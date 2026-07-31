@@ -15,7 +15,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { config } = useAppConfig();
   const [isCollapsed, setIsCollapsed] = useState(false);
-  const [isMobileOpen, setIsMobileOpen] = useState(false); // Estado para controlar o menu no celular
+  const [isMobileOpen, setIsMobileOpen] = useState(false);
 
   // Ícones vetoriais robustos e profissionais (SVG)
   const menuItems: MenuItem[] = [
@@ -92,7 +92,7 @@ export default function Sidebar() {
         >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
             {isMobileOpen ? (
-             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             ) : (
               <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
             )}
@@ -100,15 +100,15 @@ export default function Sidebar() {
         </button>
       </div>
 
-      {/* Fundo escurecido quando o menu mobile estiver aberto */}
+      {/* Fundo escurecido (Backdrop) com transição suave */}
       {isMobileOpen && (
         <div 
-          className="md:hidden fixed inset-0 bg-black/60 z-40 backdrop-blur-sm"
+          className="md:hidden fixed inset-0 bg-black/60 z-40 backdrop-blur-sm transition-opacity duration-300"
           onClick={() => setIsMobileOpen(false)}
         />
       )}
 
-      {/* Sidebar Principal (Comportamento Responsivo Integrado) */}
+      {/* Sidebar Principal com Slide-in / Slide-out no Mobile e Estabilidade Total no Desktop */}
       <aside className={`
         bg-[#0a3a33] border-r border-[#072a25] flex flex-col justify-between p-4 text-slate-100 select-none transition-all duration-300 z-50
         fixed md:relative inset-y-0 left-0
@@ -150,7 +150,7 @@ export default function Sidebar() {
             )}
           </div>
 
-          {/* Botão Cirúrgico de Alternância (Apenas no Computador) */}
+          {/* Botão de Alternância (Apenas no Computador) */}
           <div className="hidden md:flex justify-center mb-4 px-1">
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
@@ -178,7 +178,7 @@ export default function Sidebar() {
                 <Link
                   key={item.href}
                   href={item.href}
-                  onClick={() => setIsMobileOpen(false)} // Fecha o menu no celular ao clicar em uma rota
+                  onClick={() => setIsMobileOpen(false)}
                   title={isCollapsed && !isMobileOpen ? item.label : undefined}
                   className={`flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-semibold transition-all duration-150 ${
                     isCollapsed && !isMobileOpen ? 'md:justify-center md:px-2' : ''
