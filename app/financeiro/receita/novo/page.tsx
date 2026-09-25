@@ -7,6 +7,7 @@ import { supabase } from '@/lib/supabase';
 
 export default function NovaReceitaPage() {
   const router = useRouter();
+
   const [salvando, setSalvando] = useState(false);
   const [mensagemSucesso, setMensagemSucesso] = useState('');
   const [mensagemErro, setMensagemErro] = useState('');
@@ -26,31 +27,84 @@ export default function NovaReceitaPage() {
     }));
   }, []);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (salvando) return;
+
     setSalvando(true);
     setMensagemSucesso('');
     setMensagemErro('');
 
     try {
-      let rawValue = formData.valor.toString().trim();
+      // ============================================================
+      // 1. IDENTIFICAR O USUÁRIO AUTENTICADO
+      // ============================================================
+
+      const { data: userData, error: userError } =
+        await supabase.auth.getUser();
+
+      if (userError) {
+        console.error('Erro ao identificar usuário:', userError);
+        setMensagemErro(
+          'Não foi possível verificar o usuário. Faça login novamente.'
+        );
+        return;
+      }
+
+      if (!userData.user) {
+        setMensagemErro(
+          'Usuário não autenticado. Faça login novamente.'
+        );
+        return;
+      }
+
+      // ============================================================
+      // 2. VALIDAR DESCRIÇÃO
+      // ============================================================
+
+      const descricao = formData.descricao.trim();
+
+      if (!descricao) {
+        setMensagemErro('Informe a descrição da receita.');
+        return;
+      }
+
+      // ============================================================
+      // 3. CONVERTER O VALOR PARA NÚMERO
+      // ============================================================
+
+      const rawValue = formData.valor.toString().trim();
+
       let valorNumerico = 0;
 
       if (rawValue.includes(',') && rawValue.includes('.')) {
-        const limpo = rawValue.replace(/\./g, '').replace(',', '.');
+        const limpo = rawValue
+          .replace(/\./g, '')
+          .replace(',', '.');
+
         valorNumerico = parseFloat(limpo) || 0;
       } else if (rawValue.includes(',')) {
-        const limpo = rawValue.replace(',', '.');
-        valorNumerico = parseFloat(limpo) || 0;
+        valorNumerico = parseFloat(
+          rawValue.replace(',', '.')
+        ) || 0;
       } else if (rawValue.includes('.')) {
         const partes = rawValue.split('.');
+
         if (partes.length === 2 && partes[1].length === 3) {
-          valorNumerico = parseFloat(rawValue.replace(/\./g, '')) || 0;
+          valorNumerico =
+            parseFloat(rawValue.replace(/\./g, '')) || 0;
         } else {
           valorNumerico = parseFloat(rawValue) || 0;
         }
@@ -58,30 +112,70 @@ export default function NovaReceitaPage() {
         valorNumerico = parseFloat(rawValue) || 0;
       }
 
-      const { error } = await supabase.from('financeiro').insert([
-        {
-          descricao: formData.descricao.trim(),
-          tipo: 'receita',
-          valor: valorNumerico,
-          categoria: formData.categoria,
-          data_vencimento: formData.data_vencimento,
-          status: formData.status,
-        },
-      ]);
+      // ============================================================
+      // 4. VALIDAR VALOR
+      // ============================================================
+
+      if (!Number.isFinite(valorNumerico) || valorNumerico <= 0) {
+        setMensagemErro(
+          'Informe um valor válido maior que zero.'
+        );
+        return;
+      }
+
+      // ============================================================
+      // 5. SALVAR RECEITA
+      // ============================================================
+
+      const { error } = await supabase
+        .from('financeiro')
+        .insert([
+          {
+            descricao,
+            tipo: 'receita',
+            valor: valorNumerico,
+            categoria: formData.categoria,
+            data_vencimento: formData.data_vencimento,
+            status: formData.status,
+
+            // VINCULA O LANÇAMENTO AO USUÁRIO AUTENTICADO
+            user_id: userData.user.id,
+          },
+        ]);
+
+      // ============================================================
+      // 6. TRATAR ERRO DO BANCO
+      // ============================================================
 
       if (error) {
         console.error('Erro ao cadastrar receita:', error);
-        setMensagemErro('Erro ao registrar a receita no banco.');
-      } else {
-        setMensagemSucesso('Receita salva com sucesso! Redirecionando...');
-        setTimeout(() => {
-          router.push('/financeiro');
-          router.refresh();
-        }, 1200);
+
+        setMensagemErro(
+          'Erro ao registrar a receita no banco.'
+        );
+
+        return;
       }
+
+      // ============================================================
+      // 7. SUCESSO
+      // ============================================================
+
+      setMensagemSucesso(
+        'Receita salva com sucesso! Redirecionando...'
+      );
+
+      setTimeout(() => {
+        router.push('/financeiro');
+        router.refresh();
+      }, 1200);
+
     } catch (err) {
-      console.error(err);
-      setMensagemErro('Ocorreu um erro inesperado ao salvar.');
+      console.error('Erro inesperado ao salvar receita:', err);
+
+      setMensagemErro(
+        'Ocorreu um erro inesperado ao salvar.'
+      );
     } finally {
       setSalvando(false);
     }
@@ -89,15 +183,16 @@ export default function NovaReceitaPage() {
 
   return (
     <div className="min-h-screen bg-[#071f1a] text-slate-100 flex flex-col relative pb-16">
-      
+
       {mensagemSucesso && (
         <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-emerald-600 text-white px-6 py-3.5 rounded-2xl shadow-2xl border border-emerald-400/40">
-          <span className="font-semibold text-sm">{mensagemSucesso}</span>
+          <span className="font-semibold text-sm">
+            {mensagemSucesso}
+          </span>
         </div>
       )}
 
-      {/* Banner Superior Corporativo com Imagem Temática Financeira / Contábil */}
-      <div 
+      <div
         className="relative bg-cover bg-center py-24 md:py-28 px-6 md:px-12 text-white shadow-lg flex flex-col justify-between border-b border-emerald-900/45 overflow-hidden"
         style={{
           backgroundImage: `linear-gradient(rgba(7, 31, 26, 0.80), rgba(7, 31, 26, 0.92)), url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=1600&auto=format&fit=crop')`,
@@ -120,9 +215,11 @@ export default function NovaReceitaPage() {
             <div className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-900/40 px-4 py-1.5 text-xs font-semibold text-emerald-200 backdrop-blur shadow-sm mb-2 select-none">
               Gestão Financeira • Lançamentos
             </div>
+
             <h1 className="text-3xl font-bold text-white drop-shadow-md md:text-4xl">
               Cadastrar Nova Receita
             </h1>
+
             <p className="mt-1 text-emerald-100/80 text-sm drop-shadow-md font-medium">
               Registre entradas de pacotes, hospedagem e serviços do Encantos Rio Negro em Barcelos - AM.
             </p>
@@ -130,10 +227,9 @@ export default function NovaReceitaPage() {
         </div>
       </div>
 
-      {/* Conteúdo Principal com Fundo Robusto, Elevado e Acabamento Profissional */}
       <div className="px-6 py-10 md:px-12 max-w-7xl mx-auto w-full flex-1">
         <div className="rounded-3xl border border-emerald-900/40 bg-[#0a2923]/60 backdrop-blur-md p-8 shadow-xl">
-          
+
           {mensagemErro && (
             <div className="mb-6 p-4 rounded-2xl text-sm font-semibold border bg-rose-950/80 text-rose-300 border-rose-500/40">
               {mensagemErro}
@@ -141,11 +237,12 @@ export default function NovaReceitaPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            
+
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-emerald-200/80 mb-2 select-none">
                 Descrição <span className="text-rose-400">*</span>
               </label>
+
               <input
                 type="text"
                 name="descricao"
@@ -157,10 +254,12 @@ export default function NovaReceitaPage() {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+
               <div>
                 <label className="block text-xs font-bold uppercase tracking-wider text-emerald-200/80 mb-2 select-none">
                   Valor (R$) <span className="text-rose-400">*</span>
                 </label>
+
                 <input
                   type="text"
                   name="valor"
@@ -175,16 +274,28 @@ export default function NovaReceitaPage() {
                 <label className="block text-xs font-bold uppercase tracking-wider text-emerald-200/80 mb-2 select-none">
                   Categoria <span className="text-rose-400">*</span>
                 </label>
+
                 <select
                   name="categoria"
                   value={formData.categoria}
                   onChange={handleChange}
                   className="w-full px-4 py-3 rounded-xl border border-emerald-800/80 bg-[#041411] text-sm text-white focus:border-emerald-500 focus:outline-none transition"
                 >
-                  <option value="Turismo / Pacotes" className="bg-[#041411]">Turismo / Pacotes</option>
-                  <option value="Hospedagem" className="bg-[#041411]">Hospedagem</option>
-                  <option value="Alimentação" className="bg-[#041411]">Alimentação</option>
-                  <option value="Outras Receitas" className="bg-[#041411]">Outras Receitas</option>
+                  <option value="Turismo / Pacotes" className="bg-[#041411]">
+                    Turismo / Pacotes
+                  </option>
+
+                  <option value="Hospedagem" className="bg-[#041411]">
+                    Hospedagem
+                  </option>
+
+                  <option value="Alimentação" className="bg-[#041411]">
+                    Alimentação
+                  </option>
+
+                  <option value="Outras Receitas" className="bg-[#041411]">
+                    Outras Receitas
+                  </option>
                 </select>
               </div>
 
@@ -192,6 +303,7 @@ export default function NovaReceitaPage() {
                 <label className="block text-xs font-bold uppercase tracking-wider text-emerald-200/80 mb-2 select-none">
                   Data de Vencimento <span className="text-rose-400">*</span>
                 </label>
+
                 <input
                   type="date"
                   name="data_vencimento"
@@ -201,26 +313,32 @@ export default function NovaReceitaPage() {
                   className="w-full px-4 py-3 rounded-xl border border-emerald-800/80 bg-[#041411] text-sm text-white focus:border-emerald-500 focus:outline-none transition"
                 />
               </div>
+
             </div>
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-wider text-emerald-200/80 mb-2 select-none">
                 Status <span className="text-rose-400">*</span>
               </label>
+
               <select
                 name="status"
                 value={formData.status}
                 onChange={handleChange}
                 className="w-full px-4 py-3 rounded-xl border border-emerald-800/80 bg-[#041411] text-sm text-white focus:border-emerald-500 focus:outline-none transition"
               >
-                <option value="Recebido" className="bg-[#041411]">Recebido</option>
-                <option value="Pendente" className="bg-[#041411]">Pendente</option>
+                <option value="Recebido" className="bg-[#041411]">
+                  Recebido
+                </option>
+
+                <option value="Pendente" className="bg-[#041411]">
+                  Pendente
+                </option>
               </select>
             </div>
 
-            {/* Botões de Ação Padronizados e Profissionais */}
             <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-8 border-t border-emerald-900/50 mt-8">
-              
+
               <button
                 type="submit"
                 disabled={salvando}
@@ -230,26 +348,49 @@ export default function NovaReceitaPage() {
                     : 'bg-emerald-600 hover:bg-emerald-500'
                 }`}
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
-                {salvando ? 'Salvando Registro...' : 'Salvar Receita'}
+
+                {salvando
+                  ? 'Salvando Registro...'
+                  : 'Salvar Receita'}
               </button>
 
               <Link
                 href="/financeiro"
                 className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-slate-300 bg-slate-800/80 hover:bg-slate-700 border border-slate-600/40 transition cursor-pointer select-none no-underline"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
                 </svg>
+
                 Cancelar
               </Link>
 
             </div>
 
           </form>
-
         </div>
       </div>
     </div>
