@@ -1,21 +1,45 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, {
+  useEffect,
+  useState,
+} from 'react';
+
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+
 import { supabase } from '@/lib/supabase';
 import { BANNER_REGIONAL } from '@/lib/bannerImagens';
 
+type Stats = {
+  clientes: number;
+  reservas: number;
+  roteiros: number;
+  embarcacoes: number;
+};
+
 export default function DashboardPage() {
   const router = useRouter();
-  const [stats, setStats] = useState({
-    clientes: 0,
-    reservas: 0,
-    roteiros: 0,
-    embarcacoes: 0,
-  });
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+
+  const [stats, setStats] =
+    useState<Stats>({
+      clientes: 0,
+      reservas: 0,
+      roteiros: 0,
+      embarcacoes: 0,
+    });
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [error, setError] =
+    useState<string | null>(null);
+
+  /*
+    ============================================================
+    ESTATÍSTICAS REAIS
+    ============================================================
+  */
 
   useEffect(() => {
     async function fetchStats() {
@@ -23,150 +47,522 @@ export default function DashboardPage() {
       setError(null);
 
       try {
-        const [resClientes, resReservas, resPasseios, resEmbarcacoes] = await Promise.all([
-          supabase.from('clientes').select('id', { count: 'exact', head: true }),
-          supabase.from('reservas').select('id', { count: 'exact', head: true }),
-          supabase.from('passeios').select('id', { count: 'exact', head: true }),
-          supabase.from('embarcacoes').select('id', { count: 'exact', head: true }),
+        const [
+          resClientes,
+          resReservas,
+          resPasseios,
+          resEmbarcacoes,
+        ] = await Promise.all([
+          supabase
+            .from('clientes')
+            .select('id', {
+              count: 'exact',
+              head: true,
+            }),
+
+          supabase
+            .from('reservas')
+            .select('id', {
+              count: 'exact',
+              head: true,
+            }),
+
+          supabase
+            .from('passeios')
+            .select('id', {
+              count: 'exact',
+              head: true,
+            }),
+
+          supabase
+            .from('embarcacoes')
+            .select('id', {
+              count: 'exact',
+              head: true,
+            }),
         ]);
 
-        if (resClientes.error) throw new Error(`Erro em clientes: ${resClientes.error.message}`);
-        if (resReservas.error) throw new Error(`Erro em reservas: ${resReservas.error.message}`);
-        if (resPasseios.error) throw new Error(`Erro em passeios: ${resPasseios.error.message}`);
-        if (resEmbarcacoes.error) throw new Error(`Erro em embarcações: ${resEmbarcacoes.error.message}`);
+        if (resClientes.error) {
+          throw new Error(
+            `Erro em clientes: ${resClientes.error.message}`
+          );
+        }
+
+        if (resReservas.error) {
+          throw new Error(
+            `Erro em reservas: ${resReservas.error.message}`
+          );
+        }
+
+        if (resPasseios.error) {
+          throw new Error(
+            `Erro em passeios: ${resPasseios.error.message}`
+          );
+        }
+
+        if (resEmbarcacoes.error) {
+          throw new Error(
+            `Erro em embarcações: ${resEmbarcacoes.error.message}`
+          );
+        }
 
         setStats({
-          clientes: resClientes.count || 0,
-          reservas: resReservas.count || 0,
-          roteiros: resPasseios.count || 0,
-          embarcacoes: resEmbarcacoes.count || 0,
+          clientes:
+            resClientes.count || 0,
+          reservas:
+            resReservas.count || 0,
+          roteiros:
+            resPasseios.count || 0,
+          embarcacoes:
+            resEmbarcacoes.count || 0,
         });
-      } catch (err: any) {
-        console.error('Erro ao carregar estatísticas:', err);
-        setError(err.message || 'Ocorreu um erro inesperado ao carregar o dashboard.');
+      } catch (err) {
+        console.error(
+          'Erro ao carregar estatísticas:',
+          err
+        );
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : 'Ocorreu um erro inesperado ao carregar o dashboard.'
+        );
       } finally {
         setLoading(false);
       }
     }
+
     fetchStats();
   }, []);
 
-  return (
-    <div className="min-h-screen bg-[#071f1a] text-slate-800 flex flex-col selection:bg-emerald-500 selection:text-white">
-      <div 
-        className="relative bg-cover bg-center h-[440px] px-8 text-white flex flex-col justify-end pb-8 shadow-2xl overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(rgba(7, 31, 26, 0.15) 20%, rgba(7, 31, 26, 0.98) 100%), url('${BANNER_REGIONAL.modulos.dashboard}')`,
-        }}
-      >
-        <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
-          <div className="space-y-1.5 text-left">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[11px] font-bold tracking-widest uppercase mb-1 backdrop-blur-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              Plataforma Oficial
-            </span>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white drop-shadow-lg">
-              Encantos Rio Negro
-            </h1>
-            <p className="text-emerald-100/95 text-sm md:text-base font-medium drop-shadow-md max-w-2xl leading-relaxed">
-              Gestão operacional avançada e integrada para agências de turismo em <span className="text-emerald-300 font-semibold">Barcelos, Capital do Tucunaré</span>.
-            </p>
-          </div>
+  const indicadores = [
+    {
+      titulo: 'Clientes',
+      valor: stats.clientes,
+      href: '/clientes',
+      detalhe:
+        'viajantes cadastrados',
+      icon: (
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M16 21v-2a4 4 0 00-4-4H6a4 4 0 00-4 4v2M9 11a4 4 0 100-8 4 4 0 000 8zm13 10v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"
+          />
+        </svg>
+      ),
+    },
 
-          <div className="flex-shrink-0">
-            <button
-              onClick={() => router.push('/clientes/novo')}
-              className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm px-6 py-3 rounded-xl shadow-lg hover:shadow-emerald-900/50 transition-all border border-emerald-400/40 transform hover:-translate-y-0.5 cursor-pointer"
-            >
-              <span className="text-base font-bold">+</span> Novo Cliente
-            </button>
+    {
+      titulo: 'Reservas',
+      valor: stats.reservas,
+      href: '/reservas',
+      detalhe:
+        'registros na operação',
+      icon: (
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+          />
+        </svg>
+      ),
+    },
+
+    {
+      titulo: 'Passeios',
+      valor: stats.roteiros,
+      href: '/passeios',
+      detalhe:
+        'experiências cadastradas',
+      icon: (
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 21a9 9 0 100-18 9 9 0 000 18zm0-14l3 5-3 5-3-5 3-5z"
+          />
+        </svg>
+      ),
+    },
+
+    {
+      titulo: 'Embarcações',
+      valor: stats.embarcacoes,
+      href: '/embarcacoes',
+      detalhe:
+        'unidades cadastradas',
+      icon: (
+        <svg
+          className="h-5 w-5"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M3 18l2-5h14l2 5M5 13l2-6h10l2 6M12 7V3m-6 17c1.5 1 3 1 4.5 0 1.5 1 3 1 4.5 0 1.5 1 3 1 4.5 0"
+          />
+        </svg>
+      ),
+    },
+  ];
+
+  const atalhos = [
+    {
+      titulo: 'Novo cliente',
+      descricao:
+        'Cadastrar um novo viajante.',
+      href: '/clientes/novo',
+    },
+    {
+      titulo: 'Nova reserva',
+      descricao:
+        'Registrar uma nova operação.',
+      href: '/reservas/novo',
+    },
+    {
+      titulo: 'Novo passeio',
+      descricao:
+        'Adicionar uma experiência.',
+      href: '/passeios/novo',
+    },
+    {
+      titulo: 'Financeiro',
+      descricao:
+        'Acompanhar movimentações.',
+      href: '/financeiro',
+    },
+  ];
+
+  return (
+    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+      {/* =========================================================
+          APRESENTAÇÃO
+      ========================================================== */}
+
+      <section className="relative overflow-hidden border-b border-white/[0.07] bg-[#091510]">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-35"
+          style={{
+            backgroundImage: `url('${BANNER_REGIONAL.modulos.dashboard}')`,
+          }}
+        />
+
+        <div className="absolute inset-0 bg-gradient-to-r from-[#06100D] via-[#07110E]/94 to-[#07110E]/70" />
+
+        <div className="absolute inset-0 bg-gradient-to-t from-[#07110E] via-transparent to-transparent" />
+
+        <div className="pointer-events-none absolute -right-24 -top-36 h-[420px] w-[420px] rounded-full border border-[#E3A144]/10" />
+
+        <div className="relative mx-auto max-w-[1360px] px-5 py-12 md:px-8 md:py-16">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <div className="flex items-center gap-3">
+                <span className="h-px w-8 bg-[#E3A144]" />
+
+                <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#E3A144]">
+                  ERN Gestão
+                </span>
+              </div>
+
+              <h1
+                className="mt-5 max-w-[760px] text-4xl font-medium leading-[1.02] tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
+                style={{
+                  fontFamily:
+                    'var(--font-fraunces), serif',
+                }}
+              >
+                Sua operação,
+                <br className="hidden sm:block" /> em
+                um só lugar.
+              </h1>
+
+              <p className="mt-5 max-w-[670px] text-sm leading-7 text-[#EDEDE3]/48 md:text-base">
+                Clientes, reservas, passeios,
+                estrutura e financeiro conectados
+                para organizar a operação turística
+                no Rio Negro.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={() =>
+                  router.push('/clientes/novo')
+                }
+                className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl bg-[#E3A144] px-6 text-sm font-bold text-[#07130F] transition hover:-translate-y-0.5 hover:bg-[#F0B35C]"
+              >
+                <span className="text-lg leading-none">
+                  +
+                </span>
+                Novo cliente
+              </button>
+
+              <Link
+                href="/reservas"
+                className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl border border-white/[0.12] bg-white/[0.035] px-6 text-sm font-semibold text-[#EDEDE3]/75 backdrop-blur transition hover:bg-white/[0.07]"
+              >
+                Ver reservas
+                <span>→</span>
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="p-8 max-w-7xl mx-auto w-full -mt-6 z-10 flex-1 space-y-6">
+      {/* =========================================================
+          CONTEÚDO
+      ========================================================== */}
+
+      <main className="mx-auto max-w-[1360px] px-5 py-8 md:px-8 md:py-10">
+        {/* ERRO */}
+
         {error && (
-          <div className="p-4 text-red-200 bg-red-950/80 rounded-2xl border border-red-800 text-sm font-medium shadow-lg backdrop-blur-sm">
-            {error}
+          <div className="mb-6 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-sm text-red-200">
+            <span className="font-semibold">
+              Não foi possível carregar alguns
+              dados.
+            </span>
+
+            <span className="ml-2 text-red-200/65">
+              {error}
+            </span>
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          
-          {/* Card Clientes */}
-          <Link href="/clientes" className="bg-[#041c17] text-white rounded-2xl p-6 shadow-xl border border-emerald-900/60 border-l-4 border-l-blue-400 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl hover:border-emerald-700/80 group">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-400/80 group-hover:text-blue-400 transition-colors">Clientes</span>
-              <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" /></svg>
-              </div>
-            </div>
-            <div className="mt-6">
-              <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-                {loading ? <span className="animate-pulse text-emerald-600">...</span> : stats.clientes}
-              </h2>
-              <p className="text-xs font-medium text-emerald-300/80 mt-2 flex items-center gap-1">
-                <span className="text-blue-400 font-bold">↑</span> Ativos no banco
-              </p>
-            </div>
-          </Link>
+        {/* =====================================================
+            CABEÇALHO DOS INDICADORES
+        ====================================================== */}
 
-          {/* Card Reservas */}
-          <Link href="/reservas" className="bg-[#041c17] text-white rounded-2xl p-6 shadow-xl border border-emerald-900/60 border-l-4 border-l-sky-400 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl hover:border-emerald-700/80 group">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-400/80 group-hover:text-sky-400 transition-colors">Reservas</span>
-              <div className="p-2.5 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
-              </div>
-            </div>
-            <div className="mt-6">
-              <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-                {loading ? <span className="animate-pulse text-emerald-600">...</span> : stats.reservas}
-              </h2>
-              <p className="text-xs font-medium text-emerald-300/80 mt-2 flex items-center gap-1">
-                <span className="text-sky-400 font-bold">↑</span> Pendentes / Confirmadas
-              </p>
-            </div>
-          </Link>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+              Visão geral
+            </p>
 
-          {/* Card Roteiros */}
-          <Link href="/passeios" className="bg-[#041c17] text-white rounded-2xl p-6 shadow-xl border border-emerald-900/60 border-l-4 border-l-amber-400 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl hover:border-emerald-700/80 group">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-400/80 group-hover:text-amber-400 transition-colors">Roteiros</span>
-              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              </div>
-            </div>
-            <div className="mt-6">
-              <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-                {loading ? <span className="animate-pulse text-emerald-600">...</span> : stats.roteiros}
-              </h2>
-              <p className="text-xs font-medium text-emerald-300/80 mt-2 flex items-center gap-1">
-                <span className="text-amber-400 font-bold">✦</span> Ativos no catálogo
-              </p>
-            </div>
-          </Link>
+            <h2
+              className="mt-2 text-2xl text-[#F0F0E8]"
+              style={{
+                fontFamily:
+                  'var(--font-fraunces), serif',
+              }}
+            >
+              Operação agora
+            </h2>
+          </div>
 
-          {/* Card Embarcações */}
-          <Link href="/embarcacoes" className="bg-[#041c17] text-white rounded-2xl p-6 shadow-xl border border-emerald-900/60 border-l-4 border-l-purple-400 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 hover:shadow-2xl hover:border-emerald-700/80 group">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-400/80 group-hover:text-purple-400 transition-colors">Embarcações</span>
-              <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v12a2 2 0 01-2 2zM6 10h12M6 14h12" /></svg>
-              </div>
-            </div>
-            <div className="mt-6">
-              <h2 className="text-3xl md:text-4xl font-extrabold text-white tracking-tight">
-                {loading ? <span className="animate-pulse text-emerald-600">...</span> : stats.embarcacoes}
-              </h2>
-              <p className="text-xs font-medium text-emerald-300/80 mt-2 flex items-center gap-1">
-                <span className="text-purple-400 font-bold">✦</span> Todas disponíveis
-              </p>
-            </div>
-          </Link>
-
+          <p className="max-w-[420px] text-xs leading-5 text-[#EDEDE3]/30">
+            Indicadores calculados diretamente a
+            partir dos registros da operação.
+          </p>
         </div>
-      </div>
+
+        {/* =====================================================
+            INDICADORES
+        ====================================================== */}
+
+        <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {indicadores.map((item) => (
+            <Link
+              key={item.titulo}
+              href={item.href}
+              className="group rounded-[22px] border border-white/[0.075] bg-[#0A1713] p-5 transition duration-300 hover:-translate-y-0.5 hover:border-[#E3A144]/20 hover:bg-[#0C1B16]"
+            >
+              <div className="flex items-start justify-between">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E3A144]/15 bg-[#E3A144]/7 text-[#E3A144]">
+                  {item.icon}
+                </div>
+
+                <span className="text-sm text-[#EDEDE3]/18 transition group-hover:translate-x-0.5 group-hover:text-[#E3A144]">
+                  →
+                </span>
+              </div>
+
+              <div className="mt-8">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/32">
+                  {item.titulo}
+                </p>
+
+                <div className="mt-2 flex items-end gap-2">
+                  <strong
+                    className="text-4xl font-medium tracking-[-0.04em] text-[#F0F0E8]"
+                    style={{
+                      fontFamily:
+                        'var(--font-fraunces), serif',
+                    }}
+                  >
+                    {loading ? '—' : item.valor}
+                  </strong>
+                </div>
+
+                <p className="mt-2 text-[11px] text-[#EDEDE3]/28">
+                  {item.detalhe}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        {/* =====================================================
+            ÁREA INFERIOR
+        ====================================================== */}
+
+        <div className="mt-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
+          {/* ATALHOS */}
+
+          <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                  Acesso rápido
+                </p>
+
+                <h2
+                  className="mt-2 text-2xl text-[#F0F0E8]"
+                  style={{
+                    fontFamily:
+                      'var(--font-fraunces), serif',
+                  }}
+                >
+                  Comece uma operação
+                </h2>
+              </div>
+
+              <span className="hidden rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1 text-[9px] uppercase tracking-[0.15em] text-[#EDEDE3]/30 sm:block">
+                ERN
+              </span>
+            </div>
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-2">
+              {atalhos.map((atalho) => (
+                <Link
+                  key={atalho.titulo}
+                  href={atalho.href}
+                  className="group flex min-h-[110px] items-start justify-between rounded-[18px] border border-white/[0.065] bg-white/[0.018] p-4 transition hover:border-white/[0.12] hover:bg-white/[0.035]"
+                >
+                  <div>
+                    <p className="text-sm font-semibold text-[#EDEDE3]/80">
+                      {atalho.titulo}
+                    </p>
+
+                    <p className="mt-2 max-w-[200px] text-[11px] leading-5 text-[#EDEDE3]/30">
+                      {atalho.descricao}
+                    </p>
+                  </div>
+
+                  <span className="text-sm text-[#EDEDE3]/20 transition group-hover:translate-x-1 group-hover:text-[#E3A144]">
+                    →
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+
+          {/* ESTRUTURA */}
+
+          <section className="overflow-hidden rounded-[26px] border border-white/[0.075] bg-[#0A1713]">
+            <div className="border-b border-white/[0.065] px-5 py-5 md:px-6">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+                Estrutura da operação
+              </p>
+
+              <h2
+                className="mt-2 text-2xl text-[#F0F0E8]"
+                style={{
+                  fontFamily:
+                    'var(--font-fraunces), serif',
+                }}
+              >
+                Gestão conectada
+              </h2>
+            </div>
+
+            <div>
+              {[
+                {
+                  label: 'Hospedagens',
+                  href: '/hospedagens',
+                },
+                {
+                  label: 'Embarcações',
+                  href: '/embarcacoes',
+                },
+                {
+                  label: 'Guias',
+                  href: '/guias',
+                },
+                {
+                  label: 'Parceiros',
+                  href: '/parceiros',
+                },
+                {
+                  label: 'Financeiro',
+                  href: '/financeiro',
+                },
+              ].map((item, index, array) => (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`group flex items-center justify-between px-5 py-4 transition hover:bg-white/[0.025] md:px-6 ${
+                    index !== array.length - 1
+                      ? 'border-b border-white/[0.055]'
+                      : ''
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <span className="h-1.5 w-1.5 rounded-full bg-[#7C9C87]/70" />
+
+                    <span className="text-sm font-medium text-[#EDEDE3]/57 transition group-hover:text-[#EDEDE3]">
+                      {item.label}
+                    </span>
+                  </div>
+
+                  <span className="text-xs text-[#EDEDE3]/15 transition group-hover:translate-x-1 group-hover:text-[#E3A144]">
+                    →
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        </div>
+
+        {/* =====================================================
+            RODAPÉ INTERNO
+        ====================================================== */}
+
+        <div className="mt-10 flex flex-col gap-2 border-t border-white/[0.06] pt-6 text-[10px] text-[#EDEDE3]/22 sm:flex-row sm:items-center sm:justify-between">
+          <span>
+            ERN Gestão — Encantos Rio Negro
+          </span>
+
+          <span>
+            Operação turística integrada
+          </span>
+        </div>
+      </main>
     </div>
   );
 }

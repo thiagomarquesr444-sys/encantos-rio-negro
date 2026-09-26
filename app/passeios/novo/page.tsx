@@ -1,361 +1,690 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, {
+  useState,
+} from 'react';
+
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+
 import { supabase } from '@/lib/supabase';
-import { BANNER_REGIONAL } from '@/lib/bannerImagens';
+
+interface PasseioForm {
+  nome: string;
+  descricao: string;
+  cidade: string;
+  duracao: string;
+  valor: string;
+  vagas: string;
+  categoria: string;
+  foto_url: string;
+  destaque: boolean;
+  situacao: string;
+}
+
+const estadoInicial: PasseioForm = {
+  nome: '',
+  descricao: '',
+  cidade: 'Barcelos - AM',
+  duracao: '',
+  valor: '',
+  vagas: '',
+  categoria: 'Ecoturismo',
+  foto_url: '',
+  destaque: false,
+  situacao: 'Ativo',
+};
+
+function converterValor(
+  valor: string
+) {
+  let texto = valor
+    .trim()
+    .replace(/\s/g, '')
+    .replace(/R\$/gi, '');
+
+  if (!texto) {
+    return 0;
+  }
+
+  /*
+    Padrão definido para a ERN:
+
+    3500  -> 3500
+    3.500 -> 3500
+  */
+
+  if (
+    /^\d{1,3}(\.\d{3})+$/.test(
+      texto
+    )
+  ) {
+    texto = texto.replace(
+      /\./g,
+      ''
+    );
+  }
+
+  const numero =
+    Number(
+      texto.replace(',', '.')
+    );
+
+  return Number.isFinite(numero)
+    ? numero
+    : NaN;
+}
 
 export default function NovoPasseioPage() {
   const router = useRouter();
-  const [salvando, setSalvando] = useState(false);
-  const [mensagem, setMensagem] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null);
 
-  const [formData, setFormData] = useState({
-    nome: '',
-    descricao: '',
-    cidade: 'Barcelos - AM',
-    duracao: '',
-    valor: '',
-    categoria: 'Ecoturismo',
-    foto_url: '',
-    destaque: false,
-    situacao: 'Ativo',
-  });
+  const [
+    formData,
+    setFormData,
+  ] =
+    useState<PasseioForm>(
+      estadoInicial
+    );
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target;
+  const [
+    salvando,
+    setSalvando,
+  ] = useState(false);
+
+  const [
+    mensagem,
+    setMensagem,
+  ] = useState<{
+    tipo: 'sucesso' | 'erro';
+    texto: string;
+  } | null>(null);
+
+  const inputClass =
+    'w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/40';
+
+  const labelClass =
+    'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34';
+
+  function handleChange(
+    event: React.ChangeEvent<
+      | HTMLInputElement
+      | HTMLTextAreaElement
+      | HTMLSelectElement
+    >
+  ) {
+    const {
+      name,
+      value,
+      type,
+    } = event.target;
+
     if (type === 'checkbox') {
-      const { checked } = e.target as HTMLInputElement;
-      setFormData((prev) => ({ ...prev, [name]: checked }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
-    }
-  };
+      const {
+        checked,
+      } =
+        event.target as HTMLInputElement;
 
-  const handleLimpar = () => {
-    setFormData({
-      nome: '',
-      descricao: '',
-      cidade: 'Barcelos - AM',
-      duracao: '',
-      valor: '',
-      categoria: 'Ecoturismo',
-      foto_url: '',
-      destaque: false,
-      situacao: 'Ativo',
-    });
-    setMensagem(null);
-  };
+      setFormData(
+        (atual) => ({
+          ...atual,
+          [name]: checked,
+        })
+      );
 
-  const handleCancelar = () => {
-    router.push('/passeios');
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSalvando(true);
-    setMensagem(null);
-
-    if (!formData.nome.trim() || !formData.duracao.trim() || !formData.valor.trim() || !formData.descricao.trim()) {
-      setMensagem({
-        tipo: 'erro',
-        texto: 'Por favor, preencha todos os campos obrigatórios (Nome, Duração, Valor e Descrição).',
-      });
-      setSalvando(false);
       return;
     }
 
-    try {
-      const { error } = await supabase.from('passeios').insert([
-        {
-          nome: formData.nome.trim(),
-          descricao: formData.descricao.trim(),
-          cidade: formData.cidade.trim() || 'Barcelos - AM',
-          duracao: formData.duracao.trim(),
-          valor: parseFloat(formData.valor) || 0,
-          categoria: formData.categoria,
-          foto_url: formData.foto_url.trim() || 'https://images.unsplash.com/photo-1518509562904-e7ef99cdcc86?q=80&w=1200&auto=format&fit=crop',
-          destaque: formData.destaque,
-          situacao: formData.situacao,
-        },
-      ]);
+    setFormData(
+      (atual) => ({
+        ...atual,
+        [name]: value,
+      })
+    );
+  }
 
-      if (error) {
-        console.error('Erro ao cadastrar passeio:', error);
-        setMensagem({
-          tipo: 'erro',
-          texto: `Erro ao cadastrar o passeio: ${error.message || 'Verifique os campos e tente novamente.'}`,
-        });
-      } else {
-        setMensagem({
-          tipo: 'sucesso',
-          texto: 'Passeio cadastrado com sucesso. Redirecionando...',
-        });
-        setTimeout(() => {
-          router.push('/passeios');
-        }, 1500);
-      }
-    } catch (err: any) {
-      console.error('Erro inesperado:', err);
+  function handleLimpar() {
+    setFormData(
+      estadoInicial
+    );
+
+    setMensagem(null);
+  }
+
+  async function handleSubmit(
+    event: React.FormEvent
+  ) {
+    event.preventDefault();
+
+    setMensagem(null);
+
+    if (
+      !formData.nome.trim() ||
+      !formData.duracao.trim() ||
+      !formData.valor.trim() ||
+      !formData.descricao.trim()
+    ) {
       setMensagem({
         tipo: 'erro',
-        texto: 'Ocorreu um erro inesperado ao salvar.',
+        texto:
+          'Preencha os campos obrigatórios: nome, duração, valor e descrição.',
+      });
+
+      return;
+    }
+
+    const valor =
+      converterValor(
+        formData.valor
+      );
+
+    if (
+      !Number.isFinite(valor) ||
+      valor < 0
+    ) {
+      setMensagem({
+        tipo: 'erro',
+        texto:
+          'Informe um valor válido.',
+      });
+
+      return;
+    }
+
+    const vagas =
+      formData.vagas.trim()
+        ? Number(
+            formData.vagas
+          )
+        : 0;
+
+    if (
+      !Number.isFinite(vagas) ||
+      vagas < 0 ||
+      !Number.isInteger(vagas)
+    ) {
+      setMensagem({
+        tipo: 'erro',
+        texto:
+          'Informe uma quantidade válida de vagas.',
+      });
+
+      return;
+    }
+
+    setSalvando(true);
+
+    try {
+      const payload = {
+        nome:
+          formData.nome.trim(),
+
+        descricao:
+          formData.descricao.trim(),
+
+        cidade:
+          formData.cidade.trim() ||
+          'Barcelos - AM',
+
+        duracao:
+          formData.duracao.trim(),
+
+        /*
+          Campo usado pelo cadastro
+          atual do banco.
+        */
+        valor,
+
+        vagas,
+
+        categoria:
+          formData.categoria,
+
+        foto_url:
+          formData.foto_url.trim() ||
+          null,
+
+        destaque:
+          formData.destaque,
+
+        situacao:
+          formData.situacao,
+      };
+
+      const { error } =
+        await supabase
+          .from('passeios')
+          .insert([payload]);
+
+      if (error) {
+        throw error;
+      }
+
+      setMensagem({
+        tipo: 'sucesso',
+        texto:
+          'Passeio cadastrado com sucesso.',
+      });
+
+      setTimeout(() => {
+        router.push(
+          '/passeios'
+        );
+
+        router.refresh();
+      }, 1200);
+    } catch (error) {
+      console.error(
+        'Erro ao cadastrar passeio:',
+        error
+      );
+
+      setMensagem({
+        tipo: 'erro',
+        texto:
+          error instanceof Error
+            ? `Erro ao cadastrar o passeio: ${error.message}`
+            : 'Ocorreu um erro ao salvar o passeio.',
       });
     } finally {
       setSalvando(false);
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-[#071f1a] text-slate-100 flex flex-col relative pb-16">
-      
-      {/* Banner Superior Padrão Corporativo */}
-      <div className="relative w-full bg-[#051713] py-24 md:py-28 px-6 text-white shadow-lg overflow-hidden flex flex-col justify-between md:px-12 border-b border-emerald-900/45">
-        <div className="absolute inset-0 opacity-85 pointer-events-none overflow-hidden">
-          <img
-            src={BANNER_REGIONAL.modulos.serra}
-            alt="Banner Novo Passeio"
-            className="w-full h-full object-cover object-center select-none pointer-events-none"
-          />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#071f1a] via-[#071f1a]/70 to-[#071f1a]/30 pointer-events-none" />
+    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+      {/* CABEÇALHO */}
 
-        <div className="relative max-w-7xl mx-auto w-full flex justify-end z-10">
+      <section className="border-b border-white/[0.07] bg-[#091510]">
+        <div className="mx-auto max-w-[1180px] px-5 py-10 md:px-8 md:py-12">
           <Link
             href="/passeios"
-            draggable={false}
-            onDragStart={(e) => e.preventDefault()}
-            className="inline-flex items-center rounded-xl border border-emerald-500/30 bg-emerald-900/40 px-5 py-2.5 text-sm font-semibold text-emerald-200 backdrop-blur transition hover:bg-emerald-800/60 shadow-sm cursor-pointer no-underline"
-            style={{ WebkitUserDrag: 'none' } as any}
+            className="inline-flex items-center gap-2 text-xs font-semibold text-[#EDEDE3]/38 transition hover:text-[#E3A144]"
           >
-            ← Voltar para Passeios
+            <span>←</span>
+            Passeios
           </Link>
-        </div>
 
-        <div className="relative max-w-7xl mx-auto w-full z-10 pt-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
-          <div>
-            <div className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-900/40 px-4 py-1.5 text-xs font-semibold text-emerald-200 backdrop-blur shadow-sm mb-2 select-none">
-              Gestão de Experiências • Catálogo
+          <div className="mt-7 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
+                Operação • Catálogo
+              </p>
+
+              <h1
+                className="mt-3 text-4xl tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
+                style={{
+                  fontFamily:
+                    'var(--font-fraunces), serif',
+                }}
+              >
+                Novo passeio
+              </h1>
+
+              <p className="mt-4 max-w-[650px] text-sm leading-7 text-[#EDEDE3]/40">
+                Adicione uma experiência
+                ao catálogo operacional
+                da empresa.
+              </p>
             </div>
-            <h1 className="text-3xl font-bold text-white drop-shadow-md md:text-4xl">
-              Cadastrar Novo Passeio
-            </h1>
-            <p className="mt-1 text-emerald-100/80 text-sm drop-shadow-md font-medium">
-              Adicione uma nova experiência turística ao catálogo oficial do Encantos Rio Negro.
-            </p>
+
+            <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1.5 text-[9px] uppercase tracking-[0.15em] text-[#EDEDE3]/28">
+              ERN Gestão
+            </span>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Conteúdo Principal em Dark Mode Profissional */}
-      <div className="px-6 py-10 md:px-12 max-w-7xl mx-auto w-full flex-1">
-        <div className="rounded-3xl border border-emerald-900/40 bg-[#0a2923]/60 backdrop-blur-md p-8 shadow-xl">
-          
-          {mensagem && (
-            <div
-              className={`mb-6 p-4 rounded-2xl text-sm font-semibold border ${
-                mensagem.tipo === 'sucesso'
-                  ? 'bg-emerald-950/80 text-emerald-300 border-emerald-500/40'
-                  : 'bg-rose-950/80 text-rose-300 border-rose-500/40'
-              }`}
-            >
-              {mensagem.texto}
+      <main className="mx-auto max-w-[1180px] px-5 py-8 md:px-8 md:py-10">
+        {mensagem && (
+          <div
+            className={`mb-6 rounded-2xl border px-5 py-4 text-xs ${
+              mensagem.tipo ===
+              'sucesso'
+                ? 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300'
+                : 'border-red-500/20 bg-red-500/[0.07] text-red-300'
+            }`}
+          >
+            {mensagem.texto}
+          </div>
+        )}
+
+        <form
+          onSubmit={handleSubmit}
+          className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]"
+        >
+          {/* DADOS PRINCIPAIS */}
+
+          <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-7">
+            <div className="border-b border-white/[0.065] pb-5">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+                Experiência
+              </p>
+
+              <h2
+                className="mt-2 text-2xl text-[#F0F0E8]"
+                style={{
+                  fontFamily:
+                    'var(--font-fraunces), serif',
+                }}
+              >
+                Informações principais
+              </h2>
             </div>
-          )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="mt-6 space-y-5">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-emerald-200/80 mb-2 select-none">
-                  Nome do Passeio <span className="text-rose-400">*</span>
+                <label className={labelClass}>
+                  Nome do passeio *
                 </label>
+
                 <input
                   type="text"
                   name="nome"
                   required
-                  placeholder=""
                   value={formData.nome}
                   onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border border-emerald-800/80 bg-[#041411] text-sm text-white placeholder-emerald-900/40 focus:border-emerald-500 focus:outline-none transition"
+                  placeholder="Nome da experiência"
+                  className={inputClass}
                 />
               </div>
 
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className={labelClass}>
+                    Categoria *
+                  </label>
+
+                  <select
+                    name="categoria"
+                    value={
+                      formData.categoria
+                    }
+                    onChange={
+                      handleChange
+                    }
+                    className={
+                      inputClass
+                    }
+                  >
+                    <option value="Ecoturismo">
+                      Ecoturismo
+                    </option>
+
+                    <option value="Passeios Fluviais">
+                      Passeios Fluviais
+                    </option>
+
+                    <option value="Pesca Esportiva">
+                      Pesca Esportiva
+                    </option>
+
+                    <option value="Imersão Cultural">
+                      Imersão Cultural
+                    </option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className={labelClass}>
+                    Cidade / Destino *
+                  </label>
+
+                  <input
+                    type="text"
+                    name="cidade"
+                    required
+                    value={
+                      formData.cidade
+                    }
+                    onChange={
+                      handleChange
+                    }
+                    className={
+                      inputClass
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div>
+                  <label className={labelClass}>
+                    Duração *
+                  </label>
+
+                  <input
+                    type="text"
+                    name="duracao"
+                    required
+                    value={
+                      formData.duracao
+                    }
+                    onChange={
+                      handleChange
+                    }
+                    placeholder="Ex.: 4 horas"
+                    className={
+                      inputClass
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label className={labelClass}>
+                    Valor (R$) *
+                  </label>
+
+                  <input
+                    type="text"
+                    inputMode="decimal"
+                    name="valor"
+                    required
+                    value={
+                      formData.valor
+                    }
+                    onChange={
+                      handleChange
+                    }
+                    placeholder="Ex.: 3.500"
+                    className={
+                      inputClass
+                    }
+                  />
+                </div>
+
+                <div>
+                  <label className={labelClass}>
+                    Vagas
+                  </label>
+
+                  <input
+                    type="number"
+                    min="0"
+                    step="1"
+                    name="vagas"
+                    value={
+                      formData.vagas
+                    }
+                    onChange={
+                      handleChange
+                    }
+                    placeholder="0"
+                    className={
+                      inputClass
+                    }
+                  />
+                </div>
+              </div>
+
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-emerald-200/80 mb-2 select-none">
-                  Categoria <span className="text-rose-400">*</span>
+                <label className={labelClass}>
+                  Descrição *
                 </label>
-                <select
-                  name="categoria"
-                  value={formData.categoria}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border border-emerald-800/80 bg-[#041411] text-sm text-white focus:border-emerald-500 focus:outline-none transition"
-                >
-                  <option value="Ecoturismo" className="bg-[#041411]">Ecoturismo</option>
-                  <option value="Passeios Fluviais" className="bg-[#041411]">Passeios Fluviais</option>
-                  <option value="Pesca Esportiva" className="bg-[#041411]">Pesca Esportiva</option>
-                  <option value="Imersão Cultural" className="bg-[#041411]">Imersão Cultural</option>
-                </select>
+
+                <textarea
+                  name="descricao"
+                  required
+                  rows={6}
+                  value={
+                    formData.descricao
+                  }
+                  onChange={
+                    handleChange
+                  }
+                  placeholder="Descreva a experiência, roteiro e principais características..."
+                  className={`${inputClass} resize-none leading-6`}
+                />
               </div>
             </div>
+          </section>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-emerald-200/80 mb-2 select-none">
-                  Cidade / Destino <span className="text-rose-400">*</span>
+          {/* PUBLICAÇÃO */}
+
+          <div className="space-y-6">
+            <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-6">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                Publicação
+              </p>
+
+              <h2
+                className="mt-2 text-2xl text-[#F0F0E8]"
+                style={{
+                  fontFamily:
+                    'var(--font-fraunces), serif',
+                }}
+              >
+                Situação do passeio
+              </h2>
+
+              <div className="mt-6 space-y-5">
+                <div>
+                  <label className={labelClass}>
+                    Situação
+                  </label>
+
+                  <select
+                    name="situacao"
+                    value={
+                      formData.situacao
+                    }
+                    onChange={
+                      handleChange
+                    }
+                    className={
+                      inputClass
+                    }
+                  >
+                    <option value="Ativo">
+                      Ativo
+                    </option>
+
+                    <option value="Inativo">
+                      Inativo
+                    </option>
+
+                    <option value="Em Breve">
+                      Em Breve
+                    </option>
+                  </select>
+                </div>
+
+                <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-white/[0.065] bg-white/[0.018] p-4">
+                  <input
+                    type="checkbox"
+                    name="destaque"
+                    checked={
+                      formData.destaque
+                    }
+                    onChange={
+                      handleChange
+                    }
+                    className="mt-0.5 h-4 w-4"
+                  />
+
+                  <div>
+                    <p className="text-xs font-semibold text-[#EDEDE3]/70">
+                      Destacar passeio
+                    </p>
+
+                    <p className="mt-1 text-[10px] leading-5 text-[#EDEDE3]/28">
+                      Marca esta experiência
+                      como destaque dentro
+                      do catálogo.
+                    </p>
+                  </div>
                 </label>
-                <input
-                  type="text"
-                  name="cidade"
-                  required
-                  value={formData.cidade}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border border-emerald-800/80 bg-[#041411] text-sm text-white placeholder-emerald-900/40 focus:border-emerald-500 focus:outline-none transition"
-                />
               </div>
+            </section>
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-emerald-200/80 mb-2 select-none">
-                  Duração <span className="text-rose-400">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="duracao"
-                  required
-                  placeholder=""
-                  value={formData.duracao}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border border-emerald-800/80 bg-[#041411] text-sm text-white placeholder-emerald-900/40 focus:border-emerald-500 focus:outline-none transition"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-emerald-200/80 mb-2 select-none">
-                  Valor (R$) <span className="text-rose-400">*</span>
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  name="valor"
-                  required
-                  placeholder=""
-                  value={formData.valor}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border border-emerald-800/80 bg-[#041411] text-sm text-white placeholder-emerald-900/40 focus:border-emerald-500 focus:outline-none transition"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-emerald-200/80 mb-2 select-none">
-                URL da Foto de Capa (Unsplash ou Supabase Storage)
+            <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-6">
+              <label className={labelClass}>
+                URL da imagem
               </label>
+
               <input
                 type="url"
                 name="foto_url"
-                placeholder=""
-                value={formData.foto_url}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl border border-emerald-800/80 bg-[#041411] text-sm text-white placeholder-emerald-900/40 focus:border-emerald-500 focus:outline-none transition"
+                value={
+                  formData.foto_url
+                }
+                onChange={
+                  handleChange
+                }
+                placeholder="https://..."
+                className={
+                  inputClass
+                }
               />
-            </div>
 
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-emerald-200/80 mb-2 select-none">
-                Descrição Completa da Experiência <span className="text-rose-400">*</span>
-              </label>
-              <textarea
-                name="descricao"
-                required
-                rows={4}
-                placeholder=""
-                value={formData.descricao}
-                onChange={handleChange}
-                className="w-full px-4 py-3 rounded-xl border border-emerald-800/80 bg-[#041411] text-sm text-white placeholder-emerald-900/40 focus:border-emerald-500 focus:outline-none transition resize-none"
-              />
-            </div>
+              <p className="mt-3 text-[10px] leading-5 text-[#EDEDE3]/26">
+                Use uma imagem real da
+                experiência ou deixe em
+                branco por enquanto.
+              </p>
+            </section>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
-              <div className="flex items-center gap-3 bg-[#041411] px-4 py-3 rounded-xl border border-emerald-800/80">
-                <input
-                  type="checkbox"
-                  name="destaque"
-                  id="destaque"
-                  checked={formData.destaque}
-                  onChange={handleChange}
-                  className="w-5 h-5 text-emerald-600 bg-[#041411] border-emerald-800 rounded focus:ring-emerald-500 cursor-pointer"
-                />
-                <label htmlFor="destaque" className="text-sm font-semibold text-emerald-200 cursor-pointer select-none">
-                  Destacar este passeio na página principal
-                </label>
-              </div>
+          {/* AÇÕES */}
 
-              <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-emerald-200/80 mb-2 select-none">
-                  Situação <span className="text-rose-400">*</span>
-                </label>
-                <select
-                  name="situacao"
-                  value={formData.situacao}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 rounded-xl border border-emerald-800/80 bg-[#041411] text-sm text-white focus:border-emerald-500 focus:outline-none transition"
-                >
-                  <option value="Ativo" className="bg-[#041411]">Ativo</option>
-                  <option value="Inativo" className="bg-[#041411]">Inativo</option>
-                  <option value="Em Breve" className="bg-[#041411]">Em Breve</option>
-                </select>
-              </div>
-            </div>
-
-            {/* Botões de Ação Padronizados e Profissionais */}
-            <div className="flex flex-col sm:flex-row items-center justify-end gap-3 pt-8 border-t border-emerald-900/50 mt-8">
-              
+          <div className="lg:col-span-2">
+            <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-6 sm:flex-row sm:items-center sm:justify-between">
               <button
-                type="submit"
-                disabled={salvando}
-                className={`w-full sm:w-auto inline-flex items-center justify-center gap-2 px-8 py-3 rounded-xl text-sm font-semibold text-white shadow-lg transition cursor-pointer select-none border border-emerald-500/40 ${
+                type="button"
+                onClick={
+                  handleLimpar
+                }
+                disabled={
                   salvando
-                    ? 'bg-emerald-500/50 cursor-not-allowed'
-                    : 'bg-emerald-600 hover:bg-emerald-500'
-                }`}
+                }
+                className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/45"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                </svg>
-                {salvando ? 'Salvando Registro...' : 'Cadastrar Passeio'}
+                Limpar formulário
               </button>
 
-              <button
-                type="button"
-                onClick={handleLimpar}
-                disabled={salvando}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-amber-300 bg-amber-950/40 hover:bg-amber-900/60 border border-amber-600/40 transition cursor-pointer select-none"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
-                Limpar Formulário
-              </button>
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Link
+                  href="/passeios"
+                  className="inline-flex min-h-[46px] items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55"
+                >
+                  Cancelar
+                </Link>
 
-              <button
-                type="button"
-                onClick={handleCancelar}
-                disabled={salvando}
-                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-semibold text-slate-300 bg-slate-800/80 hover:bg-slate-700 border border-slate-600/40 transition cursor-pointer select-none"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-                Cancelar
-              </button>
-
+                <button
+                  type="submit"
+                  disabled={
+                    salvando
+                  }
+                  className="inline-flex min-h-[46px] items-center justify-center rounded-xl bg-[#E3A144] px-6 text-xs font-bold text-[#07130F] transition hover:bg-[#F0B35C] disabled:opacity-50"
+                >
+                  {salvando
+                    ? 'Salvando...'
+                    : 'Cadastrar passeio'}
+                </button>
+              </div>
             </div>
-
-          </form>
-
-        </div>
-      </div>
+          </div>
+        </form>
+      </main>
     </div>
   );
 }

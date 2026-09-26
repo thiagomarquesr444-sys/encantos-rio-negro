@@ -1,548 +1,1430 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+
 import Link from 'next/link';
+
 import { supabase } from '@/lib/supabase';
-import { BANNER_REGIONAL } from '@/lib/bannerImagens';
+
+type StatusReserva =
+  | 'Pendente'
+  | 'Confirmada'
+  | 'Cancelada';
 
 interface Reserva {
   id?: string | number;
-  cliente?: string;
-  pacote?: string;
-  data?: string;
-  agencia?: string;
-  guia?: string;
-  valor?: number;
-  status?: string;
-  observacoes?: string;
+  cliente: string;
+  pacote: string;
+  data: string;
+  dataOriginal?: string;
+  agencia: string;
+  guia: string;
+  valor: number;
+  status: StatusReserva;
+  observacoes: string;
+}
+
+interface ReservaBanco {
+  id?: string | number;
+
+  cliente?: string | null;
+  nome_cliente?: string | null;
+
+  pacote?: string | null;
+  passeio?: string | null;
+
+  data_reserva?: string | null;
+  data?: string | null;
+
+  agencia?: string | null;
+  parceiro?: string | null;
+
+  guia?: string | null;
+
+  valor?: number | string | null;
+  valor_total?: number | string | null;
+
+  status?: string | null;
+  Status?: string | null;
+
+  observacoes?: string | null;
+}
+
+function normalizarStatus(
+  status?: string | null
+): StatusReserva {
+  const valor = (
+    status || ''
+  )
+    .trim()
+    .toLowerCase();
+
+  if (
+    valor.includes('confirmad')
+  ) {
+    return 'Confirmada';
+  }
+
+  if (
+    valor.includes('cancelad')
+  ) {
+    return 'Cancelada';
+  }
+
+  return 'Pendente';
+}
+
+function normalizarValor(
+  valor: unknown
+) {
+  const numero = Number(valor);
+
+  return Number.isFinite(numero)
+    ? numero
+    : 0;
+}
+
+function formatarData(
+  valor?: string | null
+) {
+  if (!valor) {
+    return '—';
+  }
+
+  const dataLimpa =
+    valor.split('T')[0];
+
+  const partes =
+    dataLimpa.split('-');
+
+  if (partes.length !== 3) {
+    return valor;
+  }
+
+  const [
+    ano,
+    mes,
+    dia,
+  ] = partes;
+
+  if (
+    !ano ||
+    !mes ||
+    !dia
+  ) {
+    return valor;
+  }
+
+  return `${dia}/${mes}/${ano}`;
+}
+
+function formatarMoeda(
+  valor: number
+) {
+  return valor.toLocaleString(
+    'pt-BR',
+    {
+      style: 'currency',
+      currency: 'BRL',
+    }
+  );
+}
+
+function escaparCSV(
+  valor: unknown
+) {
+  return `"${String(
+    valor ?? ''
+  ).replace(/"/g, '""')}"`;
 }
 
 export default function ReservasPage() {
-  const [reservas, setReservas] = useState<Reserva[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [busca, setBusca] = useState('');
-  const [filtroStatus, setFiltroStatus] = useState('');
+  const [
+    reservas,
+    setReservas,
+  ] = useState<Reserva[]>([]);
 
-  // Estados para o Modal de Observações
-  const [modalObsAberto, setModalObsAberto] = useState(false);
-  const [obsSelecionada, setObsSelecionada] = useState('');
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
 
-  // Estados para o Modal Customizado de Exclusão
-  const [modalExcluirAberto, setModalExcluirAberto] = useState(false);
-  const [idParaExcluir, setIdParaExcluir] = useState<string | number | null>(null);
+  const [
+    busca,
+    setBusca,
+  ] = useState('');
+
+  const [
+    filtroStatus,
+    setFiltroStatus,
+  ] = useState<
+    '' | StatusReserva
+  >('');
+
+  const [
+    mensagemErro,
+    setMensagemErro,
+  ] = useState('');
+
+  const [
+    modalObsAberto,
+    setModalObsAberto,
+  ] = useState(false);
+
+  const [
+    reservaSelecionada,
+    setReservaSelecionada,
+  ] =
+    useState<Reserva | null>(
+      null
+    );
+
+  const [
+    modalExcluirAberto,
+    setModalExcluirAberto,
+  ] = useState(false);
+
+  const [
+    idParaExcluir,
+    setIdParaExcluir,
+  ] = useState<
+    string | number | null
+  >(null);
+
+  const [
+    excluindo,
+    setExcluindo,
+  ] = useState(false);
+
+  /*
+    ============================================================
+    CARREGAMENTO
+    ============================================================
+  */
 
   useEffect(() => {
-    fetchReservas();
+    carregarReservas();
   }, []);
 
-  async function fetchReservas() {
+  async function carregarReservas() {
     setLoading(true);
+    setMensagemErro('');
+
     try {
-      const { data, error } = await supabase
+      const {
+        data,
+        error,
+      } = await supabase
         .from('reservas')
         .select('*')
-        .order('id', { ascending: false });
-
-      if (error) {
-        console.error('Erro na query do Supabase:', error);
-      }
-
-      if (data) {
-        const reservasMapeadas: Reserva[] = data.map((item: any) => {
-          let valBruto =
-            item.valor_total !== undefined && item.valor_total !== null
-              ? item.valor_total
-              : item.valor !== undefined && item.valor !== null
-              ? item.valor
-              : 0;
-
-          let numVal = Number(valBruto) || 0;
-
-          if (numVal > 0 && numVal < 100) {
-            numVal = numVal * 1000;
-          }
-
-          return {
-            id: item.id,
-            cliente: item.cliente || item.nome_cliente || 'Cliente não informado',
-            pacote: item.pacote || item.passeio || 'Passeio padrão',
-            data: item.data_reserva
-              ? new Date(item.data_reserva).toLocaleDateString('pt-BR')
-              : item.data || '—',
-            agencia: item.agencia || item.parceiro || 'Particular',
-            guia: item.guia || 'Não atribuído',
-            valor: numVal,
-            status: item.status || item.Status || 'Pendente',
-            observacoes: item.observacoes || 'Nenhuma observação registrada.',
-          };
+        .order('id', {
+          ascending: false,
         });
 
-        setReservas(reservasMapeadas);
+      if (error) {
+        throw error;
       }
-    } catch (err) {
-      console.error('Erro ao buscar reservas:', err);
+
+      const registros =
+        (data ||
+          []) as ReservaBanco[];
+
+      const reservasFormatadas =
+        registros.map(
+          (
+            item
+          ): Reserva => {
+            /*
+              valor_total é usado primeiro
+              porque o cadastro atual já
+              grava esse campo como total
+              comercial da reserva.
+
+              valor permanece como fallback
+              para registros antigos.
+            */
+
+            const valorBruto =
+              item.valor_total !==
+                undefined &&
+              item.valor_total !==
+                null
+                ? item.valor_total
+                : item.valor;
+
+            const dataOriginal =
+              item.data_reserva ||
+              item.data ||
+              '';
+
+            return {
+              id: item.id,
+
+              cliente:
+                item.cliente ||
+                item.nome_cliente ||
+                'Cliente não informado',
+
+              pacote:
+                item.pacote ||
+                item.passeio ||
+                'Passeio não informado',
+
+              data:
+                formatarData(
+                  dataOriginal
+                ),
+
+              dataOriginal,
+
+              agencia:
+                item.agencia ||
+                item.parceiro ||
+                'Particular',
+
+              guia:
+                item.guia ||
+                'Não atribuído',
+
+              valor:
+                normalizarValor(
+                  valorBruto
+                ),
+
+              status:
+                normalizarStatus(
+                  item.status ||
+                    item.Status
+                ),
+
+              observacoes:
+                item.observacoes ||
+                '',
+            };
+          }
+        );
+
+      setReservas(
+        reservasFormatadas
+      );
+    } catch (error) {
+      console.error(
+        'Erro ao buscar reservas:',
+        error
+      );
+
+      setMensagemErro(
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível carregar as reservas.'
+      );
     } finally {
       setLoading(false);
     }
   }
 
-  const confirmarExclusao = (id: string | number | undefined) => {
-    if (!id) return;
-    setIdParaExcluir(id);
-    setModalExcluirAberto(true);
-  };
+  /*
+    ============================================================
+    INDICADORES
+    ============================================================
+  */
 
-  const executarExclusao = async () => {
-    if (!idParaExcluir) return;
+  const confirmadas =
+    reservas.filter(
+      (reserva) =>
+        reserva.status ===
+        'Confirmada'
+    );
 
-    try {
-      const { error } = await supabase.from('reservas').delete().eq('id', idParaExcluir);
-      if (error) throw error;
-      setReservas(reservas.filter((r) => r.id !== idParaExcluir));
-      setModalExcluirAberto(false);
-      setIdParaExcluir(null);
-    } catch (err: any) {
-      alert('Erro ao excluir reserva: ' + err.message);
-    }
-  };
+  const pendentes =
+    reservas.filter(
+      (reserva) =>
+        reserva.status ===
+        'Pendente'
+    );
 
-  const abrirObservacoes = (observacoes: string | undefined) => {
-    setObsSelecionada(observacoes || 'Nenhuma observação registrada para esta reserva.');
+  const canceladas =
+    reservas.filter(
+      (reserva) =>
+        reserva.status ===
+        'Cancelada'
+    );
+
+  /*
+    Não chamamos mais isso de
+    "Receita Total".
+
+    Este indicador representa a
+    soma comercial das reservas
+    cujo status está Confirmada.
+
+    Isso evita somar reservas
+    canceladas ou pendentes como
+    se já fossem receita.
+  */
+
+  const valorConfirmado =
+    confirmadas.reduce(
+      (total, reserva) =>
+        total +
+        reserva.valor,
+      0
+    );
+
+  const indicadores = [
+    {
+      titulo: 'Confirmadas',
+      valor: loading
+        ? '—'
+        : String(
+            confirmadas.length
+          ),
+      detalhe:
+        'reservas confirmadas',
+      filtro:
+        'Confirmada' as const,
+    },
+
+    {
+      titulo: 'Pendentes',
+      valor: loading
+        ? '—'
+        : String(
+            pendentes.length
+          ),
+      detalhe:
+        'aguardando definição',
+      filtro:
+        'Pendente' as const,
+    },
+
+    {
+      titulo: 'Canceladas',
+      valor: loading
+        ? '—'
+        : String(
+            canceladas.length
+          ),
+      detalhe:
+        'reservas canceladas',
+      filtro:
+        'Cancelada' as const,
+    },
+
+    {
+      titulo:
+        'Valor confirmado',
+      valor: loading
+        ? '—'
+        : formatarMoeda(
+            valorConfirmado
+          ),
+      detalhe:
+        'somente reservas confirmadas',
+      filtro: null,
+    },
+  ];
+
+  /*
+    ============================================================
+    FILTROS
+    ============================================================
+  */
+
+  const reservasFiltradas =
+    useMemo(() => {
+      const termo =
+        busca
+          .trim()
+          .toLowerCase();
+
+      return reservas.filter(
+        (reserva) => {
+          const atendeBusca =
+            termo.length === 0 ||
+            reserva.cliente
+              .toLowerCase()
+              .includes(termo) ||
+            reserva.pacote
+              .toLowerCase()
+              .includes(termo) ||
+            reserva.agencia
+              .toLowerCase()
+              .includes(termo) ||
+            reserva.guia
+              .toLowerCase()
+              .includes(termo) ||
+            reserva.status
+              .toLowerCase()
+              .includes(termo);
+
+          const atendeStatus =
+            !filtroStatus ||
+            reserva.status ===
+              filtroStatus;
+
+          return (
+            atendeBusca &&
+            atendeStatus
+          );
+        }
+      );
+    }, [
+      reservas,
+      busca,
+      filtroStatus,
+    ]);
+
+  function alternarFiltro(
+    status: StatusReserva
+  ) {
+    setFiltroStatus(
+      filtroStatus === status
+        ? ''
+        : status
+    );
+  }
+
+  /*
+    ============================================================
+    DETALHES
+    ============================================================
+  */
+
+  function abrirObservacoes(
+    reserva: Reserva
+  ) {
+    setReservaSelecionada(
+      reserva
+    );
+
     setModalObsAberto(true);
-  };
+  }
 
-  const exportarRelatorio = () => {
-    if (reservasFiltradas.length === 0) {
-      alert('Não há dados para exportar com os filtros atuais.');
+  /*
+    ============================================================
+    EXCLUSÃO
+    ============================================================
+  */
+
+  function confirmarExclusao(
+    id:
+      | string
+      | number
+      | undefined
+  ) {
+    if (
+      id === undefined ||
+      id === null
+    ) {
       return;
     }
 
-    const headers = [
+    setIdParaExcluir(id);
+    setModalExcluirAberto(
+      true
+    );
+  }
+
+  async function executarExclusao() {
+    if (
+      idParaExcluir === null
+    ) {
+      return;
+    }
+
+    setExcluindo(true);
+    setMensagemErro('');
+
+    try {
+      const { error } =
+        await supabase
+          .from('reservas')
+          .delete()
+          .eq(
+            'id',
+            idParaExcluir
+          );
+
+      if (error) {
+        throw error;
+      }
+
+      setReservas(
+        (atuais) =>
+          atuais.filter(
+            (reserva) =>
+              reserva.id !==
+              idParaExcluir
+          )
+      );
+
+      setModalExcluirAberto(
+        false
+      );
+
+      setIdParaExcluir(null);
+    } catch (error) {
+      console.error(
+        'Erro ao excluir reserva:',
+        error
+      );
+
+      setMensagemErro(
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível excluir a reserva.'
+      );
+    } finally {
+      setExcluindo(false);
+    }
+  }
+
+  /*
+    ============================================================
+    EXPORTAÇÃO CSV
+    ============================================================
+  */
+
+  function exportarRelatorio() {
+    if (
+      reservasFiltradas.length ===
+      0
+    ) {
+      setMensagemErro(
+        'Não existem reservas para exportar com os filtros atuais.'
+      );
+
+      return;
+    }
+
+    setMensagemErro('');
+
+    const cabecalho = [
       'ID',
       'Cliente',
-      'Pacote',
-      'Data',
-      'Agencia',
+      'Passeio',
+      'Data do passeio',
+      'Agência / Parceiro',
       'Guia',
-      'Valor (R$)',
+      'Valor total',
       'Status',
-      'Observacoes',
+      'Observações',
     ];
 
-    const rows = reservasFiltradas.map((r) => [
-      r.id ?? '',
-      `"${(r.cliente || '').replace(/"/g, '""')}"`,
-      `"${(r.pacote || '').replace(/"/g, '""')}"`,
-      `"${(r.data || '').replace(/"/g, '""')}"`,
-      `"${(r.agencia || '').replace(/"/g, '""')}"`,
-      `"${(r.guia || '').replace(/"/g, '""')}"`,
-      r.valor !== undefined && r.valor !== null ? r.valor.toFixed(2) : '0.00',
-      `"${(r.status || '').replace(/"/g, '""')}"`,
-      `"${(r.observacoes || '').replace(/"/g, '""')}"`,
-    ]);
+    const linhas =
+      reservasFiltradas.map(
+        (reserva) => [
+          escaparCSV(
+            reserva.id
+          ),
 
-    const csvContent = [headers.join(';'), ...rows.map((e) => e.join(';'))].join('\n');
+          escaparCSV(
+            reserva.cliente
+          ),
 
-    const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute(
-      'download',
-      `relatorio_reservas_${new Date().toISOString().slice(0, 10)}.csv`
+          escaparCSV(
+            reserva.pacote
+          ),
+
+          escaparCSV(
+            reserva.data
+          ),
+
+          escaparCSV(
+            reserva.agencia
+          ),
+
+          escaparCSV(
+            reserva.guia
+          ),
+
+          escaparCSV(
+            reserva.valor
+              .toFixed(2)
+              .replace('.', ',')
+          ),
+
+          escaparCSV(
+            reserva.status
+          ),
+
+          escaparCSV(
+            reserva.observacoes
+          ),
+        ]
+      );
+
+    const conteudo =
+      [
+        cabecalho
+          .map(escaparCSV)
+          .join(';'),
+
+        ...linhas.map(
+          (linha) =>
+            linha.join(';')
+        ),
+      ].join('\n');
+
+    const blob =
+      new Blob(
+        [
+          '\uFEFF' +
+            conteudo,
+        ],
+        {
+          type: 'text/csv;charset=utf-8;',
+        }
+      );
+
+    const url =
+      URL.createObjectURL(blob);
+
+    const link =
+      document.createElement(
+        'a'
+      );
+
+    link.href = url;
+
+    link.download =
+      `reservas_${new Date()
+        .toISOString()
+        .slice(
+          0,
+          10
+        )}.csv`;
+
+    document.body.appendChild(
+      link
     );
-    document.body.appendChild(link);
+
     link.click();
-    document.body.removeChild(link);
-  };
+    link.remove();
 
-  const confirmadas = reservas.filter(
-    (r) => r.status?.toLowerCase() === 'confirmada' || r.status?.toLowerCase() === 'confirmado'
-  ).length;
-
-  const pendentes = reservas.filter((r) => r.status?.toLowerCase() === 'pendente').length;
-
-  const canceladas = reservas.filter(
-    (r) => r.status?.toLowerCase() === 'cancelada' || r.status?.toLowerCase() === 'cancelado'
-  ).length;
-
-  const receitaTotal = reservas.reduce((acc, curr) => acc + (curr.valor || 0), 0);
-
-  const handleCardClick = (statusFiltro: string) => {
-    if (filtroStatus.toLowerCase() === statusFiltro.toLowerCase()) {
-      setFiltroStatus('');
-    } else {
-      setFiltroStatus(statusFiltro);
-    }
-  };
-
-  const reservasFiltradas = reservas.filter((r) => {
-    const termo = busca.toLowerCase();
-    const atendeBusca =
-      (r.cliente || '').toLowerCase().includes(termo) ||
-      (r.pacote || '').toLowerCase().includes(termo) ||
-      (r.agencia || '').toLowerCase().includes(termo) ||
-      (r.guia || '').toLowerCase().includes(termo) ||
-      (r.status || '').toLowerCase().includes(termo);
-
-    const statusAtual = (r.status || '').toLowerCase();
-    const atendeStatus = filtroStatus ? statusAtual.includes(filtroStatus.toLowerCase()) : true;
-
-    return atendeBusca && atendeStatus;
-  });
+    URL.revokeObjectURL(url);
+  }
 
   return (
-    <div className="min-h-screen bg-[#071f1a] text-slate-100 flex flex-col selection:bg-emerald-500 selection:text-white pb-16">
-      {/* Hero Banner Superior */}
-      <div
-        className="relative h-[360px] w-full overflow-hidden bg-cover bg-center shadow-2xl"
-        style={{
-          backgroundImage: `linear-gradient(rgba(7, 31, 26, 0.25) 20%, rgba(7, 31, 26, 0.98) 100%), url('${BANNER_REGIONAL.modulos.viagembarco}')`,
-        }}
-      >
-        <div className="max-w-7xl mx-auto w-full h-full flex flex-col md:flex-row items-start md:items-center justify-between gap-6 px-8 relative z-10">
-          <div className="space-y-1.5 text-left">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[11px] font-bold tracking-widest uppercase mb-1 backdrop-blur-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              Gestão Operacional • Carteira de Reservas
-            </span>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white drop-shadow-lg">
-              Reservas Cadastradas
+    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+      {/* =====================================================
+          CABEÇALHO
+      ====================================================== */}
+
+      <section className="border-b border-white/[0.07] bg-[#091510]">
+        <div className="mx-auto flex max-w-[1360px] flex-col gap-8 px-5 py-10 md:px-8 md:py-12 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <span className="h-px w-8 bg-[#E3A144]" />
+
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
+                Operação • Reservas
+              </span>
+            </div>
+
+            <h1
+              className="mt-4 text-4xl leading-none tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
+              style={{
+                fontFamily:
+                  'var(--font-fraunces), serif',
+              }}
+            >
+              Reservas
             </h1>
-            <p className="text-emerald-100/95 text-sm md:text-base font-medium drop-shadow-md max-w-2xl leading-relaxed">
-              Gerencie informações, status e histórico de todas as reservas operacionais em{' '}
-              <span className="text-emerald-300 font-semibold">Barcelos, AM</span>.
+
+            <p className="mt-4 max-w-[680px] text-sm leading-7 text-[#EDEDE3]/42">
+              Acompanhe atendimentos,
+              status, passeios, valores
+              e detalhes operacionais
+              da jornada do cliente.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 flex-shrink-0">
-            {/* Botão Exportar Relatório com acabamento profissional */}
+          <div className="flex flex-col gap-3 sm:flex-row">
             <button
-              onClick={exportarRelatorio}
-              className="inline-flex items-center gap-2 bg-[#072a25] hover:bg-emerald-900/70 text-emerald-200 hover:text-white font-semibold text-sm px-5 py-3 rounded-xl transition-all border border-emerald-700/40 shadow-md backdrop-blur-sm cursor-pointer group"
+              type="button"
+              onClick={
+                exportarRelatorio
+              }
+              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/60 transition hover:bg-white/[0.055] hover:text-[#EDEDE3]"
             >
-              <svg className="w-4 h-4 text-emerald-400 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 3v12m0 0 4-4m-4 4-4-4M5 20h14"
+                />
               </svg>
-              <span>Exportar Relatório</span>
+
+              Exportar CSV
             </button>
 
-            {/* Botão Nova Reserva Protegido */}
             <Link
               href="/reservas/nova"
-              className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm px-6 py-3 rounded-xl shadow-lg hover:shadow-emerald-900/50 transition-all border border-emerald-400/40 transform hover:-translate-y-0.5 cursor-pointer select-none"
-              style={{ WebkitUserDrag: 'none' } as React.CSSProperties}
+              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl bg-[#E3A144] px-6 text-sm font-bold text-[#07130F] transition hover:-translate-y-0.5 hover:bg-[#F0B35C]"
             >
-              <span className="text-base font-bold">+</span> Nova Reserva
+              <span className="text-lg">
+                +
+              </span>
+
+              Nova reserva
             </Link>
           </div>
         </div>
-      </div>
+      </section>
 
-      {/* Conteúdo Principal */}
-      <div className="p-8 max-w-7xl mx-auto w-full -mt-6 z-10 space-y-6 flex-1">
-        {/* Cards Resumo Estilizados e Interativos */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div
-            onClick={() => handleCardClick('Confirmada')}
-            className={`bg-[#041c17] rounded-2xl p-6 shadow-xl border border-emerald-900/60 border-l-4 border-l-emerald-400 transition-all duration-200 cursor-pointer hover:-translate-y-1 hover:shadow-2xl hover:border-emerald-700/80 ${
-              filtroStatus.toLowerCase() === 'confirmada'
-                ? 'ring-2 ring-emerald-400 bg-[#062923]'
-                : ''
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-wider text-emerald-400/80">
-                Confirmadas
-              </p>
-              <div className="w-8 h-8 rounded-lg bg-emerald-950/80 border border-emerald-800/60 flex items-center justify-center text-emerald-400">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M5 13l4 4L19 7" />
-                </svg>
-              </div>
-            </div>
-            <p className="mt-4 text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
-              {loading ? '...' : confirmadas}
-            </p>
-            <p className="mt-2 text-xs font-medium underline text-emerald-300">
-              {confirmadas === 1 ? 'Filtrar 1 registro' : `Filtrar ${confirmadas} registros`}
-            </p>
-          </div>
+      <main className="mx-auto max-w-[1360px] px-5 py-8 md:px-8 md:py-10">
+        {mensagemErro && (
+          <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-red-300">
+            <span>
+              {mensagemErro}
+            </span>
 
-          <div
-            onClick={() => handleCardClick('Pendente')}
-            className={`bg-[#041c17] rounded-2xl p-6 shadow-xl border border-emerald-900/60 border-l-4 border-l-amber-400 transition-all duration-200 cursor-pointer hover:-translate-y-1 hover:shadow-2xl hover:border-emerald-700/80 ${
-              filtroStatus.toLowerCase() === 'pendente'
-                ? 'ring-2 ring-amber-400 bg-[#062923]'
-                : ''
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-wider text-amber-400/80">
-                Pendentes
-              </p>
-              <div className="w-8 h-8 rounded-lg bg-amber-950/80 border border-amber-800/60 flex items-center justify-center text-amber-400">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-            <p className="mt-4 text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
-              {loading ? '...' : pendentes}
-            </p>
-            <p className="mt-2 text-xs font-medium underline text-amber-300">
-              {pendentes === 1 ? 'Filtrar 1 pendência' : `Filtrar ${pendentes} pendências`}
-            </p>
+            <button
+              type="button"
+              onClick={() =>
+                setMensagemErro('')
+              }
+              className="text-red-300/50 transition hover:text-red-300"
+            >
+              ✕
+            </button>
           </div>
+        )}
 
-          <div
-            onClick={() => handleCardClick('Cancelada')}
-            className={`bg-[#041c17] rounded-2xl p-6 shadow-xl border border-emerald-900/60 border-l-4 border-l-rose-400 transition-all duration-200 cursor-pointer hover:-translate-y-1 hover:shadow-2xl hover:border-emerald-700/80 ${
-              filtroStatus.toLowerCase() === 'cancelada'
-                ? 'ring-2 ring-rose-400 bg-[#062923]'
-                : ''
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-wider text-rose-400/80">
-                Canceladas
-              </p>
-              <div className="w-8 h-8 rounded-lg bg-rose-950/80 border border-rose-800/60 flex items-center justify-center text-rose-400">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </div>
-            </div>
-            <p className="mt-4 text-2xl lg:text-3xl font-extrabold text-white tracking-tight">
-              {loading ? '...' : canceladas}
-            </p>
-            <p className="mt-2 text-xs font-medium underline text-rose-300">
-              {canceladas === 1 ? 'Filtrar 1 cancelamento' : `Filtrar ${canceladas} cancelamentos`}
-            </p>
-          </div>
+        {/* ===================================================
+            INDICADORES
+        ==================================================== */}
 
-          <div className="bg-[#041c17] rounded-2xl p-6 shadow-xl border border-emerald-900/60 border-l-4 border-l-sky-400 transition-all duration-200">
-            <div className="flex items-center justify-between">
-              <p className="text-xs font-bold uppercase tracking-wider text-sky-400/80">
-                Receita Total
-              </p>
-              <div className="w-8 h-8 rounded-lg bg-sky-950/80 border border-sky-800/60 flex items-center justify-center text-sky-400">
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-            </div>
-            <p className="mt-4 text-2xl lg:text-3xl font-extrabold text-white tracking-tight truncate">
-              {loading
-                ? '...'
-                : receitaTotal.toLocaleString('pt-BR', {
-                    style: 'currency',
-                    currency: 'BRL',
-                  })}
-            </p>
-            <p className="mt-2 text-xs font-medium text-emerald-300/80">
-              Faturamento bruto mapeado
-            </p>
-          </div>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {indicadores.map(
+            (indicador) => {
+              const ativo =
+                indicador.filtro !==
+                  null &&
+                filtroStatus ===
+                  indicador.filtro;
+
+              return (
+                <button
+                  key={
+                    indicador.titulo
+                  }
+                  type="button"
+                  onClick={() => {
+                    if (
+                      indicador.filtro
+                    ) {
+                      alternarFiltro(
+                        indicador.filtro
+                      );
+                    }
+                  }}
+                  className={`rounded-[22px] border p-5 text-left transition ${
+                    indicador.filtro
+                      ? 'cursor-pointer'
+                      : 'cursor-default'
+                  } ${
+                    ativo
+                      ? 'border-[#E3A144]/35 bg-[#E3A144]/8'
+                      : 'border-white/[0.075] bg-[#0A1713] hover:border-white/[0.13]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+                      {
+                        indicador.titulo
+                      }
+                    </span>
+
+                    {ativo && (
+                      <span className="rounded-full bg-[#E3A144]/10 px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-[#E3A144]">
+                        filtrando
+                      </span>
+                    )}
+                  </div>
+
+                  <strong
+                    className={`mt-5 block font-medium tracking-[-0.04em] text-[#F0F0E8] ${
+                      indicador.filtro ===
+                      null
+                        ? 'text-2xl md:text-3xl'
+                        : 'text-4xl'
+                    }`}
+                    style={{
+                      fontFamily:
+                        'var(--font-fraunces), serif',
+                    }}
+                  >
+                    {
+                      indicador.valor
+                    }
+                  </strong>
+
+                  <p className="mt-2 text-[11px] text-[#EDEDE3]/28">
+                    {
+                      indicador.detalhe
+                    }
+                  </p>
+                </button>
+              );
+            }
+          )}
         </div>
 
-        {/* Tabela + Filtros Integrados */}
-        <div className="bg-[#041c17] rounded-3xl border border-emerald-900/60 p-6 shadow-xl text-slate-100">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b border-emerald-900/50 pb-6">
-            <div className="flex-1">
-              <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
-                Painel de Controladoria{' '}
-                {filtroStatus && (
-                  <span className="text-xs font-semibold text-emerald-300 bg-emerald-950/80 border border-emerald-700/50 px-3 py-1 rounded-full">
-                    Filtrando por: {filtroStatus}
-                  </span>
-                )}
-              </h2>
-              <p className="mt-1 text-xs text-emerald-200/80">
-                Pesquise por cliente, pacote, agência, guia ou status da reserva.
-              </p>
-            </div>
+        {/* ===================================================
+            LISTA
+        ==================================================== */}
 
-            <div className="flex items-center gap-3">
-              <div className="relative w-full lg:w-80">
-                <input
-                  type="text"
-                  placeholder="Pesquisar reserva..."
-                  value={busca}
-                  onChange={(e) => setBusca(e.target.value)}
-                  className="w-full rounded-xl border border-emerald-900/60 bg-[#072a25] px-4 py-2.5 text-xs text-white placeholder-emerald-300/50 outline-none focus:border-emerald-500"
-                />
+        <section className="mt-6 overflow-hidden rounded-[26px] border border-white/[0.075] bg-[#0A1713]">
+          <div className="border-b border-white/[0.065] p-5 md:p-6">
+            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                  Carteira operacional
+                </p>
+
+                <h2
+                  className="mt-2 text-2xl text-[#F0F0E8]"
+                  style={{
+                    fontFamily:
+                      'var(--font-fraunces), serif',
+                  }}
+                >
+                  Reservas cadastradas
+                </h2>
+
+                <p className="mt-2 text-xs text-[#EDEDE3]/30">
+                  {
+                    reservasFiltradas.length
+                  }{' '}
+                  de{' '}
+                  {reservas.length}{' '}
+                  reserva
+                  {reservas.length !==
+                  1
+                    ? 's'
+                    : ''}
+                </p>
               </div>
 
-              {filtroStatus && (
-                <button
-                  onClick={() => setFiltroStatus('')}
-                  className="rounded-xl bg-[#072a25] hover:bg-emerald-900/60 text-emerald-300 px-3 py-2.5 text-xs font-semibold transition border border-emerald-700/30 whitespace-nowrap cursor-pointer"
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="relative">
+                  <svg
+                    className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EDEDE3]/25"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+
+                  <input
+                    type="text"
+                    value={busca}
+                    onChange={(
+                      event
+                    ) =>
+                      setBusca(
+                        event.target
+                          .value
+                      )
+                    }
+                    placeholder="Buscar reserva..."
+                    className="h-[44px] min-w-[270px] rounded-xl border border-white/[0.08] bg-[#07110E] pl-10 pr-4 text-xs text-[#EDEDE3] outline-none placeholder:text-[#EDEDE3]/22 focus:border-[#E3A144]/35"
+                  />
+                </div>
+
+                <select
+                  value={
+                    filtroStatus
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setFiltroStatus(
+                      event.target
+                        .value as
+                        | ''
+                        | StatusReserva
+                    )
+                  }
+                  className="h-[44px] rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-xs text-[#EDEDE3]/70 outline-none focus:border-[#E3A144]/35"
                 >
-                  Limpar ✕
-                </button>
-              )}
+                  <option value="">
+                    Todos os status
+                  </option>
+
+                  <option value="Pendente">
+                    Pendentes
+                  </option>
+
+                  <option value="Confirmada">
+                    Confirmadas
+                  </option>
+
+                  <option value="Cancelada">
+                    Canceladas
+                  </option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <div className="mt-6 overflow-x-auto min-h-[300px]">
+          <div className="overflow-x-auto">
             {loading ? (
-              <div className="p-12 text-center text-emerald-400 font-medium">
-                Carregando reservas do banco de dados...
+              <div className="flex min-h-[330px] items-center justify-center">
+                <div className="text-center">
+                  <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/[0.08] border-t-[#E3A144]" />
+
+                  <p className="mt-4 text-xs text-[#EDEDE3]/35">
+                    Carregando reservas...
+                  </p>
+                </div>
               </div>
-            ) : reservasFiltradas.length === 0 ? (
-              <div className="p-12 text-center text-emerald-300/70 font-medium">
-                Nenhuma reserva encontrada com os filtros selecionados.
+            ) : reservasFiltradas.length ===
+              0 ? (
+              <div className="flex min-h-[330px] items-center justify-center px-5 text-center">
+                <div>
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/[0.07] bg-white/[0.025] text-[#E3A144]">
+                    ✦
+                  </div>
+
+                  <h3
+                    className="mt-5 text-2xl text-[#F0F0E8]"
+                    style={{
+                      fontFamily:
+                        'var(--font-fraunces), serif',
+                    }}
+                  >
+                    Nenhuma reserva
+                    encontrada.
+                  </h3>
+
+                  <p className="mt-2 text-xs text-[#EDEDE3]/30">
+                    Ajuste os filtros
+                    ou registre uma
+                    nova reserva.
+                  </p>
+                </div>
               </div>
             ) : (
-              <table className="min-w-[900px] w-full text-left border-collapse">
+              <table className="min-w-[1180px] w-full border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-emerald-900/60 text-emerald-400 text-xs uppercase tracking-wider">
-                    <th className="px-4 py-3 font-bold">Cliente</th>
-                    <th className="px-4 py-3 font-bold">Pacote / Passeio</th>
-                    <th className="px-4 py-3 font-bold">Data</th>
-                    <th className="px-4 py-3 font-bold">Agência</th>
-                    <th className="px-4 py-3 font-bold">Guia</th>
-                    <th className="px-4 py-3 font-bold">Valor</th>
-                    <th className="px-4 py-3 font-bold">Status</th>
-                    <th className="px-4 py-3 font-bold text-center">Ações</th>
+                  <tr className="border-b border-white/[0.06] bg-white/[0.012]">
+                    {[
+                      'Cliente',
+                      'Passeio',
+                      'Data',
+                      'Agência / Parceiro',
+                      'Guia',
+                      'Valor',
+                      'Status',
+                      'Ações',
+                    ].map((titulo) => (
+                      <th
+                        key={
+                          titulo
+                        }
+                        className={`px-5 py-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28 ${
+                          titulo ===
+                          'Ações'
+                            ? 'text-center'
+                            : ''
+                        }`}
+                      >
+                        {titulo}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-emerald-950/60">
-                  {reservasFiltradas.map((item, idx) => {
-                    const st = (item.status || '').toLowerCase();
-                    const isConfirmada = st.includes('confirmad');
-                    const isPendente = st.includes('pendent');
-                    const isCancelada = st.includes('cancelad');
 
-                    return (
-                      <tr
-                        key={item.id || idx}
-                        className="hover:bg-[#072a25]/50 transition-colors"
-                      >
-                        <td className="px-4 py-3.5 text-xs font-semibold text-white">
-                          {item.cliente}
-                        </td>
-                        <td className="px-4 py-3.5 text-xs text-emerald-200/80">
-                          {item.pacote}
-                        </td>
-                        <td className="px-4 py-3.5 text-xs text-emerald-200/80">
-                          {item.data}
-                        </td>
-                        <td className="px-4 py-3.5 text-xs text-emerald-200/80">
-                          {item.agencia}
-                        </td>
-                        <td className="px-4 py-3.5 text-xs text-emerald-200/80">
-                          {item.guia}
-                        </td>
-                        <td className="px-4 py-3.5 text-xs font-bold text-emerald-400">
-                          {item.valor !== undefined && item.valor !== null
-                            ? item.valor.toLocaleString('pt-BR', {
-                                style: 'currency',
-                                currency: 'BRL',
-                              })
-                            : 'R$ 0,00'}
-                        </td>
+                <tbody className="divide-y divide-white/[0.055]">
+                  {reservasFiltradas.map(
+                    (
+                      reserva,
+                      index
+                    ) => {
+                      const statusClass =
+                        reserva.status ===
+                        'Confirmada'
+                          ? 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300'
+                          : reserva.status ===
+                            'Cancelada'
+                          ? 'border-red-500/20 bg-red-500/[0.07] text-red-300'
+                          : 'border-amber-500/20 bg-amber-500/[0.07] text-amber-300';
 
-                        <td className="px-4 py-3.5">
-                          <span
-                            className={`inline-block px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-                              isConfirmada
-                                ? 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60'
-                                : isPendente
-                                ? 'bg-amber-950/80 text-amber-300 border-amber-700/60'
-                                : isCancelada
-                                ? 'bg-rose-950/80 text-rose-300 border-rose-700/60'
-                                : 'bg-slate-900 text-slate-300 border-slate-700/60'
-                            }`}
-                          >
-                            {item.status || 'Pendente'}
-                          </span>
-                        </td>
+                      const statusDot =
+                        reserva.status ===
+                        'Confirmada'
+                          ? 'bg-emerald-400'
+                          : reserva.status ===
+                            'Cancelada'
+                          ? 'bg-red-400'
+                          : 'bg-amber-400';
 
-                        <td className="px-4 py-3.5 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            {/* Visualizar Observações */}
-                            <button
-                              onClick={() => abrirObservacoes(item.observacoes)}
-                              title="Ver Observações"
-                              className="p-1.5 bg-[#072a25] hover:bg-emerald-900/60 text-emerald-300 rounded-lg transition border border-emerald-700/30 cursor-pointer"
+                      return (
+                        <tr
+                          key={
+                            reserva.id ??
+                            index
+                          }
+                          className="transition hover:bg-white/[0.018]"
+                        >
+                          <td className="px-5 py-4">
+                            <p className="text-xs font-semibold text-[#EDEDE3]/82">
+                              {
+                                reserva.cliente
+                              }
+                            </p>
+                          </td>
+
+                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/44">
+                            {
+                              reserva.pacote
+                            }
+                          </td>
+
+                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/44">
+                            {
+                              reserva.data
+                            }
+                          </td>
+
+                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/44">
+                            {
+                              reserva.agencia
+                            }
+                          </td>
+
+                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/44">
+                            {
+                              reserva.guia
+                            }
+                          </td>
+
+                          <td className="px-5 py-4 text-xs font-semibold text-[#F4C77E]">
+                            {formatarMoeda(
+                              reserva.valor
+                            )}
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <span
+                              className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[9px] font-semibold ${statusClass}`}
                             >
-                              👁️
-                            </button>
-                            {/* Editar */}
-                            <Link
-                              href={`/reservas/editar/${item.id}`}
-                              title="Editar"
-                              className="p-1.5 bg-[#072a25] hover:bg-blue-900/60 text-blue-300 rounded-lg transition border border-blue-700/30 cursor-pointer"
-                            >
-                              ✏️
-                            </Link>
-                            {/* Excluir */}
-                            <button
-                              onClick={() => confirmarExclusao(item.id)}
-                              title="Excluir"
-                              className="p-1.5 bg-[#072a25] hover:bg-rose-900/60 text-rose-300 rounded-lg transition border border-rose-700/30 cursor-pointer"
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${statusDot}`}
+                              />
+
+                              {
+                                reserva.status
+                              }
+                            </span>
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  abrirObservacoes(
+                                    reserva
+                                  )
+                                }
+                                title="Ver detalhes"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-[#E3A144]/20 hover:bg-[#E3A144]/7 hover:text-[#E3A144]"
+                              >
+                                <svg
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"
+                                  />
+
+                                  <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="3"
+                                  />
+                                </svg>
+                              </button>
+
+                              <Link
+                                href={`/reservas/editar/${reserva.id}`}
+                                title="Editar"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-sky-400/20 hover:bg-sky-400/[0.06] hover:text-sky-300"
+                              >
+                                <svg
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L8 18l-4 1 1-4L16.5 3.5z"
+                                  />
+                                </svg>
+                              </Link>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  confirmarExclusao(
+                                    reserva.id
+                                  )
+                                }
+                                title="Excluir"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-red-400/20 hover:bg-red-400/[0.06] hover:text-red-300"
+                              >
+                                <svg
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14M10 11v5m4-5v5"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+                  )}
                 </tbody>
               </table>
             )}
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
 
-      {/* Modal de Observações */}
-      {modalObsAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-[#041c17] p-6 shadow-2xl border border-emerald-900/80 text-slate-100 space-y-4">
-            <h3 className="text-base font-bold text-white flex items-center gap-2 border-b border-emerald-900/60 pb-3">
-              <span>📝</span> Observações da Reserva
-            </h3>
-            <div className="text-xs text-emerald-100/90 bg-[#072a25] p-4 rounded-xl border border-emerald-900/60 leading-relaxed min-h-[90px]">
-              {obsSelecionada}
-            </div>
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={() => setModalObsAberto(false)}
-                className="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-6 py-2 text-xs font-semibold text-white transition cursor-pointer"
-              >
-                Fechar
-              </button>
+      {/* =====================================================
+          MODAL DETALHES
+      ====================================================== */}
+
+      {modalObsAberto &&
+        reservaSelecionada && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-[680px] overflow-hidden rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.6)]">
+              <div className="flex items-start justify-between gap-5 border-b border-white/[0.07] px-6 py-5">
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                    Detalhes da reserva
+                  </p>
+
+                  <h3
+                    className="mt-2 text-2xl text-[#F0F0E8]"
+                    style={{
+                      fontFamily:
+                        'var(--font-fraunces), serif',
+                    }}
+                  >
+                    {
+                      reservaSelecionada.cliente
+                    }
+                  </h3>
+
+                  <p className="mt-1 text-xs text-[#EDEDE3]/35">
+                    {
+                      reservaSelecionada.pacote
+                    }
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setModalObsAberto(
+                      false
+                    )
+                  }
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] text-[#EDEDE3]/45 transition hover:bg-white/[0.06]"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="grid gap-3 p-6 sm:grid-cols-2">
+                {[
+                  {
+                    label:
+                      'Data do passeio',
+                    valor:
+                      reservaSelecionada.data,
+                  },
+                  {
+                    label: 'Status',
+                    valor:
+                      reservaSelecionada.status,
+                  },
+                  {
+                    label:
+                      'Agência / Parceiro',
+                    valor:
+                      reservaSelecionada.agencia,
+                  },
+                  {
+                    label: 'Guia',
+                    valor:
+                      reservaSelecionada.guia,
+                  },
+                  {
+                    label:
+                      'Valor total',
+                    valor:
+                      formatarMoeda(
+                        reservaSelecionada.valor
+                      ),
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-2xl border border-white/[0.065] bg-white/[0.018] p-4"
+                  >
+                    <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28">
+                      {item.label}
+                    </p>
+
+                    <p className="mt-2 text-xs font-medium text-[#EDEDE3]/72">
+                      {item.valor}
+                    </p>
+                  </div>
+                ))}
+
+                <div className="sm:col-span-2">
+                  <p className="mb-2 text-[8px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28">
+                    Observações
+                  </p>
+
+                  <div className="min-h-[90px] rounded-2xl border border-white/[0.065] bg-[#07110E] p-4 text-xs leading-6 text-[#EDEDE3]/50">
+                    {reservaSelecionada.observacoes ||
+                      'Nenhuma observação registrada para esta reserva.'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col-reverse gap-2 border-t border-white/[0.07] px-6 py-4 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setModalObsAberto(
+                      false
+                    )
+                  }
+                  className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 py-2.5 text-xs font-semibold text-[#EDEDE3]/55"
+                >
+                  Fechar
+                </button>
+
+                <Link
+                  href={`/reservas/editar/${reservaSelecionada.id}`}
+                  className="rounded-xl bg-[#E3A144] px-5 py-2.5 text-center text-xs font-bold text-[#07130F]"
+                >
+                  Editar reserva
+                </Link>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* Modal de Confirmação de Exclusão */}
+      {/* =====================================================
+          MODAL EXCLUSÃO
+      ====================================================== */}
+
       {modalExcluirAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-[#041c17] p-6 shadow-2xl border border-emerald-900/80 text-slate-100 text-center space-y-4">
-            <div className="w-12 h-12 bg-rose-950/80 border border-rose-800/60 text-rose-400 rounded-full flex items-center justify-center mx-auto text-xl">
-              ⚠️
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-[430px] rounded-[26px] border border-white/[0.09] bg-[#091510] p-6 text-center shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-red-500/20 bg-red-500/[0.08] text-red-300">
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 9v4m0 4h.01M10.3 4.3L2.8 17.3A2 2 0 004.5 20h15a2 2 0 001.7-2.7L13.7 4.3a2 2 0 00-3.4 0z"
+                />
+              </svg>
             </div>
-            <h3 className="text-base font-bold text-white">Confirmar Exclusão</h3>
-            <p className="text-xs text-emerald-200/80 leading-relaxed">
-              Deseja realmente excluir esta reserva do sistema? Esta ação não poderá ser desfeita.
+
+            <h3
+              className="mt-5 text-2xl text-[#F0F0E8]"
+              style={{
+                fontFamily:
+                  'var(--font-fraunces), serif',
+              }}
+            >
+              Excluir reserva?
+            </h3>
+
+            <p className="mt-3 text-xs leading-6 text-[#EDEDE3]/38">
+              A reserva será removida
+              permanentemente da base.
             </p>
-            <div className="flex items-center justify-center gap-3 pt-3 border-t border-emerald-900/60">
+
+            <div className="mt-6 grid grid-cols-2 gap-3">
               <button
-                onClick={() => setModalExcluirAberto(false)}
-                className="flex-1 rounded-xl bg-[#072a25] hover:bg-[#0e433b] py-2.5 text-xs font-semibold text-emerald-200 transition border border-emerald-700/30 cursor-pointer"
+                type="button"
+                disabled={excluindo}
+                onClick={() => {
+                  setModalExcluirAberto(
+                    false
+                  );
+
+                  setIdParaExcluir(
+                    null
+                  );
+                }}
+                className="rounded-xl border border-white/[0.09] bg-white/[0.025] px-4 py-3 text-xs font-semibold text-[#EDEDE3]/60"
               >
                 Cancelar
               </button>
+
               <button
-                onClick={executarExclusao}
-                className="flex-1 rounded-xl bg-rose-600 hover:bg-rose-500 py-2.5 text-xs font-semibold text-white transition shadow-lg cursor-pointer"
+                type="button"
+                disabled={excluindo}
+                onClick={
+                  executarExclusao
+                }
+                className="rounded-xl border border-red-500/20 bg-red-500/[0.1] px-4 py-3 text-xs font-semibold text-red-300 disabled:opacity-50"
               >
-                Sim, Excluir
+                {excluindo
+                  ? 'Excluindo...'
+                  : 'Excluir'}
               </button>
             </div>
           </div>

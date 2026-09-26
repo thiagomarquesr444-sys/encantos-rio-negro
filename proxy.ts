@@ -51,26 +51,32 @@ export async function proxy(request: NextRequest) {
       pathname === rota || pathname.startsWith(`${rota}/`)
   );
 
-  // Impede acesso às páginas privadas sem autenticação
+  // ============================================================
+  // ROTAS PRIVADAS
+  // ============================================================
+
   if (rotaPrivada && !user) {
     return NextResponse.redirect(
       new URL('/login', request.url)
     );
   }
 
-  // Usuário autenticado não precisa retornar ao login
+  // ============================================================
+  // LOGIN
+  // Usuário autenticado continua sendo enviado ao dashboard
+  // ============================================================
+
   if (pathname === '/login' && user) {
     return NextResponse.redirect(
       new URL('/dashboard', request.url)
     );
   }
 
-  // Redireciona a página inicial para o login
-  if (pathname === '/') {
-    return NextResponse.redirect(
-      new URL('/login', request.url)
-    );
-  }
+  // ============================================================
+  // HOME PÚBLICA
+  // "/" permanece pública para qualquer visitante,
+  // autenticado ou não.
+  // ============================================================
 
   return response;
 }

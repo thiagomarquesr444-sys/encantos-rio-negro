@@ -1,191 +1,646 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+
 import Link from 'next/link';
+
 import { supabase } from '@/lib/supabase';
 
-export default function ExportarRelatorioPage() {
-  const [carregando, setCarregando] = useState(false);
-  const [dados, setDados] = useState<any[]>([]);
-  const [mensagem, setMensagem] = useState('');
+interface Lancamento {
+  id?: string;
 
-  // Carrega os dados financeiros ao abrir a página
+  data_vencimento?: string | null;
+
+  tipo?: string | null;
+
+  descricao?: string | null;
+  descrição?: string | null;
+
+  categoria?: string | null;
+
+  valor?:
+    | number
+    | string
+    | null;
+
+  Valor?:
+    | number
+    | string
+    | null;
+
+  status?: string | null;
+  Status?: string | null;
+}
+
+function converterValor(
+  entrada: unknown
+) {
+  const numero =
+    Number(entrada);
+
+  return Number.isFinite(numero)
+    ? numero
+    : 0;
+}
+
+function obterValor(
+  item: Lancamento
+) {
+  return converterValor(
+    item.valor !== undefined
+      ? item.valor
+      : item.Valor
+  );
+}
+
+function obterDescricao(
+  item: Lancamento
+) {
+  return (
+    item.descricao ||
+    item.descrição ||
+    ''
+  );
+}
+
+function obterStatus(
+  item: Lancamento
+) {
+  return (
+    item.status ||
+    item.Status ||
+    ''
+  );
+}
+
+function formatarMoeda(
+  valor: number
+) {
+  return valor.toLocaleString(
+    'pt-BR',
+    {
+      style: 'currency',
+      currency: 'BRL',
+    }
+  );
+}
+
+function formatarValorCSV(
+  valor: number
+) {
+  return valor.toLocaleString(
+    'pt-BR',
+    {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }
+  );
+}
+
+function formatarData(
+  data?: string | null
+) {
+  if (!data) {
+    return '';
+  }
+
+  const partes =
+    data
+      .split('T')[0]
+      .split('-');
+
+  if (
+    partes.length !== 3
+  ) {
+    return data;
+  }
+
+  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
+function protegerCSV(
+  entrada: unknown
+) {
+  let valor = String(
+    entrada ?? ''
+  );
+
+  /*
+    Reduz risco de interpretação
+    como fórmula no Excel.
+  */
+
+  if (
+    /^[=+\-@]/.test(valor)
+  ) {
+    valor = `'${valor}`;
+  }
+
+  return `"${valor.replace(
+    /"/g,
+    '""'
+  )}"`;
+}
+
+export default function ExportarRelatorioPage() {
+  const [
+    carregando,
+    setCarregando,
+  ] = useState(false);
+
+  const [
+    dados,
+    setDados,
+  ] =
+    useState<Lancamento[]>(
+      []
+    );
+
+  const [
+    mensagem,
+    setMensagem,
+  ] = useState('');
+
+  async function buscarDadosFinanceiros() {
+    setCarregando(true);
+    setMensagem('');
+
+    try {
+      const {
+        data,
+        error,
+      } = await supabase
+        .from('financeiro')
+        .select('*')
+        .order(
+          'data_vencimento',
+          {
+            ascending: false,
+          }
+        );
+
+      if (error) {
+        throw error;
+      }
+
+      setDados(
+        (data ||
+          []) as Lancamento[]
+      );
+    } catch (err) {
+      console.error(
+        'Erro ao buscar dados financeiros:',
+        err
+      );
+
+      setMensagem(
+        err instanceof Error
+          ? err.message
+          : 'Não foi possível carregar os dados para exportação.'
+      );
+    } finally {
+      setCarregando(false);
+    }
+  }
+
   useEffect(() => {
     buscarDadosFinanceiros();
   }, []);
 
-  const buscarDadosFinanceiros = async () => {
-    setCarregando(true);
-    try {
-      const { data, error } = await supabase
-        .from('financeiro')
-        .select('*')
-        .order('data_vencimento', { ascending: false });
+  const totais =
+    useMemo(() => {
+      let receitas = 0;
+      let despesas = 0;
 
-      if (error) {
-        console.error('Erro ao buscar dados:', error);
-        setMensagem('Erro ao carregar dados para exportação.');
-      } else {
-        setDados(data || []);
-      }
-    } catch (err) {
-      console.error('Erro inesperado:', err);
-      setMensagem('Ocorreu um erro inesperado.');
-    } finally {
-      setCarregando(false);
-    }
-  };
+      dados.forEach(
+        (item) => {
+          const tipo =
+            String(
+              item.tipo || ''
+            )
+              .trim()
+              .toLowerCase();
 
-  // Função para gerar e baixar o arquivo CSV
-  const baixarCSV = () => {
-    if (dados.length === 0) {
-      alert('Não há dados para exportar.');
+          const valor =
+            obterValor(
+              item
+            );
+
+          if (
+            tipo ===
+            'receita'
+          ) {
+            receitas += valor;
+          }
+
+          if (
+            tipo ===
+            'despesa'
+          ) {
+            despesas += valor;
+          }
+        }
+      );
+
+      return {
+        receitas,
+        despesas,
+      };
+    }, [dados]);
+
+  function baixarCSV() {
+    if (
+      dados.length === 0
+    ) {
+      setMensagem(
+        'Não há dados para exportar.'
+      );
+
       return;
     }
 
-    // Cabeçalho do CSV
-    const cabecalho = ['ID', 'Data', 'Tipo', 'Descrição', 'Categoria', 'Valor (R$)', 'Status'];
-    
-    // Mapeamento das linhas
-    const linhas = dados.map((item) => [
-      item.id,
-      item.data_vencimento || '',
-      item.tipo || '',
-      `"${(item.descricao || '').replace(/"/g, '""')}"`, // Protege contra aspas na descrição
-      `"${(item.categoria || '').replace(/"/g, '""')}"`,
-      item.valor || 0,
-      item.status || '',
-    ]);
+    const cabecalho = [
+      'ID',
+      'Data',
+      'Tipo',
+      'Descrição',
+      'Categoria',
+      'Valor (R$)',
+      'Status',
+    ];
 
-    // Junta tudo em formato CSV com separador por vírgula
+    const linhas =
+      dados.map(
+        (item) => [
+          protegerCSV(
+            item.id || ''
+          ),
+
+          protegerCSV(
+            formatarData(
+              item.data_vencimento
+            )
+          ),
+
+          protegerCSV(
+            item.tipo || ''
+          ),
+
+          protegerCSV(
+            obterDescricao(
+              item
+            )
+          ),
+
+          protegerCSV(
+            item.categoria ||
+              ''
+          ),
+
+          protegerCSV(
+            formatarValorCSV(
+              obterValor(
+                item
+              )
+            )
+          ),
+
+          protegerCSV(
+            obterStatus(
+              item
+            )
+          ),
+        ]
+      );
+
     const conteudoCSV = [
-      cabecalho.join(','),
-      ...linhas.map((e) => e.join(',')),
-    ].join('\n');
+      cabecalho
+        .map(protegerCSV)
+        .join(';'),
 
-    // Cria o Blob e dispara o download
-    const blob = new Blob([conteudoCSV], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.setAttribute('href', url);
-    link.setAttribute('download', `relatorio_financeiro_encantos_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
+      ...linhas.map(
+        (linha) =>
+          linha.join(';')
+      ),
+    ].join('\r\n');
+
+    /*
+      BOM UTF-8 ajuda Excel
+      com caracteres acentuados.
+    */
+
+    const blob =
+      new Blob(
+        [
+          '\uFEFF',
+          conteudoCSV,
+        ],
+        {
+          type:
+            'text/csv;charset=utf-8;',
+        }
+      );
+
+    const url =
+      URL.createObjectURL(
+        blob
+      );
+
+    const link =
+      document.createElement(
+        'a'
+      );
+
+    link.href = url;
+
+    link.download =
+      `relatorio_financeiro_ern_${
+        new Date()
+          .toISOString()
+          .split('T')[0]
+      }.csv`;
+
+    document.body.appendChild(
+      link
+    );
+
     link.click();
-    document.body.removeChild(link);
-  };
+
+    document.body.removeChild(
+      link
+    );
+
+    URL.revokeObjectURL(
+      url
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-100 text-slate-800 flex flex-col">
-      {/* Banner Superior */}
-      <div 
-        className="relative bg-cover bg-center py-12 px-8 text-white flex flex-col items-center justify-center text-center shadow-md"
-        style={{
-          backgroundImage: `linear-gradient(rgba(15, 23, 42, 0.85), rgba(30, 41, 59, 0.95)), url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=1600&auto=format&fit=crop')`,
-        }}
-      >
-        <div className="max-w-4xl space-y-3">
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight flex items-center justify-center gap-3">
-            <span>📊</span> Exportar Relatório Financeiro
-          </h1>
-          <p className="text-slate-300 text-sm md:text-base font-medium opacity-90">
-            Gere planilhas e relatórios detalhados de receitas e despesas do Encantos Rio Negro.
-          </p>
+    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+      <section className="border-b border-white/[0.07] bg-[#091510]">
+        <div className="mx-auto max-w-[1360px] px-5 py-10 md:px-8 md:py-12">
+          <Link
+            href="/financeiro"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-[#EDEDE3]/38 transition hover:text-[#E3A144]"
+          >
+            ← Financeiro
+          </Link>
+
+          <div className="mt-7">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
+              Financeiro • Relatório
+            </p>
+
+            <h1
+              className="mt-3 text-4xl tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
+              style={{
+                fontFamily:
+                  'var(--font-fraunces), serif',
+              }}
+            >
+              Exportar financeiro
+            </h1>
+
+            <p className="mt-4 max-w-[680px] text-sm leading-7 text-[#EDEDE3]/40">
+              Visualize os
+              lançamentos disponíveis
+              e gere um arquivo CSV
+              para análise ou
+              arquivamento.
+            </p>
+          </div>
         </div>
-      </div>
+      </section>
 
-      {/* Conteúdo Principal */}
-      <div className="p-8 max-w-5xl mx-auto w-full -mt-6 z-10 space-y-8 flex-1">
-        <div className="bg-white rounded-2xl shadow-xl border border-slate-200 p-8 space-y-6">
-          
-          {mensagem && (
-            <div className="p-4 rounded-xl text-sm font-semibold bg-rose-50 text-rose-800 border border-rose-200">
-              {mensagem}
-            </div>
-          )}
+      <main className="mx-auto max-w-[1360px] px-5 py-8 md:px-8 md:py-10">
+        {mensagem && (
+          <div className="mb-6 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-red-300">
+            {mensagem}
+          </div>
+        )}
 
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 border-b border-slate-200 pb-6">
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div className="rounded-[22px] border border-white/[0.075] bg-[#0A1713] p-5">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#7C9C87]">
+              Lançamentos
+            </p>
+
+            <p
+              className="mt-4 text-3xl text-[#F0F0E8]"
+              style={{
+                fontFamily:
+                  'var(--font-fraunces), serif',
+              }}
+            >
+              {carregando
+                ? '—'
+                : dados.length}
+            </p>
+          </div>
+
+          <div className="rounded-[22px] border border-white/[0.075] bg-[#0A1713] p-5">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-emerald-300/60">
+              Receitas lançadas
+            </p>
+
+            <p
+              className="mt-4 text-2xl text-emerald-300"
+              style={{
+                fontFamily:
+                  'var(--font-fraunces), serif',
+              }}
+            >
+              {carregando
+                ? '—'
+                : formatarMoeda(
+                    totais.receitas
+                  )}
+            </p>
+          </div>
+
+          <div className="rounded-[22px] border border-white/[0.075] bg-[#0A1713] p-5">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-red-300/60">
+              Despesas lançadas
+            </p>
+
+            <p
+              className="mt-4 text-2xl text-red-300"
+              style={{
+                fontFamily:
+                  'var(--font-fraunces), serif',
+              }}
+            >
+              {carregando
+                ? '—'
+                : formatarMoeda(
+                    totais.despesas
+                  )}
+            </p>
+          </div>
+        </div>
+
+        <section className="mt-6 overflow-hidden rounded-[26px] border border-white/[0.075] bg-[#0A1713]">
+          <div className="flex flex-col gap-5 border-b border-white/[0.065] p-5 md:flex-row md:items-center md:justify-between md:p-6">
             <div>
-              <h2 className="text-xl font-bold text-slate-800">Resumo dos Dados Prontos</h2>
-              <p className="text-sm text-slate-500">
-                {carregando ? 'Carregando lançamentos...' : `${dados.length} registro(s) encontrado(s) no sistema.`}
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                Pré-visualização
+              </p>
+
+              <h2
+                className="mt-2 text-2xl text-[#F0F0E8]"
+                style={{
+                  fontFamily:
+                    'var(--font-fraunces), serif',
+                }}
+              >
+                Dados para exportação
+              </h2>
+
+              <p className="mt-2 text-[10px] text-[#EDEDE3]/30">
+                {carregando
+                  ? 'Carregando lançamentos...'
+                  : `${dados.length} registro(s) disponível(is).`}
               </p>
             </div>
 
-            <div className="flex items-center gap-3">
-              <Link
-                href="/financeiro"
-                className="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-semibold text-sm hover:bg-slate-50 transition"
-              >
-                Voltar
-              </Link>
-              <button
-                onClick={baixarCSV}
-                disabled={carregando || dados.length === 0}
-                className="bg-slate-900 hover:bg-slate-800 text-white font-semibold text-sm px-6 py-2.5 rounded-xl shadow-md transition disabled:opacity-50 flex items-center gap-2"
-              >
-                <span>📥</span> Baixar Relatório (CSV)
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={baixarCSV}
+              disabled={
+                carregando ||
+                dados.length === 0
+              }
+              className="inline-flex min-h-[46px] items-center justify-center rounded-xl bg-[#E3A144] px-6 text-xs font-bold text-[#07130F] transition hover:bg-[#F0B35C] disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Exportar CSV
+            </button>
           </div>
 
-          {/* Pré-visualização rápida dos dados */}
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-slate-200 text-slate-400 font-semibold uppercase text-xs">
-                  <th className="py-3 px-4">Data</th>
-                  <th className="py-3 px-4">Tipo</th>
-                  <th className="py-3 px-4">Descrição</th>
-                  <th className="py-3 px-4">Categoria</th>
-                  <th className="py-3 px-4 text-right">Valor</th>
-                  <th className="py-3 px-4 text-center">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {carregando ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-8 text-slate-400">Carregando registros...</td>
+            {carregando ? (
+              <div className="flex min-h-[300px] items-center justify-center">
+                <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/[0.08] border-t-[#E3A144]" />
+              </div>
+            ) : dados.length ===
+              0 ? (
+              <div className="flex min-h-[300px] items-center justify-center text-xs text-[#EDEDE3]/30">
+                Nenhum lançamento encontrado.
+              </div>
+            ) : (
+              <table className="min-w-[1050px] w-full border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-white/[0.06] bg-white/[0.012]">
+                    {[
+                      'Data',
+                      'Tipo',
+                      'Descrição',
+                      'Categoria',
+                      'Valor',
+                      'Status',
+                    ].map((titulo) => (
+                      <th
+                        key={titulo}
+                        className="px-5 py-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28"
+                      >
+                        {titulo}
+                      </th>
+                    ))}
                   </tr>
-                ) : dados.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="text-center py-8 text-slate-400">Nenhum lançamento encontrado.</td>
-                  </tr>
-                ) : (
-                  dados.map((item) => {
-                    const tipoFormatado = String(item.tipo || '').toLowerCase();
-                    const isReceita = tipoFormatado === 'receita';
-                    return (
-                      <tr key={item.id} className="hover:bg-slate-50 transition">
-                        <td className="py-3 px-4 text-slate-600">{item.data_vencimento}</td>
-                        <td className="py-3 px-4">
-                          <span className={`px-2.5 py-1 rounded-full text-xs font-semibold ${
-                            isReceita ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'
-                          }`}>
-                            {item.tipo}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 font-medium text-slate-800">{item.descricao}</td>
-                        <td className="py-3 px-4 text-slate-600">{item.categoria}</td>
-                        <td className={`py-3 px-4 text-right font-bold ${
-                          isReceita ? 'text-emerald-600' : 'text-rose-600'
-                        }`}>
-                          R$ {Number(item.valor || 0).toFixed(2)}
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <span className="px-2.5 py-1 rounded-md text-xs bg-slate-100 text-slate-700 font-medium">
-                            {item.status}
-                          </span>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+                </thead>
 
-        </div>
-      </div>
+                <tbody className="divide-y divide-white/[0.055]">
+                  {dados.map(
+                    (
+                      item,
+                      index
+                    ) => {
+                      const tipo =
+                        String(
+                          item.tipo ||
+                            ''
+                        )
+                          .trim()
+                          .toLowerCase();
+
+                      const receita =
+                        tipo ===
+                        'receita';
+
+                      return (
+                        <tr
+                          key={
+                            item.id ||
+                            index
+                          }
+                          className="transition hover:bg-white/[0.018]"
+                        >
+                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
+                            {formatarData(
+                              item.data_vencimento
+                            ) ||
+                              '—'}
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <span
+                              className={`rounded-full border px-2.5 py-1 text-[9px] font-semibold ${
+                                receita
+                                  ? 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300'
+                                  : 'border-red-500/20 bg-red-500/[0.07] text-red-300'
+                              }`}
+                            >
+                              {receita
+                                ? 'Receita'
+                                : 'Despesa'}
+                            </span>
+                          </td>
+
+                          <td className="px-5 py-4 text-xs font-semibold text-[#EDEDE3]/75">
+                            {obterDescricao(
+                              item
+                            ) ||
+                              '—'}
+                          </td>
+
+                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
+                            {item.categoria ||
+                              '—'}
+                          </td>
+
+                          <td
+                            className={`px-5 py-4 text-xs font-semibold ${
+                              receita
+                                ? 'text-emerald-300'
+                                : 'text-red-300'
+                            }`}
+                          >
+                            {formatarMoeda(
+                              obterValor(
+                                item
+                              )
+                            )}
+                          </td>
+
+                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/50">
+                            {obterStatus(
+                              item
+                            ) ||
+                              '—'}
+                          </td>
+                        </tr>
+                      );
+                    }
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </section>
+      </main>
     </div>
   );
 }

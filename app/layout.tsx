@@ -1,14 +1,33 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Fraunces, Work_Sans } from 'next/font/google';
 import './globals.css';
-import Sidebar from '@/app/components/Sidebar';
-import { AppProvider } from '@/app/context/AppContext';
 
-const inter = Inter({ subsets: ['latin'] });
+import { AppProvider } from '@/app/context/AppContext';
+import AppShell from '@/app/components/AppShell';
+import { LanguageProvider } from '@/app/components/LanguageProvider';
+
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-inter',
+});
+
+const fraunces = Fraunces({
+  subsets: ['latin'],
+  variable: '--font-fraunces',
+});
+
+const workSans = Work_Sans({
+  subsets: ['latin'],
+  variable: '--font-work-sans',
+});
 
 export const metadata: Metadata = {
-  title: 'Encantos Rio Negro • Sistema de Gestão',
-  description: 'Plataforma oficial de gestão e reservas - Encantos do Rio Negro Turismo',
+  title: {
+    default: 'Encantos Rio Negro',
+    template: '%s • Encantos Rio Negro',
+  },
+  description:
+    'Experiências, hospedagens, roteiros e turismo receptivo no Rio Negro, em Barcelos, Amazonas.',
 };
 
 export default function RootLayout({
@@ -18,18 +37,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="pt-BR">
-      <body className={`${inter.className} bg-slate-950 text-slate-100 antialiased`}>
-        <AppProvider>
-          <div className="flex min-h-screen">
-            {/* Navegação / Sidebar Lateral */}
-            <Sidebar />
-
-            {/* Área Principal de Conteúdo do Aplicativo */}
-            <main className="flex-1 bg-slate-900 min-h-screen overflow-y-auto">
-              {children}
-            </main>
-          </div>
-        </AppProvider>
+      <body
+        className={`${inter.variable} ${fraunces.variable} ${workSans.variable} bg-slate-950 text-slate-100 antialiased`}
+      >
+        <LanguageProvider>
+          <AppProvider>
+            <AppShell>{children}</AppShell>
+          </AppProvider>
+        </LanguageProvider>
       </body>
     </html>
   );

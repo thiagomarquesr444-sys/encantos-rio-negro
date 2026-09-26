@@ -1,622 +1,1856 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+
 import Link from 'next/link';
+
 import { supabase } from '@/lib/supabase';
 
+type TipoLancamento =
+  | 'receita'
+  | 'despesa';
+
+type StatusLancamento =
+  | 'Recebido'
+  | 'Pago'
+  | 'Pendente';
+
+interface LancamentoFinanceiro {
+  id?: string;
+
+  descricao?: string | null;
+  descrição?: string | null;
+
+  tipo?: string | null;
+
+  valor?:
+    | number
+    | string
+    | null;
+
+  Valor?:
+    | number
+    | string
+    | null;
+
+  categoria?: string | null;
+
+  data_vencimento?: string | null;
+
+  status?: string | null;
+  Status?: string | null;
+
+  user_id?: string | null;
+
+  created_at?: string | null;
+}
+
+type FiltroPeriodo =
+  | 'mes_atual'
+  | 'todos'
+  | 'receitas'
+  | 'despesas'
+  | 'pendentes';
+
+function removerAcentos(
+  valor: string
+) {
+  return valor
+    .normalize('NFD')
+    .replace(
+      /[\u0300-\u036f]/g,
+      ''
+    );
+}
+
+function normalizarTipo(
+  valor?: string | null
+): TipoLancamento {
+  const tipo = removerAcentos(
+    (valor || '')
+      .trim()
+      .toLowerCase()
+  );
+
+  return tipo === 'despesa'
+    ? 'despesa'
+    : 'receita';
+}
+
+function normalizarStatus(
+  tipo: TipoLancamento,
+  valor?: string | null
+): StatusLancamento {
+  const status = removerAcentos(
+    (valor || '')
+      .trim()
+      .toLowerCase()
+  );
+
+  if (
+    status === 'pendente'
+  ) {
+    return 'Pendente';
+  }
+
+  if (
+    tipo === 'despesa'
+  ) {
+    return status === 'pago'
+      ? 'Pago'
+      : 'Pendente';
+  }
+
+  return status === 'recebido'
+    ? 'Recebido'
+    : 'Pendente';
+}
+
+/*
+  ============================================================
+  CONVERSÃO MONETÁRIA
+  ============================================================
+
+  3500      -> 3500
+  3.500     -> 3500
+  3500.50   -> 3500.50
+  3.500,50  -> 3500.50
+*/
+
+function converterValor(
+  entrada: unknown
+): number {
+  if (
+    entrada === null ||
+    entrada === undefined ||
+    entrada === ''
+  ) {
+    return 0;
+  }
+
+  if (
+    typeof entrada === 'number'
+  ) {
+    return Number.isFinite(entrada)
+      ? entrada
+      : 0;
+  }
+
+  let valor = String(entrada)
+    .trim()
+    .replace(/R\$/gi, '')
+    .replace(/\s/g, '');
+
+  if (!valor) {
+    return 0;
+  }
+
+  if (
+    valor.includes('.') &&
+    valor.includes(',')
+  ) {
+    valor = valor
+      .replace(/\./g, '')
+      .replace(',', '.');
+  } else if (
+    /^\d{1,3}(\.\d{3})+$/.test(
+      valor
+    )
+  ) {
+    valor = valor.replace(
+      /\./g,
+      ''
+    );
+  } else if (
+    valor.includes(',')
+  ) {
+    valor = valor.replace(
+      ',',
+      '.'
+    );
+  }
+
+  const numero =
+    Number(valor);
+
+  return Number.isFinite(numero)
+    ? numero
+    : 0;
+}
+
+function obterValor(
+  item: LancamentoFinanceiro
+) {
+  return converterValor(
+    item.valor !== undefined
+      ? item.valor
+      : item.Valor
+  );
+}
+
+function obterDescricao(
+  item: LancamentoFinanceiro
+) {
+  return (
+    item.descricao ||
+    item.descrição ||
+    ''
+  );
+}
+
+function obterStatus(
+  item: LancamentoFinanceiro
+) {
+  const tipo =
+    normalizarTipo(
+      item.tipo
+    );
+
+  return normalizarStatus(
+    tipo,
+    item.status !== undefined
+      ? item.status
+      : item.Status
+  );
+}
+
+function formatarMoeda(
+  valor: number
+) {
+  return valor.toLocaleString(
+    'pt-BR',
+    {
+      style: 'currency',
+      currency: 'BRL',
+    }
+  );
+}
+
+function formatarData(
+  data?: string | null
+) {
+  if (!data) {
+    return '—';
+  }
+
+  const parte =
+    data.split('T')[0];
+
+  const partes =
+    parte.split('-');
+
+  if (
+    partes.length !== 3
+  ) {
+    return data;
+  }
+
+  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
 export default function FinanceiroPage() {
-  const [lancamentos, setLancamentos] = useState<any[]>([]);
-  const [lancamentosFiltrados, setLancamentosFiltrados] = useState<any[]>([]);
-  const [carregando, setCarregando] = useState(true);
+  const [
+    lancamentos,
+    setLancamentos,
+  ] =
+    useState<
+      LancamentoFinanceiro[]
+    >([]);
 
-  const [filtroPeriodo, setFiltroPeriodo] = useState('mes_atual');
+  const [
+    carregando,
+    setCarregando,
+  ] = useState(true);
 
-  const [totalReceitasGeral, setTotalReceitasGeral] = useState(0);
-  const [totalDespesasGeral, setTotalDespesasGeral] = useState(0);
-  const [lucroGeral, setLucroGeral] = useState(0);
-  const [aReceberGeral, setAReceberGeral] = useState(0);
+  const [
+    error,
+    setError,
+  ] = useState<string | null>(
+    null
+  );
 
-  // Estados dos Modais
-  const [itemVisualizar, setItemVisualizar] = useState<any>(null);
-  const [itemEditar, setItemEditar] = useState<any>(null);
-  const [itemExcluir, setItemExcluir] = useState<any>(null);
-  const [salvandoEdicao, setSalvandoEdicao] = useState(false);
-  const [excluindo, setExcluindo] = useState(false);
+  const [
+    filtroPeriodo,
+    setFiltroPeriodo,
+  ] =
+    useState<FiltroPeriodo>(
+      'mes_atual'
+    );
 
-  // Mensagem de Feedback
-  const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null);
+  const [
+    busca,
+    setBusca,
+  ] = useState('');
 
-  const mostrarToast = (mensagem: string) => {
-    setMensagemSucesso(mensagem);
-    setTimeout(() => setMensagemSucesso(null), 4000);
-  };
+  const [
+    itemVisualizar,
+    setItemVisualizar,
+  ] =
+    useState<LancamentoFinanceiro | null>(
+      null
+    );
+
+  const [
+    itemEditar,
+    setItemEditar,
+  ] =
+    useState<LancamentoFinanceiro | null>(
+      null
+    );
+
+  const [
+    valorEdicao,
+    setValorEdicao,
+  ] = useState('');
+
+  const [
+    itemExcluir,
+    setItemExcluir,
+  ] =
+    useState<LancamentoFinanceiro | null>(
+      null
+    );
+
+  const [
+    salvandoEdicao,
+    setSalvandoEdicao,
+  ] = useState(false);
+
+  const [
+    excluindo,
+    setExcluindo,
+  ] = useState(false);
+
+  const [
+    mensagemSucesso,
+    setMensagemSucesso,
+  ] =
+    useState<string | null>(
+      null
+    );
+
+  function mostrarToast(
+    mensagem: string
+  ) {
+    setMensagemSucesso(
+      mensagem
+    );
+
+    setTimeout(() => {
+      setMensagemSucesso(
+        null
+      );
+    }, 3000);
+  }
+
+  /*
+    ============================================================
+    CARREGAR
+    ============================================================
+  */
+
+  async function carregarFinanceiro() {
+    setCarregando(true);
+    setError(null);
+
+    try {
+      const {
+        data,
+        error: supabaseError,
+      } = await supabase
+        .from('financeiro')
+        .select('*')
+        .order(
+          'data_vencimento',
+          {
+            ascending: false,
+          }
+        );
+
+      if (supabaseError) {
+        throw supabaseError;
+      }
+
+      setLancamentos(
+        (data || []) as
+          LancamentoFinanceiro[]
+      );
+    } catch (err) {
+      console.error(
+        'Erro ao carregar financeiro:',
+        err
+      );
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Não foi possível carregar os lançamentos financeiros.'
+      );
+
+      setLancamentos([]);
+    } finally {
+      setCarregando(false);
+    }
+  }
 
   useEffect(() => {
     carregarFinanceiro();
   }, []);
 
-  useEffect(() => {
-    processarDadosEAplicarFiltros();
-  }, [filtroPeriodo, lancamentos]);
+  /*
+    ============================================================
+    INDICADORES FINANCEIROS
+    ============================================================
+  */
 
-  const carregarFinanceiro = async () => {
-    setCarregando(true);
-    try {
-      const { data, error } = await supabase
-        .from('financeiro')
-        .select('*')
-        .order('data_vencimento', { ascending: false });
+  const financeiro =
+    useMemo(() => {
+      let recebido = 0;
+      let pago = 0;
+      let receber = 0;
+      let pagar = 0;
 
-      if (error) {
-        console.error('Erro ao buscar financeiro:', error);
-      } else {
-        setLancamentos(data || []);
-      }
-    } catch (err) {
-      console.error('Erro inesperado:', err);
-    } finally {
-      setCarregando(false);
+      lancamentos.forEach(
+        (item) => {
+          const tipo =
+            normalizarTipo(
+              item.tipo
+            );
+
+          const status =
+            obterStatus(item);
+
+          const valor =
+            obterValor(item);
+
+          if (
+            tipo === 'receita'
+          ) {
+            if (
+              status ===
+              'Recebido'
+            ) {
+              recebido += valor;
+            } else {
+              receber += valor;
+            }
+          } else {
+            if (
+              status === 'Pago'
+            ) {
+              pago += valor;
+            } else {
+              pagar += valor;
+            }
+          }
+        }
+      );
+
+      return {
+        recebido,
+        pago,
+        receber,
+        pagar,
+        saldo:
+          recebido - pago,
+      };
+    }, [lancamentos]);
+
+  /*
+    ============================================================
+    FILTRO
+    ============================================================
+  */
+
+  const lancamentosFiltrados =
+    useMemo(() => {
+      const hoje =
+        new Date();
+
+      const mes =
+        hoje.getMonth();
+
+      const ano =
+        hoje.getFullYear();
+
+      const termo =
+        busca
+          .trim()
+          .toLowerCase();
+
+      return lancamentos.filter(
+        (item) => {
+          const tipo =
+            normalizarTipo(
+              item.tipo
+            );
+
+          const status =
+            obterStatus(item);
+
+          let atendeFiltro =
+            true;
+
+          if (
+            filtroPeriodo ===
+            'mes_atual'
+          ) {
+            if (
+              !item.data_vencimento
+            ) {
+              atendeFiltro =
+                false;
+            } else {
+              const partes =
+                item.data_vencimento
+                  .split('T')[0]
+                  .split('-');
+
+              if (
+                partes.length ===
+                3
+              ) {
+                atendeFiltro =
+                  Number(
+                    partes[1]
+                  ) -
+                    1 ===
+                    mes &&
+                  Number(
+                    partes[0]
+                  ) === ano;
+              } else {
+                atendeFiltro =
+                  false;
+              }
+            }
+          }
+
+          if (
+            filtroPeriodo ===
+            'receitas'
+          ) {
+            atendeFiltro =
+              tipo ===
+              'receita';
+          }
+
+          if (
+            filtroPeriodo ===
+            'despesas'
+          ) {
+            atendeFiltro =
+              tipo ===
+              'despesa';
+          }
+
+          if (
+            filtroPeriodo ===
+            'pendentes'
+          ) {
+            atendeFiltro =
+              status ===
+              'Pendente';
+          }
+
+          const atendeBusca =
+            !termo ||
+            obterDescricao(item)
+              .toLowerCase()
+              .includes(termo) ||
+            (
+              item.categoria ||
+              ''
+            )
+              .toLowerCase()
+              .includes(termo) ||
+            tipo.includes(
+              termo
+            ) ||
+            status
+              .toLowerCase()
+              .includes(termo);
+
+          return (
+            atendeFiltro &&
+            atendeBusca
+          );
+        }
+      );
+    }, [
+      lancamentos,
+      filtroPeriodo,
+      busca,
+    ]);
+
+  /*
+    ============================================================
+    EDIÇÃO
+    ============================================================
+  */
+
+  function abrirEdicao(
+    item: LancamentoFinanceiro
+  ) {
+    setItemEditar({
+      ...item,
+
+      descricao:
+        obterDescricao(item),
+
+      status:
+        obterStatus(item),
+    });
+
+    setValorEdicao(
+      String(
+        obterValor(item)
+      )
+    );
+
+    setError(null);
+  }
+
+  async function salvarEdicao(
+    event: React.FormEvent
+  ) {
+    event.preventDefault();
+
+    if (!itemEditar?.id) {
+      return;
     }
-  };
 
-  const confirmarExclusao = async () => {
-    if (!itemExcluir) return;
-    setExcluindo(true);
+    const descricao =
+      obterDescricao(
+        itemEditar
+      ).trim();
+
+    if (!descricao) {
+      setError(
+        'Informe a descrição do lançamento.'
+      );
+
+      return;
+    }
+
+    const valor =
+      converterValor(
+        valorEdicao
+      );
+
+    if (
+      !Number.isFinite(valor) ||
+      valor <= 0
+    ) {
+      setError(
+        'Informe um valor válido maior que zero.'
+      );
+
+      return;
+    }
+
+    const tipo =
+      normalizarTipo(
+        itemEditar.tipo
+      );
+
+    const status =
+      normalizarStatus(
+        tipo,
+        itemEditar.status
+      );
+
+    setSalvandoEdicao(
+      true
+    );
+
+    setError(null);
 
     try {
-      const { error } = await supabase
+      const {
+        error: updateError,
+      } = await supabase
+        .from('financeiro')
+        .update({
+          descricao,
+
+          valor,
+
+          categoria:
+            itemEditar.categoria
+              ?.trim() ||
+            null,
+
+          data_vencimento:
+            itemEditar.data_vencimento,
+
+          status,
+
+          /*
+            O tipo não será trocado
+            durante a edição.
+
+            Receita continua receita.
+            Despesa continua despesa.
+          */
+          tipo,
+        })
+        .eq(
+          'id',
+          itemEditar.id
+        );
+
+      if (updateError) {
+        throw updateError;
+      }
+
+      setItemEditar(null);
+
+      mostrarToast(
+        'Lançamento atualizado com sucesso.'
+      );
+
+      await carregarFinanceiro();
+    } catch (err) {
+      console.error(
+        'Erro ao atualizar lançamento:',
+        err
+      );
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Não foi possível atualizar o lançamento.'
+      );
+    } finally {
+      setSalvandoEdicao(
+        false
+      );
+    }
+  }
+
+  /*
+    ============================================================
+    EXCLUSÃO
+    ============================================================
+  */
+
+  async function confirmarExclusao() {
+    if (!itemExcluir?.id) {
+      return;
+    }
+
+    setExcluindo(true);
+    setError(null);
+
+    try {
+      const {
+        error: deleteError,
+      } = await supabase
         .from('financeiro')
         .delete()
-        .eq('id', itemExcluir.id);
+        .eq(
+          'id',
+          itemExcluir.id
+        );
 
-      if (error) {
-        console.error('Erro ao excluir:', error);
-        alert('Erro ao excluir o registro.');
-      } else {
-        setLancamentos((prev) => prev.filter((item) => item.id !== itemExcluir.id));
-        setItemExcluir(null);
-        mostrarToast('Lançamento excluído com sucesso!');
+      if (deleteError) {
+        throw deleteError;
       }
+
+      setLancamentos(
+        (atuais) =>
+          atuais.filter(
+            (item) =>
+              item.id !==
+              itemExcluir.id
+          )
+      );
+
+      setItemExcluir(null);
+
+      mostrarToast(
+        'Lançamento excluído com sucesso.'
+      );
     } catch (err) {
-      console.error('Erro inesperado ao excluir:', err);
+      console.error(
+        'Erro ao excluir lançamento:',
+        err
+      );
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Não foi possível excluir o lançamento.'
+      );
     } finally {
       setExcluindo(false);
     }
-  };
+  }
 
-  // Conversor limpo e rigoroso para o formato padrão do Supabase (Numeric)
-  const converterParaNumeroSupabase = (valorInput: any) => {
-    if (valorInput === null || valorInput === undefined || valorInput === '') return 0;
-    if (typeof valorInput === 'number') return valorInput;
+  /*
+    ============================================================
+    VISUAL
+    ============================================================
+  */
 
-    let stringValor = String(valorInput).trim();
-    stringValor = stringValor.replace('R$', '').trim();
+  function tipoClasses(
+    tipo: TipoLancamento
+  ) {
+    return tipo === 'receita'
+      ? 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300'
+      : 'border-red-500/20 bg-red-500/[0.07] text-red-300';
+  }
 
-    if (stringValor.includes('.') && stringValor.includes(',')) {
-      stringValor = stringValor.replace(/\./g, '').replace(',', '.');
-    } else if (stringValor.includes(',')) {
-      stringValor = stringValor.replace(',', '.');
+  function statusClasses(
+    status: StatusLancamento
+  ) {
+    if (
+      status ===
+      'Pendente'
+    ) {
+      return 'border-amber-500/20 bg-amber-500/[0.07] text-amber-300';
     }
 
-    const numeroFinal = parseFloat(stringValor);
-    return isNaN(numeroFinal) ? 0 : numeroFinal;
-  };
+    return 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300';
+  }
 
-  const salvarEdicao = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!itemEditar) return;
-    setSalvandoEdicao(true);
+  const inputClass =
+    'w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/40';
 
-    try {
-      const valorBruto = itemEditar.valor !== undefined ? itemEditar.valor : itemEditar.Valor;
-      const valorTratado = converterParaNumeroSupabase(valorBruto);
+  const labelClass =
+    'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34';
 
-      const { error } = await supabase
-        .from('financeiro')
-        .update({
-          descricao: itemEditar.descricao || itemEditar.descrição,
-          valor: valorTratado,
-          categoria: itemEditar.categoria,
-          data_vencimento: itemEditar.data_vencimento,
-          status: itemEditar.status || itemEditar.Status,
-          tipo: itemEditar.tipo,
-        })
-        .eq('id', itemEditar.id);
+  const cards = [
+    {
+      titulo:
+        'Receitas recebidas',
 
-      if (error) {
-        console.error('Erro ao atualizar:', error);
-        alert('Erro ao atualizar o registro no banco.');
-      } else {
-        setItemEditar(null);
-        mostrarToast('Lançamento atualizado com sucesso!');
-        carregarFinanceiro();
-      }
-    } catch (err) {
-      console.error('Erro inesperado ao salvar:', err);
-    } finally {
-      setSalvandoEdicao(false);
-    }
-  };
+      valor:
+        financeiro.recebido,
 
-  const processarDadosEAplicarFiltros = () => {
-    let recGeral = 0;
-    let despGeral = 0;
-    let pendGeral = 0;
+      detalhe:
+        'entradas realizadas',
+    },
 
-    lancamentos.forEach((item) => {
-      const val = Number(item.valor !== undefined ? item.valor : (item.Valor || 0)) || 0;
-      const tipo = String(item.tipo || '').trim().toLowerCase();
-      const status = String(item.status !== undefined ? item.status : (item.Status || '')).trim().toLowerCase();
+    {
+      titulo:
+        'Despesas pagas',
 
-      if (tipo === 'receita') {
-        recGeral += val;
-        if (status === 'pendente') {
-          pendGeral += val;
-        }
-      } else if (tipo === 'despesa') {
-        despGeral += val;
-      }
-    });
+      valor:
+        financeiro.pago,
 
-    setTotalReceitasGeral(recGeral);
-    setTotalDespesasGeral(despGeral);
-    setLucroGeral(recGeral - despGeral);
-    setAReceberGeral(pendGeral);
+      detalhe:
+        'saídas realizadas',
+    },
 
-    const hoje = new Date();
-    const mesAtual = hoje.getMonth();
-    const anoAtual = hoje.getFullYear();
+    {
+      titulo:
+        'Saldo realizado',
 
-    let listaTemp = [...lancamentos];
+      valor:
+        financeiro.saldo,
 
-    if (filtroPeriodo === 'mes_atual') {
-      listaTemp = lancamentos.filter((item) => {
-        const dataItem = item.data_vencimento ? new Date(item.data_vencimento + 'T00:00:00') : null;
-        if (!dataItem || isNaN(dataItem.getTime())) return false;
-        return dataItem.getMonth() === mesAtual && dataItem.getFullYear() === anoAtual;
-      });
-    } else if (filtroPeriodo === 'pendentes') {
-      listaTemp = lancamentos.filter((item) => {
-        const status = String(item.status !== undefined ? item.status : item.Status || '').trim().toLowerCase();
-        const tipo = String(item.tipo || '').trim().toLowerCase();
-        return tipo === 'receita' && status === 'pendente';
-      });
-    }
+      detalhe:
+        'recebido − pago',
+    },
 
-    setLancamentosFiltrados(listaTemp);
-  };
+    {
+      titulo:
+        'A receber',
+
+      valor:
+        financeiro.receber,
+
+      detalhe:
+        'receitas pendentes',
+    },
+
+    {
+      titulo:
+        'A pagar',
+
+      valor:
+        financeiro.pagar,
+
+      detalhe:
+        'despesas pendentes',
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#071f1a] text-slate-100 flex flex-col relative pb-16">
+    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+      {/* TOAST */}
+
       {mensagemSucesso && (
-        <div className="fixed top-6 right-6 z-50 animate-bounce">
-          <div className="flex items-center gap-3 px-5 py-3 rounded-2xl shadow-xl text-white font-medium text-sm bg-emerald-600">
-            <span>✅</span>
-            <span>{mensagemSucesso}</span>
-          </div>
+        <div className="fixed left-1/2 top-[100px] z-[80] -translate-x-1/2 rounded-2xl border border-emerald-500/20 bg-[#0B2119] px-5 py-3 text-xs font-semibold text-emerald-300 shadow-2xl">
+          {mensagemSucesso}
         </div>
       )}
 
-      {/* BANNER HERO PROFISSIONAL */}
-      <div className="relative w-full bg-[#051713] py-24 md:py-28 px-6 text-white shadow-lg overflow-hidden flex flex-col justify-between md:px-12 border-b border-emerald-900/45">
-        <div className="absolute inset-0 opacity-85 pointer-events-none overflow-hidden">
-          <img
-            src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?auto=format&fit=crop&w=1920&q=80"
-            alt="Banner Financeiro"
-            className="w-full h-full object-cover object-center select-none pointer-events-none"
-          />
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-[#071f1a] via-[#071f1a]/70 to-[#071f1a]/30 pointer-events-none" />
+      {/* CABEÇALHO */}
 
-        <div className="relative max-w-7xl mx-auto w-full z-10 pt-6 flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+      <section className="border-b border-white/[0.07] bg-[#091510]">
+        <div className="mx-auto flex max-w-[1360px] flex-col gap-8 px-5 py-10 md:px-8 md:py-12 xl:flex-row xl:items-end xl:justify-between">
           <div>
-            <div className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-900/40 px-4 py-1.5 text-xs font-semibold text-emerald-200 backdrop-blur shadow-sm mb-2 select-none">
-              💰 Operação • Gestão Financeira
+            <div className="flex items-center gap-3">
+              <span className="h-px w-8 bg-[#E3A144]" />
+
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
+                Financeiro • Controle
+              </span>
             </div>
-            <h1 className="text-3xl font-bold text-white drop-shadow-md md:text-4xl">Financeiro — Produção</h1>
-            <p className="mt-1 text-emerald-100/80 text-sm drop-shadow-md font-medium">Painel gerencial de receitas e despesas.</p>
+
+            <h1
+              className="mt-4 text-4xl leading-none tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
+              style={{
+                fontFamily:
+                  'var(--font-fraunces), serif',
+              }}
+            >
+              Financeiro
+            </h1>
+
+            <p className="mt-4 max-w-[720px] text-sm leading-7 text-[#EDEDE3]/42">
+              Controle entradas,
+              despesas, valores
+              pendentes e o saldo
+              financeiro efetivamente
+              realizado.
+            </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 z-10">
+          <div className="flex flex-wrap gap-3">
             <Link
               href="/financeiro/receita/novo"
-              draggable={false}
-              onDragStart={(e) => e.preventDefault()}
-              className="inline-flex items-center rounded-xl bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition select-none no-underline cursor-pointer border border-emerald-500/40"
-              style={{ WebkitUserDrag: 'none' } as any}
+              className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-[#E3A144] px-5 text-xs font-bold text-[#07130F] transition hover:bg-[#F0B35C]"
             >
-              <span className="leading-none text-base font-bold pointer-events-none mr-1.5">+</span>
-              <span className="leading-none pointer-events-none">Nova Receita</span>
+              + Nova receita
             </Link>
 
             <Link
               href="/financeiro/despesa/novo"
-              draggable={false}
-              onDragStart={(e) => e.preventDefault()}
-              className="inline-flex items-center rounded-xl bg-rose-600 hover:bg-rose-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition select-none no-underline cursor-pointer border border-rose-500/40"
-              style={{ WebkitUserDrag: 'none' } as any}
+              className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/[0.08] px-5 text-xs font-semibold text-red-300 transition hover:bg-red-500/[0.12]"
             >
-              <span className="leading-none text-base font-bold pointer-events-none mr-1.5">-</span>
-              <span className="leading-none pointer-events-none">Nova Despesa</span>
+              − Nova despesa
             </Link>
 
             <Link
               href="/financeiro/exportar"
-              draggable={false}
-              onDragStart={(e) => e.preventDefault()}
-              className="inline-flex items-center rounded-xl bg-slate-700 hover:bg-slate-600 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition select-none no-underline cursor-pointer border border-slate-600/40"
-              style={{ WebkitUserDrag: 'none' } as any}
+              className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.05]"
             >
-              <span className="leading-none text-base font-bold pointer-events-none mr-1.5">📥</span>
-              <span className="leading-none pointer-events-none">Exportar Relatório</span>
+              Exportar
             </Link>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="px-6 py-10 md:px-12 max-w-7xl mx-auto w-full flex-1 space-y-10">
-        
-        {/* BARRA DE FILTROS */}
-        <div className="rounded-2xl border border-emerald-900/40 bg-[#0a2923]/60 backdrop-blur-md p-4 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2 text-sm font-bold text-emerald-200 select-none">
-            <span>🔎 Filtrar Visão da Tabela:</span>
-          </div>
-          
-          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-4">
+      <main className="mx-auto max-w-[1360px] px-5 py-8 md:px-8 md:py-10">
+        {error && (
+          <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-red-300">
+            <span>{error}</span>
+
             <button
-              onClick={() => setFiltroPeriodo('mes_atual')}
-              className={`px-4 py-2 text-xs font-bold transition rounded-xl border select-none cursor-pointer ${
-                filtroPeriodo === 'mes_atual'
-                  ? 'bg-emerald-600 border-emerald-500 text-white shadow-md'
-                  : 'bg-[#041411]/80 border-emerald-800/60 text-emerald-300/70 hover:text-white hover:bg-emerald-900/40'
-              }`}
+              type="button"
+              onClick={() =>
+                setError(null)
+              }
             >
-              Mês Atual
-            </button>
-            <button
-              onClick={() => setFiltroPeriodo('todos')}
-              className={`px-4 py-2 text-xs font-bold transition rounded-xl border select-none cursor-pointer ${
-                filtroPeriodo === 'todos'
-                  ? 'bg-emerald-600 border-emerald-500 text-white shadow-md'
-                  : 'bg-[#041411]/80 border-emerald-800/60 text-emerald-300/70 hover:text-white hover:bg-emerald-900/40'
-              }`}
-            >
-              Histórico Geral
-            </button>
-            <button
-              onClick={() => setFiltroPeriodo('pendentes')}
-              className={`px-4 py-2 text-xs font-bold transition rounded-xl border select-none cursor-pointer ${
-                filtroPeriodo === 'pendentes'
-                  ? 'bg-amber-600 border-amber-500 text-white shadow-md'
-                  : 'bg-[#041411]/80 border-emerald-800/60 text-emerald-300/70 hover:text-white hover:bg-emerald-900/40'
-              }`}
-            >
-              Apenas Pendentes
+              ✕
             </button>
           </div>
-        </div>
+        )}
 
-        {/* CARDS DE INDICADORES */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div className="rounded-2xl border-l-4 border-l-emerald-500 bg-[#0a2923]/70 backdrop-blur-md p-6 shadow-md border border-emerald-900/30 text-emerald-100">
-            <p className="text-xs font-bold uppercase tracking-wider text-emerald-200/70 select-none">Total Receitas</p>
-            <h3 className="text-2xl font-extrabold text-emerald-400 mt-2">
-              R$ {totalReceitasGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </h3>
-            <p className="text-xs text-emerald-200/60 mt-1">visão macro da base</p>
-          </div>
+        {/* INDICADORES */}
 
-          <div className="rounded-2xl border-l-4 border-l-rose-500 bg-[#0a2923]/70 backdrop-blur-md p-6 shadow-md border border-emerald-900/30 text-emerald-100">
-            <p className="text-xs font-bold uppercase tracking-wider text-emerald-200/70 select-none">Total Despesas</p>
-            <h3 className="text-2xl font-extrabold text-rose-400 mt-2">
-              R$ {totalDespesasGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </h3>
-            <p className="text-xs text-emerald-200/60 mt-1">visão macro da base</p>
-          </div>
-
-          <div className="rounded-2xl border-l-4 border-l-sky-400 bg-[#0a2923]/70 backdrop-blur-md p-6 shadow-md border border-emerald-900/30 text-emerald-100">
-            <p className="text-xs font-bold uppercase tracking-wider text-emerald-200/70 select-none">Balanço / Lucro</p>
-            <h3 className={`text-2xl font-extrabold mt-2 ${lucroGeral >= 0 ? 'text-white' : 'text-rose-400'}`}>
-              R$ {lucroGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </h3>
-            <p className="text-xs text-emerald-200/60 mt-1">resultado líquido geral</p>
-          </div>
-
-          <div className="rounded-2xl border-l-4 border-l-amber-400 bg-[#0a2923]/70 backdrop-blur-md p-6 shadow-md border border-emerald-900/30 text-emerald-100">
-            <p className="text-xs font-bold uppercase tracking-wider text-emerald-200/70 select-none">A Receber Geral</p>
-            <h3 className="text-2xl font-extrabold text-amber-400 mt-2">
-              R$ {aReceberGeral.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </h3>
-            <p className="text-xs text-emerald-200/60 mt-1">pendências acumuladas</p>
-          </div>
-        </div>
-
-        {/* TABELA DE LANÇAMENTOS */}
-        <div className="rounded-3xl border border-emerald-900/40 bg-[#0a2923]/60 backdrop-blur-md p-6 shadow-xl space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-white">Lançamentos</h2>
-            <span className="text-xs font-semibold px-3 py-1 bg-emerald-900/80 border border-emerald-700/50 text-emerald-200 rounded-full select-none">
-              {lancamentosFiltrados.length} registro(s) listado(s)
-            </span>
-          </div>
-
-          <div className="overflow-x-auto min-h-[300px]">
-            <table className="w-full text-left border-collapse text-sm">
-              <thead className="bg-[#051713]/80 border-b border-emerald-900/60 text-emerald-200/80 font-semibold uppercase text-xs select-none">
-                <tr>
-                  <th className="py-3.5 px-5 rounded-tl-xl">Data</th>
-                  <th className="py-3.5 px-5">Tipo</th>
-                  <th className="py-3.5 px-5">Descrição</th>
-                  <th className="py-3.5 px-5">Categoria</th>
-                  <th className="py-3.5 px-5 text-right">Valor</th>
-                  <th className="py-3.5 px-5 text-center">Status</th>
-                  <th className="py-3.5 px-5 text-center rounded-tr-xl">Ações</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-emerald-900/30">
-                {carregando ? (
-                  <tr>
-                    <td colSpan={7} className="text-center py-12 text-emerald-200/60 font-medium text-sm">Carregando dados de produção...</td>
-                  </tr>
-                ) : lancamentosFiltrados.length === 0 ? (
-                  <tr>
-                    <td colSpan={7} className="text-center py-12 text-emerald-200/60 font-medium text-sm">
-                      Nenhum registro encontrado para este filtro.
-                    </td>
-                  </tr>
-                ) : (
-                  lancamentosFiltrados.map((item) => {
-                    const tipoFormatado = String(item.tipo || '').toLowerCase();
-                    const isReceita = tipoFormatado === 'receita';
-                    const valorBruto = Number(item.valor !== undefined ? item.valor : (item.Valor || 0)) || 0;
-                    const statusVal = item.status !== undefined ? item.status : (item.Status || '-');
-
-                    return (
-                      <tr key={item.id} className="bg-transparent hover:bg-emerald-950/30 transition">
-                        <td className="py-4 px-5 text-emerald-100/80">{item.data_vencimento || '-'}</td>
-                        <td className="py-4 px-5">
-                          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold select-none ${
-                            isReceita ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/30' : 'bg-rose-950/60 text-rose-300 border border-rose-500/30'
-                          }`}>
-                            {item.tipo || '-'}
-                          </span>
-                        </td>
-                        <td className="py-4 px-5 font-semibold text-white">{item.descricao || item.descrição || '-'}</td>
-                        <td className="py-4 px-5 text-emerald-100/80">{item.categoria || '-'}</td>
-                        <td className={`py-4 px-5 text-right font-bold ${
-                          isReceita ? 'text-emerald-400' : 'text-rose-400'
-                        }`}>
-                          R$ {valorBruto.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                        </td>
-                        <td className="py-4 px-5 text-center">
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-900/40 border border-emerald-700/40 text-emerald-200 select-none">
-                            {statusVal}
-                          </span>
-                        </td>
-                        <td className="py-4 px-5 text-center">
-                          <div className="flex items-center justify-center gap-1.5">
-                            {/* Botão Visualizar */}
-                            <button
-                              onClick={() => setItemVisualizar(item)}
-                              title="Visualizar detalhes"
-                              className="p-1.5 bg-emerald-900/40 hover:bg-emerald-900 text-emerald-200 rounded-lg transition cursor-pointer border border-emerald-700/40"
-                            >
-                              👁
-                            </button>
-
-                            {/* Botão Editar */}
-                            <button
-                              onClick={() => setItemEditar({ ...item })}
-                              title="Editar lançamento"
-                              className="p-1.5 bg-sky-950/40 hover:bg-sky-900 text-sky-200 rounded-lg transition cursor-pointer border border-sky-800/40"
-                            >
-                              ✎
-                            </button>
-
-                            {/* Botão Excluir */}
-                            <button
-                              onClick={() => setItemExcluir(item)}
-                              title="Excluir lançamento"
-                              className="p-1.5 bg-rose-950/40 hover:bg-rose-900 text-rose-200 rounded-lg transition cursor-pointer border border-rose-800/40"
-                            >
-                              🗑
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-      </div>
-
-      {/* MODAL DE VISUALIZAÇÃO */}
-      {itemVisualizar && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-[#071f1a] border border-emerald-900/60 p-6 shadow-2xl space-y-4 text-slate-100">
-            <div className="flex items-center justify-between border-b border-emerald-900/50 pb-3">
-              <h3 className="text-base font-bold text-white">Detalhes do Lançamento</h3>
-              <button onClick={() => setItemVisualizar(null)} className="text-emerald-300/60 hover:text-white text-sm font-bold cursor-pointer">✕</button>
-            </div>
-            <div className="space-y-3 text-sm">
-              <div>
-                <span className="text-emerald-300/60 block text-xs font-medium">ID do Registro</span>
-                <span className="text-white font-mono text-xs">{itemVisualizar.id}</span>
-              </div>
-              <div>
-                <span className="text-emerald-300/60 block text-xs font-medium">Tipo / Natureza</span>
-                <span className="font-semibold text-white capitalize">{itemVisualizar.tipo}</span>
-              </div>
-              <div>
-                <span className="text-emerald-300/60 block text-xs font-medium">Descrição</span>
-                <span className="font-bold text-white text-base">{itemVisualizar.descricao || itemVisualizar.descrição}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="text-emerald-300/60 block text-xs font-medium">Categoria</span>
-                  <span className="text-emerald-100 font-medium">{itemVisualizar.categoria || '-'}</span>
-                </div>
-                <div>
-                  <span className="text-emerald-300/60 block text-xs font-medium">Valor</span>
-                  <span className="font-bold text-emerald-400">R$ {Number(itemVisualizar.valor || itemVisualizar.Valor || 0).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <span className="text-emerald-300/60 block text-xs font-medium">Data de Vencimento</span>
-                  <span className="text-emerald-100 font-medium">{itemVisualizar.data_vencimento || '-'}</span>
-                </div>
-                <div>
-                  <span className="text-emerald-300/60 block text-xs font-medium">Status</span>
-                  <span className="text-emerald-300 font-bold">{itemVisualizar.status || itemVisualizar.Status || '-'}</span>
-                </div>
-              </div>
-            </div>
-            <div className="flex justify-end pt-3">
-              <button
-                onClick={() => setItemVisualizar(null)}
-                className="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold px-4 py-2 rounded-xl transition cursor-pointer select-none"
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+          {cards.map(
+            (card) => (
+              <div
+                key={
+                  card.titulo
+                }
+                className="rounded-[22px] border border-white/[0.075] bg-[#0A1713] p-5"
               >
-                Fechar
-              </button>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#7C9C87]">
+                  {card.titulo}
+                </p>
+
+                <strong
+                  className={`mt-5 block text-2xl font-medium tracking-[-0.04em] ${
+                    card.titulo ===
+                      'Despesas pagas' ||
+                    card.titulo ===
+                      'A pagar' ||
+                    (
+                      card.titulo ===
+                        'Saldo realizado' &&
+                      card.valor < 0
+                    )
+                      ? 'text-red-300'
+                      : card.titulo ===
+                          'A receber'
+                        ? 'text-amber-300'
+                        : 'text-[#F0F0E8]'
+                  }`}
+                  style={{
+                    fontFamily:
+                      'var(--font-fraunces), serif',
+                  }}
+                >
+                  {carregando
+                    ? '—'
+                    : formatarMoeda(
+                        card.valor
+                      )}
+                </strong>
+
+                <p className="mt-2 text-[10px] text-[#EDEDE3]/28">
+                  {card.detalhe}
+                </p>
+              </div>
+            )
+          )}
+        </div>
+
+        {/* FILTROS */}
+
+        <section className="mt-6 rounded-[22px] border border-white/[0.075] bg-[#0A1713] p-4">
+          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
+            <div className="flex flex-wrap gap-2">
+              {[
+                {
+                  chave:
+                    'mes_atual',
+                  label:
+                    'Mês atual',
+                },
+
+                {
+                  chave:
+                    'todos',
+                  label:
+                    'Histórico',
+                },
+
+                {
+                  chave:
+                    'receitas',
+                  label:
+                    'Receitas',
+                },
+
+                {
+                  chave:
+                    'despesas',
+                  label:
+                    'Despesas',
+                },
+
+                {
+                  chave:
+                    'pendentes',
+                  label:
+                    'Pendentes',
+                },
+              ].map((filtro) => {
+                const ativo =
+                  filtroPeriodo ===
+                  filtro.chave;
+
+                return (
+                  <button
+                    key={
+                      filtro.chave
+                    }
+                    type="button"
+                    onClick={() =>
+                      setFiltroPeriodo(
+                        filtro.chave as FiltroPeriodo
+                      )
+                    }
+                    className={`rounded-xl border px-4 py-2.5 text-[10px] font-semibold transition ${
+                      ativo
+                        ? 'border-[#E3A144]/30 bg-[#E3A144]/10 text-[#F4C77E]'
+                        : 'border-white/[0.07] bg-white/[0.02] text-[#EDEDE3]/40 hover:bg-white/[0.045]'
+                    }`}
+                  >
+                    {filtro.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="relative">
+              <svg
+                className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EDEDE3]/25"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+
+              <input
+                type="text"
+                value={busca}
+                onChange={(
+                  event
+                ) =>
+                  setBusca(
+                    event.target
+                      .value
+                  )
+                }
+                placeholder="Buscar lançamento..."
+                className="h-[44px] w-full min-w-[280px] rounded-xl border border-white/[0.08] bg-[#07110E] pl-10 pr-4 text-xs text-[#EDEDE3] outline-none placeholder:text-[#EDEDE3]/22 focus:border-[#E3A144]/35"
+              />
             </div>
           </div>
-        </div>
-      )}
+        </section>
 
-      {/* MODAL DE EDIÇÃO */}
-      {itemEditar && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-[#071f1a] border border-emerald-900/60 p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto text-slate-100">
-            <div className="flex items-center justify-between border-b border-emerald-900/50 pb-3">
-              <h3 className="text-base font-bold text-white">Editar Lançamento</h3>
-              <button onClick={() => setItemEditar(null)} className="text-emerald-300/60 hover:text-white text-sm font-bold cursor-pointer">✕</button>
+        {/* LANÇAMENTOS */}
+
+        <section className="mt-6 overflow-hidden rounded-[26px] border border-white/[0.075] bg-[#0A1713]">
+          <div className="flex flex-col gap-3 border-b border-white/[0.065] p-5 md:flex-row md:items-end md:justify-between md:p-6">
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                Movimentações
+              </p>
+
+              <h2
+                className="mt-2 text-2xl text-[#F0F0E8]"
+                style={{
+                  fontFamily:
+                    'var(--font-fraunces), serif',
+                }}
+              >
+                Lançamentos financeiros
+              </h2>
             </div>
-            <form onSubmit={salvarEdicao} className="space-y-4 text-sm">
-              <div>
-                <label className="block text-xs font-semibold text-emerald-200/80 mb-1">Descrição</label>
-                <input
-                  type="text"
-                  required
-                  value={itemEditar.descricao || itemEditar.descrição || ''}
-                  onChange={(e) => setItemEditar({ ...itemEditar, descricao: e.target.value })}
-                  className="w-full rounded-xl border border-emerald-800 bg-[#041411] px-3 py-2 outline-none focus:border-emerald-500 text-sm text-white"
-                />
-              </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-emerald-200/80 mb-1">Valor (R$)</label>
-                  <input
-                    type="text"
-                    required
-                    value={itemEditar.valor !== undefined ? itemEditar.valor : (itemEditar.Valor || '')}
-                    onChange={(e) => setItemEditar({ ...itemEditar, valor: e.target.value })}
-                    className="w-full rounded-xl border border-emerald-800 bg-[#041411] px-3 py-2 outline-none focus:border-emerald-500 text-sm font-bold text-emerald-400"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-emerald-200/80 mb-1">Categoria</label>
-                  <input
-                    type="text"
-                    required
-                    value={itemEditar.categoria || ''}
-                    onChange={(e) => setItemEditar({ ...itemEditar, categoria: e.target.value })}
-                    className="w-full rounded-xl border border-emerald-800 bg-[#041411] px-3 py-2 outline-none focus:border-emerald-500 text-sm text-white"
-                  />
+            <p className="text-[10px] text-[#EDEDE3]/30">
+              {
+                lancamentosFiltrados.length
+              }{' '}
+              de{' '}
+              {
+                lancamentos.length
+              }{' '}
+              registro
+              {lancamentos.length !==
+              1
+                ? 's'
+                : ''}
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            {carregando ? (
+              <div className="flex min-h-[330px] items-center justify-center">
+                <div className="text-center">
+                  <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/[0.08] border-t-[#E3A144]" />
+
+                  <p className="mt-4 text-xs text-[#EDEDE3]/35">
+                    Carregando financeiro...
+                  </p>
                 </div>
               </div>
-
-              <div className="grid grid-cols-2 gap-3">
+            ) : lancamentosFiltrados.length ===
+              0 ? (
+              <div className="flex min-h-[330px] items-center justify-center px-5 text-center">
                 <div>
-                  <label className="block text-xs font-semibold text-emerald-200/80 mb-1">Data</label>
-                  <input
-                    type="date"
-                    required
-                    value={itemEditar.data_vencimento || ''}
-                    onChange={(e) => setItemEditar({ ...itemEditar, data_vencimento: e.target.value })}
-                    className="w-full rounded-xl border border-emerald-800 bg-[#041411] px-3 py-2 outline-none focus:border-emerald-500 text-sm text-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-semibold text-emerald-200/80 mb-1">Status</label>
-                  <select
-                    value={itemEditar.status || itemEditar.Status || 'Recebido'}
-                    onChange={(e) => setItemEditar({ ...itemEditar, status: e.target.value })}
-                    className="w-full rounded-xl border border-emerald-800 bg-[#041411] px-3 py-2 outline-none focus:border-emerald-500 text-sm text-white"
+                  <h3
+                    className="text-2xl text-[#F0F0E8]"
+                    style={{
+                      fontFamily:
+                        'var(--font-fraunces), serif',
+                    }}
                   >
-                    <option value="Recebido" className="bg-[#041411]">Recebido</option>
-                    <option value="Pendente" className="bg-[#041411]">Pendente</option>
-                    <option value="Pago" className="bg-[#041411]">Pago</option>
-                  </select>
+                    Nenhum lançamento encontrado.
+                  </h3>
+
+                  <p className="mt-2 text-xs text-[#EDEDE3]/30">
+                    Ajuste os filtros ou
+                    registre uma nova
+                    movimentação.
+                  </p>
                 </div>
               </div>
+            ) : (
+              <table className="min-w-[1120px] w-full border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-white/[0.06] bg-white/[0.012]">
+                    {[
+                      'Data',
+                      'Tipo',
+                      'Descrição',
+                      'Categoria',
+                      'Valor',
+                      'Status',
+                      'Ações',
+                    ].map((titulo) => (
+                      <th
+                        key={titulo}
+                        className={`px-5 py-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28 ${
+                          titulo ===
+                          'Ações'
+                            ? 'text-center'
+                            : ''
+                        }`}
+                      >
+                        {titulo}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-emerald-900/50">
+                <tbody className="divide-y divide-white/[0.055]">
+                  {lancamentosFiltrados.map(
+                    (
+                      item,
+                      index
+                    ) => {
+                      const tipo =
+                        normalizarTipo(
+                          item.tipo
+                        );
+
+                      const status =
+                        obterStatus(
+                          item
+                        );
+
+                      const valor =
+                        obterValor(
+                          item
+                        );
+
+                      return (
+                        <tr
+                          key={
+                            item.id ||
+                            index
+                          }
+                          className="transition hover:bg-white/[0.018]"
+                        >
+                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
+                            {formatarData(
+                              item.data_vencimento
+                            )}
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <span
+                              className={`rounded-full border px-2.5 py-1 text-[9px] font-semibold ${tipoClasses(
+                                tipo
+                              )}`}
+                            >
+                              {tipo ===
+                              'receita'
+                                ? 'Receita'
+                                : 'Despesa'}
+                            </span>
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <p className="text-xs font-semibold text-[#EDEDE3]/82">
+                              {obterDescricao(
+                                item
+                              ) ||
+                                '—'}
+                            </p>
+                          </td>
+
+                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
+                            {item.categoria ||
+                              '—'}
+                          </td>
+
+                          <td
+                            className={`px-5 py-4 text-xs font-semibold ${
+                              tipo ===
+                              'receita'
+                                ? 'text-emerald-300'
+                                : 'text-red-300'
+                            }`}
+                          >
+                            {tipo ===
+                            'receita'
+                              ? '+ '
+                              : '− '}
+
+                            {formatarMoeda(
+                              valor
+                            )}
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <span
+                              className={`rounded-full border px-2.5 py-1 text-[9px] font-semibold ${statusClasses(
+                                status
+                              )}`}
+                            >
+                              {status}
+                            </span>
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                type="button"
+                                title="Visualizar"
+                                onClick={() =>
+                                  setItemVisualizar(
+                                    item
+                                  )
+                                }
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-[#E3A144]/20 hover:text-[#E3A144]"
+                              >
+                                <svg
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"
+                                  />
+
+                                  <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="3"
+                                  />
+                                </svg>
+                              </button>
+
+                              <button
+                                type="button"
+                                title="Editar"
+                                onClick={() =>
+                                  abrirEdicao(
+                                    item
+                                  )
+                                }
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-sky-400/20 hover:text-sky-300"
+                              >
+                                ✎
+                              </button>
+
+                              <button
+                                type="button"
+                                title="Excluir"
+                                onClick={() =>
+                                  setItemExcluir(
+                                    item
+                                  )
+                                }
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-red-400/20 hover:text-red-300"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </section>
+      </main>
+
+      {/* VISUALIZAÇÃO */}
+
+      {itemVisualizar && (() => {
+        const tipo =
+          normalizarTipo(
+            itemVisualizar.tipo
+          );
+
+        const status =
+          obterStatus(
+            itemVisualizar
+          );
+
+        return (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-[620px] overflow-hidden rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
+              <div className="flex items-start justify-between gap-5 border-b border-white/[0.07] px-6 py-5">
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                    Detalhes financeiros
+                  </p>
+
+                  <h3
+                    className="mt-2 text-2xl text-[#F0F0E8]"
+                    style={{
+                      fontFamily:
+                        'var(--font-fraunces), serif',
+                    }}
+                  >
+                    {obterDescricao(
+                      itemVisualizar
+                    ) ||
+                      'Lançamento'}
+                  </h3>
+                </div>
+
                 <button
                   type="button"
-                  onClick={() => setItemEditar(null)}
-                  className="px-4 py-2 rounded-xl border border-emerald-800 text-emerald-200 hover:bg-emerald-900/40 font-semibold text-xs transition cursor-pointer select-none"
+                  onClick={() =>
+                    setItemVisualizar(
+                      null
+                    )
+                  }
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] text-[#EDEDE3]/45"
                 >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={salvandoEdicao}
-                  className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-semibold text-xs transition shadow-sm cursor-pointer select-none disabled:opacity-50"
-                >
-                  {salvandoEdicao ? 'Salvando...' : 'Salvar Alterações'}
+                  ✕
                 </button>
               </div>
-            </form>
-          </div>
-        </div>
-      )}
 
-      {/* MODAL DE EXCLUSÃO */}
-      {itemExcluir && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl bg-[#071f1a] border border-emerald-900/60 p-6 shadow-2xl space-y-4 text-center text-slate-100">
-            <div className="w-10 h-10 bg-rose-950/60 text-rose-400 rounded-full flex items-center justify-center mx-auto border border-rose-800/40">
-              <svg className="w-5 h-5 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
+              <div className="grid gap-3 p-6 sm:grid-cols-2">
+                {[
+                  {
+                    label:
+                      'Tipo',
+                    valor:
+                      tipo ===
+                      'receita'
+                        ? 'Receita'
+                        : 'Despesa',
+                  },
+
+                  {
+                    label:
+                      'Valor',
+                    valor:
+                      formatarMoeda(
+                        obterValor(
+                          itemVisualizar
+                        )
+                      ),
+                  },
+
+                  {
+                    label:
+                      'Categoria',
+                    valor:
+                      itemVisualizar.categoria ||
+                      'Não informada',
+                  },
+
+                  {
+                    label:
+                      'Vencimento',
+                    valor:
+                      formatarData(
+                        itemVisualizar.data_vencimento
+                      ),
+                  },
+
+                  {
+                    label:
+                      'Status',
+                    valor:
+                      status,
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-2xl border border-white/[0.065] bg-white/[0.018] p-4"
+                  >
+                    <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28">
+                      {item.label}
+                    </p>
+
+                    <p className="mt-2 text-xs font-medium text-[#EDEDE3]/72">
+                      {item.valor}
+                    </p>
+                  </div>
+                ))}
+              </div>
+
+              <div className="flex justify-end border-t border-white/[0.07] px-6 py-4">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setItemVisualizar(
+                      null
+                    )
+                  }
+                  className="rounded-xl bg-[#E3A144] px-5 py-2.5 text-xs font-bold text-[#07130F]"
+                >
+                  Fechar
+                </button>
+              </div>
             </div>
-            <div className="space-y-1">
-              <h3 className="text-base font-bold text-white">Confirmação de Exclusão</h3>
-              <p className="text-xs text-emerald-200/70">
-                Tem certeza que deseja excluir o registro de{' '}
-                <span className="font-semibold text-white">
-                  {itemExcluir.descricao || itemExcluir.descrição || 'Lançamento'}
-                </span>
-                ? Esta ação é irreversível.
-              </p>
-            </div>
-            <div className="flex justify-center gap-2 pt-2">
-              <button
-                type="button"
-                onClick={() => setItemExcluir(null)}
-                className="px-4 py-2 rounded-xl border border-emerald-800 text-emerald-200 hover:bg-emerald-900/40 font-semibold text-xs transition cursor-pointer select-none"
+          </div>
+        );
+      })()}
+
+      {/* EDIÇÃO */}
+
+      {itemEditar && (() => {
+        const tipo =
+          normalizarTipo(
+            itemEditar.tipo
+          );
+
+        const status =
+          obterStatus(
+            itemEditar
+          );
+
+        return (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+            <div className="max-h-[92vh] w-full max-w-[680px] overflow-y-auto rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
+              <div className="flex items-start justify-between gap-5 border-b border-white/[0.07] px-6 py-5">
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                    Financeiro • Edição
+                  </p>
+
+                  <h3
+                    className="mt-2 text-2xl text-[#F0F0E8]"
+                    style={{
+                      fontFamily:
+                        'var(--font-fraunces), serif',
+                    }}
+                  >
+                    Editar lançamento
+                  </h3>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setItemEditar(
+                      null
+                    )
+                  }
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] text-[#EDEDE3]/45"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <form
+                onSubmit={
+                  salvarEdicao
+                }
+                className="space-y-5 p-6"
               >
-                Cancelar
-              </button>
+                <div>
+                  <label
+                    className={
+                      labelClass
+                    }
+                  >
+                    Natureza
+                  </label>
+
+                  <div
+                    className={`inline-flex rounded-full border px-3 py-1.5 text-[10px] font-semibold ${tipoClasses(
+                      tipo
+                    )}`}
+                  >
+                    {tipo ===
+                    'receita'
+                      ? 'Receita'
+                      : 'Despesa'}
+                  </div>
+                </div>
+
+                <div>
+                  <label
+                    className={
+                      labelClass
+                    }
+                  >
+                    Descrição *
+                  </label>
+
+                  <input
+                    type="text"
+                    required
+                    value={
+                      itemEditar.descricao ||
+                      itemEditar.descrição ||
+                      ''
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setItemEditar({
+                        ...itemEditar,
+
+                        descricao:
+                          event.target
+                            .value,
+                      })
+                    }
+                    className={
+                      inputClass
+                    }
+                  />
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label
+                      className={
+                        labelClass
+                      }
+                    >
+                      Valor (R$) *
+                    </label>
+
+                    <input
+                      type="text"
+                      inputMode="decimal"
+                      required
+                      value={
+                        valorEdicao
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        setValorEdicao(
+                          event.target
+                            .value
+                        )
+                      }
+                      placeholder="Ex.: 3.500"
+                      className={
+                        inputClass
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      className={
+                        labelClass
+                      }
+                    >
+                      Categoria
+                    </label>
+
+                    <input
+                      type="text"
+                      value={
+                        itemEditar.categoria ||
+                        ''
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        setItemEditar({
+                          ...itemEditar,
+
+                          categoria:
+                            event.target
+                              .value,
+                        })
+                      }
+                      className={
+                        inputClass
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label
+                      className={
+                        labelClass
+                      }
+                    >
+                      Data de vencimento *
+                    </label>
+
+                    <input
+                      type="date"
+                      required
+                      value={
+                        itemEditar.data_vencimento
+                          ?.split(
+                            'T'
+                          )[0] ||
+                        ''
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        setItemEditar({
+                          ...itemEditar,
+
+                          data_vencimento:
+                            event.target
+                              .value,
+                        })
+                      }
+                      className={
+                        inputClass
+                      }
+                    />
+                  </div>
+
+                  <div>
+                    <label
+                      className={
+                        labelClass
+                      }
+                    >
+                      Status
+                    </label>
+
+                    <select
+                      value={status}
+                      onChange={(
+                        event
+                      ) =>
+                        setItemEditar({
+                          ...itemEditar,
+
+                          status:
+                            event.target
+                              .value,
+                        })
+                      }
+                      className={
+                        inputClass
+                      }
+                    >
+                      {tipo ===
+                      'receita' ? (
+                        <>
+                          <option value="Recebido">
+                            Recebido
+                          </option>
+
+                          <option value="Pendente">
+                            Pendente
+                          </option>
+                        </>
+                      ) : (
+                        <>
+                          <option value="Pago">
+                            Pago
+                          </option>
+
+                          <option value="Pendente">
+                            Pendente
+                          </option>
+                        </>
+                      )}
+                    </select>
+                  </div>
+                </div>
+
+                <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-5 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setItemEditar(
+                        null
+                      )
+                    }
+                    className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/55"
+                  >
+                    Cancelar
+                  </button>
+
+                  <button
+                    type="submit"
+                    disabled={
+                      salvandoEdicao
+                    }
+                    className="rounded-xl bg-[#E3A144] px-6 py-3 text-xs font-bold text-[#07130F] disabled:opacity-50"
+                  >
+                    {salvandoEdicao
+                      ? 'Salvando...'
+                      : 'Salvar alterações'}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* EXCLUSÃO */}
+
+      {itemExcluir && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-[430px] rounded-[26px] border border-white/[0.09] bg-[#091510] p-6 text-center">
+            <h3
+              className="text-2xl text-[#F0F0E8]"
+              style={{
+                fontFamily:
+                  'var(--font-fraunces), serif',
+              }}
+            >
+              Excluir lançamento?
+            </h3>
+
+            <p className="mt-3 text-xs leading-6 text-[#EDEDE3]/38">
+              O lançamento{' '}
+              <strong className="text-[#EDEDE3]/70">
+                {obterDescricao(
+                  itemExcluir
+                ) ||
+                  'selecionado'}
+              </strong>{' '}
+              será removido
+              permanentemente.
+            </p>
+
+            <div className="mt-6 grid grid-cols-2 gap-3">
               <button
                 type="button"
                 disabled={excluindo}
-                onClick={confirmarExclusao}
-                className="px-4 py-2 rounded-xl bg-rose-700 hover:bg-rose-600 text-white font-semibold text-xs transition shadow-sm cursor-pointer select-none disabled:opacity-50"
+                onClick={() =>
+                  setItemExcluir(null)
+                }
+                className="rounded-xl border border-white/[0.09] bg-white/[0.025] px-4 py-3 text-xs font-semibold text-[#EDEDE3]/60"
               >
-                {excluindo ? 'Excluindo...' : 'Sim, Excluir'}
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                disabled={excluindo}
+                onClick={
+                  confirmarExclusao
+                }
+                className="rounded-xl border border-red-500/20 bg-red-500/[0.1] px-4 py-3 text-xs font-semibold text-red-300 disabled:opacity-50"
+              >
+                {excluindo
+                  ? 'Excluindo...'
+                  : 'Excluir'}
               </button>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }

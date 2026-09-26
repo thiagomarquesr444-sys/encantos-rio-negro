@@ -1,529 +1,1330 @@
 'use client';
 
-import React, { useEffect, useState, MouseEvent } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabase";
-import { BANNER_REGIONAL } from "@/lib/bannerImagens";
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+
+import { useRouter } from 'next/navigation';
+
+import { supabase } from '@/lib/supabase';
 
 interface Passeio {
   id?: string;
+
   nome: string;
-  categoria?: string;
-  duracao?: string;
-  preco?: number | string;
-  vagas?: number | string;
-  descricao?: string;
+
+  categoria?: string | null;
+  duracao?: string | null;
+
+  valor?: number | string | null;
+
+  /*
+    Compatibilidade com registros
+    antigos que possam usar "preco".
+  */
+  preco?: number | string | null;
+
+  vagas?: number | string | null;
+
+  descricao?: string | null;
+
+  cidade?: string | null;
+
+  foto_url?: string | null;
+
+  destaque?: boolean | null;
+
+  situacao?: string | null;
+
   created_at?: string;
+}
+
+function converterValor(
+  valor:
+    | number
+    | string
+    | null
+    | undefined
+): number {
+  if (
+    valor === null ||
+    valor === undefined ||
+    valor === ''
+  ) {
+    return 0;
+  }
+
+  if (typeof valor === 'number') {
+    return Number.isFinite(valor)
+      ? valor
+      : 0;
+  }
+
+  let texto = String(valor)
+    .trim()
+    .replace(/\s/g, '')
+    .replace(/R\$/gi, '');
+
+  if (!texto) {
+    return 0;
+  }
+
+  /*
+    Padrão escolhido:
+
+    3500  -> 3500
+    3.500 -> 3500
+
+    Também preservamos decimal
+    quando já vier corretamente
+    armazenado pelo banco.
+  */
+
+  if (
+    /^\d{1,3}(\.\d{3})+$/.test(
+      texto
+    )
+  ) {
+    texto = texto.replace(
+      /\./g,
+      ''
+    );
+  }
+
+  const numero = Number(
+    texto.replace(',', '.')
+  );
+
+  return Number.isFinite(numero)
+    ? numero
+    : 0;
+}
+
+function formatarMoeda(
+  valor:
+    | number
+    | string
+    | null
+    | undefined
+) {
+  return converterValor(
+    valor
+  ).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  });
+}
+
+function obterValorPasseio(
+  passeio: Passeio
+) {
+  /*
+    O cadastro atual grava "valor".
+
+    "preco" permanece somente como
+    fallback para registros antigos.
+  */
+
+  if (
+    passeio.valor !== undefined &&
+    passeio.valor !== null
+  ) {
+    return converterValor(
+      passeio.valor
+    );
+  }
+
+  return converterValor(
+    passeio.preco
+  );
 }
 
 export default function PasseiosPage() {
   const router = useRouter();
-  const [passeios, setPasseios] = useState<Passeio[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [busca, setBusca] = useState("");
-  const [filtroCategoria, setFiltroCategoria] = useState("");
-  const [mensagemSucesso, setMensagemSucesso] = useState("");
 
-  // Estado para o modal de visualização / edição rápida
-  const [passeioSelecionado, setPasseioSelecionado] = useState<Passeio | null>(null);
-  const [modoEdicao, setModoEdicao] = useState(false);
-  const [salvando, setSalvando] = useState(false);
+  const [
+    passeios,
+    setPasseios,
+  ] = useState<Passeio[]>([]);
 
-  const fetchPasseios = async () => {
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
+
+  const [
+    busca,
+    setBusca,
+  ] = useState('');
+
+  const [
+    filtroCategoria,
+    setFiltroCategoria,
+  ] = useState('');
+
+  const [
+    mensagemSucesso,
+    setMensagemSucesso,
+  ] = useState('');
+
+  const [
+    mensagemErro,
+    setMensagemErro,
+  ] = useState('');
+
+  const [
+    passeioSelecionado,
+    setPasseioSelecionado,
+  ] =
+    useState<Passeio | null>(
+      null
+    );
+
+  const [
+    modoEdicao,
+    setModoEdicao,
+  ] = useState(false);
+
+  const [
+    salvando,
+    setSalvando,
+  ] = useState(false);
+
+  const [
+    idParaExcluir,
+    setIdParaExcluir,
+  ] = useState<string | null>(
+    null
+  );
+
+  /*
+    ============================================================
+    CARREGAMENTO
+    ============================================================
+  */
+
+  async function fetchPasseios() {
     setLoading(true);
+    setMensagemErro('');
+
     try {
-      const { data, error } = await supabase
-        .from("passeios")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const {
+        data,
+        error,
+      } = await supabase
+        .from('passeios')
+        .select('*')
+        .order('created_at', {
+          ascending: false,
+        });
 
       if (error) {
-        console.error("Erro ao carregar passeios:", error.message);
-      } else if (data) {
-        setPasseios(data as Passeio[]);
+        throw error;
       }
-    } catch (err) {
-      console.error("Erro de conexão com o Supabase:", err);
+
+      setPasseios(
+        (data || []) as Passeio[]
+      );
+    } catch (error) {
+      console.error(
+        'Erro ao carregar passeios:',
+        error
+      );
+
+      setMensagemErro(
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível carregar os passeios.'
+      );
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   useEffect(() => {
     fetchPasseios();
   }, []);
 
-  const mostrarMensagem = (msg: string) => {
-    setMensagemSucesso(msg);
+  function mostrarMensagem(
+    mensagem: string
+  ) {
+    setMensagemSucesso(
+      mensagem
+    );
+
     setTimeout(() => {
-      setMensagemSucesso("");
-    }, 3000);
-  };
+      setMensagemSucesso('');
+    }, 2500);
+  }
 
-  const formatarPrecoExibicao = (preco?: number | string) => {
-    if (preco === undefined || preco === null) return "R$ 0,00";
-    let valorNum = Number(String(preco).replace(',', '.'));
-    if (isNaN(valorNum)) return "R$ 0,00";
+  /*
+    ============================================================
+    MÉTRICAS
+    ============================================================
+  */
 
-    if (valorNum > 0 && valorNum < 1000) {
-      valorNum = valorNum * 1000;
+  const totalPasseios =
+    passeios.length;
+
+  const totalVagas =
+    passeios.reduce(
+      (total, passeio) => {
+        const vagas =
+          Number(passeio.vagas);
+
+        return (
+          total +
+          (Number.isFinite(vagas)
+            ? vagas
+            : 0)
+        );
+      },
+      0
+    );
+
+  const categoriasUnicas =
+    Array.from(
+      new Set(
+        passeios
+          .map((p) =>
+            p.categoria?.trim()
+          )
+          .filter(
+            (
+              categoria
+            ): categoria is string =>
+              Boolean(categoria)
+          )
+      )
+    ).sort();
+
+  const precoMedio =
+    totalPasseios > 0
+      ? passeios.reduce(
+          (total, passeio) =>
+            total +
+            obterValorPasseio(
+              passeio
+            ),
+          0
+        ) / totalPasseios
+      : 0;
+
+  const ativos =
+    passeios.filter(
+      (passeio) =>
+        (
+          passeio.situacao ||
+          'Ativo'
+        ).toLowerCase() ===
+        'ativo'
+    ).length;
+
+  /*
+    ============================================================
+    FILTRO
+    ============================================================
+  */
+
+  const passeiosFiltrados =
+    useMemo(() => {
+      const termo = busca
+        .trim()
+        .toLowerCase();
+
+      return passeios.filter(
+        (passeio) => {
+          const atendeBusca =
+            !termo ||
+            passeio.nome
+              ?.toLowerCase()
+              .includes(termo) ||
+            passeio.categoria
+              ?.toLowerCase()
+              .includes(termo) ||
+            passeio.cidade
+              ?.toLowerCase()
+              .includes(termo);
+
+          const atendeCategoria =
+            !filtroCategoria ||
+            (
+              passeio.categoria ||
+              ''
+            ).toLowerCase() ===
+              filtroCategoria.toLowerCase();
+
+          return (
+            atendeBusca &&
+            atendeCategoria
+          );
+        }
+      );
+    }, [
+      passeios,
+      busca,
+      filtroCategoria,
+    ]);
+
+  /*
+    ============================================================
+    EDIÇÃO
+    ============================================================
+  */
+
+  async function handleSalvarEdicao(
+    event: React.FormEvent
+  ) {
+    event.preventDefault();
+
+    if (
+      !passeioSelecionado?.id
+    ) {
+      return;
     }
 
-    return valorNum.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-  };
+    if (
+      !passeioSelecionado.nome.trim()
+    ) {
+      setMensagemErro(
+        'Informe o nome do passeio.'
+      );
 
-  // Excluir passeio
-  const handleExcluir = async (id?: string) => {
-    if (!id) return;
-    if (!confirm("Tem certeza que deseja excluir este passeio?")) return;
-
-    try {
-      const { error } = await supabase.from("passeios").delete().eq("id", id);
-      if (error) throw error;
-      mostrarMensagem("Passeio excluído com sucesso!");
-      fetchPasseios();
-    } catch (err: any) {
-      alert("Erro ao excluir: " + err.message);
+      return;
     }
-  };
 
-  // Salvar edição rápida corrigindo o bug do input number travado em 0
-  const handleSalvarEdicao = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!passeioSelecionado?.id) return;
+    const valorNumerico =
+      obterValorPasseio(
+        passeioSelecionado
+      );
+
+    const vagasNumericas =
+      Number(
+        passeioSelecionado.vagas ||
+          0
+      );
 
     setSalvando(true);
+    setMensagemErro('');
+
     try {
-      const precoNumerico = passeioSelecionado.preco === '' || passeioSelecionado.preco === undefined ? 0 : Number(String(passeioSelecionado.preco).replace(',', '.'));
-      const vagasNumericas = passeioSelecionado.vagas === '' || passeioSelecionado.vagas === undefined ? 0 : Number(passeioSelecionado.vagas);
+      /*
+        O cadastro novo já usa "valor".
 
-      const { error } = await supabase
-        .from("passeios")
-        .update({
-          nome: passeioSelecionado.nome,
-          categoria: passeioSelecionado.categoria,
-          duracao: passeioSelecionado.duracao,
-          preco: isNaN(precoNumerico) ? 0 : precoNumerico,
-          vagas: isNaN(vagasNumericas) ? 0 : vagasNumericas,
-          descricao: passeioSelecionado.descricao,
-        })
-        .eq("id", passeioSelecionado.id);
+        Portanto, a edição passa a
+        atualizar o mesmo campo.
+      */
 
-      if (error) throw error;
+      const payload = {
+        nome:
+          passeioSelecionado.nome.trim(),
 
-      mostrarMensagem("Passeio atualizado com sucesso!");
-      setPasseioSelecionado(null);
+        categoria:
+          passeioSelecionado.categoria?.trim() ||
+          null,
+
+        duracao:
+          passeioSelecionado.duracao?.trim() ||
+          null,
+
+        valor:
+          valorNumerico,
+
+        vagas:
+          Number.isFinite(
+            vagasNumericas
+          )
+            ? vagasNumericas
+            : 0,
+
+        descricao:
+          passeioSelecionado.descricao?.trim() ||
+          null,
+      };
+
+      const { error } =
+        await supabase
+          .from('passeios')
+          .update(payload)
+          .eq(
+            'id',
+            passeioSelecionado.id
+          );
+
+      if (error) {
+        throw error;
+      }
+
+      setPasseioSelecionado(
+        null
+      );
+
       setModoEdicao(false);
-      fetchPasseios();
-    } catch (err: any) {
-      alert("Erro ao atualizar: " + err.message);
+
+      mostrarMensagem(
+        'Passeio atualizado com sucesso.'
+      );
+
+      await fetchPasseios();
+    } catch (error) {
+      console.error(
+        'Erro ao atualizar passeio:',
+        error
+      );
+
+      setMensagemErro(
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível atualizar o passeio.'
+      );
     } finally {
       setSalvando(false);
     }
-  };
+  }
 
-  // Filtros dinâmicos combinados com a categoria dos cards
-  const passeiosFiltrados = passeios.filter((p) => {
-    const termo = busca.toLowerCase();
-    const atendeBusca =
-      p.nome?.toLowerCase().includes(termo) ||
-      p.categoria?.toLowerCase().includes(termo);
+  /*
+    ============================================================
+    EXCLUSÃO
+    ============================================================
+  */
 
-    const atendeCategoria = filtroCategoria 
-      ? (p.categoria || "").toLowerCase() === filtroCategoria.toLowerCase() 
-      : true;
-
-    return atendeBusca && atendeCategoria;
-  });
-
-  // Métricas para os cards interativos
-  const totalPasseios = passeios.length;
-  const totalVagas = passeios.reduce((acc, curr) => acc + (Number(curr.vagas) || 0), 0);
-  const categoriasUnicas = Array.from(new Set(passeios.map((p) => p.categoria).filter(Boolean)));
-  
-  const precoMedio = totalPasseios > 0 
-    ? (passeios.reduce((acc, curr) => {
-        let pVal = Number(String(curr.preco || 0).replace(',', '.'));
-        if (pVal > 0 && pVal < 1000) pVal = pVal * 1000;
-        return acc + pVal;
-      }, 0) / totalPasseios)
-    : 0;
-
-  const handleCardClick = (tipoFiltro: string, valorFiltro: string) => {
-    if (tipoFiltro === 'categoria') {
-      if (filtroCategoria === valorFiltro) {
-        setFiltroCategoria('');
-      } else {
-        setFiltroCategoria(valorFiltro);
-      }
-    } else {
-      setFiltroCategoria('');
+  async function executarExclusao() {
+    if (!idParaExcluir) {
+      return;
     }
-  };
+
+    try {
+      const { error } =
+        await supabase
+          .from('passeios')
+          .delete()
+          .eq(
+            'id',
+            idParaExcluir
+          );
+
+      if (error) {
+        throw error;
+      }
+
+      setIdParaExcluir(null);
+
+      mostrarMensagem(
+        'Passeio excluído com sucesso.'
+      );
+
+      await fetchPasseios();
+    } catch (error) {
+      setMensagemErro(
+        error instanceof Error
+          ? error.message
+          : 'Não foi possível excluir o passeio.'
+      );
+    }
+  }
 
   const cards = [
     {
-      titulo: "Total de Passeios",
-      valor: loading ? "..." : String(totalPasseios),
-      detalhe: "Clique para exibir todos",
-      cor: "border-l-4 border-l-emerald-400 text-white",
-      tipoFiltro: "geral",
-      valorFiltro: "",
+      titulo: 'Passeios',
+      valor: loading
+        ? '—'
+        : String(
+            totalPasseios
+          ),
+      detalhe:
+        'registros no catálogo',
     },
+
     {
-      titulo: "Vagas Disponíveis",
-      valor: loading ? "..." : String(totalVagas),
-      detalhe: "Capacidade total",
-      cor: "border-l-4 border-l-teal-400 text-white",
-      tipoFiltro: "geral",
-      valorFiltro: "",
+      titulo: 'Ativos',
+      valor: loading
+        ? '—'
+        : String(ativos),
+      detalhe:
+        'disponíveis na operação',
     },
+
     {
-      titulo: "Preço Médio",
-      valor: loading ? "..." : precoMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }),
-      detalhe: "Valor por pessoa",
-      cor: "border-l-4 border-l-sky-400 text-white",
-      tipoFiltro: "geral",
-      valorFiltro: "",
+      titulo: 'Capacidade',
+      valor: loading
+        ? '—'
+        : String(totalVagas),
+      detalhe:
+        'vagas cadastradas',
     },
+
     {
-      titulo: "Categorias",
-      valor: loading ? "..." : String(categoriasUnicas.length),
-      detalhe: "Clique para filtrar por categoria",
-      cor: "border-l-4 border-l-purple-400 text-white",
-      tipoFiltro: "categoria",
-      valorFiltro: categoriasUnicas[0] || "",
+      titulo: 'Preço médio',
+      valor: loading
+        ? '—'
+        : formatarMoeda(
+            precoMedio
+          ),
+      detalhe:
+        'média do catálogo',
     },
   ];
 
   return (
-    <div className="min-h-screen bg-[#071f1a] text-slate-800 flex flex-col selection:bg-emerald-500 selection:text-white pb-16">
-      
-      {/* Toast Flutuante Moderno no Topo */}
+    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+      {/* MENSAGENS */}
+
       {mensagemSucesso && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 bg-emerald-600 text-white px-6 py-3.5 rounded-2xl shadow-2xl border border-emerald-500 animate-bounce">
-          <span className="text-xl">✅</span>
-          <span className="font-semibold text-sm tracking-wide">{mensagemSucesso}</span>
+        <div className="fixed left-1/2 top-[100px] z-[80] -translate-x-1/2 rounded-2xl border border-emerald-500/20 bg-[#0B2119] px-5 py-3 text-xs font-semibold text-emerald-300 shadow-2xl">
+          {mensagemSucesso}
         </div>
       )}
 
-      {/* Hero Banner Superior */}
-      <div 
-        className="relative h-[360px] w-full overflow-hidden bg-cover bg-center shadow-2xl"
-        style={{
-          backgroundImage: `linear-gradient(rgba(7, 31, 26, 0.15) 20%, rgba(7, 31, 26, 0.98) 100%), url('${BANNER_REGIONAL.modulos.cafedaamazonia}')`,
-        }}
-      >
-        <div className="max-w-7xl mx-auto w-full h-full flex flex-col md:flex-row items-start md:items-center justify-between gap-4 px-8 relative z-10">
-          <div className="space-y-1.5 text-left">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[11px] font-bold tracking-widest uppercase mb-1 backdrop-blur-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              Roteiros & Turismo • Gestão de Catálogo
-            </span>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white drop-shadow-lg">
-              Passeios Cadastrados
+      {/* CABEÇALHO */}
+
+      <section className="border-b border-white/[0.07] bg-[#091510]">
+        <div className="mx-auto flex max-w-[1360px] flex-col gap-8 px-5 py-10 md:px-8 md:py-12 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <span className="h-px w-8 bg-[#E3A144]" />
+
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
+                Operação • Passeios
+              </span>
+            </div>
+
+            <h1
+              className="mt-4 text-4xl leading-none tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
+              style={{
+                fontFamily:
+                  'var(--font-fraunces), serif',
+              }}
+            >
+              Passeios
             </h1>
-            <p className="text-emerald-100/95 text-sm md:text-base font-medium drop-shadow-md max-w-2xl leading-relaxed">
-              Gerencie roteiros, preços e capacidade de vagas oferecidas pela operadora em <span className="text-emerald-300 font-semibold">Barcelos, Capital do Tucunaré</span>.
+
+            <p className="mt-4 max-w-[700px] text-sm leading-7 text-[#EDEDE3]/42">
+              Organize experiências,
+              preços, capacidade e
+              informações operacionais
+              do catálogo da empresa.
             </p>
           </div>
 
-          <div className="flex items-center gap-3 flex-shrink-0">
+          <div className="flex flex-col gap-3 sm:flex-row">
             <button
-              onClick={fetchPasseios}
-              className="inline-flex items-center gap-2 bg-[#072a25] hover:bg-emerald-900/60 text-emerald-200 font-semibold text-sm px-5 py-3 rounded-xl transition-all border border-emerald-700/30 cursor-pointer"
+              type="button"
+              onClick={
+                fetchPasseios
+              }
+              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.055]"
             >
-              🔄 Sincronizar
+              ↻ Atualizar
             </button>
+
             <button
-              onClick={() => router.push('/passeios/novo')}
-              className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm px-6 py-3 rounded-xl shadow-lg hover:shadow-emerald-900/50 transition-all border border-emerald-400/40 transform hover:-translate-y-0.5 cursor-pointer select-none"
-              style={{ WebkitUserDrag: 'none' } as React.CSSProperties}
+              type="button"
+              onClick={() =>
+                router.push(
+                  '/passeios/novo'
+                )
+              }
+              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl bg-[#E3A144] px-6 text-sm font-bold text-[#07130F] transition hover:-translate-y-0.5 hover:bg-[#F0B35C]"
             >
-              <span className="text-base font-bold">+</span> Novo Passeio
+              <span className="text-lg">
+                +
+              </span>
+
+              Novo passeio
             </button>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="p-8 max-w-7xl mx-auto w-full -mt-6 z-10 flex-1 space-y-6">
-        
-          {/* Cards Resumo Estilizados e Interativos */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {cards.map((card) => {
-              const isAtivo = card.tipoFiltro === 'categoria' 
-                ? (card.valorFiltro !== '' && filtroCategoria === card.valorFiltro)
-                : false;
+      <main className="mx-auto max-w-[1360px] px-5 py-8 md:px-8 md:py-10">
+        {mensagemErro && (
+          <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-red-300">
+            <span>
+              {mensagemErro}
+            </span>
 
-              return (
-                <div
-                  key={card.titulo}
-                  onClick={() => handleCardClick(card.tipoFiltro, card.valorFiltro)}
-                  className={`bg-[#041c17] rounded-2xl p-6 shadow-xl border border-emerald-900/60 ${card.cor} transition-all duration-200 cursor-pointer hover:-translate-y-1 hover:shadow-2xl hover:border-emerald-700/80 ${
-                    isAtivo ? 'ring-2 ring-emerald-400 bg-[#062923]' : ''
-                  }`}
-                >
-                  <p className="text-xs font-bold uppercase tracking-wider text-emerald-400/80">{card.titulo}</p>
-                  <p className="mt-4 text-2xl lg:text-3xl font-extrabold text-white tracking-tight truncate">{card.valor}</p>
-                  <p className="mt-2 text-xs font-medium underline text-emerald-300">
-                    {card.detalhe}
-                  </p>
-                </div>
-              );
-            })}
+            <button
+              type="button"
+              onClick={() =>
+                setMensagemErro('')
+              }
+            >
+              ✕
+            </button>
           </div>
+        )}
 
-          {/* Tabela + Filtros Integrados */}
-          <div className="bg-[#041c17] rounded-3xl border border-emerald-900/60 p-6 shadow-xl text-slate-100">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b border-emerald-900/50 pb-6">
-              <div className="flex-1">
-                <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
-                  Catálogo de Passeios {filtroCategoria && <span className="text-xs font-semibold text-emerald-300 bg-emerald-950/80 border border-emerald-700/50 px-3 py-1 rounded-full">Filtrando por: {filtroCategoria}</span>}
+        {/* INDICADORES */}
+
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {cards.map((card) => (
+            <div
+              key={card.titulo}
+              className="rounded-[22px] border border-white/[0.075] bg-[#0A1713] p-5"
+            >
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+                {card.titulo}
+              </p>
+
+              <strong
+                className={`mt-5 block font-medium tracking-[-0.04em] text-[#F0F0E8] ${
+                  card.titulo ===
+                  'Preço médio'
+                    ? 'text-2xl md:text-3xl'
+                    : 'text-4xl'
+                }`}
+                style={{
+                  fontFamily:
+                    'var(--font-fraunces), serif',
+                }}
+              >
+                {card.valor}
+              </strong>
+
+              <p className="mt-2 text-[11px] text-[#EDEDE3]/28">
+                {card.detalhe}
+              </p>
+            </div>
+          ))}
+        </div>
+
+        {/* CATÁLOGO */}
+
+        <section className="mt-6 overflow-hidden rounded-[26px] border border-white/[0.075] bg-[#0A1713]">
+          <div className="border-b border-white/[0.065] p-5 md:p-6">
+            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                  Catálogo operacional
+                </p>
+
+                <h2
+                  className="mt-2 text-2xl text-[#F0F0E8]"
+                  style={{
+                    fontFamily:
+                      'var(--font-fraunces), serif',
+                  }}
+                >
+                  Experiências cadastradas
                 </h2>
-                <p className="mt-1 text-xs text-emerald-200/80">
-                  Pesquise por nome do passeio ou categoria em tempo real.
+
+                <p className="mt-2 text-xs text-[#EDEDE3]/30">
+                  {
+                    passeiosFiltrados.length
+                  }{' '}
+                  de{' '}
+                  {passeios.length}{' '}
+                  passeio
+                  {passeios.length !==
+                  1
+                    ? 's'
+                    : ''}
                 </p>
               </div>
 
-              <div className="flex flex-col gap-3 md:flex-row">
-                <input
-                  type="text"
-                  placeholder="Pesquisar passeio..."
-                  value={busca}
-                  onChange={(e) => setBusca(e.target.value)}
-                  className="rounded-xl border border-emerald-900/60 bg-[#072a25] px-4 py-2.5 text-xs text-white placeholder-emerald-300/50 outline-none focus:border-emerald-500"
-                />
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="relative">
+                  <svg
+                    className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EDEDE3]/25"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+
+                  <input
+                    type="text"
+                    placeholder="Buscar passeio..."
+                    value={busca}
+                    onChange={(
+                      event
+                    ) =>
+                      setBusca(
+                        event.target
+                          .value
+                      )
+                    }
+                    className="h-[44px] min-w-[260px] rounded-xl border border-white/[0.08] bg-[#07110E] pl-10 pr-4 text-xs text-[#EDEDE3] outline-none placeholder:text-[#EDEDE3]/22 focus:border-[#E3A144]/35"
+                  />
+                </div>
 
                 <select
-                  value={filtroCategoria}
-                  onChange={(e) => setFiltroCategoria(e.target.value)}
-                  className="rounded-xl border border-emerald-900/60 bg-[#072a25] px-4 py-2.5 text-xs text-white outline-none focus:border-emerald-500"
+                  value={
+                    filtroCategoria
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setFiltroCategoria(
+                      event.target
+                        .value
+                    )
+                  }
+                  className="h-[44px] rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-xs text-[#EDEDE3]/70 outline-none focus:border-[#E3A144]/35"
                 >
-                  <option value="">Todas as Categorias</option>
-                  {categoriasUnicas.map((cat) => (
-                    <option key={cat} value={cat}>
-                      {cat}
-                    </option>
-                  ))}
+                  <option value="">
+                    Todas as categorias
+                  </option>
+
+                  {categoriasUnicas.map(
+                    (categoria) => (
+                      <option
+                        key={
+                          categoria
+                        }
+                        value={
+                          categoria
+                        }
+                      >
+                        {categoria}
+                      </option>
+                    )
+                  )}
                 </select>
               </div>
             </div>
+          </div>
 
-            <div className="mt-6 overflow-x-auto min-h-[300px]">
-              {loading ? (
-                <div className="p-12 text-center text-emerald-400 font-medium">
-                  Carregando passeios do banco de dados...
+          <div className="overflow-x-auto">
+            {loading ? (
+              <div className="flex min-h-[330px] items-center justify-center">
+                <div className="text-center">
+                  <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/[0.08] border-t-[#E3A144]" />
+
+                  <p className="mt-4 text-xs text-[#EDEDE3]/35">
+                    Carregando passeios...
+                  </p>
                 </div>
-              ) : passeiosFiltrados.length === 0 ? (
-                <div className="p-12 text-center text-emerald-300/70 font-medium">
-                  Nenhum passeio encontrado com os filtros selecionados.
+              </div>
+            ) : passeiosFiltrados.length ===
+              0 ? (
+              <div className="flex min-h-[330px] items-center justify-center px-5 text-center">
+                <div>
+                  <h3
+                    className="text-2xl text-[#F0F0E8]"
+                    style={{
+                      fontFamily:
+                        'var(--font-fraunces), serif',
+                    }}
+                  >
+                    Nenhum passeio encontrado.
+                  </h3>
+
+                  <p className="mt-2 text-xs text-[#EDEDE3]/30">
+                    Ajuste os filtros ou
+                    cadastre uma nova
+                    experiência.
+                  </p>
                 </div>
-              ) : (
-                <table className="min-w-[900px] w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-emerald-900/60 text-emerald-400 text-xs uppercase tracking-wider">
-                      <th className="px-4 py-3 font-bold">Nome do Passeio</th>
-                      <th className="px-4 py-3 font-bold">Categoria</th>
-                      <th className="px-4 py-3 font-bold">Duração</th>
-                      <th className="px-4 py-3 font-bold">Preço</th>
-                      <th className="px-4 py-3 font-bold text-center">Vagas</th>
-                      <th className="px-4 py-3 font-bold text-center">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-emerald-950/60">
-                    {passeiosFiltrados.map((item, idx) => (
-                      <tr key={item.id || idx} className="hover:bg-[#072a25]/50 transition-colors">
-                        <td className="px-4 py-3.5 text-xs font-semibold text-white">
-                          {item.nome}
+              </div>
+            ) : (
+              <table className="min-w-[1050px] w-full border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-white/[0.06] bg-white/[0.012]">
+                    {[
+                      'Passeio',
+                      'Categoria',
+                      'Duração',
+                      'Preço',
+                      'Vagas',
+                      'Situação',
+                      'Ações',
+                    ].map((titulo) => (
+                      <th
+                        key={
+                          titulo
+                        }
+                        className={`px-5 py-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28 ${
+                          titulo ===
+                          'Ações'
+                            ? 'text-center'
+                            : ''
+                        }`}
+                      >
+                        {titulo}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-white/[0.055]">
+                  {passeiosFiltrados.map(
+                    (
+                      passeio,
+                      index
+                    ) => (
+                      <tr
+                        key={
+                          passeio.id ||
+                          index
+                        }
+                        className="transition hover:bg-white/[0.018]"
+                      >
+                        <td className="px-5 py-4">
+                          <div>
+                            <p className="text-xs font-semibold text-[#EDEDE3]/82">
+                              {
+                                passeio.nome
+                              }
+                            </p>
+
+                            {passeio.cidade && (
+                              <p className="mt-1 text-[9px] text-[#EDEDE3]/25">
+                                {
+                                  passeio.cidade
+                                }
+                              </p>
+                            )}
+                          </div>
                         </td>
-                        <td className="px-4 py-3.5 text-xs text-emerald-200/80">
-                          <span className="inline-block rounded-md bg-[#072a25] border border-emerald-700/30 px-2 py-0.5 text-[11px] font-medium text-emerald-300">
-                            {item.categoria || "Geral"}
+
+                        <td className="px-5 py-4">
+                          <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-2.5 py-1 text-[9px] text-[#EDEDE3]/50">
+                            {passeio.categoria ||
+                              'Geral'}
                           </span>
                         </td>
-                        <td className="px-4 py-3.5 text-xs text-emerald-200/80">
-                          {item.duracao || "—"}
+
+                        <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
+                          {passeio.duracao ||
+                            '—'}
                         </td>
-                        <td className="px-4 py-3.5 text-xs font-bold text-emerald-400">
-                          {formatarPrecoExibicao(item.preco)}
+
+                        <td className="px-5 py-4 text-xs font-semibold text-[#F4C77E]">
+                          {formatarMoeda(
+                            obterValorPasseio(
+                              passeio
+                            )
+                          )}
                         </td>
-                        <td className="px-4 py-3.5 text-center">
-                          <span className="inline-flex items-center rounded-full bg-emerald-950/60 px-2.5 py-1 text-[10px] font-semibold text-emerald-300 border border-emerald-800/50">
-                            {item.vagas ?? 0} vagas
+
+                        <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
+                          {Number(
+                            passeio.vagas
+                          ) || 0}
+                        </td>
+
+                        <td className="px-5 py-4">
+                          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.07] px-2.5 py-1 text-[9px] text-emerald-300">
+                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
+
+                            {passeio.situacao ||
+                              'Ativo'}
                           </span>
                         </td>
-                        <td className="px-4 py-3.5 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            {/* Botão Visualizar */}
+
+                        <td className="px-5 py-4">
+                          <div className="flex items-center justify-center gap-1.5">
                             <button
+                              type="button"
                               title="Visualizar"
                               onClick={() => {
-                                setPasseioSelecionado(item);
-                                setModoEdicao(false);
+                                setPasseioSelecionado(
+                                  passeio
+                                );
+
+                                setModoEdicao(
+                                  false
+                                );
                               }}
-                              className="p-1.5 bg-[#072a25] hover:bg-emerald-900/60 text-emerald-300 rounded-lg transition border border-emerald-700/30 cursor-pointer"
+                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-[#E3A144]/20 hover:text-[#E3A144]"
                             >
-                              👁️
+                              👁
                             </button>
-                            {/* Botão Editar */}
+
                             <button
+                              type="button"
                               title="Editar"
                               onClick={() => {
-                                setPasseioSelecionado(item);
-                                setModoEdicao(true);
+                                setPasseioSelecionado(
+                                  {
+                                    ...passeio,
+
+                                    valor:
+                                      obterValorPasseio(
+                                        passeio
+                                      ),
+                                  }
+                                );
+
+                                setModoEdicao(
+                                  true
+                                );
                               }}
-                              className="p-1.5 bg-[#072a25] hover:bg-blue-900/60 text-blue-300 rounded-lg transition border border-blue-700/30 cursor-pointer"
+                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-sky-400/20 hover:text-sky-300"
                             >
-                              ✏️
+                              ✎
                             </button>
-                            {/* Botão Excluir */}
+
                             <button
+                              type="button"
                               title="Excluir"
-                              onClick={() => handleExcluir(item.id)}
-                              className="p-1.5 bg-[#072a25] hover:bg-rose-900/60 text-rose-300 rounded-lg transition border border-rose-700/30 cursor-pointer"
+                              onClick={() =>
+                                passeio.id &&
+                                setIdParaExcluir(
+                                  passeio.id
+                                )
+                              }
+                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-red-400/20 hover:text-red-300"
                             >
-                              🗑️
+                              ×
                             </button>
                           </div>
                         </td>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-            </div>
+                    )
+                  )}
+                </tbody>
+              </table>
+            )}
           </div>
-      </div>
+        </section>
+      </main>
 
-      {/* Modal de Visualização / Edição Rápida */}
+      {/* VISUALIZAÇÃO / EDIÇÃO */}
+
       {passeioSelecionado && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-lg rounded-2xl bg-[#041c17] p-6 shadow-2xl border border-emerald-900/80 text-slate-100 space-y-4">
-            <div className="flex items-center justify-between border-b border-emerald-900/60 pb-3">
-              <h3 className="text-base font-bold text-white">
-                {modoEdicao ? "Editar Passeio" : "Detalhes do Passeio"}
-              </h3>
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="max-h-[90vh] w-full max-w-[650px] overflow-y-auto rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
+            <div className="flex items-start justify-between gap-4 border-b border-white/[0.07] px-6 py-5">
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                  {modoEdicao
+                    ? 'Editar passeio'
+                    : 'Detalhes do passeio'}
+                </p>
+
+                <h3
+                  className="mt-2 text-2xl text-[#F0F0E8]"
+                  style={{
+                    fontFamily:
+                      'var(--font-fraunces), serif',
+                  }}
+                >
+                  {
+                    passeioSelecionado.nome
+                  }
+                </h3>
+              </div>
+
               <button
-                onClick={() => setPasseioSelecionado(null)}
-                className="text-emerald-400 hover:text-white text-sm font-bold cursor-pointer"
+                type="button"
+                onClick={() =>
+                  setPasseioSelecionado(
+                    null
+                  )
+                }
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] text-[#EDEDE3]/45"
               >
                 ✕
               </button>
             </div>
 
             {modoEdicao ? (
-              <form onSubmit={handleSalvarEdicao} className="space-y-4 pt-1">
+              <form
+                onSubmit={
+                  handleSalvarEdicao
+                }
+                className="space-y-5 p-6"
+              >
                 <div>
-                  <label className="block text-[10px] font-semibold uppercase tracking-wider text-emerald-400/70 mb-1">Nome</label>
+                  <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34">
+                    Nome
+                  </label>
+
                   <input
                     type="text"
-                    value={passeioSelecionado.nome}
-                    onChange={(e) => setPasseioSelecionado({ ...passeioSelecionado, nome: e.target.value })}
                     required
-                    className="w-full rounded-xl border border-emerald-900/60 bg-[#072a25] px-4 py-2 text-xs text-white outline-none focus:border-emerald-500"
+                    value={
+                      passeioSelecionado.nome
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setPasseioSelecionado(
+                        {
+                          ...passeioSelecionado,
+                          nome:
+                            event.target
+                              .value,
+                        }
+                      )
+                    }
+                    className="w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none focus:border-[#E3A144]/40"
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-emerald-400/70 mb-1">Categoria</label>
+                    <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34">
+                      Categoria
+                    </label>
+
                     <input
                       type="text"
-                      value={passeioSelecionado.categoria || ""}
-                      onChange={(e) => setPasseioSelecionado({ ...passeioSelecionado, categoria: e.target.value })}
-                      className="w-full rounded-xl border border-emerald-900/60 bg-[#072a25] px-4 py-2 text-xs text-white outline-none focus:border-emerald-500"
+                      value={
+                        passeioSelecionado.categoria ||
+                        ''
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        setPasseioSelecionado(
+                          {
+                            ...passeioSelecionado,
+                            categoria:
+                              event
+                                .target
+                                .value,
+                          }
+                        )
+                      }
+                      className="w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none focus:border-[#E3A144]/40"
                     />
                   </div>
+
                   <div>
-                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-emerald-400/70 mb-1">Duração</label>
+                    <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34">
+                      Duração
+                    </label>
+
                     <input
                       type="text"
-                      value={passeioSelecionado.duracao || ""}
-                      onChange={(e) => setPasseioSelecionado({ ...passeioSelecionado, duracao: e.target.value })}
-                      className="w-full rounded-xl border border-emerald-900/60 bg-[#072a25] px-4 py-2 text-xs text-white outline-none focus:border-emerald-500"
+                      value={
+                        passeioSelecionado.duracao ||
+                        ''
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        setPasseioSelecionado(
+                          {
+                            ...passeioSelecionado,
+                            duracao:
+                              event
+                                .target
+                                .value,
+                          }
+                        )
+                      }
+                      className="w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none focus:border-[#E3A144]/40"
                     />
                   </div>
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+
+                <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-emerald-400/70 mb-1">Preço (R$)</label>
+                    <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34">
+                      Valor (R$)
+                    </label>
+
                     <input
-                      type="number"
-                      step="0.01"
-                      value={passeioSelecionado.preco ?? ''}
-                      onChange={(e) => setPasseioSelecionado({ ...passeioSelecionado, preco: e.target.value })}
-                      className="w-full rounded-xl border border-emerald-900/60 bg-[#072a25] px-4 py-2 text-xs text-white outline-none focus:border-emerald-500"
+                      type="text"
+                      inputMode="decimal"
+                      value={
+                        passeioSelecionado.valor ??
+                        ''
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        setPasseioSelecionado(
+                          {
+                            ...passeioSelecionado,
+                            valor:
+                              event
+                                .target
+                                .value,
+                          }
+                        )
+                      }
+                      placeholder="Ex.: 3.500"
+                      className="w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none focus:border-[#E3A144]/40"
                     />
                   </div>
+
                   <div>
-                    <label className="block text-[10px] font-semibold uppercase tracking-wider text-emerald-400/70 mb-1">Vagas</label>
+                    <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34">
+                      Vagas
+                    </label>
+
                     <input
                       type="number"
-                      value={passeioSelecionado.vagas ?? ''}
-                      onChange={(e) => setPasseioSelecionado({ ...passeioSelecionado, vagas: e.target.value })}
-                      className="w-full rounded-xl border border-emerald-900/60 bg-[#072a25] px-4 py-2 text-xs text-white outline-none focus:border-emerald-500"
+                      min="0"
+                      value={
+                        passeioSelecionado.vagas ??
+                        ''
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        setPasseioSelecionado(
+                          {
+                            ...passeioSelecionado,
+                            vagas:
+                              event
+                                .target
+                                .value,
+                          }
+                        )
+                      }
+                      className="w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none focus:border-[#E3A144]/40"
                     />
                   </div>
                 </div>
+
                 <div>
-                  <label className="block text-[10px] font-semibold uppercase tracking-wider text-emerald-400/70 mb-1">Descrição</label>
+                  <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34">
+                    Descrição
+                  </label>
+
                   <textarea
-                    rows={3}
-                    value={passeioSelecionado.descricao || ""}
-                    onChange={(e) => setPasseioSelecionado({ ...passeioSelecionado, descricao: e.target.value })}
-                    className="w-full rounded-xl border border-emerald-900/60 bg-[#072a25] px-4 py-2 text-xs text-white outline-none focus:border-emerald-500 resize-none"
+                    rows={5}
+                    value={
+                      passeioSelecionado.descricao ||
+                      ''
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setPasseioSelecionado(
+                        {
+                          ...passeioSelecionado,
+                          descricao:
+                            event.target
+                              .value,
+                        }
+                      )
+                    }
+                    className="w-full resize-none rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm leading-6 text-[#EDEDE3] outline-none focus:border-[#E3A144]/40"
                   />
                 </div>
-                <div className="flex justify-end gap-3 pt-3 border-t border-emerald-900/60">
+
+                <div className="flex justify-end gap-3 border-t border-white/[0.07] pt-5">
                   <button
                     type="button"
-                    onClick={() => setPasseioSelecionado(null)}
-                    className="rounded-xl bg-[#072a25] hover:bg-[#0e433b] px-5 py-2.5 text-xs font-semibold text-emerald-200 transition border border-emerald-700/30 cursor-pointer"
+                    onClick={() =>
+                      setPasseioSelecionado(
+                        null
+                      )
+                    }
+                    className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/55"
                   >
                     Cancelar
                   </button>
+
                   <button
                     type="submit"
-                    disabled={salvando}
-                    className="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-6 py-2.5 text-xs font-semibold text-white shadow-lg transition disabled:opacity-50 cursor-pointer"
+                    disabled={
+                      salvando
+                    }
+                    className="rounded-xl bg-[#E3A144] px-6 py-3 text-xs font-bold text-[#07130F] disabled:opacity-50"
                   >
-                    {salvando ? "Salvando..." : "Salvar Alterações"}
+                    {salvando
+                      ? 'Salvando...'
+                      : 'Salvar alterações'}
                   </button>
                 </div>
               </form>
             ) : (
-              <div className="space-y-4 pt-1">
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400/70">Nome do Passeio</p>
-                  <p className="text-sm font-bold text-white mt-0.5">{passeioSelecionado.nome}</p>
+              <div className="p-6">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {[
+                    {
+                      label:
+                        'Categoria',
+                      valor:
+                        passeioSelecionado.categoria ||
+                        'Geral',
+                    },
+
+                    {
+                      label:
+                        'Duração',
+                      valor:
+                        passeioSelecionado.duracao ||
+                        '—',
+                    },
+
+                    {
+                      label:
+                        'Preço',
+                      valor:
+                        formatarMoeda(
+                          obterValorPasseio(
+                            passeioSelecionado
+                          )
+                        ),
+                    },
+
+                    {
+                      label: 'Vagas',
+                      valor: String(
+                        Number(
+                          passeioSelecionado.vagas
+                        ) || 0
+                      ),
+                    },
+
+                    {
+                      label:
+                        'Cidade',
+                      valor:
+                        passeioSelecionado.cidade ||
+                        'Não informada',
+                    },
+
+                    {
+                      label:
+                        'Situação',
+                      valor:
+                        passeioSelecionado.situacao ||
+                        'Ativo',
+                    },
+                  ].map((item) => (
+                    <div
+                      key={item.label}
+                      className="rounded-2xl border border-white/[0.065] bg-white/[0.018] p-4"
+                    >
+                      <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28">
+                        {item.label}
+                      </p>
+
+                      <p className="mt-2 text-xs font-medium text-[#EDEDE3]/72">
+                        {item.valor}
+                      </p>
+                    </div>
+                  ))}
                 </div>
-                <div className="grid grid-cols-2 gap-4 text-xs">
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400/70">Categoria</p>
-                    <p className="text-white mt-0.5 font-medium">{passeioSelecionado.categoria || "Geral"}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400/70">Duração</p>
-                    <p className="text-white mt-0.5 font-medium">{passeioSelecionado.duracao || "—"}</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 text-xs">
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tag-wider text-emerald-400/70">Preço</p>
-                    <p className="text-sm font-bold text-emerald-400 mt-0.5">{formatarPrecoExibicao(passeioSelecionado.preco)}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400/70">Vagas Disponíveis</p>
-                    <p className="text-white mt-0.5 font-medium">{passeioSelecionado.vagas ?? 0} vagas</p>
+
+                <div className="mt-4">
+                  <p className="mb-2 text-[8px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28">
+                    Descrição
+                  </p>
+
+                  <div className="min-h-[100px] rounded-2xl border border-white/[0.065] bg-[#07110E] p-4 text-xs leading-6 text-[#EDEDE3]/50">
+                    {passeioSelecionado.descricao ||
+                      'Nenhuma descrição informada.'}
                   </div>
                 </div>
-                <div>
-                  <p className="text-[10px] font-semibold uppercase tracking-wider text-emerald-400/70">Descrição</p>
-                  <p className="text-xs text-emerald-100/90 mt-1 bg-[#072a25] p-3 rounded-xl border border-emerald-900/60 leading-relaxed">{passeioSelecionado.descricao || "Nenhuma descrição informada."}</p>
-                </div>
-                <div className="flex justify-end pt-3 border-t border-emerald-900/60">
+
+                <div className="mt-5 flex justify-end">
                   <button
-                    onClick={() => setPasseioSelecionado(null)}
-                    className="rounded-xl bg-emerald-600 hover:bg-emerald-500 px-6 py-2.5 text-xs font-semibold text-white transition cursor-pointer"
+                    type="button"
+                    onClick={() =>
+                      setPasseioSelecionado(
+                        null
+                      )
+                    }
+                    className="rounded-xl bg-[#E3A144] px-6 py-3 text-xs font-bold text-[#07130F]"
                   >
                     Fechar
                   </button>
@@ -534,6 +1335,53 @@ export default function PasseiosPage() {
         </div>
       )}
 
+      {/* EXCLUSÃO */}
+
+      {idParaExcluir && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-[430px] rounded-[26px] border border-white/[0.09] bg-[#091510] p-6 text-center">
+            <h3
+              className="text-2xl text-[#F0F0E8]"
+              style={{
+                fontFamily:
+                  'var(--font-fraunces), serif',
+              }}
+            >
+              Excluir passeio?
+            </h3>
+
+            <p className="mt-3 text-xs leading-6 text-[#EDEDE3]/38">
+              O passeio será removido
+              permanentemente do
+              catálogo.
+            </p>
+
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                onClick={() =>
+                  setIdParaExcluir(
+                    null
+                  )
+                }
+                className="rounded-xl border border-white/[0.09] bg-white/[0.025] px-4 py-3 text-xs font-semibold text-[#EDEDE3]/60"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={
+                  executarExclusao
+                }
+                className="rounded-xl border border-red-500/20 bg-red-500/[0.1] px-4 py-3 text-xs font-semibold text-red-300"
+              >
+                Excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

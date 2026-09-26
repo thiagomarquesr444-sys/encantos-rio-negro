@@ -2,623 +2,1371 @@
 
 export const dynamic = 'force-dynamic';
 
-import React, { useEffect, useState } from 'react';
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+
 import Link from 'next/link';
+
 import { supabase } from '@/lib/supabase';
+
+type StatusHospedagem =
+  | 'Disponível'
+  | 'Ocupada'
+  | 'Reservada';
 
 interface Hospedagem {
   id?: string;
-  nome?: string;
-  tipo?: string;
-  endereco?: string;
-  telefone?: string;
-  valor_diaria?: number;
-  status?: string;
-  created_at?: string;
+
+  nome?: string | null;
+  Nome?: string | null;
+
+  tipo?: string | null;
+
+  endereco?: string | null;
+  Endereco?: string | null;
+
+  telefone?: string | null;
+
+  valor_diaria?:
+    | number
+    | string
+    | null;
+
+  status?: string | null;
+  Status?: string | null;
+
+  created_at?: string | null;
+}
+
+function removerAcentos(
+  valor: string
+) {
+  return valor
+    .normalize('NFD')
+    .replace(
+      /[\u0300-\u036f]/g,
+      ''
+    );
+}
+
+function normalizarStatus(
+  valor?: string | null
+): StatusHospedagem {
+  const status = removerAcentos(
+    (valor || '')
+      .trim()
+      .toLowerCase()
+  );
+
+  if (
+    status === 'ocupada' ||
+    status === 'ocupado'
+  ) {
+    return 'Ocupada';
+  }
+
+  if (
+    status === 'reservada' ||
+    status === 'reservado'
+  ) {
+    return 'Reservada';
+  }
+
+  return 'Disponível';
+}
+
+function obterStatus(
+  hospedagem: Hospedagem
+) {
+  return normalizarStatus(
+    hospedagem.status ||
+      hospedagem.Status
+  );
+}
+
+function obterNome(
+  hospedagem: Hospedagem
+) {
+  return (
+    hospedagem.nome ||
+    hospedagem.Nome ||
+    ''
+  );
+}
+
+function obterEndereco(
+  hospedagem: Hospedagem
+) {
+  return (
+    hospedagem.endereco ||
+    hospedagem.Endereco ||
+    ''
+  );
+}
+
+/*
+  ============================================================
+  CONVERSÃO MONETÁRIA
+  ============================================================
+
+  Padrão adotado na ERN:
+
+  3500      -> 3500
+  3.500     -> 3500
+  3500.50   -> 3500.50
+  3.500,50  -> 3500.50
+*/
+
+function converterValor(
+  entrada: unknown
+): number {
+  if (
+    entrada === null ||
+    entrada === undefined ||
+    entrada === ''
+  ) {
+    return 0;
+  }
+
+  if (
+    typeof entrada === 'number'
+  ) {
+    return Number.isFinite(entrada)
+      ? entrada
+      : 0;
+  }
+
+  let valor = String(entrada)
+    .trim()
+    .replace(/R\$/gi, '')
+    .replace(/\s/g, '');
+
+  if (!valor) {
+    return 0;
+  }
+
+  /*
+    Formato brasileiro completo:
+    3.500,50
+  */
+
+  if (
+    valor.includes('.') &&
+    valor.includes(',')
+  ) {
+    valor = valor
+      .replace(/\./g, '')
+      .replace(',', '.');
+  }
+
+  /*
+    Ponto como separador de milhar:
+    3.500
+    12.500
+    1.500.000
+  */
+
+  else if (
+    /^\d{1,3}(\.\d{3})+$/.test(
+      valor
+    )
+  ) {
+    valor = valor.replace(
+      /\./g,
+      ''
+    );
+  }
+
+  /*
+    Vírgula decimal ainda é aceita
+    por compatibilidade.
+  */
+
+  else if (
+    valor.includes(',')
+  ) {
+    valor = valor.replace(
+      ',',
+      '.'
+    );
+  }
+
+  const numero = Number(valor);
+
+  return Number.isFinite(numero)
+    ? numero
+    : 0;
+}
+
+function formatarMoeda(
+  valor: unknown
+) {
+  return converterValor(
+    valor
+  ).toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  });
 }
 
 export default function HospedagensPage() {
-  const [hospedagens, setHospedagens] = useState<Hospedagem[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [busca, setBusca] = useState('');
-  const [filtroStatus, setFiltroStatus] = useState('');
+  const [
+    hospedagens,
+    setHospedagens,
+  ] = useState<Hospedagem[]>([]);
 
-  const [itemVisualizar, setItemVisualizar] = useState<Hospedagem | null>(null);
-  const [itemEditar, setItemEditar] = useState<Hospedagem | null>(null);
-  const [itemExcluir, setItemExcluir] = useState<Hospedagem | null>(null);
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
 
-  const [salvandoEdicao, setSalvandoEdicao] = useState(false);
-  const [excluindo, setExcluindo] = useState(false);
+  const [
+    error,
+    setError,
+  ] = useState<string | null>(
+    null
+  );
 
-  const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null);
+  const [
+    busca,
+    setBusca,
+  ] = useState('');
 
-  const mostrarToast = (mensagem: string) => {
-    setMensagemSucesso(mensagem);
-    setTimeout(() => setMensagemSucesso(null), 4000);
-  };
+  const [
+    filtroStatus,
+    setFiltroStatus,
+  ] = useState<
+    '' | StatusHospedagem | 'indisponiveis'
+  >('');
 
-  const fetchHospedagens = async () => {
+  const [
+    itemVisualizar,
+    setItemVisualizar,
+  ] =
+    useState<Hospedagem | null>(
+      null
+    );
+
+  const [
+    itemEditar,
+    setItemEditar,
+  ] =
+    useState<Hospedagem | null>(
+      null
+    );
+
+  const [
+    valorEdicao,
+    setValorEdicao,
+  ] = useState('');
+
+  const [
+    statusEdicao,
+    setStatusEdicao,
+  ] =
+    useState<StatusHospedagem>(
+      'Disponível'
+    );
+
+  const [
+    itemExcluir,
+    setItemExcluir,
+  ] =
+    useState<Hospedagem | null>(
+      null
+    );
+
+  const [
+    salvandoEdicao,
+    setSalvandoEdicao,
+  ] = useState(false);
+
+  const [
+    excluindo,
+    setExcluindo,
+  ] = useState(false);
+
+  const [
+    mensagemSucesso,
+    setMensagemSucesso,
+  ] =
+    useState<string | null>(
+      null
+    );
+
+  /*
+    ============================================================
+    HELPERS DE FEEDBACK
+    ============================================================
+  */
+
+  function mostrarToast(
+    mensagem: string
+  ) {
+    setMensagemSucesso(
+      mensagem
+    );
+
+    setTimeout(() => {
+      setMensagemSucesso(
+        null
+      );
+    }, 3000);
+  }
+
+  /*
+    ============================================================
+    CARREGAMENTO
+    ============================================================
+  */
+
+  async function fetchHospedagens() {
     setLoading(true);
     setError(null);
 
     try {
-      const { data, error: supabaseError } = await supabase
+      const {
+        data,
+        error: supabaseError,
+      } = await supabase
         .from('hospedagens')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('created_at', {
+          ascending: false,
+        });
 
       if (supabaseError) {
-        throw new Error(
-          `Falha ao carregar hospedagens: ${supabaseError.message}`
-        );
+        throw supabaseError;
       }
 
-      setHospedagens(data || []);
-    } catch (err: any) {
-      console.error('Erro na operação:', err);
-      setError(err.message || 'Ocorreu um erro inesperado.');
+      setHospedagens(
+        (data ||
+          []) as Hospedagem[]
+      );
+    } catch (err) {
+      console.error(
+        'Erro ao carregar hospedagens:',
+        err
+      );
+
+      setError(
+        err instanceof Error
+          ? err.message
+          : 'Não foi possível carregar as hospedagens.'
+      );
+
       setHospedagens([]);
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   useEffect(() => {
     fetchHospedagens();
   }, []);
 
-  const converterParaNumeroSupabase = (valorInput: any) => {
+  /*
+    ============================================================
+    ABRIR EDIÇÃO
+    ============================================================
+  */
+
+  function abrirEdicao(
+    hospedagem: Hospedagem
+  ) {
+    setItemEditar({
+      ...hospedagem,
+
+      nome:
+        obterNome(
+          hospedagem
+        ),
+
+      endereco:
+        obterEndereco(
+          hospedagem
+        ),
+    });
+
+    setValorEdicao(
+      String(
+        converterValor(
+          hospedagem.valor_diaria
+        )
+      )
+    );
+
+    setStatusEdicao(
+      obterStatus(
+        hospedagem
+      )
+    );
+
+    setError(null);
+  }
+
+  /*
+    ============================================================
+    ATUALIZAÇÃO
+    ============================================================
+  */
+
+  async function salvarEdicao(
+    event: React.FormEvent
+  ) {
+    event.preventDefault();
+
     if (
-      valorInput === null ||
-      valorInput === undefined ||
-      valorInput === ''
+      !itemEditar?.id
     ) {
-      return 0;
+      return;
     }
 
-    if (typeof valorInput === 'number') {
-      return valorInput;
+    const nome =
+      obterNome(
+        itemEditar
+      ).trim();
+
+    if (!nome) {
+      setError(
+        'Informe o nome da hospedagem.'
+      );
+
+      return;
     }
 
-    let stringValor = String(valorInput)
-      .trim()
-      .replace('R$', '')
-      .trim();
+    const diaria =
+      converterValor(
+        valorEdicao
+      );
 
-    if (stringValor.includes('.') && stringValor.includes(',')) {
-      stringValor = stringValor
-        .replace(/\./g, '')
-        .replace(',', '.');
-    } else if (stringValor.includes(',')) {
-      stringValor = stringValor.replace(',', '.');
+    if (
+      !Number.isFinite(
+        diaria
+      ) ||
+      diaria < 0
+    ) {
+      setError(
+        'Informe um valor válido para a diária.'
+      );
+
+      return;
     }
 
-    const numeroFinal = parseFloat(stringValor);
+    setSalvandoEdicao(
+      true
+    );
 
-    return isNaN(numeroFinal) ? 0 : numeroFinal;
-  };
-
-  const salvarEdicao = async (e: React.FormEvent) => {
-    e.preventDefault();
-
-    if (!itemEditar || !itemEditar.id) return;
-
-    setSalvandoEdicao(true);
     setError(null);
 
     try {
-      const valorTratado =
-        converterParaNumeroSupabase(itemEditar.valor_diaria);
+      const payloadBase = {
+        nome,
 
-      const { error: updateError } = await supabase
-        .from('hospedagens')
-        .update({
-          nome: itemEditar.nome || '',
-          tipo: itemEditar.tipo || null,
-          endereco: itemEditar.endereco || null,
-          telefone: itemEditar.telefone || null,
-          valor_diaria: valorTratado,
-          status: itemEditar.status || 'Disponível',
-        })
-        .eq('id', itemEditar.id);
+        tipo:
+          itemEditar.tipo?.trim() ||
+          null,
 
-      if (updateError) {
-        throw new Error(updateError.message);
+        endereco:
+          obterEndereco(
+            itemEditar
+          ).trim() || null,
+
+        telefone:
+          itemEditar.telefone?.trim() ||
+          null,
+
+        valor_diaria:
+          diaria,
+      };
+
+      /*
+        Há código histórico usando
+        "status" e outro usando
+        "Status".
+
+        Primeiro usamos a versão
+        minúscula, que é a usada
+        pelo formulário de criação.
+
+        Se a base antiga exigir a
+        coluna com maiúscula,
+        tentamos a compatibilidade.
+      */
+
+      let resultado =
+        await supabase
+          .from('hospedagens')
+          .update({
+            ...payloadBase,
+            status:
+              statusEdicao,
+          })
+          .eq(
+            'id',
+            itemEditar.id
+          );
+
+      if (resultado.error) {
+        resultado =
+          await supabase
+            .from(
+              'hospedagens'
+            )
+            .update({
+              ...payloadBase,
+              Status:
+                statusEdicao,
+            })
+            .eq(
+              'id',
+              itemEditar.id
+            );
+      }
+
+      if (resultado.error) {
+        throw resultado.error;
       }
 
       setItemEditar(null);
-      mostrarToast('Hospedagem atualizada com sucesso!');
+
+      mostrarToast(
+        'Hospedagem atualizada com sucesso.'
+      );
 
       await fetchHospedagens();
-    } catch (err: any) {
-      console.error('Erro ao atualizar hospedagem:', err);
+    } catch (err) {
+      console.error(
+        'Erro ao atualizar hospedagem:',
+        err
+      );
 
       setError(
-        'Erro ao atualizar: ' +
-          (err.message || 'Erro desconhecido.')
+        err instanceof Error
+          ? err.message
+          : 'Não foi possível atualizar a hospedagem.'
       );
     } finally {
-      setSalvandoEdicao(false);
+      setSalvandoEdicao(
+        false
+      );
     }
-  };
+  }
 
-  const confirmarExclusao = async () => {
-    if (!itemExcluir || !itemExcluir.id) return;
+  /*
+    ============================================================
+    EXCLUSÃO
+    ============================================================
+  */
+
+  async function confirmarExclusao() {
+    if (
+      !itemExcluir?.id
+    ) {
+      return;
+    }
 
     setExcluindo(true);
     setError(null);
 
     try {
-      const { error: deleteError } = await supabase
+      const {
+        error: deleteError,
+      } = await supabase
         .from('hospedagens')
         .delete()
-        .eq('id', itemExcluir.id);
+        .eq(
+          'id',
+          itemExcluir.id
+        );
 
       if (deleteError) {
-        throw new Error(deleteError.message);
+        throw deleteError;
       }
 
-      setHospedagens((prev) =>
-        prev.filter((h) => h.id !== itemExcluir.id)
+      setHospedagens(
+        (atuais) =>
+          atuais.filter(
+            (hospedagem) =>
+              hospedagem.id !==
+              itemExcluir.id
+          )
       );
 
       setItemExcluir(null);
 
-      mostrarToast('Hospedagem excluída com sucesso!');
-    } catch (err: any) {
-      console.error('Erro ao excluir:', err);
+      mostrarToast(
+        'Hospedagem excluída com sucesso.'
+      );
+    } catch (err) {
+      console.error(
+        'Erro ao excluir hospedagem:',
+        err
+      );
 
       setError(
-        'Erro ao excluir registro: ' +
-          (err.message || 'Erro desconhecido.')
+        err instanceof Error
+          ? err.message
+          : 'Não foi possível excluir a hospedagem.'
       );
     } finally {
       setExcluindo(false);
     }
-  };
+  }
 
-  const hospedagensFiltradas = hospedagens.filter((h) => {
-    const termo = busca.toLowerCase();
+  /*
+    ============================================================
+    MÉTRICAS
+    ============================================================
+  */
 
-    const nomeCompleto = h.nome || '';
-    const enderecoCompleto = h.endereco || '';
+  const totalHospedagens =
+    hospedagens.length;
 
-    const atendeBusca =
-      nomeCompleto.toLowerCase().includes(termo) ||
-      enderecoCompleto.toLowerCase().includes(termo) ||
-      (h.tipo || '').toLowerCase().includes(termo);
+  const disponiveis =
+    hospedagens.filter(
+      (hospedagem) =>
+        obterStatus(
+          hospedagem
+        ) === 'Disponível'
+    ).length;
 
-    const statusAtual = h.status || 'Disponível';
+  const ocupadas =
+    hospedagens.filter(
+      (hospedagem) =>
+        obterStatus(
+          hospedagem
+        ) === 'Ocupada'
+    ).length;
 
-    const atendeStatus = filtroStatus
-      ? statusAtual.toLowerCase() === filtroStatus.toLowerCase()
-      : true;
+  const reservadas =
+    hospedagens.filter(
+      (hospedagem) =>
+        obterStatus(
+          hospedagem
+        ) === 'Reservada'
+    ).length;
 
-    return atendeBusca && atendeStatus;
-  });
-
-  const totalHospedagens = hospedagens.length;
-
-  const disponiveis = hospedagens.filter((h) => {
-    const statusAtual = (h.status || '').toLowerCase();
-
-    return (
-      statusAtual === 'disponível' ||
-      statusAtual === 'disponivel' ||
-      statusAtual === 'ativo'
-    );
-  }).length;
-
-  const ocupadas = hospedagens.filter((h) => {
-    const statusAtual = (h.status || '').toLowerCase();
-
-    return (
-      statusAtual === 'ocupada' ||
-      statusAtual === 'reservada'
-    );
-  }).length;
+  const indisponiveis =
+    ocupadas +
+    reservadas;
 
   const mediaDiaria =
     totalHospedagens > 0
       ? hospedagens.reduce(
-          (acc, curr) =>
-            acc + (Number(curr.valor_diaria) || 0),
+          (
+            total,
+            hospedagem
+          ) =>
+            total +
+            converterValor(
+              hospedagem.valor_diaria
+            ),
           0
-        ) / totalHospedagens
+        ) /
+        totalHospedagens
       : 0;
 
-  const handleCardClick = (statusFiltro: string) => {
-    if (filtroStatus === statusFiltro) {
-      setFiltroStatus('');
-    } else {
-      setFiltroStatus(statusFiltro);
-    }
-  };
+  /*
+    ============================================================
+    FILTROS
+    ============================================================
+  */
+
+  const hospedagensFiltradas =
+    useMemo(() => {
+      const termo = busca
+        .trim()
+        .toLowerCase();
+
+      return hospedagens.filter(
+        (hospedagem) => {
+          const nome =
+            obterNome(
+              hospedagem
+            ).toLowerCase();
+
+          const endereco =
+            obterEndereco(
+              hospedagem
+            ).toLowerCase();
+
+          const tipo =
+            (
+              hospedagem.tipo ||
+              ''
+            ).toLowerCase();
+
+          const telefone =
+            (
+              hospedagem.telefone ||
+              ''
+            ).toLowerCase();
+
+          const atendeBusca =
+            !termo ||
+            nome.includes(
+              termo
+            ) ||
+            endereco.includes(
+              termo
+            ) ||
+            tipo.includes(
+              termo
+            ) ||
+            telefone.includes(
+              termo
+            );
+
+          const status =
+            obterStatus(
+              hospedagem
+            );
+
+          let atendeStatus =
+            true;
+
+          if (
+            filtroStatus ===
+            'indisponiveis'
+          ) {
+            atendeStatus =
+              status ===
+                'Ocupada' ||
+              status ===
+                'Reservada';
+          } else if (
+            filtroStatus
+          ) {
+            atendeStatus =
+              status ===
+              filtroStatus;
+          }
+
+          return (
+            atendeBusca &&
+            atendeStatus
+          );
+        }
+      );
+    }, [
+      hospedagens,
+      busca,
+      filtroStatus,
+    ]);
+
+  function filtrarPorStatus(
+    status:
+      | ''
+      | StatusHospedagem
+      | 'indisponiveis'
+  ) {
+    setFiltroStatus(
+      (atual) =>
+        atual === status
+          ? ''
+          : status
+    );
+  }
 
   const cards = [
     {
-      titulo: 'Total de Unidades',
-      valor: loading ? '...' : String(totalHospedagens),
-      detalhe: 'Unidades cadastradas',
-      cor: 'border-l-emerald-500 text-emerald-100',
-      statusFiltro: '',
+      titulo:
+        'Total de unidades',
+      valor: loading
+        ? '—'
+        : String(
+            totalHospedagens
+          ),
+      detalhe:
+        'hospedagens cadastradas',
+      filtro: '' as const,
     },
+
     {
       titulo: 'Disponíveis',
-      valor: loading ? '...' : String(disponiveis),
-      detalhe: 'Disponíveis no momento',
-      cor: 'border-l-sky-400 text-sky-100',
-      statusFiltro: 'Disponível',
-    },
-    {
-      titulo: 'Ocupadas / Reservadas',
-      valor: loading ? '...' : String(ocupadas),
-      detalhe: 'Ocupadas no momento',
-      cor: 'border-l-amber-400 text-amber-100',
-      statusFiltro: 'Ocupada',
-    },
-    {
-      titulo: 'Média da Diária',
       valor: loading
-        ? '...'
-        : `R$ ${mediaDiaria.toLocaleString('pt-BR', {
-            minimumFractionDigits: 2,
-            maximumFractionDigits: 2,
-          })}`,
-      detalhe: 'Média real da base',
-      cor: 'border-l-emerald-400 text-emerald-100',
-      statusFiltro: '',
+        ? '—'
+        : String(disponiveis),
+      detalhe:
+        'disponíveis no momento',
+      filtro:
+        'Disponível' as const,
+    },
+
+    {
+      titulo:
+        'Ocupadas / Reservadas',
+      valor: loading
+        ? '—'
+        : String(
+            indisponiveis
+          ),
+      detalhe: `${ocupadas} ocupada${
+        ocupadas === 1
+          ? ''
+          : 's'
+      } • ${reservadas} reservada${
+        reservadas === 1
+          ? ''
+          : 's'
+      }`,
+      filtro:
+        'indisponiveis' as const,
+    },
+
+    {
+      titulo:
+        'Média da diária',
+      valor: loading
+        ? '—'
+        : formatarMoeda(
+            mediaDiaria
+          ),
+      detalhe:
+        'média real da base',
+      filtro: null,
     },
   ];
 
-  const getStatusClasses = (status?: string) => {
-    switch (status?.toLowerCase()) {
-      case 'ativo':
-      case 'disponível':
-      case 'disponivel':
-        return 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/30';
+  /*
+    ============================================================
+    STATUS VISUAL
+    ============================================================
+  */
 
-      case 'ocupada':
-      case 'reservada':
-        return 'bg-amber-950/60 text-amber-300 border border-amber-500/30';
-
-      default:
-        return 'bg-slate-800 text-slate-300 border border-slate-700';
+  function statusClasses(
+    status: StatusHospedagem
+  ) {
+    if (
+      status ===
+      'Disponível'
+    ) {
+      return 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300';
     }
-  };
 
-  const getStatusDotClass = (status?: string) => {
-    switch (status?.toLowerCase()) {
-      case 'ativo':
-      case 'disponível':
-      case 'disponivel':
-        return 'bg-emerald-400';
-
-      case 'ocupada':
-      case 'reservada':
-        return 'bg-amber-400';
-
-      default:
-        return 'bg-slate-400';
+    if (
+      status ===
+      'Reservada'
+    ) {
+      return 'border-sky-500/20 bg-sky-500/[0.07] text-sky-300';
     }
-  };
+
+    return 'border-amber-500/20 bg-amber-500/[0.07] text-amber-300';
+  }
+
+  function statusDot(
+    status: StatusHospedagem
+  ) {
+    if (
+      status ===
+      'Disponível'
+    ) {
+      return 'bg-emerald-400';
+    }
+
+    if (
+      status ===
+      'Reservada'
+    ) {
+      return 'bg-sky-400';
+    }
+
+    return 'bg-amber-400';
+  }
+
+  const inputClass =
+    'w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/40';
+
+  const labelClass =
+    'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34';
 
   return (
-    <div className="min-h-screen bg-[#071f1a] text-slate-100 flex flex-col relative pb-16">
+    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+      {/* TOAST */}
+
       {mensagemSucesso && (
-        <div className="fixed top-6 right-6 z-50 animate-bounce">
-          <div className="flex items-center gap-3 px-5 py-3 rounded-2xl shadow-xl text-white font-medium text-sm bg-emerald-600">
-            <span>✅</span>
-            <span>{mensagemSucesso}</span>
-          </div>
+        <div className="fixed left-1/2 top-[100px] z-[80] -translate-x-1/2 rounded-2xl border border-emerald-500/20 bg-[#0B2119] px-5 py-3 text-xs font-semibold text-emerald-300 shadow-2xl">
+          {mensagemSucesso}
         </div>
       )}
 
-      <div className="relative w-full bg-[#051713] py-24 md:py-28 px-6 text-white shadow-lg overflow-hidden flex flex-col justify-between md:px-12 border-b border-emerald-900/40">
-        <div className="absolute inset-0 opacity-80 pointer-events-none flex items-center justify-center">
-          <div
-            className="w-full h-full bg-cover bg-center"
-            style={{
-              backgroundImage:
-                "url('https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&q=80&w=1920')",
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            }}
-          />
-        </div>
+      {/* =====================================================
+          CABEÇALHO
+      ====================================================== */}
 
-        <div className="absolute inset-0 bg-gradient-to-t from-[#071f1a] via-[#071f1a]/70 to-[#071f1a]/40 pointer-events-none" />
-
-        <div className="relative max-w-7xl mx-auto w-full flex justify-end z-10">
-          <Link
-            href="/hospedagens/novo"
-            draggable={false}
-            onDragStart={(e) => e.preventDefault()}
-            className="inline-flex items-center rounded-xl bg-emerald-600 hover:bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white shadow-md transition select-none no-underline cursor-pointer border border-emerald-500/40"
-            style={
-              {
-                WebkitUserDrag: 'none',
-              } as React.CSSProperties
-            }
-          >
-            <span className="leading-none text-base font-bold pointer-events-none mr-1.5">
-              +
-            </span>
-
-            <span className="leading-none pointer-events-none">
-              Nova Hospedagem
-            </span>
-          </Link>
-        </div>
-
-        <div className="relative max-w-7xl mx-auto w-full z-10 pt-12 flex flex-col md:flex-row justify-between items-start md:items-end gap-4">
+      <section className="border-b border-white/[0.07] bg-[#091510]">
+        <div className="mx-auto flex max-w-[1360px] flex-col gap-8 px-5 py-10 md:px-8 md:py-12 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <div className="inline-flex items-center rounded-full border border-emerald-500/30 bg-emerald-900/40 px-4 py-1.5 text-xs font-semibold text-emerald-200 backdrop-blur shadow-sm mb-2 select-none">
-              🏨 Gestão de Acomodações
+            <div className="flex items-center gap-3">
+              <span className="h-px w-8 bg-[#E3A144]" />
+
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
+                Estrutura • Hospedagens
+              </span>
             </div>
 
-            <h1 className="text-3xl font-bold text-white drop-shadow-md md:text-4xl">
+            <h1
+              className="mt-4 text-4xl leading-none tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
+              style={{
+                fontFamily:
+                  'var(--font-fraunces), serif',
+              }}
+            >
               Hospedagens
             </h1>
 
-            <p className="mt-1 text-emerald-100/80 text-sm drop-shadow-md font-medium">
-              Gerenciamento e controle completo de pousadas,
-              barcos-hotel e acomodações integradas.
+            <p className="mt-4 max-w-[700px] text-sm leading-7 text-[#EDEDE3]/42">
+              Organize pousadas,
+              hotéis, barcos-hotel e
+              outras unidades ligadas
+              à operação turística.
             </p>
           </div>
 
-          <div className="rounded-xl border border-emerald-500/30 bg-emerald-900/40 px-5 py-2.5 text-xs font-semibold text-emerald-100 backdrop-blur shadow-sm select-none">
-            {loading
-              ? '...'
-              : `${totalHospedagens} ${
-                  totalHospedagens === 1
-                    ? 'unidade cadastrada'
-                    : 'unidades cadastradas'
-                }`}
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={
+                fetchHospedagens
+              }
+              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.055]"
+            >
+              ↻ Atualizar
+            </button>
+
+            <Link
+              href="/hospedagens/novo"
+              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl bg-[#E3A144] px-6 text-sm font-bold text-[#07130F] transition hover:-translate-y-0.5 hover:bg-[#F0B35C]"
+            >
+              <span className="text-lg">
+                +
+              </span>
+
+              Nova hospedagem
+            </Link>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="px-6 py-10 md:px-12 max-w-7xl mx-auto w-full flex-1 space-y-10">
-        <div className="grid gap-6 md:grid-cols-4">
-          {cards.map((card) => {
-            const isAtivo =
-              card.statusFiltro === ''
-                ? filtroStatus === ''
-                : filtroStatus === card.statusFiltro;
+      <main className="mx-auto max-w-[1360px] px-5 py-8 md:px-8 md:py-10">
+        {error && (
+          <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-red-300">
+            <span>{error}</span>
 
-            return (
-              <div
-                key={card.titulo}
-                onClick={() =>
-                  card.statusFiltro &&
-                  handleCardClick(card.statusFiltro)
-                }
-                className={`rounded-2xl border-l-4 bg-[#0a2923]/70 backdrop-blur-md p-6 shadow-md border border-emerald-900/30 ${card.cor} transition ${
-                  card.statusFiltro
-                    ? 'cursor-pointer hover:shadow-lg hover:-translate-y-0.5'
-                    : ''
-                } ${
-                  isAtivo
-                    ? 'ring-2 ring-emerald-400 bg-emerald-900/50'
-                    : ''
-                }`}
-              >
-                <p className="text-sm font-medium text-emerald-200/70 select-none">
-                  {card.titulo}
-                </p>
+            <button
+              type="button"
+              onClick={() =>
+                setError(null)
+              }
+            >
+              ✕
+            </button>
+          </div>
+        )}
 
-                <p className="mt-3 text-4xl font-bold text-white">
-                  {card.valor}
-                </p>
+        {/* ===================================================
+            INDICADORES
+        ==================================================== */}
 
-                <p
-                  className={`mt-2 text-xs font-semibold ${
-                    card.statusFiltro
-                      ? 'underline text-emerald-300'
-                      : 'text-emerald-200/60'
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {cards.map(
+            (card) => {
+              const ativo =
+                card.filtro !==
+                  null &&
+                filtroStatus ===
+                  card.filtro;
+
+              return (
+                <button
+                  key={
+                    card.titulo
+                  }
+                  type="button"
+                  onClick={() => {
+                    if (
+                      card.filtro !==
+                      null
+                    ) {
+                      filtrarPorStatus(
+                        card.filtro
+                      );
+                    }
+                  }}
+                  className={`rounded-[22px] border p-5 text-left transition ${
+                    card.filtro ===
+                    null
+                      ? 'cursor-default'
+                      : 'cursor-pointer'
+                  } ${
+                    ativo
+                      ? 'border-[#E3A144]/35 bg-[#E3A144]/8'
+                      : 'border-white/[0.075] bg-[#0A1713] hover:border-white/[0.13]'
                   }`}
                 >
-                  {card.detalhe}
-                </p>
-              </div>
-            );
-          })}
+                  <div className="flex items-start justify-between gap-3">
+                    <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+                      {card.titulo}
+                    </span>
+
+                    {ativo && (
+                      <span className="rounded-full bg-[#E3A144]/10 px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-[#E3A144]">
+                        filtrando
+                      </span>
+                    )}
+                  </div>
+
+                  <strong
+                    className={`mt-5 block font-medium tracking-[-0.04em] text-[#F0F0E8] ${
+                      card.titulo ===
+                      'Média da diária'
+                        ? 'text-2xl md:text-3xl'
+                        : 'text-4xl'
+                    }`}
+                    style={{
+                      fontFamily:
+                        'var(--font-fraunces), serif',
+                    }}
+                  >
+                    {card.valor}
+                  </strong>
+
+                  <p className="mt-2 text-[11px] text-[#EDEDE3]/28">
+                    {card.detalhe}
+                  </p>
+                </button>
+              );
+            }
+          )}
         </div>
 
-        <div className="rounded-3xl border border-emerald-900/40 bg-[#0a2923]/60 backdrop-blur-md p-6 shadow-xl">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div className="flex-1">
-              <h2 className="text-2xl font-bold text-white">
-                Lista de Hospedagens
+        {/* ===================================================
+            TABELA
+        ==================================================== */}
 
-                {filtroStatus && (
-                  <span className="text-sm font-normal text-emerald-200 bg-emerald-900/80 border border-emerald-700/50 px-3 py-1 rounded-full ml-2">
-                    Filtrando por: {filtroStatus}
-                  </span>
-                )}
-              </h2>
-            </div>
+        <section className="mt-6 overflow-hidden rounded-[26px] border border-white/[0.075] bg-[#0A1713]">
+          <div className="border-b border-white/[0.065] p-5 md:p-6">
+            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                  Estrutura operacional
+                </p>
 
-            <div className="flex flex-col gap-3 md:flex-row">
-              <input
-                type="text"
-                placeholder="Pesquisar hospedagem..."
-                value={busca}
-                onChange={(e) => setBusca(e.target.value)}
-                className="rounded-xl border border-emerald-800/60 bg-[#041411]/80 px-4 py-3 text-sm text-slate-100 outline-none focus:border-emerald-500 focus:bg-[#041411] transition placeholder:text-emerald-300/40"
-              />
-
-              <select
-                value={filtroStatus}
-                onChange={(e) =>
-                  setFiltroStatus(e.target.value)
-                }
-                className="rounded-xl border border-emerald-800/60 bg-[#041411]/80 px-4 py-3 text-sm text-slate-100 outline-none focus:border-emerald-500 focus:bg-[#041411] transition"
-              >
-                <option value="" className="bg-[#041411]">
-                  Todos os Status
-                </option>
-
-                <option
-                  value="Disponível"
-                  className="bg-[#041411]"
+                <h2
+                  className="mt-2 text-2xl text-[#F0F0E8]"
+                  style={{
+                    fontFamily:
+                      'var(--font-fraunces), serif',
+                  }}
                 >
-                  Disponível
-                </option>
+                  Unidades cadastradas
+                </h2>
 
-                <option
-                  value="Ocupada"
-                  className="bg-[#041411]"
-                >
-                  Ocupada
-                </option>
+                <p className="mt-2 text-xs text-[#EDEDE3]/30">
+                  {
+                    hospedagensFiltradas.length
+                  }{' '}
+                  de{' '}
+                  {
+                    hospedagens.length
+                  }{' '}
+                  unidade
+                  {hospedagens.length !==
+                  1
+                    ? 's'
+                    : ''}
+                </p>
+              </div>
 
-                <option
-                  value="Reservada"
-                  className="bg-[#041411]"
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="relative">
+                  <svg
+                    className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EDEDE3]/25"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+
+                  <input
+                    type="text"
+                    value={busca}
+                    onChange={(
+                      event
+                    ) =>
+                      setBusca(
+                        event.target
+                          .value
+                      )
+                    }
+                    placeholder="Buscar hospedagem..."
+                    className="h-[44px] min-w-[270px] rounded-xl border border-white/[0.08] bg-[#07110E] pl-10 pr-4 text-xs text-[#EDEDE3] outline-none placeholder:text-[#EDEDE3]/22 focus:border-[#E3A144]/35"
+                  />
+                </div>
+
+                <select
+                  value={
+                    filtroStatus
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setFiltroStatus(
+                      event.target
+                        .value as
+                        | ''
+                        | StatusHospedagem
+                        | 'indisponiveis'
+                    )
+                  }
+                  className="h-[44px] rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-xs text-[#EDEDE3]/70 outline-none focus:border-[#E3A144]/35"
                 >
-                  Reservada
-                </option>
-              </select>
+                  <option value="">
+                    Todos os status
+                  </option>
+
+                  <option value="Disponível">
+                    Disponíveis
+                  </option>
+
+                  <option value="Reservada">
+                    Reservadas
+                  </option>
+
+                  <option value="Ocupada">
+                    Ocupadas
+                  </option>
+
+                  <option value="indisponiveis">
+                    Ocupadas ou reservadas
+                  </option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <div className="mt-8 overflow-x-auto min-h-[300px]">
+          <div className="overflow-x-auto">
             {loading ? (
-              <div className="p-12 text-center text-emerald-200/60 font-medium text-sm">
-                Carregando hospedagens com segurança...
+              <div className="flex min-h-[330px] items-center justify-center">
+                <div className="text-center">
+                  <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/[0.08] border-t-[#E3A144]" />
+
+                  <p className="mt-4 text-xs text-[#EDEDE3]/35">
+                    Carregando hospedagens...
+                  </p>
+                </div>
               </div>
-            ) : error ? (
-              <div className="p-12 text-center text-rose-300 font-medium bg-rose-950/40 rounded-xl border border-rose-900/50 text-sm">
-                {error}
-              </div>
-            ) : hospedagensFiltradas.length === 0 ? (
-              <div className="p-12 text-center text-emerald-200/60 font-medium text-sm">
-                Nenhuma hospedagem encontrada.
+            ) : hospedagensFiltradas.length ===
+              0 ? (
+              <div className="flex min-h-[330px] items-center justify-center px-5 text-center">
+                <div>
+                  <h3
+                    className="text-2xl text-[#F0F0E8]"
+                    style={{
+                      fontFamily:
+                        'var(--font-fraunces), serif',
+                    }}
+                  >
+                    Nenhuma hospedagem encontrada.
+                  </h3>
+
+                  <p className="mt-2 text-xs text-[#EDEDE3]/30">
+                    Ajuste os filtros ou
+                    cadastre uma nova
+                    unidade.
+                  </p>
+                </div>
               </div>
             ) : (
-              <table className="min-w-[1200px] w-full text-left border-collapse">
-                <thead className="bg-[#051713]/80 border-b border-emerald-900/60 text-emerald-200/80 text-xs font-bold tracking-wider select-none">
-                  <tr>
-                    <th className="px-5 py-3.5 rounded-tl-xl">
-                      NOME DA HOSPEDAGEM
-                    </th>
-
-                    <th className="px-5 py-3.5">
-                      LOCALIZAÇÃO / ENDEREÇO
-                    </th>
-
-                    <th className="px-5 py-3.5">
-                      TIPO
-                    </th>
-
-                    <th className="px-5 py-3.5">
-                      TELEFONE
-                    </th>
-
-                    <th className="px-5 py-3.5">
-                      DIÁRIA
-                    </th>
-
-                    <th className="px-5 py-3.5">
-                      STATUS
-                    </th>
-
-                    <th className="px-5 py-3.5 text-center rounded-tr-xl">
-                      AÇÕES
-                    </th>
+              <table className="min-w-[1120px] w-full border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-white/[0.06] bg-white/[0.012]">
+                    {[
+                      'Hospedagem',
+                      'Endereço',
+                      'Tipo',
+                      'Telefone',
+                      'Diária',
+                      'Status',
+                      'Ações',
+                    ].map((titulo) => (
+                      <th
+                        key={
+                          titulo
+                        }
+                        className={`px-5 py-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28 ${
+                          titulo ===
+                          'Ações'
+                            ? 'text-center'
+                            : ''
+                        }`}
+                      >
+                        {titulo}
+                      </th>
+                    ))}
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-emerald-900/30 text-sm">
+                <tbody className="divide-y divide-white/[0.055]">
                   {hospedagensFiltradas.map(
-                    (item, idx) => {
-                      const statusExibido =
-                        item.status || 'Disponível';
+                    (
+                      hospedagem,
+                      index
+                    ) => {
+                      const status =
+                        obterStatus(
+                          hospedagem
+                        );
 
                       return (
                         <tr
-                          key={item.id || idx}
-                          className="bg-transparent hover:bg-emerald-950/30 transition"
+                          key={
+                            hospedagem.id ||
+                            index
+                          }
+                          className="transition hover:bg-white/[0.018]"
                         >
-                          <td className="px-5 py-4 font-semibold text-white">
-                            {item.nome || '—'}
+                          <td className="px-5 py-4">
+                            <p className="text-xs font-semibold text-[#EDEDE3]/82">
+                              {obterNome(
+                                hospedagem
+                              ) ||
+                                '—'}
+                            </p>
                           </td>
 
-                          <td className="px-5 py-4 text-emerald-100/80">
-                            {item.endereco || '—'}
+                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
+                            {obterEndereco(
+                              hospedagem
+                            ) ||
+                              '—'}
                           </td>
 
-                          <td className="px-5 py-4 text-emerald-100/80">
-                            {item.tipo || '—'}
+                          <td className="px-5 py-4">
+                            <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-2.5 py-1 text-[9px] text-[#EDEDE3]/50">
+                              {hospedagem.tipo ||
+                                'Não informado'}
+                            </span>
                           </td>
 
-                          <td className="px-5 py-4 text-emerald-100/80">
-                            {item.telefone || '—'}
+                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
+                            {hospedagem.telefone ||
+                              '—'}
                           </td>
 
-                          <td className="px-5 py-4 font-semibold text-white">
-                            {item.valor_diaria !== undefined &&
-                            item.valor_diaria !== null
-                              ? `R$ ${Number(
-                                  item.valor_diaria
-                                ).toLocaleString('pt-BR', {
-                                  minimumFractionDigits: 2,
-                                  maximumFractionDigits: 2,
-                                })}`
-                              : 'R$ 0,00'}
+                          <td className="px-5 py-4 text-xs font-semibold text-[#F4C77E]">
+                            {formatarMoeda(
+                              hospedagem.valor_diaria
+                            )}
                           </td>
 
                           <td className="px-5 py-4">
                             <span
-                              className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold select-none ${getStatusClasses(
-                                statusExibido
+                              className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[9px] font-semibold ${statusClasses(
+                                status
                               )}`}
                             >
                               <span
-                                className={`h-1.5 w-1.5 rounded-full ${getStatusDotClass(
-                                  statusExibido
+                                className={`h-1.5 w-1.5 rounded-full ${statusDot(
+                                  status
                                 )}`}
                               />
 
-                              {statusExibido}
+                              {status}
                             </span>
                           </td>
 
-                          <td className="px-5 py-4 text-center">
+                          <td className="px-5 py-4">
                             <div className="flex items-center justify-center gap-1.5">
                               <button
-                                onClick={() =>
-                                  setItemVisualizar(item)
-                                }
-                                className="p-1.5 bg-emerald-900/40 hover:bg-emerald-900 text-emerald-200 rounded-lg transition cursor-pointer border border-emerald-700/40"
+                                type="button"
                                 title="Visualizar"
+                                onClick={() =>
+                                  setItemVisualizar(
+                                    hospedagem
+                                  )
+                                }
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-[#E3A144]/20 hover:text-[#E3A144]"
                               >
-                                👁
+                                <svg
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"
+                                  />
+
+                                  <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="3"
+                                  />
+                                </svg>
                               </button>
 
                               <button
-                                onClick={() =>
-                                  setItemEditar({
-                                    ...item,
-                                  })
-                                }
-                                className="p-1.5 bg-sky-950/40 hover:bg-sky-900 text-sky-200 rounded-lg transition cursor-pointer border border-sky-800/40"
+                                type="button"
                                 title="Editar"
+                                onClick={() =>
+                                  abrirEdicao(
+                                    hospedagem
+                                  )
+                                }
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-sky-400/20 hover:text-sky-300"
                               >
-                                ✎
+                                <svg
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L8 18l-4 1 1-4L16.5 3.5z"
+                                  />
+                                </svg>
                               </button>
 
                               <button
-                                onClick={() =>
-                                  setItemExcluir(item)
-                                }
-                                className="p-1.5 bg-rose-950/40 hover:bg-rose-900 text-rose-200 rounded-lg transition cursor-pointer border border-rose-800/40"
+                                type="button"
                                 title="Excluir"
+                                onClick={() =>
+                                  setItemExcluir(
+                                    hospedagem
+                                  )
+                                }
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-red-400/20 hover:text-red-300"
                               >
-                                🗑
+                                <svg
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14M10 11v5m4-5v5"
+                                  />
+                                </svg>
                               </button>
                             </div>
                           </td>
@@ -630,102 +1378,119 @@ export default function HospedagensPage() {
               </table>
             )}
           </div>
-        </div>
-      </div>
+        </section>
+      </main>
+
+      {/* =====================================================
+          MODAL VISUALIZAR
+      ====================================================== */}
 
       {itemVisualizar && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-[#071f1a] border border-emerald-900/60 p-6 shadow-2xl space-y-4 text-slate-100">
-            <div className="flex items-center justify-between border-b border-emerald-900/50 pb-3">
-              <h3 className="text-base font-bold text-white">
-                Detalhes da Hospedagem
-              </h3>
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-[640px] overflow-hidden rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
+            <div className="flex items-start justify-between gap-5 border-b border-white/[0.07] px-6 py-5">
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                  Detalhes da hospedagem
+                </p>
+
+                <h3
+                  className="mt-2 text-2xl text-[#F0F0E8]"
+                  style={{
+                    fontFamily:
+                      'var(--font-fraunces), serif',
+                  }}
+                >
+                  {obterNome(
+                    itemVisualizar
+                  ) || 'Hospedagem'}
+                </h3>
+              </div>
 
               <button
+                type="button"
                 onClick={() =>
-                  setItemVisualizar(null)
+                  setItemVisualizar(
+                    null
+                  )
                 }
-                className="text-emerald-300/60 hover:text-white text-sm font-bold cursor-pointer"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] text-[#EDEDE3]/45"
               >
                 ✕
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div className="col-span-2">
-                <span className="text-emerald-300/60 block text-xs font-medium">
-                  Nome da Hospedagem
-                </span>
+            <div className="grid gap-3 p-6 sm:grid-cols-2">
+              {[
+                {
+                  label: 'Tipo',
+                  valor:
+                    itemVisualizar.tipo ||
+                    'Não informado',
+                },
 
-                <span className="text-white font-bold text-base">
-                  {itemVisualizar.nome || '—'}
-                </span>
-              </div>
+                {
+                  label: 'Status',
+                  valor:
+                    obterStatus(
+                      itemVisualizar
+                    ),
+                },
 
-              <div>
-                <span className="text-emerald-300/60 block text-xs font-medium">
-                  Tipo
-                </span>
+                {
+                  label:
+                    'Telefone',
+                  valor:
+                    itemVisualizar.telefone ||
+                    'Não informado',
+                },
 
-                <span className="text-emerald-100 font-medium">
-                  {itemVisualizar.tipo || '—'}
-                </span>
-              </div>
+                {
+                  label:
+                    'Valor da diária',
+                  valor:
+                    formatarMoeda(
+                      itemVisualizar.valor_diaria
+                    ),
+                },
+              ].map((item) => (
+                <div
+                  key={item.label}
+                  className="rounded-2xl border border-white/[0.065] bg-white/[0.018] p-4"
+                >
+                  <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28">
+                    {item.label}
+                  </p>
 
-              <div>
-                <span className="text-emerald-300/60 block text-xs font-medium">
-                  Status
-                </span>
+                  <p className="mt-2 text-xs font-medium text-[#EDEDE3]/72">
+                    {item.valor}
+                  </p>
+                </div>
+              ))}
 
-                <span className="text-emerald-400 font-bold">
-                  {itemVisualizar.status ||
-                    'Disponível'}
-                </span>
-              </div>
-
-              <div className="col-span-2">
-                <span className="text-emerald-300/60 block text-xs font-medium">
+              <div className="sm:col-span-2 rounded-2xl border border-white/[0.065] bg-white/[0.018] p-4">
+                <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28">
                   Localização / Endereço
-                </span>
+                </p>
 
-                <span className="text-emerald-100 font-medium">
-                  {itemVisualizar.endereco || '—'}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-emerald-300/60 block text-xs font-medium">
-                  Telefone
-                </span>
-
-                <span className="text-emerald-100 font-medium">
-                  {itemVisualizar.telefone || '—'}
-                </span>
-              </div>
-
-              <div>
-                <span className="text-emerald-300/60 block text-xs font-medium">
-                  Valor da Diária
-                </span>
-
-                <span className="text-emerald-300 font-bold">
-                  R${' '}
-                  {Number(
-                    itemVisualizar.valor_diaria || 0
-                  ).toLocaleString('pt-BR', {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  })}
-                </span>
+                <p className="mt-2 text-xs font-medium text-[#EDEDE3]/72">
+                  {obterEndereco(
+                    itemVisualizar
+                  ) ||
+                    'Não informado'}
+                </p>
               </div>
             </div>
 
-            <div className="flex justify-end pt-3">
+            <div className="flex justify-end border-t border-white/[0.07] px-6 py-4">
               <button
+                type="button"
                 onClick={() =>
-                  setItemVisualizar(null)
+                  setItemVisualizar(
+                    null
+                  )
                 }
-                className="bg-emerald-700 hover:bg-emerald-600 text-white text-xs font-semibold px-4 py-2 rounded-xl transition cursor-pointer select-none"
+                className="rounded-xl bg-[#E3A144] px-5 py-2.5 text-xs font-bold text-[#07130F]"
               >
                 Fechar
               </button>
@@ -734,189 +1499,274 @@ export default function HospedagensPage() {
         </div>
       )}
 
+      {/* =====================================================
+          MODAL EDITAR
+      ====================================================== */}
+
       {itemEditar && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-md rounded-2xl bg-[#071f1a] border border-emerald-900/60 p-6 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto text-slate-100">
-            <div className="flex items-center justify-between border-b border-emerald-900/50 pb-3">
-              <h3 className="text-base font-bold text-white">
-                Editar Hospedagem
-              </h3>
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+          <div className="max-h-[92vh] w-full max-w-[650px] overflow-y-auto rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
+            <div className="flex items-start justify-between gap-5 border-b border-white/[0.07] px-6 py-5">
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                  Estrutura • Edição
+                </p>
+
+                <h3
+                  className="mt-2 text-2xl text-[#F0F0E8]"
+                  style={{
+                    fontFamily:
+                      'var(--font-fraunces), serif',
+                  }}
+                >
+                  Editar hospedagem
+                </h3>
+              </div>
 
               <button
+                type="button"
                 onClick={() =>
                   setItemEditar(null)
                 }
-                className="text-emerald-300/60 hover:text-white text-sm font-bold cursor-pointer"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] text-[#EDEDE3]/45"
               >
                 ✕
               </button>
             </div>
 
             <form
-              onSubmit={salvarEdicao}
-              className="space-y-4 text-sm"
+              onSubmit={
+                salvarEdicao
+              }
+              className="space-y-5 p-6"
             >
               <div>
-                <label className="block text-xs font-semibold text-emerald-200/80 mb-1">
-                  Nome da Hospedagem
+                <label
+                  className={
+                    labelClass
+                  }
+                >
+                  Nome da hospedagem *
                 </label>
 
                 <input
                   type="text"
                   required
-                  value={itemEditar.nome || ''}
-                  onChange={(e) =>
+                  value={
+                    itemEditar.nome ||
+                    ''
+                  }
+                  onChange={(
+                    event
+                  ) =>
                     setItemEditar({
                       ...itemEditar,
-                      nome: e.target.value,
+
+                      nome:
+                        event.target
+                          .value,
                     })
                   }
-                  className="w-full rounded-xl border border-emerald-800 bg-[#041411] px-3 py-2 outline-none focus:border-emerald-500 text-sm text-white"
+                  className={
+                    inputClass
+                  }
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-semibold text-emerald-200/80 mb-1">
+                  <label
+                    className={
+                      labelClass
+                    }
+                  >
                     Tipo
                   </label>
 
                   <input
                     type="text"
-                    value={itemEditar.tipo || ''}
-                    onChange={(e) =>
+                    value={
+                      itemEditar.tipo ||
+                      ''
+                    }
+                    onChange={(
+                      event
+                    ) =>
                       setItemEditar({
                         ...itemEditar,
-                        tipo: e.target.value,
+
+                        tipo:
+                          event.target
+                            .value,
                       })
                     }
-                    className="w-full rounded-xl border border-emerald-800 bg-[#041411] px-3 py-2 outline-none focus:border-emerald-500 text-sm text-white"
+                    placeholder="Ex.: Pousada"
+                    className={
+                      inputClass
+                    }
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-emerald-200/80 mb-1">
-                    Valor da Diária (R$)
+                  <label
+                    className={
+                      labelClass
+                    }
+                  >
+                    Diária (R$) *
                   </label>
 
                   <input
                     type="text"
+                    inputMode="decimal"
                     required
                     value={
-                      itemEditar.valor_diaria !== undefined
-                        ? itemEditar.valor_diaria
-                        : ''
+                      valorEdicao
                     }
-                    onChange={(e) =>
-                      setItemEditar({
-                        ...itemEditar,
-                        valor_diaria:
-                          e.target.value as any,
-                      })
+                    onChange={(
+                      event
+                    ) =>
+                      setValorEdicao(
+                        event.target
+                          .value
+                      )
                     }
-                    className="w-full rounded-xl border border-emerald-800 bg-[#041411] px-3 py-2 outline-none focus:border-emerald-500 text-sm text-white font-bold text-emerald-300"
+                    placeholder="Ex.: 350 ou 1.500"
+                    className={
+                      inputClass
+                    }
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-emerald-200/80 mb-1">
+                <label
+                  className={
+                    labelClass
+                  }
+                >
                   Localização / Endereço
                 </label>
 
                 <input
                   type="text"
-                  value={itemEditar.endereco || ''}
-                  onChange={(e) =>
+                  value={
+                    itemEditar.endereco ||
+                    ''
+                  }
+                  onChange={(
+                    event
+                  ) =>
                     setItemEditar({
                       ...itemEditar,
-                      endereco: e.target.value,
+
+                      endereco:
+                        event.target
+                          .value,
                     })
                   }
-                  className="w-full rounded-xl border border-emerald-800 bg-[#041411] px-3 py-2 outline-none focus:border-emerald-500 text-sm text-white"
+                  className={
+                    inputClass
+                  }
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <label className="block text-xs font-semibold text-emerald-200/80 mb-1">
+                  <label
+                    className={
+                      labelClass
+                    }
+                  >
                     Telefone
                   </label>
 
                   <input
                     type="text"
-                    value={itemEditar.telefone || ''}
-                    onChange={(e) =>
+                    value={
+                      itemEditar.telefone ||
+                      ''
+                    }
+                    onChange={(
+                      event
+                    ) =>
                       setItemEditar({
                         ...itemEditar,
-                        telefone: e.target.value,
+
+                        telefone:
+                          event.target
+                            .value,
                       })
                     }
-                    className="w-full rounded-xl border border-emerald-800 bg-[#041411] px-3 py-2 outline-none focus:border-emerald-500 text-sm text-white"
+                    className={
+                      inputClass
+                    }
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-emerald-200/80 mb-1">
+                  <label
+                    className={
+                      labelClass
+                    }
+                  >
                     Status
                   </label>
 
                   <select
                     value={
-                      itemEditar.status ||
-                      'Disponível'
+                      statusEdicao
                     }
-                    onChange={(e) =>
-                      setItemEditar({
-                        ...itemEditar,
-                        status: e.target.value,
-                      })
+                    onChange={(
+                      event
+                    ) =>
+                      setStatusEdicao(
+                        event.target
+                          .value as StatusHospedagem
+                      )
                     }
-                    className="w-full rounded-xl border border-emerald-800 bg-[#041411] px-3 py-2 outline-none focus:border-emerald-500 text-sm text-white"
+                    className={
+                      inputClass
+                    }
                   >
-                    <option
-                      value="Disponível"
-                      className="bg-[#041411]"
-                    >
+                    <option value="Disponível">
                       Disponível
                     </option>
 
-                    <option
-                      value="Ocupada"
-                      className="bg-[#041411]"
-                    >
-                      Ocupada
+                    <option value="Reservada">
+                      Reservada
                     </option>
 
-                    <option
-                      value="Reservada"
-                      className="bg-[#041411]"
-                    >
-                      Reservada
+                    <option value="Ocupada">
+                      Ocupada
                     </option>
                   </select>
                 </div>
               </div>
 
-              <div className="flex justify-end gap-2 pt-3 border-t border-emerald-900/50">
+              <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-5 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   onClick={() =>
-                    setItemEditar(null)
+                    setItemEditar(
+                      null
+                    )
                   }
-                  className="px-4 py-2 rounded-xl border border-emerald-800 text-emerald-200 hover:bg-emerald-900/40 font-semibold text-xs transition cursor-pointer select-none"
+                  className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/55"
                 >
                   Cancelar
                 </button>
 
                 <button
                   type="submit"
-                  disabled={salvandoEdicao}
-                  className="px-4 py-2 rounded-xl bg-emerald-700 hover:bg-emerald-600 text-white font-semibold text-xs transition shadow-sm cursor-pointer select-none disabled:opacity-50"
+                  disabled={
+                    salvandoEdicao
+                  }
+                  className="rounded-xl bg-[#E3A144] px-6 py-3 text-xs font-bold text-[#07130F] disabled:opacity-50"
                 >
                   {salvandoEdicao
                     ? 'Salvando...'
-                    : 'Salvar Alterações'}
+                    : 'Salvar alterações'}
                 </button>
               </div>
             </form>
@@ -924,55 +1774,80 @@ export default function HospedagensPage() {
         </div>
       )}
 
+      {/* =====================================================
+          MODAL EXCLUIR
+      ====================================================== */}
+
       {itemExcluir && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-sm rounded-2xl bg-[#071f1a] border border-emerald-900/60 p-6 shadow-2xl space-y-4 text-center text-slate-100">
-            <div className="w-10 h-10 bg-rose-950/60 text-rose-400 rounded-full flex items-center justify-center mx-auto border border-rose-800/40">
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-[430px] rounded-[26px] border border-white/[0.09] bg-[#091510] p-6 text-center shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-red-500/20 bg-red-500/[0.08] text-red-300">
               <svg
-                className="w-5 h-5 pointer-events-none"
+                className="h-5 w-5"
                 fill="none"
                 stroke="currentColor"
+                strokeWidth="1.8"
                 viewBox="0 0 24 24"
               >
                 <path
                   strokeLinecap="round"
                   strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  d="M12 9v4m0 4h.01M10.3 4.3L2.8 17.3A2 2 0 004.5 20h15a2 2 0 001.7-2.7L13.7 4.3a2 2 0 00-3.4 0z"
                 />
               </svg>
             </div>
 
-            <h3 className="text-base font-bold text-white">
-              Confirmar Exclusão
+            <h3
+              className="mt-5 text-2xl text-[#F0F0E8]"
+              style={{
+                fontFamily:
+                  'var(--font-fraunces), serif',
+              }}
+            >
+              Excluir hospedagem?
             </h3>
 
-            <p className="text-xs text-emerald-200/70">
-              Tem certeza que deseja excluir a hospedagem{' '}
-              <span className="font-bold text-white">
-                {itemExcluir.nome || 'Unidade'}
-              </span>
-              ? Esta ação não pode ser desfeita.
+            <p className="mt-3 text-xs leading-6 text-[#EDEDE3]/38">
+              A unidade{' '}
+              <strong className="text-[#EDEDE3]/70">
+                {obterNome(
+                  itemExcluir
+                ) ||
+                  'selecionada'}
+              </strong>{' '}
+              será removida
+              permanentemente da base.
             </p>
 
-            <div className="flex justify-center gap-2 pt-2">
+            <div className="mt-6 grid grid-cols-2 gap-3">
               <button
-                onClick={() =>
-                  setItemExcluir(null)
+                type="button"
+                disabled={
+                  excluindo
                 }
-                className="px-4 py-2 rounded-xl border border-emerald-800 text-emerald-200 hover:bg-emerald-900/40 font-semibold text-xs transition cursor-pointer select-none"
+                onClick={() =>
+                  setItemExcluir(
+                    null
+                  )
+                }
+                className="rounded-xl border border-white/[0.09] bg-white/[0.025] px-4 py-3 text-xs font-semibold text-[#EDEDE3]/60"
               >
                 Cancelar
               </button>
 
               <button
-                onClick={confirmarExclusao}
-                disabled={excluindo}
-                className="px-4 py-2 rounded-xl bg-rose-700 hover:bg-rose-600 text-white font-semibold text-xs transition shadow-sm cursor-pointer select-none disabled:opacity-50"
+                type="button"
+                disabled={
+                  excluindo
+                }
+                onClick={
+                  confirmarExclusao
+                }
+                className="rounded-xl border border-red-500/20 bg-red-500/[0.1] px-4 py-3 text-xs font-semibold text-red-300 disabled:opacity-50"
               >
                 {excluindo
                   ? 'Excluindo...'
-                  : 'Sim, Excluir'}
+                  : 'Excluir'}
               </button>
             </div>
           </div>

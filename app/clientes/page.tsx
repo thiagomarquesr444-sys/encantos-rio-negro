@@ -1,10 +1,17 @@
 'use client';
 
-import React, { useEffect, useState } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { BANNER_REGIONAL } from "@/lib/bannerImagens";
+import React, {
+  useEffect,
+  useState,
+} from 'react';
+
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+
+import {
+  supabase,
+  isSupabaseConfigured,
+} from '@/lib/supabase';
 
 interface Cliente {
   id?: string | number;
@@ -22,18 +29,48 @@ interface Cliente {
 
 export default function ClientesPage() {
   const router = useRouter();
-  const [clientes, setClientes] = useState<Cliente[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [busca, setBusca] = useState("");
-  const [filtroSituacao, setFiltroSituacao] = useState("");
 
-  // Estados para o Modal de Visualização (Olhinho)
-  const [modalVisualizarAberto, setModalVisualizarAberto] = useState(false);
-  const [clienteSelecionado, setClienteSelecionado] = useState<Cliente | null>(null);
+  const [clientes, setClientes] =
+    useState<Cliente[]>([]);
 
-  // Estados para o Modal Customizado de Exclusão (Lixeira)
-  const [modalExcluirAberto, setModalExcluirAberto] = useState(false);
-  const [idParaExcluir, setIdParaExcluir] = useState<string | number | null>(null);
+  const [loading, setLoading] =
+    useState(true);
+
+  const [busca, setBusca] =
+    useState('');
+
+  const [
+    filtroSituacao,
+    setFiltroSituacao,
+  ] = useState('');
+
+  const [
+    modalVisualizarAberto,
+    setModalVisualizarAberto,
+  ] = useState(false);
+
+  const [
+    clienteSelecionado,
+    setClienteSelecionado,
+  ] = useState<Cliente | null>(null);
+
+  const [
+    modalExcluirAberto,
+    setModalExcluirAberto,
+  ] = useState(false);
+
+  const [
+    idParaExcluir,
+    setIdParaExcluir,
+  ] = useState<string | number | null>(
+    null
+  );
+
+  /*
+    ============================================================
+    CARREGAMENTO
+    ============================================================
+  */
 
   const fetchClientes = async () => {
     if (!isSupabaseConfigured) {
@@ -42,23 +79,44 @@ export default function ClientesPage() {
     }
 
     setLoading(true);
+
     try {
-      const { data, error } = await supabase
-        .from("clientes")
-        .select("*")
-        .order("created_at", { ascending: false });
+      const { data, error } =
+        await supabase
+          .from('clientes')
+          .select('*')
+          .order('created_at', {
+            ascending: false,
+          });
 
       if (error) {
-        console.warn("⚠️ [Clientes]: Erro ao carregar registros:", error.message);
-      } else if (data) {
-        const clientesFormatados = data.map((item: any) => ({
-          ...item,
-          situacao: item.situacao || item.situação || "Ativo",
-        }));
-        setClientes(clientesFormatados);
+        console.warn(
+          '[Clientes] Erro:',
+          error.message
+        );
+
+        return;
+      }
+
+      if (data) {
+        const clientesFormatados =
+          data.map((item: any) => ({
+            ...item,
+            situacao:
+              item.situacao ||
+              item.situação ||
+              'Ativo',
+          }));
+
+        setClientes(
+          clientesFormatados
+        );
       }
     } catch (err) {
-      console.warn("⚠️ [Clientes]: Falha na requisição de rede:", err);
+      console.warn(
+        '[Clientes] Falha de rede:',
+        err
+      );
     } finally {
       setLoading(false);
     }
@@ -68,353 +126,843 @@ export default function ClientesPage() {
     fetchClientes();
   }, []);
 
-  const clientesFiltrados = clientes.filter((c) => {
-    const termo = busca.toLowerCase();
-    const atendeBusca =
-      c.nome?.toLowerCase().includes(termo) ||
-      c.documento?.toLowerCase().includes(termo) ||
-      c.email?.toLowerCase().includes(termo) ||
-      c.cidade?.toLowerCase().includes(termo);
+  /*
+    ============================================================
+    FILTROS
+    ============================================================
+  */
 
-    const situacaoAtual = c.situacao || "Ativo";
-    const atendeSituacao = filtroSituacao ? situacaoAtual.toLowerCase() === filtroSituacao.toLowerCase() : true;
+  const clientesFiltrados =
+    clientes.filter((cliente) => {
+      const termo =
+        busca.trim().toLowerCase();
 
-    return atendeBusca && atendeSituacao;
-  });
+      const atendeBusca =
+        termo.length === 0 ||
+        cliente.nome
+          ?.toLowerCase()
+          .includes(termo) ||
+        cliente.documento
+          ?.toLowerCase()
+          .includes(termo) ||
+        cliente.email
+          ?.toLowerCase()
+          .includes(termo) ||
+        cliente.cidade
+          ?.toLowerCase()
+          .includes(termo);
 
-  const totalClientes = clientes.length;
-  const ativos = clientes.filter((c) => (c.situacao || "Ativo").toLowerCase() === "ativo").length;
-  const inativos = clientes.filter((c) => (c.situacao || "").toLowerCase() === "inativo").length;
+      const situacaoAtual =
+        cliente.situacao || 'Ativo';
 
-  const handleCardClick = (statusFiltro: string) => {
-    if (filtroSituacao === statusFiltro) {
-      setFiltroSituacao('');
-    } else {
-      setFiltroSituacao(statusFiltro);
-    }
+      const atendeSituacao =
+        filtroSituacao.length === 0 ||
+        situacaoAtual.toLowerCase() ===
+          filtroSituacao.toLowerCase();
+
+      return (
+        atendeBusca &&
+        atendeSituacao
+      );
+    });
+
+  const totalClientes =
+    clientes.length;
+
+  const ativos = clientes.filter(
+    (cliente) =>
+      (
+        cliente.situacao || 'Ativo'
+      ).toLowerCase() === 'ativo'
+  ).length;
+
+  const inativos = clientes.filter(
+    (cliente) =>
+      (
+        cliente.situacao || ''
+      ).toLowerCase() === 'inativo'
+  ).length;
+
+  const alternarFiltro = (
+    situacao: string
+  ) => {
+    setFiltroSituacao((atual) =>
+      atual === situacao
+        ? ''
+        : situacao
+    );
   };
 
-  const abrirVisualizacao = (cliente: Cliente) => {
+  /*
+    ============================================================
+    VISUALIZAÇÃO
+    ============================================================
+  */
+
+  const abrirVisualizacao = (
+    cliente: Cliente
+  ) => {
     setClienteSelecionado(cliente);
     setModalVisualizarAberto(true);
   };
 
-  const confirmarExclusao = (id: string | number | undefined) => {
+  /*
+    ============================================================
+    EXCLUSÃO
+    ============================================================
+  */
+
+  const confirmarExclusao = (
+    id: string | number | undefined
+  ) => {
     if (!id) return;
+
     setIdParaExcluir(id);
     setModalExcluirAberto(true);
   };
 
-  const executarExclusao = async () => {
-    if (!idParaExcluir) return;
+  const executarExclusao =
+    async () => {
+      if (!idParaExcluir) return;
 
-    try {
-      const { error } = await supabase.from('clientes').delete().eq('id', idParaExcluir);
-      if (error) throw error;
-      setClientes(clientes.filter((c) => c.id !== idParaExcluir));
-      setModalExcluirAberto(false);
-      setIdParaExcluir(null);
-    } catch (err: any) {
-      alert('Erro ao excluir cliente: ' + err.message);
-    }
-  };
+      try {
+        const { error } =
+          await supabase
+            .from('clientes')
+            .delete()
+            .eq('id', idParaExcluir);
 
-  const cards = [
+        if (error) {
+          throw error;
+        }
+
+        setClientes((atuais) =>
+          atuais.filter(
+            (cliente) =>
+              cliente.id !==
+              idParaExcluir
+          )
+        );
+
+        setModalExcluirAberto(
+          false
+        );
+
+        setIdParaExcluir(null);
+      } catch (err) {
+        const mensagem =
+          err instanceof Error
+            ? err.message
+            : 'Erro desconhecido';
+
+        alert(
+          'Erro ao excluir cliente: ' +
+            mensagem
+        );
+      }
+    };
+
+  const indicadores = [
     {
-      titulo: "Total de Clientes",
-      valor: loading ? "..." : String(totalClientes),
-      detalhe: "Cadastrados na base",
-      cor: "border-l-4 border-l-blue-400 text-white",
-      situacaoFiltro: "",
+      titulo: 'Todos',
+      valor: totalClientes,
+      detalhe:
+        'clientes cadastrados',
+      filtro: '',
     },
     {
-      titulo: "Clientes Ativos",
-      valor: loading ? "..." : String(ativos),
-      detalhe: "Com cadastro regular (Filtrar)",
-      cor: "border-l-4 border-l-emerald-400 text-white",
-      situacaoFiltro: "Ativo",
+      titulo: 'Ativos',
+      valor: ativos,
+      detalhe:
+        'cadastros regulares',
+      filtro: 'Ativo',
     },
     {
-      titulo: "Inativos / Bloqueados",
-      valor: loading ? "..." : String(inativos),
-      detalhe: "Pendente de atenção (Filtrar)",
-      cor: "border-l-4 border-l-amber-400 text-white",
-      situacaoFiltro: "Inativo",
+      titulo: 'Inativos',
+      valor: inativos,
+      detalhe:
+        'requerem atenção',
+      filtro: 'Inativo',
     },
   ];
 
   return (
-    <div className="min-h-screen bg-[#071f1a] text-slate-800 flex flex-col selection:bg-emerald-500 selection:text-white">
-      
-      {/* Hero Banner */}
-      <div 
-        className="relative bg-cover bg-center h-[360px] px-8 text-white flex flex-col justify-end pb-8 shadow-2xl overflow-hidden"
-        style={{
-          backgroundImage: `linear-gradient(rgba(7, 31, 26, 0.15) 20%, rgba(7, 31, 26, 0.98) 100%), url('${BANNER_REGIONAL.modulos.clientes}')`,
-        }}
-      >
-        <div className="max-w-7xl mx-auto w-full flex flex-col md:flex-row items-start md:items-center justify-between gap-4 relative z-10">
-          <div className="space-y-1.5 text-left">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-[11px] font-bold tracking-widest uppercase mb-1 backdrop-blur-md">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-              Gestão Operacional • Carteira de Clientes
-            </span>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight text-white drop-shadow-lg">
-              Clientes Cadastrados
+    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+      {/* =======================================================
+          CABEÇALHO
+      ======================================================== */}
+
+      <section className="border-b border-white/[0.07] bg-[#091510]">
+        <div className="mx-auto flex max-w-[1360px] flex-col gap-8 px-5 py-10 md:px-8 md:py-12 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <span className="h-px w-8 bg-[#E3A144]" />
+
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
+                Operação • Clientes
+              </span>
+            </div>
+
+            <h1
+              className="mt-4 text-4xl leading-none tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
+              style={{
+                fontFamily:
+                  'var(--font-fraunces), serif',
+              }}
+            >
+              Clientes
             </h1>
-            <p className="text-emerald-100/95 text-sm md:text-base font-medium drop-shadow-md max-w-2xl leading-relaxed">
-              Gerencie informações, contatos e histórico dos clientes da sua operação turística em <span className="text-emerald-300 font-semibold">Barcelos, Capital do Tucunaré</span>.
+
+            <p className="mt-4 max-w-[650px] text-sm leading-7 text-[#EDEDE3]/42">
+              Consulte, organize e
+              mantenha atualizadas as
+              informações dos viajantes
+              atendidos pela sua operação.
             </p>
           </div>
 
-          <div className="flex-shrink-0">
-            <button
-              onClick={() => router.push('/clientes/novo')}
-              className="inline-flex items-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm px-6 py-3 rounded-xl shadow-lg hover:shadow-emerald-900/50 transition-all border border-emerald-400/40 transform hover:-translate-y-0.5 cursor-pointer"
-            >
-              <span className="text-base font-bold">+</span> Novo Cliente
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={() =>
+              router.push(
+                '/clientes/novo'
+              )
+            }
+            className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl bg-[#E3A144] px-6 text-sm font-bold text-[#07130F] transition hover:-translate-y-0.5 hover:bg-[#F0B35C]"
+          >
+            <span className="text-lg">
+              +
+            </span>
+            Novo cliente
+          </button>
         </div>
-      </div>
+      </section>
 
-      <div className="p-8 max-w-7xl mx-auto w-full -mt-6 z-10 flex-1 space-y-6">
-        
-          {/* Cards Resumo */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-            {cards.map((card) => {
-              const isAtivo = card.situacaoFiltro !== '' && filtroSituacao === card.situacaoFiltro;
+      <main className="mx-auto max-w-[1360px] px-5 py-8 md:px-8 md:py-10">
+        {/* =====================================================
+            INDICADORES
+        ====================================================== */}
+
+        <div className="grid gap-4 md:grid-cols-3">
+          {indicadores.map(
+            (indicador) => {
+              const ativo =
+                indicador.filtro !==
+                  '' &&
+                filtroSituacao ===
+                  indicador.filtro;
+
               return (
-                <div
-                  key={card.titulo}
-                  onClick={() => card.situacaoFiltro && handleCardClick(card.situacaoFiltro)}
-                  className={`bg-[#041c17] rounded-2xl p-6 shadow-xl border border-emerald-900/60 ${card.cor} transition-all duration-200 ${
-                    card.situacaoFiltro ? 'cursor-pointer hover:-translate-y-1 hover:shadow-2xl hover:border-emerald-700/80' : ''
-                  } ${isAtivo ? 'ring-2 ring-emerald-400 bg-[#062923]' : ''}`}
+                <button
+                  key={
+                    indicador.titulo
+                  }
+                  type="button"
+                  onClick={() => {
+                    if (
+                      indicador.filtro
+                    ) {
+                      alternarFiltro(
+                        indicador.filtro
+                      );
+                    } else {
+                      setFiltroSituacao(
+                        ''
+                      );
+                    }
+                  }}
+                  className={`rounded-[22px] border p-5 text-left transition ${
+                    ativo
+                      ? 'border-[#E3A144]/35 bg-[#E3A144]/8'
+                      : 'border-white/[0.075] bg-[#0A1713] hover:border-white/[0.14] hover:bg-[#0C1B16]'
+                  }`}
                 >
-                  <p className="text-xs font-bold uppercase tracking-wider text-emerald-400/80">{card.titulo}</p>
-                  <p className="mt-4 text-3xl md:text-4xl font-extrabold text-white tracking-tight">{card.valor}</p>
-                  <p className={`mt-2 text-xs font-medium ${card.situacaoFiltro ? 'underline text-emerald-300' : 'text-emerald-300/80'}`}>
-                    {card.detalhe}
-                  </p>
-                </div>
-              );
-            })}
-          </div>
+                  <div className="flex items-start justify-between">
+                    <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+                      {
+                        indicador.titulo
+                      }
+                    </span>
 
-          {/* Tabela + Filtros */}
-          <div className="bg-[#041c17] rounded-3xl border border-emerald-900/60 p-6 shadow-xl text-slate-100">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between border-b border-emerald-900/50 pb-6">
-              <div className="flex-1">
-                <h2 className="text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
-                  Base de Clientes {filtroSituacao && <span className="text-xs font-semibold text-emerald-300 bg-emerald-950/80 border border-emerald-700/50 px-3 py-1 rounded-full">Filtrando por: {filtroSituacao}</span>}
+                    {ativo && (
+                      <span className="rounded-full bg-[#E3A144]/10 px-2 py-1 text-[8px] font-bold uppercase tracking-[0.12em] text-[#E3A144]">
+                        Filtrando
+                      </span>
+                    )}
+                  </div>
+
+                  <strong
+                    className="mt-5 block text-4xl font-medium tracking-[-0.04em] text-[#F0F0E8]"
+                    style={{
+                      fontFamily:
+                        'var(--font-fraunces), serif',
+                    }}
+                  >
+                    {loading
+                      ? '—'
+                      : indicador.valor}
+                  </strong>
+
+                  <p className="mt-2 text-[11px] text-[#EDEDE3]/28">
+                    {
+                      indicador.detalhe
+                    }
+                  </p>
+                </button>
+              );
+            }
+          )}
+        </div>
+
+        {/* =====================================================
+            BASE DE CLIENTES
+        ====================================================== */}
+
+        <section className="mt-6 overflow-hidden rounded-[26px] border border-white/[0.075] bg-[#0A1713]">
+          {/* CABEÇALHO */}
+
+          <div className="border-b border-white/[0.065] p-5 md:p-6">
+            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                  Base operacional
+                </p>
+
+                <h2
+                  className="mt-2 text-2xl text-[#F0F0E8]"
+                  style={{
+                    fontFamily:
+                      'var(--font-fraunces), serif',
+                  }}
+                >
+                  Carteira de clientes
                 </h2>
-                <p className="mt-1 text-xs text-emerald-200/80">
-                  Consulte por nome, CPF/documento, e-mail ou cidade em tempo real.
+
+                <p className="mt-2 text-xs text-[#EDEDE3]/30">
+                  {
+                    clientesFiltrados.length
+                  }{' '}
+                  registro
+                  {clientesFiltrados.length !==
+                  1
+                    ? 's'
+                    : ''}{' '}
+                  encontrado
+                  {clientesFiltrados.length !==
+                  1
+                    ? 's'
+                    : ''}
+                  .
                 </p>
               </div>
 
-              <div className="flex flex-col gap-3 md:flex-row">
-                <input
-                  type="text"
-                  placeholder="Pesquisar cliente..."
-                  value={busca}
-                  onChange={(e) => setBusca(e.target.value)}
-                  className="rounded-xl border border-emerald-900/60 bg-[#072a25] px-4 py-2.5 text-xs text-white placeholder-emerald-300/50 outline-none focus:border-emerald-500"
-                />
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <div className="relative">
+                  <svg
+                    className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EDEDE3]/25"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z"
+                    />
+                  </svg>
+
+                  <input
+                    type="text"
+                    value={busca}
+                    onChange={(event) =>
+                      setBusca(
+                        event.target.value
+                      )
+                    }
+                    placeholder="Buscar cliente..."
+                    className="h-[44px] w-full min-w-[260px] rounded-xl border border-white/[0.08] bg-[#07110E] pl-10 pr-4 text-xs text-[#EDEDE3] outline-none placeholder:text-[#EDEDE3]/22 focus:border-[#E3A144]/35 sm:w-[300px]"
+                  />
+                </div>
 
                 <select
-                  value={filtroSituacao}
-                  onChange={(e) => setFiltroSituacao(e.target.value)}
-                  className="rounded-xl border border-emerald-900/60 bg-[#072a25] px-4 py-2.5 text-xs text-white outline-none focus:border-emerald-500"
+                  value={
+                    filtroSituacao
+                  }
+                  onChange={(event) =>
+                    setFiltroSituacao(
+                      event.target.value
+                    )
+                  }
+                  className="h-[44px] rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-xs text-[#EDEDE3]/70 outline-none focus:border-[#E3A144]/35"
                 >
-                  <option value="">Todas as Situações</option>
-                  <option value="Ativo">Ativos</option>
-                  <option value="Inativo">Inativos</option>
+                  <option value="">
+                    Todas as situações
+                  </option>
+
+                  <option value="Ativo">
+                    Ativos
+                  </option>
+
+                  <option value="Inativo">
+                    Inativos
+                  </option>
                 </select>
               </div>
             </div>
+          </div>
 
-            <div className="mt-6 overflow-x-auto min-h-[300px]">
-              {loading ? (
-                <div className="p-12 text-center text-emerald-400 font-medium">
-                  Carregando clientes do banco de dados...
+          {/* TABELA */}
+
+          <div className="overflow-x-auto">
+            {loading ? (
+              <div className="flex min-h-[320px] items-center justify-center">
+                <div className="text-center">
+                  <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/[0.08] border-t-[#E3A144]" />
+
+                  <p className="mt-4 text-xs text-[#EDEDE3]/35">
+                    Carregando clientes...
+                  </p>
                 </div>
-              ) : clientesFiltrados.length === 0 ? (
-                <div className="p-12 text-center text-emerald-300/70 font-medium">
-                  Nenhum cliente encontrado com os filtros selecionados.
+              </div>
+            ) : clientesFiltrados.length ===
+              0 ? (
+              <div className="flex min-h-[320px] items-center justify-center px-5 text-center">
+                <div>
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/[0.07] bg-white/[0.025] text-[#E3A144]">
+                    ✦
+                  </div>
+
+                  <h3
+                    className="mt-5 text-2xl text-[#F0F0E8]"
+                    style={{
+                      fontFamily:
+                        'var(--font-fraunces), serif',
+                    }}
+                  >
+                    Nenhum cliente
+                    encontrado.
+                  </h3>
+
+                  <p className="mt-2 text-xs text-[#EDEDE3]/30">
+                    Ajuste os filtros ou
+                    faça um novo cadastro.
+                  </p>
                 </div>
-              ) : (
-                <table className="min-w-[1000px] w-full text-left border-collapse">
-                  <thead>
-                    <tr className="border-b border-emerald-900/60 text-emerald-400 text-xs uppercase tracking-wider">
-                      <th className="px-4 py-3 font-bold">Nome Completo</th>
-                      <th className="px-4 py-3 font-bold">Documento</th>
-                      <th className="px-4 py-3 font-bold">Telefone</th>
-                      <th className="px-4 py-3 font-bold">E-mail</th>
-                      <th className="px-4 py-3 font-bold">Cidade</th>
-                      <th className="px-4 py-3 font-bold">Situação</th>
-                      <th className="px-4 py-3 font-bold text-center">Ações</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-emerald-950/60">
-                    {clientesFiltrados.map((cliente, idx) => (
-                      <tr key={cliente.id || idx} className="hover:bg-[#072a25]/50 transition-colors">
-                        <td className="px-4 py-3.5 text-xs font-semibold text-white">
-                          {cliente.nome}
-                        </td>
-                        <td className="px-4 py-3.5 text-xs font-mono text-emerald-200/80">
-                          {cliente.documento || "—"}
-                        </td>
-                        <td className="px-4 py-3.5 text-xs text-emerald-200/80">
-                          {cliente.telefone || "—"}
-                        </td>
-                        <td className="px-4 py-3.5 text-xs text-emerald-200/80">
-                          {cliente.email || "—"}
-                        </td>
-                        <td className="px-4 py-3.5 text-xs text-emerald-200/80">
-                          {cliente.cidade || "—"}
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <span
-                            className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[10px] font-semibold ${
-                              (cliente.situacao || "").toLowerCase() === "inativo"
-                                ? "bg-rose-950/60 text-rose-300 border border-rose-800/50"
-                                : "bg-emerald-950/60 text-emerald-300 border border-emerald-800/50"
-                            }`}
-                          >
-                            <span
-                              className={`h-1.5 w-1.5 rounded-full ${
-                                (cliente.situacao || "").toLowerCase() === "inativo" ? "bg-rose-400" : "bg-emerald-400"
-                              }`}
-                            />
-                            {cliente.situacao || "Ativo"}
-                          </span>
-                        </td>
-                        <td className="px-4 py-3.5 text-center">
-                          <div className="flex items-center justify-center gap-2">
-                            <button
-                              onClick={() => abrirVisualizacao(cliente)}
-                              title="Ver Detalhes / Observações"
-                              className="p-1.5 bg-[#072a25] hover:bg-emerald-900/60 text-emerald-300 rounded-lg transition border border-emerald-700/30 cursor-pointer"
-                            >
-                              👁️
-                            </button>
-                            <Link
-                              href={`/clientes/editar/${cliente.id}`}
-                              title="Editar Cliente"
-                              className="p-1.5 bg-[#072a25] hover:bg-blue-900/60 text-blue-300 rounded-lg transition border border-blue-700/30 cursor-pointer"
-                            >
-                              ✏️
-                            </Link>
-                            <button
-                              onClick={() => confirmarExclusao(cliente.id)}
-                              title="Excluir Cliente"
-                              className="p-1.5 bg-[#072a25] hover:bg-rose-900/60 text-rose-300 rounded-lg transition border border-rose-700/30 cursor-pointer"
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
+              </div>
+            ) : (
+              <table className="min-w-[1050px] w-full border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-white/[0.06] bg-white/[0.012]">
+                    {[
+                      'Cliente',
+                      'Documento',
+                      'Telefone',
+                      'E-mail',
+                      'Cidade',
+                      'Situação',
+                      'Ações',
+                    ].map((item) => (
+                      <th
+                        key={item}
+                        className={`px-5 py-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28 ${
+                          item ===
+                          'Ações'
+                            ? 'text-center'
+                            : ''
+                        }`}
+                      >
+                        {item}
+                      </th>
                     ))}
-                  </tbody>
-                </table>
-              )}
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-white/[0.055]">
+                  {clientesFiltrados.map(
+                    (
+                      cliente,
+                      index
+                    ) => {
+                      const inativo =
+                        (
+                          cliente.situacao ||
+                          ''
+                        ).toLowerCase() ===
+                        'inativo';
+
+                      const iniciais =
+                        cliente.nome
+                          ?.split(' ')
+                          .filter(
+                            Boolean
+                          )
+                          .slice(0, 2)
+                          .map((parte) =>
+                            parte
+                              .charAt(0)
+                              .toUpperCase()
+                          )
+                          .join('') ||
+                        'CL';
+
+                      return (
+                        <tr
+                          key={
+                            cliente.id ||
+                            index
+                          }
+                          className="transition hover:bg-white/[0.018]"
+                        >
+                          <td className="px-5 py-4">
+                            <div className="flex items-center gap-3">
+                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#E3A144]/15 bg-[#E3A144]/7 text-[10px] font-bold text-[#E3A144]">
+                                {
+                                  iniciais
+                                }
+                              </div>
+
+                              <div>
+                                <p className="text-xs font-semibold text-[#EDEDE3]/82">
+                                  {
+                                    cliente.nome
+                                  }
+                                </p>
+
+                                {cliente.nacionalidade && (
+                                  <p className="mt-1 text-[9px] text-[#EDEDE3]/25">
+                                    {
+                                      cliente.nacionalidade
+                                    }
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+                          </td>
+
+                          <td className="px-5 py-4 text-xs font-mono text-[#EDEDE3]/42">
+                            {cliente.documento ||
+                              '—'}
+                          </td>
+
+                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
+                            {cliente.telefone ||
+                              '—'}
+                          </td>
+
+                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
+                            {cliente.email ||
+                              '—'}
+                          </td>
+
+                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
+                            {cliente.cidade ||
+                              '—'}
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <span
+                              className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[9px] font-semibold ${
+                                inativo
+                                  ? 'border-red-500/20 bg-red-500/[0.07] text-red-300'
+                                  : 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300'
+                              }`}
+                            >
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${
+                                  inativo
+                                    ? 'bg-red-400'
+                                    : 'bg-emerald-400'
+                                }`}
+                              />
+
+                              {cliente.situacao ||
+                                'Ativo'}
+                            </span>
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  abrirVisualizacao(
+                                    cliente
+                                  )
+                                }
+                                title="Visualizar"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-[#E3A144]/20 hover:bg-[#E3A144]/7 hover:text-[#E3A144]"
+                              >
+                                <svg
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"
+                                  />
+                                  <circle
+                                    cx="12"
+                                    cy="12"
+                                    r="3"
+                                  />
+                                </svg>
+                              </button>
+
+                              <Link
+                                href={`/clientes/editar/${cliente.id}`}
+                                title="Editar"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-sky-400/20 hover:bg-sky-400/[0.06] hover:text-sky-300"
+                              >
+                                <svg
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L8 18l-4 1 1-4L16.5 3.5z"
+                                  />
+                                </svg>
+                              </Link>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  confirmarExclusao(
+                                    cliente.id
+                                  )
+                                }
+                                title="Excluir"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-red-400/20 hover:bg-red-400/[0.06] hover:text-red-300"
+                              >
+                                <svg
+                                  className="h-4 w-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth="1.8"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14M10 11v5m4-5v5"
+                                  />
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </section>
+      </main>
+
+      {/* =======================================================
+          MODAL DETALHES
+      ======================================================== */}
+
+      {modalVisualizarAberto &&
+        clienteSelecionado && (
+          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+            <div className="w-full max-w-[640px] overflow-hidden rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.6)]">
+              <div className="flex items-center justify-between border-b border-white/[0.07] px-6 py-5">
+                <div>
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                    Perfil do cliente
+                  </p>
+
+                  <h3
+                    className="mt-1 text-2xl text-[#F0F0E8]"
+                    style={{
+                      fontFamily:
+                        'var(--font-fraunces), serif',
+                    }}
+                  >
+                    {
+                      clienteSelecionado.nome
+                    }
+                  </h3>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setModalVisualizarAberto(
+                      false
+                    )
+                  }
+                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] text-[#EDEDE3]/45 transition hover:bg-white/[0.06] hover:text-white"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="grid gap-4 p-6 sm:grid-cols-2">
+                {[
+                  {
+                    label: 'Documento',
+                    valor:
+                      clienteSelecionado.documento,
+                  },
+                  {
+                    label:
+                      'Telefone / WhatsApp',
+                    valor:
+                      clienteSelecionado.telefone,
+                  },
+                  {
+                    label: 'E-mail',
+                    valor:
+                      clienteSelecionado.email,
+                  },
+                  {
+                    label: 'Cidade',
+                    valor:
+                      clienteSelecionado.cidade,
+                  },
+                  {
+                    label:
+                      'Nacionalidade',
+                    valor:
+                      clienteSelecionado.nacionalidade,
+                  },
+                  {
+                    label: 'Situação',
+                    valor:
+                      clienteSelecionado.situacao ||
+                      'Ativo',
+                  },
+                ].map((item) => (
+                  <div
+                    key={item.label}
+                    className="rounded-2xl border border-white/[0.065] bg-white/[0.018] p-4"
+                  >
+                    <p className="text-[8px] font-semibold uppercase tracking-[0.17em] text-[#EDEDE3]/28">
+                      {item.label}
+                    </p>
+
+                    <p className="mt-2 break-words text-xs font-medium text-[#EDEDE3]/75">
+                      {item.valor ||
+                        'Não informado'}
+                    </p>
+                  </div>
+                ))}
+
+                <div className="sm:col-span-2">
+                  <p className="mb-2 text-[8px] font-semibold uppercase tracking-[0.17em] text-[#EDEDE3]/28">
+                    Observações
+                  </p>
+
+                  <div className="min-h-[90px] rounded-2xl border border-white/[0.065] bg-[#07110E] p-4 text-xs leading-6 text-[#EDEDE3]/50">
+                    {clienteSelecionado.observacoes ||
+                      'Nenhuma observação registrada para este cliente.'}
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-2 border-t border-white/[0.07] px-6 py-4">
+                <Link
+                  href={`/clientes/editar/${clienteSelecionado.id}`}
+                  className="rounded-xl border border-white/[0.09] bg-white/[0.03] px-5 py-2.5 text-xs font-semibold text-[#EDEDE3]/65 transition hover:bg-white/[0.06]"
+                >
+                  Editar cliente
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setModalVisualizarAberto(
+                      false
+                    )
+                  }
+                  className="rounded-xl bg-[#E3A144] px-5 py-2.5 text-xs font-bold text-[#07130F]"
+                >
+                  Fechar
+                </button>
+              </div>
             </div>
           </div>
-      </div>
+        )}
 
-      {/* Modal de Visualização / Observações */}
-      {modalVisualizarAberto && clienteSelecionado && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-[#041c17] rounded-2xl shadow-2xl max-w-lg w-full p-6 border border-emerald-900/80 text-slate-100 space-y-4">
-            <div className="flex items-center justify-between border-b border-emerald-900/60 pb-3">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <span>👤</span> Detalhes do Cliente
-              </h3>
-              <button
-                onClick={() => setModalVisualizarAberto(false)}
-                className="text-emerald-400 hover:text-white text-sm font-bold cursor-pointer"
-              >
-                ✕
-              </button>
-            </div>
-            <div className="grid grid-cols-2 gap-4 text-xs">
-              <div>
-                <span className="text-emerald-400/70 block text-[10px] font-semibold uppercase tracking-wider">Nome Completo</span>
-                <span className="text-white font-medium text-sm">{clienteSelecionado.nome}</span>
-              </div>
-              <div>
-                <span className="text-emerald-400/70 block text-[10px] font-semibold uppercase tracking-wider">Documento / CPF</span>
-                <span className="text-white font-mono">{clienteSelecionado.documento || 'Não informado'}</span>
-              </div>
-              <div>
-                <span className="text-emerald-400/70 block text-[10px] font-semibold uppercase tracking-wider">Telefone</span>
-                <span className="text-white">{clienteSelecionado.telefone || 'Não informado'}</span>
-              </div>
-              <div>
-                <span className="text-emerald-400/70 block text-[10px] font-semibold uppercase tracking-wider">E-mail</span>
-                <span className="text-white">{clienteSelecionado.email || 'Não informado'}</span>
-              </div>
-              <div>
-                <span className="text-emerald-400/70 block text-[10px] font-semibold uppercase tracking-wider">Cidade</span>
-                <span className="text-white">{clienteSelecionado.cidade || 'Não informada'}</span>
-              </div>
-              <div>
-                <span className="text-emerald-400/70 block text-[10px] font-semibold uppercase tracking-wider">Situação</span>
-                <span className="text-white">{clienteSelecionado.situacao || 'Ativo'}</span>
-              </div>
-            </div>
-            <div>
-              <span className="text-emerald-400/70 block text-[10px] font-semibold uppercase tracking-wider mb-1">Observações / Histórico</span>
-              <p className="text-emerald-100/90 text-xs bg-[#072a25] p-3 rounded-xl border border-emerald-900/60 min-h-[60px] leading-relaxed">
-                {clienteSelecionado.observacoes || 'Nenhuma observação registrada para este cliente.'}
-              </p>
-            </div>
-            <div className="flex justify-end pt-2">
-              <button
-                onClick={() => setModalVisualizarAberto(false)}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition cursor-pointer"
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* =======================================================
+          MODAL EXCLUSÃO
+      ======================================================== */}
 
-      {/* Modal de Confirmação de Exclusão */}
       {modalExcluirAberto && (
-        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4 z-50">
-          <div className="bg-[#041c17] rounded-2xl shadow-2xl max-w-md w-full p-6 border border-emerald-900/80 text-center space-y-4">
-            <div className="w-12 h-12 bg-rose-950/80 text-rose-400 border border-rose-800/50 rounded-full flex items-center justify-center mx-auto text-xl shadow-inner">
-              ⚠️
+        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-[430px] rounded-[26px] border border-white/[0.09] bg-[#091510] p-6 text-center shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-red-500/20 bg-red-500/[0.08] text-red-300">
+              <svg
+                className="h-5 w-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M12 9v4m0 4h.01M10.3 4.3L2.8 17.3A2 2 0 004.5 20h15a2 2 0 001.7-2.7L13.7 4.3a2 2 0 00-3.4 0z"
+                />
+              </svg>
             </div>
-            <h3 className="text-base font-bold text-white">
-              Confirmar Exclusão
+
+            <h3
+              className="mt-5 text-2xl text-[#F0F0E8]"
+              style={{
+                fontFamily:
+                  'var(--font-fraunces), serif',
+              }}
+            >
+              Excluir cliente?
             </h3>
-            <p className="text-emerald-200/80 text-xs leading-relaxed">
-              Deseja realmente excluir este cliente do sistema? Esta ação é definitiva e não poderá ser desfeita.
+
+            <p className="mx-auto mt-3 max-w-[320px] text-xs leading-6 text-[#EDEDE3]/38">
+              Este registro será removido
+              da base. A ação não poderá
+              ser desfeita.
             </p>
-            <div className="flex items-center justify-center gap-3 pt-2">
+
+            <div className="mt-6 grid grid-cols-2 gap-3">
               <button
-                onClick={() => setModalExcluirAberto(false)}
-                className="flex-1 bg-[#072a25] hover:bg-[#0e433b] text-emerald-200 text-xs font-semibold py-2.5 rounded-xl transition border border-emerald-700/30 cursor-pointer"
+                type="button"
+                onClick={() => {
+                  setModalExcluirAberto(
+                    false
+                  );
+                  setIdParaExcluir(null);
+                }}
+                className="rounded-xl border border-white/[0.09] bg-white/[0.025] px-4 py-3 text-xs font-semibold text-[#EDEDE3]/60 transition hover:bg-white/[0.05]"
               >
                 Cancelar
               </button>
+
               <button
-                onClick={executarExclusao}
-                className="flex-1 bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold py-2.5 rounded-xl transition shadow-md cursor-pointer"
+                type="button"
+                onClick={
+                  executarExclusao
+                }
+                className="rounded-xl border border-red-500/20 bg-red-500/[0.1] px-4 py-3 text-xs font-semibold text-red-300 transition hover:bg-red-500/[0.16]"
               >
-                Sim, Excluir
+                Excluir
               </button>
             </div>
           </div>
         </div>
       )}
-
     </div>
   );
 }

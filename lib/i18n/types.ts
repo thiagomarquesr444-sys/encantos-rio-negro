@@ -1,0 +1,1 @@
+export type Idioma = 'PT' | 'EN' | 'ES';
