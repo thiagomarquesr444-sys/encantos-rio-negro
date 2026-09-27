@@ -1,35 +1,83 @@
 import { createServerClient } from '@supabase/ssr';
-import { NextResponse, type NextRequest } from 'next/server';
+import {
+  NextResponse,
+  type NextRequest,
+} from 'next/server';
 
-export async function proxy(request: NextRequest) {
-  let response = NextResponse.next({
-    request,
-  });
+export async function proxy(
+  request: NextRequest
+) {
+  const pathname =
+    request.nextUrl.pathname;
 
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll();
+  /*
+    ============================================================
+    WEBHOOK ASAAS
+
+    Esta rota possui autenticação própria através do cabeçalho
+    asaas-access-token.
+
+    Ela não depende da sessão Supabase do usuário e não deve
+    passar pelo fluxo de autenticação das páginas privadas.
+    ============================================================
+  */
+
+  if (
+    pathname ===
+    '/api/webhooks/asaas'
+  ) {
+    return NextResponse.next();
+  }
+
+  let response =
+    NextResponse.next({
+      request,
+    });
+
+  const supabase =
+    createServerClient(
+      process.env
+        .NEXT_PUBLIC_SUPABASE_URL!,
+      process.env
+        .NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          getAll() {
+            return request.cookies.getAll();
+          },
+
+          setAll(
+            cookiesToSet
+          ) {
+            cookiesToSet.forEach(
+              ({
+                name,
+                value,
+                options,
+              }) => {
+                request.cookies.set(
+                  name,
+                  value
+                );
+
+                response.cookies.set(
+                  name,
+                  value,
+                  options
+                );
+              }
+            );
+          },
         },
-
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => {
-            request.cookies.set(name, value);
-            response.cookies.set(name, value, options);
-          });
-        },
-      },
-    }
-  );
+      }
+    );
 
   const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const pathname = request.nextUrl.pathname;
+    data: {
+      user,
+    },
+  } =
+    await supabase.auth.getUser();
 
   const rotasPrivadas = [
     '/dashboard',
@@ -44,45 +92,74 @@ export async function proxy(request: NextRequest) {
     '/parceiros',
     '/relatorios',
     '/vouchers',
+    '/planos',
   ];
 
-  const rotaPrivada = rotasPrivadas.some(
-    (rota) =>
-      pathname === rota || pathname.startsWith(`${rota}/`)
-  );
+  const rotaPrivada =
+    rotasPrivadas.some(
+      (rota) =>
+        pathname === rota ||
+        pathname.startsWith(
+          `${rota}/`
+        )
+    );
 
-  // ============================================================
-  // ROTAS PRIVADAS
-  // ============================================================
+  /*
+    ============================================================
+    ROTAS PRIVADAS
+    ============================================================
+  */
 
-  if (rotaPrivada && !user) {
+  if (
+    rotaPrivada &&
+    !user
+  ) {
     return NextResponse.redirect(
-      new URL('/login', request.url)
+      new URL(
+        '/login',
+        request.url
+      )
     );
   }
 
-  // ============================================================
-  // LOGIN
-  // Usuário autenticado continua sendo enviado ao dashboard
-  // ============================================================
+  /*
+    ============================================================
+    LOGIN
 
-  if (pathname === '/login' && user) {
+    Usuário autenticado continua sendo enviado ao dashboard.
+    ============================================================
+  */
+
+  if (
+    pathname ===
+      '/login' &&
+    user
+  ) {
     return NextResponse.redirect(
-      new URL('/dashboard', request.url)
+      new URL(
+        '/dashboard',
+        request.url
+      )
     );
   }
 
-  // ============================================================
-  // HOME PÚBLICA
-  // "/" permanece pública para qualquer visitante,
-  // autenticado ou não.
-  // ============================================================
+  /*
+    ============================================================
+    HOME E DEMAIS ROTAS PÚBLICAS
+    ============================================================
+  */
 
   return response;
 }
 
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    /*
+      O webhook do Asaas é excluído do Proxy.
+
+      Todo o restante continua com o comportamento
+      atual do projeto.
+    */
+    '/((?!api/webhooks/asaas|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 };

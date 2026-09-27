@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/assinaturas/processar-cancelamentos",
+      "schedule": "15 4 * * *"
+    }
+  ]
+}
