@@ -1,11 +1,24 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { supabase } from '@/lib/supabase';
 import { BANNER_REGIONAL } from '@/lib/bannerImagens';
+
+import {
+  analisarUsoPlano,
+  RECURSOS_PLANOS,
+  type PlanoAtual,
+  type RecursoPlano,
+  type UsoPlano,
+} from '@/lib/plano';
 
 type Stats = {
   clientes: number;
@@ -14,78 +27,132 @@ type Stats = {
   embarcacoes: number;
 };
 
-type RecursosPlano = {
-  rede_basica?: boolean;
-  financeiro?: boolean;
-  vouchers?: boolean;
-  relatorios?: boolean;
-  concierge_ia?: boolean;
-  whatsapp?: boolean;
-  destaque_rede?: boolean;
-  [key: string]: boolean | undefined;
-};
-
-type PlanoAtual = {
-  empresa_id: string;
-  empresa_nome: string;
-  plano_id: string;
+type UsoClientesRpc = {
   plano_codigo: string;
   plano_nome: string;
-  assinatura_status: string;
-  limite_usuarios: number | null;
-  limite_clientes: number | null;
-  limite_reservas_mes: number | null;
-  limite_passeios: number | null;
-  recursos: RecursosPlano | null;
+  total_clientes: number | string | null;
+  limite_clientes: number | string | null;
+  ilimitado: boolean;
+  percentual_uso: number | string | null;
 };
 
-function formatarLimite(valor: number | null | undefined) {
-  if (valor === null || valor === undefined) {
-    return 'Ilimitado';
+type UsoPasseiosRpc = {
+  plano_codigo: string;
+  plano_nome: string;
+  total_passeios: number | string | null;
+  limite_passeios: number | string | null;
+  ilimitado: boolean;
+  percentual_uso: number | string | null;
+};
+
+type UsoReservasRpc = {
+  plano_codigo: string;
+  plano_nome: string;
+  total_reservas_mes: number | string | null;
+  limite_reservas_mes: number | string | null;
+  ilimitado: boolean;
+  percentual_uso: number | string | null;
+  inicio_periodo: string | null;
+  fim_periodo: string | null;
+};
+
+type UsoUsuariosRpc = {
+  plano_codigo: string;
+  plano_nome: string;
+  total_usuarios: number | string | null;
+  limite_usuarios: number | string | null;
+  ilimitado: boolean;
+  percentual_uso: number | string | null;
+};
+
+function primeiroResultado<T>(
+  data: T | T[] | null
+): T | null {
+  if (!data) {
+    return null;
   }
 
-  return String(valor);
+  if (Array.isArray(data)) {
+    return data[0] ?? null;
+  }
+
+  return data;
 }
 
-function nomeRecurso(chave: string) {
-  const nomes: Record<string, string> = {
-    rede_basica: 'Rede ERN',
-    financeiro: 'Financeiro',
-    vouchers: 'Vouchers',
-    relatorios: 'Relatórios',
-    concierge_ia: 'Concierge IA',
-    whatsapp: 'WhatsApp',
-    destaque_rede: 'Destaque na Rede',
-  };
+function numeroSeguro(
+  valor: number | string | null | undefined
+) {
+  const numero = Number(valor ?? 0);
 
-  return nomes[chave] ?? chave;
+  return Number.isFinite(numero)
+    ? numero
+    : 0;
+}
+
+function nomeStatus(status: string) {
+  switch (status) {
+    case 'ativo':
+      return 'Ativo';
+
+    case 'trial':
+      return 'Período de teste';
+
+    case 'cancelado':
+      return 'Cancelado';
+
+    case 'inativo':
+      return 'Inativo';
+
+    default:
+      return status;
+  }
+}
+
+function estiloStatus(status: string) {
+  if (
+    status === 'ativo' ||
+    status === 'trial'
+  ) {
+    return 'border-emerald-400/15 bg-emerald-400/[0.07] text-emerald-300';
+  }
+
+  return 'border-[#E3A144]/20 bg-[#E3A144]/10 text-[#F4C77E]';
 }
 
 export default function DashboardPage() {
   const router = useRouter();
 
-  const [stats, setStats] = useState<Stats>({
-    clientes: 0,
-    reservas: 0,
-    roteiros: 0,
-    embarcacoes: 0,
-  });
+  const [stats, setStats] =
+    useState<Stats>({
+      clientes: 0,
+      reservas: 0,
+      roteiros: 0,
+      embarcacoes: 0,
+    });
 
-  const [plano, setPlano] = useState<PlanoAtual | null>(null);
+  const [plano, setPlano] =
+    useState<PlanoAtual | null>(null);
 
-  const [loading, setLoading] = useState(true);
-  const [loadingPlano, setLoadingPlano] = useState(true);
+  const [uso, setUso] =
+    useState<UsoPlano | null>(null);
 
-  const [error, setError] = useState<string | null>(null);
-  const [erroPlano, setErroPlano] = useState<string | null>(null);
+  const [loading, setLoading] =
+    useState(true);
 
-  /*
-    ============================================================
-    ESTATÍSTICAS REAIS
-    ============================================================
-  */
+  const [
+    loadingPlano,
+    setLoadingPlano,
+  ] = useState(true);
+
+  const [error, setError] =
+    useState<string | null>(null);
+
+  const [erroPlano, setErroPlano] =
+    useState<string | null>(null);
 
   useEffect(() => {
+    let ativo = true;
+
     async function fetchDashboard() {
       setLoading(true);
       setLoadingPlano(true);
@@ -99,6 +166,10 @@ export default function DashboardPage() {
           resPasseios,
           resEmbarcacoes,
           resPlano,
+          resUsoClientes,
+          resUsoPasseios,
+          resUsoReservas,
+          resUsoUsuarios,
         ] = await Promise.all([
           supabase
             .from('clientes')
@@ -128,51 +199,64 @@ export default function DashboardPage() {
               head: true,
             }),
 
-          supabase.rpc('get_meu_plano'),
+          supabase.rpc(
+            'get_meu_plano'
+          ),
+
+          supabase.rpc(
+            'get_meu_uso_clientes'
+          ),
+
+          supabase.rpc(
+            'get_meu_uso_passeios'
+          ),
+
+          supabase.rpc(
+            'get_meu_uso_reservas_mes'
+          ),
+
+          supabase.rpc(
+            'get_meu_uso_usuarios'
+          ),
         ]);
 
-        /*
-          ========================================================
-          ESTATÍSTICAS
-          ========================================================
-        */
-
-        if (resClientes.error) {
-          throw new Error(
-            `Erro em clientes: ${resClientes.error.message}`
-          );
+        if (!ativo) {
+          return;
         }
 
-        if (resReservas.error) {
-          throw new Error(
-            `Erro em reservas: ${resReservas.error.message}`
-          );
-        }
+        const errosEstatisticas = [
+          resClientes.error,
+          resReservas.error,
+          resPasseios.error,
+          resEmbarcacoes.error,
+        ].filter(Boolean);
 
-        if (resPasseios.error) {
-          throw new Error(
-            `Erro em passeios: ${resPasseios.error.message}`
+        if (
+          errosEstatisticas.length > 0
+        ) {
+          console.error(
+            'Erros nas estatísticas:',
+            errosEstatisticas
           );
-        }
 
-        if (resEmbarcacoes.error) {
-          throw new Error(
-            `Erro em embarcações: ${resEmbarcacoes.error.message}`
+          setError(
+            'Não foi possível carregar todos os indicadores da operação.'
           );
         }
 
         setStats({
-          clientes: resClientes.count || 0,
-          reservas: resReservas.count || 0,
-          roteiros: resPasseios.count || 0,
-          embarcacoes: resEmbarcacoes.count || 0,
-        });
+          clientes:
+            resClientes.count ?? 0,
 
-        /*
-          ========================================================
-          PLANO / ASSINATURA
-          ========================================================
-        */
+          reservas:
+            resReservas.count ?? 0,
+
+          roteiros:
+            resPasseios.count ?? 0,
+
+          embarcacoes:
+            resEmbarcacoes.count ?? 0,
+        });
 
         if (resPlano.error) {
           console.error(
@@ -180,15 +264,21 @@ export default function DashboardPage() {
             resPlano.error
           );
 
-          setErroPlano(resPlano.error.message);
           setPlano(null);
-        } else {
-          const resultado = Array.isArray(resPlano.data)
-            ? resPlano.data[0]
-            : resPlano.data;
 
-          if (resultado) {
-            setPlano(resultado as PlanoAtual);
+          setErroPlano(
+            resPlano.error.message
+          );
+        } else {
+          const resultadoPlano =
+            primeiroResultado(
+              resPlano.data
+            );
+
+          if (resultadoPlano) {
+            setPlano(
+              resultadoPlano as PlanoAtual
+            );
           } else {
             setPlano(null);
 
@@ -197,11 +287,94 @@ export default function DashboardPage() {
             );
           }
         }
+
+        const errosUso = [
+          resUsoClientes.error,
+          resUsoPasseios.error,
+          resUsoReservas.error,
+          resUsoUsuarios.error,
+        ].filter(Boolean);
+
+        if (errosUso.length > 0) {
+          console.error(
+            'Erros ao carregar uso do plano:',
+            errosUso
+          );
+
+          setUso(null);
+
+          setErroPlano(
+            'Não foi possível carregar completamente o uso da assinatura.'
+          );
+
+          return;
+        }
+
+        const clientes =
+          primeiroResultado(
+            resUsoClientes.data
+          ) as UsoClientesRpc | null;
+
+        const passeios =
+          primeiroResultado(
+            resUsoPasseios.data
+          ) as UsoPasseiosRpc | null;
+
+        const reservas =
+          primeiroResultado(
+            resUsoReservas.data
+          ) as UsoReservasRpc | null;
+
+        const usuarios =
+          primeiroResultado(
+            resUsoUsuarios.data
+          ) as UsoUsuariosRpc | null;
+
+        if (
+          !clientes ||
+          !passeios ||
+          !reservas ||
+          !usuarios
+        ) {
+          setUso(null);
+
+          setErroPlano(
+            'Não foi possível identificar completamente o uso da assinatura.'
+          );
+
+          return;
+        }
+
+        setUso({
+          usuarios:
+            numeroSeguro(
+              usuarios.total_usuarios
+            ),
+
+          clientes:
+            numeroSeguro(
+              clientes.total_clientes
+            ),
+
+          reservas_mes:
+            numeroSeguro(
+              reservas.total_reservas_mes
+            ),
+
+          passeios:
+            numeroSeguro(
+              passeios.total_passeios
+            ),
+        });
       } catch (err) {
         console.error(
           'Erro ao carregar dashboard:',
           err
         );
+
+        if (!ativo) {
+          return;
+        }
 
         setError(
           err instanceof Error
@@ -209,26 +382,45 @@ export default function DashboardPage() {
             : 'Ocorreu um erro inesperado ao carregar o dashboard.'
         );
       } finally {
-        setLoading(false);
-        setLoadingPlano(false);
+        if (ativo) {
+          setLoading(false);
+          setLoadingPlano(false);
+        }
       }
     }
 
     fetchDashboard();
+
+    return () => {
+      ativo = false;
+    };
   }, []);
 
-  /*
-    ============================================================
-    INDICADORES
-    ============================================================
-  */
+  const situacaoUso =
+    useMemo(() => {
+      if (
+        !plano ||
+        !uso
+      ) {
+        return null;
+      }
+
+      return analisarUsoPlano(
+        plano,
+        uso
+      );
+    }, [
+      plano,
+      uso,
+    ]);
 
   const indicadores = [
     {
       titulo: 'Clientes',
       valor: stats.clientes,
       href: '/clientes',
-      detalhe: 'viajantes cadastrados',
+      detalhe:
+        'viajantes cadastrados',
       icon: (
         <svg
           className="h-5 w-5"
@@ -245,11 +437,13 @@ export default function DashboardPage() {
         </svg>
       ),
     },
+
     {
       titulo: 'Reservas',
       valor: stats.reservas,
       href: '/reservas',
-      detalhe: 'registros na operação',
+      detalhe:
+        'registros na operação',
       icon: (
         <svg
           className="h-5 w-5"
@@ -266,11 +460,13 @@ export default function DashboardPage() {
         </svg>
       ),
     },
+
     {
       titulo: 'Passeios',
       valor: stats.roteiros,
       href: '/passeios',
-      detalhe: 'experiências cadastradas',
+      detalhe:
+        'experiências cadastradas',
       icon: (
         <svg
           className="h-5 w-5"
@@ -287,11 +483,13 @@ export default function DashboardPage() {
         </svg>
       ),
     },
+
     {
       titulo: 'Embarcações',
       valor: stats.embarcacoes,
       href: '/embarcacoes',
-      detalhe: 'unidades cadastradas',
+      detalhe:
+        'unidades cadastradas',
       icon: (
         <svg
           className="h-5 w-5"
@@ -310,50 +508,100 @@ export default function DashboardPage() {
     },
   ];
 
-  /*
-    ============================================================
-    ACESSOS RÁPIDOS
-    ============================================================
-  */
-
   const atalhos = [
     {
-      titulo: 'Novo cliente',
-      descricao: 'Cadastrar um novo viajante.',
-      href: '/clientes/novo',
+      titulo:
+        'Novo cliente',
+      descricao:
+        'Cadastrar um novo viajante.',
+      href:
+        '/clientes/novo',
     },
+
     {
-      titulo: 'Nova reserva',
-      descricao: 'Registrar uma nova operação.',
-      href: '/reservas/nova',
+      titulo:
+        'Nova reserva',
+      descricao:
+        'Registrar uma nova operação.',
+      href:
+        '/reservas/nova',
     },
+
     {
-      titulo: 'Novo passeio',
-      descricao: 'Adicionar uma experiência.',
-      href: '/passeios/novo',
+      titulo:
+        'Novo passeio',
+      descricao:
+        'Adicionar uma experiência.',
+      href:
+        '/passeios/novo',
     },
+
     {
-      titulo: 'Financeiro',
-      descricao: 'Acompanhar movimentações.',
-      href: '/financeiro',
+      titulo:
+        'Financeiro',
+      descricao:
+        'Acompanhar movimentações.',
+      href:
+        '/financeiro',
     },
   ];
 
-  const recursos = plano?.recursos
-    ? Object.entries(plano.recursos)
-    : [];
+  const recursos =
+    plano?.recursos
+      ? Object.entries(
+          plano.recursos
+        )
+      : [];
+
+  const cardsUso =
+    situacaoUso
+      ? [
+          {
+            chave:
+              'usuarios',
+            label:
+              'Usuários',
+            situacao:
+              situacaoUso.usuarios,
+          },
+
+          {
+            chave:
+              'clientes',
+            label:
+              'Clientes',
+            situacao:
+              situacaoUso.clientes,
+          },
+
+          {
+            chave:
+              'reservas_mes',
+            label:
+              'Reservas / mês',
+            situacao:
+              situacaoUso.reservas_mes,
+          },
+
+          {
+            chave:
+              'passeios',
+            label:
+              'Passeios',
+            situacao:
+              situacaoUso.passeios,
+          },
+        ]
+      : [];
 
   return (
     <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
-      {/* =========================================================
-          APRESENTAÇÃO
-      ========================================================== */}
-
       <section className="relative overflow-hidden border-b border-white/[0.07] bg-[#091510]">
         <div
           className="absolute inset-0 bg-cover bg-center opacity-35"
           style={{
-            backgroundImage: `url('${BANNER_REGIONAL.modulos.dashboard}')`,
+            backgroundImage:
+              `url('${BANNER_REGIONAL.modulos.dashboard}')`,
           }}
         />
 
@@ -398,7 +646,9 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={() =>
-                  router.push('/clientes/novo')
+                  router.push(
+                    '/clientes/novo'
+                  )
                 }
                 className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl bg-[#E3A144] px-6 text-sm font-bold text-[#07130F] transition hover:-translate-y-0.5 hover:bg-[#F0B35C]"
               >
@@ -414,20 +664,16 @@ export default function DashboardPage() {
                 className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl border border-white/[0.12] bg-white/[0.035] px-6 text-sm font-semibold text-[#EDEDE3]/75 backdrop-blur transition hover:bg-white/[0.07]"
               >
                 Ver reservas
-                <span>→</span>
+                <span aria-hidden="true">
+                  →
+                </span>
               </Link>
             </div>
           </div>
         </div>
       </section>
 
-      {/* =========================================================
-          CONTEÚDO
-      ========================================================== */}
-
       <main className="mx-auto max-w-[1360px] px-5 py-8 md:px-8 md:py-10">
-        {/* ERRO GERAL */}
-
         {error && (
           <div className="mb-6 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-sm text-red-200">
             <span className="font-semibold">
@@ -440,10 +686,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* =====================================================
-            PLANO ATUAL
-        ====================================================== */}
-
         <section className="mb-8 overflow-hidden rounded-[26px] border border-[#E3A144]/15 bg-[#0A1713]">
           <div className="grid lg:grid-cols-[0.72fr_1.28fr]">
             <div className="relative border-b border-white/[0.065] p-5 md:p-6 lg:border-b-0 lg:border-r">
@@ -455,18 +697,18 @@ export default function DashboardPage() {
                     Plano atual
                   </p>
 
-                  {!loadingPlano && plano && (
-                    <span
-                      className={`rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] ${
-                        plano.assinatura_status ===
-                        'ativo'
-                          ? 'border-emerald-400/15 bg-emerald-400/[0.07] text-emerald-300'
-                          : 'border-[#E3A144]/20 bg-[#E3A144]/10 text-[#F4C77E]'
-                      }`}
-                    >
-                      {plano.assinatura_status}
-                    </span>
-                  )}
+                  {!loadingPlano &&
+                    plano && (
+                      <span
+                        className={`rounded-full border px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] ${estiloStatus(
+                          plano.assinatura_status
+                        )}`}
+                      >
+                        {nomeStatus(
+                          plano.assinatura_status
+                        )}
+                      </span>
+                    )}
                 </div>
 
                 <h2
@@ -500,6 +742,18 @@ export default function DashboardPage() {
                   </div>
                 )}
 
+                <div className="mt-6">
+                  <Link
+                    href="/planos"
+                    className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-[#E3A144]/15 bg-[#E3A144]/[0.055] px-4 text-xs font-semibold text-[#F4C77E] transition hover:bg-[#E3A144]/10"
+                  >
+                    Gerenciar plano
+                    <span aria-hidden="true">
+                      →
+                    </span>
+                  </Link>
+                </div>
+
                 {erroPlano && (
                   <p className="mt-4 text-xs leading-5 text-red-300/75">
                     {erroPlano}
@@ -512,7 +766,7 @@ export default function DashboardPage() {
               <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
                   <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
-                    Uso incluído
+                    Uso da assinatura
                   </p>
 
                   <h3
@@ -522,68 +776,130 @@ export default function DashboardPage() {
                         'var(--font-fraunces), serif',
                     }}
                   >
-                    Limites da assinatura
+                    Consumo e limites
                   </h3>
                 </div>
 
                 <p className="text-[10px] text-[#EDEDE3]/28">
-                  Apenas informativo nesta etapa
+                  Limites aplicados em tempo real
                 </p>
               </div>
 
-              <div className="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
-                {[
-                  {
-                    label: 'Usuários',
-                    valor: formatarLimite(
-                      plano?.limite_usuarios
-                    ),
-                  },
-                  {
-                    label: 'Clientes',
-                    valor: formatarLimite(
-                      plano?.limite_clientes
-                    ),
-                  },
-                  {
-                    label: 'Reservas / mês',
-                    valor: formatarLimite(
-                      plano?.limite_reservas_mes
-                    ),
-                  },
-                  {
-                    label: 'Passeios',
-                    valor: formatarLimite(
-                      plano?.limite_passeios
-                    ),
-                  },
-                ].map((item) => (
-                  <div
-                    key={item.label}
-                    className="rounded-[18px] border border-white/[0.065] bg-white/[0.018] p-4"
-                  >
-                    <p className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[#EDEDE3]/30">
-                      {item.label}
-                    </p>
+              {loadingPlano ? (
+                <div className="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
+                  {[
+                    'Usuários',
+                    'Clientes',
+                    'Reservas / mês',
+                    'Passeios',
+                  ].map(
+                    (label) => (
+                      <div
+                        key={label}
+                        className="rounded-[18px] border border-white/[0.065] bg-white/[0.018] p-4"
+                      >
+                        <p className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[#EDEDE3]/30">
+                          {label}
+                        </p>
 
-                    <strong
-                      className="mt-2 block text-2xl font-medium text-[#F0F0E8]"
-                      style={{
-                        fontFamily:
-                          'var(--font-fraunces), serif',
-                      }}
-                    >
-                      {loadingPlano
-                        ? '—'
-                        : item.valor}
-                    </strong>
-                  </div>
-                ))}
-              </div>
+                        <strong className="mt-2 block text-2xl text-[#F0F0E8]">
+                          —
+                        </strong>
+                      </div>
+                    )
+                  )}
+                </div>
+              ) : situacaoUso ? (
+                <div className="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
+                  {cardsUso.map(
+                    ({
+                      chave,
+                      label,
+                      situacao,
+                    }) => {
+                      const percentual =
+                        situacao.ilimitado ||
+                        situacao.limite === null ||
+                        situacao.limite === 0
+                          ? 0
+                          : Math.min(
+                              100,
+                              Math.max(
+                                0,
+                                (situacao.usado /
+                                  situacao.limite) *
+                                  100
+                              )
+                            );
+
+                      return (
+                        <div
+                          key={chave}
+                          className={`rounded-[18px] border p-4 ${
+                            situacao.excedido ||
+                            situacao.atingido
+                              ? 'border-[#E3A144]/20 bg-[#E3A144]/[0.045]'
+                              : 'border-white/[0.065] bg-white/[0.018]'
+                          }`}
+                        >
+                          <p className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[#EDEDE3]/30">
+                            {label}
+                          </p>
+
+                          <strong
+                            className="mt-2 block text-2xl font-medium text-[#F0F0E8]"
+                            style={{
+                              fontFamily:
+                                'var(--font-fraunces), serif',
+                            }}
+                          >
+                            {situacao.ilimitado
+                              ? `${situacao.usado}`
+                              : `${situacao.usado} / ${situacao.limite}`}
+                          </strong>
+
+                          <p className="mt-1 text-[10px] text-[#EDEDE3]/28">
+                            {situacao.ilimitado
+                              ? 'Limite ilimitado'
+                              : situacao.excedido
+                                ? 'Acima do limite atual'
+                                : situacao.atingido
+                                  ? 'Limite atingido'
+                                  : `${situacao.restante ?? 0} restante${situacao.restante === 1 ? '' : 's'}`}
+                          </p>
+
+                          {!situacao.ilimitado &&
+                            situacao.limite !==
+                              null && (
+                              <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.055]">
+                                <div
+                                  className={`h-full rounded-full ${
+                                    situacao.atingido
+                                      ? 'bg-[#E3A144]'
+                                      : percentual >=
+                                          80
+                                        ? 'bg-[#E3A144]'
+                                        : 'bg-emerald-400'
+                                  }`}
+                                  style={{
+                                    width:
+                                      `${percentual}%`,
+                                  }}
+                                />
+                              </div>
+                            )}
+                        </div>
+                      );
+                    }
+                  )}
+                </div>
+              ) : (
+                <div className="mt-5 rounded-[18px] border border-white/[0.065] bg-white/[0.018] p-5 text-sm text-[#EDEDE3]/35">
+                  Não foi possível carregar o uso da assinatura.
+                </div>
+              )}
             </div>
           </div>
-
-          {/* RECURSOS DO PLANO */}
 
           <div className="border-t border-white/[0.065] px-5 py-5 md:px-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
@@ -592,9 +908,8 @@ export default function DashboardPage() {
                   Recursos do plano
                 </p>
 
-                <p className="mt-1 text-xs leading-5 text-[#EDEDE3]/32">
-                  Nesta etapa os indicadores são apenas
-                  visuais. Nenhum módulo será bloqueado.
+                <p className="mt-1 max-w-[480px] text-xs leading-5 text-[#EDEDE3]/32">
+                  Os recursos disponíveis são definidos pela assinatura da empresa e protegidos também no servidor.
                 </p>
               </div>
 
@@ -607,37 +922,49 @@ export default function DashboardPage() {
 
                 {!loadingPlano &&
                   recursos.map(
-                    ([chave, liberado]) => (
-                      <span
-                        key={chave}
-                        className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-[10px] font-medium ${
-                          liberado
-                            ? 'border-emerald-400/15 bg-emerald-400/[0.06] text-emerald-200/80'
-                            : 'border-white/[0.07] bg-white/[0.02] text-[#EDEDE3]/32'
-                        }`}
-                      >
+                    ([
+                      chave,
+                      liberado,
+                    ]) => {
+                      const recurso =
+                        chave as RecursoPlano;
+
+                      const nome =
+                        RECURSOS_PLANOS[
+                          recurso
+                        ]?.nome ??
+                        chave;
+
+                      return (
                         <span
-                          className={`flex h-4 w-4 items-center justify-center rounded-full text-[8px] ${
+                          key={chave}
+                          className={`inline-flex items-center gap-2 rounded-full border px-3 py-2 text-[10px] font-medium ${
                             liberado
-                              ? 'bg-emerald-400/10 text-emerald-300'
-                              : 'bg-white/[0.04] text-[#EDEDE3]/28'
+                              ? 'border-emerald-400/15 bg-emerald-400/[0.06] text-emerald-200/80'
+                              : 'border-white/[0.07] bg-white/[0.02] text-[#EDEDE3]/32'
                           }`}
                         >
-                          {liberado ? '✓' : '—'}
-                        </span>
+                          <span
+                            className={`flex h-4 w-4 items-center justify-center rounded-full text-[8px] ${
+                              liberado
+                                ? 'bg-emerald-400/10 text-emerald-300'
+                                : 'bg-white/[0.04] text-[#EDEDE3]/28'
+                            }`}
+                          >
+                            {liberado
+                              ? '✓'
+                              : '—'}
+                          </span>
 
-                        {nomeRecurso(chave)}
-                      </span>
-                    )
+                          {nome}
+                        </span>
+                      );
+                    }
                   )}
               </div>
             </div>
           </div>
         </section>
-
-        {/* =====================================================
-            CABEÇALHO DOS INDICADORES
-        ====================================================== */}
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -657,64 +984,55 @@ export default function DashboardPage() {
           </div>
 
           <p className="max-w-[420px] text-xs leading-5 text-[#EDEDE3]/30">
-            Indicadores calculados diretamente a
-            partir dos registros da operação.
+            Indicadores calculados diretamente a partir dos registros da operação.
           </p>
         </div>
 
-        {/* =====================================================
-            INDICADORES
-        ====================================================== */}
-
         <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {indicadores.map((item) => (
-            <Link
-              key={item.titulo}
-              href={item.href}
-              className="group rounded-[22px] border border-white/[0.075] bg-[#0A1713] p-5 transition duration-300 hover:-translate-y-0.5 hover:border-[#E3A144]/20 hover:bg-[#0C1B16]"
-            >
-              <div className="flex items-start justify-between">
-                <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E3A144]/15 bg-[#E3A144]/7 text-[#E3A144]">
-                  {item.icon}
+          {indicadores.map(
+            (item) => (
+              <Link
+                key={item.titulo}
+                href={item.href}
+                className="group rounded-[22px] border border-white/[0.075] bg-[#0A1713] p-5 transition duration-300 hover:-translate-y-0.5 hover:border-[#E3A144]/20 hover:bg-[#0C1B16]"
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-[#E3A144]/15 bg-[#E3A144]/7 text-[#E3A144]">
+                    {item.icon}
+                  </div>
+
+                  <span className="text-sm text-[#EDEDE3]/18 transition group-hover:translate-x-0.5 group-hover:text-[#E3A144]">
+                    →
+                  </span>
                 </div>
 
-                <span className="text-sm text-[#EDEDE3]/18 transition group-hover:translate-x-0.5 group-hover:text-[#E3A144]">
-                  →
-                </span>
-              </div>
+                <div className="mt-8">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/32">
+                    {item.titulo}
+                  </p>
 
-              <div className="mt-8">
-                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/32">
-                  {item.titulo}
-                </p>
-
-                <div className="mt-2 flex items-end gap-2">
                   <strong
-                    className="text-4xl font-medium tracking-[-0.04em] text-[#F0F0E8]"
+                    className="mt-2 block text-4xl font-medium tracking-[-0.04em] text-[#F0F0E8]"
                     style={{
                       fontFamily:
                         'var(--font-fraunces), serif',
                     }}
                   >
-                    {loading ? '—' : item.valor}
+                    {loading
+                      ? '—'
+                      : item.valor}
                   </strong>
-                </div>
 
-                <p className="mt-2 text-[11px] text-[#EDEDE3]/28">
-                  {item.detalhe}
-                </p>
-              </div>
-            </Link>
-          ))}
+                  <p className="mt-2 text-[11px] text-[#EDEDE3]/28">
+                    {item.detalhe}
+                  </p>
+                </div>
+              </Link>
+            )
+          )}
         </div>
 
-        {/* =====================================================
-            ÁREA INFERIOR
-        ====================================================== */}
-
         <div className="mt-8 grid gap-6 xl:grid-cols-[1.15fr_0.85fr]">
-          {/* ATALHOS */}
-
           <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-6">
             <div className="flex items-center justify-between">
               <div>
@@ -739,31 +1057,39 @@ export default function DashboardPage() {
             </div>
 
             <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              {atalhos.map((atalho) => (
-                <Link
-                  key={atalho.titulo}
-                  href={atalho.href}
-                  className="group flex min-h-[110px] items-start justify-between rounded-[18px] border border-white/[0.065] bg-white/[0.018] p-4 transition hover:border-white/[0.12] hover:bg-white/[0.035]"
-                >
-                  <div>
-                    <p className="text-sm font-semibold text-[#EDEDE3]/80">
-                      {atalho.titulo}
-                    </p>
+              {atalhos.map(
+                (atalho) => (
+                  <Link
+                    key={
+                      atalho.titulo
+                    }
+                    href={
+                      atalho.href
+                    }
+                    className="group flex min-h-[110px] items-start justify-between rounded-[18px] border border-white/[0.065] bg-white/[0.018] p-4 transition hover:border-white/[0.12] hover:bg-white/[0.035]"
+                  >
+                    <div>
+                      <p className="text-sm font-semibold text-[#EDEDE3]/80">
+                        {
+                          atalho.titulo
+                        }
+                      </p>
 
-                    <p className="mt-2 max-w-[200px] text-[11px] leading-5 text-[#EDEDE3]/30">
-                      {atalho.descricao}
-                    </p>
-                  </div>
+                      <p className="mt-2 max-w-[200px] text-[11px] leading-5 text-[#EDEDE3]/30">
+                        {
+                          atalho.descricao
+                        }
+                      </p>
+                    </div>
 
-                  <span className="text-sm text-[#EDEDE3]/20 transition group-hover:translate-x-1 group-hover:text-[#E3A144]">
-                    →
-                  </span>
-                </Link>
-              ))}
+                    <span className="text-sm text-[#EDEDE3]/20 transition group-hover:translate-x-1 group-hover:text-[#E3A144]">
+                      →
+                    </span>
+                  </Link>
+                )
+              )}
             </div>
           </section>
-
-          {/* ESTRUTURA */}
 
           <section className="overflow-hidden rounded-[26px] border border-white/[0.075] bg-[#0A1713]">
             <div className="border-b border-white/[0.065] px-5 py-5 md:px-6">
@@ -785,55 +1111,79 @@ export default function DashboardPage() {
             <div>
               {[
                 {
-                  label: 'Hospedagens',
-                  href: '/hospedagens',
+                  label:
+                    'Hospedagens',
+                  href:
+                    '/hospedagens',
                 },
-                {
-                  label: 'Embarcações',
-                  href: '/embarcacoes',
-                },
-                {
-                  label: 'Guias',
-                  href: '/guias',
-                },
-                {
-                  label: 'Parceiros',
-                  href: '/parceiros',
-                },
-                {
-                  label: 'Financeiro',
-                  href: '/financeiro',
-                },
-              ].map((item, index, array) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`group flex items-center justify-between px-5 py-4 transition hover:bg-white/[0.025] md:px-6 ${
-                    index !== array.length - 1
-                      ? 'border-b border-white/[0.055]'
-                      : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#7C9C87]/70" />
 
-                    <span className="text-sm font-medium text-[#EDEDE3]/57 transition group-hover:text-[#EDEDE3]">
-                      {item.label}
+                {
+                  label:
+                    'Embarcações',
+                  href:
+                    '/embarcacoes',
+                },
+
+                {
+                  label:
+                    'Guias',
+                  href:
+                    '/guias',
+                },
+
+                {
+                  label:
+                    'Parceiros',
+                  href:
+                    '/parceiros',
+                },
+
+                {
+                  label:
+                    'Financeiro',
+                  href:
+                    '/financeiro',
+                },
+              ].map(
+                (
+                  item,
+                  index,
+                  array
+                ) => (
+                  <Link
+                    key={
+                      item.href
+                    }
+                    href={
+                      item.href
+                    }
+                    className={`group flex items-center justify-between px-5 py-4 transition hover:bg-white/[0.025] md:px-6 ${
+                      index !==
+                      array.length -
+                        1
+                        ? 'border-b border-white/[0.055]'
+                        : ''
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span className="h-1.5 w-1.5 rounded-full bg-[#7C9C87]/70" />
+
+                      <span className="text-sm font-medium text-[#EDEDE3]/57 transition group-hover:text-[#EDEDE3]">
+                        {
+                          item.label
+                        }
+                      </span>
+                    </div>
+
+                    <span className="text-xs text-[#EDEDE3]/15 transition group-hover:translate-x-1 group-hover:text-[#E3A144]">
+                      →
                     </span>
-                  </div>
-
-                  <span className="text-xs text-[#EDEDE3]/15 transition group-hover:translate-x-1 group-hover:text-[#E3A144]">
-                    →
-                  </span>
-                </Link>
-              ))}
+                  </Link>
+                )
+              )}
             </div>
           </section>
         </div>
-
-        {/* =====================================================
-            RODAPÉ INTERNO
-        ====================================================== */}
 
         <div className="mt-10 flex flex-col gap-2 border-t border-white/[0.06] pt-6 text-[10px] text-[#EDEDE3]/22 sm:flex-row sm:items-center sm:justify-between">
           <span>

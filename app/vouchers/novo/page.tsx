@@ -45,53 +45,171 @@ const estadoInicial: VoucherForm = {
   validade: '',
 };
 
+/*
+  ============================================================
+  CONVERSÃO MONETÁRIA
+  ============================================================
+
+  Aceita:
+
+  3500
+  3500,00
+  3.500
+  3.500,00
+  3500.00
+  3,500.00
+  R$ 3.500,00
+
+  Nenhuma multiplicação artificial é aplicada.
+*/
+
 function converterValor(
   entrada: string
 ): number {
   let valor = entrada
     .trim()
+    .replace(/\s/g, '')
     .replace(/R\$/gi, '')
-    .replace(/\s/g, '');
-
-  if (!valor) {
-    return 0;
-  }
-
-  if (
-    valor.includes('.') &&
-    valor.includes(',')
-  ) {
-    valor = valor
-      .replace(/\./g, '')
-      .replace(',', '.');
-  } else if (
-    /^\d{1,3}(\.\d{3})+$/.test(
-      valor
-    )
-  ) {
-    valor = valor.replace(
-      /\./g,
+    .replace(
+      /[^0-9.,-]/g,
       ''
     );
-  } else if (
-    valor.includes(',')
+
+  if (!valor) {
+    return Number.NaN;
+  }
+
+  const temVirgula =
+    valor.includes(',');
+
+  const temPonto =
+    valor.includes('.');
+
+  /*
+    ----------------------------------------------------------
+    DUAS MARCAÇÕES
+    ----------------------------------------------------------
+
+    3.500,50 -> brasileiro
+    3,500.50 -> internacional
+  */
+
+  if (
+    temVirgula &&
+    temPonto
   ) {
-    valor = valor.replace(
-      ',',
-      '.'
-    );
+    const ultimaVirgula =
+      valor.lastIndexOf(',');
+
+    const ultimoPonto =
+      valor.lastIndexOf('.');
+
+    if (
+      ultimaVirgula >
+      ultimoPonto
+    ) {
+      valor = valor
+        .replace(
+          /\./g,
+          ''
+        )
+        .replace(
+          ',',
+          '.'
+        );
+    } else {
+      valor =
+        valor.replace(
+          /,/g,
+          ''
+        );
+    }
+  }
+
+  /*
+    ----------------------------------------------------------
+    SOMENTE VÍRGULA
+    ----------------------------------------------------------
+
+    3,500 -> 3500
+    3,50  -> 3.50
+  */
+
+  else if (
+    temVirgula
+  ) {
+    if (
+      /^\d{1,3}(,\d{3})+$/.test(
+        valor
+      )
+    ) {
+      valor =
+        valor.replace(
+          /,/g,
+          ''
+        );
+    } else {
+      valor =
+        valor.replace(
+          ',',
+          '.'
+        );
+    }
+  }
+
+  /*
+    ----------------------------------------------------------
+    SOMENTE PONTO
+    ----------------------------------------------------------
+
+    3.500 -> 3500
+    3.50  -> 3.50
+  */
+
+  else if (
+    temPonto
+  ) {
+    if (
+      /^\d{1,3}(\.\d{3})+$/.test(
+        valor
+      )
+    ) {
+      valor =
+        valor.replace(
+          /\./g,
+          ''
+        );
+    }
   }
 
   const numero =
     Number(valor);
 
-  return Number.isFinite(numero)
+  return Number.isFinite(
+    numero
+  )
     ? numero
-    : NaN;
+    : Number.NaN;
+}
+
+function formatarValorCampo(
+  numero: number
+) {
+  return numero.toLocaleString(
+    'pt-BR',
+    {
+      minimumFractionDigits:
+        2,
+
+      maximumFractionDigits:
+        2,
+    }
+  );
 }
 
 export default function NovoVoucherPage() {
-  const router = useRouter();
+  const router =
+    useRouter();
 
   const [
     formData,
@@ -105,47 +223,55 @@ export default function NovoVoucherPage() {
     clientes,
     setClientes,
   ] =
-    useState<Cliente[]>([]);
+    useState<Cliente[]>(
+      []
+    );
 
   const [
     passeios,
     setPasseios,
   ] =
-    useState<Passeio[]>([]);
+    useState<Passeio[]>(
+      []
+    );
 
   const [
     carregandoRelacionados,
     setCarregandoRelacionados,
-  ] = useState(true);
+  ] =
+    useState(true);
 
   const [
     salvando,
     setSalvando,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     erro,
     setErro,
-  ] = useState<string | null>(
-    null
-  );
+  ] =
+    useState<string | null>(
+      null
+    );
 
   const [
     sucesso,
     setSucesso,
-  ] = useState<string | null>(
-    null
-  );
+  ] =
+    useState<string | null>(
+      null
+    );
 
   const inputClass =
-    'w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/40';
+    'w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/40 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-50';
 
   const labelClass =
     'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34';
 
   /*
     ============================================================
-    RELACIONAMENTOS
+    CLIENTES E PASSEIOS
     ============================================================
   */
 
@@ -154,6 +280,8 @@ export default function NovoVoucherPage() {
       true
     );
 
+    setErro(null);
+
     try {
       const [
         clientesResultado,
@@ -161,15 +289,27 @@ export default function NovoVoucherPage() {
       ] =
         await Promise.all([
           supabase
-            .from('clientes')
-            .select('*')
-            .order('nome', {
-              ascending: true,
-            }),
+            .from(
+              'clientes'
+            )
+            .select(
+              'id, nome'
+            )
+            .order(
+              'nome',
+              {
+                ascending:
+                  true,
+              }
+            ),
 
           supabase
-            .from('passeios')
-            .select('*')
+            .from(
+              'passeios'
+            )
+            .select(
+              'id, nome'
+            )
             .order(
               'created_at',
               {
@@ -192,19 +332,26 @@ export default function NovoVoucherPage() {
       }
 
       setClientes(
-        (clientesResultado.data ||
-          []) as Cliente[]
+        (
+          clientesResultado.data ||
+          []
+        ) as Cliente[]
       );
 
       setPasseios(
-        (passeiosResultado.data ||
-          []) as Passeio[]
+        (
+          passeiosResultado.data ||
+          []
+        ) as Passeio[]
       );
     } catch (err) {
       console.error(
         'Erro ao carregar dados relacionados:',
         err
       );
+
+      setClientes([]);
+      setPasseios([]);
 
       setErro(
         err instanceof Error
@@ -222,26 +369,71 @@ export default function NovoVoucherPage() {
     carregarRelacionados();
   }, []);
 
-  function alterarCampo(
-    campo:
-      keyof VoucherForm,
-    valor: string
+  /*
+    ============================================================
+    CAMPOS
+    ============================================================
+  */
+
+  function alterarCampo<
+    K extends keyof VoucherForm,
+  >(
+    campo: K,
+    valor: VoucherForm[K]
   ) {
     setFormData(
-      (atual) => ({
+      (
+        atual
+      ) => ({
         ...atual,
-        [campo]: valor,
+
+        [campo]:
+          valor,
       })
     );
   }
 
   function handleLimpar() {
+    if (
+      salvando
+    ) {
+      return;
+    }
+
     setFormData(
       estadoInicial
     );
 
     setErro(null);
     setSucesso(null);
+  }
+
+  function formatarValorAoSair() {
+    if (
+      !formData.valor.trim()
+    ) {
+      return;
+    }
+
+    const valor =
+      converterValor(
+        formData.valor
+      );
+
+    if (
+      !Number.isFinite(
+        valor
+      )
+    ) {
+      return;
+    }
+
+    alterarCampo(
+      'valor',
+      formatarValorCampo(
+        valor
+      )
+    );
   }
 
   /*
@@ -251,11 +443,14 @@ export default function NovoVoucherPage() {
   */
 
   async function handleSubmit(
-    event: React.FormEvent
+    event:
+      React.FormEvent
   ) {
     event.preventDefault();
 
-    if (salvando) {
+    if (
+      salvando
+    ) {
       return;
     }
 
@@ -263,7 +458,8 @@ export default function NovoVoucherPage() {
     setSucesso(null);
 
     const codigo =
-      formData.codigo.trim();
+      formData.codigo
+        .trim();
 
     if (!codigo) {
       setErro(
@@ -293,13 +489,25 @@ export default function NovoVoucherPage() {
       return;
     }
 
+    if (
+      !formData.valor.trim()
+    ) {
+      setErro(
+        'Informe o valor do voucher.'
+      );
+
+      return;
+    }
+
     const valor =
       converterValor(
         formData.valor
       );
 
     if (
-      !Number.isFinite(valor) ||
+      !Number.isFinite(
+        valor
+      ) ||
       valor <= 0
     ) {
       setErro(
@@ -313,31 +521,37 @@ export default function NovoVoucherPage() {
 
     try {
       const {
-        error: insertError,
-      } = await supabase
-        .from('vouchers')
-        .insert([
-          {
-            codigo,
+        error:
+          insertError,
+      } =
+        await supabase
+          .from(
+            'vouchers'
+          )
+          .insert([
+            {
+              codigo,
 
-            cliente_id:
-              formData.clienteId,
+              cliente_id:
+                formData.clienteId,
 
-            passeio_id:
-              formData.passeioId,
+              passeio_id:
+                formData.passeioId,
 
-            valor,
+              valor,
 
-            status:
-              formData.status,
+              status:
+                formData.status,
 
-            validade:
-              formData.validade ||
-              null,
-          },
-        ]);
+              validade:
+                formData.validade ||
+                null,
+            },
+          ]);
 
-      if (insertError) {
+      if (
+        insertError
+      ) {
         throw insertError;
       }
 
@@ -345,18 +559,40 @@ export default function NovoVoucherPage() {
         'Voucher cadastrado com sucesso.'
       );
 
-      setTimeout(() => {
-        router.push(
-          '/vouchers'
-        );
+      window.setTimeout(
+        () => {
+          router.push(
+            '/vouchers'
+          );
 
-        router.refresh();
-      }, 1200);
+          router.refresh();
+        },
+        1000
+      );
     } catch (err) {
       console.error(
         'Erro ao salvar voucher:',
         err
       );
+
+      const mensagem =
+        String(
+          err instanceof Error
+            ? err.message
+            : ''
+        );
+
+      if (
+        mensagem.includes(
+          'ERN_USUARIO_SEM_EMPRESA'
+        )
+      ) {
+        setErro(
+          'Seu usuário não possui uma empresa vinculada.'
+        );
+
+        return;
+      }
 
       setErro(
         err instanceof Error
@@ -369,8 +605,10 @@ export default function NovoVoucherPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
-      {/* HEADER */}
+    <div className="min-h-screen bg-[#07110E] pb-16 text-[#EDEDE3]">
+      {/* =====================================================
+          CABEÇALHO
+      ====================================================== */}
 
       <section className="border-b border-white/[0.07] bg-[#091510]">
         <div className="mx-auto max-w-[1180px] px-5 py-10 md:px-8 md:py-12">
@@ -378,16 +616,21 @@ export default function NovoVoucherPage() {
             href="/vouchers"
             className="inline-flex items-center gap-2 text-xs font-semibold text-[#EDEDE3]/38 transition hover:text-[#E3A144]"
           >
-            ← Vouchers
+            <span>←</span>
+            Vouchers
           </Link>
 
           <div className="mt-7">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
-              Operação • Emissão
-            </p>
+            <div className="flex items-center gap-3">
+              <span className="h-px w-8 bg-[#E3A144]" />
+
+              <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
+                Operação • Emissão
+              </p>
+            </div>
 
             <h1
-              className="mt-3 text-4xl tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
+              className="mt-4 text-4xl tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
               style={{
                 fontFamily:
                   'var(--font-fraunces), serif',
@@ -397,9 +640,8 @@ export default function NovoVoucherPage() {
             </h1>
 
             <p className="mt-4 max-w-[680px] text-sm leading-7 text-[#EDEDE3]/40">
-              Vincule o comprovante ao
-              cliente e ao passeio,
-              informe valor, validade e
+              Vincule o comprovante ao cliente e à
+              experiência, informe valor, validade e
               situação operacional.
             </p>
           </div>
@@ -407,9 +649,27 @@ export default function NovoVoucherPage() {
       </section>
 
       <main className="mx-auto max-w-[1180px] px-5 py-8 md:px-8 md:py-10">
+        {/* ===================================================
+            FEEDBACK
+        ==================================================== */}
+
         {erro && (
-          <div className="mb-6 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-red-300">
-            {erro}
+          <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-red-300">
+            <span>
+              {erro}
+            </span>
+
+            <button
+              type="button"
+              onClick={() =>
+                setErro(
+                  null
+                )
+              }
+              className="text-red-300/60 transition hover:text-red-200"
+            >
+              ✕
+            </button>
           </div>
         )}
 
@@ -420,10 +680,14 @@ export default function NovoVoucherPage() {
         )}
 
         <form
-          onSubmit={handleSubmit}
+          onSubmit={
+            handleSubmit
+          }
           className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]"
         >
-          {/* DADOS */}
+          {/* =================================================
+              DADOS
+          ================================================== */}
 
           <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-7">
             <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
@@ -441,8 +705,11 @@ export default function NovoVoucherPage() {
             </h2>
 
             <div className="mt-6 space-y-5">
+              {/* CÓDIGO */}
+
               <div>
                 <label
+                  htmlFor="codigo"
                   className={
                     labelClass
                   }
@@ -451,8 +718,12 @@ export default function NovoVoucherPage() {
                 </label>
 
                 <input
+                  id="codigo"
                   type="text"
                   required
+                  disabled={
+                    salvando
+                  }
                   value={
                     formData.codigo
                   }
@@ -472,8 +743,11 @@ export default function NovoVoucherPage() {
                 />
               </div>
 
+              {/* CLIENTE */}
+
               <div>
                 <label
+                  htmlFor="cliente"
                   className={
                     labelClass
                   }
@@ -482,9 +756,11 @@ export default function NovoVoucherPage() {
                 </label>
 
                 <select
+                  id="cliente"
                   required
                   disabled={
-                    carregandoRelacionados
+                    carregandoRelacionados ||
+                    salvando
                   }
                   value={
                     formData.clienteId
@@ -505,11 +781,16 @@ export default function NovoVoucherPage() {
                   <option value="">
                     {carregandoRelacionados
                       ? 'Carregando clientes...'
-                      : 'Selecione um cliente'}
+                      : clientes.length ===
+                          0
+                        ? 'Nenhum cliente disponível'
+                        : 'Selecione um cliente'}
                   </option>
 
                   {clientes.map(
-                    (cliente) => (
+                    (
+                      cliente
+                    ) => (
                       <option
                         key={
                           cliente.id
@@ -527,8 +808,11 @@ export default function NovoVoucherPage() {
                 </select>
               </div>
 
+              {/* PASSEIO */}
+
               <div>
                 <label
+                  htmlFor="passeio"
                   className={
                     labelClass
                   }
@@ -537,9 +821,11 @@ export default function NovoVoucherPage() {
                 </label>
 
                 <select
+                  id="passeio"
                   required
                   disabled={
-                    carregandoRelacionados
+                    carregandoRelacionados ||
+                    salvando
                   }
                   value={
                     formData.passeioId
@@ -560,11 +846,16 @@ export default function NovoVoucherPage() {
                   <option value="">
                     {carregandoRelacionados
                       ? 'Carregando passeios...'
-                      : 'Selecione um passeio'}
+                      : passeios.length ===
+                          0
+                        ? 'Nenhum passeio disponível'
+                        : 'Selecione um passeio'}
                   </option>
 
                   {passeios.map(
-                    (passeio) => (
+                    (
+                      passeio
+                    ) => (
                       <option
                         key={
                           passeio.id
@@ -583,8 +874,11 @@ export default function NovoVoucherPage() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
+                {/* VALOR */}
+
                 <div>
                   <label
+                    htmlFor="valor"
                     className={
                       labelClass
                     }
@@ -593,9 +887,13 @@ export default function NovoVoucherPage() {
                   </label>
 
                   <input
+                    id="valor"
                     type="text"
                     inputMode="decimal"
                     required
+                    disabled={
+                      salvando
+                    }
                     value={
                       formData.valor
                     }
@@ -608,19 +906,25 @@ export default function NovoVoucherPage() {
                           .value
                       )
                     }
-                    placeholder="Ex.: 3.500"
+                    onBlur={
+                      formatarValorAoSair
+                    }
+                    placeholder="Ex.: 3.500,00"
                     className={
                       inputClass
                     }
                   />
 
-                  <p className="mt-2 text-[9px] text-[#EDEDE3]/24">
-                    Ex.: 3500 ou 3.500.
+                  <p className="mt-2 text-[9px] leading-4 text-[#EDEDE3]/24">
+                    Aceita 3500, 3.500, 3500,00 ou 3.500,00.
                   </p>
                 </div>
 
+                {/* VALIDADE */}
+
                 <div>
                   <label
+                    htmlFor="validade"
                     className={
                       labelClass
                     }
@@ -629,7 +933,11 @@ export default function NovoVoucherPage() {
                   </label>
 
                   <input
+                    id="validade"
                     type="date"
+                    disabled={
+                      salvando
+                    }
                     value={
                       formData.validade
                     }
@@ -651,9 +959,13 @@ export default function NovoVoucherPage() {
             </div>
           </section>
 
-          {/* STATUS */}
+          {/* =================================================
+              LATERAL
+          ================================================== */}
 
           <div className="space-y-6">
+            {/* STATUS */}
+
             <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-6">
               <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
                 Situação
@@ -670,16 +982,15 @@ export default function NovoVoucherPage() {
               </h2>
 
               <p className="mt-4 text-xs leading-6 text-[#EDEDE3]/35">
-                Novos vouchers
-                normalmente começam
-                como ativos e podem
-                depois ser marcados como
-                utilizados ou
-                cancelados.
+                Um novo voucher normalmente é emitido
+                como ativo. Depois ele pode ser marcado
+                como utilizado ou cancelado conforme a
+                operação.
               </p>
 
               <div className="mt-6">
                 <label
+                  htmlFor="status"
                   className={
                     labelClass
                   }
@@ -688,6 +999,10 @@ export default function NovoVoucherPage() {
                 </label>
 
                 <select
+                  id="status"
+                  disabled={
+                    salvando
+                  }
                   value={
                     formData.status
                   }
@@ -697,7 +1012,7 @@ export default function NovoVoucherPage() {
                     alterarCampo(
                       'status',
                       event.target
-                        .value
+                        .value as StatusVoucher
                     )
                   }
                   className={
@@ -719,10 +1034,22 @@ export default function NovoVoucherPage() {
               </div>
             </section>
 
+            {/* VÍNCULOS */}
+
             <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-6">
               <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
-                Vínculos
+                Estrutura do registro
               </p>
+
+              <h2
+                className="mt-2 text-lg text-[#F0F0E8]"
+                style={{
+                  fontFamily:
+                    'var(--font-fraunces), serif',
+                }}
+              >
+                Informações vinculadas
+              </h2>
 
               <div className="mt-5 space-y-2">
                 {[
@@ -732,33 +1059,57 @@ export default function NovoVoucherPage() {
                   'Valor',
                   'Validade',
                   'Status operacional',
-                ].map((item) => (
-                  <div
-                    key={item}
-                    className="flex items-center gap-3 rounded-xl border border-white/[0.055] bg-white/[0.018] px-3 py-2.5"
-                  >
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#E3A144]" />
+                ].map(
+                  (
+                    item
+                  ) => (
+                    <div
+                      key={
+                        item
+                      }
+                      className="flex items-center gap-3 rounded-xl border border-white/[0.055] bg-white/[0.018] px-3 py-2.5"
+                    >
+                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#E3A144]" />
 
-                    <span className="text-[11px] text-[#EDEDE3]/48">
-                      {item}
-                    </span>
-                  </div>
-                ))}
+                      <span className="text-[11px] text-[#EDEDE3]/48">
+                        {item}
+                      </span>
+                    </div>
+                  )
+                )}
+              </div>
+            </section>
+
+            {/* PROTEÇÃO */}
+
+            <section className="rounded-[20px] border border-emerald-500/10 bg-emerald-500/[0.025] p-5">
+              <div className="flex items-start gap-3">
+                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
+
+                <p className="text-[10px] leading-5 text-[#EDEDE3]/32">
+                  O voucher será vinculado automaticamente
+                  à empresa autenticada pela proteção do
+                  servidor.
+                </p>
               </div>
             </section>
           </div>
 
-          {/* AÇÕES */}
+          {/* =================================================
+              AÇÕES
+          ================================================== */}
 
           <div className="lg:col-span-2">
             <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-6 sm:flex-row sm:items-center sm:justify-between">
               <button
                 type="button"
-                disabled={salvando}
+                disabled={
+                  salvando
+                }
                 onClick={
                   handleLimpar
                 }
-                className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/45 disabled:opacity-50"
+                className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/45 transition hover:bg-white/[0.045] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Limpar formulário
               </button>
@@ -766,7 +1117,7 @@ export default function NovoVoucherPage() {
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/vouchers"
-                  className="inline-flex min-h-[46px] items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55"
+                  className="inline-flex min-h-[46px] items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.045]"
                 >
                   Cancelar
                 </Link>
@@ -775,13 +1126,19 @@ export default function NovoVoucherPage() {
                   type="submit"
                   disabled={
                     salvando ||
-                    carregandoRelacionados
+                    carregandoRelacionados ||
+                    clientes.length ===
+                      0 ||
+                    passeios.length ===
+                      0
                   }
-                  className="inline-flex min-h-[46px] items-center justify-center rounded-xl bg-[#E3A144] px-6 text-xs font-bold text-[#07130F] transition hover:bg-[#F0B35C] disabled:opacity-50"
+                  className="inline-flex min-h-[46px] min-w-[170px] items-center justify-center rounded-xl bg-[#E3A144] px-6 text-xs font-bold text-[#07130F] shadow-[0_8px_22px_rgba(227,161,68,0.12)] transition hover:bg-[#F0B35C] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {salvando
                     ? 'Salvando...'
-                    : 'Cadastrar voucher'}
+                    : carregandoRelacionados
+                      ? 'Carregando dados...'
+                      : 'Cadastrar voucher'}
                 </button>
               </div>
             </div>

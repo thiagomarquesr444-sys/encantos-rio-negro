@@ -1,493 +1,1746 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+} from 'react';
+
 import Link from 'next/link';
+
 import { supabase } from '@/lib/supabase';
+
+type StatusRelatorio =
+  | 'Concluído'
+  | 'Pendente'
+  | 'Em Análise';
 
 interface Relatorio {
   id?: string;
-  titulo?: string;
-  tipo?: string;
-  data_geracao?: string;
-  gerado_por?: string;
-  status?: string;
+  titulo?: string | null;
+  tipo?: string | null;
+  data_geracao?: string | null;
+  gerado_por?: string | null;
+  status?: string | null;
+  created_at?: string | null;
+}
+
+type Feedback = {
+  tipo:
+    | 'sucesso'
+    | 'erro';
+
+  texto: string;
+};
+
+/*
+  ============================================================
+  STATUS
+  ============================================================
+*/
+
+function removerAcentos(
+  valor: string
+) {
+  return valor
+    .normalize('NFD')
+    .replace(
+      /[\u0300-\u036f]/g,
+      ''
+    );
+}
+
+function normalizarStatus(
+  valor?: string | null
+): StatusRelatorio {
+  const status =
+    removerAcentos(
+      (
+        valor ||
+        ''
+      )
+        .trim()
+        .toLowerCase()
+    );
+
+  if (
+    status ===
+      'pendente'
+  ) {
+    return 'Pendente';
+  }
+
+  if (
+    status ===
+      'em analise'
+  ) {
+    return 'Em Análise';
+  }
+
+  return 'Concluído';
+}
+
+/*
+  ============================================================
+  DATA
+  ============================================================
+*/
+
+function formatarData(
+  valor?: string | null
+) {
+  if (!valor) {
+    return '—';
+  }
+
+  const data =
+    valor.split(
+      'T'
+    )[0];
+
+  const partes =
+    data.split('-');
+
+  if (
+    partes.length !== 3
+  ) {
+    return valor;
+  }
+
+  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
+/*
+  ============================================================
+  CSV
+  ============================================================
+*/
+
+function escaparCSV(
+  valor:
+    | string
+    | null
+    | undefined
+) {
+  return `"${String(
+    valor || ''
+  ).replace(
+    /"/g,
+    '""'
+  )}"`;
 }
 
 export default function RelatoriosPage() {
-  const [relatorios, setRelatorios] = useState<Relatorio[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [busca, setBusca] = useState('');
-  const [filtroStatus, setFiltroStatus] = useState('');
-  const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null);
+  const [
+    relatorios,
+    setRelatorios,
+  ] =
+    useState<Relatorio[]>(
+      []
+    );
 
-  // Estados para modais de visualização, edição e exclusão
-  const [itemVisualizar, setItemVisualizar] = useState<Relatorio | null>(null);
-  const [itemEditar, setItemEditar] = useState<Relatorio | null>(null);
-  const [itemExcluir, setItemExcluir] = useState<Relatorio | null>(null);
-  const [salvando, setSalvando] = useState(false);
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(true);
 
-  const fetchRelatorios = async () => {
+  const [
+    busca,
+    setBusca,
+  ] =
+    useState('');
+
+  const [
+    filtroStatus,
+    setFiltroStatus,
+  ] =
+    useState<
+      '' | StatusRelatorio
+    >('');
+
+  const [
+    feedback,
+    setFeedback,
+  ] =
+    useState<Feedback | null>(
+      null
+    );
+
+  const [
+    itemVisualizar,
+    setItemVisualizar,
+  ] =
+    useState<Relatorio | null>(
+      null
+    );
+
+  const [
+    itemEditar,
+    setItemEditar,
+  ] =
+    useState<Relatorio | null>(
+      null
+    );
+
+  const [
+    itemExcluir,
+    setItemExcluir,
+  ] =
+    useState<Relatorio | null>(
+      null
+    );
+
+  const [
+    salvando,
+    setSalvando,
+  ] =
+    useState(false);
+
+  const [
+    excluindo,
+    setExcluindo,
+  ] =
+    useState(false);
+
+  const inputClass =
+    'w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/40 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-50';
+
+  const labelClass =
+    'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34';
+
+  /*
+    ============================================================
+    CARREGAMENTO
+    ============================================================
+  */
+
+  async function fetchRelatorios() {
     setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('relatorios')
-        .select('*')
-        .order('created_at', { ascending: false });
+    setFeedback(null);
 
-      if (!error && data) {
-        setRelatorios(data);
+    try {
+      const {
+        data,
+        error,
+      } =
+        await supabase
+          .from(
+            'relatorios'
+          )
+          .select('*')
+          .order(
+            'created_at',
+            {
+              ascending:
+                false,
+            }
+          );
+
+      if (error) {
+        throw error;
       }
-    } catch (err) {
-      console.error('Erro ao buscar relatórios:', err);
+
+      setRelatorios(
+        (
+          data ||
+          []
+        ) as Relatorio[]
+      );
+    } catch (error) {
+      console.error(
+        'Erro ao buscar relatórios:',
+        error
+      );
+
+      setRelatorios([]);
+
+      setFeedback({
+        tipo:
+          'erro',
+
+        texto:
+          error instanceof Error
+            ? error.message
+            : 'Não foi possível carregar os relatórios.',
+      });
     } finally {
       setLoading(false);
     }
-  };
+  }
 
   useEffect(() => {
     fetchRelatorios();
   }, []);
 
-  const totalRelatorios = relatorios.length;
-  const concluidos = relatorios.filter(
-    (r) => r.status?.toLowerCase() === 'concluído' || r.status?.toLowerCase() === 'concluido' || r.status?.toLowerCase() === 'aprovado'
-  ).length;
-  const pendentes = relatorios.filter(
-    (r) => r.status?.toLowerCase() === 'pendente' || r.status?.toLowerCase() === 'em análise'
-  ).length;
+  function mostrarSucesso(
+    texto: string
+  ) {
+    setFeedback({
+      tipo:
+        'sucesso',
 
-  const handleCardClick = (statusFiltro: string) => {
-    if (filtroStatus === statusFiltro) {
-      setFiltroStatus('');
-    } else {
-      setFiltroStatus(statusFiltro);
-    }
-  };
+      texto,
+    });
 
-  const exportarCSV = () => {
-    if (relatorios.length === 0) return;
-    const cabecalho = ['ID', 'Titulo', 'Tipo', 'Data', 'Autor', 'Status'];
-    const linhas = relatorios.map((r) => [
-      r.id || '',
-      `"${r.titulo || ''}"`,
-      `"${r.tipo || ''}"`,
-      r.data_geracao || '',
-      `"${r.gerado_por || ''}"`,
-      r.status || 'Concluído',
+    window.setTimeout(
+      () => {
+        setFeedback(
+          (
+            atual
+          ) =>
+            atual?.tipo ===
+            'sucesso'
+              ? null
+              : atual
+        );
+      },
+      3000
+    );
+  }
+
+  /*
+    ============================================================
+    MÉTRICAS
+    ============================================================
+  */
+
+  const total =
+    relatorios.length;
+
+  const concluidos =
+    relatorios.filter(
+      (
+        item
+      ) =>
+        normalizarStatus(
+          item.status
+        ) ===
+        'Concluído'
+    ).length;
+
+  const pendentes =
+    relatorios.filter(
+      (
+        item
+      ) =>
+        normalizarStatus(
+          item.status
+        ) ===
+        'Pendente'
+    ).length;
+
+  const emAnalise =
+    relatorios.filter(
+      (
+        item
+      ) =>
+        normalizarStatus(
+          item.status
+        ) ===
+        'Em Análise'
+    ).length;
+
+  /*
+    ============================================================
+    FILTROS
+    ============================================================
+  */
+
+  const relatoriosFiltrados =
+    useMemo(() => {
+      const termo =
+        busca
+          .trim()
+          .toLowerCase();
+
+      return relatorios.filter(
+        (
+          item
+        ) => {
+          const status =
+            normalizarStatus(
+              item.status
+            );
+
+          const atendeBusca =
+            !termo ||
+            String(
+              item.titulo ||
+              ''
+            )
+              .toLowerCase()
+              .includes(
+                termo
+              ) ||
+            String(
+              item.tipo ||
+              ''
+            )
+              .toLowerCase()
+              .includes(
+                termo
+              ) ||
+            String(
+              item.gerado_por ||
+              ''
+            )
+              .toLowerCase()
+              .includes(
+                termo
+              ) ||
+            status
+              .toLowerCase()
+              .includes(
+                termo
+              );
+
+          const atendeStatus =
+            !filtroStatus ||
+            status ===
+              filtroStatus;
+
+          return (
+            atendeBusca &&
+            atendeStatus
+          );
+        }
+      );
+    }, [
+      relatorios,
+      busca,
+      filtroStatus,
     ]);
 
-    const csvContent = 'data:text/csv;charset=utf-8,' + [cabecalho.join(','), ...linhas.map((e) => e.join(','))].join('\n');
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement('a');
-    link.setAttribute('href', encodedUri);
-    link.setAttribute('download', 'relatorios_operacionais.csv');
-    document.body.appendChild(link);
+  function alternarFiltro(
+    status:
+      StatusRelatorio
+  ) {
+    setFiltroStatus(
+      (
+        atual
+      ) =>
+        atual === status
+          ? ''
+          : status
+    );
+  }
+
+  /*
+    ============================================================
+    EXPORTAÇÃO
+    ============================================================
+  */
+
+  function exportarCSV() {
+    if (
+      relatoriosFiltrados.length ===
+      0
+    ) {
+      setFeedback({
+        tipo:
+          'erro',
+
+        texto:
+          'Não existem relatórios para exportar com os filtros atuais.',
+      });
+
+      return;
+    }
+
+    const cabecalho = [
+      'ID',
+      'Título',
+      'Tipo',
+      'Data',
+      'Responsável',
+      'Status',
+    ];
+
+    const linhas =
+      relatoriosFiltrados.map(
+        (
+          item
+        ) => [
+          escaparCSV(
+            item.id
+          ),
+
+          escaparCSV(
+            item.titulo
+          ),
+
+          escaparCSV(
+            item.tipo
+          ),
+
+          escaparCSV(
+            item.data_geracao
+          ),
+
+          escaparCSV(
+            item.gerado_por
+          ),
+
+          escaparCSV(
+            normalizarStatus(
+              item.status
+            )
+          ),
+        ]
+      );
+
+    const conteudo =
+      [
+        cabecalho.join(
+          ';'
+        ),
+
+        ...linhas.map(
+          (
+            linha
+          ) =>
+            linha.join(
+              ';'
+            )
+        ),
+      ].join(
+        '\n'
+      );
+
+    /*
+      BOM melhora a abertura
+      do CSV UTF-8 no Excel.
+    */
+
+    const blob =
+      new Blob(
+        [
+          '\uFEFF',
+          conteudo,
+        ],
+        {
+          type:
+            'text/csv;charset=utf-8;',
+        }
+      );
+
+    const url =
+      URL.createObjectURL(
+        blob
+      );
+
+    const link =
+      document.createElement(
+        'a'
+      );
+
+    link.href =
+      url;
+
+    link.download =
+      'relatorios-ern.csv';
+
+    document.body.appendChild(
+      link
+    );
+
     link.click();
-    document.body.removeChild(link);
-  };
 
-  const salvarEdicao = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!itemEditar || !itemEditar.id) return;
+    document.body.removeChild(
+      link
+    );
+
+    URL.revokeObjectURL(
+      url
+    );
+
+    mostrarSucesso(
+      'Arquivo CSV gerado com sucesso.'
+    );
+  }
+
+  /*
+    ============================================================
+    EDIÇÃO
+    ============================================================
+  */
+
+  async function salvarEdicao(
+    event:
+      React.FormEvent
+  ) {
+    event.preventDefault();
+
+    if (
+      !itemEditar?.id
+    ) {
+      return;
+    }
+
+    const titulo =
+      itemEditar.titulo
+        ?.trim();
+
+    if (!titulo) {
+      setFeedback({
+        tipo:
+          'erro',
+
+        texto:
+          'Informe o título do relatório.',
+      });
+
+      return;
+    }
+
     setSalvando(true);
+    setFeedback(null);
 
     try {
-      const { error } = await supabase
-        .from('relatorios')
-        .update({
-          titulo: itemEditar.titulo,
-          tipo: itemEditar.tipo,
-          gerado_por: itemEditar.gerado_por,
-          status: itemEditar.status,
-          data_geracao: itemEditar.data_geracao,
-        })
-        .eq('id', itemEditar.id);
+      const {
+        error,
+      } =
+        await supabase
+          .from(
+            'relatorios'
+          )
+          .update({
+            titulo,
 
-      if (error) throw error;
+            tipo:
+              itemEditar.tipo?.trim() ||
+              null,
 
-      setItemEditar(null);
-      setMensagemSucesso('Relatório atualizado com sucesso!');
-      setTimeout(() => setMensagemSucesso(null), 4000);
-      fetchRelatorios();
-    } catch (err: any) {
-      console.error('Erro ao atualizar:', err);
+            data_geracao:
+              itemEditar.data_geracao ||
+              null,
+
+            gerado_por:
+              itemEditar.gerado_por?.trim() ||
+              null,
+
+            status:
+              normalizarStatus(
+                itemEditar.status
+              ),
+          })
+          .eq(
+            'id',
+            itemEditar.id
+          );
+
+      if (error) {
+        throw error;
+      }
+
+      setItemEditar(
+        null
+      );
+
+      mostrarSucesso(
+        'Relatório atualizado com sucesso.'
+      );
+
+      await fetchRelatorios();
+    } catch (error) {
+      console.error(
+        'Erro ao atualizar relatório:',
+        error
+      );
+
+      setFeedback({
+        tipo:
+          'erro',
+
+        texto:
+          error instanceof Error
+            ? error.message
+            : 'Não foi possível atualizar o relatório.',
+      });
     } finally {
       setSalvando(false);
     }
-  };
+  }
 
-  const confirmarExclusao = async () => {
-    if (!itemExcluir || !itemExcluir.id) return;
-    setSalvando(true);
+  /*
+    ============================================================
+    EXCLUSÃO
+    ============================================================
+  */
+
+  async function confirmarExclusao() {
+    if (
+      !itemExcluir?.id ||
+      excluindo
+    ) {
+      return;
+    }
+
+    setExcluindo(true);
+    setFeedback(null);
 
     try {
-      const { error } = await supabase.from('relatorios').delete().eq('id', itemExcluir.id);
-      if (error) throw error;
+      const {
+        error,
+      } =
+        await supabase
+          .from(
+            'relatorios'
+          )
+          .delete()
+          .eq(
+            'id',
+            itemExcluir.id
+          );
 
-      setRelatorios((prev) => prev.filter((r) => r.id !== itemExcluir.id));
-      setItemExcluir(null);
-      setMensagemSucesso('Relatório excluído com sucesso!');
-      setTimeout(() => setMensagemSucesso(null), 4000);
-    } catch (err: any) {
-      console.error('Erro ao excluir:', err);
+      if (error) {
+        throw error;
+      }
+
+      setRelatorios(
+        (
+          atuais
+        ) =>
+          atuais.filter(
+            (
+              item
+            ) =>
+              item.id !==
+              itemExcluir.id
+          )
+      );
+
+      setItemExcluir(
+        null
+      );
+
+      mostrarSucesso(
+        'Relatório excluído com sucesso.'
+      );
+    } catch (error) {
+      console.error(
+        'Erro ao excluir relatório:',
+        error
+      );
+
+      setFeedback({
+        tipo:
+          'erro',
+
+        texto:
+          error instanceof Error
+            ? error.message
+            : 'Não foi possível excluir o relatório.',
+      });
     } finally {
-      setSalvando(false);
+      setExcluindo(false);
     }
-  };
+  }
 
-  const relatoriosFiltrados = relatorios.filter((r) => {
-    const termo = busca.toLowerCase();
-    const atendeBusca =
-      (r.titulo || '').toLowerCase().includes(termo) ||
-      (r.tipo || '').toLowerCase().includes(termo) ||
-      (r.gerado_por || '').toLowerCase().includes(termo) ||
-      (r.status || '').toLowerCase().includes(termo);
+  /*
+    ============================================================
+    STATUS VISUAL
+    ============================================================
+  */
 
-    const statusAtual = (r.status || '').toLowerCase();
-    const atendeStatus = filtroStatus ? statusAtual.includes(filtroStatus.toLowerCase()) : true;
+  function statusClasses(
+    status:
+      StatusRelatorio
+  ) {
+    if (
+      status ===
+      'Concluído'
+    ) {
+      return 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300';
+    }
 
-    return atendeBusca && atendeStatus;
-  });
+    if (
+      status ===
+      'Em Análise'
+    ) {
+      return 'border-sky-500/20 bg-sky-500/[0.07] text-sky-300';
+    }
+
+    return 'border-amber-500/20 bg-amber-500/[0.07] text-amber-300';
+  }
+
+  function statusDot(
+    status:
+      StatusRelatorio
+  ) {
+    if (
+      status ===
+      'Concluído'
+    ) {
+      return 'bg-emerald-400';
+    }
+
+    if (
+      status ===
+      'Em Análise'
+    ) {
+      return 'bg-sky-400';
+    }
+
+    return 'bg-amber-400';
+  }
+
+  const cards = [
+    {
+      titulo:
+        'Relatórios',
+
+      valor:
+        loading
+          ? '—'
+          : String(
+              total
+            ),
+
+      detalhe:
+        'registros da empresa',
+
+      filtro:
+        null,
+    },
+
+    {
+      titulo:
+        'Concluídos',
+
+      valor:
+        loading
+          ? '—'
+          : String(
+              concluidos
+            ),
+
+      detalhe:
+        'processos concluídos',
+
+      filtro:
+        'Concluído' as StatusRelatorio,
+    },
+
+    {
+      titulo:
+        'Pendentes',
+
+      valor:
+        loading
+          ? '—'
+          : String(
+              pendentes
+            ),
+
+      detalhe:
+        'aguardando conclusão',
+
+      filtro:
+        'Pendente' as StatusRelatorio,
+    },
+
+    {
+      titulo:
+        'Em análise',
+
+      valor:
+        loading
+          ? '—'
+          : String(
+              emAnalise
+            ),
+
+      detalhe:
+        'em acompanhamento',
+
+      filtro:
+        'Em Análise' as StatusRelatorio,
+    },
+  ];
 
   return (
-    <div className="min-h-screen bg-[#072822] text-slate-100 flex flex-col">
-      <div 
-        className="relative bg-cover bg-center py-12 px-8 text-white flex flex-col items-center justify-center text-center shadow-md border-b border-emerald-950/40"
-        style={{
-          backgroundImage: `linear-gradient(rgba(7, 40, 34, 0.85), rgba(4, 24, 20, 0.95)), url('https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?q=80&w=1600&auto=format&fit=crop')`,
-        }}
-      >
-        <div className="max-w-4xl space-y-3">
-          <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight flex items-center justify-center gap-3 text-white">
-            <span>📈</span> Relatórios Operacionais
-          </h1>
-          <p className="text-emerald-200/90 text-sm md:text-base font-medium">
-            Painel de controle, métricas gerenciais e relatórios integrados ao banco de dados.
-          </p>
-          
-          <div className="pt-4 flex flex-wrap items-center justify-center gap-3">
+    <div className="min-h-screen bg-[#07110E] pb-16 text-[#EDEDE3]">
+      {/* =====================================================
+          FEEDBACK
+      ====================================================== */}
+
+      {feedback?.tipo ===
+        'sucesso' && (
+        <div className="fixed left-1/2 top-[100px] z-[90] -translate-x-1/2 rounded-2xl border border-emerald-500/20 bg-[#0B2119] px-5 py-3 text-xs font-semibold text-emerald-300 shadow-2xl">
+          {
+            feedback.texto
+          }
+        </div>
+      )}
+
+      {/* =====================================================
+          CABEÇALHO
+      ====================================================== */}
+
+      <section className="border-b border-white/[0.07] bg-[#091510]">
+        <div className="mx-auto flex max-w-[1360px] flex-col gap-8 px-5 py-10 md:px-8 md:py-12 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <span className="h-px w-8 bg-[#E3A144]" />
+
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
+                Gestão • Relatórios
+              </span>
+            </div>
+
+            <h1
+              className="mt-4 text-4xl leading-none tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
+              style={{
+                fontFamily:
+                  'var(--font-fraunces), serif',
+              }}
+            >
+              Relatórios
+            </h1>
+
+            <p className="mt-4 max-w-[720px] text-sm leading-7 text-[#EDEDE3]/42">
+              Organize registros operacionais e
+              gerenciais da empresa em um ambiente
+              centralizado e protegido pelo seu plano.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={
+                exportarCSV
+              }
+              disabled={
+                loading
+              }
+              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.055] disabled:opacity-50"
+            >
+              Exportar CSV
+            </button>
+
             <Link
               href="/relatorios/novo"
-              className="bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm px-5 py-2.5 rounded-lg shadow-lg transition-all flex items-center gap-2"
+              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl bg-[#E3A144] px-6 text-sm font-bold text-[#07130F] transition hover:-translate-y-0.5 hover:bg-[#F0B35C]"
             >
-              <span>+</span> Novo Relatório
+              <span className="text-lg">
+                +
+              </span>
+
+              Novo relatório
             </Link>
-            <button
-              onClick={exportarCSV}
-              className="bg-emerald-900/60 hover:bg-emerald-900/80 text-emerald-100 font-semibold text-sm px-5 py-2.5 rounded-lg shadow-lg transition-all border border-emerald-700/50 backdrop-blur-sm flex items-center gap-2"
-            >
-              <span>📑</span> Exportar Dados
-            </button>
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="p-8 max-w-7xl mx-auto w-full -mt-6 z-10 space-y-8 flex-1">
-        {mensagemSucesso && (
-          <div className="bg-emerald-950 border border-emerald-700 p-4 rounded-xl text-emerald-200 text-sm font-semibold shadow-md flex items-center justify-between">
-            <span>✅ {mensagemSucesso}</span>
-            <button onClick={() => setMensagemSucesso(null)} className="text-emerald-400 font-bold">✕</button>
+      <main className="mx-auto max-w-[1360px] px-5 py-8 md:px-8 md:py-10">
+        {feedback?.tipo ===
+          'erro' && (
+          <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-red-300">
+            <span>
+              {
+                feedback.texto
+              }
+            </span>
+
+            <button
+              type="button"
+              onClick={() =>
+                setFeedback(
+                  null
+                )
+              }
+            >
+              ✕
+            </button>
           </div>
         )}
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          <div className="bg-[#041c17] rounded-2xl p-6 shadow-xl border border-emerald-900/60 flex flex-col justify-between">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-400/80">Total de Relatórios</span>
-              <span className="text-xl">📊</span>
-            </div>
-            <div className="mt-4">
-              <h2 className="text-4xl font-extrabold text-white">{loading ? '...' : totalRelatorios}</h2>
-              <p className="text-xs font-semibold text-emerald-300/80 mt-2">
-                {totalRelatorios === 1 ? '1 relatório gerado' : `${totalRelatorios} relatórios gerados`}
-              </p>
-            </div>
-          </div>
+        {/* ===================================================
+            INDICADORES
+        ==================================================== */}
 
-          <div 
-            onClick={() => handleCardClick('concluído')}
-            className={`bg-[#041c17] rounded-2xl p-6 shadow-xl border cursor-pointer transition-all hover:scale-[1.02] flex flex-col justify-between group ${
-              filtroStatus.toLowerCase() === 'concluído' ? 'ring-2 ring-emerald-400 bg-emerald-950/50' : 'border-emerald-900/60'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-400/80 group-hover:text-emerald-300 transition-colors">Concluídos / Aprovados</span>
-              <span className="text-xl">✅</span>
-            </div>
-            <div className="mt-4">
-              <h2 className="text-4xl font-extrabold text-white">{loading ? '...' : concluidos}</h2>
-              <p className="text-xs font-semibold text-emerald-400 mt-2 underline">
-                {concluidos === 1 ? 'Filtrar 1 concluído' : `Filtrar ${concluidos} concluídos`}
-              </p>
-            </div>
-          </div>
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {cards.map(
+            (
+              card
+            ) => {
+              const ativo =
+                card.filtro !==
+                  null &&
+                filtroStatus ===
+                  card.filtro;
 
-          <div 
-            onClick={() => handleCardClick('pendente')}
-            className={`bg-[#041c17] rounded-2xl p-6 shadow-xl border cursor-pointer transition-all hover:scale-[1.02] flex flex-col justify-between group ${
-              filtroStatus.toLowerCase() === 'pendente' ? 'ring-2 ring-amber-400 bg-amber-950/30' : 'border-emerald-900/60'
-            }`}
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold uppercase tracking-wider text-emerald-400/80 group-hover:text-amber-400 transition-colors">Pendentes / Em Análise</span>
-              <span className="text-xl">⏳</span>
-            </div>
-            <div className="mt-4">
-              <h2 className="text-4xl font-extrabold text-white">{loading ? '...' : pendentes}</h2>
-              <p className="text-xs font-semibold text-amber-400 mt-2 underline">
-                {pendentes === 1 ? 'Filtrar 1 pendência' : `Filtrar ${pendentes} pendências`}
-              </p>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-[#041c17] px-5 py-3.5 rounded-2xl border border-emerald-800/60 shadow-lg flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 w-full">
-            <span className="text-emerald-400 text-lg">🔍</span>
-            <input
-              type="text"
-              placeholder="Pesquisar por título, tipo, autor ou status..."
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              className="w-full text-sm text-slate-100 placeholder-emerald-400/60 bg-transparent focus:outline-none"
-            />
-          </div>
-          {filtroStatus && (
-            <button
-              onClick={() => setFiltroStatus('')}
-              className="text-xs font-semibold bg-emerald-950 text-emerald-300 hover:bg-emerald-900 border border-emerald-700 px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors"
-            >
-              Limpar Filtro ({filtroStatus}) ✕
-            </button>
-          )}
-        </div>
-
-        <div className="bg-[#041c17] rounded-2xl shadow-2xl border border-emerald-900/60 overflow-hidden">
-          {loading ? (
-            <div className="p-12 text-center text-emerald-300 text-sm">Carregando dados do Supabase...</div>
-          ) : relatoriosFiltrados.length === 0 ? (
-            <div className="p-16 text-center text-emerald-400/70 text-sm">
-              Nenhum relatório encontrado com os critérios informados.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead className="bg-[#02110e] text-emerald-200 text-xs uppercase tracking-wider border-b border-emerald-900/80">
-                  <tr>
-                    <th className="px-6 py-4">Título</th>
-                    <th className="px-6 py-4">Tipo</th>
-                    <th className="px-6 py-4">Data</th>
-                    <th className="px-6 py-4">Autor</th>
-                    <th className="px-6 py-4">Status</th>
-                    <th className="px-6 py-4 text-center">Ações</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-emerald-900/40 text-slate-200">
-                  {relatoriosFiltrados.map((item, idx) => (
-                    <tr key={item.id || idx} className="hover:bg-emerald-900/30 transition-colors">
-                      <td className="px-6 py-4 font-semibold text-white">{item.titulo || '—'}</td>
-                      <td className="px-6 py-4 text-emerald-300">{item.tipo || '—'}</td>
-                      <td className="px-6 py-4 text-slate-400">{item.data_geracao || '—'}</td>
-                      <td className="px-6 py-4 text-slate-300">{item.gerado_por || '—'}</td>
-                      <td className="px-6 py-4">
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-emerald-950 text-emerald-300 border border-emerald-700/60">
-                          {item.status || 'Concluído'}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <button
-                            onClick={() => setItemVisualizar(item)}
-                            title="Visualizar relatório"
-                            className="p-2 rounded-lg bg-sky-950/50 hover:bg-sky-900 text-sky-300 transition-colors"
-                          >
-                            👁️
-                          </button>
-                          <button
-                            onClick={() => setItemEditar(item)}
-                            title="Editar relatório"
-                            className="p-2 rounded-lg bg-emerald-900/50 hover:bg-emerald-900 text-emerald-300 transition-colors"
-                          >
-                            ✏️
-                          </button>
-                          <button
-                            onClick={() => setItemExcluir(item)}
-                            title="Excluir relatório"
-                            className="p-2 rounded-lg bg-rose-950/50 hover:bg-rose-900 text-rose-300 transition-colors"
-                          >
-                            🗑️
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Modal Visualizar */}
-      {itemVisualizar && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#041c17] border border-emerald-900 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-5">
-            <div className="flex items-center justify-between border-b border-emerald-900 pb-3">
-              <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <span>👁️</span> Detalhes do Relatório
-              </h3>
-              <button onClick={() => setItemVisualizar(null)} className="text-emerald-400 font-bold">✕</button>
-            </div>
-            
-            <div className="space-y-4 text-sm">
-              <div className="bg-[#072822] p-4 rounded-xl border border-emerald-800/60">
-                <span className="block text-xs font-bold uppercase text-emerald-400 mb-1">Título</span>
-                <p className="text-white font-medium">{itemVisualizar.titulo || '—'}</p>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-[#072822] p-4 rounded-xl border border-emerald-800/60">
-                  <span className="block text-xs font-bold uppercase text-emerald-400 mb-1">Tipo</span>
-                  <p className="text-emerald-300 font-medium">{itemVisualizar.tipo || '—'}</p>
-                </div>
-                <div className="bg-[#072822] p-4 rounded-xl border border-emerald-800/60">
-                  <span className="block text-xs font-bold uppercase text-emerald-400 mb-1">Status</span>
-                  <p className="text-emerald-200 font-medium">{itemVisualizar.status || 'Concluído'}</p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-[#072822] p-4 rounded-xl border border-emerald-800/60">
-                  <span className="block text-xs font-bold uppercase text-emerald-400 mb-1">Autor / Responsável</span>
-                  <p className="text-slate-200 font-medium">{itemVisualizar.gerado_por || '—'}</p>
-                </div>
-                <div className="bg-[#072822] p-4 rounded-xl border border-emerald-800/60">
-                  <span className="block text-xs font-bold uppercase text-emerald-400 mb-1">Data de Geração</span>
-                  <p className="text-slate-300 font-medium">{itemVisualizar.data_geracao || '—'}</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end pt-2 border-t border-emerald-900">
-              <button
-                type="button"
-                onClick={() => setItemVisualizar(null)}
-                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm shadow"
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Editar */}
-      {itemEditar && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#041c17] border border-emerald-900 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <h3 className="text-lg font-bold text-white border-b border-emerald-900 pb-3">Editar Relatório</h3>
-            <form onSubmit={salvarEdicao} className="space-y-4 text-sm">
-              <div>
-                <label className="block text-xs font-bold uppercase text-emerald-400 mb-1">Título</label>
-                <input
-                  type="text"
-                  required
-                  value={itemEditar.titulo || ''}
-                  onChange={(e) => setItemEditar({ ...itemEditar, titulo: e.target.value })}
-                  className="w-full bg-[#072822] border border-emerald-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase text-emerald-400 mb-1">Tipo</label>
-                  <input
-                    type="text"
-                    value={itemEditar.tipo || ''}
-                    onChange={(e) => setItemEditar({ ...itemEditar, tipo: e.target.value })}
-                    className="w-full bg-[#072822] border border-emerald-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase text-emerald-400 mb-1">Autor (Gerado Por)</label>
-                  <input
-                    type="text"
-                    value={itemEditar.gerado_por || ''}
-                    onChange={(e) => setItemEditar({ ...itemEditar, gerado_por: e.target.value })}
-                    className="w-full bg-[#072822] border border-emerald-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold uppercase text-emerald-400 mb-1">Status</label>
-                  <select
-                    value={itemEditar.status || 'Concluído'}
-                    onChange={(e) => setItemEditar({ ...itemEditar, status: e.target.value })}
-                    className="w-full bg-[#072822] border border-emerald-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="Concluído">Concluído</option>
-                    <option value="Pendente">Pendente</option>
-                    <option value="Em Análise">Em Análise</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase text-emerald-400 mb-1">Data</label>
-                  <input
-                    type="date"
-                    value={itemEditar.data_geracao || ''}
-                    onChange={(e) => setItemEditar({ ...itemEditar, data_geracao: e.target.value })}
-                    className="w-full bg-[#072822] border border-emerald-800 rounded-xl px-4 py-2.5 text-white focus:outline-none focus:border-emerald-500"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-2 pt-4 border-t border-emerald-900">
+              return (
                 <button
                   type="button"
-                  onClick={() => setItemEditar(null)}
-                  className="px-4 py-2 rounded-xl border border-emerald-800 text-emerald-300 font-semibold"
+                  key={
+                    card.titulo
+                  }
+                  onClick={() => {
+                    if (
+                      card.filtro
+                    ) {
+                      alternarFiltro(
+                        card.filtro
+                      );
+                    }
+                  }}
+                  className={`rounded-[22px] border p-5 text-left transition ${
+                    card.filtro
+                      ? 'cursor-pointer'
+                      : 'cursor-default'
+                  } ${
+                    ativo
+                      ? 'border-[#E3A144]/35 bg-[#E3A144]/[0.08]'
+                      : 'border-white/[0.075] bg-[#0A1713]'
+                  }`}
                 >
-                  Cancelar
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+                    {
+                      card.titulo
+                    }
+                  </p>
+
+                  <strong
+                    className="mt-5 block text-4xl font-medium tracking-[-0.04em] text-[#F0F0E8]"
+                    style={{
+                      fontFamily:
+                        'var(--font-fraunces), serif',
+                    }}
+                  >
+                    {
+                      card.valor
+                    }
+                  </strong>
+
+                  <p className="mt-2 text-[11px] text-[#EDEDE3]/28">
+                    {
+                      card.detalhe
+                    }
+                  </p>
                 </button>
-                <button
-                  type="submit"
-                  disabled={salvando}
-                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow"
-                >
-                  {salvando ? 'Salvando...' : 'Salvar Alterações'}
-                </button>
-              </div>
-            </form>
-          </div>
+              );
+            }
+          )}
         </div>
+
+        {/* ===================================================
+            LISTAGEM
+        ==================================================== */}
+
+        <section className="mt-6 overflow-hidden rounded-[26px] border border-white/[0.075] bg-[#0A1713]">
+          <div className="border-b border-white/[0.065] p-5 md:p-6">
+            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                  Controle gerencial
+                </p>
+
+                <h2
+                  className="mt-2 text-2xl text-[#F0F0E8]"
+                  style={{
+                    fontFamily:
+                      'var(--font-fraunces), serif',
+                  }}
+                >
+                  Registros da empresa
+                </h2>
+
+                <p className="mt-2 text-xs text-[#EDEDE3]/30">
+                  {
+                    relatoriosFiltrados.length
+                  }{' '}
+                  de{' '}
+                  {
+                    relatorios.length
+                  }{' '}
+                  relatório
+                  {relatorios.length !==
+                  1
+                    ? 's'
+                    : ''}
+                </p>
+              </div>
+
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <input
+                  type="text"
+                  placeholder="Buscar título, tipo ou responsável..."
+                  value={
+                    busca
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setBusca(
+                      event.target
+                        .value
+                    )
+                  }
+                  className="h-[44px] min-w-[310px] rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-xs text-[#EDEDE3] outline-none placeholder:text-[#EDEDE3]/22 focus:border-[#E3A144]/35"
+                />
+
+                <select
+                  value={
+                    filtroStatus
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setFiltroStatus(
+                      event.target
+                        .value as
+                        | ''
+                        | StatusRelatorio
+                    )
+                  }
+                  className="h-[44px] rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-xs text-[#EDEDE3]/70 outline-none focus:border-[#E3A144]/35"
+                >
+                  <option value="">
+                    Todos os status
+                  </option>
+
+                  <option value="Concluído">
+                    Concluídos
+                  </option>
+
+                  <option value="Pendente">
+                    Pendentes
+                  </option>
+
+                  <option value="Em Análise">
+                    Em análise
+                  </option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div className="overflow-x-auto">
+            {loading ? (
+              <Loading />
+            ) : relatoriosFiltrados.length ===
+              0 ? (
+              <div className="flex min-h-[330px] items-center justify-center px-5 text-center">
+                <div>
+                  <h3
+                    className="text-2xl text-[#F0F0E8]"
+                    style={{
+                      fontFamily:
+                        'var(--font-fraunces), serif',
+                    }}
+                  >
+                    Nenhum relatório encontrado.
+                  </h3>
+
+                  <p className="mt-2 text-xs text-[#EDEDE3]/30">
+                    Ajuste os filtros ou registre um novo relatório.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <table className="w-full min-w-[1000px] border-collapse text-left">
+                <thead>
+                  <tr className="border-b border-white/[0.06] bg-white/[0.012]">
+                    {[
+                      'Título',
+                      'Tipo',
+                      'Data',
+                      'Responsável',
+                      'Status',
+                      'Ações',
+                    ].map(
+                      (
+                        titulo
+                      ) => (
+                        <th
+                          key={
+                            titulo
+                          }
+                          className={`px-5 py-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28 ${
+                            titulo ===
+                            'Ações'
+                              ? 'text-center'
+                              : ''
+                          }`}
+                        >
+                          {
+                            titulo
+                          }
+                        </th>
+                      )
+                    )}
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-white/[0.055]">
+                  {relatoriosFiltrados.map(
+                    (
+                      item,
+                      index
+                    ) => {
+                      const status =
+                        normalizarStatus(
+                          item.status
+                        );
+
+                      return (
+                        <tr
+                          key={
+                            item.id ||
+                            index
+                          }
+                          className="transition hover:bg-white/[0.018]"
+                        >
+                          <td className="px-5 py-4">
+                            <p className="text-xs font-semibold text-[#EDEDE3]/82">
+                              {item.titulo ||
+                                '—'}
+                            </p>
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-2.5 py-1 text-[9px] text-[#EDEDE3]/50">
+                              {item.tipo ||
+                                'Geral'}
+                            </span>
+                          </td>
+
+                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
+                            {formatarData(
+                              item.data_geracao
+                            )}
+                          </td>
+
+                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/48">
+                            {item.gerado_por ||
+                              '—'}
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <span
+                              className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[9px] font-semibold ${statusClasses(
+                                status
+                              )}`}
+                            >
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${statusDot(
+                                  status
+                                )}`}
+                              />
+
+                              {
+                                status
+                              }
+                            </span>
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                type="button"
+                                title="Visualizar"
+                                onClick={() =>
+                                  setItemVisualizar(
+                                    item
+                                  )
+                                }
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:text-[#E3A144]"
+                              >
+                                ◉
+                              </button>
+
+                              <button
+                                type="button"
+                                title="Editar"
+                                onClick={() =>
+                                  setItemEditar({
+                                    ...item,
+
+                                    status:
+                                      normalizarStatus(
+                                        item.status
+                                      ),
+                                  })
+                                }
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:text-sky-300"
+                              >
+                                ✎
+                              </button>
+
+                              <button
+                                type="button"
+                                title="Excluir"
+                                onClick={() =>
+                                  setItemExcluir(
+                                    item
+                                  )
+                                }
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:text-red-300"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
+                  )}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </section>
+      </main>
+
+      {/* =====================================================
+          VISUALIZAÇÃO
+      ====================================================== */}
+
+      {itemVisualizar && (
+        <ModalBase
+          etiqueta="Relatório"
+          titulo={
+            itemVisualizar.titulo ||
+            'Relatório'
+          }
+          onClose={() =>
+            setItemVisualizar(
+              null
+            )
+          }
+        >
+          <div className="grid gap-3 p-6 sm:grid-cols-2">
+            <Detalhe
+              label="Tipo"
+              valor={
+                itemVisualizar.tipo ||
+                'Geral'
+              }
+            />
+
+            <Detalhe
+              label="Status"
+              valor={normalizarStatus(
+                itemVisualizar.status
+              )}
+            />
+
+            <Detalhe
+              label="Responsável"
+              valor={
+                itemVisualizar.gerado_por ||
+                'Não informado'
+              }
+            />
+
+            <Detalhe
+              label="Data"
+              valor={formatarData(
+                itemVisualizar.data_geracao
+              )}
+            />
+          </div>
+
+          <div className="flex justify-end border-t border-white/[0.07] px-6 py-4">
+            <button
+              type="button"
+              onClick={() =>
+                setItemVisualizar(
+                  null
+                )
+              }
+              className="rounded-xl bg-[#E3A144] px-5 py-2.5 text-xs font-bold text-[#07130F]"
+            >
+              Fechar
+            </button>
+          </div>
+        </ModalBase>
       )}
 
-      {/* Modal Excluir */}
-      {itemExcluir && (
-        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-[#041c17] border border-emerald-900 rounded-2xl max-w-md w-full p-6 shadow-2xl text-center space-y-4">
-            <div className="text-3xl">⚠️</div>
-            <h3 className="text-lg font-bold text-white">Confirmar Exclusão</h3>
-            <p className="text-sm text-emerald-300/80">
-              Deseja realmente excluir o relatório <span className="font-semibold text-white">{itemExcluir.titulo}</span>?
-            </p>
-            <div className="flex justify-center gap-3 pt-2">
+      {/* =====================================================
+          EDIÇÃO
+      ====================================================== */}
+
+      {itemEditar && (
+        <ModalBase
+          etiqueta="Gestão • Edição"
+          titulo="Editar relatório"
+          onClose={() =>
+            !salvando &&
+            setItemEditar(
+              null
+            )
+          }
+        >
+          <form
+            onSubmit={
+              salvarEdicao
+            }
+            className="space-y-5 p-6"
+          >
+            <div>
+              <label className={labelClass}>
+                Título *
+              </label>
+
+              <input
+                type="text"
+                required
+                disabled={
+                  salvando
+                }
+                value={
+                  itemEditar.titulo ||
+                  ''
+                }
+                onChange={(
+                  event
+                ) =>
+                  setItemEditar({
+                    ...itemEditar,
+
+                    titulo:
+                      event.target
+                        .value,
+                  })
+                }
+                className={
+                  inputClass
+                }
+              />
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className={labelClass}>
+                  Tipo
+                </label>
+
+                <input
+                  type="text"
+                  disabled={
+                    salvando
+                  }
+                  value={
+                    itemEditar.tipo ||
+                    ''
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setItemEditar({
+                      ...itemEditar,
+
+                      tipo:
+                        event.target
+                          .value,
+                    })
+                  }
+                  className={
+                    inputClass
+                  }
+                />
+              </div>
+
+              <div>
+                <label className={labelClass}>
+                  Responsável
+                </label>
+
+                <input
+                  type="text"
+                  disabled={
+                    salvando
+                  }
+                  value={
+                    itemEditar.gerado_por ||
+                    ''
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setItemEditar({
+                      ...itemEditar,
+
+                      gerado_por:
+                        event.target
+                          .value,
+                    })
+                  }
+                  className={
+                    inputClass
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div>
+                <label className={labelClass}>
+                  Status
+                </label>
+
+                <select
+                  disabled={
+                    salvando
+                  }
+                  value={
+                    normalizarStatus(
+                      itemEditar.status
+                    )
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setItemEditar({
+                      ...itemEditar,
+
+                      status:
+                        event.target
+                          .value,
+                    })
+                  }
+                  className={
+                    inputClass
+                  }
+                >
+                  <option value="Concluído">
+                    Concluído
+                  </option>
+
+                  <option value="Pendente">
+                    Pendente
+                  </option>
+
+                  <option value="Em Análise">
+                    Em Análise
+                  </option>
+                </select>
+              </div>
+
+              <div>
+                <label className={labelClass}>
+                  Data
+                </label>
+
+                <input
+                  type="date"
+                  disabled={
+                    salvando
+                  }
+                  value={
+                    itemEditar.data_geracao?.split(
+                      'T'
+                    )[0] ||
+                    ''
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setItemEditar({
+                      ...itemEditar,
+
+                      data_geracao:
+                        event.target
+                          .value,
+                    })
+                  }
+                  className={
+                    inputClass
+                  }
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-5 sm:flex-row sm:justify-end">
               <button
-                onClick={() => setItemExcluir(null)}
-                className="flex-1 px-4 py-2.5 rounded-xl border border-emerald-800 text-emerald-300 font-semibold"
+                type="button"
+                disabled={
+                  salvando
+                }
+                onClick={() =>
+                  setItemEditar(
+                    null
+                  )
+                }
+                className="rounded-xl border border-white/[0.08] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/55"
               >
                 Cancelar
               </button>
+
               <button
-                onClick={confirmarExclusao}
-                disabled={salvando}
-                className="flex-1 px-4 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-semibold shadow"
+                type="submit"
+                disabled={
+                  salvando
+                }
+                className="rounded-xl bg-[#E3A144] px-6 py-3 text-xs font-bold text-[#07130F] disabled:opacity-50"
               >
-                {salvando ? 'Excluindo...' : 'Sim, Excluir'}
+                {salvando
+                  ? 'Salvando...'
+                  : 'Salvar alterações'}
+              </button>
+            </div>
+          </form>
+        </ModalBase>
+      )}
+
+      {/* =====================================================
+          EXCLUSÃO
+      ====================================================== */}
+
+      {itemExcluir && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-[430px] rounded-[26px] border border-white/[0.09] bg-[#091510] p-6 text-center">
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-red-500/20 bg-red-500/[0.08] text-red-300">
+              !
+            </div>
+
+            <h3
+              className="mt-4 text-2xl text-[#F0F0E8]"
+              style={{
+                fontFamily:
+                  'var(--font-fraunces), serif',
+              }}
+            >
+              Excluir relatório?
+            </h3>
+
+            <p className="mt-3 text-xs leading-6 text-[#EDEDE3]/38">
+              O relatório{' '}
+              <strong className="text-[#EDEDE3]/70">
+                {itemExcluir.titulo ||
+                  'selecionado'}
+              </strong>{' '}
+              será removido permanentemente.
+            </p>
+
+            <div className="mt-6 grid grid-cols-2 gap-3">
+              <button
+                type="button"
+                disabled={
+                  excluindo
+                }
+                onClick={() =>
+                  setItemExcluir(
+                    null
+                  )
+                }
+                className="rounded-xl border border-white/[0.09] px-4 py-3 text-xs font-semibold text-[#EDEDE3]/60 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                disabled={
+                  excluindo
+                }
+                onClick={
+                  confirmarExclusao
+                }
+                className="rounded-xl border border-red-500/20 bg-red-500/[0.1] px-4 py-3 text-xs font-semibold text-red-300 disabled:opacity-50"
+              >
+                {excluindo
+                  ? 'Excluindo...'
+                  : 'Excluir'}
               </button>
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/*
+  ============================================================
+  COMPONENTES
+  ============================================================
+*/
+
+function Loading() {
+  return (
+    <div className="flex min-h-[330px] items-center justify-center">
+      <div className="text-center">
+        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/[0.08] border-t-[#E3A144]" />
+
+        <p className="mt-4 text-xs text-[#EDEDE3]/35">
+          Carregando relatórios...
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function Detalhe({
+  label,
+  valor,
+}: {
+  label: string;
+  valor: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/[0.065] bg-white/[0.018] p-4">
+      <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28">
+        {label}
+      </p>
+
+      <p className="mt-2 text-xs font-medium text-[#EDEDE3]/72">
+        {valor}
+      </p>
+    </div>
+  );
+}
+
+function ModalBase({
+  etiqueta,
+  titulo,
+  onClose,
+  children,
+}: {
+  etiqueta: string;
+  titulo: string;
+  onClose: () => void;
+  children:
+    React.ReactNode;
+}) {
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+      <div className="max-h-[92vh] w-full max-w-[680px] overflow-y-auto rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
+        <div className="flex items-start justify-between gap-4 border-b border-white/[0.07] px-6 py-5">
+          <div>
+            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+              {etiqueta}
+            </p>
+
+            <h3
+              className="mt-2 text-2xl text-[#F0F0E8]"
+              style={{
+                fontFamily:
+                  'var(--font-fraunces), serif',
+              }}
+            >
+              {titulo}
+            </h3>
+          </div>
+
+          <button
+            type="button"
+            onClick={
+              onClose
+            }
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] text-[#EDEDE3]/45"
+          >
+            ✕
+          </button>
+        </div>
+
+        {children}
+      </div>
     </div>
   );
 }

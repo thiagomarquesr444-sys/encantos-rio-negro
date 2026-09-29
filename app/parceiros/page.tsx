@@ -1,314 +1,1297 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
 interface Parceiro {
-  id?: string | number;
-  nome?: string;
-  cidade?: string;
-  categoria?: string;
-  avaliacao?: number;
-  idiomas?: string;
-  especialidade?: string;
-  logo_url?: string;
+  id: string;
+  created_at: string | null;
+  nome: string;
+  comissao_porcentagem: number | null;
+  telefone: string | null;
+  email: string | null;
+  status: string | null;
+  empresa_id: string;
+  tipo: string | null;
+  tipo_pessoa: string | null;
+  documento: string | null;
+  whatsapp: string | null;
+  cidade: string | null;
+  endereco: string | null;
+  observacoes: string | null;
+  updated_at: string | null;
+}
+
+type TipoFeedback = 'sucesso' | 'erro';
+
+interface Feedback {
+  tipo: TipoFeedback;
+  texto: string;
+}
+
+const TIPOS_PARCEIRO = [
+  'Agência',
+  'Operador',
+  'Hospedagem',
+  'Transporte',
+  'Fornecedor',
+  'Prestador de serviço',
+  'Outro',
+];
+
+function normalizarTexto(valor?: string | null) {
+  return (valor ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim();
+}
+
+function formatarPercentual(valor?: number | null) {
+  const numero = Number(valor ?? 0);
+
+  if (!Number.isFinite(numero)) {
+    return '0%';
+  }
+
+  return `${numero.toLocaleString('pt-BR', {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 2,
+  })}%`;
+}
+
+function formatarData(valor?: string | null) {
+  if (!valor) return '—';
+
+  const data = new Date(valor);
+
+  if (Number.isNaN(data.getTime())) {
+    return '—';
+  }
+
+  return data.toLocaleDateString('pt-BR');
+}
+
+function obterIniciais(nome: string) {
+  const partes = nome.trim().split(/\s+/).filter(Boolean);
+
+  if (partes.length === 0) return 'ER';
+
+  if (partes.length === 1) {
+    return partes[0].slice(0, 2).toUpperCase();
+  }
+
+  return `${partes[0][0]}${partes[partes.length - 1][0]}`.toUpperCase();
 }
 
 export default function ParceirosPage() {
   const [parceiros, setParceiros] = useState<Parceiro[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [busca, setBusca] = useState('');
-  const [filtroCategoria, setFiltroCategoria] = useState('');
+  const [filtroTipo, setFiltroTipo] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState('');
+
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
+
+  const [visualizando, setVisualizando] = useState<Parceiro | null>(null);
+  const [editando, setEditando] = useState<Parceiro | null>(null);
+  const [excluindo, setExcluindo] = useState<Parceiro | null>(null);
+
+  const [salvando, setSalvando] = useState(false);
+
+  async function carregarParceiros() {
+    setLoading(true);
+    setFeedback(null);
+
+    try {
+      const { data, error } = await supabase
+        .from('parceiros')
+        .select(
+          `
+          id,
+          created_at,
+          nome,
+          comissao_porcentagem,
+          telefone,
+          email,
+          status,
+          empresa_id,
+          tipo,
+          tipo_pessoa,
+          documento,
+          whatsapp,
+          cidade,
+          endereco,
+          observacoes,
+          updated_at
+        `
+        )
+        .order('nome', { ascending: true });
+
+      if (error) {
+        throw error;
+      }
+
+      setParceiros((data ?? []) as Parceiro[]);
+    } catch (error) {
+      console.error('Erro ao carregar parceiros:', error);
+
+      setFeedback({
+        tipo: 'erro',
+        texto:
+          error instanceof Error
+            ? error.message
+            : 'Não foi possível carregar os parceiros.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  }
 
   useEffect(() => {
-    async function fetchParceiros() {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase.from('parceiros').select('*');
-        if (!error && data && data.length > 0) {
-          setParceiros(data);
-        } else {
-          // Fallback robusto com dados de exemplo se a tabela do Supabase estiver vazia
-          setParceiros([
-            {
-              id: 1,
-              nome: 'Encantos Rio Negro Turismo',
-              cidade: 'Barcelos - AM',
-              categoria: 'Turismo Receptivo',
-              avaliacao: 4.9,
-              idiomas: 'Português • Inglês',
-              especialidade: 'Pesca Esportiva e Ecoturismo',
-            },
-            {
-              id: 2,
-              nome: 'Rio Negro Adventure',
-              cidade: 'Barcelos - AM',
-              categoria: 'Embarcações',
-              avaliacao: 4.8,
-              idiomas: 'Português • Espanhol',
-              especialidade: 'Passeios Fluviais',
-            },
-            {
-              id: 3,
-              nome: 'Expedições Amazônicas',
-              cidade: 'Santa Isabel do Rio Negro - AM',
-              categoria: 'Guias',
-              avaliacao: 5.0,
-              idiomas: 'Português • Inglês • Espanhol',
-              especialidade: 'Turismo de Natureza',
-            },
-          ]);
-        }
-      } catch (err) {
-        console.error('Erro ao buscar parceiros:', err);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchParceiros();
+    carregarParceiros();
   }, []);
 
-  // Categorias para os cards interativos
-  const categoriasCards = [
-    { nome: 'Turismo Receptivo', icone: '🛶' },
-    { nome: 'Embarcações', icone: '🚤' },
-    { nome: 'Guias', icone: '🧭' },
-    { nome: 'Hospedagens', icone: '🏨' },
-  ];
+  const tiposExistentes = useMemo(() => {
+    return Array.from(
+      new Set(
+        parceiros
+          .map((parceiro) => parceiro.tipo?.trim())
+          .filter((tipo): tipo is string => Boolean(tipo))
+      )
+    ).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [parceiros]);
 
-  const handleCardClick = (cat: string) => {
-    if (filtroCategoria === cat) {
-      setFiltroCategoria('');
-    } else {
-      setFiltroCategoria(cat);
+  const metricas = useMemo(() => {
+    const ativos = parceiros.filter(
+      (parceiro) => normalizarTexto(parceiro.status) === 'ativo'
+    ).length;
+
+    const fornecedores = parceiros.filter(
+      (parceiro) => normalizarTexto(parceiro.tipo) === 'fornecedor'
+    ).length;
+
+    const cidades = new Set(
+      parceiros.map((parceiro) => parceiro.cidade?.trim()).filter(Boolean)
+    ).size;
+
+    return {
+      total: parceiros.length,
+      ativos,
+      fornecedores,
+      cidades,
+    };
+  }, [parceiros]);
+
+  const parceirosFiltrados = useMemo(() => {
+    const termo = normalizarTexto(busca);
+
+    return parceiros.filter((parceiro) => {
+      const atendeBusca =
+        !termo ||
+        normalizarTexto(parceiro.nome).includes(termo) ||
+        normalizarTexto(parceiro.tipo).includes(termo) ||
+        normalizarTexto(parceiro.cidade).includes(termo) ||
+        normalizarTexto(parceiro.telefone).includes(termo) ||
+        normalizarTexto(parceiro.whatsapp).includes(termo) ||
+        normalizarTexto(parceiro.email).includes(termo) ||
+        normalizarTexto(parceiro.documento).includes(termo);
+
+      const atendeTipo =
+        !filtroTipo ||
+        normalizarTexto(parceiro.tipo) === normalizarTexto(filtroTipo);
+
+      const atendeStatus =
+        !filtroStatus ||
+        normalizarTexto(parceiro.status) === normalizarTexto(filtroStatus);
+
+      return atendeBusca && atendeTipo && atendeStatus;
+    });
+  }, [parceiros, busca, filtroTipo, filtroStatus]);
+
+  async function salvarEdicao(event: React.FormEvent) {
+    event.preventDefault();
+
+    if (!editando?.id) return;
+
+    if (!editando.nome.trim()) {
+      setFeedback({
+        tipo: 'erro',
+        texto: 'Informe o nome do parceiro.',
+      });
+
+      return;
     }
-  };
 
-  const parceirosFiltrados = parceiros.filter((item) => {
-    const termo = busca.toLowerCase();
-    const atendeBusca =
-      (item.nome || '').toLowerCase().includes(termo) ||
-      (item.cidade || '').toLowerCase().includes(termo) ||
-      (item.categoria || '').toLowerCase().includes(termo) ||
-      (item.especialidade || '').toLowerCase().includes(termo);
+    const comissao = Number(editando.comissao_porcentagem ?? 0);
 
-    const atendeCategoria = filtroCategoria
-      ? (item.categoria || '').toLowerCase().includes(filtroCategoria.toLowerCase())
-      : true;
+    if (!Number.isFinite(comissao) || comissao < 0 || comissao > 100) {
+      setFeedback({
+        tipo: 'erro',
+        texto: 'A comissão deve estar entre 0% e 100%.',
+      });
 
-    return atendeBusca && atendeCategoria;
-  });
+      return;
+    }
+
+    setSalvando(true);
+    setFeedback(null);
+
+    try {
+      const { error } = await supabase
+        .from('parceiros')
+        .update({
+          nome: editando.nome.trim(),
+          tipo: editando.tipo?.trim() || null,
+          tipo_pessoa: editando.tipo_pessoa?.trim() || null,
+          documento: editando.documento?.trim() || null,
+          telefone: editando.telefone?.trim() || null,
+          whatsapp: editando.whatsapp?.trim() || null,
+          email: editando.email?.trim() || null,
+          cidade: editando.cidade?.trim() || null,
+          endereco: editando.endereco?.trim() || null,
+          comissao_porcentagem: comissao,
+          status: editando.status || 'ativo',
+          observacoes: editando.observacoes?.trim() || null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', editando.id);
+
+      if (error) {
+        throw error;
+      }
+
+      setEditando(null);
+
+      setFeedback({
+        tipo: 'sucesso',
+        texto: 'Parceiro atualizado com sucesso.',
+      });
+
+      await carregarParceiros();
+    } catch (error) {
+      console.error('Erro ao atualizar parceiro:', error);
+
+      setFeedback({
+        tipo: 'erro',
+        texto:
+          error instanceof Error
+            ? error.message
+            : 'Não foi possível atualizar o parceiro.',
+      });
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  async function confirmarExclusao() {
+    if (!excluindo?.id) return;
+
+    setSalvando(true);
+    setFeedback(null);
+
+    try {
+      const { error } = await supabase
+        .from('parceiros')
+        .delete()
+        .eq('id', excluindo.id);
+
+      if (error) {
+        throw error;
+      }
+
+      setParceiros((atual) =>
+        atual.filter((parceiro) => parceiro.id !== excluindo.id)
+      );
+
+      setExcluindo(null);
+
+      setFeedback({
+        tipo: 'sucesso',
+        texto: 'Parceiro excluído com sucesso.',
+      });
+    } catch (error) {
+      console.error('Erro ao excluir parceiro:', error);
+
+      setFeedback({
+        tipo: 'erro',
+        texto:
+          error instanceof Error
+            ? error.message
+            : 'Não foi possível excluir o parceiro.',
+      });
+    } finally {
+      setSalvando(false);
+    }
+  }
+
+  function limparFiltros() {
+    setBusca('');
+    setFiltroTipo('');
+    setFiltroStatus('');
+  }
+
+  const possuiFiltro = Boolean(busca || filtroTipo || filtroStatus);
 
   return (
-    <main className="min-h-screen bg-slate-50 text-slate-800 flex flex-col">
-      
-      {/* Banner Superior com Fundo Temático */}
-      <div 
-        className="relative bg-cover bg-center py-16 px-8 text-white flex flex-col items-center justify-center text-center shadow-md"
-        style={{
-          backgroundImage: `linear-gradient(rgba(6, 78, 59, 0.85), rgba(4, 47, 35, 0.95)), url('https://images.unsplash.com/photo-1518509562904-e7ef99cdcc86?q=80&w=1600&auto=format&fit=crop')`,
-        }}
-      >
-        <div className="max-w-4xl space-y-4">
-          <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight flex items-center justify-center gap-3">
-            <span>🤝</span> Parceiros • Marketplace
-          </h1>
-          <p className="text-emerald-100 text-sm md:text-base font-medium opacity-90 max-w-3xl mx-auto">
-            Encontre agências de turismo receptivo, embarcações, guias, hospedagens e serviços especializados para viver uma experiência completa na Amazônia.
-          </p>
+    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+      <header className="border-b border-white/[0.07] bg-[#091510]">
+        <div className="mx-auto flex max-w-[1360px] flex-col gap-7 px-5 py-9 md:px-8 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <div className="flex items-center gap-3">
+              <span className="h-px w-8 bg-[#E3A144]" />
 
-          <div className="pt-4 flex flex-wrap items-center justify-center gap-3">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#E3A144]">
+                Rede Operacional ERN
+              </span>
+            </div>
+
+            <h1
+              className="mt-4 text-4xl tracking-[-0.04em] text-[#F0F0E8] md:text-5xl"
+              style={{
+                fontFamily: 'var(--font-fraunces), serif',
+              }}
+            >
+              Parceiros
+            </h1>
+
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-[#EDEDE3]/40">
+              Organize parceiros, prestadores e fornecedores que participam
+              da operação da sua empresa.
+            </p>
+          </div>
+
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={carregarParceiros}
+              disabled={loading}
+              className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.05] disabled:opacity-40"
+            >
+              ↻ Atualizar
+            </button>
+
             <Link
               href="/parceiros/novo"
-              className="bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-sm px-6 py-3 rounded-xl shadow-lg transition-all flex items-center gap-2"
+              className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl bg-[#E3A144] px-6 text-sm font-bold text-[#07130F] transition hover:bg-[#F0B35C]"
             >
-              <span>➕</span> Cadastrar Parceiro
+              <span className="text-lg">+</span>
+              Novo parceiro
             </Link>
-            <button 
-              onClick={() => {
-                const el = document.getElementById('diretorio-parceiros');
-                el?.scrollIntoView({ behavior: 'smooth' });
-              }}
-              className="bg-white/20 hover:bg-white/30 text-white font-semibold text-sm px-6 py-3 rounded-xl shadow-lg transition-all border border-white/30 backdrop-blur-sm flex items-center gap-2"
-            >
-              <span>🔍</span> Explorar Parceiros
-            </button>
           </div>
         </div>
-      </div>
+      </header>
 
-      <div className="mx-auto max-w-7xl px-8 py-10 w-full flex-1 space-y-10" id="diretorio-parceiros">
+      <main className="mx-auto max-w-[1360px] space-y-6 px-5 py-8 md:px-8">
+        {feedback && (
+          <div
+            className={`flex items-start justify-between gap-4 rounded-2xl border px-5 py-4 text-xs ${
+              feedback.tipo === 'sucesso'
+                ? 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-200'
+                : 'border-red-500/20 bg-red-500/[0.07] text-red-300'
+            }`}
+          >
+            <span>{feedback.texto}</span>
 
-        {/* Barra de Pesquisa Moderna com Indicador de Filtro Ativo */}
-        <div className="bg-white px-5 py-3.5 rounded-2xl border border-slate-200/80 shadow-sm flex items-center justify-between gap-3">
-          <div className="flex items-center gap-3 w-full">
-            <span className="text-slate-400 text-lg">🔍</span>
-            <input
-              type="text"
-              placeholder="Pesquisar agência, cidade, categoria ou especialidade..."
-              value={busca}
-              onChange={(e) => setBusca(e.target.value)}
-              className="w-full text-sm text-slate-800 placeholder-slate-400 bg-transparent focus:outline-none"
-            />
-          </div>
-          {filtroCategoria && (
             <button
-              onClick={() => setFiltroCategoria('')}
-              className="text-xs font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 px-3 py-1.5 rounded-lg whitespace-nowrap transition-colors"
+              type="button"
+              onClick={() => setFeedback(null)}
+              className="opacity-60 hover:opacity-100"
             >
-              Limpar Filtro ({filtroCategoria}) ✕
+              ✕
             </button>
-          )}
-        </div>
+          </div>
+        )}
 
-        {/* Cards de Categorias Interativos */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          {categoriasCards.map((cat, idx) => {
-            const isSelected = filtroCategoria.toLowerCase() === cat.nome.toLowerCase();
-            return (
-              <div
-                key={idx}
-                onClick={() => handleCardClick(cat.nome)}
-                className={`rounded-2xl bg-white p-6 text-center shadow-lg cursor-pointer transition-all hover:-translate-y-1 hover:shadow-xl border-b-4 ${
-                  isSelected ? 'border-emerald-600 ring-2 ring-emerald-500 bg-emerald-50/40' : 'border-transparent'
-                }`}
+        <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <MetricCard
+            titulo="Parceiros"
+            valor={loading ? '—' : String(metricas.total)}
+            descricao="registros da empresa"
+          />
+
+          <MetricCard
+            titulo="Ativos"
+            valor={loading ? '—' : String(metricas.ativos)}
+            descricao="relações operacionais ativas"
+          />
+
+          <MetricCard
+            titulo="Fornecedores"
+            valor={loading ? '—' : String(metricas.fornecedores)}
+            descricao="cadastrados atualmente"
+          />
+
+          <MetricCard
+            titulo="Cidades"
+            valor={loading ? '—' : String(metricas.cidades)}
+            descricao="localidades representadas"
+          />
+        </section>
+
+        <section className="rounded-[24px] border border-[#E3A144]/15 bg-[#E3A144]/[0.035] p-5 md:p-6">
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
+                Estrutura operacional
+              </p>
+
+              <h2
+                className="mt-3 text-xl text-[#F0F0E8]"
+                style={{
+                  fontFamily: 'var(--font-fraunces), serif',
+                }}
               >
-                <div className="text-4xl mb-2">{cat.icone}</div>
-                <h2 className="text-base font-bold text-slate-800">{cat.nome}</h2>
-                <p className="text-xs font-semibold text-emerald-600 mt-1 underline">
-                  {isSelected ? 'Filtro ativo' : 'Filtrar categoria'}
+                A base comercial que conecta a operação ERN.
+              </h2>
+
+              <p className="mt-2 max-w-3xl text-xs leading-6 text-[#EDEDE3]/35">
+                Parceiros cadastrados aqui poderão participar da cadeia de
+                fornecedores, cotações, pedidos, compras e abastecimento das
+                expedições.
+              </p>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              {[
+                'Turismo',
+                'Hospedagem',
+                'Transporte',
+                'Fornecedores',
+                'Serviços',
+              ].map((item) => (
+                <span
+                  key={item}
+                  className="rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1.5 text-[9px] font-semibold text-[#EDEDE3]/38"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="overflow-hidden rounded-[24px] border border-white/[0.075] bg-[#0A1713]">
+          <div className="border-b border-white/[0.06] p-5 md:p-6">
+            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
+              <div>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+                  Diretório privado
+                </p>
+
+                <h2
+                  className="mt-2 text-2xl text-[#F0F0E8]"
+                  style={{
+                    fontFamily: 'var(--font-fraunces), serif',
+                  }}
+                >
+                  Rede da empresa
+                </h2>
+
+                <p className="mt-2 text-xs text-[#EDEDE3]/28">
+                  {parceirosFiltrados.length} de {parceiros.length}{' '}
+                  {parceiros.length === 1 ? 'parceiro' : 'parceiros'}
                 </p>
               </div>
-            );
-          })}
-        </div>
 
-        {/* Grid Moderno de Perfis */}
-        <div>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-              <span>🌟</span> Agências e Prestadores Verificados
-            </h2>
-            {filtroCategoria && (
-              <span className="text-xs bg-emerald-100 text-emerald-800 px-3 py-1 rounded-full font-semibold">
-                Categoria: {filtroCategoria}
-              </span>
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-[280px_180px_160px]">
+                <input
+                  type="search"
+                  value={busca}
+                  onChange={(event) => setBusca(event.target.value)}
+                  placeholder="Nome, cidade, documento..."
+                  className="h-[44px] rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-xs text-[#EDEDE3] outline-none placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/35"
+                />
+
+                <select
+                  value={filtroTipo}
+                  onChange={(event) => setFiltroTipo(event.target.value)}
+                  className="h-[44px] rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-xs text-[#EDEDE3] outline-none focus:border-[#E3A144]/35"
+                >
+                  <option value="">Todos os tipos</option>
+
+                  {tiposExistentes.map((tipo) => (
+                    <option key={tipo} value={tipo}>
+                      {tipo}
+                    </option>
+                  ))}
+                </select>
+
+                <select
+                  value={filtroStatus}
+                  onChange={(event) => setFiltroStatus(event.target.value)}
+                  className="h-[44px] rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-xs text-[#EDEDE3] outline-none focus:border-[#E3A144]/35"
+                >
+                  <option value="">Todos</option>
+                  <option value="ativo">Ativos</option>
+                  <option value="inativo">Inativos</option>
+                </select>
+              </div>
+            </div>
+
+            {possuiFiltro && (
+              <div className="mt-4">
+                <button
+                  type="button"
+                  onClick={limparFiltros}
+                  className="text-[10px] font-semibold text-[#F4C77E] transition hover:text-[#E3A144]"
+                >
+                  Limpar filtros
+                </button>
+              </div>
             )}
           </div>
 
           {loading ? (
-            <div className="p-12 text-center text-slate-500 text-sm">Carregando parceiros do Supabase...</div>
+            <div className="flex min-h-[320px] items-center justify-center">
+              <div className="text-center">
+                <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/[0.08] border-t-[#E3A144]" />
+
+                <p className="mt-4 text-xs text-[#EDEDE3]/30">
+                  Carregando parceiros...
+                </p>
+              </div>
+            </div>
           ) : parceirosFiltrados.length === 0 ? (
-            <div className="p-16 text-center text-slate-400 text-sm bg-white rounded-2xl shadow border border-slate-200">
-              Nenhum parceiro encontrado com os critérios informados.
+            <div className="flex min-h-[320px] items-center justify-center p-6 text-center">
+              <div className="max-w-md">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-white/[0.07] bg-white/[0.025] text-xl text-[#E3A144]">
+                  ◇
+                </div>
+
+                <h3
+                  className="mt-5 text-2xl text-[#F0F0E8]"
+                  style={{
+                    fontFamily: 'var(--font-fraunces), serif',
+                  }}
+                >
+                  {parceiros.length === 0
+                    ? 'Sua rede ainda está vazia.'
+                    : 'Nenhum parceiro encontrado.'}
+                </h3>
+
+                <p className="mt-3 text-xs leading-6 text-[#EDEDE3]/30">
+                  {parceiros.length === 0
+                    ? 'Cadastre o primeiro parceiro da empresa para começar a estruturar sua rede operacional.'
+                    : 'Tente alterar os filtros utilizados na pesquisa.'}
+                </p>
+
+                {parceiros.length === 0 && (
+                  <Link
+                    href="/parceiros/novo"
+                    className="mt-5 inline-flex min-h-[42px] items-center justify-center rounded-xl bg-[#E3A144] px-5 text-xs font-bold text-[#07130F] transition hover:bg-[#F0B35C]"
+                  >
+                    Cadastrar primeiro parceiro
+                  </Link>
+                )}
+              </div>
             </div>
           ) : (
-            <div className="grid gap-8 lg:grid-cols-3">
-              {parceirosFiltrados.map((item, idx) => (
-                <div
-                  key={item.id || idx}
-                  className="rounded-2xl bg-white p-6 shadow-lg border border-slate-100 transition hover:-translate-y-1 hover:shadow-xl flex flex-col justify-between"
-                >
-                  <div>
-                    <div className="flex items-center justify-between">
-                      <h2 className="text-xl font-bold text-slate-800">{item.nome || 'Parceiro'}</h2>
-                      <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700 whitespace-nowrap">
-                        ⭐ {item.avaliacao ? item.avaliacao.toFixed(1) : '5.0'}
-                      </span>
+            <>
+              <div className="hidden overflow-x-auto lg:block">
+                <table className="w-full min-w-[1050px] text-left">
+                  <thead className="border-b border-white/[0.06] bg-[#07110E]">
+                    <tr>
+                      <TableHeader>Parceiro</TableHeader>
+                      <TableHeader>Tipo</TableHeader>
+                      <TableHeader>Localidade</TableHeader>
+                      <TableHeader>Contato</TableHeader>
+                      <TableHeader>Comissão</TableHeader>
+                      <TableHeader>Status</TableHeader>
+                      <TableHeader alinhamento="right">Ações</TableHeader>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-white/[0.055]">
+                    {parceirosFiltrados.map((parceiro) => (
+                      <tr
+                        key={parceiro.id}
+                        className="transition hover:bg-white/[0.018]"
+                      >
+                        <td className="px-6 py-4">
+                          <div className="flex items-center gap-3">
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.025] text-[11px] font-bold text-[#E3A144]">
+                              {obterIniciais(parceiro.nome)}
+                            </div>
+
+                            <div className="min-w-0">
+                              <p className="truncate text-xs font-semibold text-[#F0F0E8]">
+                                {parceiro.nome}
+                              </p>
+
+                              <p className="mt-1 text-[9px] text-[#EDEDE3]/25">
+                                {parceiro.tipo_pessoa || 'Tipo não informado'}
+                              </p>
+                            </div>
+                          </div>
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1 text-[9px] font-semibold text-[#EDEDE3]/45">
+                            {parceiro.tipo || 'Sem classificação'}
+                          </span>
+                        </td>
+
+                        <td className="px-6 py-4 text-[11px] text-[#EDEDE3]/40">
+                          {parceiro.cidade || '—'}
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <p className="text-[11px] text-[#EDEDE3]/45">
+                            {parceiro.whatsapp ||
+                              parceiro.telefone ||
+                              parceiro.email ||
+                              '—'}
+                          </p>
+                        </td>
+
+                        <td className="px-6 py-4 text-[11px] font-semibold text-[#F4C77E]">
+                          {formatarPercentual(parceiro.comissao_porcentagem)}
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <StatusBadge status={parceiro.status} />
+                        </td>
+
+                        <td className="px-6 py-4">
+                          <div className="flex justify-end gap-2">
+                            <ActionButton
+                              label="Ver"
+                              onClick={() => setVisualizando(parceiro)}
+                            />
+
+                            <ActionButton
+                              label="Editar"
+                              onClick={() => setEditando({ ...parceiro })}
+                            />
+
+                            <ActionButton
+                              label="Excluir"
+                              danger
+                              onClick={() => setExcluindo(parceiro)}
+                            />
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              <div className="grid gap-3 p-4 lg:hidden">
+                {parceirosFiltrados.map((parceiro) => (
+                  <article
+                    key={parceiro.id}
+                    className="rounded-2xl border border-white/[0.065] bg-[#07110E] p-5"
+                  >
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-white/[0.07] bg-white/[0.025] text-[11px] font-bold text-[#E3A144]">
+                          {obterIniciais(parceiro.nome)}
+                        </div>
+
+                        <div className="min-w-0">
+                          <h3 className="truncate text-sm font-semibold text-[#F0F0E8]">
+                            {parceiro.nome}
+                          </h3>
+
+                          <p className="mt-1 text-[10px] text-[#EDEDE3]/28">
+                            {parceiro.tipo || 'Sem classificação'}
+                          </p>
+                        </div>
+                      </div>
+
+                      <StatusBadge status={parceiro.status} />
                     </div>
 
-                    <p className="mt-2 text-sm text-slate-500 font-medium flex items-center gap-1">
-                      <span>📍</span> {item.cidade || 'Amazônia - AM'}
-                    </p>
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      <MiniInfo
+                        titulo="Cidade"
+                        valor={parceiro.cidade || '—'}
+                      />
 
-                    <p className="mt-1 text-xs font-bold text-emerald-700 uppercase tracking-wide">
-                      {item.categoria || 'Parceiro Turístico'}
-                    </p>
+                      <MiniInfo
+                        titulo="Comissão"
+                        valor={formatarPercentual(
+                          parceiro.comissao_porcentagem
+                        )}
+                      />
 
-                    <div className="mt-5 space-y-2 text-sm text-slate-600 border-t border-slate-100 pt-4">
-                      {item.idiomas && (
-                        <p>
-                          🌎 <strong>Idiomas:</strong> {item.idiomas}
-                        </p>
-                      )}
-                      {item.especialidade && (
-                        <p>
-                          🎣 <strong>Especialidade:</strong> {item.especialidade}
-                        </p>
-                      )}
-                      <p>🚐 Traslados disponíveis</p>
-                      <p>🏨 Reserva de hospedagens</p>
-                      <p>🚤 Passeios fluviais</p>
-                      <p>✈ Apoio ao turista no destino</p>
+                      <MiniInfo
+                        titulo="Contato"
+                        valor={
+                          parceiro.whatsapp ||
+                          parceiro.telefone ||
+                          parceiro.email ||
+                          '—'
+                        }
+                      />
+
+                      <MiniInfo
+                        titulo="Cadastro"
+                        valor={formatarData(parceiro.created_at)}
+                      />
                     </div>
-                  </div>
 
-                  <div className="mt-8 pt-4 border-t border-slate-100 flex flex-wrap gap-2">
-                    <button className="flex-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 px-3 py-2 text-xs font-semibold text-white transition text-center">
-                      Ver Perfil
-                    </button>
-                    <button className="flex-1 rounded-lg bg-blue-600 hover:bg-blue-700 px-3 py-2 text-xs font-semibold text-white transition text-center">
-                      Contato
-                    </button>
-                    <button className="w-full rounded-lg bg-amber-500 hover:bg-amber-600 px-3 py-2 text-xs font-semibold text-white transition text-center">
-                      Solicitar Orçamento
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
+                    <div className="mt-5 flex gap-2 border-t border-white/[0.055] pt-4">
+                      <ActionButton
+                        label="Ver"
+                        full
+                        onClick={() => setVisualizando(parceiro)}
+                      />
+
+                      <ActionButton
+                        label="Editar"
+                        full
+                        onClick={() => setEditando({ ...parceiro })}
+                      />
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </>
           )}
-        </div>
+        </section>
+      </main>
 
-        {/* Seção Informativa: Vantagens */}
-        <div className="mt-16 rounded-2xl bg-white p-8 shadow-xl border border-slate-100">
-          <h2 className="text-2xl md:text-3xl font-bold text-center text-slate-800">
-            Por que contratar uma agência de turismo receptivo?
-          </h2>
-          <p className="mt-2 text-center text-slate-500 text-sm md:text-base">
-            Quem mora no destino conhece detalhes que transformam uma viagem comum em uma experiência inesquecível.
-          </p>
+      {visualizando && (
+        <Modal onClose={() => setVisualizando(null)}>
+          <ModalHeader
+            titulo={visualizando.nome}
+            subtitulo="Detalhes do parceiro"
+            onClose={() => setVisualizando(null)}
+          />
 
-          <div className="mt-10 grid gap-4 md:grid-cols-2 lg:grid-cols-5 text-sm text-slate-700">
-            <div className="rounded-xl bg-emerald-50/70 p-4 border border-emerald-100 font-medium">
-              ✅ Conhece profundamente o destino.
+          <div className="grid gap-3 p-6 sm:grid-cols-2">
+            <DetailCard titulo="Tipo" valor={visualizando.tipo || '—'} />
+
+            <DetailCard
+              titulo="Pessoa"
+              valor={visualizando.tipo_pessoa || '—'}
+            />
+
+            <DetailCard
+              titulo="Documento"
+              valor={visualizando.documento || '—'}
+            />
+
+            <DetailCard
+              titulo="Cidade"
+              valor={visualizando.cidade || '—'}
+            />
+
+            <DetailCard
+              titulo="Telefone"
+              valor={visualizando.telefone || '—'}
+            />
+
+            <DetailCard
+              titulo="WhatsApp"
+              valor={visualizando.whatsapp || '—'}
+            />
+
+            <DetailCard titulo="E-mail" valor={visualizando.email || '—'} />
+
+            <DetailCard
+              titulo="Comissão"
+              valor={formatarPercentual(visualizando.comissao_porcentagem)}
+            />
+
+            <DetailCard
+              titulo="Endereço"
+              valor={visualizando.endereco || '—'}
+              span
+            />
+
+            <DetailCard
+              titulo="Observações"
+              valor={visualizando.observacoes || 'Nenhuma observação.'}
+              span
+            />
+          </div>
+
+          <div className="flex justify-end border-t border-white/[0.07] px-6 py-4">
+            <button
+              type="button"
+              onClick={() => setVisualizando(null)}
+              className="rounded-xl bg-[#E3A144] px-5 py-2.5 text-xs font-bold text-[#07130F]"
+            >
+              Fechar
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {editando && (
+        <Modal onClose={() => setEditando(null)} maxWidth="760px">
+          <ModalHeader
+            titulo="Editar parceiro"
+            subtitulo={editando.nome}
+            onClose={() => setEditando(null)}
+          />
+
+          <form onSubmit={salvarEdicao}>
+            <div className="grid gap-5 p-6 md:grid-cols-2">
+              <FormField label="Nome *" span>
+                <input
+                  required
+                  value={editando.nome}
+                  onChange={(event) =>
+                    setEditando({
+                      ...editando,
+                      nome: event.target.value,
+                    })
+                  }
+                  className={inputClass}
+                />
+              </FormField>
+
+              <FormField label="Tipo">
+                <select
+                  value={editando.tipo || ''}
+                  onChange={(event) =>
+                    setEditando({
+                      ...editando,
+                      tipo: event.target.value,
+                    })
+                  }
+                  className={inputClass}
+                >
+                  <option value="">Selecione</option>
+
+                  {TIPOS_PARCEIRO.map((tipo) => (
+                    <option key={tipo} value={tipo}>
+                      {tipo}
+                    </option>
+                  ))}
+                </select>
+              </FormField>
+
+              <FormField label="Tipo de pessoa">
+                <select
+                  value={editando.tipo_pessoa || ''}
+                  onChange={(event) =>
+                    setEditando({
+                      ...editando,
+                      tipo_pessoa: event.target.value,
+                    })
+                  }
+                  className={inputClass}
+                >
+                  <option value="">Selecione</option>
+                  <option value="Pessoa física">Pessoa física</option>
+                  <option value="Pessoa jurídica">Pessoa jurídica</option>
+                </select>
+              </FormField>
+
+              <FormField label="Documento">
+                <input
+                  value={editando.documento || ''}
+                  onChange={(event) =>
+                    setEditando({
+                      ...editando,
+                      documento: event.target.value,
+                    })
+                  }
+                  className={inputClass}
+                />
+              </FormField>
+
+              <FormField label="Cidade">
+                <input
+                  value={editando.cidade || ''}
+                  onChange={(event) =>
+                    setEditando({
+                      ...editando,
+                      cidade: event.target.value,
+                    })
+                  }
+                  className={inputClass}
+                />
+              </FormField>
+
+              <FormField label="Telefone">
+                <input
+                  value={editando.telefone || ''}
+                  onChange={(event) =>
+                    setEditando({
+                      ...editando,
+                      telefone: event.target.value,
+                    })
+                  }
+                  className={inputClass}
+                />
+              </FormField>
+
+              <FormField label="WhatsApp">
+                <input
+                  value={editando.whatsapp || ''}
+                  onChange={(event) =>
+                    setEditando({
+                      ...editando,
+                      whatsapp: event.target.value,
+                    })
+                  }
+                  className={inputClass}
+                />
+              </FormField>
+
+              <FormField label="E-mail">
+                <input
+                  type="email"
+                  value={editando.email || ''}
+                  onChange={(event) =>
+                    setEditando({
+                      ...editando,
+                      email: event.target.value,
+                    })
+                  }
+                  className={inputClass}
+                />
+              </FormField>
+
+              <FormField label="Comissão (%)">
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  value={editando.comissao_porcentagem ?? 0}
+                  onChange={(event) =>
+                    setEditando({
+                      ...editando,
+                      comissao_porcentagem: Number(event.target.value),
+                    })
+                  }
+                  className={inputClass}
+                />
+              </FormField>
+
+              <FormField label="Status">
+                <select
+                  value={editando.status || 'ativo'}
+                  onChange={(event) =>
+                    setEditando({
+                      ...editando,
+                      status: event.target.value,
+                    })
+                  }
+                  className={inputClass}
+                >
+                  <option value="ativo">Ativo</option>
+                  <option value="inativo">Inativo</option>
+                </select>
+              </FormField>
+
+              <FormField label="Endereço" span>
+                <input
+                  value={editando.endereco || ''}
+                  onChange={(event) =>
+                    setEditando({
+                      ...editando,
+                      endereco: event.target.value,
+                    })
+                  }
+                  className={inputClass}
+                />
+              </FormField>
+
+              <FormField label="Observações" span>
+                <textarea
+                  rows={4}
+                  value={editando.observacoes || ''}
+                  onChange={(event) =>
+                    setEditando({
+                      ...editando,
+                      observacoes: event.target.value,
+                    })
+                  }
+                  className={`${inputClass} resize-none py-3`}
+                />
+              </FormField>
             </div>
-            <div className="rounded-xl bg-emerald-50/70 p-4 border border-emerald-100 font-medium">
-              ✅ Planeja toda a viagem com antecedência.
+
+            <div className="flex justify-end gap-3 border-t border-white/[0.07] px-6 py-4">
+              <button
+                type="button"
+                onClick={() => setEditando(null)}
+                className="rounded-xl border border-white/[0.08] px-5 py-2.5 text-xs font-semibold text-[#EDEDE3]/55"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="submit"
+                disabled={salvando}
+                className="rounded-xl bg-[#E3A144] px-5 py-2.5 text-xs font-bold text-[#07130F] disabled:opacity-50"
+              >
+                {salvando ? 'Salvando...' : 'Salvar alterações'}
+              </button>
             </div>
-            <div className="rounded-xl bg-emerald-50/70 p-4 border border-emerald-100 font-medium">
-              ✅ Economiza tempo e evita filas.
+          </form>
+        </Modal>
+      )}
+
+      {excluindo && (
+        <Modal onClose={() => setExcluindo(null)} maxWidth="460px">
+          <div className="p-6 text-center">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl border border-red-500/20 bg-red-500/[0.08] text-xl">
+              !
             </div>
-            <div className="rounded-xl bg-emerald-50/70 p-4 border border-emerald-100 font-medium">
-              ✅ Resolve imprevistos durante a viagem.
-            </div>
-            <div className="rounded-xl bg-emerald-50/70 p-4 border border-emerald-100 font-medium">
-              ✅ Reserva hotéis, passeios e traslados.
-            </div>
-            <div className="rounded-xl bg-emerald-50/70 p-4 border border-emerald-100 font-medium">
-              ✅ Guias especializados acompanham você.
-            </div>
-            <div className="rounded-xl bg-emerald-50/70 p-4 border border-emerald-100 font-medium">
-              ✅ Atendimento personalizado do início ao fim.
-            </div>
-            <div className="rounded-xl bg-emerald-50/70 p-4 border border-emerald-100 font-medium">
-              ✅ Mais segurança em todo o roteiro.
-            </div>
-            <div className="rounded-xl bg-emerald-50/70 p-4 border border-emerald-100 font-medium">
-              ✅ Mais opções para aproveitar sua estadia.
-            </div>
-            <div className="rounded-xl bg-emerald-50/70 p-4 border border-emerald-100 font-medium">
-              ✅ Um parceiro local sempre pronto para ajudar.
+
+            <h3
+              className="mt-5 text-2xl text-[#F0F0E8]"
+              style={{
+                fontFamily: 'var(--font-fraunces), serif',
+              }}
+            >
+              Excluir parceiro?
+            </h3>
+
+            <p className="mt-3 text-xs leading-6 text-[#EDEDE3]/35">
+              O registro de{' '}
+              <strong className="text-[#F0F0E8]">{excluindo.nome}</strong>{' '}
+              será excluído. Registros vinculados poderão impedir a operação.
+            </p>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                type="button"
+                onClick={() => setExcluindo(null)}
+                className="flex-1 rounded-xl border border-white/[0.08] px-4 py-3 text-xs font-semibold text-[#EDEDE3]/55"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={confirmarExclusao}
+                disabled={salvando}
+                className="flex-1 rounded-xl bg-red-600 px-4 py-3 text-xs font-bold text-white disabled:opacity-50"
+              >
+                {salvando ? 'Excluindo...' : 'Excluir'}
+              </button>
             </div>
           </div>
-        </div>
+        </Modal>
+      )}
+    </div>
+  );
+}
 
-        <footer className="mt-12 border-t border-slate-200 pt-8 text-center text-xs text-slate-500">
-          © 2026 Encantos Rio Negro • Marketplace de Turismo Receptivo da Amazônia.
-        </footer>
+const inputClass =
+  'h-[44px] w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-xs text-[#EDEDE3] outline-none placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/35';
 
+function MetricCard({
+  titulo,
+  valor,
+  descricao,
+}: {
+  titulo: string;
+  valor: string;
+  descricao: string;
+}) {
+  return (
+    <div className="rounded-[22px] border border-white/[0.075] bg-[#0A1713] p-5">
+      <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+        {titulo}
+      </p>
+
+      <strong
+        className="mt-5 block text-4xl font-medium tracking-[-0.04em] text-[#F0F0E8]"
+        style={{
+          fontFamily: 'var(--font-fraunces), serif',
+        }}
+      >
+        {valor}
+      </strong>
+
+      <p className="mt-2 text-[11px] text-[#EDEDE3]/28">{descricao}</p>
+    </div>
+  );
+}
+
+function TableHeader({
+  children,
+  alinhamento = 'left',
+}: {
+  children: React.ReactNode;
+  alinhamento?: 'left' | 'right';
+}) {
+  return (
+    <th
+      className={`px-6 py-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#7C9C87] ${
+        alinhamento === 'right' ? 'text-right' : 'text-left'
+      }`}
+    >
+      {children}
+    </th>
+  );
+}
+
+function StatusBadge({ status }: { status?: string | null }) {
+  const ativo = normalizarTexto(status) === 'ativo';
+
+  return (
+    <span
+      className={`inline-flex rounded-full border px-2.5 py-1 text-[9px] font-semibold ${
+        ativo
+          ? 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300'
+          : 'border-white/[0.08] bg-white/[0.025] text-[#EDEDE3]/35'
+      }`}
+    >
+      {ativo ? 'Ativo' : 'Inativo'}
+    </span>
+  );
+}
+
+function ActionButton({
+  label,
+  onClick,
+  danger = false,
+  full = false,
+}: {
+  label: string;
+  onClick: () => void;
+  danger?: boolean;
+  full?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`${full ? 'flex-1' : ''} rounded-lg border px-3 py-2 text-[10px] font-semibold transition ${
+        danger
+          ? 'border-red-500/15 bg-red-500/[0.04] text-red-300 hover:bg-red-500/[0.08]'
+          : 'border-white/[0.07] bg-white/[0.02] text-[#EDEDE3]/45 hover:border-[#E3A144]/20 hover:text-[#F4C77E]'
+      }`}
+    >
+      {label}
+    </button>
+  );
+}
+
+function MiniInfo({ titulo, valor }: { titulo: string; valor: string }) {
+  return (
+    <div className="rounded-xl border border-white/[0.055] bg-white/[0.015] p-3">
+      <p className="text-[8px] font-semibold uppercase tracking-[0.14em] text-[#EDEDE3]/20">
+        {titulo}
+      </p>
+
+      <p className="mt-1.5 truncate text-[10px] text-[#EDEDE3]/50">{valor}</p>
+    </div>
+  );
+}
+
+function Modal({
+  children,
+  onClose,
+  maxWidth = '700px',
+}: {
+  children: React.ReactNode;
+  onClose: () => void;
+  maxWidth?: string;
+}) {
+  return (
+    <div
+      className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
+      onMouseDown={(event) => {
+        if (event.target === event.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div
+        className="max-h-[90vh] w-full overflow-y-auto rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.65)]"
+        style={{ maxWidth }}
+      >
+        {children}
       </div>
-    </main>
+    </div>
+  );
+}
+
+function ModalHeader({
+  titulo,
+  subtitulo,
+  onClose,
+}: {
+  titulo: string;
+  subtitulo: string;
+  onClose: () => void;
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 border-b border-white/[0.07] px-6 py-5">
+      <div>
+        <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+          {subtitulo}
+        </p>
+
+        <h3
+          className="mt-2 text-2xl text-[#F0F0E8]"
+          style={{
+            fontFamily: 'var(--font-fraunces), serif',
+          }}
+        >
+          {titulo}
+        </h3>
+      </div>
+
+      <button
+        type="button"
+        onClick={onClose}
+        className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] text-[#EDEDE3]/45"
+      >
+        ✕
+      </button>
+    </div>
+  );
+}
+
+function DetailCard({
+  titulo,
+  valor,
+  span = false,
+}: {
+  titulo: string;
+  valor: string;
+  span?: boolean;
+}) {
+  return (
+    <div
+      className={`rounded-2xl border border-white/[0.065] bg-white/[0.018] p-4 ${
+        span ? 'sm:col-span-2' : ''
+      }`}
+    >
+      <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/25">
+        {titulo}
+      </p>
+
+      <p className="mt-2 whitespace-pre-wrap break-words text-xs font-medium leading-5 text-[#EDEDE3]/65">
+        {valor}
+      </p>
+    </div>
+  );
+}
+
+function FormField({
+  label,
+  children,
+  span = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  span?: boolean;
+}) {
+  return (
+    <label className={span ? 'md:col-span-2' : ''}>
+      <span className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.14em] text-[#7C9C87]">
+        {label}
+      </span>
+
+      {children}
+    </label>
   );
 }

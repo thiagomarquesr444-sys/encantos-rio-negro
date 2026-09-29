@@ -54,6 +54,12 @@ interface ReservaBanco {
   observacoes?: string | null;
 }
 
+/*
+  ============================================================
+  STATUS
+  ============================================================
+*/
+
 function normalizarStatus(
   status?: string | null
 ): StatusReserva {
@@ -86,6 +92,15 @@ function normalizarStatus(
   ============================================================
   CONVERSÃO MONETÁRIA
   ============================================================
+
+  Exemplos:
+
+  3500
+  3500,00
+  3.500
+  3.500,00
+  3500.00
+  R$ 3.500,00
 */
 
 function converterValorMonetario(
@@ -106,7 +121,7 @@ function converterValorMonetario(
   );
 
   if (!bruto) {
-    return NaN;
+    return Number.NaN;
   }
 
   const temVirgula =
@@ -115,14 +130,18 @@ function converterValorMonetario(
   const temPonto =
     bruto.includes('.');
 
-  let normalizado = bruto;
+  let normalizado =
+    bruto;
 
   /*
     3.500,50
     3,500.50
   */
 
-  if (temVirgula && temPonto) {
+  if (
+    temVirgula &&
+    temPonto
+  ) {
     const ultimaVirgula =
       bruto.lastIndexOf(',');
 
@@ -133,10 +152,25 @@ function converterValorMonetario(
       ultimaVirgula >
       ultimoPonto
     ) {
-      normalizado = bruto
-        .replace(/\./g, '')
-        .replace(',', '.');
+      /*
+        Formato brasileiro:
+        3.500,50
+      */
+      normalizado =
+        bruto
+          .replace(
+            /\./g,
+            ''
+          )
+          .replace(
+            ',',
+            '.'
+          );
     } else {
+      /*
+        Formato internacional:
+        3,500.50
+      */
       normalizado =
         bruto.replace(
           /,/g,
@@ -150,7 +184,9 @@ function converterValorMonetario(
     3,50  -> 3.50
   */
 
-  else if (temVirgula) {
+  else if (
+    temVirgula
+  ) {
     if (
       /^\d{1,3}(,\d{3})+$/.test(
         bruto
@@ -181,7 +217,9 @@ function converterValorMonetario(
     3.50  -> 3.50
   */
 
-  else if (temPonto) {
+  else if (
+    temPonto
+  ) {
     if (
       /^\d{1,3}(\.\d{3})+$/.test(
         bruto
@@ -210,9 +248,11 @@ function converterValorMonetario(
   const numero =
     Number(normalizado);
 
-  return Number.isFinite(numero)
+  return Number.isFinite(
+    numero
+  )
     ? numero
-    : NaN;
+    : Number.NaN;
 }
 
 function formatarValorCampo(
@@ -221,8 +261,11 @@ function formatarValorCampo(
   return numero.toLocaleString(
     'pt-BR',
     {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+      minimumFractionDigits:
+        2,
+
+      maximumFractionDigits:
+        2,
     }
   );
 }
@@ -234,7 +277,9 @@ function valorBancoParaCampo(
     Number(valor);
 
   if (
-    !Number.isFinite(numero)
+    !Number.isFinite(
+      numero
+    )
   ) {
     return '';
   }
@@ -244,32 +289,55 @@ function valorBancoParaCampo(
   );
 }
 
+/*
+  ============================================================
+  PÁGINA
+  ============================================================
+*/
+
 export default function EditarReservaPage() {
-  const router = useRouter();
+  const router =
+    useRouter();
 
   const params =
     useParams();
 
-  const id =
+  const parametroId =
     params?.id;
+
+  const id =
+    Array.isArray(
+      parametroId
+    )
+      ? parametroId[0]
+      : parametroId;
 
   const [
     loading,
     setLoading,
-  ] = useState(true);
+  ] =
+    useState(true);
 
   const [
     salvando,
     setSalvando,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     feedback,
     setFeedback,
-  ] = useState<{
-    tipo: 'sucesso' | 'erro';
-    mensagem: string;
-  } | null>(null);
+  ] =
+    useState<{
+      tipo:
+        | 'sucesso'
+        | 'erro';
+
+      mensagem:
+        string;
+    } | null>(
+      null
+    );
 
   const [
     form,
@@ -287,7 +355,7 @@ export default function EditarReservaPage() {
     });
 
   const inputClass =
-    'w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/40';
+    'w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/40 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-50';
 
   const labelClass =
     'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34';
@@ -300,28 +368,62 @@ export default function EditarReservaPage() {
 
   useEffect(() => {
     if (!id) {
+      setLoading(false);
+
+      setFeedback({
+        tipo:
+          'erro',
+
+        mensagem:
+          'Identificador da reserva não encontrado.',
+      });
+
       return;
     }
 
+    let ativo = true;
+
     async function carregar() {
       setLoading(true);
+      setFeedback(null);
 
       try {
         const {
           data,
           error,
-        } = await supabase
-          .from('reservas')
-          .select('*')
-          .eq('id', id)
-          .single();
+        } =
+          await supabase
+            .from(
+              'reservas'
+            )
+            .select('*')
+            .eq(
+              'id',
+              id
+            )
+            .single();
 
         if (error) {
           throw error;
         }
 
+        if (
+          !data ||
+          !ativo
+        ) {
+          return;
+        }
+
         const reserva =
           data as ReservaBanco;
+
+        /*
+          valor_total é a fonte
+          prioritária.
+
+          valor continua como
+          fallback para dados antigos.
+        */
 
         const valorBruto =
           reserva.valor_total !==
@@ -384,33 +486,50 @@ export default function EditarReservaPage() {
           error
         );
 
+        if (!ativo) {
+          return;
+        }
+
         setFeedback({
-          tipo: 'erro',
+          tipo:
+            'erro',
+
           mensagem:
-            'Não foi possível carregar os dados da reserva.',
+            error instanceof Error
+              ? `Não foi possível carregar a reserva: ${error.message}`
+              : 'Não foi possível carregar os dados da reserva.',
         });
       } finally {
-        setLoading(false);
+        if (ativo) {
+          setLoading(false);
+        }
       }
     }
 
     carregar();
+
+    return () => {
+      ativo = false;
+    };
   }, [id]);
 
   /*
     ============================================================
-    ALTERAÇÃO DE CAMPOS
+    ALTERAÇÃO DOS CAMPOS
     ============================================================
   */
 
   function alterarCampo(
-    campo: keyof ReservaForm,
+    campo:
+      keyof ReservaForm,
     valor: string
   ) {
     setForm(
       (atual) => ({
         ...atual,
-        [campo]: valor,
+
+        [campo]:
+          valor,
       })
     );
   }
@@ -428,7 +547,9 @@ export default function EditarReservaPage() {
       );
 
     if (
-      !Number.isFinite(numero)
+      !Number.isFinite(
+        numero
+      )
     ) {
       return;
     }
@@ -443,12 +564,13 @@ export default function EditarReservaPage() {
 
   /*
     ============================================================
-    ATUALIZAÇÃO
+    SALVAR
     ============================================================
   */
 
   async function handleAtualizar(
-    event: React.FormEvent
+    event:
+      React.FormEvent
   ) {
     event.preventDefault();
 
@@ -465,7 +587,9 @@ export default function EditarReservaPage() {
       !form.valor.trim()
     ) {
       setFeedback({
-        tipo: 'erro',
+        tipo:
+          'erro',
+
         mensagem:
           'Preencha os campos obrigatórios: cliente, passeio, data do passeio e valor total.',
       });
@@ -485,7 +609,9 @@ export default function EditarReservaPage() {
       valorTratado < 0
     ) {
       setFeedback({
-        tipo: 'erro',
+        tipo:
+          'erro',
+
         mensagem:
           'Informe um valor válido para a reserva.',
       });
@@ -497,8 +623,14 @@ export default function EditarReservaPage() {
 
     try {
       /*
-        Mantemos valor e
-        valor_total sincronizados.
+        IMPORTANTE:
+
+        valor e valor_total
+        permanecem sincronizados.
+
+        Isso impede que a listagem,
+        edição e indicadores exibam
+        números diferentes.
       */
 
       const payload = {
@@ -533,29 +665,43 @@ export default function EditarReservaPage() {
           null,
       };
 
-      const { error } =
+      const {
+        error,
+      } =
         await supabase
-          .from('reservas')
-          .update(payload)
-          .eq('id', id);
+          .from(
+            'reservas'
+          )
+          .update(
+            payload
+          )
+          .eq(
+            'id',
+            id
+          );
 
       if (error) {
         throw error;
       }
 
       setFeedback({
-        tipo: 'sucesso',
+        tipo:
+          'sucesso',
+
         mensagem:
           'Reserva atualizada com sucesso.',
       });
 
-      setTimeout(() => {
-        router.push(
-          '/reservas'
-        );
+      setTimeout(
+        () => {
+          router.push(
+            '/reservas'
+          );
 
-        router.refresh();
-      }, 1200);
+          router.refresh();
+        },
+        1000
+      );
     } catch (error) {
       console.error(
         'Erro ao atualizar reserva:',
@@ -563,7 +709,9 @@ export default function EditarReservaPage() {
       );
 
       setFeedback({
-        tipo: 'erro',
+        tipo:
+          'erro',
+
         mensagem:
           error instanceof Error
             ? `Erro ao atualizar reserva: ${error.message}`
@@ -573,6 +721,12 @@ export default function EditarReservaPage() {
       setSalvando(false);
     }
   }
+
+  /*
+    ============================================================
+    CARREGANDO
+    ============================================================
+  */
 
   if (loading) {
     return (
@@ -588,9 +742,17 @@ export default function EditarReservaPage() {
     );
   }
 
+  /*
+    ============================================================
+    INTERFACE
+    ============================================================
+  */
+
   return (
     <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
-      {/* CABEÇALHO */}
+      {/* =====================================================
+          CABEÇALHO
+      ====================================================== */}
 
       <section className="border-b border-white/[0.07] bg-[#091510]">
         <div className="mx-auto max-w-[1180px] px-5 py-10 md:px-8 md:py-12">
@@ -599,16 +761,21 @@ export default function EditarReservaPage() {
             className="inline-flex items-center gap-2 text-xs font-semibold text-[#EDEDE3]/38 transition hover:text-[#E3A144]"
           >
             <span>←</span>
+
             Reservas
           </Link>
 
           <div className="mt-7">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
-              Operação • Edição
-            </p>
+            <div className="flex items-center gap-3">
+              <span className="h-px w-8 bg-[#E3A144]" />
+
+              <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
+                Operação • Edição
+              </p>
+            </div>
 
             <h1
-              className="mt-3 text-4xl tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
+              className="mt-4 text-4xl tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
               style={{
                 fontFamily:
                   'var(--font-fraunces), serif',
@@ -618,17 +785,20 @@ export default function EditarReservaPage() {
             </h1>
 
             <p className="mt-4 max-w-[650px] text-sm leading-7 text-[#EDEDE3]/40">
-              Atualize os dados
-              comerciais e
-              operacionais da reserva
-              mantendo valores e
-              status consistentes.
+              Atualize os dados comerciais e
+              operacionais da reserva mantendo
+              valores, datas e status
+              consistentes.
             </p>
           </div>
         </div>
       </section>
 
       <main className="mx-auto max-w-[1180px] px-5 py-8 md:px-8 md:py-10">
+        {/* ===================================================
+            FEEDBACK
+        ==================================================== */}
+
         {feedback && (
           <div
             className={`mb-6 rounded-2xl border px-5 py-4 text-xs ${
@@ -638,7 +808,9 @@ export default function EditarReservaPage() {
                 : 'border-red-500/20 bg-red-500/[0.07] text-red-300'
             }`}
           >
-            {feedback.mensagem}
+            {
+              feedback.mensagem
+            }
           </div>
         )}
 
@@ -648,7 +820,9 @@ export default function EditarReservaPage() {
           }
           className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]"
         >
-          {/* DADOS */}
+          {/* =================================================
+              DADOS DA RESERVA
+          ================================================== */}
 
           <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-7">
             <div className="border-b border-white/[0.065] pb-5">
@@ -668,8 +842,11 @@ export default function EditarReservaPage() {
             </div>
 
             <div className="mt-6 space-y-5">
+              {/* CLIENTE */}
+
               <div>
                 <label
+                  htmlFor="cliente"
                   className={
                     labelClass
                   }
@@ -678,8 +855,12 @@ export default function EditarReservaPage() {
                 </label>
 
                 <input
+                  id="cliente"
                   type="text"
                   required
+                  disabled={
+                    salvando
+                  }
                   value={
                     form.cliente
                   }
@@ -698,8 +879,11 @@ export default function EditarReservaPage() {
                 />
               </div>
 
+              {/* PASSEIO */}
+
               <div>
                 <label
+                  htmlFor="pacote"
                   className={
                     labelClass
                   }
@@ -708,8 +892,12 @@ export default function EditarReservaPage() {
                 </label>
 
                 <input
+                  id="pacote"
                   type="text"
                   required
+                  disabled={
+                    salvando
+                  }
                   value={
                     form.pacote
                   }
@@ -729,8 +917,11 @@ export default function EditarReservaPage() {
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
+                {/* DATA */}
+
                 <div>
                   <label
+                    htmlFor="data-reserva"
                     className={
                       labelClass
                     }
@@ -739,8 +930,12 @@ export default function EditarReservaPage() {
                   </label>
 
                   <input
+                    id="data-reserva"
                     type="date"
                     required
+                    disabled={
+                      salvando
+                    }
                     value={
                       form.dataReserva
                     }
@@ -759,8 +954,11 @@ export default function EditarReservaPage() {
                   />
                 </div>
 
+                {/* VALOR */}
+
                 <div>
                   <label
+                    htmlFor="valor-reserva"
                     className={
                       labelClass
                     }
@@ -769,9 +967,13 @@ export default function EditarReservaPage() {
                   </label>
 
                   <input
+                    id="valor-reserva"
                     type="text"
                     inputMode="decimal"
                     required
+                    disabled={
+                      salvando
+                    }
                     value={
                       form.valor
                     }
@@ -794,9 +996,9 @@ export default function EditarReservaPage() {
                   />
 
                   <p className="mt-2 text-[9px] leading-4 text-[#EDEDE3]/24">
-                    Exemplos aceitos:
-                    3500, 3.500,
-                    3,500 ou
+                    Aceita 3500,
+                    3.500,
+                    3500,00 ou
                     3.500,00.
                   </p>
                 </div>
@@ -804,7 +1006,9 @@ export default function EditarReservaPage() {
             </div>
           </section>
 
-          {/* OPERAÇÃO */}
+          {/* =================================================
+              OPERAÇÃO
+          ================================================== */}
 
           <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-6">
             <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
@@ -822,8 +1026,11 @@ export default function EditarReservaPage() {
             </h2>
 
             <div className="mt-6 space-y-5">
+              {/* AGÊNCIA */}
+
               <div>
                 <label
+                  htmlFor="agencia"
                   className={
                     labelClass
                   }
@@ -832,7 +1039,11 @@ export default function EditarReservaPage() {
                 </label>
 
                 <input
+                  id="agencia"
                   type="text"
+                  disabled={
+                    salvando
+                  }
                   value={
                     form.agencia
                   }
@@ -851,8 +1062,11 @@ export default function EditarReservaPage() {
                 />
               </div>
 
+              {/* GUIA */}
+
               <div>
                 <label
+                  htmlFor="guia"
                   className={
                     labelClass
                   }
@@ -861,7 +1075,11 @@ export default function EditarReservaPage() {
                 </label>
 
                 <input
+                  id="guia"
                   type="text"
+                  disabled={
+                    salvando
+                  }
                   value={
                     form.guia
                   }
@@ -880,8 +1098,11 @@ export default function EditarReservaPage() {
                 />
               </div>
 
+              {/* STATUS */}
+
               <div>
                 <label
+                  htmlFor="status"
                   className={
                     labelClass
                   }
@@ -890,6 +1111,10 @@ export default function EditarReservaPage() {
                 </label>
 
                 <select
+                  id="status"
+                  disabled={
+                    salvando
+                  }
                   value={
                     form.status
                   }
@@ -922,10 +1147,13 @@ export default function EditarReservaPage() {
             </div>
           </section>
 
-          {/* OBSERVAÇÕES */}
+          {/* =================================================
+              OBSERVAÇÕES
+          ================================================== */}
 
           <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-6 lg:col-span-2">
             <label
+              htmlFor="observacoes"
               className={
                 labelClass
               }
@@ -934,7 +1162,11 @@ export default function EditarReservaPage() {
             </label>
 
             <textarea
+              id="observacoes"
               rows={5}
+              disabled={
+                salvando
+              }
               value={
                 form.observacoes
               }
@@ -952,28 +1184,36 @@ export default function EditarReservaPage() {
             />
           </section>
 
-          {/* AÇÕES */}
+          {/* =================================================
+              AÇÕES
+          ================================================== */}
 
           <div className="lg:col-span-2">
-            <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-6 sm:flex-row sm:justify-end">
-              <Link
-                href="/reservas"
-                className="inline-flex min-h-[46px] items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.05]"
-              >
-                Cancelar
-              </Link>
+            <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-6 sm:flex-row sm:items-center sm:justify-between">
+              <p className="hidden text-[10px] text-[#EDEDE3]/22 sm:block">
+                Valor e valor total serão mantidos sincronizados.
+              </p>
 
-              <button
-                type="submit"
-                disabled={
-                  salvando
-                }
-                className="inline-flex min-h-[46px] items-center justify-center rounded-xl bg-[#E3A144] px-6 text-xs font-bold text-[#07130F] transition hover:bg-[#F0B35C] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {salvando
-                  ? 'Salvando...'
-                  : 'Salvar alterações'}
-              </button>
+              <div className="flex flex-col-reverse gap-3 sm:flex-row">
+                <Link
+                  href="/reservas"
+                  className="inline-flex min-h-[46px] items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.05]"
+                >
+                  Cancelar
+                </Link>
+
+                <button
+                  type="submit"
+                  disabled={
+                    salvando
+                  }
+                  className="inline-flex min-h-[46px] min-w-[160px] items-center justify-center rounded-xl bg-[#E3A144] px-6 text-xs font-bold text-[#07130F] shadow-[0_8px_22px_rgba(227,161,68,0.12)] transition hover:bg-[#F0B35C] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {salvando
+                    ? 'Salvando...'
+                    : 'Salvar alterações'}
+                </button>
+              </div>
             </div>
           </div>
         </form>

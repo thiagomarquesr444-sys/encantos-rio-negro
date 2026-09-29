@@ -49,15 +49,33 @@ interface Voucher {
 
 interface Cliente {
   id: string;
+
   nome?: string | null;
+
   nome_completo?: string | null;
 }
 
 interface Passeio {
   id: string;
+
   nome?: string | null;
+
   titulo?: string | null;
 }
+
+type Feedback = {
+  tipo:
+    | 'sucesso'
+    | 'erro';
+
+  texto: string;
+};
+
+/*
+  ============================================================
+  TEXTO / STATUS
+  ============================================================
+*/
 
 function removerAcentos(
   valor: string
@@ -73,20 +91,26 @@ function removerAcentos(
 function normalizarStatus(
   valor?: string | null
 ): StatusVoucher {
-  const status = removerAcentos(
-    (valor || '')
-      .trim()
-      .toLowerCase()
-  );
+  const status =
+    removerAcentos(
+      (
+        valor ||
+        ''
+      )
+        .trim()
+        .toLowerCase()
+    );
 
   if (
-    status === 'utilizado'
+    status ===
+    'utilizado'
   ) {
     return 'Utilizado';
   }
 
   if (
-    status === 'cancelado'
+    status ===
+    'cancelado'
   ) {
     return 'Cancelado';
   }
@@ -98,12 +122,17 @@ function normalizarStatus(
   ============================================================
   VALORES
 
-  Convenção ERN:
+  Aceita:
 
-  3500      -> 3500
-  3.500     -> 3500
-  3500.50   -> 3500.50
-  3.500,50  -> 3500.50
+  3500
+  3500,00
+  3.500
+  3.500,00
+  3500.50
+  3,500.00
+  R$ 3.500,00
+
+  Não existe multiplicação artificial.
   ============================================================
 */
 
@@ -119,51 +148,149 @@ function converterValor(
   }
 
   if (
-    typeof entrada === 'number'
+    typeof entrada ===
+    'number'
   ) {
-    return Number.isFinite(entrada)
+    return Number.isFinite(
+      entrada
+    )
       ? entrada
       : 0;
   }
 
-  let valor = String(entrada)
-    .trim()
-    .replace(/R\$/gi, '')
-    .replace(/\s/g, '');
+  let valor =
+    String(entrada)
+      .trim()
+      .replace(
+        /\s/g,
+        ''
+      )
+      .replace(
+        /R\$/gi,
+        ''
+      )
+      .replace(
+        /[^0-9.,-]/g,
+        ''
+      );
 
   if (!valor) {
     return 0;
   }
 
+  const temVirgula =
+    valor.includes(',');
+
+  const temPonto =
+    valor.includes('.');
+
+  /*
+    Formatos mistos:
+
+    3.500,50
+    3,500.50
+  */
+
   if (
-    valor.includes('.') &&
-    valor.includes(',')
+    temVirgula &&
+    temPonto
   ) {
-    valor = valor
-      .replace(/\./g, '')
-      .replace(',', '.');
-  } else if (
+    const ultimaVirgula =
+      valor.lastIndexOf(
+        ','
+      );
+
+    const ultimoPonto =
+      valor.lastIndexOf(
+        '.'
+      );
+
+    if (
+      ultimaVirgula >
+      ultimoPonto
+    ) {
+      /*
+        3.500,50
+      */
+
+      valor =
+        valor
+          .replace(
+            /\./g,
+            ''
+          )
+          .replace(
+            ',',
+            '.'
+          );
+    } else {
+      /*
+        3,500.50
+      */
+
+      valor =
+        valor.replace(
+          /,/g,
+          ''
+        );
+    }
+  }
+
+  /*
+    Apenas vírgula:
+
+    3,50   -> 3.50
+    3,500  -> 3500
+  */
+
+  else if (
+    temVirgula
+  ) {
+    if (
+      /^\d{1,3}(,\d{3})+$/.test(
+        valor
+      )
+    ) {
+      valor =
+        valor.replace(
+          /,/g,
+          ''
+        );
+    } else {
+      valor =
+        valor.replace(
+          ',',
+          '.'
+        );
+    }
+  }
+
+  /*
+    Apenas ponto:
+
+    3.500  -> 3500
+    3.50   -> 3.50
+  */
+
+  else if (
+    temPonto &&
     /^\d{1,3}(\.\d{3})+$/.test(
       valor
     )
   ) {
-    valor = valor.replace(
-      /\./g,
-      ''
-    );
-  } else if (
-    valor.includes(',')
-  ) {
-    valor = valor.replace(
-      ',',
-      '.'
-    );
+    valor =
+      valor.replace(
+        /\./g,
+        ''
+      );
   }
 
   const numero =
     Number(valor);
 
-  return Number.isFinite(numero)
+  return Number.isFinite(
+    numero
+  )
     ? numero
     : 0;
 }
@@ -176,15 +303,39 @@ function formatarMoeda(
   ).toLocaleString(
     'pt-BR',
     {
-      style: 'currency',
-      currency: 'BRL',
+      style:
+        'currency',
+
+      currency:
+        'BRL',
+    }
+  );
+}
+
+function formatarValorCampo(
+  valor: unknown
+) {
+  return converterValor(
+    valor
+  ).toLocaleString(
+    'pt-BR',
+    {
+      minimumFractionDigits:
+        2,
+
+      maximumFractionDigits:
+        2,
     }
   );
 }
 
 /*
-  Evita deslocamento de data
-  causado por UTC/new Date().
+  ============================================================
+  DATAS
+
+  Evita conversão UTC para campos
+  que representam somente uma data.
+  ============================================================
 */
 
 function formatarData(
@@ -195,7 +346,9 @@ function formatarData(
   }
 
   const data =
-    valor.split('T')[0];
+    valor.split(
+      'T'
+    )[0];
 
   const partes =
     data.split('-');
@@ -219,21 +372,33 @@ function dataExpirada(
   const hoje =
     new Date();
 
-  const ano = hoje.getFullYear();
+  const ano =
+    hoje.getFullYear();
 
-  const mes = String(
-    hoje.getMonth() + 1
-  ).padStart(2, '0');
+  const mes =
+    String(
+      hoje.getMonth() +
+        1
+    ).padStart(
+      2,
+      '0'
+    );
 
-  const dia = String(
-    hoje.getDate()
-  ).padStart(2, '0');
+  const dia =
+    String(
+      hoje.getDate()
+    ).padStart(
+      2,
+      '0'
+    );
 
   const hojeTexto =
     `${ano}-${mes}-${dia}`;
 
   const validadeTexto =
-    validade.split('T')[0];
+    validade.split(
+      'T'
+    )[0];
 
   return (
     validadeTexto <
@@ -241,40 +406,48 @@ function dataExpirada(
   );
 }
 
+/*
+  ============================================================
+  PÁGINA
+  ============================================================
+*/
+
 export default function VouchersPage() {
   const [
     vouchers,
     setVouchers,
-  ] = useState<Voucher[]>([]);
+  ] =
+    useState<Voucher[]>(
+      []
+    );
 
   const [
     clientes,
     setClientes,
   ] =
-    useState<Cliente[]>([]);
+    useState<Cliente[]>(
+      []
+    );
 
   const [
     passeios,
     setPasseios,
   ] =
-    useState<Passeio[]>([]);
+    useState<Passeio[]>(
+      []
+    );
 
   const [
     loading,
     setLoading,
-  ] = useState(true);
-
-  const [
-    error,
-    setError,
-  ] = useState<string | null>(
-    null
-  );
+  ] =
+    useState(true);
 
   const [
     busca,
     setBusca,
-  ] = useState('');
+  ] =
+    useState('');
 
   const [
     filtroStatus,
@@ -283,6 +456,14 @@ export default function VouchersPage() {
     useState<
       '' | StatusVoucher
     >('');
+
+  const [
+    feedback,
+    setFeedback,
+  ] =
+    useState<Feedback | null>(
+      null
+    );
 
   const [
     itemVisualizar,
@@ -301,24 +482,36 @@ export default function VouchersPage() {
     );
 
   const [
+    itemExcluir,
+    setItemExcluir,
+  ] =
+    useState<Voucher | null>(
+      null
+    );
+
+  const [
     editCodigo,
     setEditCodigo,
-  ] = useState('');
+  ] =
+    useState('');
 
   const [
     editClienteId,
     setEditClienteId,
-  ] = useState('');
+  ] =
+    useState('');
 
   const [
     editPasseioId,
     setEditPasseioId,
-  ] = useState('');
+  ] =
+    useState('');
 
   const [
     editValor,
     setEditValor,
-  ] = useState('');
+  ] =
+    useState('');
 
   const [
     editStatus,
@@ -331,41 +524,51 @@ export default function VouchersPage() {
   const [
     editValidade,
     setEditValidade,
-  ] = useState('');
-
-  const [
-    itemExcluir,
-    setItemExcluir,
   ] =
-    useState<Voucher | null>(
-      null
-    );
+    useState('');
 
   const [
     salvandoEdicao,
     setSalvandoEdicao,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     excluindo,
     setExcluindo,
-  ] = useState(false);
+  ] =
+    useState(false);
 
-  const [
-    toast,
-    setToast,
-  ] = useState<string | null>(
-    null
-  );
+  /*
+    ============================================================
+    FEEDBACK
+    ============================================================
+  */
 
-  function mostrarToast(
-    mensagem: string
+  function mostrarSucesso(
+    texto: string
   ) {
-    setToast(mensagem);
+    setFeedback({
+      tipo:
+        'sucesso',
 
-    setTimeout(() => {
-      setToast(null);
-    }, 3000);
+      texto,
+    });
+
+    window.setTimeout(
+      () => {
+        setFeedback(
+          (
+            atual
+          ) =>
+            atual?.tipo ===
+            'sucesso'
+              ? null
+              : atual
+        );
+      },
+      3000
+    );
   }
 
   /*
@@ -380,15 +583,18 @@ export default function VouchersPage() {
     ) {
       setLoading(false);
 
-      setError(
-        'Supabase não está configurado.'
-      );
+      setFeedback({
+        tipo:
+          'erro',
+
+        texto:
+          'Supabase não está configurado.',
+      });
 
       return;
     }
 
     setLoading(true);
-    setError(null);
 
     try {
       const [
@@ -398,7 +604,9 @@ export default function VouchersPage() {
       ] =
         await Promise.all([
           supabase
-            .from('vouchers')
+            .from(
+              'vouchers'
+            )
             .select('*')
             .order(
               'created_at',
@@ -409,14 +617,20 @@ export default function VouchersPage() {
             ),
 
           supabase
-            .from('clientes')
+            .from(
+              'clientes'
+            )
             .select(
               'id, nome'
             ),
 
           supabase
-            .from('passeios')
-            .select('*'),
+            .from(
+              'passeios'
+            )
+            .select(
+              'id, nome'
+            ),
         ]);
 
       if (
@@ -425,13 +639,46 @@ export default function VouchersPage() {
         throw vouchersResultado.error;
       }
 
+      /*
+        Clientes e passeios são
+        dados auxiliares.
+
+        Se uma dessas consultas
+        falhar, os vouchers ainda
+        podem ser exibidos usando
+        os nomes já existentes
+        no próprio registro.
+      */
+
+      if (
+        clientesResultado.error
+      ) {
+        console.error(
+          'Erro ao carregar clientes dos vouchers:',
+          clientesResultado.error
+        );
+      }
+
+      if (
+        passeiosResultado.error
+      ) {
+        console.error(
+          'Erro ao carregar passeios dos vouchers:',
+          passeiosResultado.error
+        );
+      }
+
       const clientesData =
-        (clientesResultado.data ||
-          []) as Cliente[];
+        (
+          clientesResultado.data ||
+          []
+        ) as Cliente[];
 
       const passeiosData =
-        (passeiosResultado.data ||
-          []) as Passeio[];
+        (
+          passeiosResultado.data ||
+          []
+        ) as Passeio[];
 
       setClientes(
         clientesData
@@ -448,9 +695,12 @@ export default function VouchersPage() {
         >();
 
       clientesData.forEach(
-        (cliente) => {
+        (
+          cliente
+        ) => {
           mapaClientes.set(
             cliente.id,
+
             cliente.nome ||
               cliente.nome_completo ||
               'Cliente'
@@ -465,9 +715,12 @@ export default function VouchersPage() {
         >();
 
       passeiosData.forEach(
-        (passeio) => {
+        (
+          passeio
+        ) => {
           mapaPasseios.set(
             passeio.id,
+
             passeio.nome ||
               passeio.titulo ||
               'Passeio'
@@ -519,18 +772,24 @@ export default function VouchersPage() {
           })
         );
 
-      setVouchers(registros);
-    } catch (err) {
+      setVouchers(
+        registros
+      );
+    } catch (error) {
       console.error(
         'Erro ao carregar vouchers:',
-        err
+        error
       );
 
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Não foi possível carregar os vouchers.'
-      );
+      setFeedback({
+        tipo:
+          'erro',
+
+        texto:
+          error instanceof Error
+            ? error.message
+            : 'Não foi possível carregar os vouchers.',
+      });
 
       setVouchers([]);
     } finally {
@@ -553,7 +812,9 @@ export default function VouchersPage() {
 
   const ativos =
     vouchers.filter(
-      (voucher) =>
+      (
+        voucher
+      ) =>
         normalizarStatus(
           voucher.status
         ) === 'Ativo'
@@ -561,18 +822,24 @@ export default function VouchersPage() {
 
   const utilizados =
     vouchers.filter(
-      (voucher) =>
+      (
+        voucher
+      ) =>
         normalizarStatus(
           voucher.status
-        ) === 'Utilizado'
+        ) ===
+        'Utilizado'
     ).length;
 
   const cancelados =
     vouchers.filter(
-      (voucher) =>
+      (
+        voucher
+      ) =>
         normalizarStatus(
           voucher.status
-        ) === 'Cancelado'
+        ) ===
+        'Cancelado'
     ).length;
 
   const valorAtivo =
@@ -613,7 +880,9 @@ export default function VouchersPage() {
           .toLowerCase();
 
       return vouchers.filter(
-        (voucher) => {
+        (
+          voucher
+        ) => {
           const status =
             normalizarStatus(
               voucher.status
@@ -623,25 +892,33 @@ export default function VouchersPage() {
             !termo ||
             String(
               voucher.codigo ||
-                ''
+              ''
             )
               .toLowerCase()
-              .includes(termo) ||
+              .includes(
+                termo
+              ) ||
             String(
               voucher.cliente_nome ||
-                ''
+              ''
             )
               .toLowerCase()
-              .includes(termo) ||
+              .includes(
+                termo
+              ) ||
             String(
               voucher.passeio_nome ||
-                ''
+              ''
             )
               .toLowerCase()
-              .includes(termo) ||
+              .includes(
+                termo
+              ) ||
             status
               .toLowerCase()
-              .includes(termo);
+              .includes(
+                termo
+              );
 
           const atendeStatus =
             !filtroStatus ||
@@ -664,7 +941,9 @@ export default function VouchersPage() {
     status: StatusVoucher
   ) {
     setFiltroStatus(
-      (atual) =>
+      (
+        atual
+      ) =>
         atual === status
           ? ''
           : status
@@ -680,25 +959,28 @@ export default function VouchersPage() {
   function abrirEdicao(
     voucher: Voucher
   ) {
-    setItemEditar(voucher);
+    setItemEditar(
+      voucher
+    );
 
     setEditCodigo(
-      voucher.codigo || ''
+      voucher.codigo ||
+      ''
     );
 
     setEditClienteId(
-      voucher.cliente_id || ''
+      voucher.cliente_id ||
+      ''
     );
 
     setEditPasseioId(
-      voucher.passeio_id || ''
+      voucher.passeio_id ||
+      ''
     );
 
     setEditValor(
-      String(
-        converterValor(
-          voucher.valor
-        )
+      formatarValorCampo(
+        voucher.valor
       )
     );
 
@@ -716,15 +998,18 @@ export default function VouchersPage() {
         : ''
     );
 
-    setError(null);
+    setFeedback(null);
   }
 
   async function salvarEdicao(
-    event: React.FormEvent
+    event:
+      React.FormEvent
   ) {
     event.preventDefault();
 
-    if (!itemEditar?.id) {
+    if (
+      !itemEditar?.id
+    ) {
       return;
     }
 
@@ -732,25 +1017,41 @@ export default function VouchersPage() {
       editCodigo.trim();
 
     if (!codigo) {
-      setError(
-        'Informe o código do voucher.'
-      );
+      setFeedback({
+        tipo:
+          'erro',
+
+        texto:
+          'Informe o código do voucher.',
+      });
 
       return;
     }
 
-    if (!editClienteId) {
-      setError(
-        'Selecione o cliente.'
-      );
+    if (
+      !editClienteId
+    ) {
+      setFeedback({
+        tipo:
+          'erro',
+
+        texto:
+          'Selecione o cliente.',
+      });
 
       return;
     }
 
-    if (!editPasseioId) {
-      setError(
-        'Selecione o passeio.'
-      );
+    if (
+      !editPasseioId
+    ) {
+      setFeedback({
+        tipo:
+          'erro',
+
+        texto:
+          'Selecione o passeio.',
+      });
 
       return;
     }
@@ -761,12 +1062,18 @@ export default function VouchersPage() {
       );
 
     if (
-      !Number.isFinite(valor) ||
+      !Number.isFinite(
+        valor
+      ) ||
       valor <= 0
     ) {
-      setError(
-        'Informe um valor válido maior que zero.'
-      );
+      setFeedback({
+        tipo:
+          'erro',
+
+        texto:
+          'Informe um valor válido maior que zero.',
+      });
 
       return;
     }
@@ -775,58 +1082,67 @@ export default function VouchersPage() {
       true
     );
 
-    setError(null);
+    setFeedback(null);
 
     try {
       const {
-        error: updateError,
-      } = await supabase
-        .from('vouchers')
-        .update({
-          codigo,
+        error,
+      } =
+        await supabase
+          .from(
+            'vouchers'
+          )
+          .update({
+            codigo,
 
-          cliente_id:
-            editClienteId,
+            cliente_id:
+              editClienteId,
 
-          passeio_id:
-            editPasseioId,
+            passeio_id:
+              editPasseioId,
 
-          valor,
+            valor,
 
-          status:
-            editStatus,
+            status:
+              editStatus,
 
-          validade:
-            editValidade ||
-            null,
-        })
-        .eq(
-          'id',
-          itemEditar.id
-        );
+            validade:
+              editValidade ||
+              null,
+          })
+          .eq(
+            'id',
+            itemEditar.id
+          );
 
-      if (updateError) {
-        throw updateError;
+      if (error) {
+        throw error;
       }
 
-      setItemEditar(null);
+      setItemEditar(
+        null
+      );
 
-      mostrarToast(
+      mostrarSucesso(
         'Voucher atualizado com sucesso.'
       );
 
       await fetchVouchers();
-    } catch (err) {
+    } catch (error) {
       console.error(
         'Erro ao atualizar voucher:',
-        err
+        error
       );
 
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Não foi possível atualizar o voucher.'
-      );
+      setFeedback({
+        tipo:
+          'erro',
+
+        texto:
+          error instanceof Error
+            ? error.message
+            : 'Não foi possível atualizar o voucher.',
+      });
     } finally {
       setSalvandoEdicao(
         false
@@ -841,53 +1157,69 @@ export default function VouchersPage() {
   */
 
   async function confirmarExclusao() {
-    if (!itemExcluir?.id) {
+    if (
+      !itemExcluir?.id ||
+      excluindo
+    ) {
       return;
     }
 
     setExcluindo(true);
-    setError(null);
+    setFeedback(null);
 
     try {
       const {
-        error: deleteError,
-      } = await supabase
-        .from('vouchers')
-        .delete()
-        .eq(
-          'id',
-          itemExcluir.id
-        );
+        error,
+      } =
+        await supabase
+          .from(
+            'vouchers'
+          )
+          .delete()
+          .eq(
+            'id',
+            itemExcluir.id
+          );
 
-      if (deleteError) {
-        throw deleteError;
+      if (error) {
+        throw error;
       }
 
       setVouchers(
-        (atuais) =>
+        (
+          atuais
+        ) =>
           atuais.filter(
-            (voucher) =>
+            (
+              voucher
+            ) =>
               voucher.id !==
               itemExcluir.id
           )
       );
 
-      setItemExcluir(null);
+      setItemExcluir(
+        null
+      );
 
-      mostrarToast(
+      mostrarSucesso(
         'Voucher excluído com sucesso.'
       );
-    } catch (err) {
+    } catch (error) {
       console.error(
         'Erro ao excluir voucher:',
-        err
+        error
       );
 
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Não foi possível excluir o voucher.'
-      );
+      setFeedback({
+        tipo:
+          'erro',
+
+        texto:
+          error instanceof Error
+            ? error.message
+            : 'Não foi possível excluir o voucher.',
+      });
     } finally {
       setExcluindo(false);
     }
@@ -900,7 +1232,8 @@ export default function VouchersPage() {
   */
 
   function statusClasses(
-    status: StatusVoucher
+    status:
+      StatusVoucher
   ) {
     if (
       status === 'Ativo'
@@ -919,7 +1252,8 @@ export default function VouchersPage() {
   }
 
   function statusDot(
-    status: StatusVoucher
+    status:
+      StatusVoucher
   ) {
     if (
       status === 'Ativo'
@@ -938,7 +1272,7 @@ export default function VouchersPage() {
   }
 
   const inputClass =
-    'w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/40';
+    'w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/40 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-50';
 
   const labelClass =
     'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34';
@@ -947,35 +1281,53 @@ export default function VouchersPage() {
     {
       titulo:
         'Total de vouchers',
-      valor: loading
-        ? '—'
-        : String(total),
+
+      valor:
+        loading
+          ? '—'
+          : String(
+              total
+            ),
+
       detalhe:
         'documentos cadastrados',
-      filtro: null,
+
+      filtro:
+        null,
     },
 
     {
       titulo:
         'Vouchers ativos',
-      valor: loading
-        ? '—'
-        : String(ativos),
+
+      valor:
+        loading
+          ? '—'
+          : String(
+              ativos
+            ),
+
       detalhe:
-        'disponíveis para utilização',
+        'com status ativo',
+
       filtro:
         'Ativo' as StatusVoucher,
     },
 
     {
-      titulo: 'Utilizados',
-      valor: loading
-        ? '—'
-        : String(
-            utilizados
-          ),
+      titulo:
+        'Utilizados',
+
+      valor:
+        loading
+          ? '—'
+          : String(
+              utilizados
+            ),
+
       detalhe:
         'já utilizados',
+
       filtro:
         'Utilizado' as StatusVoucher,
     },
@@ -983,26 +1335,40 @@ export default function VouchersPage() {
     {
       titulo:
         'Valor ativo',
-      valor: loading
-        ? '—'
-        : formatarMoeda(
-            valorAtivo
-          ),
+
+      valor:
+        loading
+          ? '—'
+          : formatarMoeda(
+              valorAtivo
+            ),
+
       detalhe:
         'soma dos vouchers ativos',
-      filtro: null,
+
+      filtro:
+        null,
     },
   ];
 
   return (
     <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
-      {toast && (
-        <div className="fixed left-1/2 top-[100px] z-[80] -translate-x-1/2 rounded-2xl border border-emerald-500/20 bg-[#0B2119] px-5 py-3 text-xs font-semibold text-emerald-300 shadow-2xl">
-          {toast}
+      {/* =====================================================
+          FEEDBACK
+      ====================================================== */}
+
+      {feedback?.tipo ===
+        'sucesso' && (
+        <div className="fixed left-1/2 top-[100px] z-[90] -translate-x-1/2 rounded-2xl border border-emerald-500/20 bg-[#0B2119] px-5 py-3 text-xs font-semibold text-emerald-300 shadow-2xl">
+          {
+            feedback.texto
+          }
         </div>
       )}
 
-      {/* HEADER */}
+      {/* =====================================================
+          CABEÇALHO
+      ====================================================== */}
 
       <section className="border-b border-white/[0.07] bg-[#091510]">
         <div className="mx-auto flex max-w-[1360px] flex-col gap-8 px-5 py-10 md:px-8 md:py-12 lg:flex-row lg:items-end lg:justify-between">
@@ -1026,9 +1392,8 @@ export default function VouchersPage() {
             </h1>
 
             <p className="mt-4 max-w-[720px] text-sm leading-7 text-[#EDEDE3]/42">
-              Organize comprovantes,
-              clientes, experiências,
-              valores, validade e
+              Organize comprovantes, clientes,
+              experiências, valores, validade e
               utilização dos vouchers.
             </p>
           </div>
@@ -1039,7 +1404,10 @@ export default function VouchersPage() {
               onClick={
                 fetchVouchers
               }
-              className="inline-flex min-h-[50px] items-center justify-center rounded-xl border border-white/[0.09] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.055]"
+              disabled={
+                loading
+              }
+              className="inline-flex min-h-[50px] items-center justify-center rounded-xl border border-white/[0.09] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.055] disabled:cursor-not-allowed disabled:opacity-50"
             >
               ↻ Atualizar
             </button>
@@ -1059,27 +1427,43 @@ export default function VouchersPage() {
       </section>
 
       <main className="mx-auto max-w-[1360px] px-5 py-8 md:px-8 md:py-10">
-        {error && (
+        {/* ===================================================
+            ERRO
+        ==================================================== */}
+
+        {feedback?.tipo ===
+          'erro' && (
           <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-red-300">
-            <span>{error}</span>
+            <span>
+              {
+                feedback.texto
+              }
+            </span>
 
             <button
               type="button"
               onClick={() =>
-                setError(null)
+                setFeedback(
+                  null
+                )
               }
+              className="text-red-300/60 transition hover:text-red-200"
             >
               ✕
             </button>
           </div>
         )}
 
-        {/* CARDS */}
+        {/* ===================================================
+            INDICADORES
+        ==================================================== */}
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {cards.map(
-            (card) => {
-              const ativo =
+            (
+              card
+            ) => {
+              const selecionado =
                 card.filtro !==
                   null &&
                 filtroStatus ===
@@ -1105,13 +1489,15 @@ export default function VouchersPage() {
                       ? 'cursor-pointer'
                       : 'cursor-default'
                   } ${
-                    ativo
-                      ? 'border-[#E3A144]/35 bg-[#E3A144]/8'
+                    selecionado
+                      ? 'border-[#E3A144]/35 bg-[#E3A144]/[0.08]'
                       : 'border-white/[0.075] bg-[#0A1713]'
                   }`}
                 >
                   <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
-                    {card.titulo}
+                    {
+                      card.titulo
+                    }
                   </p>
 
                   <strong
@@ -1126,17 +1512,23 @@ export default function VouchersPage() {
                         'var(--font-fraunces), serif',
                     }}
                   >
-                    {card.valor}
+                    {
+                      card.valor
+                    }
                   </strong>
 
                   <p className="mt-2 text-[11px] text-[#EDEDE3]/28">
-                    {card.detalhe}
+                    {
+                      card.detalhe
+                    }
                   </p>
                 </button>
               );
             }
           )}
         </div>
+
+        {/* CANCELADOS */}
 
         <div className="mt-4">
           <button
@@ -1161,7 +1553,9 @@ export default function VouchersPage() {
           </button>
         </div>
 
-        {/* TABELA */}
+        {/* ===================================================
+            TABELA
+        ==================================================== */}
 
         <section className="mt-6 overflow-hidden rounded-[26px] border border-white/[0.075] bg-[#0A1713]">
           <div className="border-b border-white/[0.065] p-5 md:p-6">
@@ -1198,22 +1592,22 @@ export default function VouchersPage() {
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row">
-                <div className="relative">
-                  <input
-                    type="text"
-                    value={busca}
-                    onChange={(
-                      event
-                    ) =>
-                      setBusca(
-                        event.target
-                          .value
-                      )
-                    }
-                    placeholder="Buscar código, cliente ou passeio..."
-                    className="h-[44px] min-w-[310px] rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-xs text-[#EDEDE3] outline-none placeholder:text-[#EDEDE3]/22 focus:border-[#E3A144]/35"
-                  />
-                </div>
+                <input
+                  type="text"
+                  value={
+                    busca
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setBusca(
+                      event.target
+                        .value
+                    )
+                  }
+                  placeholder="Buscar código, cliente ou passeio..."
+                  className="h-[44px] min-w-[310px] rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-xs text-[#EDEDE3] outline-none placeholder:text-[#EDEDE3]/22 focus:border-[#E3A144]/35"
+                />
 
                 <select
                   value={
@@ -1253,15 +1647,7 @@ export default function VouchersPage() {
 
           <div className="overflow-x-auto">
             {loading ? (
-              <div className="flex min-h-[330px] items-center justify-center">
-                <div className="text-center">
-                  <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/[0.08] border-t-[#E3A144]" />
-
-                  <p className="mt-4 text-xs text-[#EDEDE3]/35">
-                    Carregando vouchers...
-                  </p>
-                </div>
-              </div>
+              <LoadingTabela />
             ) : vouchersFiltrados.length ===
               0 ? (
               <div className="flex min-h-[330px] items-center justify-center px-5 text-center">
@@ -1277,14 +1663,12 @@ export default function VouchersPage() {
                   </h3>
 
                   <p className="mt-2 text-xs text-[#EDEDE3]/30">
-                    Ajuste os filtros ou
-                    cadastre um novo
-                    voucher.
+                    Ajuste os filtros ou cadastre um novo voucher.
                   </p>
                 </div>
               </div>
             ) : (
-              <table className="min-w-[1180px] w-full border-collapse text-left">
+              <table className="w-full min-w-[1180px] border-collapse text-left">
                 <thead>
                   <tr className="border-b border-white/[0.06] bg-white/[0.012]">
                     {[
@@ -1295,19 +1679,27 @@ export default function VouchersPage() {
                       'Valor',
                       'Status',
                       'Ações',
-                    ].map((titulo) => (
-                      <th
-                        key={titulo}
-                        className={`px-5 py-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28 ${
-                          titulo ===
-                          'Ações'
-                            ? 'text-center'
-                            : ''
-                        }`}
-                      >
-                        {titulo}
-                      </th>
-                    ))}
+                    ].map(
+                      (
+                        titulo
+                      ) => (
+                        <th
+                          key={
+                            titulo
+                          }
+                          className={`px-5 py-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28 ${
+                            titulo ===
+                            'Ações'
+                              ? 'text-center'
+                              : ''
+                          }`}
+                        >
+                          {
+                            titulo
+                          }
+                        </th>
+                      )
+                    )}
                   </tr>
                 </thead>
 
@@ -1384,7 +1776,9 @@ export default function VouchersPage() {
                                 )}`}
                               />
 
-                              {status}
+                              {
+                                status
+                              }
                             </span>
                           </td>
 
@@ -1398,7 +1792,7 @@ export default function VouchersPage() {
                                     voucher
                                   )
                                 }
-                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:text-[#E3A144]"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-[#E3A144]/20 hover:text-[#E3A144]"
                               >
                                 ◉
                               </button>
@@ -1411,7 +1805,7 @@ export default function VouchersPage() {
                                     voucher
                                   )
                                 }
-                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:text-sky-300"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-sky-400/20 hover:text-sky-300"
                               >
                                 ✎
                               </button>
@@ -1424,7 +1818,7 @@ export default function VouchersPage() {
                                     voucher
                                   )
                                 }
-                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:text-red-300"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-red-400/20 hover:text-red-300"
                               >
                                 ×
                               </button>
@@ -1441,170 +1835,303 @@ export default function VouchersPage() {
         </section>
       </main>
 
-      {/* VISUALIZAÇÃO */}
+      {/* =====================================================
+          VISUALIZAÇÃO
+      ====================================================== */}
 
       {itemVisualizar && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-[680px] overflow-hidden rounded-[26px] border border-white/[0.09] bg-[#091510]">
-            <div className="flex items-start justify-between border-b border-white/[0.07] px-6 py-5">
-              <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-                  Detalhes do voucher
-                </p>
+        <ModalBase
+          titulo="Detalhes do voucher"
+          subtitulo={
+            itemVisualizar.codigo ||
+            'Voucher'
+          }
+          onClose={() =>
+            setItemVisualizar(
+              null
+            )
+          }
+        >
+          <div className="grid gap-3 p-6 sm:grid-cols-2">
+            <Detalhe
+              label="Cliente"
+              valor={
+                itemVisualizar.cliente_nome ||
+                'Não informado'
+              }
+            />
 
-                <h3
-                  className="mt-2 text-2xl text-[#F0F0E8]"
-                  style={{
-                    fontFamily:
-                      'var(--font-fraunces), serif',
-                  }}
-                >
-                  {itemVisualizar.codigo ||
-                    'Voucher'}
-                </h3>
-              </div>
+            <Detalhe
+              label="Passeio"
+              valor={
+                itemVisualizar.passeio_nome ||
+                'Não informado'
+              }
+            />
 
-              <button
-                type="button"
-                onClick={() =>
-                  setItemVisualizar(
-                    null
-                  )
-                }
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] text-[#EDEDE3]/45"
-              >
-                ✕
-              </button>
-            </div>
+            <Detalhe
+              label="Valor"
+              valor={formatarMoeda(
+                itemVisualizar.valor
+              )}
+            />
 
-            <div className="grid gap-3 p-6 sm:grid-cols-2">
-              {[
-                {
-                  label: 'Cliente',
-                  valor:
-                    itemVisualizar.cliente_nome ||
-                    'Não informado',
-                },
+            <Detalhe
+              label="Emissão"
+              valor={formatarData(
+                itemVisualizar.data_emissao ||
+                itemVisualizar.created_at
+              )}
+            />
 
-                {
-                  label: 'Passeio',
-                  valor:
-                    itemVisualizar.passeio_nome ||
-                    'Não informado',
-                },
+            <Detalhe
+              label="Validade"
+              valor={formatarData(
+                itemVisualizar.validade
+              )}
+            />
 
-                {
-                  label: 'Valor',
-                  valor:
-                    formatarMoeda(
-                      itemVisualizar.valor
-                    ),
-                },
-
-                {
-                  label: 'Validade',
-                  valor:
-                    formatarData(
-                      itemVisualizar.validade
-                    ),
-                },
-
-                {
-                  label: 'Status',
-                  valor:
-                    normalizarStatus(
-                      itemVisualizar.status
-                    ),
-                },
-              ].map((item) => (
-                <div
-                  key={item.label}
-                  className="rounded-2xl border border-white/[0.065] bg-white/[0.018] p-4"
-                >
-                  <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28">
-                    {item.label}
-                  </p>
-
-                  <p className="mt-2 text-xs font-medium text-[#EDEDE3]/72">
-                    {item.valor}
-                  </p>
-                </div>
-              ))}
-            </div>
-
-            <div className="flex justify-end border-t border-white/[0.07] px-6 py-4">
-              <button
-                type="button"
-                onClick={() =>
-                  setItemVisualizar(
-                    null
-                  )
-                }
-                className="rounded-xl bg-[#E3A144] px-5 py-2.5 text-xs font-bold text-[#07130F]"
-              >
-                Fechar
-              </button>
-            </div>
+            <Detalhe
+              label="Status"
+              valor={normalizarStatus(
+                itemVisualizar.status
+              )}
+            />
           </div>
-        </div>
+
+          <div className="flex justify-end border-t border-white/[0.07] px-6 py-4">
+            <button
+              type="button"
+              onClick={() =>
+                setItemVisualizar(
+                  null
+                )
+              }
+              className="rounded-xl bg-[#E3A144] px-5 py-2.5 text-xs font-bold text-[#07130F] transition hover:bg-[#F0B35C]"
+            >
+              Fechar
+            </button>
+          </div>
+        </ModalBase>
       )}
 
-      {/* EDIÇÃO */}
+      {/* =====================================================
+          EDIÇÃO
+      ====================================================== */}
 
       {itemEditar && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="max-h-[92vh] w-full max-w-[720px] overflow-y-auto rounded-[26px] border border-white/[0.09] bg-[#091510]">
-            <div className="flex items-start justify-between border-b border-white/[0.07] px-6 py-5">
-              <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-                  Operação • Edição
-                </p>
+        <ModalBase
+          titulo="Operação • Edição"
+          subtitulo="Editar voucher"
+          onClose={() =>
+            !salvandoEdicao &&
+            setItemEditar(
+              null
+            )
+          }
+        >
+          <form
+            onSubmit={
+              salvarEdicao
+            }
+            className="space-y-5 p-6"
+          >
+            <div>
+              <label className={labelClass}>
+                Código *
+              </label>
 
-                <h3
-                  className="mt-2 text-2xl text-[#F0F0E8]"
-                  style={{
-                    fontFamily:
-                      'var(--font-fraunces), serif',
-                  }}
-                >
-                  Editar voucher
-                </h3>
-              </div>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setItemEditar(null)
+              <input
+                type="text"
+                required
+                disabled={
+                  salvandoEdicao
                 }
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] text-[#EDEDE3]/45"
-              >
-                ✕
-              </button>
+                value={
+                  editCodigo
+                }
+                onChange={(
+                  event
+                ) =>
+                  setEditCodigo(
+                    event.target
+                      .value
+                  )
+                }
+                className={
+                  inputClass
+                }
+              />
             </div>
 
-            <form
-              onSubmit={
-                salvarEdicao
-              }
-              className="space-y-5 p-6"
-            >
+            <div>
+              <label className={labelClass}>
+                Cliente *
+              </label>
+
+              <select
+                required
+                disabled={
+                  salvandoEdicao
+                }
+                value={
+                  editClienteId
+                }
+                onChange={(
+                  event
+                ) =>
+                  setEditClienteId(
+                    event.target
+                      .value
+                  )
+                }
+                className={
+                  inputClass
+                }
+              >
+                <option value="">
+                  Selecione...
+                </option>
+
+                {clientes.map(
+                  (
+                    cliente
+                  ) => (
+                    <option
+                      key={
+                        cliente.id
+                      }
+                      value={
+                        cliente.id
+                      }
+                    >
+                      {cliente.nome ||
+                        cliente.nome_completo ||
+                        cliente.id}
+                    </option>
+                  )
+                )}
+              </select>
+            </div>
+
+            <div>
+              <label className={labelClass}>
+                Passeio *
+              </label>
+
+              <select
+                required
+                disabled={
+                  salvandoEdicao
+                }
+                value={
+                  editPasseioId
+                }
+                onChange={(
+                  event
+                ) =>
+                  setEditPasseioId(
+                    event.target
+                      .value
+                  )
+                }
+                className={
+                  inputClass
+                }
+              >
+                <option value="">
+                  Selecione...
+                </option>
+
+                {passeios.map(
+                  (
+                    passeio
+                  ) => (
+                    <option
+                      key={
+                        passeio.id
+                      }
+                      value={
+                        passeio.id
+                      }
+                    >
+                      {passeio.nome ||
+                        passeio.titulo ||
+                        passeio.id}
+                    </option>
+                  )
+                )}
+              </select>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
               <div>
-                <label
-                  className={
-                    labelClass
-                  }
-                >
-                  Código *
+                <label className={labelClass}>
+                  Valor (R$) *
                 </label>
 
                 <input
                   type="text"
+                  inputMode="decimal"
                   required
-                  value={editCodigo}
+                  disabled={
+                    salvandoEdicao
+                  }
+                  value={
+                    editValor
+                  }
                   onChange={(
                     event
                   ) =>
-                    setEditCodigo(
+                    setEditValor(
+                      event.target
+                        .value
+                    )
+                  }
+                  onBlur={() => {
+                    const valor =
+                      converterValor(
+                        editValor
+                      );
+
+                    if (
+                      valor > 0
+                    ) {
+                      setEditValor(
+                        formatarValorCampo(
+                          valor
+                        )
+                      );
+                    }
+                  }}
+                  placeholder="Ex.: 3.500,00"
+                  className={
+                    inputClass
+                  }
+                />
+
+                <p className="mt-2 text-[9px] text-[#EDEDE3]/22">
+                  Aceita 3500, 3.500 ou 3.500,00.
+                </p>
+              </div>
+
+              <div>
+                <label className={labelClass}>
+                  Validade
+                </label>
+
+                <input
+                  type="date"
+                  disabled={
+                    salvandoEdicao
+                  }
+                  value={
+                    editValidade
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setEditValidade(
                       event.target
                         .value
                     )
@@ -1614,242 +2141,91 @@ export default function VouchersPage() {
                   }
                 />
               </div>
+            </div>
 
-              <div>
-                <label
-                  className={
-                    labelClass
-                  }
-                >
-                  Cliente *
-                </label>
+            <div>
+              <label className={labelClass}>
+                Status
+              </label>
 
-                <select
-                  required
-                  value={
-                    editClienteId
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    setEditClienteId(
-                      event.target
-                        .value
-                    )
-                  }
-                  className={
-                    inputClass
-                  }
-                >
-                  <option value="">
-                    Selecione...
-                  </option>
+              <select
+                disabled={
+                  salvandoEdicao
+                }
+                value={
+                  editStatus
+                }
+                onChange={(
+                  event
+                ) =>
+                  setEditStatus(
+                    event.target
+                      .value as StatusVoucher
+                  )
+                }
+                className={
+                  inputClass
+                }
+              >
+                <option value="Ativo">
+                  Ativo
+                </option>
 
-                  {clientes.map(
-                    (cliente) => (
-                      <option
-                        key={
-                          cliente.id
-                        }
-                        value={
-                          cliente.id
-                        }
-                      >
-                        {cliente.nome ||
-                          cliente.nome_completo ||
-                          cliente.id}
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
+                <option value="Utilizado">
+                  Utilizado
+                </option>
 
-              <div>
-                <label
-                  className={
-                    labelClass
-                  }
-                >
-                  Passeio *
-                </label>
+                <option value="Cancelado">
+                  Cancelado
+                </option>
+              </select>
+            </div>
 
-                <select
-                  required
-                  value={
-                    editPasseioId
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    setEditPasseioId(
-                      event.target
-                        .value
-                    )
-                  }
-                  className={
-                    inputClass
-                  }
-                >
-                  <option value="">
-                    Selecione...
-                  </option>
+            <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-5 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                disabled={
+                  salvandoEdicao
+                }
+                onClick={() =>
+                  setItemEditar(
+                    null
+                  )
+                }
+                className="rounded-xl border border-white/[0.08] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/55 disabled:opacity-50"
+              >
+                Cancelar
+              </button>
 
-                  {passeios.map(
-                    (passeio) => (
-                      <option
-                        key={
-                          passeio.id
-                        }
-                        value={
-                          passeio.id
-                        }
-                      >
-                        {passeio.nome ||
-                          passeio.titulo ||
-                          passeio.id}
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label
-                    className={
-                      labelClass
-                    }
-                  >
-                    Valor (R$) *
-                  </label>
-
-                  <input
-                    type="text"
-                    inputMode="decimal"
-                    required
-                    value={
-                      editValor
-                    }
-                    onChange={(
-                      event
-                    ) =>
-                      setEditValor(
-                        event.target
-                          .value
-                      )
-                    }
-                    placeholder="Ex.: 3.500"
-                    className={
-                      inputClass
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label
-                    className={
-                      labelClass
-                    }
-                  >
-                    Validade
-                  </label>
-
-                  <input
-                    type="date"
-                    value={
-                      editValidade
-                    }
-                    onChange={(
-                      event
-                    ) =>
-                      setEditValidade(
-                        event.target
-                          .value
-                      )
-                    }
-                    className={
-                      inputClass
-                    }
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label
-                  className={
-                    labelClass
-                  }
-                >
-                  Status
-                </label>
-
-                <select
-                  value={
-                    editStatus
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    setEditStatus(
-                      event.target
-                        .value as StatusVoucher
-                    )
-                  }
-                  className={
-                    inputClass
-                  }
-                >
-                  <option value="Ativo">
-                    Ativo
-                  </option>
-
-                  <option value="Utilizado">
-                    Utilizado
-                  </option>
-
-                  <option value="Cancelado">
-                    Cancelado
-                  </option>
-                </select>
-              </div>
-
-              <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-5 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setItemEditar(
-                      null
-                    )
-                  }
-                  className="rounded-xl border border-white/[0.08] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/55"
-                >
-                  Cancelar
-                </button>
-
-                <button
-                  type="submit"
-                  disabled={
-                    salvandoEdicao
-                  }
-                  className="rounded-xl bg-[#E3A144] px-6 py-3 text-xs font-bold text-[#07130F] disabled:opacity-50"
-                >
-                  {salvandoEdicao
-                    ? 'Salvando...'
-                    : 'Salvar alterações'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+              <button
+                type="submit"
+                disabled={
+                  salvandoEdicao
+                }
+                className="rounded-xl bg-[#E3A144] px-6 py-3 text-xs font-bold text-[#07130F] transition hover:bg-[#F0B35C] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {salvandoEdicao
+                  ? 'Salvando...'
+                  : 'Salvar alterações'}
+              </button>
+            </div>
+          </form>
+        </ModalBase>
       )}
 
-      {/* EXCLUSÃO */}
+      {/* =====================================================
+          EXCLUSÃO
+      ====================================================== */}
 
       {itemExcluir && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
           <div className="w-full max-w-[430px] rounded-[26px] border border-white/[0.09] bg-[#091510] p-6 text-center">
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-red-500/20 bg-red-500/[0.08] text-lg text-red-300">
+              !
+            </div>
+
             <h3
-              className="text-2xl text-[#F0F0E8]"
+              className="mt-4 text-2xl text-[#F0F0E8]"
               style={{
                 fontFamily:
                   'var(--font-fraunces), serif',
@@ -1864,29 +2240,34 @@ export default function VouchersPage() {
                 {itemExcluir.codigo ||
                   'selecionado'}
               </strong>{' '}
-              será removido
-              permanentemente.
+              será removido permanentemente.
             </p>
 
             <div className="mt-6 grid grid-cols-2 gap-3">
               <button
                 type="button"
-                disabled={excluindo}
-                onClick={() =>
-                  setItemExcluir(null)
+                disabled={
+                  excluindo
                 }
-                className="rounded-xl border border-white/[0.09] px-4 py-3 text-xs font-semibold text-[#EDEDE3]/60"
+                onClick={() =>
+                  setItemExcluir(
+                    null
+                  )
+                }
+                className="rounded-xl border border-white/[0.09] px-4 py-3 text-xs font-semibold text-[#EDEDE3]/60 disabled:opacity-50"
               >
                 Cancelar
               </button>
 
               <button
                 type="button"
-                disabled={excluindo}
+                disabled={
+                  excluindo
+                }
                 onClick={
                   confirmarExclusao
                 }
-                className="rounded-xl border border-red-500/20 bg-red-500/[0.1] px-4 py-3 text-xs font-semibold text-red-300 disabled:opacity-50"
+                className="rounded-xl border border-red-500/20 bg-red-500/[0.1] px-4 py-3 text-xs font-semibold text-red-300 transition hover:bg-red-500/[0.15] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {excluindo
                   ? 'Excluindo...'
@@ -1896,6 +2277,95 @@ export default function VouchersPage() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/*
+  ============================================================
+  COMPONENTES INTERNOS
+  ============================================================
+*/
+
+function LoadingTabela() {
+  return (
+    <div className="flex min-h-[330px] items-center justify-center">
+      <div className="text-center">
+        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/[0.08] border-t-[#E3A144]" />
+
+        <p className="mt-4 text-xs text-[#EDEDE3]/35">
+          Carregando vouchers...
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function Detalhe({
+  label,
+  valor,
+}: {
+  label: string;
+  valor: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/[0.065] bg-white/[0.018] p-4">
+      <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28">
+        {label}
+      </p>
+
+      <p className="mt-2 text-xs font-medium text-[#EDEDE3]/72">
+        {valor}
+      </p>
+    </div>
+  );
+}
+
+function ModalBase({
+  titulo,
+  subtitulo,
+  onClose,
+  children,
+}: {
+  titulo: string;
+  subtitulo: string;
+  onClose: () => void;
+  children:
+    React.ReactNode;
+}) {
+  return (
+    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
+      <div className="max-h-[92vh] w-full max-w-[720px] overflow-y-auto rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
+        <div className="flex items-start justify-between gap-4 border-b border-white/[0.07] px-6 py-5">
+          <div>
+            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+              {titulo}
+            </p>
+
+            <h3
+              className="mt-2 text-2xl text-[#F0F0E8]"
+              style={{
+                fontFamily:
+                  'var(--font-fraunces), serif',
+              }}
+            >
+              {subtitulo}
+            </h3>
+          </div>
+
+          <button
+            type="button"
+            onClick={
+              onClose
+            }
+            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] text-[#EDEDE3]/45 transition hover:bg-white/[0.05]"
+          >
+            ✕
+          </button>
+        </div>
+
+        {children}
+      </div>
     </div>
   );
 }

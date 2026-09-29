@@ -10,36 +10,43 @@ import { useRouter } from 'next/navigation';
 
 import { supabase } from '@/lib/supabase';
 
-interface Passeio {
+type Passeio = {
   id?: string;
-
   nome: string;
-
   categoria?: string | null;
   duracao?: string | null;
-
   valor?: number | string | null;
-
-  /*
-    Compatibilidade com registros
-    antigos que possam usar "preco".
-  */
   preco?: number | string | null;
-
   vagas?: number | string | null;
-
   descricao?: string | null;
-
   cidade?: string | null;
-
   foto_url?: string | null;
-
   destaque?: boolean | null;
-
   situacao?: string | null;
-
   created_at?: string;
-}
+};
+
+type Feedback = {
+  tipo: 'sucesso' | 'erro';
+  texto: string;
+};
+
+/*
+  ============================================================
+  VALORES
+
+  Aceita:
+  3500
+  3500,00
+  3.500
+  3.500,00
+  3500.00
+  3,500.00
+  R$ 3.500,00
+
+  Não existe multiplicação artificial.
+  ============================================================
+*/
 
 function converterValor(
   valor:
@@ -56,7 +63,9 @@ function converterValor(
     return 0;
   }
 
-  if (typeof valor === 'number') {
+  if (
+    typeof valor === 'number'
+  ) {
     return Number.isFinite(valor)
       ? valor
       : 0;
@@ -65,37 +74,78 @@ function converterValor(
   let texto = String(valor)
     .trim()
     .replace(/\s/g, '')
-    .replace(/R\$/gi, '');
+    .replace(/R\$/gi, '')
+    .replace(
+      /[^0-9.,-]/g,
+      ''
+    );
 
   if (!texto) {
     return 0;
   }
 
-  /*
-    Padrão escolhido:
+  const temVirgula =
+    texto.includes(',');
 
-    3500  -> 3500
-    3.500 -> 3500
-
-    Também preservamos decimal
-    quando já vier corretamente
-    armazenado pelo banco.
-  */
+  const temPonto =
+    texto.includes('.');
 
   if (
+    temVirgula &&
+    temPonto
+  ) {
+    const ultimaVirgula =
+      texto.lastIndexOf(',');
+
+    const ultimoPonto =
+      texto.lastIndexOf('.');
+
+    texto =
+      ultimaVirgula >
+      ultimoPonto
+        ? texto
+            .replace(
+              /\./g,
+              ''
+            )
+            .replace(
+              ',',
+              '.'
+            )
+        : texto.replace(
+            /,/g,
+            ''
+          );
+  } else if (
+    temVirgula
+  ) {
+    texto =
+      /^\d{1,3}(,\d{3})+$/.test(
+        texto
+      )
+        ? texto.replace(
+            /,/g,
+            ''
+          )
+        : texto.replace(
+            ',',
+            '.'
+          );
+  } else if (
+    temPonto &&
     /^\d{1,3}(\.\d{3})+$/.test(
       texto
     )
   ) {
-    texto = texto.replace(
-      /\./g,
-      ''
-    );
+    texto =
+      texto.replace(
+        /\./g,
+        ''
+      );
   }
 
-  const numero = Number(
-    texto.replace(',', '.')
-  );
+  const numero =
+    Number(texto);
 
   return Number.isFinite(numero)
     ? numero
@@ -111,24 +161,50 @@ function formatarMoeda(
 ) {
   return converterValor(
     valor
-  ).toLocaleString('pt-BR', {
-    style: 'currency',
-    currency: 'BRL',
-  });
+  ).toLocaleString(
+    'pt-BR',
+    {
+      style: 'currency',
+      currency: 'BRL',
+    }
+  );
 }
+
+function formatarValorCampo(
+  valor:
+    | number
+    | string
+    | null
+    | undefined
+) {
+  return converterValor(
+    valor
+  ).toLocaleString(
+    'pt-BR',
+    {
+      minimumFractionDigits:
+        2,
+
+      maximumFractionDigits:
+        2,
+    }
+  );
+}
+
+/*
+  valor é a fonte principal.
+
+  preco continua somente como
+  compatibilidade temporária
+  para registros legados.
+*/
 
 function obterValorPasseio(
   passeio: Passeio
 ) {
-  /*
-    O cadastro atual grava "valor".
-
-    "preco" permanece somente como
-    fallback para registros antigos.
-  */
-
   if (
-    passeio.valor !== undefined &&
+    passeio.valor !==
+      undefined &&
     passeio.valor !== null
   ) {
     return converterValor(
@@ -141,38 +217,89 @@ function obterValorPasseio(
   );
 }
 
+function estiloSituacao(
+  situacao?: string | null
+) {
+  const valor =
+    (
+      situacao ||
+      'Ativo'
+    ).toLowerCase();
+
+  if (
+    valor.includes(
+      'inativo'
+    )
+  ) {
+    return {
+      bolinha:
+        'bg-[#EDEDE3]/35',
+
+      container:
+        'border-white/[0.08] bg-white/[0.025] text-[#EDEDE3]/45',
+    };
+  }
+
+  if (
+    valor.includes(
+      'breve'
+    )
+  ) {
+    return {
+      bolinha:
+        'bg-[#E3A144]',
+
+      container:
+        'border-[#E3A144]/20 bg-[#E3A144]/[0.07] text-[#F4C77E]',
+    };
+  }
+
+  return {
+    bolinha:
+      'bg-emerald-400',
+
+    container:
+      'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300',
+  };
+}
+
 export default function PasseiosPage() {
-  const router = useRouter();
+  const router =
+    useRouter();
 
   const [
     passeios,
     setPasseios,
-  ] = useState<Passeio[]>([]);
+  ] =
+    useState<Passeio[]>(
+      []
+    );
 
   const [
     loading,
     setLoading,
-  ] = useState(true);
+  ] =
+    useState(true);
 
   const [
     busca,
     setBusca,
-  ] = useState('');
+  ] =
+    useState('');
 
   const [
     filtroCategoria,
     setFiltroCategoria,
-  ] = useState('');
+  ] =
+    useState('');
 
   const [
-    mensagemSucesso,
-    setMensagemSucesso,
-  ] = useState('');
-
-  const [
-    mensagemErro,
-    setMensagemErro,
-  ] = useState('');
+    feedback,
+    setFeedback,
+  ] =
+    useState<Feedback | null>(
+      null
+    );
 
   const [
     passeioSelecionado,
@@ -185,19 +312,28 @@ export default function PasseiosPage() {
   const [
     modoEdicao,
     setModoEdicao,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     salvando,
     setSalvando,
-  ] = useState(false);
+  ] =
+    useState(false);
+
+  const [
+    excluindo,
+    setExcluindo,
+  ] =
+    useState(false);
 
   const [
     idParaExcluir,
     setIdParaExcluir,
-  ] = useState<string | null>(
-    null
-  );
+  ] =
+    useState<string | null>(
+      null
+    );
 
   /*
     ============================================================
@@ -207,25 +343,34 @@ export default function PasseiosPage() {
 
   async function fetchPasseios() {
     setLoading(true);
-    setMensagemErro('');
 
     try {
       const {
         data,
         error,
-      } = await supabase
-        .from('passeios')
-        .select('*')
-        .order('created_at', {
-          ascending: false,
-        });
+      } =
+        await supabase
+          .from(
+            'passeios'
+          )
+          .select('*')
+          .order(
+            'created_at',
+            {
+              ascending:
+                false,
+            }
+          );
 
       if (error) {
         throw error;
       }
 
       setPasseios(
-        (data || []) as Passeio[]
+        (
+          data ||
+          []
+        ) as Passeio[]
       );
     } catch (error) {
       console.error(
@@ -233,11 +378,15 @@ export default function PasseiosPage() {
         error
       );
 
-      setMensagemErro(
-        error instanceof Error
-          ? error.message
-          : 'Não foi possível carregar os passeios.'
-      );
+      setFeedback({
+        tipo:
+          'erro',
+
+        texto:
+          error instanceof Error
+            ? error.message
+            : 'Não foi possível carregar os passeios.',
+      });
     } finally {
       setLoading(false);
     }
@@ -247,16 +396,30 @@ export default function PasseiosPage() {
     fetchPasseios();
   }, []);
 
-  function mostrarMensagem(
-    mensagem: string
+  function mostrarSucesso(
+    texto: string
   ) {
-    setMensagemSucesso(
-      mensagem
-    );
+    setFeedback({
+      tipo:
+        'sucesso',
 
-    setTimeout(() => {
-      setMensagemSucesso('');
-    }, 2500);
+      texto,
+    });
+
+    window.setTimeout(
+      () => {
+        setFeedback(
+          (
+            atual
+          ) =>
+            atual?.tipo ===
+            'sucesso'
+              ? null
+              : atual
+        );
+      },
+      2500
+    );
   }
 
   /*
@@ -270,51 +433,77 @@ export default function PasseiosPage() {
 
   const totalVagas =
     passeios.reduce(
-      (total, passeio) => {
+      (
+        total,
+        passeio
+      ) => {
         const vagas =
-          Number(passeio.vagas);
+          Number(
+            passeio.vagas
+          );
 
         return (
           total +
-          (Number.isFinite(vagas)
-            ? vagas
-            : 0)
+          (
+            Number.isFinite(
+              vagas
+            )
+              ? vagas
+              : 0
+          )
         );
       },
       0
     );
 
   const categoriasUnicas =
-    Array.from(
-      new Set(
-        passeios
-          .map((p) =>
-            p.categoria?.trim()
+    useMemo(
+      () =>
+        Array.from(
+          new Set(
+            passeios
+              .map(
+                (
+                  passeio
+                ) =>
+                  passeio.categoria?.trim()
+              )
+              .filter(
+                (
+                  categoria
+                ): categoria is string =>
+                  Boolean(
+                    categoria
+                  )
+              )
           )
-          .filter(
-            (
-              categoria
-            ): categoria is string =>
-              Boolean(categoria)
-          )
-      )
-    ).sort();
+        ).sort(),
+      [
+        passeios,
+      ]
+    );
 
   const precoMedio =
     totalPasseios > 0
       ? passeios.reduce(
-          (total, passeio) =>
+          (
+            total,
+            passeio
+          ) =>
             total +
             obterValorPasseio(
               passeio
             ),
           0
-        ) / totalPasseios
+        ) /
+        totalPasseios
       : 0;
 
   const ativos =
     passeios.filter(
-      (passeio) =>
+      (
+        passeio
+      ) =>
         (
           passeio.situacao ||
           'Ativo'
@@ -324,29 +513,43 @@ export default function PasseiosPage() {
 
   /*
     ============================================================
-    FILTRO
+    FILTROS
     ============================================================
   */
 
   const passeiosFiltrados =
     useMemo(() => {
-      const termo = busca
-        .trim()
-        .toLowerCase();
+      const termo =
+        busca
+          .trim()
+          .toLowerCase();
 
       return passeios.filter(
-        (passeio) => {
+        (
+          passeio
+        ) => {
           const atendeBusca =
             !termo ||
             passeio.nome
               ?.toLowerCase()
-              .includes(termo) ||
+              .includes(
+                termo
+              ) ||
             passeio.categoria
               ?.toLowerCase()
-              .includes(termo) ||
+              .includes(
+                termo
+              ) ||
             passeio.cidade
               ?.toLowerCase()
-              .includes(termo);
+              .includes(
+                termo
+              ) ||
+            passeio.descricao
+              ?.toLowerCase()
+              .includes(
+                termo
+              );
 
           const atendeCategoria =
             !filtroCategoria ||
@@ -370,12 +573,54 @@ export default function PasseiosPage() {
 
   /*
     ============================================================
+    VISUALIZAÇÃO
+    ============================================================
+  */
+
+  function abrirVisualizacao(
+    passeio: Passeio
+  ) {
+    setFeedback(null);
+
+    setPasseioSelecionado({
+      ...passeio,
+    });
+
+    setModoEdicao(
+      false
+    );
+  }
+
+  /*
+    ============================================================
     EDIÇÃO
     ============================================================
   */
 
+  function abrirEdicao(
+    passeio: Passeio
+  ) {
+    setFeedback(null);
+
+    setPasseioSelecionado({
+      ...passeio,
+
+      valor:
+        formatarValorCampo(
+          obterValorPasseio(
+            passeio
+          )
+        ),
+    });
+
+    setModoEdicao(
+      true
+    );
+  }
+
   async function handleSalvarEdicao(
-    event: React.FormEvent
+    event:
+      React.FormEvent
   ) {
     event.preventDefault();
 
@@ -388,33 +633,80 @@ export default function PasseiosPage() {
     if (
       !passeioSelecionado.nome.trim()
     ) {
-      setMensagemErro(
-        'Informe o nome do passeio.'
-      );
+      setFeedback({
+        tipo:
+          'erro',
+
+        texto:
+          'Informe o nome do passeio.',
+      });
 
       return;
     }
 
     const valorNumerico =
-      obterValorPasseio(
-        passeioSelecionado
+      converterValor(
+        passeioSelecionado.valor
       );
+
+    if (
+      !Number.isFinite(
+        valorNumerico
+      ) ||
+      valorNumerico < 0
+    ) {
+      setFeedback({
+        tipo:
+          'erro',
+
+        texto:
+          'Informe um valor válido para o passeio.',
+      });
+
+      return;
+    }
 
     const vagasNumericas =
-      Number(
-        passeioSelecionado.vagas ||
-          0
-      );
+      passeioSelecionado.vagas ===
+        '' ||
+      passeioSelecionado.vagas ===
+        null ||
+      passeioSelecionado.vagas ===
+        undefined
+        ? 0
+        : Number(
+            passeioSelecionado.vagas
+          );
+
+    if (
+      !Number.isFinite(
+        vagasNumericas
+      ) ||
+      !Number.isInteger(
+        vagasNumericas
+      ) ||
+      vagasNumericas < 0
+    ) {
+      setFeedback({
+        tipo:
+          'erro',
+
+        texto:
+          'Informe uma quantidade inteira e válida de vagas.',
+      });
+
+      return;
+    }
 
     setSalvando(true);
-    setMensagemErro('');
+    setFeedback(null);
 
     try {
       /*
-        O cadastro novo já usa "valor".
-
-        Portanto, a edição passa a
-        atualizar o mesmo campo.
+        Enquanto valor e preco
+        coexistirem no banco,
+        ambos recebem exatamente
+        o mesmo valor.
       */
 
       const payload = {
@@ -429,25 +721,47 @@ export default function PasseiosPage() {
           passeioSelecionado.duracao?.trim() ||
           null,
 
+        cidade:
+          passeioSelecionado.cidade?.trim() ||
+          null,
+
         valor:
           valorNumerico,
 
+        preco:
+          valorNumerico,
+
         vagas:
-          Number.isFinite(
-            vagasNumericas
-          )
-            ? vagasNumericas
-            : 0,
+          vagasNumericas,
 
         descricao:
           passeioSelecionado.descricao?.trim() ||
           null,
+
+        foto_url:
+          passeioSelecionado.foto_url?.trim() ||
+          null,
+
+        destaque:
+          Boolean(
+            passeioSelecionado.destaque
+          ),
+
+        situacao:
+          passeioSelecionado.situacao ||
+          'Ativo',
       };
 
-      const { error } =
+      const {
+        error,
+      } =
         await supabase
-          .from('passeios')
-          .update(payload)
+          .from(
+            'passeios'
+          )
+          .update(
+            payload
+          )
           .eq(
             'id',
             passeioSelecionado.id
@@ -461,9 +775,11 @@ export default function PasseiosPage() {
         null
       );
 
-      setModoEdicao(false);
+      setModoEdicao(
+        false
+      );
 
-      mostrarMensagem(
+      mostrarSucesso(
         'Passeio atualizado com sucesso.'
       );
 
@@ -474,11 +790,15 @@ export default function PasseiosPage() {
         error
       );
 
-      setMensagemErro(
-        error instanceof Error
-          ? error.message
-          : 'Não foi possível atualizar o passeio.'
-      );
+      setFeedback({
+        tipo:
+          'erro',
+
+        texto:
+          error instanceof Error
+            ? error.message
+            : 'Não foi possível atualizar o passeio.',
+      });
     } finally {
       setSalvando(false);
     }
@@ -491,14 +811,24 @@ export default function PasseiosPage() {
   */
 
   async function executarExclusao() {
-    if (!idParaExcluir) {
+    if (
+      !idParaExcluir ||
+      excluindo
+    ) {
       return;
     }
 
+    setExcluindo(true);
+    setFeedback(null);
+
     try {
-      const { error } =
+      const {
+        error,
+      } =
         await supabase
-          .from('passeios')
+          .from(
+            'passeios'
+          )
           .delete()
           .eq(
             'id',
@@ -509,75 +839,115 @@ export default function PasseiosPage() {
         throw error;
       }
 
-      setIdParaExcluir(null);
+      setIdParaExcluir(
+        null
+      );
 
-      mostrarMensagem(
+      mostrarSucesso(
         'Passeio excluído com sucesso.'
       );
 
       await fetchPasseios();
     } catch (error) {
-      setMensagemErro(
-        error instanceof Error
-          ? error.message
-          : 'Não foi possível excluir o passeio.'
+      console.error(
+        'Erro ao excluir passeio:',
+        error
       );
+
+      setFeedback({
+        tipo:
+          'erro',
+
+        texto:
+          error instanceof Error
+            ? error.message
+            : 'Não foi possível excluir o passeio.',
+      });
+    } finally {
+      setExcluindo(false);
     }
   }
 
   const cards = [
     {
-      titulo: 'Passeios',
-      valor: loading
-        ? '—'
-        : String(
-            totalPasseios
-          ),
+      titulo:
+        'Passeios',
+
+      valor:
+        loading
+          ? '—'
+          : String(
+              totalPasseios
+            ),
+
       detalhe:
         'registros no catálogo',
     },
 
     {
-      titulo: 'Ativos',
-      valor: loading
-        ? '—'
-        : String(ativos),
+      titulo:
+        'Ativos',
+
+      valor:
+        loading
+          ? '—'
+          : String(
+              ativos
+            ),
+
       detalhe:
         'disponíveis na operação',
     },
 
     {
-      titulo: 'Capacidade',
-      valor: loading
-        ? '—'
-        : String(totalVagas),
+      titulo:
+        'Capacidade',
+
+      valor:
+        loading
+          ? '—'
+          : String(
+              totalVagas
+            ),
+
       detalhe:
         'vagas cadastradas',
     },
 
     {
-      titulo: 'Preço médio',
-      valor: loading
-        ? '—'
-        : formatarMoeda(
-            precoMedio
-          ),
+      titulo:
+        'Preço médio',
+
+      valor:
+        loading
+          ? '—'
+          : formatarMoeda(
+              precoMedio
+            ),
+
       detalhe:
-        'média do catálogo',
+        'média real do catálogo',
     },
   ];
 
   return (
     <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
-      {/* MENSAGENS */}
+      {/* =====================================================
+          FEEDBACK
+      ====================================================== */}
 
-      {mensagemSucesso && (
-        <div className="fixed left-1/2 top-[100px] z-[80] -translate-x-1/2 rounded-2xl border border-emerald-500/20 bg-[#0B2119] px-5 py-3 text-xs font-semibold text-emerald-300 shadow-2xl">
-          {mensagemSucesso}
+      {feedback?.tipo ===
+        'sucesso' && (
+        <div className="fixed left-1/2 top-[100px] z-[90] -translate-x-1/2 rounded-2xl border border-emerald-500/20 bg-[#0B2119] px-5 py-3 text-xs font-semibold text-emerald-300 shadow-2xl">
+          {
+            feedback.texto
+          }
         </div>
       )}
 
-      {/* CABEÇALHO */}
+      {/* =====================================================
+          CABEÇALHO
+      ====================================================== */}
 
       <section className="border-b border-white/[0.07] bg-[#091510]">
         <div className="mx-auto flex max-w-[1360px] flex-col gap-8 px-5 py-10 md:px-8 md:py-12 lg:flex-row lg:items-end lg:justify-between">
@@ -601,9 +971,8 @@ export default function PasseiosPage() {
             </h1>
 
             <p className="mt-4 max-w-[700px] text-sm leading-7 text-[#EDEDE3]/42">
-              Organize experiências,
-              preços, capacidade e
-              informações operacionais
+              Organize experiências, preços,
+              capacidade e informações operacionais
               do catálogo da empresa.
             </p>
           </div>
@@ -614,7 +983,10 @@ export default function PasseiosPage() {
               onClick={
                 fetchPasseios
               }
-              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.055]"
+              disabled={
+                loading
+              }
+              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.055] disabled:cursor-not-allowed disabled:opacity-50"
             >
               ↻ Atualizar
             </button>
@@ -639,58 +1011,84 @@ export default function PasseiosPage() {
       </section>
 
       <main className="mx-auto max-w-[1360px] px-5 py-8 md:px-8 md:py-10">
-        {mensagemErro && (
+        {/* ===================================================
+            ERROS
+        ==================================================== */}
+
+        {feedback?.tipo ===
+          'erro' && (
           <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-red-300">
             <span>
-              {mensagemErro}
+              {
+                feedback.texto
+              }
             </span>
 
             <button
               type="button"
               onClick={() =>
-                setMensagemErro('')
+                setFeedback(
+                  null
+                )
               }
+              className="text-red-300/60 transition hover:text-red-200"
             >
               ✕
             </button>
           </div>
         )}
 
-        {/* INDICADORES */}
+        {/* ===================================================
+            INDICADORES
+        ==================================================== */}
 
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {cards.map((card) => (
-            <div
-              key={card.titulo}
-              className="rounded-[22px] border border-white/[0.075] bg-[#0A1713] p-5"
-            >
-              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
-                {card.titulo}
-              </p>
-
-              <strong
-                className={`mt-5 block font-medium tracking-[-0.04em] text-[#F0F0E8] ${
-                  card.titulo ===
-                  'Preço médio'
-                    ? 'text-2xl md:text-3xl'
-                    : 'text-4xl'
-                }`}
-                style={{
-                  fontFamily:
-                    'var(--font-fraunces), serif',
-                }}
+          {cards.map(
+            (
+              card
+            ) => (
+              <div
+                key={
+                  card.titulo
+                }
+                className="rounded-[22px] border border-white/[0.075] bg-[#0A1713] p-5"
               >
-                {card.valor}
-              </strong>
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+                  {
+                    card.titulo
+                  }
+                </p>
 
-              <p className="mt-2 text-[11px] text-[#EDEDE3]/28">
-                {card.detalhe}
-              </p>
-            </div>
-          ))}
+                <strong
+                  className={`mt-5 block font-medium tracking-[-0.04em] text-[#F0F0E8] ${
+                    card.titulo ===
+                    'Preço médio'
+                      ? 'text-2xl md:text-3xl'
+                      : 'text-4xl'
+                  }`}
+                  style={{
+                    fontFamily:
+                      'var(--font-fraunces), serif',
+                  }}
+                >
+                  {
+                    card.valor
+                  }
+                </strong>
+
+                <p className="mt-2 text-[11px] text-[#EDEDE3]/28">
+                  {
+                    card.detalhe
+                  }
+                </p>
+              </div>
+            )
+          )}
         </div>
 
-        {/* CATÁLOGO */}
+        {/* ===================================================
+            CATÁLOGO
+        ==================================================== */}
 
         <section className="mt-6 overflow-hidden rounded-[26px] border border-white/[0.075] bg-[#0A1713]">
           <div className="border-b border-white/[0.065] p-5 md:p-6">
@@ -715,7 +1113,9 @@ export default function PasseiosPage() {
                     passeiosFiltrados.length
                   }{' '}
                   de{' '}
-                  {passeios.length}{' '}
+                  {
+                    passeios.length
+                  }{' '}
                   passeio
                   {passeios.length !==
                   1
@@ -743,7 +1143,9 @@ export default function PasseiosPage() {
                   <input
                     type="text"
                     placeholder="Buscar passeio..."
-                    value={busca}
+                    value={
+                      busca
+                    }
                     onChange={(
                       event
                     ) =>
@@ -775,7 +1177,9 @@ export default function PasseiosPage() {
                   </option>
 
                   {categoriasUnicas.map(
-                    (categoria) => (
+                    (
+                      categoria
+                    ) => (
                       <option
                         key={
                           categoria
@@ -784,7 +1188,9 @@ export default function PasseiosPage() {
                           categoria
                         }
                       >
-                        {categoria}
+                        {
+                          categoria
+                        }
                       </option>
                     )
                   )}
@@ -819,14 +1225,12 @@ export default function PasseiosPage() {
                   </h3>
 
                   <p className="mt-2 text-xs text-[#EDEDE3]/30">
-                    Ajuste os filtros ou
-                    cadastre uma nova
-                    experiência.
+                    Ajuste os filtros ou cadastre uma nova experiência.
                   </p>
                 </div>
               </div>
             ) : (
-              <table className="min-w-[1050px] w-full border-collapse text-left">
+              <table className="w-full min-w-[1050px] border-collapse text-left">
                 <thead>
                   <tr className="border-b border-white/[0.06] bg-white/[0.012]">
                     {[
@@ -837,21 +1241,27 @@ export default function PasseiosPage() {
                       'Vagas',
                       'Situação',
                       'Ações',
-                    ].map((titulo) => (
-                      <th
-                        key={
-                          titulo
-                        }
-                        className={`px-5 py-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28 ${
-                          titulo ===
-                          'Ações'
-                            ? 'text-center'
-                            : ''
-                        }`}
-                      >
-                        {titulo}
-                      </th>
-                    ))}
+                    ].map(
+                      (
+                        titulo
+                      ) => (
+                        <th
+                          key={
+                            titulo
+                          }
+                          className={`px-5 py-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28 ${
+                            titulo ===
+                            'Ações'
+                              ? 'text-center'
+                              : ''
+                          }`}
+                        >
+                          {
+                            titulo
+                          }
+                        </th>
+                      )
+                    )}
                   </tr>
                 </thead>
 
@@ -860,127 +1270,134 @@ export default function PasseiosPage() {
                     (
                       passeio,
                       index
-                    ) => (
-                      <tr
-                        key={
-                          passeio.id ||
-                          index
-                        }
-                        className="transition hover:bg-white/[0.018]"
-                      >
-                        <td className="px-5 py-4">
-                          <div>
-                            <p className="text-xs font-semibold text-[#EDEDE3]/82">
-                              {
-                                passeio.nome
-                              }
-                            </p>
+                    ) => {
+                      const situacao =
+                        estiloSituacao(
+                          passeio.situacao
+                        );
 
-                            {passeio.cidade && (
-                              <p className="mt-1 text-[9px] text-[#EDEDE3]/25">
-                                {
-                                  passeio.cidade
-                                }
-                              </p>
-                            )}
-                          </div>
-                        </td>
-
-                        <td className="px-5 py-4">
-                          <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-2.5 py-1 text-[9px] text-[#EDEDE3]/50">
-                            {passeio.categoria ||
-                              'Geral'}
-                          </span>
-                        </td>
-
-                        <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
-                          {passeio.duracao ||
-                            '—'}
-                        </td>
-
-                        <td className="px-5 py-4 text-xs font-semibold text-[#F4C77E]">
-                          {formatarMoeda(
-                            obterValorPasseio(
-                              passeio
-                            )
-                          )}
-                        </td>
-
-                        <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
-                          {Number(
-                            passeio.vagas
-                          ) || 0}
-                        </td>
-
-                        <td className="px-5 py-4">
-                          <span className="inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/[0.07] px-2.5 py-1 text-[9px] text-emerald-300">
-                            <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-
-                            {passeio.situacao ||
-                              'Ativo'}
-                          </span>
-                        </td>
-
-                        <td className="px-5 py-4">
-                          <div className="flex items-center justify-center gap-1.5">
-                            <button
-                              type="button"
-                              title="Visualizar"
-                              onClick={() => {
-                                setPasseioSelecionado(
-                                  passeio
-                                );
-
-                                setModoEdicao(
-                                  false
-                                );
-                              }}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-[#E3A144]/20 hover:text-[#E3A144]"
-                            >
-                              👁
-                            </button>
-
-                            <button
-                              type="button"
-                              title="Editar"
-                              onClick={() => {
-                                setPasseioSelecionado(
+                      return (
+                        <tr
+                          key={
+                            passeio.id ||
+                            index
+                          }
+                          className="transition hover:bg-white/[0.018]"
+                        >
+                          <td className="px-5 py-4">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs font-semibold text-[#EDEDE3]/82">
                                   {
-                                    ...passeio,
-
-                                    valor:
-                                      obterValorPasseio(
-                                        passeio
-                                      ),
+                                    passeio.nome
                                   }
-                                );
+                                </p>
 
-                                setModoEdicao(
-                                  true
-                                );
-                              }}
-                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-sky-400/20 hover:text-sky-300"
-                            >
-                              ✎
-                            </button>
+                                {passeio.destaque && (
+                                  <span
+                                    title="Destaque"
+                                    className="text-[10px] text-[#E3A144]"
+                                  >
+                                    ★
+                                  </span>
+                                )}
+                              </div>
 
-                            <button
-                              type="button"
-                              title="Excluir"
-                              onClick={() =>
-                                passeio.id &&
-                                setIdParaExcluir(
-                                  passeio.id
-                                )
-                              }
-                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-red-400/20 hover:text-red-300"
+                              {passeio.cidade && (
+                                <p className="mt-1 text-[9px] text-[#EDEDE3]/25">
+                                  {
+                                    passeio.cidade
+                                  }
+                                </p>
+                              )}
+                            </div>
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-2.5 py-1 text-[9px] text-[#EDEDE3]/50">
+                              {passeio.categoria ||
+                                'Geral'}
+                            </span>
+                          </td>
+
+                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
+                            {passeio.duracao ||
+                              '—'}
+                          </td>
+
+                          <td className="px-5 py-4 text-xs font-semibold text-[#F4C77E]">
+                            {formatarMoeda(
+                              obterValorPasseio(
+                                passeio
+                              )
+                            )}
+                          </td>
+
+                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
+                            {Number(
+                              passeio.vagas
+                            ) || 0}
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <span
+                              className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[9px] ${situacao.container}`}
                             >
-                              ×
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
+                              <span
+                                className={`h-1.5 w-1.5 rounded-full ${situacao.bolinha}`}
+                              />
+
+                              {passeio.situacao ||
+                                'Ativo'}
+                            </span>
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <div className="flex items-center justify-center gap-1.5">
+                              <button
+                                type="button"
+                                title="Visualizar"
+                                onClick={() =>
+                                  abrirVisualizacao(
+                                    passeio
+                                  )
+                                }
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-[#E3A144]/20 hover:text-[#E3A144]"
+                              >
+                                👁
+                              </button>
+
+                              <button
+                                type="button"
+                                title="Editar"
+                                onClick={() =>
+                                  abrirEdicao(
+                                    passeio
+                                  )
+                                }
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-sky-400/20 hover:text-sky-300"
+                              >
+                                ✎
+                              </button>
+
+                              <button
+                                type="button"
+                                title="Excluir"
+                                onClick={() =>
+                                  passeio.id &&
+                                  setIdParaExcluir(
+                                    passeio.id
+                                  )
+                                }
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-red-400/20 hover:text-red-300"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    }
                   )}
                 </tbody>
               </table>
@@ -989,11 +1406,13 @@ export default function PasseiosPage() {
         </section>
       </main>
 
-      {/* VISUALIZAÇÃO / EDIÇÃO */}
+      {/* =====================================================
+          MODAL: VISUALIZAÇÃO / EDIÇÃO
+      ====================================================== */}
 
       {passeioSelecionado && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-[650px] overflow-y-auto rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
+          <div className="max-h-[90vh] w-full max-w-[690px] overflow-y-auto rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
             <div className="flex items-start justify-between gap-4 border-b border-white/[0.07] px-6 py-5">
               <div>
                 <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
@@ -1017,12 +1436,16 @@ export default function PasseiosPage() {
 
               <button
                 type="button"
-                onClick={() =>
+                onClick={() => {
                   setPasseioSelecionado(
                     null
-                  )
-                }
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] text-[#EDEDE3]/45"
+                  );
+
+                  setModoEdicao(
+                    false
+                  );
+                }}
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] text-[#EDEDE3]/45 transition hover:bg-white/[0.05]"
               >
                 ✕
               </button>
@@ -1035,88 +1458,131 @@ export default function PasseiosPage() {
                 }
                 className="space-y-5 p-6"
               >
-                <div>
-                  <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34">
-                    Nome
-                  </label>
+                <CampoTexto
+                  label="Nome *"
+                  value={
+                    passeioSelecionado.nome
+                  }
+                  disabled={
+                    salvando
+                  }
+                  onChange={(
+                    valor
+                  ) =>
+                    setPasseioSelecionado({
+                      ...passeioSelecionado,
 
-                  <input
-                    type="text"
-                    required
+                      nome:
+                        valor,
+                    })
+                  }
+                  required
+                />
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <CampoTexto
+                    label="Categoria"
                     value={
-                      passeioSelecionado.nome
+                      passeioSelecionado.categoria ||
+                      ''
+                    }
+                    disabled={
+                      salvando
                     }
                     onChange={(
-                      event
+                      valor
                     ) =>
-                      setPasseioSelecionado(
-                        {
-                          ...passeioSelecionado,
-                          nome:
-                            event.target
-                              .value,
-                        }
-                      )
+                      setPasseioSelecionado({
+                        ...passeioSelecionado,
+
+                        categoria:
+                          valor,
+                      })
                     }
-                    className="w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none focus:border-[#E3A144]/40"
+                  />
+
+                  <CampoTexto
+                    label="Duração"
+                    value={
+                      passeioSelecionado.duracao ||
+                      ''
+                    }
+                    disabled={
+                      salvando
+                    }
+                    onChange={(
+                      valor
+                    ) =>
+                      setPasseioSelecionado({
+                        ...passeioSelecionado,
+
+                        duracao:
+                          valor,
+                      })
+                    }
                   />
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
+                  <CampoTexto
+                    label="Cidade"
+                    value={
+                      passeioSelecionado.cidade ||
+                      ''
+                    }
+                    disabled={
+                      salvando
+                    }
+                    onChange={(
+                      valor
+                    ) =>
+                      setPasseioSelecionado({
+                        ...passeioSelecionado,
+
+                        cidade:
+                          valor,
+                      })
+                    }
+                  />
+
                   <div>
                     <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34">
-                      Categoria
+                      Situação
                     </label>
 
-                    <input
-                      type="text"
+                    <select
+                      disabled={
+                        salvando
+                      }
                       value={
-                        passeioSelecionado.categoria ||
-                        ''
+                        passeioSelecionado.situacao ||
+                        'Ativo'
                       }
                       onChange={(
                         event
                       ) =>
-                        setPasseioSelecionado(
-                          {
-                            ...passeioSelecionado,
-                            categoria:
-                              event
-                                .target
-                                .value,
-                          }
-                        )
-                      }
-                      className="w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none focus:border-[#E3A144]/40"
-                    />
-                  </div>
+                        setPasseioSelecionado({
+                          ...passeioSelecionado,
 
-                  <div>
-                    <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34">
-                      Duração
-                    </label>
+                          situacao:
+                            event.target
+                              .value,
+                        })
+                      }
+                      className="w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none focus:border-[#E3A144]/40 disabled:opacity-50"
+                    >
+                      <option value="Ativo">
+                        Ativo
+                      </option>
 
-                    <input
-                      type="text"
-                      value={
-                        passeioSelecionado.duracao ||
-                        ''
-                      }
-                      onChange={(
-                        event
-                      ) =>
-                        setPasseioSelecionado(
-                          {
-                            ...passeioSelecionado,
-                            duracao:
-                              event
-                                .target
-                                .value,
-                          }
-                        )
-                      }
-                      className="w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none focus:border-[#E3A144]/40"
-                    />
+                      <option value="Inativo">
+                        Inativo
+                      </option>
+
+                      <option value="Em Breve">
+                        Em Breve
+                      </option>
+                    </select>
                   </div>
                 </div>
 
@@ -1129,6 +1595,9 @@ export default function PasseiosPage() {
                     <input
                       type="text"
                       inputMode="decimal"
+                      disabled={
+                        salvando
+                      }
                       value={
                         passeioSelecionado.valor ??
                         ''
@@ -1136,19 +1605,21 @@ export default function PasseiosPage() {
                       onChange={(
                         event
                       ) =>
-                        setPasseioSelecionado(
-                          {
-                            ...passeioSelecionado,
-                            valor:
-                              event
-                                .target
-                                .value,
-                          }
-                        )
+                        setPasseioSelecionado({
+                          ...passeioSelecionado,
+
+                          valor:
+                            event.target
+                              .value,
+                        })
                       }
-                      placeholder="Ex.: 3.500"
-                      className="w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none focus:border-[#E3A144]/40"
+                      placeholder="Ex.: 3.500,00"
+                      className="w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none focus:border-[#E3A144]/40 disabled:opacity-50"
                     />
+
+                    <p className="mt-2 text-[9px] text-[#EDEDE3]/22">
+                      Aceita 3500, 3.500 ou 3.500,00.
+                    </p>
                   </div>
 
                   <div>
@@ -1159,6 +1630,10 @@ export default function PasseiosPage() {
                     <input
                       type="number"
                       min="0"
+                      step="1"
+                      disabled={
+                        salvando
+                      }
                       value={
                         passeioSelecionado.vagas ??
                         ''
@@ -1166,20 +1641,83 @@ export default function PasseiosPage() {
                       onChange={(
                         event
                       ) =>
-                        setPasseioSelecionado(
-                          {
-                            ...passeioSelecionado,
-                            vagas:
-                              event
-                                .target
-                                .value,
-                          }
-                        )
+                        setPasseioSelecionado({
+                          ...passeioSelecionado,
+
+                          vagas:
+                            event.target
+                              .value,
+                        })
                       }
-                      className="w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none focus:border-[#E3A144]/40"
+                      className="w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none focus:border-[#E3A144]/40 disabled:opacity-50"
                     />
                   </div>
                 </div>
+
+                <CampoTexto
+                  label="URL da foto"
+                  value={
+                    passeioSelecionado.foto_url ||
+                    ''
+                  }
+                  disabled={
+                    salvando
+                  }
+                  onChange={(
+                    valor
+                  ) =>
+                    setPasseioSelecionado({
+                      ...passeioSelecionado,
+
+                      foto_url:
+                        valor,
+                    })
+                  }
+                  type="url"
+                  placeholder="https://..."
+                />
+
+                <label
+                  className={`flex cursor-pointer items-center justify-between rounded-xl border px-4 py-3 transition ${
+                    passeioSelecionado.destaque
+                      ? 'border-[#E3A144]/25 bg-[#E3A144]/[0.05]'
+                      : 'border-white/[0.08] bg-[#07110E]'
+                  }`}
+                >
+                  <div>
+                    <p className="text-xs font-semibold text-[#EDEDE3]/65">
+                      Destaque
+                    </p>
+
+                    <p className="mt-1 text-[9px] text-[#EDEDE3]/24">
+                      Marcar esta experiência como destaque.
+                    </p>
+                  </div>
+
+                  <input
+                    type="checkbox"
+                    checked={
+                      Boolean(
+                        passeioSelecionado.destaque
+                      )
+                    }
+                    onChange={(
+                      event
+                    ) =>
+                      setPasseioSelecionado({
+                        ...passeioSelecionado,
+
+                        destaque:
+                          event.target
+                            .checked,
+                      })
+                    }
+                    disabled={
+                      salvando
+                    }
+                    className="h-4 w-4 accent-[#E3A144]"
+                  />
+                </label>
 
                 <div>
                   <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34">
@@ -1188,6 +1726,9 @@ export default function PasseiosPage() {
 
                   <textarea
                     rows={5}
+                    disabled={
+                      salvando
+                    }
                     value={
                       passeioSelecionado.descricao ||
                       ''
@@ -1195,28 +1736,34 @@ export default function PasseiosPage() {
                     onChange={(
                       event
                     ) =>
-                      setPasseioSelecionado(
-                        {
-                          ...passeioSelecionado,
-                          descricao:
-                            event.target
-                              .value,
-                        }
-                      )
+                      setPasseioSelecionado({
+                        ...passeioSelecionado,
+
+                        descricao:
+                          event.target
+                            .value,
+                      })
                     }
-                    className="w-full resize-none rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm leading-6 text-[#EDEDE3] outline-none focus:border-[#E3A144]/40"
+                    className="w-full resize-none rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm leading-6 text-[#EDEDE3] outline-none focus:border-[#E3A144]/40 disabled:opacity-50"
                   />
                 </div>
 
-                <div className="flex justify-end gap-3 border-t border-white/[0.07] pt-5">
+                <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-5 sm:flex-row sm:justify-end">
                   <button
                     type="button"
-                    onClick={() =>
+                    disabled={
+                      salvando
+                    }
+                    onClick={() => {
                       setPasseioSelecionado(
                         null
-                      )
-                    }
-                    className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/55"
+                      );
+
+                      setModoEdicao(
+                        false
+                      );
+                    }}
+                    className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/55 disabled:opacity-50"
                   >
                     Cancelar
                   </button>
@@ -1226,7 +1773,7 @@ export default function PasseiosPage() {
                     disabled={
                       salvando
                     }
-                    className="rounded-xl bg-[#E3A144] px-6 py-3 text-xs font-bold text-[#07130F] disabled:opacity-50"
+                    className="rounded-xl bg-[#E3A144] px-6 py-3 text-xs font-bold text-[#07130F] transition hover:bg-[#F0B35C] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {salvando
                       ? 'Salvando...'
@@ -1237,72 +1784,64 @@ export default function PasseiosPage() {
             ) : (
               <div className="p-6">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  {[
-                    {
-                      label:
-                        'Categoria',
-                      valor:
-                        passeioSelecionado.categoria ||
-                        'Geral',
-                    },
+                  <Detalhe
+                    label="Categoria"
+                    valor={
+                      passeioSelecionado.categoria ||
+                      'Geral'
+                    }
+                  />
 
-                    {
-                      label:
-                        'Duração',
-                      valor:
-                        passeioSelecionado.duracao ||
-                        '—',
-                    },
+                  <Detalhe
+                    label="Duração"
+                    valor={
+                      passeioSelecionado.duracao ||
+                      '—'
+                    }
+                  />
 
-                    {
-                      label:
-                        'Preço',
-                      valor:
-                        formatarMoeda(
-                          obterValorPasseio(
-                            passeioSelecionado
-                          )
-                        ),
-                    },
+                  <Detalhe
+                    label="Preço"
+                    valor={formatarMoeda(
+                      obterValorPasseio(
+                        passeioSelecionado
+                      )
+                    )}
+                  />
 
-                    {
-                      label: 'Vagas',
-                      valor: String(
-                        Number(
-                          passeioSelecionado.vagas
-                        ) || 0
-                      ),
-                    },
+                  <Detalhe
+                    label="Vagas"
+                    valor={String(
+                      Number(
+                        passeioSelecionado.vagas
+                      ) || 0
+                    )}
+                  />
 
-                    {
-                      label:
-                        'Cidade',
-                      valor:
-                        passeioSelecionado.cidade ||
-                        'Não informada',
-                    },
+                  <Detalhe
+                    label="Cidade"
+                    valor={
+                      passeioSelecionado.cidade ||
+                      'Não informada'
+                    }
+                  />
 
-                    {
-                      label:
-                        'Situação',
-                      valor:
-                        passeioSelecionado.situacao ||
-                        'Ativo',
-                    },
-                  ].map((item) => (
-                    <div
-                      key={item.label}
-                      className="rounded-2xl border border-white/[0.065] bg-white/[0.018] p-4"
-                    >
-                      <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28">
-                        {item.label}
-                      </p>
+                  <Detalhe
+                    label="Situação"
+                    valor={
+                      passeioSelecionado.situacao ||
+                      'Ativo'
+                    }
+                  />
 
-                      <p className="mt-2 text-xs font-medium text-[#EDEDE3]/72">
-                        {item.valor}
-                      </p>
-                    </div>
-                  ))}
+                  <Detalhe
+                    label="Destaque"
+                    valor={
+                      passeioSelecionado.destaque
+                        ? 'Sim'
+                        : 'Não'
+                    }
+                  />
                 </div>
 
                 <div className="mt-4">
@@ -1316,7 +1855,19 @@ export default function PasseiosPage() {
                   </div>
                 </div>
 
-                <div className="mt-5 flex justify-end">
+                <div className="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      abrirEdicao(
+                        passeioSelecionado
+                      )
+                    }
+                    className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.05]"
+                  >
+                    Editar
+                  </button>
+
                   <button
                     type="button"
                     onClick={() =>
@@ -1324,7 +1875,7 @@ export default function PasseiosPage() {
                         null
                       )
                     }
-                    className="rounded-xl bg-[#E3A144] px-6 py-3 text-xs font-bold text-[#07130F]"
+                    className="rounded-xl bg-[#E3A144] px-6 py-3 text-xs font-bold text-[#07130F] transition hover:bg-[#F0B35C]"
                   >
                     Fechar
                   </button>
@@ -1335,13 +1886,19 @@ export default function PasseiosPage() {
         </div>
       )}
 
-      {/* EXCLUSÃO */}
+      {/* =====================================================
+          EXCLUSÃO
+      ====================================================== */}
 
       {idParaExcluir && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
           <div className="w-full max-w-[430px] rounded-[26px] border border-white/[0.09] bg-[#091510] p-6 text-center">
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-red-500/20 bg-red-500/[0.08] text-lg text-red-300">
+              !
+            </div>
+
             <h3
-              className="text-2xl text-[#F0F0E8]"
+              className="mt-4 text-2xl text-[#F0F0E8]"
               style={{
                 fontFamily:
                   'var(--font-fraunces), serif',
@@ -1351,37 +1908,125 @@ export default function PasseiosPage() {
             </h3>
 
             <p className="mt-3 text-xs leading-6 text-[#EDEDE3]/38">
-              O passeio será removido
-              permanentemente do
-              catálogo.
+              O passeio será removido permanentemente do catálogo.
+              Esta ação não pode ser desfeita.
             </p>
 
             <div className="mt-6 grid grid-cols-2 gap-3">
               <button
                 type="button"
+                disabled={
+                  excluindo
+                }
                 onClick={() =>
                   setIdParaExcluir(
                     null
                   )
                 }
-                className="rounded-xl border border-white/[0.09] bg-white/[0.025] px-4 py-3 text-xs font-semibold text-[#EDEDE3]/60"
+                className="rounded-xl border border-white/[0.09] bg-white/[0.025] px-4 py-3 text-xs font-semibold text-[#EDEDE3]/60 disabled:opacity-50"
               >
                 Cancelar
               </button>
 
               <button
                 type="button"
+                disabled={
+                  excluindo
+                }
                 onClick={
                   executarExclusao
                 }
-                className="rounded-xl border border-red-500/20 bg-red-500/[0.1] px-4 py-3 text-xs font-semibold text-red-300"
+                className="rounded-xl border border-red-500/20 bg-red-500/[0.1] px-4 py-3 text-xs font-semibold text-red-300 transition hover:bg-red-500/[0.15] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Excluir
+                {excluindo
+                  ? 'Excluindo...'
+                  : 'Excluir'}
               </button>
             </div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/*
+  ============================================================
+  COMPONENTES INTERNOS
+  ============================================================
+*/
+
+function CampoTexto({
+  label,
+  value,
+  onChange,
+  disabled,
+  required = false,
+  type = 'text',
+  placeholder,
+}: {
+  label: string;
+  value: string;
+  onChange: (
+    valor: string
+  ) => void;
+  disabled?: boolean;
+  required?: boolean;
+  type?: string;
+  placeholder?: string;
+}) {
+  return (
+    <div>
+      <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34">
+        {label}
+      </label>
+
+      <input
+        type={
+          type
+        }
+        required={
+          required
+        }
+        disabled={
+          disabled
+        }
+        value={
+          value
+        }
+        onChange={(
+          event
+        ) =>
+          onChange(
+            event.target
+              .value
+          )
+        }
+        placeholder={
+          placeholder
+        }
+        className="w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none focus:border-[#E3A144]/40 disabled:opacity-50"
+      />
+    </div>
+  );
+}
+
+function Detalhe({
+  label,
+  valor,
+}: {
+  label: string;
+  valor: string;
+}) {
+  return (
+    <div className="rounded-2xl border border-white/[0.065] bg-white/[0.018] p-4">
+      <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28">
+        {label}
+      </p>
+
+      <p className="mt-2 text-xs font-medium text-[#EDEDE3]/72">
+        {valor}
+      </p>
     </div>
   );
 }
