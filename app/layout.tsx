@@ -1,25 +1,21 @@
 import type { Metadata } from 'next';
-import { Inter, Fraunces, Work_Sans } from 'next/font/google';
+import type { CSSProperties, ReactNode } from 'react';
+
+import '@fontsource-variable/inter';
+import '@fontsource-variable/fraunces';
+import '@fontsource-variable/work-sans';
+
 import './globals.css';
 
 import { AppProvider } from '@/app/context/AppContext';
 import AppShell from '@/app/components/AppShell';
 import { LanguageProvider } from '@/app/components/LanguageProvider';
 
-const inter = Inter({
-  subsets: ['latin'],
-  variable: '--font-inter',
-});
-
-const fraunces = Fraunces({
-  subsets: ['latin'],
-  variable: '--font-fraunces',
-});
-
-const workSans = Work_Sans({
-  subsets: ['latin'],
-  variable: '--font-work-sans',
-});
+const fontes = {
+  '--font-inter': '"Inter Variable"',
+  '--font-fraunces': '"Fraunces Variable"',
+  '--font-work-sans': '"Work Sans Variable"',
+} as CSSProperties;
 
 export const metadata: Metadata = {
   title: {
@@ -33,12 +29,13 @@ export const metadata: Metadata = {
 export default function RootLayout({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   return (
     <html lang="pt-BR">
       <body
-        className={`${inter.variable} ${fraunces.variable} ${workSans.variable} bg-slate-950 text-slate-100 antialiased`}
+        style={fontes}
+        className="bg-slate-950 text-slate-100 antialiased"
       >
         <LanguageProvider>
           <AppProvider>

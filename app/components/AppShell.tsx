@@ -1,69 +1,66 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import Sidebar from '@/app/components/Sidebar';
+
+const ROTAS_GESTAO = [
+  '/dashboard',
+  '/financeiro',
+  '/clientes',
+  '/reservas',
+  '/hospedagens',
+  '/passeios',
+  '/configuracoes',
+  '/embarcacoes',
+  '/guias',
+  '/parceiros',
+  '/relatorios',
+  '/vouchers',
+  '/planos',
+  '/demandas',
+] as const;
+
+function pertenceARota(
+  pathname: string,
+  rota: string
+): boolean {
+  return (
+    pathname === rota ||
+    pathname.startsWith(`${rota}/`)
+  );
+}
 
 export default function AppShell({
   children,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
 }) {
   const pathname = usePathname();
 
-  /*
-    ============================================================
-    FACE PÚBLICA / COMERCIAL
-    ============================================================
-  */
-
-  const rotasPublicas = [
-    '/',
-    '/operadores',
-    '/descubra',
-    '/experiencias',
-    '/destinos',
-    '/rede',
-    '/login',
-  ];
-
-  const rotaPublica = rotasPublicas.some((rota) => {
-    if (rota === '/') {
-      return pathname === '/';
-    }
-
-    return (
-      pathname === rota ||
-      pathname.startsWith(`${rota}/`)
+  const rotaGestao =
+    pathname !== null &&
+    ROTAS_GESTAO.some((rota) =>
+      pertenceARota(pathname, rota)
     );
-  });
 
-  if (rotaPublica) {
+  // Portal, autenticação e áreas com navegação própria.
+  if (!rotaGestao) {
     return (
-      <main className="min-h-screen w-full bg-[#0B1512]">
+      <div className="min-h-screen w-full bg-[#0B1512]">
         {children}
-      </main>
+      </div>
     );
   }
 
-  /*
-    ============================================================
-    ERN GESTÃO
-    ============================================================
-
-    A antiga Sidebar lateral foi substituída por uma
-    navegação superior central.
-
-    O conteúdo da área privada passa a utilizar toda
-    a largura disponível.
-  */
-
+  // Navegação da gestão das operadoras.
   return (
     <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
       <Sidebar />
 
-      <main className="min-h-screen w-full pt-[82px]">
+      <div className="min-h-screen w-full pt-[82px]">
         {children}
-      </main>
+      </div>
     </div>
   );
 }
