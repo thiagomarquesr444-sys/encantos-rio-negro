@@ -4,12 +4,19 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import LogoERN from '@/app/components/LogoERN';
 import {
   useLanguage,
   type Idioma,
 } from '@/app/components/LanguageProvider';
 
 const idiomas: Idioma[] = ['PT', 'EN', 'ES'];
+
+const nomesIdiomas: Record<Idioma, string> = {
+  PT: 'Português',
+  EN: 'English',
+  ES: 'Español',
+};
 
 const textos = {
   PT: {
@@ -22,8 +29,9 @@ const textos = {
     language: 'Idioma',
     menu: 'Menu',
     closeMenu: 'Fechar menu',
+    navigation: 'Navegação do portal',
+    home: 'Encantos Rio Negro — início',
   },
-
   EN: {
     discover: 'Discover',
     experiences: 'Experiences',
@@ -34,8 +42,9 @@ const textos = {
     language: 'Language',
     menu: 'Menu',
     closeMenu: 'Close menu',
+    navigation: 'Portal navigation',
+    home: 'Encantos Rio Negro — home',
   },
-
   ES: {
     discover: 'Descubre',
     experiences: 'Experiencias',
@@ -46,125 +55,147 @@ const textos = {
     language: 'Idioma',
     menu: 'Menú',
     closeMenu: 'Cerrar menú',
+    navigation: 'Navegación del portal',
+    home: 'Encantos Rio Negro — inicio',
   },
 };
 
+const FOCO =
+  'focus-visible:outline-2 focus-visible:outline-offset-4 ' +
+  'focus-visible:outline-[#E3A144]';
+
+function rotaAtiva(pathname: string, href: string) {
+  if (href === '/') return pathname === '/';
+
+  return (
+    pathname === href ||
+    pathname.startsWith(`${href}/`)
+  );
+}
+
+function IconeMenu({ fechar = false }: { fechar?: boolean }) {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.8}
+      className="h-6 w-6 shrink-0"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d={
+          fechar
+            ? 'M6 6l12 12M6 18L18 6'
+            : 'M4 6h16M4 12h16M4 18h16'
+        }
+      />
+    </svg>
+  );
+}
+
 export default function PublicHeader() {
   const pathname = usePathname();
-
-  /*
-    IDIOMA GLOBAL
-
-    Agora o Header não possui mais um idioma próprio.
-    Ele usa o mesmo idioma compartilhado por toda a Face 1.
-  */
   const { idioma, setIdioma } = useLanguage();
 
   const [menuAberto, setMenuAberto] = useState(false);
-  const [idiomaAberto, setIdiomaAberto] = useState(false);
   const [rolouPagina, setRolouPagina] = useState(false);
 
-  const idiomaRef = useRef<HTMLDivElement>(null);
+  const dialogRef = useRef<HTMLDialogElement>(null);
+  const fecharRef = useRef<HTMLButtonElement>(null);
 
   const t = textos[idioma];
 
-  /* =========================================================
-      DETECÇÃO DE ROTAS ATIVAS
-  ========================================================== */
+  const links = [
+    { href: '/', titulo: t.discover },
+    { href: '/experiencias', titulo: t.experiences },
+    { href: '/destinos', titulo: t.destinations },
+    { href: '/rede', titulo: t.network },
+  ];
 
-  const paginaInicial = pathname === '/';
+  const paginaOperadores = rotaAtiva(
+    pathname,
+    '/operadores',
+  );
 
-  const paginaExperiencias =
-    pathname === '/experiencias' ||
-    pathname.startsWith('/experiencias/');
-
-  const paginaDestinos =
-    pathname === '/destinos' ||
-    pathname.startsWith('/destinos/');
-
-  const paginaRede =
-    pathname === '/rede' ||
-    pathname.startsWith('/rede/');
-
-  const paginaOperadores =
-    pathname === '/operadores' ||
-    pathname.startsWith('/operadores/');
-
-  /* =========================================================
-      SCROLL DO HEADER
-  ========================================================== */
+  function fecharMenu() {
+    // Fecha imediatamente para permitir também a navegação
+    // por âncoras dentro da mesma página.
+    dialogRef.current?.close();
+    setMenuAberto(false);
+  }
 
   useEffect(() => {
-    const handleScroll = () => {
+    function atualizarScroll() {
       setRolouPagina(window.scrollY > 24);
-    };
+    }
 
-    handleScroll();
+    atualizarScroll();
 
-    window.addEventListener('scroll', handleScroll, {
+    window.addEventListener('scroll', atualizarScroll, {
       passive: true,
     });
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('scroll', atualizarScroll);
     };
   }, []);
 
-  /* =========================================================
-      FECHAR MENUS AO TROCAR DE ROTA
-  ========================================================== */
-
   useEffect(() => {
+    dialogRef.current?.close();
     setMenuAberto(false);
-    setIdiomaAberto(false);
   }, [pathname]);
 
-  /* =========================================================
-      FECHAR SELETOR AO CLICAR FORA
-  ========================================================== */
-
   useEffect(() => {
-    const fecharAoClicarFora = (event: MouseEvent) => {
-      if (
-        idiomaRef.current &&
-        !idiomaRef.current.contains(event.target as Node)
-      ) {
-        setIdiomaAberto(false);
-      }
-    };
-
-    document.addEventListener(
-      'mousedown',
-      fecharAoClicarFora
+    const media = window.matchMedia(
+      '(min-width: 1280px)',
     );
 
+    function ajustarNavegacao() {
+      if (media.matches) {
+        dialogRef.current?.close();
+        setMenuAberto(false);
+      }
+    }
+
+    ajustarNavegacao();
+    media.addEventListener('change', ajustarNavegacao);
+
     return () => {
-      document.removeEventListener(
-        'mousedown',
-        fecharAoClicarFora
-      );
+      media.removeEventListener('change', ajustarNavegacao);
     };
   }, []);
 
-  /* =========================================================
-      BLOQUEAR SCROLL NO MENU MOBILE
-  ========================================================== */
-
   useEffect(() => {
-    if (menuAberto) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
+    const dialog = dialogRef.current;
+
+    if (!dialog) return;
+
+    if (!menuAberto) {
+      if (dialog.open) dialog.close();
+      return;
     }
 
+    const overflowAnterior = document.body.style.overflow;
+
+    document.body.style.overflow = 'hidden';
+
+    if (!dialog.open) {
+      dialog.showModal();
+    }
+
+    fecharRef.current?.focus();
+
     return () => {
-      document.body.style.overflow = '';
+      document.body.style.overflow = overflowAnterior;
+
+      if (dialog.open) {
+        dialog.close();
+      }
     };
   }, [menuAberto]);
-
-  /* =========================================================
-      ATUALIZAR LANG DO HTML
-  ========================================================== */
 
   useEffect(() => {
     const idiomasHtml: Record<Idioma, string> = {
@@ -173,552 +204,314 @@ export default function PublicHeader() {
       ES: 'es',
     };
 
-    document.documentElement.lang =
-      idiomasHtml[idioma];
+    document.documentElement.lang = idiomasHtml[idioma];
   }, [idioma]);
 
-  /* =========================================================
-      ALTERAÇÃO GLOBAL DE IDIOMA
-  ========================================================== */
-
-  const selecionarIdioma = (
-    novoIdioma: Idioma
-  ) => {
-    setIdioma(novoIdioma);
-    setIdiomaAberto(false);
-  };
-
-  /* =========================================================
-      ESTILOS
-  ========================================================== */
-
-  const classeLinkDesktop = (ativo: boolean) =>
-    `relative rounded-lg px-3.5 py-2 text-[13px] font-medium transition ${
-      ativo
-        ? 'bg-white/[0.055] text-[#F0F0E8]'
-        : 'text-[#EDEDE3]/62 hover:bg-white/[0.04] hover:text-[#F0F0E8]'
-    }`;
-
-  const classeLinkMobile = (ativo: boolean) =>
-    `flex items-center justify-between rounded-xl px-4 py-3.5 text-sm font-medium transition ${
+  function classeLink(ativo: boolean) {
+    return `inline-flex min-h-12 items-center rounded-xl px-3 text-sm font-medium transition-colors motion-reduce:transition-none ${FOCO} ${
       ativo
         ? 'bg-[#E3A144]/10 text-[#F4C77E]'
-        : 'text-[#EDEDE3]/75 hover:bg-white/[0.05]'
+        : 'text-[#EDEDE3]/80 hover:bg-white/5 hover:text-white'
     }`;
+  }
 
   return (
     <>
-      {/* =========================================================
-          HEADER
-      ========================================================== */}
-
       <header
-        className={`fixed inset-x-0 top-0 z-[100] transition-all duration-500 ${
+        className={`fixed inset-x-0 top-0 z-[100] border-b text-[#EDEDE3] transition-colors duration-300 motion-reduce:transition-none ${
           rolouPagina
-            ? 'border-b border-white/10 bg-[#08130F]/92 shadow-[0_14px_45px_rgba(0,0,0,0.22)] backdrop-blur-2xl'
-            : 'border-b border-white/[0.07] bg-[#08130F]/72 backdrop-blur-xl'
+            ? 'border-white/15 bg-[#08130F]/95 shadow-lg backdrop-blur-xl'
+            : 'border-white/10 bg-[#08130F]/85 backdrop-blur-xl'
         }`}
       >
-        <div className="mx-auto flex h-[76px] max-w-[1320px] items-center justify-between gap-6 px-5 md:px-8">
-
-          {/* =====================================================
-              IDENTIDADE
-          ====================================================== */}
-
+        <div className="mx-auto flex h-[76px] max-w-[1320px] items-center justify-between gap-3 px-4 sm:px-6 xl:px-8">
           <Link
             href="/"
-            aria-label="Encantos Rio Negro"
-            className="group flex shrink-0 items-center gap-3 no-underline"
+            aria-label={t.home}
+            onClick={fecharMenu}
+            className={`flex min-w-0 items-center gap-2.5 rounded-xl xl:shrink-0 ${FOCO}`}
           >
-            <div className="relative flex h-9 w-9 items-center justify-center rounded-full border border-[#E3A144]/35 bg-[#E3A144]/10">
-              <span className="text-[15px] text-[#E3A144] transition-transform duration-500 group-hover:rotate-12">
-                ✦
-              </span>
+            <LogoERN tamanho={48} prioridade />
 
-              <span className="absolute inset-[-4px] rounded-full border border-[#E3A144]/0 transition duration-500 group-hover:border-[#E3A144]/20" />
-            </div>
-
-            <div className="leading-none">
-              <p
-                className="text-[17px] font-medium tracking-[-0.02em] text-[#F0F0E8]"
+            <span className="min-w-0 leading-none">
+              <span
+                className="block text-base font-medium text-[#F0F0E8] sm:text-lg"
                 style={{
                   fontFamily:
                     'var(--font-fraunces), serif',
                 }}
               >
                 Encantos
-              </p>
-
-              <p className="mt-1 text-[8px] font-semibold uppercase tracking-[0.3em] text-[#E3A144]/80">
-                Rio Negro
-              </p>
-            </div>
-          </Link>
-
-          {/* =====================================================
-              NAVEGAÇÃO DESKTOP
-          ====================================================== */}
-
-          <nav className="hidden items-center gap-1 xl:flex">
-            <Link
-              href="/"
-              className={classeLinkDesktop(
-                paginaInicial
-              )}
-            >
-              {t.discover}
-
-              {paginaInicial && (
-                <span className="absolute inset-x-3 -bottom-[18px] h-px bg-[#E3A144]" />
-              )}
-            </Link>
-
-            <Link
-              href="/experiencias"
-              className={classeLinkDesktop(
-                paginaExperiencias
-              )}
-            >
-              {t.experiences}
-
-              {paginaExperiencias && (
-                <span className="absolute inset-x-3 -bottom-[18px] h-px bg-[#E3A144]" />
-              )}
-            </Link>
-
-            <Link
-              href="/destinos"
-              className={classeLinkDesktop(
-                paginaDestinos
-              )}
-            >
-              {t.destinations}
-
-              {paginaDestinos && (
-                <span className="absolute inset-x-3 -bottom-[18px] h-px bg-[#E3A144]" />
-              )}
-            </Link>
-
-            <Link
-              href="/rede"
-              className={classeLinkDesktop(
-                paginaRede
-              )}
-            >
-              {t.network}
-
-              {paginaRede && (
-                <span className="absolute inset-x-3 -bottom-[18px] h-px bg-[#E3A144]" />
-              )}
-            </Link>
-          </nav>
-
-          {/* =====================================================
-              AÇÕES DESKTOP
-          ====================================================== */}
-
-          <div className="hidden items-center gap-2 md:flex">
-
-            {/* OPERADORES */}
-
-            <Link
-              href="/operadores"
-              className={`group inline-flex h-10 items-center gap-2 rounded-xl border px-4 text-[12px] font-semibold transition ${
-                paginaOperadores
-                  ? 'border-[#E3A144]/30 bg-[#E3A144]/10 text-[#F4C77E]'
-                  : 'border-white/10 bg-white/[0.025] text-[#EDEDE3]/72 hover:border-[#7C9C87]/30 hover:bg-white/[0.055] hover:text-[#F0F0E8]'
-              }`}
-            >
-              <span className="hidden lg:inline">
-                {t.operators}
               </span>
 
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-                className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5"
-              >
-                <path
-                  d="M5 12H19M13 6L19 12L13 18"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <span className="mt-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F4C77E]">
+                Rio Negro
+              </span>
+            </span>
+          </Link>
+
+          <nav
+            aria-label={t.navigation}
+            className="hidden items-center gap-1 xl:flex"
+          >
+            {links.map((item) => {
+              const ativo = rotaAtiva(pathname, item.href);
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={ativo ? 'page' : undefined}
+                  className={classeLink(ativo)}
+                >
+                  {item.titulo}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="hidden shrink-0 items-center gap-2 xl:flex">
+            <Link
+              href="/operadores"
+              aria-current={
+                paginaOperadores ? 'page' : undefined
+              }
+              className={`${classeLink(paginaOperadores)} border border-white/15`}
+            >
+              {t.operators}
             </Link>
 
-            {/* =================================================
-                IDIOMA
-            ================================================== */}
+            <label className="relative">
+              <span className="sr-only">{t.language}</span>
 
-            <div
-              ref={idiomaRef}
-              className="relative"
-            >
-              <button
-                type="button"
-                aria-label={t.language}
-                aria-expanded={idiomaAberto}
-                onClick={() =>
-                  setIdiomaAberto(
-                    (estado) => !estado
-                  )
-                }
-                className={`flex h-10 items-center gap-2 rounded-xl border px-3 text-[11px] font-semibold transition ${
-                  idiomaAberto
-                    ? 'border-[#E3A144]/35 bg-[#E3A144]/10 text-[#F4C77E]'
-                    : 'border-white/10 bg-white/[0.025] text-[#EDEDE3]/65 hover:border-white/20 hover:bg-white/[0.05]'
-                }`}
+              <select
+                value={idioma}
+                onChange={(event) => {
+                  const selecionado = idiomas.find(
+                    (item) => item === event.target.value,
+                  );
+
+                  if (selecionado) {
+                    setIdioma(selecionado);
+                  }
+                }}
+                className={`min-h-12 rounded-xl border border-white/15 bg-[#0A1713] px-3 text-sm font-semibold text-[#EDEDE3] ${FOCO}`}
               >
-                <span className="text-[13px]">
-                  {idioma === 'PT'
-                    ? '🇧🇷'
-                    : idioma === 'EN'
-                    ? '🇺🇸'
-                    : '🇪🇸'}
-                </span>
-
-                <span>{idioma}</span>
-
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  aria-hidden="true"
-                  className={`h-3 w-3 transition-transform ${
-                    idiomaAberto
-                      ? 'rotate-180'
-                      : ''
-                  }`}
-                >
-                  <path
-                    d="M6 9L12 15L18 9"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </button>
-
-              {idiomaAberto && (
-                <div className="absolute right-0 top-[48px] w-[170px] overflow-hidden rounded-2xl border border-white/10 bg-[#0A1713]/98 p-1.5 shadow-2xl backdrop-blur-2xl">
-                  <p className="px-3 pb-1.5 pt-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#EDEDE3]/30">
-                    {t.language}
-                  </p>
-
-                  {idiomas.map((item) => {
-                    const ativo =
-                      idioma === item;
-
-                    return (
-                      <button
-                        key={item}
-                        type="button"
-                        onClick={() =>
-                          selecionarIdioma(
-                            item
-                          )
-                        }
-                        className={`flex w-full items-center justify-between rounded-xl px-3 py-2.5 text-left text-xs transition ${
-                          ativo
-                            ? 'bg-[#E3A144]/10 text-[#F4C77E]'
-                            : 'text-[#EDEDE3]/65 hover:bg-white/[0.05] hover:text-[#F0F0E8]'
-                        }`}
-                      >
-                        <span className="flex items-center gap-2.5">
-                          <span>
-                            {item === 'PT'
-                              ? '🇧🇷'
-                              : item === 'EN'
-                              ? '🇺🇸'
-                              : '🇪🇸'}
-                          </span>
-
-                          <span>
-                            {item === 'PT'
-                              ? 'Português'
-                              : item === 'EN'
-                              ? 'English'
-                              : 'Español'}
-                          </span>
-                        </span>
-
-                        {ativo && (
-                          <span className="text-[#E3A144]">
-                            ✓
-                          </span>
-                        )}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* =================================================
-                CTA PRINCIPAL
-            ================================================== */}
+                {idiomas.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </label>
 
             <Link
               href="/#concierge"
-              className="group relative inline-flex h-11 items-center justify-center gap-2 overflow-hidden rounded-xl bg-[#E3A144] px-5 text-[12px] font-bold text-[#07130F] shadow-[0_8px_30px_rgba(227,161,68,0.18)] transition duration-300 hover:-translate-y-0.5 hover:bg-[#F0B35C] hover:shadow-[0_12px_36px_rgba(227,161,68,0.26)]"
+              className={`inline-flex min-h-12 items-center justify-center rounded-xl bg-[#E3A144] px-4 text-sm font-bold text-[#07130F] transition-colors hover:bg-[#F0B35C] ${FOCO}`}
             >
-              <span className="relative z-10">
-                {t.plan}
-              </span>
-
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                aria-hidden="true"
-                className="relative z-10 h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1"
-              >
-                <path
-                  d="M5 12H19M13 6L19 12L13 18"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
-
-              <span className="absolute inset-y-0 -left-20 w-14 rotate-[20deg] bg-white/25 blur-lg transition-all duration-700 group-hover:left-[120%]" />
+              {t.plan}
             </Link>
           </div>
-
-          {/* =====================================================
-              BOTÃO MOBILE
-          ====================================================== */}
 
           <button
             type="button"
             aria-label={t.menu}
             aria-expanded={menuAberto}
-            onClick={() =>
-              setMenuAberto(
-                (estado) => !estado
-              )
-            }
-            className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/10 bg-white/[0.03] text-[#EDEDE3] transition hover:bg-white/[0.06] md:hidden"
+            aria-controls="menu-publico-ern"
+            aria-haspopup="dialog"
+            onClick={() => setMenuAberto(true)}
+            className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/5 text-[#EDEDE3] xl:hidden ${FOCO}`}
           >
-            <div className="relative h-4 w-5">
-              <span
-                className={`absolute left-0 top-0 h-px w-5 bg-current transition-all duration-300 ${
-                  menuAberto
-                    ? 'top-[7px] rotate-45'
-                    : ''
-                }`}
-              />
-
-              <span
-                className={`absolute left-0 top-[7px] h-px w-5 bg-current transition-all duration-300 ${
-                  menuAberto
-                    ? 'opacity-0'
-                    : 'opacity-100'
-                }`}
-              />
-
-              <span
-                className={`absolute left-0 top-[14px] h-px w-5 bg-current transition-all duration-300 ${
-                  menuAberto
-                    ? 'top-[7px] -rotate-45'
-                    : ''
-                }`}
-              />
-            </div>
+            <IconeMenu />
           </button>
         </div>
       </header>
 
-      {/* =========================================================
-          MENU MOBILE
-      ========================================================== */}
-
-      <div
-        className={`fixed inset-0 z-[90] transition ${
-          menuAberto
-            ? 'pointer-events-auto opacity-100'
-            : 'pointer-events-none opacity-0'
-        } md:hidden`}
-      >
-        <button
-          type="button"
-          aria-label={t.closeMenu}
-          onClick={() =>
-            setMenuAberto(false)
+      <dialog
+        ref={dialogRef}
+        id="menu-publico-ern"
+        aria-labelledby="titulo-menu-publico"
+        className="menu-publico"
+        onCancel={(event) => {
+          event.preventDefault();
+          fecharMenu();
+        }}
+        onClose={(event) => {
+          // Evita que um evento de fechamento anterior
+          // feche novamente um diálogo que já foi reaberto.
+          if (!event.currentTarget.open) {
+            setMenuAberto(false);
           }
-          className="absolute inset-0 bg-[#030806]/80 backdrop-blur-md"
-        />
+        }}
+        onClick={(event) => {
+          if (event.target !== event.currentTarget) return;
 
-        <div
-          className={`absolute inset-x-3 top-[88px] overflow-hidden rounded-[26px] border border-white/10 bg-[#0A1713]/98 shadow-2xl transition-all duration-300 ${
-            menuAberto
-              ? 'translate-y-0 scale-100'
-              : '-translate-y-3 scale-[0.98]'
-          }`}
-        >
-          <div className="p-4">
+          const limites =
+            event.currentTarget.getBoundingClientRect();
 
-            {/* =================================================
-                NAVEGAÇÃO MOBILE
-            ================================================== */}
-
-            <nav className="space-y-1">
-              <Link
-                href="/"
-                onClick={() =>
-                  setMenuAberto(false)
-                }
-                className={classeLinkMobile(
-                  paginaInicial
-                )}
+          if (
+            event.clientX < limites.left ||
+            event.clientX > limites.right ||
+            event.clientY < limites.top ||
+            event.clientY > limites.bottom
+          ) {
+            fecharMenu();
+          }
+        }}
+      >
+        <div className="flex h-full min-h-0 flex-col">
+          <div
+            className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 px-4 pb-4"
+            style={{
+              paddingTop:
+                'max(1rem, env(safe-area-inset-top, 0px))',
+            }}
+          >
+            <div className="min-w-0">
+              <h2
+                id="titulo-menu-publico"
+                className="text-lg font-semibold text-[#F0F0E8]"
               >
-                {t.discover}
+                {t.menu}
+              </h2>
 
-                <span className="text-[#E3A144]">
-                  →
-                </span>
-              </Link>
+              <p className="mt-1 text-sm text-[#EDEDE3]/70">
+                Encantos Rio Negro
+              </p>
+            </div>
 
-              <Link
-                href="/experiencias"
-                onClick={() =>
-                  setMenuAberto(false)
-                }
-                className={classeLinkMobile(
-                  paginaExperiencias
-                )}
-              >
-                {t.experiences}
+            <button
+              ref={fecharRef}
+              type="button"
+              aria-label={t.closeMenu}
+              onClick={fecharMenu}
+              className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/20 text-[#EDEDE3] hover:bg-white/5 ${FOCO}`}
+            >
+              <IconeMenu fechar />
+            </button>
+          </div>
 
-                <span className="text-[#E3A144]">
-                  →
-                </span>
-              </Link>
+          <div
+            className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4"
+            style={{
+              paddingBottom:
+                'max(1.5rem, env(safe-area-inset-bottom, 0px))',
+            }}
+          >
+            <nav
+              aria-label={t.navigation}
+              className="space-y-2"
+            >
+              {links.map((item) => {
+                const ativo = rotaAtiva(
+                  pathname,
+                  item.href,
+                );
 
-              <Link
-                href="/destinos"
-                onClick={() =>
-                  setMenuAberto(false)
-                }
-                className={classeLinkMobile(
-                  paginaDestinos
-                )}
-              >
-                {t.destinations}
-
-                <span className="text-[#E3A144]">
-                  →
-                </span>
-              </Link>
-
-              <Link
-                href="/rede"
-                onClick={() =>
-                  setMenuAberto(false)
-                }
-                className={classeLinkMobile(
-                  paginaRede
-                )}
-              >
-                {t.network}
-
-                <span className="text-[#E3A144]">
-                  →
-                </span>
-              </Link>
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={fecharMenu}
+                    aria-current={
+                      ativo ? 'page' : undefined
+                    }
+                    className={`flex min-h-[52px] items-center justify-between gap-3 rounded-xl px-4 py-3 text-base font-medium ${FOCO} ${
+                      ativo
+                        ? 'bg-[#E3A144]/10 text-[#F4C77E]'
+                        : 'text-[#EDEDE3] hover:bg-white/5'
+                    }`}
+                  >
+                    <span>{item.titulo}</span>
+                    <span aria-hidden="true">→</span>
+                  </Link>
+                );
+              })}
             </nav>
 
-            <div className="my-4 h-px bg-white/[0.07]" />
-
-            {/* =================================================
-                IDIOMAS MOBILE
-            ================================================== */}
-
-            <div>
-              <p className="px-2 text-[9px] font-semibold uppercase tracking-[0.18em] text-[#EDEDE3]/30">
+            <fieldset className="mt-6 min-w-0 border-t border-white/10 pt-4">
+              <legend className="px-2 text-sm font-medium text-[#EDEDE3]/75">
                 {t.language}
-              </p>
+              </legend>
 
-              <div className="mt-2 grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2">
                 {idiomas.map((item) => {
-                  const ativo =
-                    idioma === item;
+                  const ativo = idioma === item;
 
                   return (
                     <button
                       key={item}
                       type="button"
-                      onClick={() =>
-                        selecionarIdioma(
-                          item
-                        )
-                      }
-                      className={`rounded-xl border px-3 py-3 text-xs font-semibold transition ${
+                      aria-label={nomesIdiomas[item]}
+                      aria-pressed={ativo}
+                      onClick={() => setIdioma(item)}
+                      className={`min-h-12 rounded-xl border px-2 text-sm font-semibold ${FOCO} ${
                         ativo
-                          ? 'border-[#E3A144]/40 bg-[#E3A144]/10 text-[#F4C77E]'
-                          : 'border-white/10 bg-white/[0.025] text-[#EDEDE3]/55'
+                          ? 'border-[#E3A144]/60 bg-[#E3A144]/10 text-[#F4C77E]'
+                          : 'border-white/20 text-[#EDEDE3]/80 hover:bg-white/5'
                       }`}
                     >
-                      <span className="mr-1.5">
-                        {item === 'PT'
-                          ? '🇧🇷'
-                          : item === 'EN'
-                          ? '🇺🇸'
-                          : '🇪🇸'}
-                      </span>
-
                       {item}
                     </button>
                   );
                 })}
               </div>
+            </fieldset>
+
+            <div className="mt-6 space-y-3 border-t border-white/10 pt-5">
+              <Link
+                href="/operadores"
+                onClick={fecharMenu}
+                aria-current={
+                  paginaOperadores ? 'page' : undefined
+                }
+                className={`flex min-h-[52px] items-center justify-between gap-3 rounded-xl border px-4 py-3 text-sm font-semibold ${FOCO} ${
+                  paginaOperadores
+                    ? 'border-[#E3A144]/50 bg-[#E3A144]/10 text-[#F4C77E]'
+                    : 'border-white/20 text-[#EDEDE3] hover:bg-white/5'
+                }`}
+              >
+                <span>{t.operators}</span>
+                <span aria-hidden="true">→</span>
+              </Link>
+
+              <Link
+                href="/#concierge"
+                onClick={fecharMenu}
+                className={`flex min-h-[52px] items-center justify-center rounded-xl bg-[#E3A144] px-4 py-3 text-center text-sm font-bold text-[#07130F] hover:bg-[#F0B35C] ${FOCO}`}
+              >
+                {t.plan}
+              </Link>
             </div>
-
-            <div className="my-4 h-px bg-white/[0.07]" />
-
-            {/* =================================================
-                OPERADORES
-            ================================================== */}
-
-            <Link
-              href="/operadores"
-              onClick={() =>
-                setMenuAberto(false)
-              }
-              className={`flex min-h-[50px] items-center justify-between rounded-xl border px-4 text-sm font-semibold transition ${
-                paginaOperadores
-                  ? 'border-[#E3A144]/35 bg-[#E3A144]/10 text-[#F4C77E]'
-                  : 'border-white/10 bg-white/[0.025] text-[#EDEDE3]/75'
-              }`}
-            >
-              {t.operators}
-
-              <span className="text-[#7C9C87]">
-                →
-              </span>
-            </Link>
-
-            {/* =================================================
-                CTA MOBILE
-            ================================================== */}
-
-            <Link
-              href="/#concierge"
-              onClick={() =>
-                setMenuAberto(false)
-              }
-              className="mt-2 flex min-h-[52px] items-center justify-center gap-2 rounded-xl bg-[#E3A144] px-5 text-sm font-bold text-[#07130F]"
-            >
-              {t.plan}
-
-              <span>→</span>
-            </Link>
           </div>
         </div>
-      </div>
+      </dialog>
+
+      <style jsx>{`
+        .menu-publico {
+          position: fixed;
+          inset: 0 0 0 auto;
+          box-sizing: border-box;
+          width: min(92vw, 400px);
+          max-width: none;
+          height: 100vh;
+          height: 100dvh;
+          max-height: none;
+          margin: 0;
+          padding: 0;
+          overflow: hidden;
+          border: 0;
+          border-left: 1px solid rgb(255 255 255 / 12%);
+          background: #0a1713;
+          color: #edede3;
+          box-shadow: -20px 0 70px rgb(0 0 0 / 35%);
+        }
+
+        .menu-publico::backdrop {
+          background: rgb(0 0 0 / 65%);
+          backdrop-filter: blur(3px);
+        }
+      `}</style>
     </>
   );
 }

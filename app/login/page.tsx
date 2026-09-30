@@ -9,6 +9,7 @@ import {
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
+import LogoERN from '@/app/components/LogoERN';
 import { supabase } from '@/lib/supabase';
 import { interpretarTipoAcesso } from '@/lib/acessos';
 
@@ -16,25 +17,31 @@ type Modo = 'login' | 'cadastro' | 'recuperacao';
 
 const apresentacoes = {
   operadora: {
+    etiqueta: 'Operadora de turismo',
     titulo: 'Acesso da operadora',
+    cadastro: 'Crie sua conta de acesso',
     descricao:
-      'Entre para acessar a gestão da empresa à qual sua conta está vinculada.',
+      'Entre com seu usuário para acessar a empresa à qual você está vinculado.',
   },
   guia: {
+    etiqueta: 'Guia independente',
     titulo: 'Acesso do guia',
+    cadastro: 'Crie sua conta de guia',
     descricao:
-      'Entre ou crie sua conta para iniciar seu cadastro individual de guia na ERN.',
+      'Acesse seu espaço individual de guia na Encantos Rio Negro.',
   },
   fornecedor: {
+    etiqueta: 'Fornecedor independente',
     titulo: 'Acesso do fornecedor',
+    cadastro: 'Crie sua conta de fornecedor',
     descricao:
-      'Entre ou crie sua conta para iniciar seu cadastro de fornecedor na ERN.',
+      'Acesse o cadastro profissional da sua atividade na Encantos Rio Negro.',
   },
 };
 
 function mensagemDoErro(
   error: unknown,
-  alternativa: string
+  alternativa: string,
 ): string {
   const codigo =
     typeof error === 'object' &&
@@ -74,16 +81,19 @@ function mensagemDoErro(
 
 function FormularioLogin() {
   const searchParams = useSearchParams();
+
   const acesso = interpretarTipoAcesso(
-    searchParams.get('acesso')
+    searchParams.get('acesso'),
   );
 
   const apresentacao = acesso
     ? apresentacoes[acesso]
     : {
+        etiqueta: 'Acesso profissional',
         titulo: 'Acesse sua conta ERN',
+        cadastro: 'Crie sua conta ERN',
         descricao:
-          'Entre para consultar seus acessos ou crie sua conta.',
+          'Entre para continuar no espaço vinculado à sua conta.',
       };
 
   const destinoAcesso = acesso
@@ -121,7 +131,7 @@ function FormularioLogin() {
   function criarUrlRetorno(destino: string) {
     const url = new URL(
       '/auth/callback',
-      window.location.origin
+      window.location.origin,
     );
 
     url.searchParams.set('next', destino);
@@ -135,7 +145,7 @@ function FormularioLogin() {
   }
 
   async function handleSubmit(
-    event: FormEvent<HTMLFormElement>
+    event: FormEvent<HTMLFormElement>,
   ) {
     event.preventDefault();
 
@@ -173,23 +183,23 @@ function FormularioLogin() {
             emailInformado,
             {
               redirectTo: criarUrlRetorno(
-                '/auth/nova-senha'
+                '/auth/nova-senha',
               ),
-            }
+            },
           );
 
         if (error) {
           setErro(
             mensagemDoErro(
               error,
-              'Não foi possível solicitar a recuperação. Tente novamente.'
-            )
+              'Não foi possível solicitar a recuperação. Tente novamente.',
+            ),
           );
           return;
         }
 
         setSucesso(
-          'Se houver uma conta apta à recuperação com esse e-mail, você receberá as instruções. Confira também a pasta de spam.'
+          'Se houver uma conta apta à recuperação com esse e-mail, você receberá as instruções. Confira também a pasta de spam.',
         );
         return;
       }
@@ -200,7 +210,7 @@ function FormularioLogin() {
           password: senha,
           options: {
             emailRedirectTo: criarUrlRetorno(
-              destinoAcesso
+              destinoAcesso,
             ),
           },
         });
@@ -209,14 +219,15 @@ function FormularioLogin() {
           setErro(
             mensagemDoErro(
               error,
-              'Não foi possível concluir o cadastro. Confira os dados ou tente entrar com sua conta.'
-            )
+              'Não foi possível concluir o cadastro. Confira os dados ou tente entrar com sua conta.',
+            ),
           );
           return;
         }
 
         setSenha('');
         setConfirmacaoSenha('');
+        setMostrarSenha(false);
 
         if (data.session) {
           continuar();
@@ -225,7 +236,7 @@ function FormularioLogin() {
 
         setModo('login');
         setSucesso(
-          'Confira seu e-mail para concluir o cadastro. Se sua conta já existe, entre normalmente ou recupere a senha.'
+          'Confira seu e-mail para concluir o cadastro. Se sua conta já existe, entre normalmente ou recupere a senha.',
         );
         return;
       }
@@ -240,15 +251,15 @@ function FormularioLogin() {
         setErro(
           mensagemDoErro(
             error,
-            'Não foi possível entrar. Confira sua conexão e tente novamente.'
-          )
+            'Não foi possível entrar. Confira sua conexão e tente novamente.',
+          ),
         );
         return;
       }
 
       if (!data.session) {
         setErro(
-          'Não foi possível iniciar a sessão. Tente novamente.'
+          'Não foi possível iniciar a sessão. Tente novamente.',
         );
         return;
       }
@@ -256,8 +267,9 @@ function FormularioLogin() {
       setSenha('');
       continuar();
     } catch {
+      setRedirecionando(false);
       setErro(
-        'Não foi possível concluir a solicitação. Confira sua conexão e tente novamente.'
+        'Não foi possível concluir a solicitação. Confira sua conexão e tente novamente.',
       );
     } finally {
       emProcessamento.current = false;
@@ -269,14 +281,16 @@ function FormularioLogin() {
     modo === 'recuperacao'
       ? 'Recuperar senha'
       : modo === 'cadastro'
-        ? 'Crie sua conta ERN'
+        ? apresentacao.cadastro
         : apresentacao.titulo;
 
   const descricao =
     modo === 'recuperacao'
-      ? 'Informe o e-mail da sua conta para receber as instruções de recuperação.'
+      ? 'Informe seu e-mail para receber as instruções de recuperação.'
       : modo === 'cadastro'
-        ? 'Use seu e-mail e escolha uma senha. A conclusão do cadastro profissional acontece após a autenticação.'
+        ? acesso === 'operadora'
+          ? 'Crie suas credenciais de acesso. O vínculo com a empresa precisa ser autorizado.'
+          : 'Use seu e-mail e escolha uma senha. Depois da confirmação, continue seu cadastro profissional.'
         : apresentacao.descricao;
 
   const textoBotao = redirecionando
@@ -289,39 +303,62 @@ function FormularioLogin() {
           ? 'Enviar instruções'
           : 'Entrar';
 
+  const focoClass =
+    'focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#E3A144]';
+
   const inputClass =
-    'w-full rounded-xl border border-white/10 bg-[#07110E] px-4 py-3.5 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/30 focus:border-[#E3A144]/60 disabled:opacity-50';
+    'block min-h-[52px] w-full min-w-0 scroll-mt-6 rounded-xl border border-white/20 bg-[#07110E] px-4 py-3 text-base leading-6 text-[#F0F0E8] outline-none transition-colors placeholder:text-[#EDEDE3]/45 focus:border-[#E3A144] focus:ring-2 focus:ring-[#E3A144]/20 disabled:cursor-not-allowed disabled:opacity-60';
 
   const labelClass =
-    'mb-2 block text-xs font-semibold text-[#EDEDE3]/70';
+    'mb-2 block text-sm font-medium text-[#EDEDE3]/85';
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#07110E] px-4 py-10 text-[#EDEDE3] sm:px-6">
-      <div className="w-full max-w-md">
+    <main
+      className="flex min-h-dvh w-full flex-col bg-[#07110E] text-[#EDEDE3]"
+      style={{
+        paddingTop:
+          'max(1rem, env(safe-area-inset-top, 0px))',
+        paddingRight:
+          'max(1rem, env(safe-area-inset-right, 0px))',
+        paddingBottom:
+          'max(1.5rem, env(safe-area-inset-bottom, 0px))',
+        paddingLeft:
+          'max(1rem, env(safe-area-inset-left, 0px))',
+      }}
+    >
+      <div className="mx-auto my-auto w-full min-w-0 max-w-[460px] py-2 sm:py-6">
         <Link
           href="/operadores#acessos-profissionais"
-          className="mb-6 inline-flex min-h-[44px] items-center gap-2 text-sm text-[#EDEDE3]/60 transition hover:text-[#E3A144]"
+          className={`mb-3 inline-flex min-h-12 items-center gap-2 rounded-lg px-1 text-sm text-[#EDEDE3]/75 transition-colors hover:text-[#F4C77E] sm:mb-5 ${focoClass}`}
         >
           <span aria-hidden="true">←</span>
           Voltar aos acessos
         </Link>
 
-        <div className="rounded-[28px] border border-white/[0.08] bg-[#0D1B16] p-6 shadow-2xl sm:p-8">
-          <div className="text-center">
+        <section
+          aria-labelledby="login-titulo"
+          className="min-w-0 rounded-3xl border border-white/10 bg-[#0D1B16] p-5 shadow-xl sm:p-8"
+        >
+          <header className="text-center">
             <Link
               href="/"
               aria-label="Ir ao portal Encantos Rio Negro"
-              className="mx-auto flex h-16 w-16 items-center justify-center rounded-2xl border border-[#E3A144]/25 bg-[#E3A144]/10 text-xl font-bold tracking-wider text-[#E3A144]"
+              className={`inline-flex rounded-full align-middle ${focoClass}`}
             >
-              ERN
+              <LogoERN tamanho={76} prioridade />
             </Link>
 
-            <p className="mt-5 text-[10px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
+            <p className="mt-3 text-sm font-semibold text-[#F4C77E]">
               Encantos Rio Negro
             </p>
 
+            <p className="mt-2 text-xs font-medium text-[#EDEDE3]/65">
+              {apresentacao.etiqueta}
+            </p>
+
             <h1
-              className="mt-3 text-3xl leading-tight text-[#F0F0E8]"
+              id="login-titulo"
+              className="mt-4 break-words text-2xl leading-tight text-[#F0F0E8] sm:text-3xl"
               style={{
                 fontFamily:
                   'var(--font-fraunces), serif',
@@ -330,15 +367,16 @@ function FormularioLogin() {
               {titulo}
             </h1>
 
-            <p className="mt-3 text-sm leading-6 text-[#EDEDE3]/55">
+            <p className="mt-3 text-sm leading-6 text-[#EDEDE3]/75">
               {descricao}
             </p>
-          </div>
+          </header>
 
           {erro && (
             <div
+              id="login-erro"
               role="alert"
-              className="mt-6 rounded-xl border border-red-500/25 bg-red-500/[0.08] p-4 text-sm text-red-300"
+              className="mt-5 break-words rounded-xl border border-red-400/30 bg-red-500/10 p-4 text-sm leading-6 text-red-200"
             >
               {erro}
             </div>
@@ -346,8 +384,9 @@ function FormularioLogin() {
 
           {sucesso && (
             <div
+              id="login-sucesso"
               role="status"
-              className="mt-6 rounded-xl border border-emerald-500/25 bg-emerald-500/[0.08] p-4 text-sm text-emerald-300"
+              className="mt-5 break-words rounded-xl border border-emerald-400/30 bg-emerald-500/10 p-4 text-sm leading-6 text-emerald-200"
             >
               {sucesso}
             </div>
@@ -355,7 +394,15 @@ function FormularioLogin() {
 
           <form
             onSubmit={handleSubmit}
-            className="mt-7 space-y-5"
+            aria-busy={bloqueado}
+            aria-describedby={
+              erro
+                ? 'login-erro'
+                : sucesso
+                  ? 'login-sucesso'
+                  : undefined
+            }
+            className="mt-6 space-y-5"
           >
             <div>
               <label
@@ -369,8 +416,10 @@ function FormularioLogin() {
                 id="login-email"
                 name="email"
                 type="email"
+                inputMode="email"
                 autoComplete="email"
                 autoCapitalize="none"
+                autoCorrect="off"
                 spellCheck={false}
                 required
                 disabled={bloqueado}
@@ -401,6 +450,8 @@ function FormularioLogin() {
                       ? 'new-password'
                       : 'current-password'
                   }
+                  autoCapitalize="none"
+                  spellCheck={false}
                   minLength={
                     modo === 'cadastro' ? 8 : undefined
                   }
@@ -422,10 +473,15 @@ function FormularioLogin() {
                   type="button"
                   disabled={bloqueado}
                   aria-pressed={mostrarSenha}
+                  aria-controls={
+                    modo === 'cadastro'
+                      ? 'login-senha login-confirmacao'
+                      : 'login-senha'
+                  }
                   onClick={() =>
                     setMostrarSenha((atual) => !atual)
                   }
-                  className="mt-2 min-h-[36px] text-xs font-semibold text-[#E3A144] hover:underline disabled:opacity-50"
+                  className={`mt-1 inline-flex min-h-12 items-center rounded-lg px-1 text-sm font-medium text-[#F4C77E] hover:underline disabled:opacity-50 ${focoClass}`}
                 >
                   {mostrarSenha
                     ? 'Ocultar senha'
@@ -448,14 +504,14 @@ function FormularioLogin() {
                   name="password-confirmation"
                   type={mostrarSenha ? 'text' : 'password'}
                   autoComplete="new-password"
+                  autoCapitalize="none"
+                  spellCheck={false}
                   minLength={8}
                   required
                   disabled={bloqueado}
                   value={confirmacaoSenha}
                   onChange={(event) =>
-                    setConfirmacaoSenha(
-                      event.target.value
-                    )
+                    setConfirmacaoSenha(event.target.value)
                   }
                   placeholder="Repita a senha"
                   className={inputClass}
@@ -465,31 +521,31 @@ function FormularioLogin() {
 
             {modo === 'cadastro' &&
               acesso === 'operadora' && (
-                <p className="rounded-xl border border-white/[0.07] bg-white/[0.02] p-3 text-xs leading-5 text-[#EDEDE3]/55">
-                  Criar uma conta não cria uma empresa nem
-                  concede acesso a uma operadora existente.
-                  O acesso empresarial depende de um vínculo
-                  autorizado.
+                <p className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm leading-6 text-[#EDEDE3]/75">
+                  Esta etapa cria apenas seu usuário.
+                  Para integrar uma operadora existente,
+                  solicite um convite ao administrador.
+                  Cada colaborador utiliza seu próprio login.
                 </p>
               )}
 
             <button
               type="submit"
               disabled={bloqueado}
-              className="flex min-h-[48px] w-full items-center justify-center rounded-xl bg-[#E3A144] px-5 py-3 text-sm font-bold text-[#07130F] transition hover:bg-[#F0B35C] disabled:cursor-not-allowed disabled:opacity-50"
+              className={`flex min-h-[52px] w-full items-center justify-center rounded-xl bg-[#E3A144] px-4 py-3 text-base font-bold text-[#07130F] transition-colors hover:bg-[#F0B35C] disabled:cursor-not-allowed disabled:opacity-60 ${focoClass}`}
             >
               {textoBotao}
             </button>
           </form>
 
-          <div className="mt-5 flex flex-col gap-2 text-sm">
+          <div className="mt-4 flex flex-col gap-1">
             {modo === 'login' ? (
               <>
                 <button
                   type="button"
                   disabled={bloqueado}
                   onClick={() => alterarModo('cadastro')}
-                  className="min-h-[44px] text-[#E3A144] hover:underline disabled:opacity-50"
+                  className={`min-h-12 w-full rounded-xl px-3 py-2 text-sm font-medium text-[#F4C77E] hover:bg-white/[0.03] disabled:opacity-50 ${focoClass}`}
                 >
                   Não tem conta? Cadastre-se
                 </button>
@@ -500,7 +556,7 @@ function FormularioLogin() {
                   onClick={() =>
                     alterarModo('recuperacao')
                   }
-                  className="min-h-[44px] text-[#EDEDE3]/60 hover:underline disabled:opacity-50"
+                  className={`min-h-12 w-full rounded-xl px-3 py-2 text-sm text-[#EDEDE3]/75 hover:bg-white/[0.03] disabled:opacity-50 ${focoClass}`}
                 >
                   Esqueci minha senha
                 </button>
@@ -510,24 +566,24 @@ function FormularioLogin() {
                 type="button"
                 disabled={bloqueado}
                 onClick={() => alterarModo('login')}
-                className="min-h-[44px] text-[#E3A144] hover:underline disabled:opacity-50"
+                className={`min-h-12 w-full rounded-xl px-3 py-2 text-sm font-medium text-[#F4C77E] hover:bg-white/[0.03] disabled:opacity-50 ${focoClass}`}
               >
                 Voltar para entrar
               </button>
             )}
           </div>
 
-          <div className="mt-6 border-t border-white/[0.07] pt-5 text-center">
+          <footer className="mt-5 border-t border-white/10 pt-3 text-center">
             <Link
               href="/"
-              className="inline-flex min-h-[44px] items-center text-xs text-[#EDEDE3]/50 transition hover:text-[#E3A144]"
+              className={`inline-flex min-h-12 items-center justify-center rounded-lg px-2 text-sm text-[#EDEDE3]/70 transition-colors hover:text-[#F4C77E] ${focoClass}`}
             >
               Explorar o portal sem entrar
             </Link>
-          </div>
-        </div>
+          </footer>
+        </section>
       </div>
-    </div>
+    </main>
   );
 }
 
@@ -537,7 +593,7 @@ export default function LoginPage() {
       fallback={
         <div
           role="status"
-          className="flex min-h-screen items-center justify-center bg-[#07110E] px-5 text-sm text-[#EDEDE3]/60"
+          className="flex min-h-dvh items-center justify-center bg-[#07110E] px-5 text-sm text-[#EDEDE3]/75"
         >
           Carregando acesso...
         </div>
