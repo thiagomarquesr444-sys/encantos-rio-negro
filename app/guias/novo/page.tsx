@@ -1,19 +1,16 @@
 'use client';
 
-import React, {
-  useState,
-} from 'react';
-
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-
 import { supabase } from '@/lib/supabase';
+import {
+  obterContextoGuias,
+  validarContextoGuias,
+  type ContextoGuias,
+} from '@/lib/guiasOperacionais';
 
-type StatusGuia =
-  | 'Ativo'
-  | 'Em Tour'
-  | 'Férias'
-  | 'Inativo';
+type StatusGuia = 'Ativo' | 'Em Tour' | 'Férias' | 'Inativo';
 
 interface GuiaForm {
   nome: string;
@@ -22,6 +19,11 @@ interface GuiaForm {
   idiomas: string;
   cadastur: string;
   status: StatusGuia;
+}
+
+interface Mensagem {
+  tipo: 'sucesso' | 'erro';
+  texto: string;
 }
 
 const estadoInicial: GuiaForm = {
@@ -33,275 +35,237 @@ const estadoInicial: GuiaForm = {
   status: 'Ativo',
 };
 
-function somenteNumeros(
-  valor: string
-) {
-  return valor.replace(
-    /\D/g,
-    ''
-  );
+function somenteNumeros(valor: string) {
+  return valor.replace(/\D/g, '');
 }
 
-function formatarCPF(
-  valor: string
-) {
-  const numeros =
-    somenteNumeros(
-      valor
-    ).slice(0, 11);
+function formatarCPF(valor: string) {
+  const numeros = somenteNumeros(valor).slice(0, 11);
 
   return numeros
-    .replace(
-      /^(\d{3})(\d)/,
-      '$1.$2'
-    )
-    .replace(
-      /^(\d{3})\.(\d{3})(\d)/,
-      '$1.$2.$3'
-    )
-    .replace(
-      /\.(\d{3})(\d)/,
-      '.$1-$2'
-    );
+    .replace(/^(\d{3})(\d)/, '$1.$2')
+    .replace(/^(\d{3})\.(\d{3})(\d)/, '$1.$2.$3')
+    .replace(/\.(\d{3})(\d)/, '.$1-$2');
 }
 
-function formatarTelefone(
-  valor: string
-) {
-  const numeros =
-    somenteNumeros(
-      valor
-    ).slice(0, 11);
+function formatarTelefone(valor: string) {
+  const numeros = somenteNumeros(valor).slice(0, 11);
 
-  if (
-    numeros.length <= 10
-  ) {
+  if (numeros.length <= 10) {
     return numeros
-      .replace(
-        /^(\d{2})(\d)/,
-        '($1) $2'
-      )
-      .replace(
-        /(\d{4})(\d)/,
-        '$1-$2'
-      );
+      .replace(/^(\d{2})(\d)/, '($1) $2')
+      .replace(/(\d{4})(\d)/, '$1-$2');
   }
 
   return numeros
-    .replace(
-      /^(\d{2})(\d)/,
-      '($1) $2'
-    )
-    .replace(
-      /(\d{5})(\d)/,
-      '$1-$2'
-    );
+    .replace(/^(\d{2})(\d)/, '($1) $2')
+    .replace(/(\d{5})(\d)/, '$1-$2');
 }
 
 export default function NovoGuiaPage() {
   const router = useRouter();
 
-  const [
-    formData,
-    setFormData,
-  ] =
-    useState<GuiaForm>(
-      estadoInicial
-    );
+  const [contexto, setContexto] = useState<ContextoGuias | null>(
+    null
+  );
+  const [carregandoContexto, setCarregandoContexto] =
+    useState(true);
+  const [formData, setFormData] =
+    useState<GuiaForm>(estadoInicial);
+  const [salvando, setSalvando] = useState(false);
+  const [concluido, setConcluido] = useState(false);
+  const [mensagem, setMensagem] = useState<Mensagem | null>(
+    null
+  );
 
-  const [
-    salvando,
-    setSalvando,
-  ] = useState(false);
+  const bloqueado =
+    carregandoContexto ||
+    salvando ||
+    concluido ||
+    !contexto?.pode_gerenciar;
 
-  const [
-    mensagem,
-    setMensagem,
-  ] = useState<{
-    tipo: 'sucesso' | 'erro';
-    texto: string;
-  } | null>(null);
+  useEffect(() => {
+    let ativo = true;
+
+    async function carregarContexto() {
+      try {
+        const atual = await obterContextoGuias();
+
+        if (!ativo) return;
+
+        setContexto(atual);
+
+        if (!atual.pode_gerenciar) {
+          setMensagem({
+            tipo: 'erro',
+            texto:
+              'Seu perfil permite apenas consultar os guias da operadora. O cadastro está disponível para administradores e operadores.',
+          });
+        }
+      } catch (err) {
+        if (!ativo) return;
+
+        setMensagem({
+          tipo: 'erro',
+          texto:
+            err instanceof Error
+              ? err.message
+              : 'Não foi possível identificar sua empresa. Entre com uma conta da operadora.',
+        });
+      } finally {
+        if (ativo) {
+          setCarregandoContexto(false);
+        }
+      }
+    }
+
+    void carregarContexto();
+
+    return () => {
+      ativo = false;
+    };
+  }, []);
 
   const inputClass =
-    'w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/40';
+    'w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/40 disabled:cursor-not-allowed disabled:opacity-50';
 
   const labelClass =
     'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34';
 
   function handleChange(
     event: React.ChangeEvent<
-      | HTMLInputElement
-      | HTMLSelectElement
+      HTMLInputElement | HTMLSelectElement
     >
   ) {
-    const {
-      name,
-      value,
-    } = event.target;
+    const { name, value } = event.target;
 
     if (name === 'cpf') {
-      setFormData(
-        (atual) => ({
+      setFormData((atual) => ({
+        ...atual,
+        cpf: formatarCPF(value),
+      }));
+      return;
+    }
+
+    if (name === 'telefone') {
+      setFormData((atual) => ({
+        ...atual,
+        telefone: formatarTelefone(value),
+      }));
+      return;
+    }
+
+    if (name === 'status') {
+      if (
+        value === 'Ativo' ||
+        value === 'Em Tour' ||
+        value === 'Férias' ||
+        value === 'Inativo'
+      ) {
+        setFormData((atual) => ({
           ...atual,
-
-          cpf:
-            formatarCPF(
-              value
-            ),
-        })
-      );
-
+          status: value,
+        }));
+      }
       return;
     }
 
     if (
-      name === 'telefone'
+      name === 'nome' ||
+      name === 'idiomas' ||
+      name === 'cadastur'
     ) {
-      setFormData(
-        (atual) => ({
-          ...atual,
-
-          telefone:
-            formatarTelefone(
-              value
-            ),
-        })
-      );
-
-      return;
-    }
-
-    setFormData(
-      (atual) => ({
+      setFormData((atual) => ({
         ...atual,
-
         [name]: value,
-      })
-    );
+      }));
+    }
   }
 
   function handleLimpar() {
-    setFormData(
-      estadoInicial
-    );
+    if (bloqueado) return;
 
+    setFormData({ ...estadoInicial });
     setMensagem(null);
   }
 
-  /*
-    ============================================================
-    SALVAR
-    ============================================================
-  */
-
-  async function handleSubmit(
-    event: React.FormEvent
-  ) {
+  async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
+
+    if (bloqueado || !contexto) return;
 
     setMensagem(null);
 
-    if (
-      !formData.nome.trim() ||
-      !formData.cpf.trim() ||
-      !formData.telefone.trim() ||
-      !formData.cadastur.trim()
-    ) {
+    const nome = formData.nome.trim();
+    const cpf = formData.cpf.trim();
+    const telefone = formData.telefone.trim();
+    const cadastur = formData.cadastur.trim();
+
+    if (!nome || !cpf || !telefone || !cadastur) {
       setMensagem({
         tipo: 'erro',
         texto:
           'Preencha os campos obrigatórios: nome, CPF, telefone e CADASTUR.',
       });
-
       return;
     }
 
-    if (
-      somenteNumeros(
-        formData.cpf
-      ).length !== 11
-    ) {
+    if (somenteNumeros(cpf).length !== 11) {
       setMensagem({
         tipo: 'erro',
-        texto:
-          'Informe um CPF com 11 dígitos.',
+        texto: 'Informe um CPF com 11 dígitos.',
       });
-
       return;
     }
 
-    if (
-      somenteNumeros(
-        formData.telefone
-      ).length < 10
-    ) {
+    if (somenteNumeros(telefone).length < 10) {
       setMensagem({
         tipo: 'erro',
-        texto:
-          'Informe um telefone válido.',
+        texto: 'Informe um telefone válido.',
       });
-
       return;
     }
 
     setSalvando(true);
 
     try {
+      const atual = await validarContextoGuias(contexto);
+
       const payload = {
-        nome:
-          formData.nome.trim(),
-
-        cpf:
-          formData.cpf.trim(),
-
-        telefone:
-          formData.telefone.trim(),
-
-        idiomas:
-          formData.idiomas.trim() ||
-          'Português',
-
-        cadastur:
-          formData.cadastur.trim(),
-
-        status:
-          formData.status,
+        empresa_id: atual.empresa_id,
+        nome,
+        cpf,
+        telefone,
+        idiomas: formData.idiomas.trim() || 'Português',
+        cadastur,
+        status: formData.status,
       };
 
-      const { error } =
-        await supabase
-          .from('guias')
-          .insert([payload]);
+      const { error } = await supabase
+        .from('guias')
+        .insert([payload])
+        .select('id')
+        .single();
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
+      setConcluido(true);
       setMensagem({
         tipo: 'sucesso',
-        texto:
-          'Guia cadastrado com sucesso.',
+        texto: 'Guia cadastrado com sucesso na sua operadora.',
       });
 
-      setTimeout(() => {
-        router.push(
-          '/guias'
-        );
-
-        router.refresh();
-      }, 1200);
+      router.replace('/guias');
+      router.refresh();
     } catch (err) {
-      console.error(
-        'Erro ao cadastrar guia:',
-        err
-      );
+      console.error('Erro ao cadastrar guia:', err);
 
       setMensagem({
         tipo: 'erro',
         texto:
           err instanceof Error
             ? `Erro ao cadastrar guia: ${err.message}`
-            : 'Não foi possível cadastrar o guia.',
+            : 'Não foi possível confirmar o cadastro. Confira a listagem antes de tentar novamente.',
       });
     } finally {
       setSalvando(false);
@@ -310,10 +274,6 @@ export default function NovoGuiaPage() {
 
   return (
     <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
-      {/* =====================================================
-          CABEÇALHO
-      ====================================================== */}
-
       <section className="border-b border-white/[0.07] bg-[#091510]">
         <div className="mx-auto max-w-[1180px] px-5 py-10 md:px-8 md:py-12">
           <Link
@@ -321,7 +281,6 @@ export default function NovoGuiaPage() {
             className="inline-flex items-center gap-2 text-xs font-semibold text-[#EDEDE3]/38 transition hover:text-[#E3A144]"
           >
             <span>←</span>
-
             Guias
           </Link>
 
@@ -334,22 +293,19 @@ export default function NovoGuiaPage() {
               <h1
                 className="mt-3 text-4xl tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
                 style={{
-                  fontFamily:
-                    'var(--font-fraunces), serif',
+                  fontFamily: 'var(--font-fraunces), serif',
                 }}
               >
                 Novo guia
               </h1>
 
               <p className="mt-4 max-w-[680px] text-sm leading-7 text-[#EDEDE3]/40">
-                Cadastre profissionais
-                da operação, contatos,
-                idiomas, CADASTUR e
-                disponibilidade.
+                Cadastre profissionais da sua operadora,
+                contatos, idiomas, CADASTUR e disponibilidade.
               </p>
             </div>
 
-            <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1.5 text-[9px] uppercase tracking-[0.15em] text-[#EDEDE3]/28">
+            <span className="self-start rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1.5 text-[9px] uppercase tracking-[0.15em] text-[#EDEDE3]/28">
               ERN Gestão
             </span>
           </div>
@@ -357,11 +313,20 @@ export default function NovoGuiaPage() {
       </section>
 
       <main className="mx-auto max-w-[1180px] px-5 py-8 md:px-8 md:py-10">
+        {carregandoContexto && (
+          <div
+            role="status"
+            className="mb-6 rounded-2xl border border-white/[0.08] bg-white/[0.025] px-5 py-4 text-xs text-[#EDEDE3]/55"
+          >
+            Verificando sua empresa e suas permissões...
+          </div>
+        )}
+
         {mensagem && (
           <div
+            role={mensagem.tipo === 'erro' ? 'alert' : 'status'}
             className={`mb-6 rounded-2xl border px-5 py-4 text-xs ${
-              mensagem.tipo ===
-              'sucesso'
+              mensagem.tipo === 'sucesso'
                 ? 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300'
                 : 'border-red-500/20 bg-red-500/[0.07] text-red-300'
             }`}
@@ -374,10 +339,6 @@ export default function NovoGuiaPage() {
           onSubmit={handleSubmit}
           className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]"
         >
-          {/* =================================================
-              PROFISSIONAL
-          ================================================== */}
-
           <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-7">
             <div className="border-b border-white/[0.065] pb-5">
               <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
@@ -387,8 +348,7 @@ export default function NovoGuiaPage() {
               <h2
                 className="mt-2 text-2xl text-[#F0F0E8]"
                 style={{
-                  fontFamily:
-                    'var(--font-fraunces), serif',
+                  fontFamily: 'var(--font-fraunces), serif',
                 }}
               >
                 Dados do profissional
@@ -398,148 +358,118 @@ export default function NovoGuiaPage() {
             <div className="mt-6 space-y-5">
               <div>
                 <label
-                  className={
-                    labelClass
-                  }
+                  htmlFor="guia-nome"
+                  className={labelClass}
                 >
                   Nome completo *
                 </label>
 
                 <input
+                  id="guia-nome"
                   type="text"
                   name="nome"
                   required
-                  value={
-                    formData.nome
-                  }
-                  onChange={
-                    handleChange
-                  }
+                  disabled={bloqueado}
+                  value={formData.nome}
+                  onChange={handleChange}
                   placeholder="Nome completo do guia"
-                  className={
-                    inputClass
-                  }
+                  className={inputClass}
                 />
               </div>
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
                   <label
-                    className={
-                      labelClass
-                    }
+                    htmlFor="guia-cpf"
+                    className={labelClass}
                   >
                     CPF *
                   </label>
 
                   <input
+                    id="guia-cpf"
                     type="text"
                     inputMode="numeric"
                     name="cpf"
                     required
                     maxLength={14}
-                    value={
-                      formData.cpf
-                    }
-                    onChange={
-                      handleChange
-                    }
+                    disabled={bloqueado}
+                    value={formData.cpf}
+                    onChange={handleChange}
                     placeholder="000.000.000-00"
-                    className={
-                      inputClass
-                    }
+                    className={inputClass}
                   />
                 </div>
 
                 <div>
                   <label
-                    className={
-                      labelClass
-                    }
+                    htmlFor="guia-telefone"
+                    className={labelClass}
                   >
                     Telefone / WhatsApp *
                   </label>
 
                   <input
+                    id="guia-telefone"
                     type="text"
                     inputMode="tel"
                     name="telefone"
                     required
-                    value={
-                      formData.telefone
-                    }
-                    onChange={
-                      handleChange
-                    }
+                    disabled={bloqueado}
+                    value={formData.telefone}
+                    onChange={handleChange}
                     placeholder="(92) 99999-9999"
-                    className={
-                      inputClass
-                    }
+                    className={inputClass}
                   />
                 </div>
               </div>
 
               <div>
                 <label
-                  className={
-                    labelClass
-                  }
+                  htmlFor="guia-idiomas"
+                  className={labelClass}
                 >
                   Idiomas
                 </label>
 
                 <input
+                  id="guia-idiomas"
                   type="text"
                   name="idiomas"
-                  value={
-                    formData.idiomas
-                  }
-                  onChange={
-                    handleChange
-                  }
+                  disabled={bloqueado}
+                  value={formData.idiomas}
+                  onChange={handleChange}
                   placeholder="Ex.: Português, Inglês, Espanhol"
-                  className={
-                    inputClass
-                  }
+                  className={inputClass}
                 />
 
                 <p className="mt-2 text-[9px] leading-4 text-[#EDEDE3]/24">
-                  Separe mais de um
-                  idioma por vírgula.
+                  Separe mais de um idioma por vírgula.
                 </p>
               </div>
 
               <div>
                 <label
-                  className={
-                    labelClass
-                  }
+                  htmlFor="guia-cadastur"
+                  className={labelClass}
                 >
                   Registro CADASTUR *
                 </label>
 
                 <input
+                  id="guia-cadastur"
                   type="text"
                   name="cadastur"
                   required
-                  value={
-                    formData.cadastur
-                  }
-                  onChange={
-                    handleChange
-                  }
+                  disabled={bloqueado}
+                  value={formData.cadastur}
+                  onChange={handleChange}
                   placeholder="Número do registro"
-                  className={
-                    inputClass
-                  }
+                  className={inputClass}
                 />
               </div>
             </div>
           </section>
-
-          {/* =================================================
-              OPERAÇÃO
-          ================================================== */}
 
           <div className="space-y-6">
             <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-6">
@@ -550,64 +480,51 @@ export default function NovoGuiaPage() {
               <h2
                 className="mt-2 text-2xl text-[#F0F0E8]"
                 style={{
-                  fontFamily:
-                    'var(--font-fraunces), serif',
+                  fontFamily: 'var(--font-fraunces), serif',
                 }}
               >
                 Disponibilidade
               </h2>
 
               <p className="mt-4 text-xs leading-6 text-[#EDEDE3]/35">
-                O status informa se o
-                guia está disponível,
-                em uma operação,
-                afastado temporariamente
+                O status informa se o guia está disponível,
+                em uma operação, afastado temporariamente
                 ou inativo.
               </p>
 
               <div className="mt-6">
                 <label
-                  className={
-                    labelClass
-                  }
+                  htmlFor="guia-status"
+                  className={labelClass}
                 >
                   Status
                 </label>
 
                 <select
+                  id="guia-status"
                   name="status"
-                  value={
-                    formData.status
-                  }
-                  onChange={
-                    handleChange
-                  }
-                  className={
-                    inputClass
-                  }
+                  disabled={bloqueado}
+                  value={formData.status}
+                  onChange={handleChange}
+                  className={inputClass}
                 >
-                  <option value="Ativo">
-                    Ativo
-                  </option>
-
-                  <option value="Em Tour">
-                    Em Tour
-                  </option>
-
-                  <option value="Férias">
-                    Férias
-                  </option>
-
-                  <option value="Inativo">
-                    Inativo
-                  </option>
+                  <option value="Ativo">Ativo</option>
+                  <option value="Em Tour">Em Tour</option>
+                  <option value="Férias">Férias</option>
+                  <option value="Inativo">Inativo</option>
                 </select>
               </div>
             </section>
 
             <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-6">
               <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
-                Cadastro profissional
+                Cadastro da operadora
+              </p>
+
+              <p className="mt-4 text-xs leading-6 text-[#EDEDE3]/40">
+                Este cadastro organiza os profissionais
+                utilizados pela sua operadora. Ele não cria
+                uma conta de acesso para o guia.
               </p>
 
               <div className="mt-5 space-y-2">
@@ -623,7 +540,6 @@ export default function NovoGuiaPage() {
                     className="flex items-center gap-3 rounded-xl border border-white/[0.055] bg-white/[0.018] px-3 py-2.5"
                   >
                     <span className="h-1.5 w-1.5 rounded-full bg-[#E3A144]" />
-
                     <span className="text-[11px] text-[#EDEDE3]/48">
                       {item}
                     </span>
@@ -633,43 +549,39 @@ export default function NovoGuiaPage() {
             </section>
           </div>
 
-          {/* =================================================
-              AÇÕES
-          ================================================== */}
-
           <div className="lg:col-span-2">
             <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-6 sm:flex-row sm:items-center sm:justify-between">
               <button
                 type="button"
-                onClick={
-                  handleLimpar
-                }
-                disabled={
-                  salvando
-                }
-                className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/45 transition hover:bg-white/[0.05] disabled:opacity-50"
+                onClick={handleLimpar}
+                disabled={bloqueado}
+                className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/45 transition hover:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Limpar formulário
               </button>
 
               <div className="flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href="/guias"
-                  className="inline-flex min-h-[46px] items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.05]"
+                <button
+                  type="button"
+                  disabled={salvando || concluido}
+                  onClick={() => router.push('/guias')}
+                  className="inline-flex min-h-[46px] items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.05] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Cancelar
-                </Link>
+                </button>
 
                 <button
                   type="submit"
-                  disabled={
-                    salvando
-                  }
+                  disabled={bloqueado}
                   className="inline-flex min-h-[46px] items-center justify-center rounded-xl bg-[#E3A144] px-6 text-xs font-bold text-[#07130F] transition hover:bg-[#F0B35C] disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  {salvando
-                    ? 'Salvando...'
-                    : 'Cadastrar guia'}
+                  {carregandoContexto
+                    ? 'Verificando acesso...'
+                    : salvando
+                      ? 'Salvando...'
+                      : concluido
+                        ? 'Cadastro concluído'
+                        : 'Cadastrar guia'}
                 </button>
               </div>
             </div>
