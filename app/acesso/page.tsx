@@ -32,32 +32,72 @@ const titulos: Record<TipoAcesso, string> = {
   fornecedor: 'Meu espaço de fornecedor',
 };
 
+const nomes: Record<TipoAcesso, string> = {
+  operadora: 'operadora de turismo',
+  guia: 'guia autônomo da Rede ERN',
+  fornecedor: 'fornecedor da Rede ERN',
+};
+
 const descricoes: Record<TipoAcesso, string> = {
   operadora:
     'Acesse a operação da sua empresa conforme as permissões do seu usuário.',
   guia:
-    'Mantenha seu cadastro individual de guia na Encantos Rio Negro.',
+    'Acesse seu espaço independente e mantenha seu cadastro de guia na Rede ERN.',
   fornecedor:
-    'Mantenha o cadastro profissional dos produtos e serviços da sua atividade.',
+    'Acesse seu espaço independente e mantenha seu cadastro de comerciante ou prestador de serviços na Rede ERN.',
 };
 
-function acessosIndependentes(
-  conta: AcessosConta,
-): TipoAcessoProfissional[] {
+function analisarConta(conta: AcessosConta) {
+  const empresarial = Boolean(conta.empresa_id);
+  const acessoEmpresa = contaPossuiAcesso(
+    conta,
+    'operadora',
+  );
+
   const tipos: TipoAcessoProfissional[] = [
     'guia',
     'fornecedor',
   ];
 
-  return tipos.filter((tipo) =>
+  const independentes = tipos.filter((tipo) =>
     contaPossuiAcesso(conta, tipo),
   );
-}
 
-function possuiVinculoEmpresarial(
-  conta: AcessosConta,
-): boolean {
-  return Boolean(conta.empresa_id);
+  const modalidadeDesconhecida = conta.acessos.some(
+    (tipo) =>
+      tipo !== 'operadora' &&
+      tipo !== 'guia' &&
+      tipo !== 'fornecedor',
+  );
+
+  const conflito =
+    modalidadeDesconhecida ||
+    independentes.length > 1 ||
+    (empresarial && independentes.length > 0) ||
+    (!empresarial && acessoEmpresa);
+
+  const modalidade: TipoAcesso | null = conflito
+    ? null
+    : empresarial
+      ? 'operadora'
+      : independentes.length === 1
+        ? independentes[0]
+        : null;
+
+  const existente: TipoAcesso | null = conflito
+    ? null
+    : empresarial
+      ? acessoEmpresa
+        ? 'operadora'
+        : null
+      : modalidade;
+
+  return {
+    empresarial,
+    conflito,
+    modalidade,
+    existente,
+  };
 }
 
 function mensagemErro(
@@ -94,23 +134,14 @@ function ConteudoAcesso() {
 
         if (!ativo) return;
 
+        // Consultar a conta não deve abrir outro painel
+        // automaticamente.
         setConta(atual);
-
-        if (contaPossuiAcesso(atual, 'operadora')) {
-          ocupado.current = true;
-          setProcessando('entrar');
-          window.location.replace(destinos.operadora);
-        }
-      } catch (error) {
+      } catch {
         if (!ativo) return;
 
-        ocupado.current = false;
-        setProcessando(null);
         setErro(
-          mensagemErro(
-            error,
-            'Não foi possível consultar sua conta.',
-          ),
+          'Não foi possível consultar sua conta. Tente novamente ou retorne ao login.',
         );
       } finally {
         if (ativo) setCarregando(false);
@@ -124,45 +155,43 @@ function ConteudoAcesso() {
     };
   }, []);
 
-  const empresarial = conta
-    ? possuiVinculoEmpresarial(conta)
-    : false;
+  const situacao = conta ? analisarConta(conta) : null;
+  const empresarial = situacao?.empresarial ?? false;
+  const conflito = situacao?.conflito ?? false;
+  const modalidade = situacao?.modalidade ?? null;
+  const existente = situacao?.existente ?? null;
 
-  const independentes = conta
-    ? acessosIndependentes(conta)
-    : [];
-
-  const conflito =
-    !empresarial && independentes.length > 1;
-
-  const existente: TipoAcesso | null = conta
-    ? contaPossuiAcesso(conta, 'operadora')
-      ? 'operadora'
-      : !empresarial && independentes.length === 1
-        ? independentes[0]
-        : null
-    : null;
+  const incompativel = Boolean(
+    solicitado &&
+      modalidade &&
+      solicitado !== modalidade,
+  );
 
   const novoTipo: TipoAcessoProfissional | null =
     conta &&
+    !conflito &&
     !empresarial &&
-    independentes.length === 0 &&
+    !modalidade &&
     (solicitado === 'guia' ||
       solicitado === 'fornecedor')
       ? solicitado
       : null;
 
   const tipoExibido = existente ?? novoTipo;
-  const bloqueado = processando !== null;
+  const bloqueado = carregando || processando !== null;
 
-  // Uma conta empresarial sempre retorna à entrada da operadora.
-  const tipoLogin = empresarial
-    ? 'operadora'
-    : existente ?? solicitado;
-
+  // Ao trocar de conta, mantém a modalidade que a pessoa
+  // tentou acessar, em vez de trocar para a operadora.
+  const tipoLogin = solicitado ?? modalidade;
   const linkLogin = tipoLogin
     ? `/login?acesso=${tipoLogin}`
     : '/login';
+
+  const focoClass =
+    'focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#E3A144]';
+
+  const botaoPrincipal =
+    `inline-flex min-h-[52px] w-full items-center justify-center rounded-xl bg-[#E3A144] px-5 py-3 text-base font-bold text-[#07130F] transition hover:bg-[#F0B35C] disabled:cursor-not-allowed disabled:opacity-60 ${focoClass}`;
 
   async function conferirContaAtual() {
     if (!conta) {
@@ -172,8 +201,10 @@ function ConteudoAcesso() {
     const atual = await carregarAcessosConta();
 
     if (atual.usuario_id !== conta.usuario_id) {
+      setConta(null);
+
       throw new Error(
-        'A conta conectada mudou. Recarregue a página.',
+        'A conta conectada mudou. Recarregue a página antes de continuar.',
       );
     }
 
@@ -181,7 +212,17 @@ function ConteudoAcesso() {
   }
 
   async function entrar() {
-    if (ocupado.current || !conta) return;
+    if (
+      ocupado.current ||
+      !conta ||
+      !existente ||
+      conflito ||
+      incompativel
+    ) {
+      return;
+    }
+
+    const tipoEsperado = existente;
 
     ocupado.current = true;
     setProcessando('entrar');
@@ -193,29 +234,36 @@ function ConteudoAcesso() {
       const atual = await conferirContaAtual();
       setConta(atual);
 
-      let destino: string;
+      const verificada = analisarConta(atual);
 
-      if (contaPossuiAcesso(atual, 'operadora')) {
-        destino = destinos.operadora;
-      } else {
-        if (possuiVinculoEmpresarial(atual)) {
-          throw new Error(
-            'Seu usuário está vinculado a uma empresa, mas o acesso operacional não está habilitado. Procure o administrador da empresa.',
-          );
-        }
-
-        const acessos = acessosIndependentes(atual);
-
-        if (acessos.length !== 1) {
-          throw new Error(
-            'Não foi possível determinar seu espaço profissional. Seu cadastro precisa ser revisado.',
-          );
-        }
-
-        destino = destinos[acessos[0]];
+      if (verificada.conflito) {
+        throw new Error(
+          'Os vínculos desta conta precisam ser revisados pela equipe ERN.',
+        );
       }
 
-      window.location.replace(destino);
+      if (
+        solicitado &&
+        verificada.modalidade &&
+        solicitado !== verificada.modalidade
+      ) {
+        throw new Error(
+          'Esta conta não pertence à modalidade solicitada. Saia e entre com a conta correta.',
+        );
+      }
+
+      if (
+        !verificada.existente ||
+        verificada.existente !== tipoEsperado
+      ) {
+        throw new Error(
+          'O vínculo da sua conta mudou ou não está habilitado. Recarregue a página para consultar sua situação.',
+        );
+      }
+
+      window.location.replace(
+        destinos[verificada.existente],
+      );
       navegando = true;
     } catch (error) {
       setErro(
@@ -236,7 +284,9 @@ function ConteudoAcesso() {
     if (
       ocupado.current ||
       !conta ||
-      !novoTipo
+      !novoTipo ||
+      conflito ||
+      incompativel
     ) {
       return;
     }
@@ -253,24 +303,32 @@ function ConteudoAcesso() {
       const atual = await conferirContaAtual();
       setConta(atual);
 
+      const verificada = analisarConta(atual);
+
+      if (verificada.conflito) {
+        throw new Error(
+          'Os vínculos desta conta precisam ser revisados antes de iniciar o cadastro.',
+        );
+      }
+
+      if (verificada.empresarial) {
+        throw new Error(
+          'Esta conta pertence a uma operadora. Para se cadastrar na Rede ERN como profissional independente, utilize uma conta própria dessa modalidade.',
+        );
+      }
+
       if (
-        possuiVinculoEmpresarial(atual) ||
-        contaPossuiAcesso(atual, 'operadora')
+        verificada.modalidade &&
+        verificada.modalidade !== tipo
       ) {
         throw new Error(
-          'Esta conta pertence à equipe de uma operadora. Utilize o acesso da empresa.',
+          'Esta conta já pertence a outra modalidade. Não é possível adicionar uma segunda modalidade.',
         );
       }
 
-      const acessos = acessosIndependentes(atual);
-
-      if (acessos.some((acesso) => acesso !== tipo)) {
-        throw new Error(
-          'Esta conta já possui outra modalidade profissional. Não é possível ativar uma modalidade adicional por esta página.',
-        );
-      }
-
-      if (!acessos.includes(tipo)) {
+      if (!verificada.modalidade) {
+        // O usuário é definido pelo banco através de auth.uid().
+        // Não cria empresa nem concede permissões empresariais.
         const { error } = await supabase
           .from('acessos_profissionais')
           .insert({ tipo });
@@ -282,20 +340,20 @@ function ConteudoAcesso() {
         }
       }
 
+      // Confirma o vínculo inclusive quando outra aba
+      // já realizou o cadastro.
       const confirmada = await conferirContaAtual();
       setConta(confirmada);
 
-      const confirmados =
-        acessosIndependentes(confirmada);
+      const resultado = analisarConta(confirmada);
 
       if (
-        possuiVinculoEmpresarial(confirmada) ||
-        contaPossuiAcesso(confirmada, 'operadora') ||
-        confirmados.length !== 1 ||
-        confirmados[0] !== tipo
+        resultado.conflito ||
+        resultado.empresarial ||
+        resultado.existente !== tipo
       ) {
         throw new Error(
-          'O cadastro precisa ser revisado antes de continuar. Recarregue a página para consultar sua situação.',
+          'Não foi possível confirmar esta modalidade para sua conta. Recarregue a página para consultar seu vínculo.',
         );
       }
 
@@ -332,7 +390,7 @@ function ConteudoAcesso() {
 
       if (error) {
         throw new Error(
-          'Não foi possível sair. Tente novamente.',
+          'Não foi possível encerrar a sessão. Tente novamente.',
         );
       }
 
@@ -354,22 +412,48 @@ function ConteudoAcesso() {
     }
   }
 
+  const titulo = carregando
+    ? 'Preparando seu acesso'
+    : conflito
+      ? 'Revisão do cadastro'
+      : incompativel
+        ? 'Conta de outra modalidade'
+        : tipoExibido
+          ? titulos[tipoExibido]
+          : empresarial
+            ? 'Acesso da empresa'
+            : 'Concluir seu acesso';
+
   return (
-    <main className="min-h-screen bg-[#07110E] px-4 py-6 text-[#EDEDE3] sm:px-6 sm:py-10">
-      <div className="mx-auto w-full max-w-2xl">
+    <main
+      className="min-h-dvh bg-[#07110E] text-[#EDEDE3]"
+      style={{
+        paddingTop:
+          'max(1.5rem, env(safe-area-inset-top, 0px))',
+        paddingRight:
+          'max(1rem, env(safe-area-inset-right, 0px))',
+        paddingBottom:
+          'max(1.5rem, env(safe-area-inset-bottom, 0px))',
+        paddingLeft:
+          'max(1rem, env(safe-area-inset-left, 0px))',
+      }}
+    >
+      <div className="mx-auto w-full min-w-0 max-w-2xl sm:py-4">
         <header className="flex flex-wrap items-center justify-between gap-4">
           <Link
             href="/"
             aria-label="Encantos Rio Negro — portal público"
-            className="inline-flex min-w-0 items-center gap-3 rounded-xl focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#E3A144]"
+            className={`inline-flex min-w-0 items-center gap-3 rounded-xl ${focoClass}`}
           >
-            <LogoERN tamanho={56} prioridade />
+            <span className="shrink-0">
+              <LogoERN tamanho={56} prioridade />
+            </span>
 
             <span className="min-w-0">
               <span className="block text-sm font-semibold text-[#F0F0E8] sm:text-base">
                 Encantos Rio Negro
               </span>
-              <span className="mt-1 block text-xs text-[#EDEDE3]/55">
+              <span className="mt-1 block text-xs text-[#EDEDE3]/60">
                 Voltar ao portal
               </span>
             </span>
@@ -380,7 +464,7 @@ function ConteudoAcesso() {
               type="button"
               disabled={bloqueado}
               onClick={() => void sair()}
-              className="min-h-11 rounded-xl border border-white/15 px-4 text-sm transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50"
+              className={`min-h-12 rounded-xl border border-white/15 px-4 text-sm transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50 ${focoClass}`}
             >
               {processando === 'sair'
                 ? 'Saindo...'
@@ -389,26 +473,23 @@ function ConteudoAcesso() {
           )}
         </header>
 
-        <section className="mt-8 rounded-3xl border border-white/10 bg-[#0D1B16] p-5 sm:mt-12 sm:p-8">
+        <section
+          aria-labelledby="acesso-titulo"
+          aria-busy={bloqueado}
+          className="mt-8 min-w-0 rounded-3xl border border-white/10 bg-[#0D1B16] p-5 sm:mt-12 sm:p-8"
+        >
           <h1
-            className="text-2xl leading-tight text-[#F0F0E8] sm:text-3xl"
+            id="acesso-titulo"
+            className="break-words text-2xl leading-tight text-[#F0F0E8] sm:text-3xl"
             style={{
               fontFamily: 'var(--font-fraunces), serif',
             }}
           >
-            {carregando
-              ? 'Preparando seu acesso'
-              : conflito
-                ? 'Revisão do cadastro'
-                : tipoExibido
-                  ? titulos[tipoExibido]
-                  : empresarial
-                    ? 'Acesso da empresa'
-                    : 'Concluir seu acesso'}
+            {titulo}
           </h1>
 
           {conta?.email && (
-            <p className="mt-3 break-all text-xs leading-6 text-[#EDEDE3]/55">
+            <p className="mt-3 break-all text-sm leading-6 text-[#EDEDE3]/65">
               Conta conectada: {conta.email}
             </p>
           )}
@@ -416,7 +497,7 @@ function ConteudoAcesso() {
           {erro && (
             <div
               role="alert"
-              className="mt-5 rounded-xl border border-red-400/30 bg-red-500/10 p-4 text-sm leading-6 text-red-200"
+              className="mt-5 break-words rounded-xl border border-red-400/30 bg-red-500/10 p-4 text-sm leading-6 text-red-200"
             >
               {erro}
             </div>
@@ -430,10 +511,10 @@ function ConteudoAcesso() {
               Verificando sua conta...
             </p>
           ) : !conta ? (
-            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-6 flex flex-col gap-3">
               <Link
                 href={linkLogin}
-                className="inline-flex min-h-12 items-center justify-center rounded-xl bg-[#E3A144] px-5 text-sm font-bold text-[#07130F]"
+                className={botaoPrincipal}
               >
                 Ir para o login
               </Link>
@@ -441,18 +522,57 @@ function ConteudoAcesso() {
               <button
                 type="button"
                 onClick={() => window.location.reload()}
-                className="min-h-12 rounded-xl border border-white/15 px-5 text-sm"
+                className={`min-h-12 rounded-xl border border-white/15 px-5 text-sm ${focoClass}`}
               >
                 Tentar novamente
               </button>
             </div>
           ) : conflito ? (
             <p className="mt-6 text-sm leading-7 text-[#EDEDE3]/75">
-              Sua conta possui mais de uma modalidade
-              profissional cadastrada. É necessário revisar
-              esse vínculo com a administração da ERN antes
-              de continuar.
+              Foram encontrados vínculos incompatíveis nesta
+              conta. Solicite a revisão à equipe ERN antes
+              de continuar. Nenhuma modalidade será alterada
+              automaticamente.
             </p>
+          ) : incompativel && solicitado && modalidade ? (
+            <>
+              <div
+                role="alert"
+                className="mt-6 rounded-xl border border-amber-400/30 bg-amber-500/10 p-4 text-sm leading-7 text-amber-100"
+              >
+                Esta conta pertence à modalidade de{' '}
+                <strong>{nomes[modalidade]}</strong>.
+                Você solicitou o acesso de{' '}
+                <strong>{nomes[solicitado]}</strong>.
+                A entrada nesse espaço não está autorizada
+                para esta conta.
+              </div>
+
+              <p className="mt-4 text-sm leading-7 text-[#EDEDE3]/75">
+                Saia e entre com uma conta da modalidade
+                escolhida. Para utilizar sua conta atual,
+                volte à entrada profissional e selecione
+                o acesso correspondente.
+              </p>
+
+              <button
+                type="button"
+                disabled={bloqueado}
+                onClick={() => void sair()}
+                className={`mt-6 ${botaoPrincipal}`}
+              >
+                {processando === 'sair'
+                  ? 'Saindo...'
+                  : 'Sair e entrar com outra conta'}
+              </button>
+
+              <Link
+                href="/operadores#acessos-profissionais"
+                className={`mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-white/15 px-4 py-3 text-center text-sm ${focoClass}`}
+              >
+                Voltar à entrada profissional
+              </Link>
+            </>
           ) : tipoExibido ? (
             <>
               <p className="mt-5 text-sm leading-7 text-[#EDEDE3]/75">
@@ -460,19 +580,30 @@ function ConteudoAcesso() {
               </p>
 
               {existente === 'operadora' && (
-                <p className="mt-4 text-sm leading-7 text-[#EDEDE3]/60">
-                  Os acessos da equipe são usuários vinculados
-                  à mesma empresa e seguem o limite do plano
-                  contratado.
+                <p className="mt-4 text-sm leading-7 text-[#EDEDE3]/65">
+                  Cada integrante da equipe utiliza seu
+                  próprio usuário vinculado à empresa,
+                  conforme as permissões e o limite do plano.
+                </p>
+              )}
+
+              {(tipoExibido === 'guia' ||
+                tipoExibido === 'fornecedor') && (
+                <p className="mt-4 text-sm leading-7 text-[#EDEDE3]/65">
+                  Este espaço pertence à Rede ERN e não
+                  concede acesso à gestão das operadoras.
                 </p>
               )}
 
               {novoTipo && (
-                <p className="mt-4 text-sm leading-7 text-[#EDEDE3]/60">
-                  Você está iniciando um cadastro independente
-                  de {novoTipo === 'guia' ? 'guia' : 'fornecedor'}.
-                  Seus dados não serão publicados automaticamente.
-                </p>
+                <div className="mt-5 rounded-xl border border-white/10 bg-white/[0.03] p-4 text-sm leading-7 text-[#EDEDE3]/75">
+                  Ao continuar, esta conta será vinculada
+                  à modalidade de{' '}
+                  <strong>{nomes[novoTipo]}</strong>.
+                  Depois você preencherá seu perfil.
+                  Seus dados não serão publicados
+                  automaticamente.
+                </div>
               )}
 
               <button
@@ -485,7 +616,7 @@ function ConteudoAcesso() {
                     void iniciarCadastro();
                   }
                 }}
-                className="mt-7 min-h-12 w-full rounded-xl bg-[#E3A144] px-5 py-3 text-sm font-bold text-[#07130F] transition hover:bg-[#F0B35C] disabled:cursor-not-allowed disabled:opacity-60"
+                className={`mt-7 ${botaoPrincipal}`}
               >
                 {processando === 'entrar'
                   ? 'Abrindo seu espaço...'
@@ -505,15 +636,15 @@ function ConteudoAcesso() {
           ) : (
             <>
               <p className="mt-6 text-sm leading-7 text-[#EDEDE3]/75">
-                Sua conta ainda não possui um vínculo
-                profissional. Volte à página de acessos e
-                selecione a entrada correspondente à sua
-                atividade.
+                Sua conta ainda não possui vínculo
+                profissional. Selecione a entrada
+                correspondente à sua atividade para
+                continuar o cadastro.
               </p>
 
               <Link
                 href="/operadores#acessos-profissionais"
-                className="mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-[#E3A144]/40 px-5 text-sm font-semibold text-[#F4C77E]"
+                className={`mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-[#E3A144]/40 px-5 py-3 text-center text-sm font-semibold text-[#F4C77E] ${focoClass}`}
               >
                 Ir para a entrada profissional
               </Link>
@@ -521,7 +652,7 @@ function ConteudoAcesso() {
           )}
         </section>
 
-        <p className="mt-6 text-center text-xs leading-6 text-[#EDEDE3]/50">
+        <p className="mt-6 text-center text-xs leading-6 text-[#EDEDE3]/55">
           Experiências, encontros e oportunidades no Rio Negro.
         </p>
       </div>
@@ -535,7 +666,7 @@ export default function AcessoPage() {
       fallback={
         <div
           role="status"
-          className="flex min-h-screen items-center justify-center bg-[#07110E] px-5 text-sm text-[#EDEDE3]/70"
+          className="flex min-h-dvh items-center justify-center bg-[#07110E] px-5 text-sm text-[#EDEDE3]/70"
         >
           Preparando seu acesso...
         </div>

@@ -67,12 +67,12 @@ function impedirCache(response: NextResponse): void {
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
 
-  // O webhook valida sua autenticação no próprio endpoint.
+  // O webhook mantém sua autenticação no próprio endpoint.
   if (pertenceARota(pathname, '/api/webhooks/asaas')) {
     return NextResponse.next();
   }
 
-  // O callback precisa funcionar antes de existir uma sessão.
+  // O callback valida o código ou token e cria a sessão.
   if (pertenceARota(pathname, '/auth/callback')) {
     return NextResponse.next();
   }
@@ -81,7 +81,8 @@ export async function proxy(request: NextRequest) {
     pertenceARota(pathname, rota),
   );
 
-  // /guia é independente; /guias pertence à operadora.
+  // /guias pertence à operadora.
+  // /guia pertence ao guia independente da Rede ERN.
   const rotaGuia = pertenceARota(pathname, '/guia');
 
   const rotaFornecedor = pertenceARota(
@@ -104,10 +105,23 @@ export async function proxy(request: NextRequest) {
     rotaNovaSenha;
 
   // Portal e login continuam públicos.
-  // As APIs verificam autenticação e autorização no endpoint.
+  // As APIs devem validar suas próprias permissões.
   if (!exigeVerificacao) {
     return NextResponse.next();
   }
+
+  // Nas páginas dos painéis, a modalidade vem da rota.
+  // Um parâmetro na URL não pode mudar essa exigência.
+  const acessoSolicitado: TipoAcesso | null =
+    rotaEmpresa
+      ? 'operadora'
+      : rotaGuia
+        ? 'guia'
+        : rotaFornecedor
+          ? 'fornecedor'
+          : interpretarAcesso(
+              request.nextUrl.searchParams.get('acesso'),
+            );
 
   let response = NextResponse.next({ request });
   impedirCache(response);
@@ -120,7 +134,6 @@ export async function proxy(request: NextRequest) {
     }
 
     impedirCache(destino);
-
     return destino;
   }
 
@@ -129,6 +142,14 @@ export async function proxy(request: NextRequest) {
       NextResponse.redirect(
         new URL(destino, request.url),
       ),
+    );
+  }
+
+  function orientarAcesso(): NextResponse {
+    return redirecionar(
+      acessoSolicitado
+        ? `/acesso?acesso=${acessoSolicitado}`
+        : '/acesso',
     );
   }
 
@@ -171,6 +192,7 @@ export async function proxy(request: NextRequest) {
             const cookiesAnteriores =
               response.cookies.getAll();
 
+            // Atualiza a sessão utilizada pelo servidor.
             for (const { name, value } of cookiesToSet) {
               request.cookies.set(name, value);
             }
@@ -181,6 +203,7 @@ export async function proxy(request: NextRequest) {
               response.cookies.set(cookie);
             }
 
+            // Atualiza a sessão enviada ao navegador.
             for (const {
               name,
               value,
@@ -212,38 +235,32 @@ export async function proxy(request: NextRequest) {
     }
 
     if (erroUsuario || !user || user.is_anonymous) {
-      // A página orienta sobre sessão ausente ou link inválido.
-      // A alteração da senha exige autenticação no Supabase.
+      // A página explica quando o link ou a sessão
+      // não permitem definir uma nova senha.
       if (rotaNovaSenha) {
         return response;
       }
 
-      const solicitado: TipoAcesso | null =
-        rotaEmpresa
-          ? 'operadora'
-          : rotaGuia
-            ? 'guia'
-            : rotaFornecedor
-              ? 'fornecedor'
-              : interpretarAcesso(
-                  request.nextUrl.searchParams.get('acesso'),
-                );
-
       return redirecionar(
-        solicitado
-          ? `/login?acesso=${solicitado}`
+        acessoSolicitado
+          ? `/login?acesso=${acessoSolicitado}`
           : '/login',
       );
     }
 
-    // Recuperação e definição de senha não dependem
-    // de vínculo empresarial ou cadastro profissional.
+    // Definir senha não exige modalidade profissional.
     if (rotaNovaSenha) {
       return response;
     }
 
-    // O vínculo empresarial é verificado antes
-    // de qualquer acesso profissional independente.
+    // A página /acesso precisa aparecer também para contas
+    // incompatíveis, sem redirecionamento automático.
+    // Ela consulta os vínculos e apresenta a orientação.
+    // Liberar essa página não libera nenhum painel.
+    if (rotaAcesso) {
+      return response;
+    }
+
     const {
       data: perfil,
       error: erroPerfil,
@@ -264,31 +281,15 @@ export async function proxy(request: NextRequest) {
     );
 
     if (possuiEmpresa) {
-      if (!papelEmpresaPermitido) {
-        // A página de acesso explica o vínculo pendente.
-        // Não redireciona para si mesma.
-        if (rotaAcesso) {
-          return response;
-        }
-
-        return redirecionar('/acesso?acesso=operadora');
-      }
-
-      if (rotaEmpresa) {
-        // Permissões específicas continuam sendo
-        // verificadas pelos módulos, APIs e RLS.
+      // Usuário empresarial só pode entrar nas rotas
+      // da operadora e com papel empresarial permitido.
+      if (rotaEmpresa && papelEmpresaPermitido) {
         return response;
       }
 
-      // Conta da equipe não entra no painel independente
-      // de guia ou fornecedor nem no seletor de atividades.
-      return redirecionar('/dashboard');
-    }
-
-    // Contas sem empresa podem concluir seu cadastro aqui.
-    // A página verifica a modalidade já existente.
-    if (rotaAcesso) {
-      return response;
+      // Mantém a intenção original: guia, fornecedor
+      // ou operadora com acesso ainda não habilitado.
+      return orientarAcesso();
     }
 
     const {
@@ -304,10 +305,10 @@ export async function proxy(request: NextRequest) {
       return indisponivel();
     }
 
-    // A restrição no banco admite uma modalidade por conta.
-    // Se houver inconsistência, não escolhe uma arbitrariamente.
+    // Cada conta independente possui uma modalidade.
+    // Inconsistências não liberam nenhum painel.
     if ((adesoes?.length ?? 0) > 1) {
-      return redirecionar('/acesso');
+      return orientarAcesso();
     }
 
     const modalidade = adesoes?.[0]?.tipo;
@@ -317,40 +318,28 @@ export async function proxy(request: NextRequest) {
       modalidade !== 'guia' &&
       modalidade !== 'fornecedor'
     ) {
-      return redirecionar('/acesso');
+      return orientarAcesso();
     }
 
-    if (modalidade === 'guia') {
-      if (rotaGuia) {
-        return response;
-      }
-
-      return redirecionar('/guia');
+    if (rotaGuia && modalidade === 'guia') {
+      return response;
     }
 
-    if (modalidade === 'fornecedor') {
-      if (rotaFornecedor) {
-        return response;
-      }
-
-      return redirecionar('/fornecedor');
+    if (
+      rotaFornecedor &&
+      modalidade === 'fornecedor'
+    ) {
+      return response;
     }
 
-    // Usuário autenticado, mas ainda sem vínculo.
-    // A URL informa a intenção; não concede permissão.
-    if (rotaEmpresa) {
-      return redirecionar('/acesso?acesso=operadora');
-    }
-
-    if (rotaGuia) {
-      return redirecionar('/acesso?acesso=guia');
-    }
-
-    if (rotaFornecedor) {
-      return redirecionar('/acesso?acesso=fornecedor');
-    }
-
-    return redirecionar('/acesso');
+    // Inclui:
+    // - guia tentando entrar na operadora ou fornecedor;
+    // - fornecedor tentando entrar na operadora ou guia;
+    // - conta ainda sem vínculo.
+    //
+    // Não troca o painel automaticamente.
+    // A URL indica a intenção, nunca concede permissão.
+    return orientarAcesso();
   } catch {
     return indisponivel();
   }

@@ -19,23 +19,23 @@ const apresentacoes = {
   operadora: {
     etiqueta: 'Operadora de turismo',
     titulo: 'Acesso da operadora',
-    cadastro: 'Crie sua conta de acesso',
+    cadastro: 'Crie seu usuário da operadora',
     descricao:
-      'Entre com seu usuário para acessar a empresa à qual você está vinculado.',
+      'Entre com seu usuário vinculado à empresa de turismo.',
   },
   guia: {
-    etiqueta: 'Guia independente',
+    etiqueta: 'Rede ERN • Guia autônomo',
     titulo: 'Acesso do guia',
-    cadastro: 'Crie sua conta de guia',
+    cadastro: 'Cadastre-se como guia',
     descricao:
-      'Acesse seu espaço individual de guia na Encantos Rio Negro.',
+      'Acesse seu espaço independente de guia na Rede ERN.',
   },
   fornecedor: {
-    etiqueta: 'Fornecedor independente',
+    etiqueta: 'Rede ERN • Fornecedor',
     titulo: 'Acesso do fornecedor',
-    cadastro: 'Crie sua conta de fornecedor',
+    cadastro: 'Cadastre-se como fornecedor',
     descricao:
-      'Acesse o cadastro profissional da sua atividade na Encantos Rio Negro.',
+      'Acesse seu espaço independente de comerciante ou prestador de serviços na Rede ERN.',
   },
 };
 
@@ -81,7 +81,6 @@ function mensagemDoErro(
 
 function FormularioLogin() {
   const searchParams = useSearchParams();
-
   const acesso = interpretarTipoAcesso(
     searchParams.get('acesso'),
   );
@@ -89,11 +88,11 @@ function FormularioLogin() {
   const apresentacao = acesso
     ? apresentacoes[acesso]
     : {
-        etiqueta: 'Acesso profissional',
-        titulo: 'Acesse sua conta ERN',
+        etiqueta: 'Acesso profissional ERN',
+        titulo: 'Acesse sua conta',
         cadastro: 'Crie sua conta ERN',
         descricao:
-          'Entre para continuar no espaço vinculado à sua conta.',
+          'Entre para acessar o espaço vinculado à sua conta.',
       };
 
   const destinoAcesso = acesso
@@ -106,11 +105,9 @@ function FormularioLogin() {
   const [confirmacaoSenha, setConfirmacaoSenha] =
     useState('');
   const [mostrarSenha, setMostrarSenha] = useState(false);
-
   const [loading, setLoading] = useState(false);
   const [redirecionando, setRedirecionando] =
     useState(false);
-
   const [erro, setErro] = useState('');
   const [sucesso, setSucesso] = useState('');
 
@@ -135,13 +132,143 @@ function FormularioLogin() {
     );
 
     url.searchParams.set('next', destino);
-
     return url.toString();
   }
 
-  function continuar() {
-    setRedirecionando(true);
-    window.location.assign(destinoAcesso);
+  async function recusarEntrada(mensagem: string) {
+    setSenha('');
+    setConfirmacaoSenha('');
+    setMostrarSenha(false);
+    setSucesso('');
+    setRedirecionando(false);
+
+    try {
+      const { error } = await supabase.auth.signOut({
+        scope: 'local',
+      });
+
+      if (error) {
+        setErro(
+          `${mensagem} Não foi possível encerrar a sessão deste navegador. Tente novamente antes de trocar de conta.`,
+        );
+        return;
+      }
+
+      setErro(mensagem);
+    } catch {
+      setErro(
+        `${mensagem} Não foi possível confirmar o encerramento da sessão. Confira sua conexão e tente novamente.`,
+      );
+    }
+  }
+
+  async function validarEContinuar(usuarioEsperado: string) {
+    try {
+      // Confere a identidade no servidor antes de consultar vínculos.
+      const {
+        data: { user },
+        error: erroUsuario,
+      } = await supabase.auth.getUser();
+
+      if (
+        erroUsuario ||
+        !user ||
+        user.is_anonymous ||
+        user.id !== usuarioEsperado
+      ) {
+        await recusarEntrada(
+          'Não foi possível confirmar sua sessão. Entre novamente.',
+        );
+        return;
+      }
+
+      const [resultadoPerfil, resultadoAcessos] =
+        await Promise.all([
+          supabase
+            .from('perfis')
+            .select('empresa_id,role')
+            .eq('id', user.id)
+            .maybeSingle(),
+
+          supabase
+            .from('acessos_profissionais')
+            .select('tipo')
+            .eq('usuario_id', user.id)
+            .limit(2),
+        ]);
+
+      if (resultadoPerfil.error || resultadoAcessos.error) {
+        await recusarEntrada(
+          'Não foi possível verificar a modalidade da sua conta. Tente novamente em alguns instantes.',
+        );
+        return;
+      }
+
+      const possuiEmpresa = Boolean(
+        resultadoPerfil.data?.empresa_id,
+      );
+      const modalidades = resultadoAcessos.data ?? [];
+
+      const modalidadeInvalida = modalidades.some(
+        (item) =>
+          item.tipo !== 'guia' &&
+          item.tipo !== 'fornecedor',
+      );
+
+      // Não escolhe um perfil automaticamente se os vínculos
+      // estiverem inconsistentes.
+      if (
+        modalidadeInvalida ||
+        modalidades.length > 1 ||
+        (possuiEmpresa && modalidades.length > 0)
+      ) {
+        await recusarEntrada(
+          'Os vínculos desta conta precisam ser revisados pela equipe ERN. Não foi possível liberar a entrada.',
+        );
+        return;
+      }
+
+      const modalidadeAtual = possuiEmpresa
+        ? 'operadora'
+        : modalidades[0]?.tipo ?? null;
+
+      if (
+        acesso &&
+        modalidadeAtual &&
+        modalidadeAtual !== acesso
+      ) {
+        const origem =
+          modalidadeAtual === 'operadora'
+            ? 'uma operadora de turismo'
+            : modalidadeAtual === 'guia'
+              ? 'um guia autônomo da Rede ERN'
+              : 'um fornecedor da Rede ERN';
+
+        const destino =
+          acesso === 'operadora'
+            ? 'da operadora'
+            : acesso === 'guia'
+              ? 'do guia'
+              : 'do fornecedor';
+
+        await recusarEntrada(
+          `Esta conta pertence a ${origem} e não possui acesso ao painel ${destino}. Use uma conta da modalidade escolhida ou volte aos acessos para entrar no espaço correto.`,
+        );
+        return;
+      }
+
+      // Uma conta sem modalidade continua para o processo
+      // de cadastro. Este login não cria vínculos nem permissões.
+      setSenha('');
+      setConfirmacaoSenha('');
+      setMostrarSenha(false);
+      setRedirecionando(true);
+      window.location.assign(destinoAcesso);
+    } catch {
+      await recusarEntrada(
+        'Não foi possível verificar seu acesso. Confira sua conexão e tente novamente.',
+      );
+    }
   }
 
   async function handleSubmit(
@@ -230,13 +357,13 @@ function FormularioLogin() {
         setMostrarSenha(false);
 
         if (data.session) {
-          continuar();
+          await validarEContinuar(data.session.user.id);
           return;
         }
 
         setModo('login');
         setSucesso(
-          'Confira seu e-mail para concluir o cadastro. Se sua conta já existe, entre normalmente ou recupere a senha.',
+          'Confira seu e-mail para concluir o cadastro. Se sua conta já existe, utilize o acesso correspondente à modalidade dela.',
         );
         return;
       }
@@ -264,8 +391,7 @@ function FormularioLogin() {
         return;
       }
 
-      setSenha('');
-      continuar();
+      await validarEContinuar(data.session.user.id);
     } catch {
       setRedirecionando(false);
       setErro(
@@ -289,8 +415,12 @@ function FormularioLogin() {
       ? 'Informe seu e-mail para receber as instruções de recuperação.'
       : modo === 'cadastro'
         ? acesso === 'operadora'
-          ? 'Crie suas credenciais de acesso. O vínculo com a empresa precisa ser autorizado.'
-          : 'Use seu e-mail e escolha uma senha. Depois da confirmação, continue seu cadastro profissional.'
+          ? 'Crie suas credenciais. O vínculo com a empresa precisa ser autorizado.'
+          : acesso === 'guia'
+            ? 'Crie seu cadastro independente de guia na Rede ERN. Use um e-mail que não esteja vinculado a uma operadora ou fornecedor.'
+            : acesso === 'fornecedor'
+              ? 'Crie seu cadastro independente de fornecedor na Rede ERN. Use um e-mail que não esteja vinculado a uma operadora ou guia.'
+              : 'Crie suas credenciais para continuar o cadastro na ERN.'
         : apresentacao.descricao;
 
   const textoBotao = redirecionando
@@ -360,8 +490,7 @@ function FormularioLogin() {
               id="login-titulo"
               className="mt-4 break-words text-2xl leading-tight text-[#F0F0E8] sm:text-3xl"
               style={{
-                fontFamily:
-                  'var(--font-fraunces), serif',
+                fontFamily: 'var(--font-fraunces), serif',
               }}
             >
               {titulo}
@@ -526,6 +655,16 @@ function FormularioLogin() {
                   Para integrar uma operadora existente,
                   solicite um convite ao administrador.
                   Cada colaborador utiliza seu próprio login.
+                </p>
+              )}
+
+            {modo === 'cadastro' &&
+              (acesso === 'guia' ||
+                acesso === 'fornecedor') && (
+                <p className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm leading-6 text-[#EDEDE3]/75">
+                  Este cadastro pertence à Rede ERN.
+                  Ele não cria vínculo com uma operadora
+                  nem libera acesso à gestão de empresas.
                 </p>
               )}
 
