@@ -12,9 +12,15 @@ import { useSearchParams } from 'next/navigation';
 
 import LogoERN from '@/app/components/LogoERN';
 import { supabase } from '@/lib/supabase';
-import { interpretarTipoAcesso } from '@/lib/acessos';
+import {
+  interpretarTipoAcesso,
+  type TipoAcesso,
+} from '@/lib/acessos';
 
-type Modo = 'login' | 'cadastro' | 'recuperacao';
+type Modo =
+  | 'login'
+  | 'cadastro'
+  | 'recuperacao';
 
 const apresentacoes = {
   operadora: {
@@ -103,41 +109,60 @@ function FormularioLogin() {
     ? `/acesso?acesso=${acesso}`
     : '/acesso';
 
-  const [modo, setModo] = useState<Modo>('login');
+  const [modo, setModo] =
+    useState<Modo>('login');
 
-  const [email, setEmail] = useState('');
-  const [senha, setSenha] = useState('');
-
-  const [confirmacaoSenha, setConfirmacaoSenha] =
+  const [email, setEmail] =
     useState('');
 
-  const [mostrarSenha, setMostrarSenha] =
+  const [senha, setSenha] =
+    useState('');
+
+  const [
+    confirmacaoSenha,
+    setConfirmacaoSenha,
+  ] = useState('');
+
+  const [
+    mostrarSenha,
+    setMostrarSenha,
+  ] = useState(false);
+
+  const [loading, setLoading] =
     useState(false);
 
-  const [loading, setLoading] = useState(false);
+  const [
+    redirecionando,
+    setRedirecionando,
+  ] = useState(false);
 
-  const [redirecionando, setRedirecionando] =
-    useState(false);
+  const [erro, setErro] =
+    useState('');
 
-  const [erro, setErro] = useState('');
-  const [sucesso, setSucesso] = useState('');
+  const [sucesso, setSucesso] =
+    useState('');
 
-  const emProcessamento = useRef(false);
+  const emProcessamento =
+    useRef(false);
 
-  const bloqueado = loading || redirecionando;
+  const bloqueado =
+    loading || redirecionando;
 
   /*
-   * Nesta etapa, o Google é liberado somente para operadora.
+   * Google fica disponível quando a entrada
+   * possui uma modalidade profissional definida.
    *
-   * Guia e fornecedor serão habilitados depois que o fluxo
-   * de criação do vínculo em acessos_profissionais estiver
-   * concluído.
+   * O Google apenas autentica a identidade.
+   * A modalidade real continua sendo validada
+   * e criada pela própria ERN.
    */
   const googleDisponivel =
-    acesso === 'operadora' &&
+    acesso !== null &&
     modo !== 'recuperacao';
 
-  function alterarModo(proximo: Modo) {
+  function alterarModo(
+    proximo: Modo,
+  ) {
     if (
       emProcessamento.current ||
       redirecionando
@@ -153,15 +178,40 @@ function FormularioLogin() {
     setSucesso('');
   }
 
-  function criarUrlRetorno(destino: string) {
+  function criarUrlRetorno(
+    destino: string,
+  ) {
     const url = new URL(
       '/auth/callback',
       window.location.origin,
     );
 
-    url.searchParams.set('next', destino);
+    url.searchParams.set(
+      'next',
+      destino,
+    );
 
     return url.toString();
+  }
+
+  function dadosCadastro(
+    tipo: TipoAcesso | null,
+  ) {
+    if (!tipo) {
+      return undefined;
+    }
+
+    /*
+     * Metadata registra apenas a intenção
+     * apresentada no cadastro.
+     *
+     * Ela NÃO concede acesso nem substitui
+     * perfis, empresa_id ou
+     * acessos_profissionais.
+     */
+    return {
+      tipo_cadastro: tipo,
+    };
   }
 
   async function recusarEntrada(
@@ -200,13 +250,15 @@ function FormularioLogin() {
   ) {
     try {
       /*
-       * Confere a identidade no servidor antes
-       * de consultar vínculos.
+       * Confirma a identidade real junto
+       * ao Supabase antes de consultar
+       * qualquer vínculo da aplicação.
        */
       const {
         data: { user },
         error: erroUsuario,
-      } = await supabase.auth.getUser();
+      } =
+        await supabase.auth.getUser();
 
       if (
         erroUsuario ||
@@ -232,9 +284,14 @@ function FormularioLogin() {
           .maybeSingle(),
 
         supabase
-          .from('acessos_profissionais')
+          .from(
+            'acessos_profissionais',
+          )
           .select('tipo')
-          .eq('usuario_id', user.id)
+          .eq(
+            'usuario_id',
+            user.id,
+          )
           .limit(2),
       ]);
 
@@ -249,23 +306,27 @@ function FormularioLogin() {
         return;
       }
 
-      const possuiEmpresa = Boolean(
-        resultadoPerfil.data?.empresa_id,
-      );
+      const possuiEmpresa =
+        Boolean(
+          resultadoPerfil.data
+            ?.empresa_id,
+        );
 
       const modalidades =
-        resultadoAcessos.data ?? [];
+        resultadoAcessos.data ??
+        [];
 
       const modalidadeInvalida =
         modalidades.some(
           (item) =>
             item.tipo !== 'guia' &&
-            item.tipo !== 'fornecedor',
+            item.tipo !==
+              'fornecedor',
         );
 
       /*
-       * Não escolhe um perfil automaticamente
-       * se os vínculos estiverem inconsistentes.
+       * Situações inconsistentes não
+       * são corrigidas silenciosamente.
        */
       if (
         modalidadeInvalida ||
@@ -282,19 +343,28 @@ function FormularioLogin() {
         return;
       }
 
-      const modalidadeAtual = possuiEmpresa
-        ? 'operadora'
-        : modalidades[0]?.tipo ?? null;
+      const modalidadeAtual =
+        possuiEmpresa
+          ? 'operadora'
+          : modalidades[0]
+              ?.tipo ?? null;
 
+      /*
+       * Uma identidade já vinculada
+       * não pode atravessar para outra
+       * modalidade pela URL.
+       */
       if (
         acesso &&
         modalidadeAtual &&
         modalidadeAtual !== acesso
       ) {
         const origem =
-          modalidadeAtual === 'operadora'
+          modalidadeAtual ===
+          'operadora'
             ? 'uma operadora de turismo'
-            : modalidadeAtual === 'guia'
+            : modalidadeAtual ===
+                'guia'
               ? 'um guia autônomo da Rede ERN'
               : 'um fornecedor da Rede ERN';
 
@@ -313,17 +383,23 @@ function FormularioLogin() {
       }
 
       /*
-       * Uma conta sem modalidade continua para
-       * o processo de cadastro.
+       * Conta autenticada e válida.
        *
-       * Este login não cria vínculos nem permissões.
+       * Se já possui modalidade, /acesso
+       * permitirá a entrada.
+       *
+       * Se ainda não possui modalidade,
+       * /acesso executará o onboarding
+       * correspondente.
        */
       setSenha('');
       setConfirmacaoSenha('');
       setMostrarSenha(false);
       setRedirecionando(true);
 
-      window.location.assign(destinoAcesso);
+      window.location.assign(
+        destinoAcesso,
+      );
     } catch {
       await recusarEntrada(
         'Não foi possível verificar seu acesso. Confira sua conexão e tente novamente.',
@@ -343,23 +419,30 @@ function FormularioLogin() {
     setErro('');
     setSucesso('');
 
-    emProcessamento.current = true;
+    emProcessamento.current =
+      true;
+
     setLoading(true);
     setRedirecionando(true);
 
     try {
       const { error } =
-        await supabase.auth.signInWithOAuth({
-          provider: 'google',
+        await supabase.auth
+          .signInWithOAuth({
+            provider: 'google',
 
-          options: {
-            redirectTo:
-              criarUrlRetorno(destinoAcesso),
-          },
-        });
+            options: {
+              redirectTo:
+                criarUrlRetorno(
+                  destinoAcesso,
+                ),
+            },
+          });
 
       if (error) {
-        setRedirecionando(false);
+        setRedirecionando(
+          false,
+        );
 
         setErro(
           mensagemDoErro(
@@ -370,6 +453,12 @@ function FormularioLogin() {
 
         return;
       }
+
+      /*
+       * Em caso de sucesso, o navegador
+       * será encaminhado pelo Supabase
+       * ao Google.
+       */
     } catch {
       setRedirecionando(false);
 
@@ -377,7 +466,9 @@ function FormularioLogin() {
         'Não foi possível iniciar o acesso com o Google. Confira sua conexão e tente novamente.',
       );
     } finally {
-      emProcessamento.current = false;
+      emProcessamento.current =
+        false;
+
       setLoading(false);
     }
   }
@@ -401,7 +492,10 @@ function FormularioLogin() {
       email.trim();
 
     if (!emailInformado) {
-      setErro('Informe seu e-mail.');
+      setErro(
+        'Informe seu e-mail.',
+      );
+
       return;
     }
 
@@ -414,7 +508,10 @@ function FormularioLogin() {
         return;
       }
 
-      if (senha !== confirmacaoSenha) {
+      if (
+        senha !==
+        confirmacaoSenha
+      ) {
         setErro(
           'As senhas não coincidem.',
         );
@@ -423,11 +520,19 @@ function FormularioLogin() {
       }
     }
 
-    emProcessamento.current = true;
+    emProcessamento.current =
+      true;
+
     setLoading(true);
 
     try {
-      if (modo === 'recuperacao') {
+      /*
+       * RECUPERAÇÃO DE SENHA
+       */
+      if (
+        modo ===
+        'recuperacao'
+      ) {
         const { error } =
           await supabase.auth
             .resetPasswordForEmail(
@@ -458,19 +563,35 @@ function FormularioLogin() {
         return;
       }
 
-      if (modo === 'cadastro') {
-        const { data, error } =
-          await supabase.auth.signUp({
-            email: emailInformado,
-            password: senha,
+      /*
+       * CADASTRO POR E-MAIL
+       */
+      if (
+        modo === 'cadastro'
+      ) {
+        const {
+          data,
+          error,
+        } =
+          await supabase.auth
+            .signUp({
+              email:
+                emailInformado,
 
-            options: {
-              emailRedirectTo:
-                criarUrlRetorno(
-                  destinoAcesso,
-                ),
-            },
-          });
+              password: senha,
+
+              options: {
+                emailRedirectTo:
+                  criarUrlRetorno(
+                    destinoAcesso,
+                  ),
+
+                data:
+                  dadosCadastro(
+                    acesso,
+                  ),
+              },
+            });
 
         if (error) {
           setErro(
@@ -487,6 +608,12 @@ function FormularioLogin() {
         setConfirmacaoSenha('');
         setMostrarSenha(false);
 
+        /*
+         * Se a confirmação de e-mail
+         * estiver desabilitada no projeto,
+         * o Supabase pode devolver sessão
+         * imediatamente.
+         */
         if (data.session) {
           await validarEContinuar(
             data.session.user.id,
@@ -495,19 +622,32 @@ function FormularioLogin() {
           return;
         }
 
+        /*
+         * Com confirmação obrigatória,
+         * auth.users pode existir enquanto
+         * session permanece null.
+         */
         setModo('login');
 
         setSucesso(
-          'Confira seu e-mail para concluir o cadastro. Se sua conta já existe, utilize o acesso correspondente à modalidade dela.',
+          'Confira seu e-mail para concluir o cadastro. Depois da confirmação, você continuará no acesso correspondente à modalidade escolhida.',
         );
 
         return;
       }
 
-      const { data, error } =
+      /*
+       * LOGIN POR E-MAIL E SENHA
+       */
+      const {
+        data,
+        error,
+      } =
         await supabase.auth
           .signInWithPassword({
-            email: emailInformado,
+            email:
+              emailInformado,
+
             password: senha,
           });
 
@@ -540,7 +680,9 @@ function FormularioLogin() {
         'Não foi possível concluir a solicitação. Confira sua conexão e tente novamente.',
       );
     } finally {
-      emProcessamento.current = false;
+      emProcessamento.current =
+        false;
+
       setLoading(false);
     }
   }
@@ -556,12 +698,15 @@ function FormularioLogin() {
     modo === 'recuperacao'
       ? 'Informe seu e-mail para receber as instruções de recuperação.'
       : modo === 'cadastro'
-        ? acesso === 'operadora'
+        ? acesso ===
+          'operadora'
           ? 'Crie suas credenciais. O vínculo com a empresa precisa ser autorizado.'
-          : acesso === 'guia'
-            ? 'Crie seu cadastro independente de guia na Rede ERN. Use um e-mail que não esteja vinculado a uma operadora ou fornecedor.'
-            : acesso === 'fornecedor'
-              ? 'Crie seu cadastro independente de fornecedor na Rede ERN. Use um e-mail que não esteja vinculado a uma operadora ou guia.'
+          : acesso ===
+              'guia'
+            ? 'Crie sua conta de guia independente na Rede ERN. Depois você concluirá seu perfil profissional.'
+            : acesso ===
+                'fornecedor'
+              ? 'Crie sua conta de fornecedor independente na Rede ERN. Depois você concluirá seu perfil profissional.'
               : 'Crie suas credenciais para continuar o cadastro na ERN.'
         : apresentacao.descricao;
 
@@ -572,14 +717,20 @@ function FormularioLogin() {
         ? 'Processando...'
         : modo === 'cadastro'
           ? 'Criar conta'
-          : modo === 'recuperacao'
+          : modo ===
+              'recuperacao'
             ? 'Enviar instruções'
             : 'Entrar';
 
   const textoGoogle =
     redirecionando
       ? 'Abrindo Google...'
-      : modo === 'cadastro'
+      : modo === 'cadastro' &&
+          (
+            acesso === 'guia' ||
+            acesso ===
+              'fornecedor'
+          )
         ? 'Cadastrar com Google'
         : 'Continuar com Google';
 
@@ -598,10 +749,13 @@ function FormularioLogin() {
       style={{
         paddingTop:
           'max(1rem, env(safe-area-inset-top, 0px))',
+
         paddingRight:
           'max(1rem, env(safe-area-inset-right, 0px))',
+
         paddingBottom:
           'max(1.5rem, env(safe-area-inset-bottom, 0px))',
+
         paddingLeft:
           'max(1rem, env(safe-area-inset-left, 0px))',
       }}
@@ -639,7 +793,9 @@ function FormularioLogin() {
             </p>
 
             <p className="mt-2 text-xs font-medium text-[#EDEDE3]/65">
-              {apresentacao.etiqueta}
+              {
+                apresentacao.etiqueta
+              }
             </p>
 
             <h1
@@ -682,16 +838,42 @@ function FormularioLogin() {
             <div className="mt-6">
               <button
                 type="button"
-                disabled={bloqueado}
-                onClick={entrarComGoogle}
-                className={`flex min-h-[52px] w-full items-center justify-center gap-3 rounded-xl border border-white/20 bg-white px-4 py-3 text-base font-semibold text-[#202124] transition-colors hover:bg-[#F5F5F5] disabled:cursor-not-allowed disabled:opacity-60 ${focoClass}`}
+                disabled={
+                  bloqueado
+                }
+                onClick={() =>
+                  void entrarComGoogle()
+                }
+                className={`flex min-h-[52px] w-full items-center justify-center gap-3 rounded-xl border border-[#DADCE0] bg-white px-4 py-3 text-base font-semibold text-[#202124] transition-colors hover:bg-[#F8F9FA] disabled:cursor-not-allowed disabled:opacity-60 ${focoClass}`}
               >
-                <span
+                <svg
                   aria-hidden="true"
-                  className="flex h-6 w-6 items-center justify-center rounded-full text-lg font-bold"
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="shrink-0"
                 >
-                  G
-                </span>
+                  <path
+                    fill="#4285F4"
+                    d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.92h5.39a4.61 4.61 0 0 1-2 3.02v2.54h3.24c1.9-1.75 2.97-4.33 2.97-7.41Z"
+                  />
+
+                  <path
+                    fill="#34A853"
+                    d="M12 22c2.7 0 4.98-.9 6.63-2.36l-3.24-2.54c-.9.6-2.05.96-3.39.96-2.61 0-4.82-1.76-5.61-4.13H3.04v2.61A10 10 0 0 0 12 22Z"
+                  />
+
+                  <path
+                    fill="#FBBC05"
+                    d="M6.39 13.93A6 6 0 0 1 6.08 12c0-.67.12-1.32.31-1.93V7.46H3.04A10 10 0 0 0 2 12c0 1.61.39 3.13 1.04 4.54l3.35-2.61Z"
+                  />
+
+                  <path
+                    fill="#EA4335"
+                    d="M12 5.94c1.47 0 2.79.51 3.83 1.5l2.87-2.87C16.97 2.96 14.7 2 12 2a10 10 0 0 0-8.96 5.46l3.35 2.61C7.18 7.7 9.39 5.94 12 5.94Z"
+                  />
+                </svg>
 
                 <span>
                   {textoGoogle}
@@ -699,23 +881,27 @@ function FormularioLogin() {
               </button>
 
               <div
-                className="my-5 flex items-center gap-3"
                 aria-hidden="true"
+                className="my-5 flex items-center gap-3"
               >
-                <div className="h-px flex-1 bg-white/10" />
+                <span className="h-px flex-1 bg-white/10" />
 
                 <span className="text-xs font-medium uppercase tracking-[0.16em] text-[#EDEDE3]/45">
                   ou
                 </span>
 
-                <div className="h-px flex-1 bg-white/10" />
+                <span className="h-px flex-1 bg-white/10" />
               </div>
             </div>
           )}
 
           <form
-            onSubmit={handleSubmit}
-            aria-busy={bloqueado}
+            onSubmit={
+              handleSubmit
+            }
+            aria-busy={
+              bloqueado
+            }
             aria-describedby={
               erro
                 ? 'login-erro'
@@ -732,7 +918,9 @@ function FormularioLogin() {
             <div>
               <label
                 htmlFor="login-email"
-                className={labelClass}
+                className={
+                  labelClass
+                }
               >
                 E-mail
               </label>
@@ -745,25 +933,37 @@ function FormularioLogin() {
                 autoComplete="email"
                 autoCapitalize="none"
                 autoCorrect="off"
-                spellCheck={false}
+                spellCheck={
+                  false
+                }
                 required
-                disabled={bloqueado}
+                disabled={
+                  bloqueado
+                }
                 value={email}
-                onChange={(event) =>
+                onChange={(
+                  event,
+                ) =>
                   setEmail(
-                    event.target.value,
+                    event.target
+                      .value,
                   )
                 }
                 placeholder="seu.email@exemplo.com"
-                className={inputClass}
+                className={
+                  inputClass
+                }
               />
             </div>
 
-            {modo !== 'recuperacao' && (
+            {modo !==
+              'recuperacao' && (
               <div>
                 <label
                   htmlFor="login-senha"
-                  className={labelClass}
+                  className={
+                    labelClass
+                  }
                 >
                   Senha
                 </label>
@@ -777,47 +977,65 @@ function FormularioLogin() {
                       : 'password'
                   }
                   autoComplete={
-                    modo === 'cadastro'
+                    modo ===
+                    'cadastro'
                       ? 'new-password'
                       : 'current-password'
                   }
                   autoCapitalize="none"
-                  spellCheck={false}
+                  spellCheck={
+                    false
+                  }
                   minLength={
-                    modo === 'cadastro'
+                    modo ===
+                    'cadastro'
                       ? 8
                       : undefined
                   }
                   required
-                  disabled={bloqueado}
+                  disabled={
+                    bloqueado
+                  }
                   value={senha}
-                  onChange={(event) =>
+                  onChange={(
+                    event,
+                  ) =>
                     setSenha(
-                      event.target.value,
+                      event.target
+                        .value,
                     )
                   }
                   placeholder={
-                    modo === 'cadastro'
+                    modo ===
+                    'cadastro'
                       ? 'Pelo menos 8 caracteres'
                       : 'Sua senha'
                   }
-                  className={inputClass}
+                  className={
+                    inputClass
+                  }
                 />
 
                 <button
                   type="button"
-                  disabled={bloqueado}
+                  disabled={
+                    bloqueado
+                  }
                   aria-pressed={
                     mostrarSenha
                   }
                   aria-controls={
-                    modo === 'cadastro'
+                    modo ===
+                    'cadastro'
                       ? 'login-senha login-confirmacao'
                       : 'login-senha'
                   }
                   onClick={() =>
                     setMostrarSenha(
-                      (atual) => !atual,
+                      (
+                        atual,
+                      ) =>
+                        !atual,
                     )
                   }
                   className={`mt-1 inline-flex min-h-12 items-center rounded-lg px-1 text-sm font-medium text-[#F4C77E] hover:underline disabled:opacity-50 ${focoClass}`}
@@ -829,11 +1047,14 @@ function FormularioLogin() {
               </div>
             )}
 
-            {modo === 'cadastro' && (
+            {modo ===
+              'cadastro' && (
               <div>
                 <label
                   htmlFor="login-confirmacao"
-                  className={labelClass}
+                  className={
+                    labelClass
+                  }
                 >
                   Confirme a senha
                 </label>
@@ -848,64 +1069,99 @@ function FormularioLogin() {
                   }
                   autoComplete="new-password"
                   autoCapitalize="none"
-                  spellCheck={false}
+                  spellCheck={
+                    false
+                  }
                   minLength={8}
                   required
-                  disabled={bloqueado}
-                  value={confirmacaoSenha}
-                  onChange={(event) =>
+                  disabled={
+                    bloqueado
+                  }
+                  value={
+                    confirmacaoSenha
+                  }
+                  onChange={(
+                    event,
+                  ) =>
                     setConfirmacaoSenha(
-                      event.target.value,
+                      event.target
+                        .value,
                     )
                   }
                   placeholder="Repita a senha"
-                  className={inputClass}
+                  className={
+                    inputClass
+                  }
                 />
               </div>
             )}
 
-            {modo === 'cadastro' &&
-              acesso === 'operadora' && (
+            {modo ===
+              'cadastro' &&
+              acesso ===
+                'operadora' && (
                 <p className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm leading-6 text-[#EDEDE3]/75">
-                  Esta etapa cria apenas
-                  seu usuário. Para integrar
-                  uma operadora existente,
-                  solicite um convite ao
-                  administrador. Cada
-                  colaborador utiliza seu
+                  Esta etapa
+                  cria apenas seu
+                  usuário. Para
+                  integrar uma
+                  operadora
+                  existente,
+                  solicite um
+                  convite ao
+                  administrador.
+                  Cada colaborador
+                  utiliza seu
                   próprio login.
                 </p>
               )}
 
-            {modo === 'cadastro' &&
+            {modo ===
+              'cadastro' &&
               (
-                acesso === 'guia' ||
-                acesso === 'fornecedor'
+                acesso ===
+                  'guia' ||
+                acesso ===
+                  'fornecedor'
               ) && (
                 <p className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm leading-6 text-[#EDEDE3]/75">
-                  Este cadastro pertence
-                  à Rede ERN. Ele não cria
-                  vínculo com uma operadora
-                  nem libera acesso à gestão
-                  de empresas.
+                  Este cadastro
+                  pertence à Rede
+                  ERN. Depois da
+                  autenticação,
+                  você confirmará
+                  sua modalidade e
+                  preencherá seu
+                  perfil
+                  profissional.
+                  Ele não cria
+                  vínculo com uma
+                  operadora.
                 </p>
               )}
 
             <button
               type="submit"
-              disabled={bloqueado}
+              disabled={
+                bloqueado
+              }
               className={`flex min-h-[52px] w-full items-center justify-center rounded-xl bg-[#E3A144] px-4 py-3 text-base font-bold text-[#07130F] transition-colors hover:bg-[#F0B35C] disabled:cursor-not-allowed disabled:opacity-60 ${focoClass}`}
             >
-              {textoBotao}
+              {
+                textoBotao
+              }
             </button>
           </form>
 
           <div className="mt-4 flex flex-col gap-1">
-            {modo === 'login' ? (
+            {modo ===
+            'login' ? (
               <>
                 <button
                   type="button"
-                  disabled={bloqueado}
+                  disabled={
+                    bloqueado
+                  }
                   onClick={() =>
                     alterarModo(
                       'cadastro',
@@ -919,7 +1175,9 @@ function FormularioLogin() {
 
                 <button
                   type="button"
-                  disabled={bloqueado}
+                  disabled={
+                    bloqueado
+                  }
                   onClick={() =>
                     alterarModo(
                       'recuperacao',
@@ -927,19 +1185,25 @@ function FormularioLogin() {
                   }
                   className={`min-h-12 w-full rounded-xl px-3 py-2 text-sm text-[#EDEDE3]/75 hover:bg-white/[0.03] disabled:opacity-50 ${focoClass}`}
                 >
-                  Esqueci minha senha
+                  Esqueci minha
+                  senha
                 </button>
               </>
             ) : (
               <button
                 type="button"
-                disabled={bloqueado}
+                disabled={
+                  bloqueado
+                }
                 onClick={() =>
-                  alterarModo('login')
+                  alterarModo(
+                    'login',
+                  )
                 }
                 className={`min-h-12 w-full rounded-xl px-3 py-2 text-sm font-medium text-[#F4C77E] hover:bg-white/[0.03] disabled:opacity-50 ${focoClass}`}
               >
-                Voltar para entrar
+                Voltar para
+                entrar
               </button>
             )}
           </div>
@@ -949,7 +1213,8 @@ function FormularioLogin() {
               href="/"
               className={`inline-flex min-h-12 items-center justify-center rounded-lg px-2 text-sm text-[#EDEDE3]/70 transition-colors hover:text-[#F4C77E] ${focoClass}`}
             >
-              Explorar o portal sem entrar
+              Explorar o portal
+              sem entrar
             </Link>
           </footer>
         </section>
