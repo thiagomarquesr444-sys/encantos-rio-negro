@@ -1,8 +1,9 @@
 import type { Metadata } from 'next';
-import PerfilProfissional from '@/app/components/PerfilProfissional';
+
+import PainelProfissional from '@/app/components/PainelProfissional';
 
 export const metadata: Metadata = {
-  title: 'Meu cadastro de guia',
+  title: 'Painel do Guia',
   robots: {
     index: false,
     follow: false,
@@ -10,5 +11,7 @@ export const metadata: Metadata = {
 };
 
 export default function GuiaPage() {
-  return <PerfilProfissional tipo="guia" />;
+  return (
+    <PainelProfissional tipo="guia" />
+  );
 }

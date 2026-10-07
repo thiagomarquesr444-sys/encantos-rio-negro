@@ -1,8 +1,11 @@
 'use client';
 
 import type { ReactNode } from 'react';
+
 import { usePathname } from 'next/navigation';
+
 import Sidebar from '@/app/components/Sidebar';
+import SidebarProfissional from '@/app/components/SidebarProfissional';
 
 const ROTAS_GESTAO = [
   '/dashboard',
@@ -23,7 +26,7 @@ const ROTAS_GESTAO = [
 
 function pertenceARota(
   pathname: string,
-  rota: string
+  rota: string,
 ): boolean {
   return (
     pathname === rota ||
@@ -41,26 +44,65 @@ export default function AppShell({
   const rotaGestao =
     pathname !== null &&
     ROTAS_GESTAO.some((rota) =>
-      pertenceARota(pathname, rota)
+      pertenceARota(
+        pathname,
+        rota,
+      ),
     );
 
-  // Portal, autenticação e áreas com navegação própria.
-  if (!rotaGestao) {
+  const rotaGuia =
+    pathname !== null &&
+    pertenceARota(
+      pathname,
+      '/guia',
+    );
+
+  const rotaFornecedor =
+    pathname !== null &&
+    pertenceARota(
+      pathname,
+      '/fornecedor',
+    );
+
+  if (rotaGestao) {
     return (
-      <div className="min-h-screen w-full bg-[#0B1512]">
-        {children}
+      <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+        <Sidebar />
+
+        <div className="min-h-screen w-full pt-[82px]">
+          {children}
+        </div>
       </div>
     );
   }
 
-  // Navegação da gestão das operadoras.
-  return (
-    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
-      <Sidebar />
+  if (rotaGuia) {
+    return (
+      <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+        <SidebarProfissional tipo="guia" />
 
-      <div className="min-h-screen w-full pt-[82px]">
-        {children}
+        <div className="min-h-screen w-full pt-[82px]">
+          {children}
+        </div>
       </div>
+    );
+  }
+
+  if (rotaFornecedor) {
+    return (
+      <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+        <SidebarProfissional tipo="fornecedor" />
+
+        <div className="min-h-screen w-full pt-[82px]">
+          {children}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen w-full bg-[#0B1512]">
+      {children}
     </div>
   );
 }
