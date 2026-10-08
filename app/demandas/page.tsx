@@ -1,6 +1,11 @@
 'use client';
 
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+} from 'react';
 import Link from 'next/link';
 
 import { supabase } from '@/lib/supabase';
@@ -43,10 +48,14 @@ const CONSULTA_INICIAL: Consulta = {
 };
 
 const ESTILOS_STATUS: Record<StatusDemanda, string> = {
-  rascunho: 'border-slate-400/20 bg-slate-400/10 text-slate-300',
-  aberta: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300',
-  encerrada: 'border-cyan-400/20 bg-cyan-400/10 text-cyan-300',
-  cancelada: 'border-rose-400/20 bg-rose-400/10 text-rose-300',
+  rascunho:
+    'border-slate-400/20 bg-slate-400/10 text-slate-300',
+  aberta:
+    'border-emerald-400/20 bg-emerald-400/10 text-emerald-300',
+  encerrada:
+    'border-cyan-400/20 bg-cyan-400/10 text-cyan-300',
+  cancelada:
+    'border-rose-400/20 bg-rose-400/10 text-rose-300',
 };
 
 const CAMPO =
@@ -68,11 +77,15 @@ const formatadorQuantidade = new Intl.NumberFormat('pt-BR', {
 });
 
 function formatarData(data: string | null): string {
-  if (!data) return 'Não informado';
+  if (!data) {
+    return 'Não informado';
+  }
 
   const partes = data.split('-');
 
-  if (partes.length !== 3) return 'Data indisponível';
+  if (partes.length !== 3) {
+    return 'Data indisponível';
+  }
 
   return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
@@ -80,7 +93,9 @@ function formatarData(data: string | null): string {
 function SkeletonDemandas() {
   return (
     <div role="status" aria-label="Carregando demandas">
-      <span className="sr-only">Carregando demandas...</span>
+      <span className="sr-only">
+        Carregando demandas...
+      </span>
 
       <div
         aria-hidden="true"
@@ -105,25 +120,38 @@ function SkeletonDemandas() {
 }
 
 export default function DemandasPage() {
-  const [rascunhoBusca, setRascunhoBusca] = useState('');
-  const [consulta, setConsulta] = useState<Consulta>(CONSULTA_INICIAL);
-  const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' });
+  const [rascunhoBusca, setRascunhoBusca] =
+    useState('');
+
+  const [consulta, setConsulta] =
+    useState<Consulta>(CONSULTA_INICIAL);
+
+  const [estado, setEstado] = useState<Estado>({
+    tipo: 'carregando',
+  });
+
   const [revisao, setRevisao] = useState(0);
 
-  const requisicaoAtual = useRef<AbortController | null>(null);
+  const requisicaoAtual =
+    useRef<AbortController | null>(null);
 
   useEffect(() => {
-    const { data } = supabase.auth.onAuthStateChange((evento) => {
-      if (
-        evento === 'SIGNED_OUT' ||
-        evento === 'SIGNED_IN' ||
-        evento === 'USER_UPDATED'
-      ) {
-        requisicaoAtual.current?.abort();
-        setEstado({ tipo: 'carregando' });
-        setRevisao((valor) => valor + 1);
-      }
-    });
+    const { data } =
+      supabase.auth.onAuthStateChange((evento) => {
+        if (
+          evento === 'SIGNED_OUT' ||
+          evento === 'SIGNED_IN' ||
+          evento === 'USER_UPDATED'
+        ) {
+          requisicaoAtual.current?.abort();
+
+          setEstado({
+            tipo: 'carregando',
+          });
+
+          setRevisao((valor) => valor + 1);
+        }
+      });
 
     return () => {
       data.subscription.unsubscribe();
@@ -132,14 +160,19 @@ export default function DemandasPage() {
 
   useEffect(() => {
     const controller = new AbortController();
+
     requisicaoAtual.current = controller;
 
     let ativo = true;
 
-    setEstado({ tipo: 'carregando' });
+    setEstado({
+      tipo: 'carregando',
+    });
 
     const timeout = window.setTimeout(() => {
-      if (!ativo || controller.signal.aborted) return;
+      if (!ativo || controller.signal.aborted) {
+        return;
+      }
 
       controller.abort();
 
@@ -152,9 +185,17 @@ export default function DemandasPage() {
 
     async function carregar(): Promise<void> {
       try {
-        const contexto = await obterContextoDemandas(controller.signal);
+        const contexto =
+          await obterContextoDemandas(
+            controller.signal,
+          );
 
-        if (!ativo || controller.signal.aborted) return;
+        if (
+          !ativo ||
+          controller.signal.aborted
+        ) {
+          return;
+        }
 
         const resultado = await listarDemandas(
           contexto,
@@ -162,16 +203,24 @@ export default function DemandasPage() {
           controller.signal,
         );
 
-        if (!ativo || controller.signal.aborted) return;
+        if (
+          !ativo ||
+          controller.signal.aborted
+        ) {
+          return;
+        }
 
-        // Corrige a página caso a quantidade de registros tenha diminuído.
-        const ultimaPagina = Math.max(resultado.total_paginas - 1, 0);
+        const ultimaPagina = Math.max(
+          resultado.total_paginas - 1,
+          0,
+        );
 
         if (consulta.pagina > ultimaPagina) {
           setConsulta((anterior) => ({
             ...anterior,
             pagina: ultimaPagina,
           }));
+
           return;
         }
 
@@ -181,11 +230,17 @@ export default function DemandasPage() {
           resultado,
         });
       } catch (erro: unknown) {
-        if (!ativo || controller.signal.aborted) return;
+        if (
+          !ativo ||
+          controller.signal.aborted
+        ) {
+          return;
+        }
 
         setEstado({
           tipo: 'erro',
-          mensagem: mensagemErroDemandas(erro),
+          mensagem:
+            mensagemErroDemandas(erro),
         });
       } finally {
         window.clearTimeout(timeout);
@@ -196,28 +251,44 @@ export default function DemandasPage() {
 
     return () => {
       ativo = false;
+
       controller.abort();
+
       window.clearTimeout(timeout);
 
-      if (requisicaoAtual.current === controller) {
+      if (
+        requisicaoAtual.current === controller
+      ) {
         requisicaoAtual.current = null;
       }
     };
   }, [consulta, revisao]);
 
-  function alterarConsulta(proxima: Consulta): void {
+  function alterarConsulta(
+    proxima: Consulta,
+  ): void {
     requisicaoAtual.current?.abort();
-    setEstado({ tipo: 'carregando' });
+
+    setEstado({
+      tipo: 'carregando',
+    });
+
     setConsulta(proxima);
   }
 
   function atualizar(): void {
     requisicaoAtual.current?.abort();
-    setEstado({ tipo: 'carregando' });
+
+    setEstado({
+      tipo: 'carregando',
+    });
+
     setRevisao((valor) => valor + 1);
   }
 
-  function buscar(evento: FormEvent<HTMLFormElement>): void {
+  function buscar(
+    evento: FormEvent<HTMLFormElement>,
+  ): void {
     evento.preventDefault();
 
     alterarConsulta({
@@ -229,11 +300,23 @@ export default function DemandasPage() {
 
   function limparFiltros(): void {
     setRascunhoBusca('');
-    alterarConsulta({ ...CONSULTA_INICIAL });
+
+    alterarConsulta({
+      ...CONSULTA_INICIAL,
+    });
   }
 
-  const carregando = estado.tipo === 'carregando';
-  const resultado = estado.tipo === 'pronto' ? estado.resultado : null;
+  const carregando =
+    estado.tipo === 'carregando';
+
+  const resultado =
+    estado.tipo === 'pronto'
+      ? estado.resultado
+      : null;
+
+  const podeGerenciar =
+    estado.tipo === 'pronto' &&
+    estado.contexto.pode_gerenciar;
 
   const temFiltros =
     consulta.busca !== '' ||
@@ -243,7 +326,7 @@ export default function DemandasPage() {
   return (
     <main className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
       <header className="border-b border-white/10 bg-[#091510]">
-        <div className="mx-auto max-w-7xl px-5 py-8 md:px-8">
+        <div className="mx-auto max-w-7xl px-4 py-7 sm:px-5 md:px-8 md:py-10">
           <Link
             href="/dashboard"
             className="text-sm text-[#B4C8BB] transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#E3A144]"
@@ -251,7 +334,7 @@ export default function DemandasPage() {
             ← Dashboard
           </Link>
 
-          <div className="mt-6 flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-6 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-widest text-[#E3A144]">
                 Oferta e demanda
@@ -260,35 +343,111 @@ export default function DemandasPage() {
               <h1
                 className="mt-2 text-4xl tracking-tight md:text-5xl"
                 style={{
-                  fontFamily: 'var(--font-fraunces), serif',
+                  fontFamily:
+                    'var(--font-fraunces), serif',
                 }}
               >
                 Demandas
               </h1>
 
               <p className="mt-3 max-w-2xl text-sm leading-6 text-[#B4C8BB]">
-                Acompanhe os serviços que sua empresa precisa contratar.
-                As demandas desta área são privadas da sua empresa.
+                Organize as necessidades de
+                contratação da sua operação.
+                Estas demandas permanecem privadas
+                dentro da sua empresa.
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={atualizar}
-              disabled={carregando}
-              className={BOTAO}
-            >
-              {carregando ? 'Carregando...' : 'Atualizar'}
-            </button>
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <button
+                type="button"
+                onClick={atualizar}
+                disabled={carregando}
+                className={BOTAO}
+              >
+                {carregando
+                  ? 'Carregando...'
+                  : 'Atualizar'}
+              </button>
+
+              {podeGerenciar && (
+                <Link
+                  href="/demandas/nova"
+                  className={`${BOTAO} border-[#E3A144] bg-[#E3A144] text-[#07130F] hover:bg-[#F0B35C]`}
+                >
+                  <span
+                    aria-hidden="true"
+                    className="mr-2 text-lg leading-none"
+                  >
+                    +
+                  </span>
+                  Nova demanda
+                </Link>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto max-w-7xl space-y-6 px-5 py-6 md:px-8 md:py-8">
+      <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-5 md:px-8 md:py-8">
+        <section className="grid gap-3 sm:grid-cols-3">
+          <div className="rounded-2xl border border-white/10 bg-[#0A1713] p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7C9C87]">
+              Total
+            </p>
+
+            <strong
+              className="mt-2 block text-3xl text-[#F0F0E8]"
+              style={{
+                fontFamily:
+                  'var(--font-fraunces), serif',
+              }}
+            >
+              {resultado?.total ?? '—'}
+            </strong>
+
+            <p className="mt-1 text-xs text-[#B4C8BB]">
+              demandas encontradas
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-emerald-400/10 bg-[#0A1713] p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
+              Fluxo operacional
+            </p>
+
+            <strong className="mt-2 block text-sm text-[#F0F0E8]">
+              Necessidades da empresa
+            </strong>
+
+            <p className="mt-2 text-xs leading-5 text-[#B4C8BB]">
+              Hospedagem, transporte fluvial,
+              guiamento, passeios e outros
+              serviços.
+            </p>
+          </div>
+
+          <div className="rounded-2xl border border-[#E3A144]/15 bg-[#0A1713] p-4">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#E3A144]">
+              Privacidade
+            </p>
+
+            <strong className="mt-2 block text-sm text-[#F0F0E8]">
+              Ambiente empresarial
+            </strong>
+
+            <p className="mt-2 text-xs leading-5 text-[#B4C8BB]">
+              Nenhuma demanda desta área é
+              publicada automaticamente na Rede
+              ERN.
+            </p>
+          </div>
+        </section>
+
         <form
           onSubmit={buscar}
           aria-label="Filtrar demandas"
-          className="rounded-2xl border border-white/10 bg-[#0A1713] p-5"
+          className="rounded-2xl border border-white/10 bg-[#0A1713] p-4 sm:p-5"
         >
           <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-[2fr_1fr_1fr_auto]">
             <div>
@@ -304,7 +463,11 @@ export default function DemandasPage() {
                 type="search"
                 maxLength={160}
                 value={rascunhoBusca}
-                onChange={(evento) => setRascunhoBusca(evento.target.value)}
+                onChange={(evento) =>
+                  setRascunhoBusca(
+                    evento.target.value,
+                  )
+                }
                 placeholder="Ex.: hospedagem para grupo"
                 className={CAMPO}
               />
@@ -322,9 +485,13 @@ export default function DemandasPage() {
                 id="categoria-demanda"
                 value={consulta.categoria}
                 onChange={(evento) => {
-                  const valor = evento.target.value;
+                  const valor =
+                    evento.target.value;
 
-                  if (valor === '' || ehCategoriaDemanda(valor)) {
+                  if (
+                    valor === '' ||
+                    ehCategoriaDemanda(valor)
+                  ) {
                     alterarConsulta({
                       ...consulta,
                       categoria: valor,
@@ -334,10 +501,17 @@ export default function DemandasPage() {
                 }}
                 className={CAMPO}
               >
-                <option value="">Todas as categorias</option>
+                <option value="">
+                  Todas as categorias
+                </option>
 
-                {Object.entries(CATEGORIAS_DEMANDA).map(([valor, nome]) => (
-                  <option key={valor} value={valor}>
+                {Object.entries(
+                  CATEGORIAS_DEMANDA,
+                ).map(([valor, nome]) => (
+                  <option
+                    key={valor}
+                    value={valor}
+                  >
                     {nome}
                   </option>
                 ))}
@@ -356,9 +530,13 @@ export default function DemandasPage() {
                 id="status-demanda"
                 value={consulta.status}
                 onChange={(evento) => {
-                  const valor = evento.target.value;
+                  const valor =
+                    evento.target.value;
 
-                  if (valor === '' || ehStatusDemanda(valor)) {
+                  if (
+                    valor === '' ||
+                    ehStatusDemanda(valor)
+                  ) {
                     alterarConsulta({
                       ...consulta,
                       status: valor,
@@ -368,10 +546,17 @@ export default function DemandasPage() {
                 }}
                 className={CAMPO}
               >
-                <option value="">Todos os status</option>
+                <option value="">
+                  Todos os status
+                </option>
 
-                {Object.entries(STATUS_DEMANDA).map(([valor, nome]) => (
-                  <option key={valor} value={valor}>
+                {Object.entries(
+                  STATUS_DEMANDA,
+                ).map(([valor, nome]) => (
+                  <option
+                    key={valor}
+                    value={valor}
+                  >
                     {nome}
                   </option>
                 ))}
@@ -405,7 +590,10 @@ export default function DemandasPage() {
           )}
         </form>
 
-        <section aria-label="Resultados da consulta" aria-busy={carregando}>
+        <section
+          aria-label="Resultados da consulta"
+          aria-busy={carregando}
+        >
           {carregando && <SkeletonDemandas />}
 
           {estado.tipo === 'erro' && (
@@ -414,7 +602,8 @@ export default function DemandasPage() {
               className="entrada rounded-2xl border border-rose-400/20 bg-[#0A1713] p-6 md:p-8"
             >
               <h2 className="text-xl font-semibold text-rose-200">
-                Não foi possível carregar as demandas
+                Não foi possível carregar as
+                demandas
               </h2>
 
               <p className="mt-3 text-sm leading-6 text-[#B4C8BB]">
@@ -422,166 +611,236 @@ export default function DemandasPage() {
               </p>
 
               <div className="mt-6 flex flex-wrap gap-3">
-                <button type="button" onClick={atualizar} className={BOTAO}>
+                <button
+                  type="button"
+                  onClick={atualizar}
+                  className={BOTAO}
+                >
                   Tentar novamente
                 </button>
 
-                <Link href="/login" className={BOTAO}>
+                <Link
+                  href="/login"
+                  className={BOTAO}
+                >
                   Ir para o login
                 </Link>
               </div>
             </div>
           )}
 
-          {estado.tipo === 'pronto' && resultado && (
-            <div className="entrada">
-              <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                <p role="status" className="text-sm text-[#B4C8BB]">
-                  <strong className="text-[#F0F0E8]">
-                    {resultado.total}
-                  </strong>{' '}
-                  {resultado.total === 1
-                    ? 'demanda encontrada'
-                    : 'demandas encontradas'}
-                </p>
-
-                {!estado.contexto.pode_gerenciar && (
-                  <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-[#B4C8BB]">
-                    Seu perfil permite apenas consulta
-                  </span>
-                )}
-              </div>
-
-              {resultado.registros.length === 0 ? (
-                <div className="rounded-2xl border border-dashed border-white/15 bg-[#0A1713] px-6 py-14 text-center">
-                  <h2
-                    className="text-2xl text-[#F0F0E8]"
-                    style={{
-                      fontFamily: 'var(--font-fraunces), serif',
-                    }}
+          {estado.tipo === 'pronto' &&
+            resultado && (
+              <div className="entrada">
+                <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+                  <p
+                    role="status"
+                    className="text-sm text-[#B4C8BB]"
                   >
-                    {temFiltros
-                      ? 'Nenhuma demanda corresponde aos filtros'
-                      : 'Sua empresa ainda não tem demandas'}
-                  </h2>
-
-                  <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-[#B4C8BB]">
-                    {temFiltros
-                      ? 'Experimente outro título, categoria ou status.'
-                      : 'As necessidades de contratação da sua empresa aparecerão aqui.'}
+                    <strong className="text-[#F0F0E8]">
+                      {resultado.total}
+                    </strong>{' '}
+                    {resultado.total === 1
+                      ? 'demanda encontrada'
+                      : 'demandas encontradas'}
                   </p>
 
-                  {temFiltros && (
-                    <button
-                      type="button"
-                      onClick={limparFiltros}
-                      className={`${BOTAO} mt-6`}
-                    >
-                      Limpar filtros
-                    </button>
+                  {!estado.contexto
+                    .pode_gerenciar && (
+                    <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-[#B4C8BB]">
+                      Seu perfil permite apenas
+                      consulta
+                    </span>
                   )}
                 </div>
-              ) : (
-                <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {resultado.registros.map((demanda) => (
-                    <li key={demanda.id} className="min-w-0">
-                      <article className="flex h-full flex-col rounded-2xl border border-white/10 bg-[#0A1713] p-6 transition-colors hover:border-[#E3A144]/30 motion-reduce:transition-none">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
-                          <span className="text-xs font-semibold text-[#E3A144]">
-                            {CATEGORIAS_DEMANDA[demanda.categoria]}
-                          </span>
 
-                          <span
-                            className={`rounded-full border px-3 py-1 text-xs ${ESTILOS_STATUS[demanda.status]}`}
+                {resultado.registros.length ===
+                0 ? (
+                  <div className="rounded-2xl border border-dashed border-white/15 bg-[#0A1713] px-6 py-14 text-center">
+                    <h2
+                      className="text-2xl text-[#F0F0E8]"
+                      style={{
+                        fontFamily:
+                          'var(--font-fraunces), serif',
+                      }}
+                    >
+                      {temFiltros
+                        ? 'Nenhuma demanda corresponde aos filtros'
+                        : 'Sua empresa ainda não tem demandas'}
+                    </h2>
+
+                    <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-[#B4C8BB]">
+                      {temFiltros
+                        ? 'Experimente outro título, categoria ou status.'
+                        : 'Cadastre uma necessidade operacional para organizar a contratação de serviços da empresa.'}
+                    </p>
+
+                    <div className="mt-6 flex flex-wrap justify-center gap-3">
+                      {temFiltros && (
+                        <button
+                          type="button"
+                          onClick={
+                            limparFiltros
+                          }
+                          className={BOTAO}
+                        >
+                          Limpar filtros
+                        </button>
+                      )}
+
+                      {!temFiltros &&
+                        estado.contexto
+                          .pode_gerenciar && (
+                          <Link
+                            href="/demandas/nova"
+                            className={`${BOTAO} border-[#E3A144] bg-[#E3A144] text-[#07130F] hover:bg-[#F0B35C]`}
                           >
-                            {STATUS_DEMANDA[demanda.status]}
-                          </span>
-                        </div>
-
-                        <h2 className="mt-5 break-words text-xl font-semibold text-[#F0F0E8]">
-                          {demanda.titulo}
-                        </h2>
-
-                        <p className="mt-2 break-words text-sm text-[#B4C8BB]">
-                          {demanda.localidade}
-                        </p>
-
-                        <p className="mt-5 line-clamp-3 break-words text-sm leading-6 text-[#B4C8BB]">
-                          {demanda.descricao || 'Sem descrição adicional.'}
-                        </p>
-
-                        <dl className="mt-auto space-y-3 pt-6">
-                          <div className="rounded-xl bg-white/[0.03] px-4 py-3">
-                            <dt className="text-xs text-[#B4C8BB]">
-                              Quantidade
-                            </dt>
-                            <dd className="mt-1 break-words text-sm font-semibold">
-                              {formatadorQuantidade.format(demanda.quantidade)}{' '}
-                              {demanda.unidade}
-                            </dd>
-                          </div>
-
-                          <div className="rounded-xl bg-white/[0.03] px-4 py-3">
-                            <dt className="text-xs text-[#B4C8BB]">
-                              Período
-                            </dt>
-                            <dd className="mt-1 text-sm">
-                              {demanda.data_inicio && demanda.data_fim
-                                ? `${formatarData(demanda.data_inicio)} a ${formatarData(demanda.data_fim)}`
-                                : 'Não informado'}
-                            </dd>
-                          </div>
-                        </dl>
-                      </article>
-                    </li>
-                  ))}
-                </ul>
-              )}
-
-              {resultado.total > 0 && (
-                <nav
-                  aria-label="Paginação de demandas"
-                  className="mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row"
-                >
-                  <p className="text-sm text-[#B4C8BB]">
-                    Página {resultado.pagina + 1} de {resultado.total_paginas}
-                  </p>
-
-                  <div className="flex gap-3">
-                    <button
-                      type="button"
-                      disabled={resultado.pagina === 0}
-                      onClick={() =>
-                        alterarConsulta({
-                          ...consulta,
-                          pagina: Math.max(resultado.pagina - 1, 0),
-                        })
-                      }
-                      className={BOTAO}
-                    >
-                      Anterior
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={
-                        resultado.pagina + 1 >= resultado.total_paginas
-                      }
-                      onClick={() =>
-                        alterarConsulta({
-                          ...consulta,
-                          pagina: resultado.pagina + 1,
-                        })
-                      }
-                      className={BOTAO}
-                    >
-                      Próxima
-                    </button>
+                            Criar primeira demanda
+                          </Link>
+                        )}
+                    </div>
                   </div>
-                </nav>
-              )}
-            </div>
-          )}
+                ) : (
+                  <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                    {resultado.registros.map(
+                      (demanda) => (
+                        <li
+                          key={demanda.id}
+                          className="min-w-0"
+                        >
+                          <article className="flex h-full flex-col rounded-2xl border border-white/10 bg-[#0A1713] p-5 transition-colors hover:border-[#E3A144]/30 sm:p-6 motion-reduce:transition-none">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                              <span className="text-xs font-semibold text-[#E3A144]">
+                                {
+                                  CATEGORIAS_DEMANDA[
+                                    demanda
+                                      .categoria
+                                  ]
+                                }
+                              </span>
+
+                              <span
+                                className={`rounded-full border px-3 py-1 text-xs ${ESTILOS_STATUS[demanda.status]}`}
+                              >
+                                {
+                                  STATUS_DEMANDA[
+                                    demanda.status
+                                  ]
+                                }
+                              </span>
+                            </div>
+
+                            <h2 className="mt-5 break-words text-xl font-semibold text-[#F0F0E8]">
+                              {demanda.titulo}
+                            </h2>
+
+                            <p className="mt-2 break-words text-sm text-[#B4C8BB]">
+                              {demanda.localidade}
+                            </p>
+
+                            <p className="mt-5 line-clamp-3 break-words text-sm leading-6 text-[#B4C8BB]">
+                              {demanda.descricao ||
+                                'Sem descrição adicional.'}
+                            </p>
+
+                            <dl className="mt-auto space-y-3 pt-6">
+                              <div className="rounded-xl bg-white/[0.03] px-4 py-3">
+                                <dt className="text-xs text-[#B4C8BB]">
+                                  Quantidade
+                                </dt>
+
+                                <dd className="mt-1 break-words text-sm font-semibold">
+                                  {formatadorQuantidade.format(
+                                    demanda.quantidade,
+                                  )}{' '}
+                                  {
+                                    demanda.unidade
+                                  }
+                                </dd>
+                              </div>
+
+                              <div className="rounded-xl bg-white/[0.03] px-4 py-3">
+                                <dt className="text-xs text-[#B4C8BB]">
+                                  Período
+                                </dt>
+
+                                <dd className="mt-1 text-sm">
+                                  {demanda.data_inicio &&
+                                  demanda.data_fim
+                                    ? `${formatarData(
+                                        demanda.data_inicio,
+                                      )} a ${formatarData(
+                                        demanda.data_fim,
+                                      )}`
+                                    : 'Não informado'}
+                                </dd>
+                              </div>
+                            </dl>
+                          </article>
+                        </li>
+                      ),
+                    )}
+                  </ul>
+                )}
+
+                {resultado.total > 0 && (
+                  <nav
+                    aria-label="Paginação de demandas"
+                    className="mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row"
+                  >
+                    <p className="text-sm text-[#B4C8BB]">
+                      Página{' '}
+                      {resultado.pagina + 1}{' '}
+                      de{' '}
+                      {resultado.total_paginas}
+                    </p>
+
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        disabled={
+                          resultado.pagina ===
+                          0
+                        }
+                        onClick={() =>
+                          alterarConsulta({
+                            ...consulta,
+                            pagina: Math.max(
+                              resultado.pagina -
+                                1,
+                              0,
+                            ),
+                          })
+                        }
+                        className={BOTAO}
+                      >
+                        Anterior
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={
+                          resultado.pagina +
+                            1 >=
+                          resultado.total_paginas
+                        }
+                        onClick={() =>
+                          alterarConsulta({
+                            ...consulta,
+                            pagina:
+                              resultado.pagina +
+                              1,
+                          })
+                        }
+                        className={BOTAO}
+                      >
+                        Próxima
+                      </button>
+                    </div>
+                  </nav>
+                )}
+              </div>
+            )}
         </section>
       </div>
 
@@ -591,6 +850,7 @@ export default function DemandasPage() {
             opacity: 0;
             transform: translateY(6px);
           }
+
           to {
             opacity: 1;
             transform: translateY(0);
