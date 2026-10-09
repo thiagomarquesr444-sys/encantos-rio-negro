@@ -2,6 +2,7 @@
 
 import {
   useEffect,
+  useMemo,
   useState,
   type FormEvent,
 } from 'react';
@@ -10,28 +11,54 @@ import { useRouter } from 'next/navigation';
 
 import {
   CATEGORIAS_DEMANDA,
+  PUBLICOS_ALVO,
+  TIPOS_COMBUSTIVEL,
   criarDemanda,
   mensagemErroDemandas,
+  metodoEstimativaDaCategoria,
   obterContextoDemandas,
   type CategoriaDemanda,
   type ContextoDemandas,
   type DadosDemanda,
-  type StatusDemanda,
+  type PublicoAlvo,
+  type TipoCombustivel,
 } from '@/lib/demandas';
 
-type FormularioDemanda = {
+type Formulario = {
   titulo: string;
   descricao: string;
+
   categoria: CategoriaDemanda;
+
   localidade: string;
+
   data_inicio: string;
   data_fim: string;
+
   quantidade: string;
   unidade: string;
-  status: Extract<
-    StatusDemanda,
-    'rascunho' | 'aberta'
-  >;
+
+  publico_alvo:
+    | PublicoAlvo
+    | '';
+
+  pessoas_estimadas: string;
+  dias_estimados: string;
+  consumo_pessoa_dia: string;
+
+  tipo_combustivel:
+    | TipoCombustivel
+    | '';
+
+  horas_motor_dia: string;
+
+  consumo_litros_hora: string;
+
+  margem_percentual: string;
+
+  status:
+    | 'rascunho'
+    | 'aberta';
 };
 
 type EstadoContexto =
@@ -47,15 +74,32 @@ type EstadoContexto =
       contexto: ContextoDemandas;
     };
 
-const FORMULARIO_INICIAL: FormularioDemanda = {
+const FORMULARIO_INICIAL: Formulario = {
   titulo: '',
   descricao: '',
-  categoria: 'hospedagem',
+
+  categoria: 'alimentacao',
+
   localidade: '',
+
   data_inicio: '',
   data_fim: '',
+
   quantidade: '1',
-  unidade: 'unidade',
+  unidade: 'refeições',
+
+  publico_alvo: 'ambos',
+
+  pessoas_estimadas: '',
+  dias_estimados: '',
+  consumo_pessoa_dia: '3',
+
+  tipo_combustivel: '',
+
+  horas_motor_dia: '',
+  consumo_litros_hora: '',
+  margem_percentual: '10',
+
   status: 'rascunho',
 };
 
@@ -64,25 +108,81 @@ const CAMPO =
   'px-4 text-sm text-[#F0F0E8] outline-none transition-colors ' +
   'placeholder:text-white/30 focus:border-[#E3A144] ' +
   'focus:ring-2 focus:ring-[#E3A144]/20 disabled:cursor-not-allowed ' +
-  'disabled:opacity-50 motion-reduce:transition-none';
+  'disabled:opacity-50';
 
 const BOTAO =
   'inline-flex min-h-12 items-center justify-center rounded-xl ' +
   'border border-white/15 px-5 text-sm font-semibold text-[#EDEDE3] ' +
-  'transition-colors hover:bg-white/5 focus-visible:outline ' +
-  'focus-visible:outline-2 focus-visible:outline-offset-4 ' +
-  'focus-visible:outline-[#E3A144] disabled:cursor-not-allowed ' +
-  'disabled:opacity-40 motion-reduce:transition-none';
+  'transition-colors hover:bg-white/5 disabled:cursor-not-allowed ' +
+  'disabled:opacity-40';
+
+function numeroFormulario(
+  valor: string,
+): number | null {
+  if (!valor.trim()) {
+    return null;
+  }
+
+  const numero = Number(
+    valor.replace(',', '.'),
+  );
+
+  return Number.isFinite(numero)
+    ? numero
+    : null;
+}
+
+function diasInclusivos(
+  inicio: string,
+  fim: string,
+): number | null {
+  if (!inicio || !fim || fim < inicio) {
+    return null;
+  }
+
+  const inicioMs = new Date(
+    `${inicio}T12:00:00Z`,
+  ).getTime();
+
+  const fimMs = new Date(
+    `${fim}T12:00:00Z`,
+  ).getTime();
+
+  if (
+    !Number.isFinite(inicioMs) ||
+    !Number.isFinite(fimMs)
+  ) {
+    return null;
+  }
+
+  return (
+    Math.floor(
+      (fimMs - inicioMs) /
+        86_400_000,
+    ) + 1
+  );
+}
+
+function arredondar(
+  valor: number,
+): number {
+  return Math.round(valor * 100) / 100;
+}
 
 export default function NovaDemandaPage() {
   const router = useRouter();
 
-  const [formulario, setFormulario] =
-    useState<FormularioDemanda>(
-      FORMULARIO_INICIAL,
-    );
+  const [
+    formulario,
+    setFormulario,
+  ] = useState<Formulario>(
+    FORMULARIO_INICIAL,
+  );
 
-  const [estadoContexto, setEstadoContexto] =
+  const [
+    estadoContexto,
+    setEstadoContexto,
+  ] =
     useState<EstadoContexto>({
       tipo: 'carregando',
     });
@@ -90,8 +190,12 @@ export default function NovaDemandaPage() {
   const [salvando, setSalvando] =
     useState(false);
 
-  const [erroFormulario, setErroFormulario] =
-    useState<string | null>(null);
+  const [
+    erroFormulario,
+    setErroFormulario,
+  ] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     const controller =
@@ -113,11 +217,13 @@ export default function NovaDemandaPage() {
           return;
         }
 
-        if (!contexto.pode_gerenciar) {
+        if (
+          !contexto.pode_gerenciar
+        ) {
           setEstadoContexto({
             tipo: 'erro',
             mensagem:
-              'Seu perfil permite consultar demandas, mas não criar ou alterar registros.',
+              'Seu perfil permite consultar demandas, mas não criar registros.',
           });
 
           return;
@@ -138,7 +244,9 @@ export default function NovaDemandaPage() {
         setEstadoContexto({
           tipo: 'erro',
           mensagem:
-            mensagemErroDemandas(erro),
+            mensagemErroDemandas(
+              erro,
+            ),
         });
       }
     }
@@ -151,20 +259,303 @@ export default function NovaDemandaPage() {
     };
   }, []);
 
+  const metodoEstimativa =
+    metodoEstimativaDaCategoria(
+      formulario.categoria,
+    );
+
+  const previsao =
+    useMemo(() => {
+      if (
+        metodoEstimativa ===
+        'manual'
+      ) {
+        return numeroFormulario(
+          formulario.quantidade,
+        );
+      }
+
+      const dias =
+        numeroFormulario(
+          formulario.dias_estimados,
+        );
+
+      if (
+        dias === null ||
+        dias <= 0
+      ) {
+        return null;
+      }
+
+      if (
+        metodoEstimativa ===
+        'pessoa_dia'
+      ) {
+        const pessoas =
+          numeroFormulario(
+            formulario.pessoas_estimadas,
+          );
+
+        const consumo =
+          numeroFormulario(
+            formulario.consumo_pessoa_dia,
+          );
+
+        if (
+          pessoas === null ||
+          consumo === null ||
+          pessoas <= 0 ||
+          consumo <= 0
+        ) {
+          return null;
+        }
+
+        return arredondar(
+          pessoas *
+            dias *
+            consumo,
+        );
+      }
+
+      const horas =
+        numeroFormulario(
+          formulario.horas_motor_dia,
+        );
+
+      const litrosHora =
+        numeroFormulario(
+          formulario.consumo_litros_hora,
+        );
+
+      const margem =
+        numeroFormulario(
+          formulario.margem_percentual,
+        ) ?? 0;
+
+      if (
+        horas === null ||
+        litrosHora === null ||
+        horas <= 0 ||
+        litrosHora <= 0 ||
+        margem < 0
+      ) {
+        return null;
+      }
+
+      return arredondar(
+        dias *
+          horas *
+          litrosHora *
+          (1 + margem / 100),
+      );
+    }, [
+      formulario,
+      metodoEstimativa,
+    ]);
+
   function atualizarCampo<
-    K extends keyof FormularioDemanda,
+    K extends keyof Formulario,
   >(
     campo: K,
-    valor: FormularioDemanda[K],
+    valor: Formulario[K],
   ): void {
-    setFormulario((anterior) => ({
-      ...anterior,
-      [campo]: valor,
-    }));
+    setFormulario(
+      (anterior) => ({
+        ...anterior,
+        [campo]: valor,
+      }),
+    );
 
-    if (erroFormulario) {
-      setErroFormulario(null);
-    }
+    setErroFormulario(null);
+  }
+
+  function alterarCategoria(
+    categoria: CategoriaDemanda,
+  ): void {
+    setFormulario(
+      (anterior) => {
+        if (
+          categoria ===
+          'alimentacao'
+        ) {
+          return {
+            ...anterior,
+            categoria,
+            unidade:
+              'refeições',
+            publico_alvo:
+              'ambos',
+            consumo_pessoa_dia:
+              anterior.consumo_pessoa_dia ||
+              '3',
+            tipo_combustivel:
+              '',
+          };
+        }
+
+        if (
+          categoria ===
+          'bebidas'
+        ) {
+          return {
+            ...anterior,
+            categoria,
+            unidade: 'litros',
+            publico_alvo:
+              'ambos',
+            consumo_pessoa_dia:
+              anterior.consumo_pessoa_dia ||
+              '3',
+            tipo_combustivel:
+              '',
+          };
+        }
+
+        if (
+          categoria ===
+          'combustivel'
+        ) {
+          return {
+            ...anterior,
+            categoria,
+            unidade: 'litros',
+            publico_alvo: '',
+            tipo_combustivel:
+              anterior.tipo_combustivel ||
+              'gasolina',
+            margem_percentual:
+              anterior.margem_percentual ||
+              '10',
+          };
+        }
+
+        return {
+          ...anterior,
+          categoria,
+          unidade: 'unidade',
+          publico_alvo: '',
+          tipo_combustivel: '',
+        };
+      },
+    );
+
+    setErroFormulario(null);
+  }
+
+  function atualizarPeriodo(
+    campo:
+      | 'data_inicio'
+      | 'data_fim',
+    valor: string,
+  ): void {
+    setFormulario(
+      (anterior) => {
+        const proximo = {
+          ...anterior,
+          [campo]: valor,
+        };
+
+        const dias =
+          diasInclusivos(
+            proximo.data_inicio,
+            proximo.data_fim,
+          );
+
+        if (
+          dias !== null &&
+          metodoEstimativaDaCategoria(
+            proximo.categoria,
+          ) !== 'manual'
+        ) {
+          proximo.dias_estimados =
+            String(dias);
+        }
+
+        return proximo;
+      },
+    );
+
+    setErroFormulario(null);
+  }
+
+  function montarDados(): DadosDemanda {
+    return {
+      titulo:
+        formulario.titulo,
+
+      descricao:
+        formulario.descricao.trim()
+          ? formulario.descricao
+          : null,
+
+      categoria:
+        formulario.categoria,
+
+      localidade:
+        formulario.localidade,
+
+      data_inicio:
+        formulario.data_inicio ||
+        null,
+
+      data_fim:
+        formulario.data_fim ||
+        null,
+
+      quantidade:
+        previsao ??
+        numeroFormulario(
+          formulario.quantidade,
+        ) ??
+        0,
+
+      unidade:
+        formulario.unidade,
+
+      status:
+        formulario.status,
+
+      metodo_estimativa:
+        metodoEstimativa,
+
+      publico_alvo:
+        formulario.publico_alvo ||
+        null,
+
+      pessoas_estimadas:
+        numeroFormulario(
+          formulario.pessoas_estimadas,
+        ),
+
+      dias_estimados:
+        numeroFormulario(
+          formulario.dias_estimados,
+        ),
+
+      consumo_pessoa_dia:
+        numeroFormulario(
+          formulario.consumo_pessoa_dia,
+        ),
+
+      tipo_combustivel:
+        formulario.tipo_combustivel ||
+        null,
+
+      horas_motor_dia:
+        numeroFormulario(
+          formulario.horas_motor_dia,
+        ),
+
+      consumo_litros_hora:
+        numeroFormulario(
+          formulario.consumo_litros_hora,
+        ),
+
+      margem_percentual:
+        numeroFormulario(
+          formulario.margem_percentual,
+        ) ?? 0,
+    };
   }
 
   async function salvar(
@@ -173,48 +564,20 @@ export default function NovaDemandaPage() {
     evento.preventDefault();
 
     if (
-      estadoContexto.tipo !== 'pronto'
+      estadoContexto.tipo !==
+        'pronto' ||
+      salvando
     ) {
       return;
     }
 
-    if (salvando) {
-      return;
-    }
-
-    setErroFormulario(null);
-
-    const quantidade = Number(
-      formulario.quantidade.replace(
-        ',',
-        '.',
-      ),
-    );
-
-    const dados: DadosDemanda = {
-      titulo: formulario.titulo,
-      descricao:
-        formulario.descricao.trim() ||
-        null,
-      categoria: formulario.categoria,
-      localidade:
-        formulario.localidade,
-      data_inicio:
-        formulario.data_inicio ||
-        null,
-      data_fim:
-        formulario.data_fim || null,
-      quantidade,
-      unidade: formulario.unidade,
-      status: formulario.status,
-    };
-
     setSalvando(true);
+    setErroFormulario(null);
 
     try {
       await criarDemanda(
         estadoContexto.contexto,
-        dados,
+        montarDados(),
       );
 
       router.push('/demandas');
@@ -230,84 +593,56 @@ export default function NovaDemandaPage() {
 
   const bloqueado =
     salvando ||
-    estadoContexto.tipo !== 'pronto';
+    estadoContexto.tipo !==
+      'pronto';
 
   return (
     <main className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
       <header className="border-b border-white/10 bg-[#091510]">
-        <div className="mx-auto max-w-5xl px-4 py-7 sm:px-5 md:px-8 md:py-10">
+        <div className="mx-auto max-w-5xl px-4 py-8 md:px-8">
           <Link
             href="/demandas"
-            className="text-sm text-[#B4C8BB] transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#E3A144]"
+            className="text-sm text-[#B4C8BB] hover:text-white"
           >
             ← Voltar para demandas
           </Link>
 
-          <div className="mt-6">
-            <p className="text-xs font-semibold uppercase tracking-widest text-[#E3A144]">
-              Operação da empresa
-            </p>
+          <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-[#E3A144]">
+            Planejamento operacional
+          </p>
 
-            <h1
-              className="mt-2 text-4xl tracking-tight md:text-5xl"
-              style={{
-                fontFamily:
-                  'var(--font-fraunces), serif',
-              }}
-            >
-              Nova demanda
-            </h1>
+          <h1
+            className="mt-2 text-4xl md:text-5xl"
+            style={{
+              fontFamily:
+                'var(--font-fraunces), serif',
+            }}
+          >
+            Nova demanda
+          </h1>
 
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-[#B4C8BB]">
-              Registre uma necessidade de
-              contratação para organizar a
-              operação da sua empresa.
-            </p>
-          </div>
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#B4C8BB]">
+            Calcule previamente
+            alimentação, bebidas,
+            combustível ou registre
+            outros recursos necessários
+            para a viagem.
+          </p>
         </div>
       </header>
 
-      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-5 md:px-8 md:py-8">
+      <div className="mx-auto max-w-5xl px-4 py-7 md:px-8">
         {estadoContexto.tipo ===
-          'carregando' && (
-          <div
-            role="status"
-            className="rounded-2xl border border-white/10 bg-[#0A1713] p-6"
-          >
-            <div className="h-5 w-48 animate-pulse rounded bg-white/10" />
-            <div className="mt-4 h-4 w-3/4 animate-pulse rounded bg-white/5" />
+          'erro' && (
+          <div className="rounded-2xl border border-rose-400/20 bg-[#0A1713] p-6">
+            {estadoContexto.mensagem}
           </div>
         )}
 
-        {estadoContexto.tipo === 'erro' && (
-          <div
-            role="alert"
-            className="rounded-2xl border border-rose-400/20 bg-[#0A1713] p-6 md:p-8"
-          >
-            <p className="text-xs font-semibold uppercase tracking-[0.16em] text-rose-300">
-              Acesso indisponível
-            </p>
-
-            <h2
-              className="mt-2 text-2xl text-[#F0F0E8]"
-              style={{
-                fontFamily:
-                  'var(--font-fraunces), serif',
-              }}
-            >
-              Não foi possível abrir o cadastro
-            </h2>
-
-            <p className="mt-3 max-w-xl text-sm leading-6 text-[#B4C8BB]">
-              {estadoContexto.mensagem}
-            </p>
-
-            <Link
-              href="/demandas"
-              className={`${BOTAO} mt-6`}
-            >
-              Voltar para demandas
-            </Link>
+        {estadoContexto.tipo ===
+          'carregando' && (
+          <div className="rounded-2xl border border-white/10 bg-[#0A1713] p-6">
+            Carregando...
           </div>
         )}
 
@@ -318,77 +653,53 @@ export default function NovaDemandaPage() {
             className="space-y-6"
           >
             <section className="rounded-2xl border border-white/10 bg-[#0A1713] p-5 md:p-7">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-                  Identificação
-                </p>
-
-                <h2
-                  className="mt-2 text-2xl text-[#F0F0E8]"
-                  style={{
-                    fontFamily:
-                      'var(--font-fraunces), serif',
-                  }}
-                >
-                  O que sua empresa precisa?
-                </h2>
-              </div>
+              <h2 className="text-2xl">
+                Identificação
+              </h2>
 
               <div className="mt-6 grid gap-5 md:grid-cols-2">
                 <div className="md:col-span-2">
-                  <label
-                    htmlFor="titulo"
-                    className="mb-2 block text-sm font-medium text-[#EDEDE3]"
-                  >
+                  <label className="mb-2 block text-sm">
                     Título
                   </label>
 
                   <input
-                    id="titulo"
-                    type="text"
                     required
                     minLength={3}
                     maxLength={160}
-                    value={formulario.titulo}
-                    onChange={(evento) =>
+                    value={
+                      formulario.titulo
+                    }
+                    onChange={(
+                      evento,
+                    ) =>
                       atualizarCampo(
                         'titulo',
-                        evento.target.value,
+                        evento.target
+                          .value,
                       )
                     }
-                    disabled={bloqueado}
-                    placeholder="Ex.: Hospedagem para grupo de pesca"
                     className={CAMPO}
                   />
-
-                  <p className="mt-2 text-xs text-[#B4C8BB]">
-                    Use um título objetivo para
-                    identificar rapidamente a
-                    necessidade.
-                  </p>
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="categoria"
-                    className="mb-2 block text-sm font-medium text-[#EDEDE3]"
-                  >
+                  <label className="mb-2 block text-sm">
                     Categoria
                   </label>
 
                   <select
-                    id="categoria"
                     value={
                       formulario.categoria
                     }
-                    onChange={(evento) =>
-                      atualizarCampo(
-                        'categoria',
+                    onChange={(
+                      evento,
+                    ) =>
+                      alterarCategoria(
                         evento.target
                           .value as CategoriaDemanda,
                       )
                     }
-                    disabled={bloqueado}
                     className={CAMPO}
                   >
                     {Object.entries(
@@ -407,307 +718,562 @@ export default function NovaDemandaPage() {
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="localidade"
-                    className="mb-2 block text-sm font-medium text-[#EDEDE3]"
-                  >
+                  <label className="mb-2 block text-sm">
                     Localidade
                   </label>
 
                   <input
-                    id="localidade"
-                    type="text"
                     required
                     minLength={2}
                     maxLength={200}
                     value={
                       formulario.localidade
                     }
-                    onChange={(evento) =>
+                    onChange={(
+                      evento,
+                    ) =>
                       atualizarCampo(
                         'localidade',
-                        evento.target.value,
+                        evento.target
+                          .value,
                       )
                     }
-                    disabled={bloqueado}
                     placeholder="Ex.: Barcelos - AM"
                     className={CAMPO}
                   />
                 </div>
 
                 <div className="md:col-span-2">
-                  <label
-                    htmlFor="descricao"
-                    className="mb-2 block text-sm font-medium text-[#EDEDE3]"
-                  >
+                  <label className="mb-2 block text-sm">
                     Descrição
                   </label>
 
                   <textarea
-                    id="descricao"
                     rows={5}
                     maxLength={5000}
                     value={
                       formulario.descricao
                     }
-                    onChange={(evento) =>
+                    onChange={(
+                      evento,
+                    ) =>
                       atualizarCampo(
                         'descricao',
-                        evento.target.value,
+                        evento.target
+                          .value,
                       )
                     }
-                    disabled={bloqueado}
-                    placeholder="Descreva os detalhes da contratação, perfil desejado, necessidades especiais ou outras informações relevantes."
-                    className={`${CAMPO} resize-y py-3`}
+                    className={`${CAMPO} py-3`}
                   />
                 </div>
               </div>
             </section>
 
             <section className="rounded-2xl border border-white/10 bg-[#0A1713] p-5 md:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
-                Quantidade e período
-              </p>
-
-              <h2
-                className="mt-2 text-2xl text-[#F0F0E8]"
-                style={{
-                  fontFamily:
-                    'var(--font-fraunces), serif',
-                }}
-              >
-                Dimensione a necessidade
+              <h2 className="text-2xl">
+                Período da viagem
               </h2>
 
               <div className="mt-6 grid gap-5 sm:grid-cols-2">
                 <div>
-                  <label
-                    htmlFor="quantidade"
-                    className="mb-2 block text-sm font-medium text-[#EDEDE3]"
-                  >
-                    Quantidade
-                  </label>
-
-                  <input
-                    id="quantidade"
-                    type="number"
-                    required
-                    min="0.01"
-                    step="0.01"
-                    value={
-                      formulario.quantidade
-                    }
-                    onChange={(evento) =>
-                      atualizarCampo(
-                        'quantidade',
-                        evento.target.value,
-                      )
-                    }
-                    disabled={bloqueado}
-                    className={CAMPO}
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="unidade"
-                    className="mb-2 block text-sm font-medium text-[#EDEDE3]"
-                  >
-                    Unidade
-                  </label>
-
-                  <input
-                    id="unidade"
-                    type="text"
-                    required
-                    minLength={1}
-                    maxLength={40}
-                    value={formulario.unidade}
-                    onChange={(evento) =>
-                      atualizarCampo(
-                        'unidade',
-                        evento.target.value,
-                      )
-                    }
-                    disabled={bloqueado}
-                    placeholder="Ex.: quartos, vagas, barcos"
-                    className={CAMPO}
-                  />
-                </div>
-
-                <div>
-                  <label
-                    htmlFor="data_inicio"
-                    className="mb-2 block text-sm font-medium text-[#EDEDE3]"
-                  >
+                  <label className="mb-2 block text-sm">
                     Início
                   </label>
 
                   <input
-                    id="data_inicio"
                     type="date"
                     value={
                       formulario.data_inicio
                     }
-                    onChange={(evento) =>
-                      atualizarCampo(
+                    onChange={(
+                      evento,
+                    ) =>
+                      atualizarPeriodo(
                         'data_inicio',
-                        evento.target.value,
+                        evento.target
+                          .value,
                       )
                     }
-                    disabled={bloqueado}
                     className={CAMPO}
                   />
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="data_fim"
-                    className="mb-2 block text-sm font-medium text-[#EDEDE3]"
-                  >
+                  <label className="mb-2 block text-sm">
                     Final
                   </label>
 
                   <input
-                    id="data_fim"
                     type="date"
-                    value={formulario.data_fim}
-                    onChange={(evento) =>
-                      atualizarCampo(
+                    value={
+                      formulario.data_fim
+                    }
+                    onChange={(
+                      evento,
+                    ) =>
+                      atualizarPeriodo(
                         'data_fim',
-                        evento.target.value,
+                        evento.target
+                          .value,
                       )
                     }
-                    disabled={bloqueado}
                     className={CAMPO}
                   />
                 </div>
               </div>
-
-              <p className="mt-4 text-xs leading-5 text-[#B4C8BB]">
-                O período é opcional. Se informar
-                uma data, informe também a outra.
-              </p>
             </section>
 
-            <section className="rounded-2xl border border-[#E3A144]/15 bg-[#0A1713] p-5 md:p-7">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-                Situação
+            {metodoEstimativa ===
+              'pessoa_dia' && (
+              <section className="rounded-2xl border border-[#E3A144]/20 bg-[#0A1713] p-5 md:p-7">
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#E3A144]">
+                  Previsão automática
+                </p>
+
+                <h2 className="mt-2 text-2xl">
+                  Consumo por pessoa
+                  e por dia
+                </h2>
+
+                <div className="mt-6 grid gap-5 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm">
+                      Público
+                    </label>
+
+                    <select
+                      value={
+                        formulario.publico_alvo
+                      }
+                      onChange={(
+                        evento,
+                      ) =>
+                        atualizarCampo(
+                          'publico_alvo',
+                          evento.target
+                            .value as PublicoAlvo,
+                        )
+                      }
+                      className={CAMPO}
+                    >
+                      {Object.entries(
+                        PUBLICOS_ALVO,
+                      )
+                        .filter(
+                          ([valor]) =>
+                            valor !==
+                            'operacao',
+                        )
+                        .map(
+                          ([
+                            valor,
+                            nome,
+                          ]) => (
+                            <option
+                              key={
+                                valor
+                              }
+                              value={
+                                valor
+                              }
+                            >
+                              {nome}
+                            </option>
+                          ),
+                        )}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm">
+                      Pessoas
+                    </label>
+
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      required
+                      value={
+                        formulario.pessoas_estimadas
+                      }
+                      onChange={(
+                        evento,
+                      ) =>
+                        atualizarCampo(
+                          'pessoas_estimadas',
+                          evento.target
+                            .value,
+                        )
+                      }
+                      className={CAMPO}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm">
+                      Dias
+                    </label>
+
+                    <input
+                      type="number"
+                      min="1"
+                      step="1"
+                      required
+                      value={
+                        formulario.dias_estimados
+                      }
+                      onChange={(
+                        evento,
+                      ) =>
+                        atualizarCampo(
+                          'dias_estimados',
+                          evento.target
+                            .value,
+                        )
+                      }
+                      className={CAMPO}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm">
+                      Consumo por
+                      pessoa/dia
+                    </label>
+
+                    <input
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      required
+                      value={
+                        formulario.consumo_pessoa_dia
+                      }
+                      onChange={(
+                        evento,
+                      ) =>
+                        atualizarCampo(
+                          'consumo_pessoa_dia',
+                          evento.target
+                            .value,
+                        )
+                      }
+                      className={CAMPO}
+                    />
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="mb-2 block text-sm">
+                      Unidade
+                    </label>
+
+                    <input
+                      required
+                      value={
+                        formulario.unidade
+                      }
+                      onChange={(
+                        evento,
+                      ) =>
+                        atualizarCampo(
+                          'unidade',
+                          evento.target
+                            .value,
+                        )
+                      }
+                      className={CAMPO}
+                    />
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {metodoEstimativa ===
+              'combustivel_hora' && (
+              <section className="rounded-2xl border border-[#E3A144]/20 bg-[#0A1713] p-5 md:p-7">
+                <p className="text-xs font-semibold uppercase tracking-widest text-[#E3A144]">
+                  Previsão de
+                  combustível
+                </p>
+
+                <h2 className="mt-2 text-2xl">
+                  Consumo estimado da
+                  embarcação
+                </h2>
+
+                <div className="mt-6 grid gap-5 md:grid-cols-2">
+                  <div>
+                    <label className="mb-2 block text-sm">
+                      Combustível
+                    </label>
+
+                    <select
+                      value={
+                        formulario.tipo_combustivel
+                      }
+                      onChange={(
+                        evento,
+                      ) =>
+                        atualizarCampo(
+                          'tipo_combustivel',
+                          evento.target
+                            .value as TipoCombustivel,
+                        )
+                      }
+                      className={CAMPO}
+                    >
+                      {Object.entries(
+                        TIPOS_COMBUSTIVEL,
+                      ).map(
+                        ([
+                          valor,
+                          nome,
+                        ]) => (
+                          <option
+                            key={valor}
+                            value={valor}
+                          >
+                            {nome}
+                          </option>
+                        ),
+                      )}
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm">
+                      Dias
+                    </label>
+
+                    <input
+                      required
+                      type="number"
+                      min="1"
+                      step="1"
+                      value={
+                        formulario.dias_estimados
+                      }
+                      onChange={(
+                        evento,
+                      ) =>
+                        atualizarCampo(
+                          'dias_estimados',
+                          evento.target
+                            .value,
+                        )
+                      }
+                      className={CAMPO}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm">
+                      Horas de
+                      motor/dia
+                    </label>
+
+                    <input
+                      required
+                      type="number"
+                      min="0.01"
+                      max="24"
+                      step="0.01"
+                      value={
+                        formulario.horas_motor_dia
+                      }
+                      onChange={(
+                        evento,
+                      ) =>
+                        atualizarCampo(
+                          'horas_motor_dia',
+                          evento.target
+                            .value,
+                        )
+                      }
+                      className={CAMPO}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm">
+                      Consumo médio
+                      (L/h)
+                    </label>
+
+                    <input
+                      required
+                      type="number"
+                      min="0.01"
+                      step="0.01"
+                      value={
+                        formulario.consumo_litros_hora
+                      }
+                      onChange={(
+                        evento,
+                      ) =>
+                        atualizarCampo(
+                          'consumo_litros_hora',
+                          evento.target
+                            .value,
+                        )
+                      }
+                      className={CAMPO}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 block text-sm">
+                      Margem de
+                      segurança (%)
+                    </label>
+
+                    <input
+                      required
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="0.01"
+                      value={
+                        formulario.margem_percentual
+                      }
+                      onChange={(
+                        evento,
+                      ) =>
+                        atualizarCampo(
+                          'margem_percentual',
+                          evento.target
+                            .value,
+                        )
+                      }
+                      className={CAMPO}
+                    />
+                  </div>
+                </div>
+              </section>
+            )}
+
+            {metodoEstimativa ===
+              'manual' && (
+              <section className="rounded-2xl border border-white/10 bg-[#0A1713] p-5 md:p-7">
+                <h2 className="text-2xl">
+                  Quantidade necessária
+                </h2>
+
+                <div className="mt-6 grid gap-5 sm:grid-cols-2">
+                  <input
+                    type="number"
+                    min="0.01"
+                    step="0.01"
+                    required
+                    value={
+                      formulario.quantidade
+                    }
+                    onChange={(
+                      evento,
+                    ) =>
+                      atualizarCampo(
+                        'quantidade',
+                        evento.target
+                          .value,
+                      )
+                    }
+                    className={CAMPO}
+                  />
+
+                  <input
+                    required
+                    value={
+                      formulario.unidade
+                    }
+                    onChange={(
+                      evento,
+                    ) =>
+                      atualizarCampo(
+                        'unidade',
+                        evento.target
+                          .value,
+                      )
+                    }
+                    className={CAMPO}
+                  />
+                </div>
+              </section>
+            )}
+
+            <section className="rounded-2xl border border-[#E3A144]/20 bg-[#0A1713] p-5 md:p-7">
+              <p className="text-xs font-semibold uppercase tracking-widest text-[#E3A144]">
+                Quantidade prevista
               </p>
 
-              <h2
-                className="mt-2 text-2xl text-[#F0F0E8]"
-                style={{
-                  fontFamily:
-                    'var(--font-fraunces), serif',
-                }}
-              >
-                Como deseja salvar?
+              <strong className="mt-3 block text-4xl text-[#F0F0E8]">
+                {previsao !== null
+                  ? `${previsao.toLocaleString(
+                      'pt-BR',
+                      {
+                        maximumFractionDigits: 2,
+                      },
+                    )} ${formulario.unidade}`
+                  : 'Preencha os dados'}
+              </strong>
+            </section>
+
+            <section className="rounded-2xl border border-white/10 bg-[#0A1713] p-5 md:p-7">
+              <h2 className="text-2xl">
+                Situação
               </h2>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <label
-                  className={`cursor-pointer rounded-2xl border p-4 transition ${
-                    formulario.status ===
-                    'rascunho'
-                      ? 'border-[#E3A144]/35 bg-[#E3A144]/[0.07]'
-                      : 'border-white/10 bg-white/[0.02] hover:border-white/20'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="status"
-                    value="rascunho"
-                    checked={
-                      formulario.status ===
-                      'rascunho'
-                    }
-                    onChange={() =>
-                      atualizarCampo(
-                        'status',
-                        'rascunho',
-                      )
-                    }
-                    disabled={bloqueado}
-                    className="sr-only"
-                  />
+              <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                {[
+                  {
+                    valor:
+                      'rascunho' as const,
+                    titulo:
+                      'Rascunho',
+                  },
+                  {
+                    valor:
+                      'aberta' as const,
+                    titulo:
+                      'Abrir demanda',
+                  },
+                ].map(
+                  (opcao) => (
+                    <label
+                      key={
+                        opcao.valor
+                      }
+                      className="cursor-pointer rounded-xl border border-white/10 p-4"
+                    >
+                      <input
+                        type="radio"
+                        className="mr-3"
+                        checked={
+                          formulario.status ===
+                          opcao.valor
+                        }
+                        onChange={() =>
+                          atualizarCampo(
+                            'status',
+                            opcao.valor,
+                          )
+                        }
+                      />
 
-                  <span className="block text-sm font-semibold text-[#F0F0E8]">
-                    Salvar como rascunho
-                  </span>
-
-                  <span className="mt-2 block text-xs leading-5 text-[#B4C8BB]">
-                    A necessidade fica registrada
-                    para revisão antes de ser
-                    considerada aberta.
-                  </span>
-                </label>
-
-                <label
-                  className={`cursor-pointer rounded-2xl border p-4 transition ${
-                    formulario.status ===
-                    'aberta'
-                      ? 'border-emerald-400/30 bg-emerald-400/[0.06]'
-                      : 'border-white/10 bg-white/[0.02] hover:border-white/20'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="status"
-                    value="aberta"
-                    checked={
-                      formulario.status ===
-                      'aberta'
-                    }
-                    onChange={() =>
-                      atualizarCampo(
-                        'status',
-                        'aberta',
-                      )
-                    }
-                    disabled={bloqueado}
-                    className="sr-only"
-                  />
-
-                  <span className="block text-sm font-semibold text-[#F0F0E8]">
-                    Abrir demanda
-                  </span>
-
-                  <span className="mt-2 block text-xs leading-5 text-[#B4C8BB]">
-                    Marca a necessidade como ativa
-                    dentro da operação da empresa.
-                  </span>
-                </label>
-              </div>
-
-              <div className="mt-5 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3">
-                <p className="text-xs leading-5 text-[#B4C8BB]">
-                  Mesmo uma demanda aberta
-                  permanece privada nesta etapa.
-                  Ela não será publicada
-                  automaticamente no portal ou no
-                  feed da Rede ERN.
-                </p>
+                      {opcao.titulo}
+                    </label>
+                  ),
+                )}
               </div>
             </section>
 
             {erroFormulario && (
-              <div
-                role="alert"
-                className="rounded-2xl border border-rose-400/20 bg-rose-400/[0.05] px-5 py-4"
-              >
-                <p className="text-sm font-semibold text-rose-200">
-                  Não foi possível salvar a
-                  demanda.
-                </p>
-
-                <p className="mt-2 text-sm leading-6 text-rose-100/70">
-                  {erroFormulario}
-                </p>
+              <div className="rounded-2xl border border-rose-400/20 bg-rose-400/[0.05] p-5 text-rose-200">
+                {erroFormulario}
               </div>
             )}
 
-            <div className="flex flex-col-reverse gap-3 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-end">
+            <div className="flex justify-end gap-3">
               <Link
                 href="/demandas"
                 className={BOTAO}
@@ -718,14 +1284,11 @@ export default function NovaDemandaPage() {
               <button
                 type="submit"
                 disabled={bloqueado}
-                className={`${BOTAO} border-[#E3A144] bg-[#E3A144] text-[#07130F] hover:bg-[#F0B35C]`}
+                className={`${BOTAO} border-[#E3A144] bg-[#E3A144] text-[#07130F]`}
               >
                 {salvando
                   ? 'Salvando...'
-                  : formulario.status ===
-                      'aberta'
-                    ? 'Criar e abrir demanda'
-                    : 'Salvar rascunho'}
+                  : 'Salvar demanda'}
               </button>
             </div>
           </form>

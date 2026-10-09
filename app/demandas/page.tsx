@@ -12,7 +12,9 @@ import { supabase } from '@/lib/supabase';
 
 import {
   CATEGORIAS_DEMANDA,
+  PUBLICOS_ALVO,
   STATUS_DEMANDA,
+  TIPOS_COMBUSTIVEL,
   ehCategoriaDemanda,
   ehStatusDemanda,
   listarDemandas,
@@ -20,6 +22,7 @@ import {
   obterContextoDemandas,
   type CategoriaDemanda,
   type ContextoDemandas,
+  type Demanda,
   type PaginaDemandas,
   type StatusDemanda,
 } from '@/lib/demandas';
@@ -33,7 +36,10 @@ type Consulta = {
 
 type Estado =
   | { tipo: 'carregando' }
-  | { tipo: 'erro'; mensagem: string }
+  | {
+      tipo: 'erro';
+      mensagem: string;
+    }
   | {
       tipo: 'pronto';
       contexto: ContextoDemandas;
@@ -47,13 +53,19 @@ const CONSULTA_INICIAL: Consulta = {
   pagina: 0,
 };
 
-const ESTILOS_STATUS: Record<StatusDemanda, string> = {
+const ESTILOS_STATUS: Record<
+  StatusDemanda,
+  string
+> = {
   rascunho:
     'border-slate-400/20 bg-slate-400/10 text-slate-300',
+
   aberta:
     'border-emerald-400/20 bg-emerald-400/10 text-emerald-300',
+
   encerrada:
     'border-cyan-400/20 bg-cyan-400/10 text-cyan-300',
+
   cancelada:
     'border-rose-400/20 bg-rose-400/10 text-rose-300',
 };
@@ -72,11 +84,14 @@ const BOTAO =
   'focus-visible:outline-[#E3A144] disabled:cursor-not-allowed ' +
   'disabled:opacity-40 motion-reduce:transition-none';
 
-const formatadorQuantidade = new Intl.NumberFormat('pt-BR', {
-  maximumFractionDigits: 2,
-});
+const formatadorQuantidade =
+  new Intl.NumberFormat('pt-BR', {
+    maximumFractionDigits: 2,
+  });
 
-function formatarData(data: string | null): string {
+function formatarData(
+  data: string | null,
+): string {
   if (!data) {
     return 'Não informado';
   }
@@ -90,9 +105,64 @@ function formatarData(data: string | null): string {
   return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
 
+function detalheEstimativa(
+  demanda: Demanda,
+): string | null {
+  if (
+    demanda.metodo_estimativa ===
+      'pessoa_dia' &&
+    demanda.pessoas_estimadas !==
+      null &&
+    demanda.dias_estimados !==
+      null &&
+    demanda.consumo_pessoa_dia !==
+      null
+  ) {
+    const publico =
+      demanda.publico_alvo
+        ? PUBLICOS_ALVO[
+            demanda.publico_alvo
+          ]
+        : 'Público não informado';
+
+    return `${publico} • ${demanda.pessoas_estimadas} pessoas × ${demanda.dias_estimados} dias × ${formatadorQuantidade.format(
+      demanda.consumo_pessoa_dia,
+    )} ${demanda.unidade}/pessoa/dia`;
+  }
+
+  if (
+    demanda.metodo_estimativa ===
+      'combustivel_hora' &&
+    demanda.tipo_combustivel &&
+    demanda.dias_estimados !==
+      null &&
+    demanda.horas_motor_dia !==
+      null &&
+    demanda.consumo_litros_hora !==
+      null
+  ) {
+    return `${
+      TIPOS_COMBUSTIVEL[
+        demanda.tipo_combustivel
+      ]
+    } • ${demanda.dias_estimados} dias × ${formatadorQuantidade.format(
+      demanda.horas_motor_dia,
+    )} h/dia × ${formatadorQuantidade.format(
+      demanda.consumo_litros_hora,
+    )} L/h + ${formatadorQuantidade.format(
+      demanda.margem_percentual,
+    )}% de margem`;
+  }
+
+  return null;
+}
+
 function SkeletonDemandas() {
   return (
-    <div role="status" aria-label="Carregando demandas">
+    <div
+      role="status"
+      aria-label="Carregando demandas"
+    >
       <span className="sr-only">
         Carregando demandas...
       </span>
@@ -101,57 +171,77 @@ function SkeletonDemandas() {
         aria-hidden="true"
         className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
       >
-        {Array.from({ length: 6 }, (_, indice) => (
-          <div
-            key={indice}
-            className="rounded-2xl border border-white/10 bg-[#0A1713] p-6 motion-safe:animate-pulse"
-          >
-            <div className="h-5 w-24 rounded bg-white/10" />
-            <div className="mt-6 h-6 w-3/4 rounded bg-white/10" />
-            <div className="mt-3 h-4 w-1/2 rounded bg-white/5" />
-            <div className="mt-6 h-4 w-full rounded bg-white/5" />
-            <div className="mt-3 h-4 w-4/5 rounded bg-white/5" />
-            <div className="mt-6 h-12 rounded-xl bg-white/5" />
-          </div>
-        ))}
+        {Array.from(
+          { length: 6 },
+          (_, indice) => (
+            <div
+              key={indice}
+              className="rounded-2xl border border-white/10 bg-[#0A1713] p-6 motion-safe:animate-pulse"
+            >
+              <div className="h-5 w-24 rounded bg-white/10" />
+              <div className="mt-6 h-6 w-3/4 rounded bg-white/10" />
+              <div className="mt-3 h-4 w-1/2 rounded bg-white/5" />
+              <div className="mt-6 h-4 w-full rounded bg-white/5" />
+              <div className="mt-3 h-4 w-4/5 rounded bg-white/5" />
+              <div className="mt-6 h-12 rounded-xl bg-white/5" />
+            </div>
+          ),
+        )}
       </div>
     </div>
   );
 }
 
 export default function DemandasPage() {
-  const [rascunhoBusca, setRascunhoBusca] =
-    useState('');
+  const [
+    rascunhoBusca,
+    setRascunhoBusca,
+  ] = useState('');
 
-  const [consulta, setConsulta] =
-    useState<Consulta>(CONSULTA_INICIAL);
+  const [
+    consulta,
+    setConsulta,
+  ] = useState<Consulta>(
+    CONSULTA_INICIAL,
+  );
 
-  const [estado, setEstado] = useState<Estado>({
-    tipo: 'carregando',
-  });
+  const [estado, setEstado] =
+    useState<Estado>({
+      tipo: 'carregando',
+    });
 
-  const [revisao, setRevisao] = useState(0);
+  const [revisao, setRevisao] =
+    useState(0);
 
   const requisicaoAtual =
-    useRef<AbortController | null>(null);
+    useRef<AbortController | null>(
+      null,
+    );
 
   useEffect(() => {
     const { data } =
-      supabase.auth.onAuthStateChange((evento) => {
-        if (
-          evento === 'SIGNED_OUT' ||
-          evento === 'SIGNED_IN' ||
-          evento === 'USER_UPDATED'
-        ) {
-          requisicaoAtual.current?.abort();
+      supabase.auth.onAuthStateChange(
+        (evento) => {
+          if (
+            evento ===
+              'SIGNED_OUT' ||
+            evento ===
+              'SIGNED_IN' ||
+            evento ===
+              'USER_UPDATED'
+          ) {
+            requisicaoAtual.current?.abort();
 
-          setEstado({
-            tipo: 'carregando',
-          });
+            setEstado({
+              tipo: 'carregando',
+            });
 
-          setRevisao((valor) => valor + 1);
-        }
-      });
+            setRevisao(
+              (valor) => valor + 1,
+            );
+          }
+        },
+      );
 
     return () => {
       data.subscription.unsubscribe();
@@ -159,9 +249,11 @@ export default function DemandasPage() {
   }, []);
 
   useEffect(() => {
-    const controller = new AbortController();
+    const controller =
+      new AbortController();
 
-    requisicaoAtual.current = controller;
+    requisicaoAtual.current =
+      controller;
 
     let ativo = true;
 
@@ -169,19 +261,23 @@ export default function DemandasPage() {
       tipo: 'carregando',
     });
 
-    const timeout = window.setTimeout(() => {
-      if (!ativo || controller.signal.aborted) {
-        return;
-      }
+    const timeout =
+      window.setTimeout(() => {
+        if (
+          !ativo ||
+          controller.signal.aborted
+        ) {
+          return;
+        }
 
-      controller.abort();
+        controller.abort();
 
-      setEstado({
-        tipo: 'erro',
-        mensagem:
-          'A consulta demorou mais que o esperado. Verifique sua conexão e tente novamente.',
-      });
-    }, 20000);
+        setEstado({
+          tipo: 'erro',
+          mensagem:
+            'A consulta demorou mais que o esperado. Verifique sua conexão e tente novamente.',
+        });
+      }, 20000);
 
     async function carregar(): Promise<void> {
       try {
@@ -197,11 +293,12 @@ export default function DemandasPage() {
           return;
         }
 
-        const resultado = await listarDemandas(
-          contexto,
-          consulta,
-          controller.signal,
-        );
+        const resultado =
+          await listarDemandas(
+            contexto,
+            consulta,
+            controller.signal,
+          );
 
         if (
           !ativo ||
@@ -210,16 +307,24 @@ export default function DemandasPage() {
           return;
         }
 
-        const ultimaPagina = Math.max(
-          resultado.total_paginas - 1,
-          0,
-        );
+        const ultimaPagina =
+          Math.max(
+            resultado.total_paginas -
+              1,
+            0,
+          );
 
-        if (consulta.pagina > ultimaPagina) {
-          setConsulta((anterior) => ({
-            ...anterior,
-            pagina: ultimaPagina,
-          }));
+        if (
+          consulta.pagina >
+          ultimaPagina
+        ) {
+          setConsulta(
+            (anterior) => ({
+              ...anterior,
+              pagina:
+                ultimaPagina,
+            }),
+          );
 
           return;
         }
@@ -240,10 +345,14 @@ export default function DemandasPage() {
         setEstado({
           tipo: 'erro',
           mensagem:
-            mensagemErroDemandas(erro),
+            mensagemErroDemandas(
+              erro,
+            ),
         });
       } finally {
-        window.clearTimeout(timeout);
+        window.clearTimeout(
+          timeout,
+        );
       }
     }
 
@@ -257,9 +366,11 @@ export default function DemandasPage() {
       window.clearTimeout(timeout);
 
       if (
-        requisicaoAtual.current === controller
+        requisicaoAtual.current ===
+        controller
       ) {
-        requisicaoAtual.current = null;
+        requisicaoAtual.current =
+          null;
       }
     };
   }, [consulta, revisao]);
@@ -283,7 +394,9 @@ export default function DemandasPage() {
       tipo: 'carregando',
     });
 
-    setRevisao((valor) => valor + 1);
+    setRevisao(
+      (valor) => valor + 1,
+    );
   }
 
   function buscar(
@@ -293,7 +406,8 @@ export default function DemandasPage() {
 
     alterarConsulta({
       ...consulta,
-      busca: rascunhoBusca.trim(),
+      busca:
+        rascunhoBusca.trim(),
       pagina: 0,
     });
   }
@@ -307,7 +421,8 @@ export default function DemandasPage() {
   }
 
   const carregando =
-    estado.tipo === 'carregando';
+    estado.tipo ===
+    'carregando';
 
   const resultado =
     estado.tipo === 'pronto'
@@ -316,7 +431,8 @@ export default function DemandasPage() {
 
   const podeGerenciar =
     estado.tipo === 'pronto' &&
-    estado.contexto.pode_gerenciar;
+    estado.contexto
+      .pode_gerenciar;
 
   const temFiltros =
     consulta.busca !== '' ||
@@ -351,10 +467,11 @@ export default function DemandasPage() {
               </h1>
 
               <p className="mt-3 max-w-2xl text-sm leading-6 text-[#B4C8BB]">
-                Organize as necessidades de
-                contratação da sua operação.
-                Estas demandas permanecem privadas
-                dentro da sua empresa.
+                Planeje alimentação,
+                bebidas, combustível e
+                os demais recursos
+                necessários para a
+                operação turística.
               </p>
             </div>
 
@@ -390,60 +507,6 @@ export default function DemandasPage() {
       </header>
 
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-5 md:px-8 md:py-8">
-        <section className="grid gap-3 sm:grid-cols-3">
-          <div className="rounded-2xl border border-white/10 bg-[#0A1713] p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7C9C87]">
-              Total
-            </p>
-
-            <strong
-              className="mt-2 block text-3xl text-[#F0F0E8]"
-              style={{
-                fontFamily:
-                  'var(--font-fraunces), serif',
-              }}
-            >
-              {resultado?.total ?? '—'}
-            </strong>
-
-            <p className="mt-1 text-xs text-[#B4C8BB]">
-              demandas encontradas
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-emerald-400/10 bg-[#0A1713] p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
-              Fluxo operacional
-            </p>
-
-            <strong className="mt-2 block text-sm text-[#F0F0E8]">
-              Necessidades da empresa
-            </strong>
-
-            <p className="mt-2 text-xs leading-5 text-[#B4C8BB]">
-              Hospedagem, transporte fluvial,
-              guiamento, passeios e outros
-              serviços.
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-[#E3A144]/15 bg-[#0A1713] p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#E3A144]">
-              Privacidade
-            </p>
-
-            <strong className="mt-2 block text-sm text-[#F0F0E8]">
-              Ambiente empresarial
-            </strong>
-
-            <p className="mt-2 text-xs leading-5 text-[#B4C8BB]">
-              Nenhuma demanda desta área é
-              publicada automaticamente na Rede
-              ERN.
-            </p>
-          </div>
-        </section>
-
         <form
           onSubmit={buscar}
           aria-label="Filtrar demandas"
@@ -463,12 +526,15 @@ export default function DemandasPage() {
                 type="search"
                 maxLength={160}
                 value={rascunhoBusca}
-                onChange={(evento) =>
+                onChange={(
+                  evento,
+                ) =>
                   setRascunhoBusca(
-                    evento.target.value,
+                    evento.target
+                      .value,
                   )
                 }
-                placeholder="Ex.: hospedagem para grupo"
+                placeholder="Ex.: combustível da viagem"
                 className={CAMPO}
               />
             </div>
@@ -483,18 +549,26 @@ export default function DemandasPage() {
 
               <select
                 id="categoria-demanda"
-                value={consulta.categoria}
-                onChange={(evento) => {
+                value={
+                  consulta.categoria
+                }
+                onChange={(
+                  evento,
+                ) => {
                   const valor =
-                    evento.target.value;
+                    evento.target
+                      .value;
 
                   if (
                     valor === '' ||
-                    ehCategoriaDemanda(valor)
+                    ehCategoriaDemanda(
+                      valor,
+                    )
                   ) {
                     alterarConsulta({
                       ...consulta,
-                      categoria: valor,
+                      categoria:
+                        valor,
                       pagina: 0,
                     });
                   }
@@ -507,14 +581,16 @@ export default function DemandasPage() {
 
                 {Object.entries(
                   CATEGORIAS_DEMANDA,
-                ).map(([valor, nome]) => (
-                  <option
-                    key={valor}
-                    value={valor}
-                  >
-                    {nome}
-                  </option>
-                ))}
+                ).map(
+                  ([valor, nome]) => (
+                    <option
+                      key={valor}
+                      value={valor}
+                    >
+                      {nome}
+                    </option>
+                  ),
+                )}
               </select>
             </div>
 
@@ -529,17 +605,23 @@ export default function DemandasPage() {
               <select
                 id="status-demanda"
                 value={consulta.status}
-                onChange={(evento) => {
+                onChange={(
+                  evento,
+                ) => {
                   const valor =
-                    evento.target.value;
+                    evento.target
+                      .value;
 
                   if (
                     valor === '' ||
-                    ehStatusDemanda(valor)
+                    ehStatusDemanda(
+                      valor,
+                    )
                   ) {
                     alterarConsulta({
                       ...consulta,
-                      status: valor,
+                      status:
+                        valor,
                       pagina: 0,
                     });
                   }
@@ -552,14 +634,16 @@ export default function DemandasPage() {
 
                 {Object.entries(
                   STATUS_DEMANDA,
-                ).map(([valor, nome]) => (
-                  <option
-                    key={valor}
-                    value={valor}
-                  >
-                    {nome}
-                  </option>
-                ))}
+                ).map(
+                  ([valor, nome]) => (
+                    <option
+                      key={valor}
+                      value={valor}
+                    >
+                      {nome}
+                    </option>
+                  ),
+                )}
               </select>
             </div>
 
@@ -582,7 +666,7 @@ export default function DemandasPage() {
               <button
                 type="button"
                 onClick={limparFiltros}
-                className="rounded px-2 py-2 text-sm font-semibold text-[#F4C77E] hover:underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#E3A144]"
+                className="rounded px-2 py-2 text-sm font-semibold text-[#F4C77E] hover:underline"
               >
                 Limpar filtros
               </button>
@@ -594,53 +678,43 @@ export default function DemandasPage() {
           aria-label="Resultados da consulta"
           aria-busy={carregando}
         >
-          {carregando && <SkeletonDemandas />}
+          {carregando && (
+            <SkeletonDemandas />
+          )}
 
-          {estado.tipo === 'erro' && (
-            <div
-              role="alert"
-              className="entrada rounded-2xl border border-rose-400/20 bg-[#0A1713] p-6 md:p-8"
-            >
+          {estado.tipo ===
+            'erro' && (
+            <div className="rounded-2xl border border-rose-400/20 bg-[#0A1713] p-6 md:p-8">
               <h2 className="text-xl font-semibold text-rose-200">
-                Não foi possível carregar as
-                demandas
+                Não foi possível
+                carregar as demandas
               </h2>
 
               <p className="mt-3 text-sm leading-6 text-[#B4C8BB]">
                 {estado.mensagem}
               </p>
 
-              <div className="mt-6 flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={atualizar}
-                  className={BOTAO}
-                >
-                  Tentar novamente
-                </button>
-
-                <Link
-                  href="/login"
-                  className={BOTAO}
-                >
-                  Ir para o login
-                </Link>
-              </div>
+              <button
+                type="button"
+                onClick={atualizar}
+                className={`${BOTAO} mt-6`}
+              >
+                Tentar novamente
+              </button>
             </div>
           )}
 
-          {estado.tipo === 'pronto' &&
+          {estado.tipo ===
+            'pronto' &&
             resultado && (
-              <div className="entrada">
+              <div>
                 <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                  <p
-                    role="status"
-                    className="text-sm text-[#B4C8BB]"
-                  >
+                  <p className="text-sm text-[#B4C8BB]">
                     <strong className="text-[#F0F0E8]">
                       {resultado.total}
                     </strong>{' '}
-                    {resultado.total === 1
+                    {resultado.total ===
+                    1
                       ? 'demanda encontrada'
                       : 'demandas encontradas'}
                   </p>
@@ -648,14 +722,14 @@ export default function DemandasPage() {
                   {!estado.contexto
                     .pode_gerenciar && (
                     <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-[#B4C8BB]">
-                      Seu perfil permite apenas
-                      consulta
+                      Seu perfil permite
+                      apenas consulta
                     </span>
                   )}
                 </div>
 
-                {resultado.registros.length ===
-                0 ? (
+                {resultado.registros
+                  .length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-white/15 bg-[#0A1713] px-6 py-14 text-center">
                     <h2
                       className="text-2xl text-[#F0F0E8]"
@@ -664,135 +738,159 @@ export default function DemandasPage() {
                           'var(--font-fraunces), serif',
                       }}
                     >
-                      {temFiltros
-                        ? 'Nenhuma demanda corresponde aos filtros'
-                        : 'Sua empresa ainda não tem demandas'}
+                      Nenhuma demanda
+                      encontrada
                     </h2>
 
                     <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-[#B4C8BB]">
-                      {temFiltros
-                        ? 'Experimente outro título, categoria ou status.'
-                        : 'Cadastre uma necessidade operacional para organizar a contratação de serviços da empresa.'}
+                      Registre as
+                      necessidades da
+                      próxima operação
+                      para reduzir
+                      imprevistos durante
+                      a viagem.
                     </p>
-
-                    <div className="mt-6 flex flex-wrap justify-center gap-3">
-                      {temFiltros && (
-                        <button
-                          type="button"
-                          onClick={
-                            limparFiltros
-                          }
-                          className={BOTAO}
-                        >
-                          Limpar filtros
-                        </button>
-                      )}
-
-                      {!temFiltros &&
-                        estado.contexto
-                          .pode_gerenciar && (
-                          <Link
-                            href="/demandas/nova"
-                            className={`${BOTAO} border-[#E3A144] bg-[#E3A144] text-[#07130F] hover:bg-[#F0B35C]`}
-                          >
-                            Criar primeira demanda
-                          </Link>
-                        )}
-                    </div>
                   </div>
                 ) : (
                   <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                     {resultado.registros.map(
-                      (demanda) => (
-                        <li
-                          key={demanda.id}
-                          className="min-w-0"
-                        >
-                          <article className="flex h-full flex-col rounded-2xl border border-white/10 bg-[#0A1713] p-5 transition-colors hover:border-[#E3A144]/30 sm:p-6 motion-reduce:transition-none">
-                            <div className="flex flex-wrap items-center justify-between gap-3">
-                              <span className="text-xs font-semibold text-[#E3A144]">
-                                {
-                                  CATEGORIAS_DEMANDA[
-                                    demanda
-                                      .categoria
-                                  ]
-                                }
-                              </span>
+                      (demanda) => {
+                        const detalhe =
+                          detalheEstimativa(
+                            demanda,
+                          );
 
-                              <span
-                                className={`rounded-full border px-3 py-1 text-xs ${ESTILOS_STATUS[demanda.status]}`}
-                              >
-                                {
-                                  STATUS_DEMANDA[
-                                    demanda.status
-                                  ]
-                                }
-                              </span>
-                            </div>
-
-                            <h2 className="mt-5 break-words text-xl font-semibold text-[#F0F0E8]">
-                              {demanda.titulo}
-                            </h2>
-
-                            <p className="mt-2 break-words text-sm text-[#B4C8BB]">
-                              {demanda.localidade}
-                            </p>
-
-                            <p className="mt-5 line-clamp-3 break-words text-sm leading-6 text-[#B4C8BB]">
-                              {demanda.descricao ||
-                                'Sem descrição adicional.'}
-                            </p>
-
-                            <dl className="mt-auto space-y-3 pt-6">
-                              <div className="rounded-xl bg-white/[0.03] px-4 py-3">
-                                <dt className="text-xs text-[#B4C8BB]">
-                                  Quantidade
-                                </dt>
-
-                                <dd className="mt-1 break-words text-sm font-semibold">
-                                  {formatadorQuantidade.format(
-                                    demanda.quantidade,
-                                  )}{' '}
+                        return (
+                          <li
+                            key={
+                              demanda.id
+                            }
+                            className="min-w-0"
+                          >
+                            <article className="flex h-full flex-col rounded-2xl border border-white/10 bg-[#0A1713] p-5 transition-colors hover:border-[#E3A144]/30 sm:p-6">
+                              <div className="flex flex-wrap items-center justify-between gap-3">
+                                <span className="text-xs font-semibold text-[#E3A144]">
                                   {
-                                    demanda.unidade
+                                    CATEGORIAS_DEMANDA[
+                                      demanda
+                                        .categoria
+                                    ]
                                   }
-                                </dd>
+                                </span>
+
+                                <span
+                                  className={`rounded-full border px-3 py-1 text-xs ${
+                                    ESTILOS_STATUS[
+                                      demanda
+                                        .status
+                                    ]
+                                  }`}
+                                >
+                                  {
+                                    STATUS_DEMANDA[
+                                      demanda
+                                        .status
+                                    ]
+                                  }
+                                </span>
                               </div>
 
-                              <div className="rounded-xl bg-white/[0.03] px-4 py-3">
-                                <dt className="text-xs text-[#B4C8BB]">
-                                  Período
-                                </dt>
+                              <h2 className="mt-5 break-words text-xl font-semibold text-[#F0F0E8]">
+                                {
+                                  demanda.titulo
+                                }
+                              </h2>
 
-                                <dd className="mt-1 text-sm">
-                                  {demanda.data_inicio &&
-                                  demanda.data_fim
-                                    ? `${formatarData(
-                                        demanda.data_inicio,
-                                      )} a ${formatarData(
-                                        demanda.data_fim,
-                                      )}`
-                                    : 'Não informado'}
-                                </dd>
-                              </div>
-                            </dl>
-                          </article>
-                        </li>
-                      ),
+                              <p className="mt-2 text-sm text-[#B4C8BB]">
+                                {
+                                  demanda.localidade
+                                }
+                              </p>
+
+                              <p className="mt-5 line-clamp-3 text-sm leading-6 text-[#B4C8BB]">
+                                {demanda.descricao ||
+                                  'Sem descrição adicional.'}
+                              </p>
+
+                              {detalhe && (
+                                <div className="mt-5 rounded-xl border border-[#E3A144]/10 bg-[#E3A144]/[0.035] p-3">
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#E3A144]">
+                                    Previsão
+                                    calculada
+                                  </p>
+
+                                  <p className="mt-2 text-xs leading-5 text-[#B4C8BB]">
+                                    {
+                                      detalhe
+                                    }
+                                  </p>
+                                </div>
+                              )}
+
+                              <dl className="mt-auto space-y-3 pt-6">
+                                <div className="rounded-xl bg-white/[0.03] px-4 py-3">
+                                  <dt className="text-xs text-[#B4C8BB]">
+                                    Quantidade
+                                    prevista
+                                  </dt>
+
+                                  <dd className="mt-1 text-sm font-semibold">
+                                    {formatadorQuantidade.format(
+                                      demanda.quantidade,
+                                    )}{' '}
+                                    {
+                                      demanda.unidade
+                                    }
+                                  </dd>
+                                </div>
+
+                                <div className="rounded-xl bg-white/[0.03] px-4 py-3">
+                                  <dt className="text-xs text-[#B4C8BB]">
+                                    Período
+                                  </dt>
+
+                                  <dd className="mt-1 text-sm">
+                                    {demanda.data_inicio &&
+                                    demanda.data_fim
+                                      ? `${formatarData(
+                                          demanda.data_inicio,
+                                        )} a ${formatarData(
+                                          demanda.data_fim,
+                                        )}`
+                                      : 'Não informado'}
+                                  </dd>
+                                </div>
+                              </dl>
+
+                              {estado.contexto
+                                .pode_gerenciar && (
+                                <Link
+                                  href={`/demandas/editar/${demanda.id}`}
+                                  className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl border border-[#E3A144]/25 bg-[#E3A144]/[0.06] px-4 text-sm font-semibold text-[#F4C77E] transition hover:bg-[#E3A144]/10"
+                                >
+                                  Gerenciar
+                                  demanda →
+                                </Link>
+                              )}
+                            </article>
+                          </li>
+                        );
+                      },
                     )}
                   </ul>
                 )}
 
-                {resultado.total > 0 && (
-                  <nav
-                    aria-label="Paginação de demandas"
-                    className="mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row"
-                  >
+                {resultado.total >
+                  0 && (
+                  <nav className="mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
                     <p className="text-sm text-[#B4C8BB]">
                       Página{' '}
-                      {resultado.pagina + 1}{' '}
+                      {resultado.pagina +
+                        1}{' '}
                       de{' '}
-                      {resultado.total_paginas}
+                      {
+                        resultado.total_paginas
+                      }
                     </p>
 
                     <div className="flex gap-3">
@@ -805,14 +903,17 @@ export default function DemandasPage() {
                         onClick={() =>
                           alterarConsulta({
                             ...consulta,
-                            pagina: Math.max(
-                              resultado.pagina -
-                                1,
-                              0,
-                            ),
+                            pagina:
+                              Math.max(
+                                resultado.pagina -
+                                  1,
+                                0,
+                              ),
                           })
                         }
-                        className={BOTAO}
+                        className={
+                          BOTAO
+                        }
                       >
                         Anterior
                       </button>
@@ -832,7 +933,9 @@ export default function DemandasPage() {
                               1,
                           })
                         }
-                        className={BOTAO}
+                        className={
+                          BOTAO
+                        }
                       >
                         Próxima
                       </button>
@@ -843,26 +946,6 @@ export default function DemandasPage() {
             )}
         </section>
       </div>
-
-      <style jsx>{`
-        @keyframes aparecer {
-          from {
-            opacity: 0;
-            transform: translateY(6px);
-          }
-
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        @media (prefers-reduced-motion: no-preference) {
-          .entrada {
-            animation: aparecer 180ms ease-out both;
-          }
-        }
-      `}</style>
     </main>
   );
 }
