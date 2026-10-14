@@ -9,6 +9,7 @@ import React, {
 import Link from 'next/link';
 
 import { supabase } from '@/lib/supabase';
+import GraficosFinanceiros from '@/app/components/GraficosFinanceiros';
 
 type TipoLancamento =
   | 'receita'
@@ -40,6 +41,7 @@ interface LancamentoFinanceiro {
   categoria?: string | null;
 
   data_vencimento?: string | null;
+  data_liquidacao?: string | null;
 
   status?: string | null;
   Status?: string | null;
@@ -250,6 +252,32 @@ function formatarData(
   }
 
   return `${partes[2]}/${partes[1]}/${partes[0]}`;
+}
+
+// ERN_LIQUIDACAO_EDICAO
+function dataFinanceiraValida(valor: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
+
+  const data = new Date(`${valor}T12:00:00Z`);
+
+  return (
+    Number.isFinite(data.getTime()) &&
+    data.toISOString().slice(0, 10) === valor
+  );
+}
+
+function hojeFinanceiroManaus(): string {
+  const partes = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Manaus',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+
+  const obter = (tipo: string) =>
+    partes.find((parte) => parte.type === tipo)?.value ?? '';
+
+  return `${obter('year')}-${obter('month')}-${obter('day')}`;
 }
 
 export default function FinanceiroPage() {
@@ -664,9 +692,39 @@ export default function FinanceiroPage() {
         itemEditar.status
       );
 
-    setSalvandoEdicao(
-      true
-    );
+    const tipoOriginal = (itemEditar.tipo ?? '').trim().toLowerCase();
+
+    if (tipoOriginal !== 'receita' && tipoOriginal !== 'despesa') {
+      setError('Este lançamento tem um tipo inválido e precisa ser revisado.');
+      return;
+    }
+
+    const vencimento = itemEditar.data_vencimento ?? '';
+
+    if (!dataFinanceiraValida(vencimento)) {
+      setError('Informe uma data de vencimento válida.');
+      return;
+    }
+
+    const liquidacao =
+      status === 'Pendente'
+        ? null
+        : itemEditar.data_liquidacao?.trim() || null;
+
+    if (
+      status !== 'Pendente' &&
+      (!liquidacao || !dataFinanceiraValida(liquidacao))
+    ) {
+      setError('Informe a data efetiva do recebimento ou pagamento.');
+      return;
+    }
+
+    if (liquidacao && liquidacao > hojeFinanceiroManaus()) {
+      setError('Um recebimento ou pagamento realizado não pode ter data futura.');
+      return;
+    }
+
+    setSalvandoEdicao(true);
 
     setError(null);
 
@@ -685,8 +743,8 @@ export default function FinanceiroPage() {
               ?.trim() ||
             null,
 
-          data_vencimento:
-            itemEditar.data_vencimento,
+          data_vencimento: vencimento,
+          data_liquidacao: liquidacao,
 
           status,
 
@@ -964,6 +1022,12 @@ export default function FinanceiroPage() {
             </button>
           </div>
         )}
+
+        <GraficosFinanceiros />
+
+        <p className="mb-4 text-sm text-[#EDEDE3]/65">
+          Resumo geral de todo o histórico — independente do período da análise acima.
+        </p>
 
         {/* INDICADORES */}
 
@@ -1764,6 +1828,56 @@ export default function FinanceiroPage() {
                     </select>
                   </div>
                 </div>
+
+                <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+                  {status !== 'Pendente' ? (
+                    <>
+                      <label
+                        htmlFor="ern-data-liquidacao"
+                        className="mb-2 block text-sm font-medium text-[#EDEDE3]"
+                      >
+                        {tipo === 'receita'
+                          ? 'Data efetiva do recebimento'
+                          : 'Data efetiva do pagamento'}
+                      </label>
+
+                      <input
+                        id="ern-data-liquidacao"
+                        type="date"
+                        required
+                        max={hojeFinanceiroManaus()}
+                        disabled={salvandoEdicao}
+                        value={itemEditar.data_liquidacao ?? ''}
+                        onChange={(event) =>
+                          setItemEditar({
+                            ...itemEditar,
+                            data_liquidacao: event.target.value,
+                          })
+                        }
+                        className={`${inputClass} min-h-12 [color-scheme:dark]`}
+                      />
+
+                      <p className="mt-2 text-xs leading-6 text-[#EDEDE3]/65">
+                        Informe quando o dinheiro realmente entrou ou saiu.
+                        Essa data determina o mês nos gráficos realizados.
+                      </p>
+                    </>
+                  ) : (
+                    <p className="text-sm leading-6 text-[#EDEDE3]/65">
+                      Lançamentos pendentes entram na análise pelo vencimento.
+                      Ao salvar como pendente, a data de liquidação será removida.
+                    </p>
+                  )}
+                </div>
+
+                {error && (
+                  <p
+                    role="alert"
+                    className="rounded-xl border border-red-400/25 bg-red-400/10 p-4 text-sm text-red-200"
+                  >
+                    {error}
+                  </p>
+                )}
 
                 <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-5 sm:flex-row sm:justify-end">
                   <button
