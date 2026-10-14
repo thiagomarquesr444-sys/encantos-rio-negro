@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 
 import { supabase } from '@/lib/supabase';
-import { BANNER_REGIONAL } from '@/lib/bannerImagens';
+
 
 import {
   analisarUsoPlano,
@@ -870,18 +870,22 @@ export default function DashboardPage() {
     <div className="min-h-screen min-w-0 w-full break-words bg-[#07110E] text-[#EDEDE3]">
       <section className="relative overflow-hidden border-b border-white/[0.07] bg-[#091510]">
         <div
-          className="absolute inset-0 bg-cover bg-center opacity-35"
+          aria-hidden="true"
+          className="relative h-48 w-full bg-cover bg-[position:50%_55%] sm:h-60 lg:absolute lg:inset-0 lg:h-full lg:bg-[position:65%_50%]"
           style={{
-            backgroundImage: `url('${BANNER_REGIONAL.modulos.dashboard}')`,
+            backgroundImage: "url('/images/regiao/ilha.png.jpeg')",
           }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-[#091510] via-transparent to-transparent lg:hidden" />
+        </div>
+
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 hidden bg-[linear-gradient(90deg,rgba(6,16,13,0.96)_0%,rgba(6,16,13,0.88)_30%,rgba(6,16,13,0.42)_60%,rgba(6,16,13,0.08)_100%)] lg:block"
         />
 
-        <div className="absolute inset-0 bg-gradient-to-r from-[#06100D] via-[#07110E]/94 to-[#07110E]/70" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#07110E] via-transparent to-transparent" />
-        <div className="pointer-events-none absolute -right-24 -top-36 h-[420px] w-[420px] rounded-full border border-[#E3A144]/10" />
-
-        <div className="relative mx-auto max-w-[1360px] px-3 py-7 sm:px-5 sm:py-11 md:px-8 md:py-16">
-          <div className="flex min-w-0 flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+        <div className="relative mx-auto max-w-[1360px] px-4 pb-7 pt-3 sm:px-5 sm:pb-9 md:px-8 lg:flex lg:min-h-[300px] lg:items-center lg:py-10">
+          <div className="flex w-full min-w-0 flex-col gap-5">
             <div>
               <div className="flex items-center gap-3">
                 <span className="h-px w-8 bg-[#E3A144]" />
@@ -892,7 +896,7 @@ export default function DashboardPage() {
               </div>
 
               <h1
-                className="mt-3 max-w-[780px] text-3xl font-medium leading-[1.02] tracking-[-0.035em] text-[#F0F0E8] sm:mt-5 sm:text-4xl md:text-5xl"
+                className="mt-3 max-w-[650px] text-[clamp(1.75rem,5vw,2.75rem)] font-medium leading-[1.12] tracking-[-0.025em] text-[#F0F0E8]"
                 style={{
                   fontFamily:
                     'var(--font-fraunces), serif',
@@ -903,14 +907,14 @@ export default function DashboardPage() {
                 sob controle.
               </h1>
 
-              <p className="mt-3 max-w-[700px] text-sm leading-6 text-[#EDEDE3]/65 sm:mt-5 sm:leading-7 md:text-base">
+              <p className="mt-3 max-w-[560px] text-sm leading-6 text-[#EDEDE3]/85 sm:leading-7">
                 Acompanhe o que acontece hoje,
                 prepare as próximas operações e
                 conecte sua empresa à Rede ERN.
               </p>
             </div>
 
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-3">
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
               <Link
                 href="/reservas/nova"
                 className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#E3A144] px-3 text-xs font-bold text-[#07130F] transition hover:-translate-y-0.5 hover:bg-[#F0B35C] sm:min-h-[50px] sm:px-6 sm:text-sm"

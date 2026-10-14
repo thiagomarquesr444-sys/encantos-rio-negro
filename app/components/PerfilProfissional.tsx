@@ -6,11 +6,8 @@ import {
   useState,
   type FormEvent,
 } from 'react';
-
 import Link from 'next/link';
-
 import { supabase } from '@/lib/supabase';
-
 import {
   carregarAcessosConta,
   contaPossuiAcesso,
@@ -39,16 +36,17 @@ interface RegistroPerfil {
 }
 
 interface CampoPerfil {
-  campo: Exclude<
-    keyof DadosPerfil,
-    'descricao'
-  >;
+  campo: Exclude<keyof DadosPerfil, 'descricao'>;
   label: string;
   limite: number;
   placeholder?: string;
   tipo?: 'text' | 'tel';
   autoComplete?: string;
   ajuda?: string;
+}
+
+interface Props {
+  tipo: TipoAcessoProfissional;
 }
 
 const CAMPOS =
@@ -79,29 +77,19 @@ const INPUT =
 const LABEL =
   'mb-2 block text-sm font-medium text-[#EDEDE3]/85';
 
-function normalizarPerfil(
-  registro: RegistroPerfil,
-): DadosPerfil {
+function normalizarPerfil(registro: RegistroPerfil): DadosPerfil {
   return {
     nome: registro.nome,
-    telefone:
-      registro.telefone ?? '',
-    cidade:
-      registro.cidade ?? '',
-    descricao:
-      registro.descricao ?? '',
-    idiomas:
-      registro.idiomas ?? '',
-    cadastur:
-      registro.cadastur ?? '',
-    categoria:
-      registro.categoria ?? '',
+    telefone: registro.telefone ?? '',
+    cidade: registro.cidade ?? '',
+    descricao: registro.descricao ?? '',
+    idiomas: registro.idiomas ?? '',
+    cadastur: registro.cadastur ?? '',
+    categoria: registro.categoria ?? '',
   };
 }
 
-function textoOpcional(
-  valor: string,
-): string | null {
+function textoOpcional(valor: string): string | null {
   return valor.trim() || null;
 }
 
@@ -109,131 +97,63 @@ function validarModalidade(
   conta: AcessosConta,
   tipo: TipoAcessoProfissional,
 ): void {
-  if (
-    conta.empresa_id ||
-    contaPossuiAcesso(
-      conta,
-      'operadora',
-    )
-  ) {
+  if (conta.empresa_id || contaPossuiAcesso(conta, 'operadora')) {
     throw new Error(
       'Esta conta está vinculada a uma operadora. Utilize a área de gestão da empresa.',
     );
   }
 
-  const modalidades =
-    conta.acessos.filter(
-      (acesso) =>
-        acesso === 'guia' ||
-        acesso === 'fornecedor',
-    );
+  const modalidades = conta.acessos.filter(
+    (acesso) => acesso === 'guia' || acesso === 'fornecedor',
+  );
 
-  if (
-    modalidades.length !== 1 ||
-    modalidades[0] !== tipo
-  ) {
+  if (modalidades.length !== 1 || modalidades[0] !== tipo) {
     throw new Error(
       'Este espaço não corresponde ao cadastro da sua conta. Confira seu acesso para continuar.',
     );
   }
 }
 
-export default function PerfilProfissional({
-  tipo,
-}: {
-  tipo: TipoAcessoProfissional;
-}) {
-  const guia =
-    tipo === 'guia';
+export default function PerfilProfissional({ tipo }: Props) {
+  return <FormularioPerfilProfissional key={tipo} tipo={tipo} />;
+}
 
-  const raiz =
-    guia
-      ? '/guia'
-      : '/fornecedor';
+function FormularioPerfilProfissional({ tipo }: Props) {
+  const guia = tipo === 'guia';
+  const raiz = guia ? '/guia' : '/fornecedor';
 
-  const [
-    dados,
-    setDados,
-  ] = useState<DadosPerfil>({
+  const [dados, setDados] = useState<DadosPerfil>({
     ...DADOS_INICIAIS,
   });
+  const [usuarioId, setUsuarioId] = useState<string | null>(null);
+  const [existe, setExiste] = useState(false);
+  const [carregando, setCarregando] = useState(true);
+  const [salvando, setSalvando] = useState(false);
+  const [erro, setErro] = useState('');
+  const [sucesso, setSucesso] = useState('');
 
-  const [
-    usuarioId,
-    setUsuarioId,
-  ] = useState<string | null>(
-    null,
-  );
-
-  const [
-    existe,
-    setExiste,
-  ] = useState(false);
-
-  const [
-    carregando,
-    setCarregando,
-  ] = useState(true);
-
-  const [
-    salvando,
-    setSalvando,
-  ] = useState(false);
-
-  const [
-    erro,
-    setErro,
-  ] = useState('');
-
-  const [
-    sucesso,
-    setSucesso,
-  ] = useState('');
-
-  const ocupado =
-    useRef(false);
-
-  const avisoRef =
-    useRef<HTMLDivElement>(null);
+  const ocupado = useRef(false);
+  const avisoRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let ativo = true;
 
-    setCarregando(true);
-    setUsuarioId(null);
-    setExiste(false);
-
-    setDados({
-      ...DADOS_INICIAIS,
-    });
-
-    setErro('');
-    setSucesso('');
-
     async function carregar() {
       try {
-        const conta =
-          await carregarAcessosConta();
+        const conta = await carregarAcessosConta();
 
-        validarModalidade(
-          conta,
-          tipo,
-        );
+        if (!ativo) return;
 
-        const {
-          data,
-          error,
-        } = await supabase
-          .from(
-            'perfis_profissionais',
-          )
+        validarModalidade(conta, tipo);
+
+        const { data, error } = await supabase
+          .from('perfis_profissionais')
           .select(CAMPOS)
-          .eq(
-            'usuario_id',
-            conta.usuario_id,
-          )
+          .eq('usuario_id', conta.usuario_id)
           .eq('tipo', tipo)
           .maybeSingle();
+
+        if (!ativo) return;
 
         if (error) {
           throw new Error(
@@ -241,29 +161,14 @@ export default function PerfilProfissional({
           );
         }
 
-        if (!ativo) {
-          return;
-        }
-
-        setUsuarioId(
-          conta.usuario_id,
-        );
-
-        setExiste(
-          Boolean(data),
-        );
+        setUsuarioId(conta.usuario_id);
+        setExiste(Boolean(data));
 
         if (data) {
-          setDados(
-            normalizarPerfil(
-              data,
-            ),
-          );
+          setDados(normalizarPerfil(data));
         }
       } catch (error) {
-        if (!ativo) {
-          return;
-        }
+        if (!ativo) return;
 
         setErro(
           error instanceof Error
@@ -285,58 +190,34 @@ export default function PerfilProfissional({
   }, [tipo]);
 
   useEffect(() => {
-    if (
-      erro ||
-      sucesso
-    ) {
-      avisoRef.current?.scrollIntoView(
-        {
-          block: 'nearest',
-          behavior: 'auto',
-        },
-      );
+    if (erro || sucesso) {
+      avisoRef.current?.scrollIntoView({
+        block: 'nearest',
+        behavior: 'auto',
+      });
     }
   }, [erro, sucesso]);
 
-  function alterar(
-    campo: keyof DadosPerfil,
-    valor: string,
-  ) {
+  function alterar(campo: keyof DadosPerfil, valor: string) {
     setDados((atual) => ({
       ...atual,
       [campo]: valor,
     }));
-
     setSucesso('');
   }
 
-  async function salvar(
-    event: FormEvent<HTMLFormElement>,
-  ) {
+  async function salvar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    if (
-      ocupado.current ||
-      carregando ||
-      !usuarioId
-    ) {
-      return;
-    }
+    if (ocupado.current || carregando || !usuarioId) return;
 
     setErro('');
     setSucesso('');
 
-    const nome =
-      dados.nome.trim();
+    const nome = dados.nome.trim();
 
-    if (
-      nome.length < 2 ||
-      nome.length > 120
-    ) {
-      setErro(
-        'Informe um nome entre 2 e 120 caracteres.',
-      );
-
+    if (nome.length < 2 || nome.length > 120) {
+      setErro('Informe um nome entre 2 e 120 caracteres.');
       return;
     }
 
@@ -344,99 +225,45 @@ export default function PerfilProfissional({
     setSalvando(true);
 
     try {
-      const conta =
-        await carregarAcessosConta();
+      const conta = await carregarAcessosConta();
 
-      if (
-        conta.usuario_id !==
-        usuarioId
-      ) {
+      if (conta.usuario_id !== usuarioId) {
         throw new Error(
           'A conta conectada mudou. Recarregue a página antes de salvar.',
         );
       }
 
-      validarModalidade(
-        conta,
-        tipo,
-      );
+      validarModalidade(conta, tipo);
 
       const payload = {
         nome,
-
-        telefone:
-          textoOpcional(
-            dados.telefone,
-          ),
-
-        cidade:
-          textoOpcional(
-            dados.cidade,
-          ),
-
-        descricao:
-          textoOpcional(
-            dados.descricao,
-          ),
-
-        idiomas: guia
-          ? textoOpcional(
-              dados.idiomas,
-            )
-          : null,
-
-        cadastur: guia
-          ? textoOpcional(
-              dados.cadastur,
-            )
-          : null,
-
-        categoria: guia
-          ? null
-          : textoOpcional(
-              dados.categoria,
-            ),
+        telefone: textoOpcional(dados.telefone),
+        cidade: textoOpcional(dados.cidade),
+        descricao: textoOpcional(dados.descricao),
+        idiomas: guia ? textoOpcional(dados.idiomas) : null,
+        cadastur: guia ? textoOpcional(dados.cadastur) : null,
+        categoria: guia ? null : textoOpcional(dados.categoria),
       };
 
       if (existe) {
-        const {
-          data,
-          error,
-        } = await supabase
-          .from(
-            'perfis_profissionais',
-          )
+        const { data, error } = await supabase
+          .from('perfis_profissionais')
           .update(payload)
-          .eq(
-            'usuario_id',
-            usuarioId,
-          )
+          .eq('usuario_id', usuarioId)
           .eq('tipo', tipo)
           .select(CAMPOS)
           .single();
 
-        if (
-          error ||
-          !data
-        ) {
+        if (error || !data) {
           throw new Error(
             'Não foi possível confirmar a atualização. Recarregue a página e confira os dados antes de tentar novamente.',
           );
         }
 
-        setDados(
-          normalizarPerfil(
-            data,
-          ),
-        );
+        setDados(normalizarPerfil(data));
       } else {
-        const {
-          data,
-          error,
-        } = await supabase
-          .from(
-            'perfis_profissionais',
-          )
+        const { data, error } = await supabase
+          .from('perfis_profissionais')
           .insert({
             tipo,
             ...payload,
@@ -444,30 +271,19 @@ export default function PerfilProfissional({
           .select(CAMPOS)
           .single();
 
-        if (
-          error?.code ===
-          '23505'
-        ) {
+        if (error?.code === '23505') {
           throw new Error(
             'Já existe um cadastro para esta modalidade. Recarregue a página para consultá-lo.',
           );
         }
 
-        if (
-          error ||
-          !data
-        ) {
+        if (error || !data) {
           throw new Error(
             'Não foi possível confirmar o cadastro. Recarregue a página e confira se ele foi salvo antes de tentar novamente.',
           );
         }
 
-        setDados(
-          normalizarPerfil(
-            data,
-          ),
-        );
-
+        setDados(normalizarPerfil(data));
         setExiste(true);
       }
 
@@ -486,112 +302,72 @@ export default function PerfilProfissional({
     }
   }
 
-  const camposContato: CampoPerfil[] =
-    [
-      {
-        campo: 'telefone',
-        label:
-          'Telefone / WhatsApp',
-        limite: 30,
-        tipo: 'tel',
-        autoComplete: 'tel',
-        placeholder:
-          'Inclua o DDD',
-      },
-      {
-        campo: 'cidade',
-        label:
-          'Cidade de atuação',
-        limite: 120,
-        placeholder:
-          'Ex.: Barcelos, Amazonas',
-      },
-    ];
+  const camposContato: CampoPerfil[] = [
+    {
+      campo: 'telefone',
+      label: 'Telefone / WhatsApp',
+      limite: 30,
+      tipo: 'tel',
+      autoComplete: 'tel',
+      placeholder: 'Inclua o DDD',
+    },
+    {
+      campo: 'cidade',
+      label: 'Cidade de atuação',
+      limite: 120,
+      placeholder: 'Ex.: Barcelos, Amazonas',
+    },
+  ];
 
-  const camposAtividade: CampoPerfil[] =
-    guia
-      ? [
-          {
-            campo: 'idiomas',
-            label: 'Idiomas',
-            limite: 300,
-            placeholder:
-              'Ex.: Português, Inglês',
-          },
-          {
-            campo: 'cadastur',
-            label:
-              'Registro CADASTUR',
-            limite: 100,
-            placeholder:
-              'Número do registro',
-            ajuda:
-              'O registro informado ainda não representa verificação pela ERN.',
-          },
-        ]
-      : [
-          {
-            campo: 'categoria',
-            label:
-              'Atividade principal',
-            limite: 120,
-            placeholder:
-              'Ex.: alimentação, transporte, comércio ou serviços',
-          },
-        ];
+  const camposAtividade: CampoPerfil[] = guia
+    ? [
+        {
+          campo: 'idiomas',
+          label: 'Idiomas',
+          limite: 300,
+          placeholder: 'Ex.: Português, Inglês',
+        },
+        {
+          campo: 'cadastur',
+          label: 'Registro CADASTUR',
+          limite: 100,
+          placeholder: 'Número do registro',
+          ajuda:
+            'O registro informado ainda não representa verificação pela ERN.',
+        },
+      ]
+    : [
+        {
+          campo: 'categoria',
+          label: 'Atividade principal',
+          limite: 120,
+          placeholder:
+            'Ex.: alimentação, transporte, comércio ou serviços',
+        },
+      ];
 
-  function renderizarCampo(
-    campo: CampoPerfil,
-  ) {
-    const id =
-      `perfil-${campo.campo}`;
+  function renderizarCampo(campo: CampoPerfil) {
+    const id = `perfil-${campo.campo}`;
 
     return (
-      <div
-        key={campo.campo}
-        className="min-w-0"
-      >
-        <label
-          htmlFor={id}
-          className={LABEL}
-        >
+      <div key={campo.campo} className="min-w-0">
+        <label htmlFor={id} className={LABEL}>
           {campo.label}
         </label>
 
         <input
           id={id}
           name={campo.campo}
-          type={
-            campo.tipo ?? 'text'
-          }
-          inputMode={
-            campo.tipo === 'tel'
-              ? 'tel'
-              : undefined
-          }
-          autoComplete={
-            campo.autoComplete
-          }
-          maxLength={
-            campo.limite
-          }
-          value={
-            dados[campo.campo]
-          }
+          type={campo.tipo ?? 'text'}
+          inputMode={campo.tipo === 'tel' ? 'tel' : undefined}
+          autoComplete={campo.autoComplete}
+          maxLength={campo.limite}
+          value={dados[campo.campo]}
           onChange={(event) =>
-            alterar(
-              campo.campo,
-              event.target.value,
-            )
+            alterar(campo.campo, event.target.value)
           }
-          placeholder={
-            campo.placeholder
-          }
-          aria-describedby={
-            campo.ajuda
-              ? `${id}-ajuda`
-              : undefined
-          }
+          placeholder={campo.placeholder}
+          aria-describedby={campo.ajuda ? `${id}-ajuda` : undefined}
           className={INPUT}
         />
 
@@ -615,25 +391,19 @@ export default function PerfilProfissional({
             href={raiz}
             className={`inline-flex min-h-11 items-center gap-2 rounded-xl text-sm font-semibold text-[#F4C77E] transition-colors hover:text-[#FFD18A] ${FOCO}`}
           >
-            <span aria-hidden="true">
-              ←
-            </span>
-
+            <span aria-hidden="true">←</span>
             Voltar ao painel
           </Link>
 
           <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-            {guia
-              ? 'Guia independente'
-              : 'Fornecedor independente'}
+            {guia ? 'Guia independente' : 'Fornecedor independente'}
           </p>
 
           <h1
             id="perfil-titulo"
             className="mt-3 text-3xl leading-tight text-[#F0F0E8] sm:text-4xl"
             style={{
-              fontFamily:
-                'var(--font-fraunces), serif',
+              fontFamily: 'var(--font-fraunces), serif',
             }}
           >
             Meu perfil profissional
@@ -646,10 +416,7 @@ export default function PerfilProfissional({
           </p>
         </header>
 
-        <div
-          ref={avisoRef}
-          className="scroll-mt-28"
-        >
+        <div ref={avisoRef} className="scroll-mt-28">
           {erro && (
             <div
               role="alert"
@@ -683,15 +450,14 @@ export default function PerfilProfissional({
             </h2>
 
             <p className="mt-3 max-w-2xl text-sm leading-7 text-[#EDEDE3]/70">
-              Confira sua sessão e a modalidade vinculada à sua conta antes de continuar.
+              Confira sua sessão e a modalidade vinculada à sua conta
+              antes de continuar.
             </p>
 
             <div className="mt-5 flex flex-col gap-3 sm:flex-row">
               <button
                 type="button"
-                onClick={() =>
-                  window.location.reload()
-                }
+                onClick={() => window.location.reload()}
                 className={`min-h-12 rounded-xl border border-white/20 px-5 text-sm font-semibold text-[#EDEDE3] transition-colors hover:bg-white/5 ${FOCO}`}
               >
                 Tentar novamente
@@ -715,7 +481,6 @@ export default function PerfilProfissional({
               <h2 className="text-lg font-semibold text-[#F0F0E8]">
                 Dados profissionais
               </h2>
-
               <p className="mt-2 text-xs leading-6 text-[#EDEDE3]/65">
                 Apenas o nome é obrigatório nesta etapa.
               </p>
@@ -730,10 +495,7 @@ export default function PerfilProfissional({
               </legend>
 
               <div>
-                <label
-                  htmlFor="perfil-nome"
-                  className={LABEL}
-                >
+                <label htmlFor="perfil-nome" className={LABEL}>
                   {guia
                     ? 'Nome profissional *'
                     : 'Nome profissional ou comercial *'}
@@ -743,29 +505,20 @@ export default function PerfilProfissional({
                   id="perfil-nome"
                   name="nome"
                   type="text"
-                  autoComplete={
-                    guia
-                      ? 'name'
-                      : 'organization'
-                  }
+                  autoComplete={guia ? 'name' : 'organization'}
                   required
                   minLength={2}
                   maxLength={120}
                   value={dados.nome}
                   onChange={(event) =>
-                    alterar(
-                      'nome',
-                      event.target.value,
-                    )
+                    alterar('nome', event.target.value)
                   }
                   className={INPUT}
                 />
               </div>
 
               <div className="grid min-w-0 gap-5 sm:grid-cols-2">
-                {camposContato.map(
-                  renderizarCampo,
-                )}
+                {camposContato.map(renderizarCampo)}
               </div>
 
               <div
@@ -775,16 +528,11 @@ export default function PerfilProfissional({
                     : 'min-w-0'
                 }
               >
-                {camposAtividade.map(
-                  renderizarCampo,
-                )}
+                {camposAtividade.map(renderizarCampo)}
               </div>
 
               <div>
-                <label
-                  htmlFor="perfil-descricao"
-                  className={LABEL}
-                >
+                <label htmlFor="perfil-descricao" className={LABEL}>
                   {guia
                     ? 'Sobre sua atuação'
                     : 'Sobre seus produtos e serviços'}
@@ -795,14 +543,9 @@ export default function PerfilProfissional({
                   name="descricao"
                   rows={6}
                   maxLength={2000}
-                  value={
-                    dados.descricao
-                  }
+                  value={dados.descricao}
                   onChange={(event) =>
-                    alterar(
-                      'descricao',
-                      event.target.value,
-                    )
+                    alterar('descricao', event.target.value)
                   }
                   placeholder={
                     guia
@@ -817,23 +560,22 @@ export default function PerfilProfissional({
                   id="descricao-contagem"
                   className="mt-2 text-right text-xs text-[#EDEDE3]/65"
                 >
-                  {
-                    dados.descricao
-                      .length
-                  }{' '}
-                  / 2000 caracteres
+                  {dados.descricao.length} / 2000 caracteres
                 </p>
               </div>
 
               <div className="rounded-2xl border border-[#E3A144]/15 bg-[#E3A144]/[0.04] p-4">
                 <p className="text-sm leading-7 text-[#EDEDE3]/70">
-                  Salvar este perfil não publica automaticamente seus dados no portal público ou no feed da Rede ERN. A publicação será controlada por módulos próprios.
+                  Salvar este perfil não publica automaticamente seus
+                  dados no portal público ou no feed da Rede ERN. A
+                  publicação será controlada por módulos próprios.
                 </p>
               </div>
 
               <div className="flex flex-col gap-3 border-t border-white/10 pt-6 sm:flex-row sm:items-center sm:justify-between">
                 <p className="max-w-xl text-xs leading-6 text-[#EDEDE3]/60">
-                  Você poderá atualizar estas informações sempre que necessário.
+                  Você poderá atualizar estas informações sempre que
+                  necessário.
                 </p>
 
                 <button
@@ -856,9 +598,11 @@ export default function PerfilProfissional({
           <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#A8BCAF]">
             Privacidade
           </p>
-
           <p className="mt-2 text-sm leading-7 text-[#EDEDE3]/65">
-            O perfil profissional continua separado da publicação pública. Quando o módulo de feed for ativado, você terá controle sobre o conteúdo que será exibido aos visitantes da Encantos Rio Negro.
+            O perfil profissional continua separado da publicação
+            pública. Quando o módulo de feed for ativado, você terá
+            controle sobre o conteúdo que será exibido aos visitantes
+            da Encantos Rio Negro.
           </p>
         </section>
       </div>
