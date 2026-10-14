@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import GraficosOperadora from '@/app/components/GraficosOperadora';
 
 import { supabase } from '@/lib/supabase';
 
@@ -251,6 +252,97 @@ function diferencaDiasISO(
   );
 }
 
+async function carregarReservasDashboard(
+  inicio: string,
+  fim: string,
+  estaAtivo: () => boolean,
+): Promise<{
+  data: ReservaOperacional[] | null;
+  error: Error | null;
+}> {
+  const registros: ReservaOperacional[] = [];
+  const identificadores = new Set<string>();
+  const tamanhoPagina = 200;
+  const limiteProtecao = 10000;
+  let totalEsperado: number | null = null;
+
+  try {
+    while (estaAtivo()) {
+      const deslocamento = registros.length;
+
+      const { data, error, count } = await supabase
+        .from('reservas')
+        .select(
+          'id,data_reserva,horario,quantidade_pessoas,valor_total,status,cliente,pacote,guia,embarcacao_id',
+          { count: 'exact' },
+        )
+        .gte('data_reserva', inicio)
+        .lte('data_reserva', fim)
+        .order('data_reserva', { ascending: true })
+        .order('horario', { ascending: true, nullsFirst: false })
+        .order('id', { ascending: true })
+        .range(deslocamento, deslocamento + tamanhoPagina - 1)
+        .returns<ReservaOperacional[]>();
+
+      if (!estaAtivo()) {
+        return { data: null, error: null };
+      }
+
+      if (error) throw new Error(error.message);
+
+      if (count === null) {
+        throw new Error('Não foi possível conferir o total de reservas.');
+      }
+
+      if (count > limiteProtecao) {
+        throw new Error(
+          'O volume de reservas exige uma consulta agregada no servidor.',
+        );
+      }
+
+      if (totalEsperado !== null && count !== totalEsperado) {
+        throw new Error(
+          'As reservas mudaram durante a consulta. Atualize o painel.',
+        );
+      }
+
+      totalEsperado = count;
+      const lote = data ?? [];
+
+      for (const registro of lote) {
+        if (identificadores.has(registro.id)) {
+          throw new Error(
+            'As reservas mudaram durante a paginação. Atualize o painel.',
+          );
+        }
+
+        identificadores.add(registro.id);
+        registros.push(registro);
+      }
+
+      if (registros.length === totalEsperado) {
+        return { data: registros, error: null };
+      }
+
+      if (lote.length === 0 || registros.length > totalEsperado) {
+        throw new Error(
+          'A consulta retornou reservas incompletas. Atualize o painel.',
+        );
+      }
+    }
+
+    return { data: null, error: null };
+  } catch (error) {
+    return {
+      data: null,
+      error:
+        error instanceof Error
+          ? error
+          : new Error('Não foi possível consultar as reservas.'),
+    };
+  }
+}
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<Stats>({
     clientes: 0,
@@ -268,6 +360,7 @@ export default function DashboardPage() {
   const [plano, setPlano] = useState<PlanoAtual | null>(null);
   const [uso, setUso] = useState<UsoPlano | null>(null);
 
+  const [inicioPeriodo, setInicioPeriodo] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadingPlano, setLoadingPlano] = useState(true);
 
@@ -278,13 +371,9 @@ export default function DashboardPage() {
     let ativo = true;
 
     async function fetchDashboard() {
-      setLoading(true);
-      setLoadingPlano(true);
-      setError(null);
-      setErroPlano(null);
 
       const hoje = dataLocalManaus();
-      const horizonte = adicionarDiasISO(hoje, 30);
+      const horizonte = adicionarDiasISO(hoje, 29);
 
       try {
         const [
@@ -320,19 +409,7 @@ export default function DashboardPage() {
             head: true,
           }),
 
-          supabase
-            .from('reservas')
-            .select(
-              'id,data_reserva,horario,quantidade_pessoas,valor_total,status,cliente,pacote,guia,embarcacao_id',
-            )
-            .gte('data_reserva', hoje)
-            .lte('data_reserva', horizonte)
-            .order('data_reserva', { ascending: true })
-            .order('horario', {
-              ascending: true,
-              nullsFirst: false,
-            })
-            .limit(30),
+          carregarReservasDashboard(hoje, horizonte, () => ativo),
 
           supabase
             .from('demandas')
@@ -361,6 +438,8 @@ export default function DashboardPage() {
         if (!ativo) {
           return;
         }
+
+        setInicioPeriodo(hoje);
 
         const errosOperacionais = [
           resClientes.error,
@@ -525,7 +604,7 @@ export default function DashboardPage() {
 
   const resumoOperacional = useMemo(() => {
     const hoje = dataLocalManaus();
-    const seteDias = adicionarDiasISO(hoje, 7);
+    const seteDias = adicionarDiasISO(hoje, 6);
 
     const reservasValidas = reservasOperacionais.filter(
       (reserva) =>
@@ -548,7 +627,7 @@ export default function DashboardPage() {
       0,
     );
 
-    const pendentes = reservasOperacionais.filter(
+    const pendentes = proximosSeteDias.filter(
       (reserva) =>
         normalizarStatusReserva(reserva.status) === 'pendente',
     );
@@ -579,7 +658,7 @@ export default function DashboardPage() {
 
   const alertas = useMemo(() => {
     const hoje = dataLocalManaus();
-    const seteDias = adicionarDiasISO(hoje, 7);
+    const seteDias = adicionarDiasISO(hoje, 6);
 
     const proximas = reservasOperacionais.filter(
       (reserva) =>
@@ -623,7 +702,7 @@ export default function DashboardPage() {
           demanda.data_inicio,
         );
 
-        return diferenca >= 0 && diferenca <= 7;
+        return diferenca >= 0 && diferenca <= 6;
       },
     ).length;
 
@@ -950,6 +1029,8 @@ export default function DashboardPage() {
           </div>
         )}
 
+        {!error && (
+          <>
         <section>
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -1044,6 +1125,12 @@ export default function DashboardPage() {
             </div>
           </div>
         </section>
+
+        <GraficosOperadora
+          reservas={reservasOperacionais}
+          inicio={inicioPeriodo}
+          carregando={loading}
+        />
 
         <div className="mt-6 grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
           <section className="overflow-hidden rounded-2xl border border-white/[0.075] bg-[#0A1713] sm:rounded-[26px]">
@@ -2103,6 +2190,18 @@ export default function DashboardPage() {
             Operação turística integrada
           </span>
         </div>
+          </>
+        )}
+
+        {error && (
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="min-h-11 rounded-xl border border-[#E3A144]/40 px-4 py-2 text-sm font-semibold text-[#F4C77E] focus-visible:outline-2 focus-visible:outline-offset-4"
+          >
+            Tentar carregar novamente
+          </button>
+        )}
       </main>
     </div>
   );
