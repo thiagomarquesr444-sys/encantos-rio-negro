@@ -1,92 +1,131 @@
-'use client';
+"use client";
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from "react";
 
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import Link from "next/link";
 
-import { supabase } from '@/lib/supabase';
-import VinculosReserva from '@/app/components/VinculosReserva';
-import LogisticaReserva from '@/app/components/LogisticaReserva';
+import { useRouter } from "next/navigation";
+
+import { supabase } from "@/lib/supabase";
+
+import VinculosReserva from "@/app/components/VinculosReserva";
+
+import LogisticaReserva from "@/app/components/LogisticaReserva";
 
 type Feedback = {
-  tipo: 'sucesso' | 'erro';
+  tipo: "sucesso" | "erro";
+
   mensagem: string;
 };
 
 type UsoReservas = {
   plano_codigo: string;
+
   plano_nome: string;
+
   total_reservas_mes: number;
+
   limite_reservas_mes: number | null;
+
   ilimitado: boolean;
+
   percentual_uso: number | null;
+
   inicio_periodo: string;
+
   fim_periodo: string;
 };
 
 type FormReserva = {
   cliente_id?: string;
+
   passeio_id?: string;
+
   horario?: string;
+
   embarcacao_id?: string;
+
+  quantidade_pessoas: string;
   cliente: string;
+
   pacote: string;
+
   data_reserva: string;
+
   agencia: string;
+
   guia: string;
+
   valor: string;
+
   status: string;
+
   observacoes: string;
 };
 
 const ESTADO_INICIAL: FormReserva = {
-  cliente: '',
-  pacote: '',
-  data_reserva: '',
-  agencia: '',
-  guia: '',
-  valor: '',
-  status: 'Pendente',
-  observacoes: '',
+  quantidade_pessoas: "1",
+  cliente: "",
+
+  pacote: "",
+
+  data_reserva: "",
+
+  agencia: "",
+
+  guia: "",
+
+  valor: "",
+
+  status: "Pendente",
+
+  observacoes: "",
 };
 
 /*
+
   ============================================================
+
   VALOR MONETÁRIO
+
   ============================================================
 
   Exemplos:
 
   3500        -> 3500
+
   3500,00     -> 3500
+
   3.500       -> 3500
+
   3.500,00    -> 3500
+
   3500.00     -> 3500
 
   Entrada inválida retorna null.
+
 */
+
 function converterValor(valor: string): number | null {
-  let texto = valor.trim().replace(/^R\$\s*/i, '');
+  let texto = valor.trim().replace(/^R\$\s*/i, "");
 
   if (!texto) return null;
 
-  if (texto.includes(',')) {
+  if (texto.includes(",")) {
     if (!/^(?:\d+|\d{1,3}(?:\.\d{3})+),\d{1,2}$/.test(texto)) {
       return null;
     }
 
-    texto = texto.replace(/\./g, '').replace(',', '.');
+    texto = texto.replace(/\./g, "").replace(",", ".");
   } else if (/^\d{1,3}(?:\.\d{3})+$/.test(texto)) {
-    texto = texto.replace(/\./g, '');
+    texto = texto.replace(/\./g, "");
   } else if (!/^\d+(?:\.\d{1,2})?$/.test(texto)) {
     return null;
   }
 
-  const [inteiro, decimal = ''] = texto.split('.');
-  const centavos =
-    Number(inteiro) * 100 +
-    Number(decimal.padEnd(2, '0'));
+  const [inteiro, decimal = ""] = texto.split(".");
+
+  const centavos = Number(inteiro) * 100 + Number(decimal.padEnd(2, "0"));
 
   if (!Number.isSafeInteger(centavos) || centavos < 0) {
     return null;
@@ -94,116 +133,84 @@ function converterValor(valor: string): number | null {
 
   return centavos / 100;
 }
-function formatarData(
-  data: string | null | undefined
-) {
+
+function formatarData(data: string | null | undefined) {
   if (!data) {
-    return '—';
+    return "—";
   }
 
-  const partes =
-    data.split('-');
+  const partes = data.split("-");
 
-  if (
-    partes.length !== 3
-  ) {
+  if (partes.length !== 3) {
     return data;
   }
 
   return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
 
-function dataISOValida(
-  data: string
-) {
-  if (
-    !/^\d{4}-\d{2}-\d{2}$/.test(
-      data
-    )
-  ) {
+function dataISOValida(data: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) {
     return false;
   }
 
-  const [
-    ano,
-    mes,
-    dia,
-  ] = data
-    .split('-')
+  const [ano, mes, dia] = data
+
+    .split("-")
+
     .map(Number);
 
-  const verificacao =
-    new Date(
-      Date.UTC(
-        ano,
-        mes - 1,
-        dia
-      )
-    );
+  const verificacao = new Date(
+    Date.UTC(
+      ano,
+
+      mes - 1,
+
+      dia,
+    ),
+  );
 
   return (
-    verificacao.getUTCFullYear() ===
-      ano &&
-    verificacao.getUTCMonth() ===
-      mes - 1 &&
-    verificacao.getUTCDate() ===
-      dia
+    verificacao.getUTCFullYear() === ano &&
+    verificacao.getUTCMonth() === mes - 1 &&
+    verificacao.getUTCDate() === dia
   );
+}
+
+function quantidadePessoasValida(valor: string): boolean {
+  if (!/^[0-9]+$/.test(valor)) return false;
+  const quantidade = Number(valor);
+  return Number.isInteger(quantidade) && quantidade >= 1 && quantidade <= 2147483647;
 }
 
 export default function NovaReservaPage() {
   const router = useRouter();
 
   // ERN_CONFIRMACAO_RESERVA
+
   const envioReserva = useRef(false);
+
   const reservaGravada = useRef(false);
 
-  const [
-    formData,
-    setFormData,
-  ] =
-    useState<FormReserva>(
-      ESTADO_INICIAL
-    );
+  const [formData, setFormData] = useState<FormReserva>(ESTADO_INICIAL);
 
-  const [
-    loading,
-    setLoading,
-  ] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [
-    carregandoUso,
-    setCarregandoUso,
-  ] = useState(true);
+  const [carregandoUso, setCarregandoUso] = useState(true);
 
-  const [
-    uso,
-    setUso,
-  ] =
-    useState<UsoReservas | null>(
-      null
-    );
+  const [uso, setUso] = useState<UsoReservas | null>(null);
 
-  const [
-    erroUso,
-    setErroUso,
-  ] =
-    useState<string | null>(
-      null
-    );
+  const [erroUso, setErroUso] = useState<string | null>(null);
 
-  const [
-    feedback,
-    setFeedback,
-  ] =
-    useState<Feedback | null>(
-      null
-    );
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
 
   /*
+
     ============================================================
+
     USO MENSAL DO PLANO
+
     ============================================================
+
   */
 
   useEffect(() => {
@@ -212,86 +219,66 @@ export default function NovaReservaPage() {
 
   async function carregarUsoReservas() {
     setCarregandoUso(true);
+
     setErroUso(null);
 
     try {
       const {
         data,
+
         error,
-      } =
-        await supabase.rpc(
-          'get_meu_uso_reservas_mes'
-        );
+      } = await supabase.rpc("get_meu_uso_reservas_mes");
 
       if (error) {
         throw error;
       }
 
-      const resultado =
-        Array.isArray(data)
-          ? data[0]
-          : data;
+      const resultado = Array.isArray(data) ? data[0] : data;
 
       if (!resultado) {
         setUso(null);
 
         setErroUso(
-          'Não foi possível identificar o uso mensal de reservas desta assinatura.'
+          "Não foi possível identificar o uso mensal de reservas desta assinatura.",
         );
 
         return;
       }
 
       setUso({
-        plano_codigo:
-          resultado.plano_codigo,
+        plano_codigo: resultado.plano_codigo,
 
-        plano_nome:
-          resultado.plano_nome,
+        plano_nome: resultado.plano_nome,
 
-        total_reservas_mes:
-          Number(
-            resultado.total_reservas_mes ??
-              0
-          ),
+        total_reservas_mes: Number(resultado.total_reservas_mes ?? 0),
 
         limite_reservas_mes:
-          resultado.limite_reservas_mes ===
-          null
+          resultado.limite_reservas_mes === null
             ? null
-            : Number(
-                resultado.limite_reservas_mes
-              ),
+            : Number(resultado.limite_reservas_mes),
 
-        ilimitado:
-          Boolean(
-            resultado.ilimitado
-          ),
+        ilimitado: Boolean(resultado.ilimitado),
 
         percentual_uso:
-          resultado.percentual_uso ===
-          null
+          resultado.percentual_uso === null
             ? null
-            : Number(
-                resultado.percentual_uso
-              ),
+            : Number(resultado.percentual_uso),
 
-        inicio_periodo:
-          resultado.inicio_periodo,
+        inicio_periodo: resultado.inicio_periodo,
 
-        fim_periodo:
-          resultado.fim_periodo,
+        fim_periodo: resultado.fim_periodo,
       });
     } catch (error) {
       console.error(
-        'Erro ao consultar uso mensal de reservas:',
-        error
+        "Erro ao consultar uso mensal de reservas:",
+
+        error,
       );
 
       setUso(null);
 
       setErroUso(
-        'Não foi possível consultar o limite mensal de reservas neste momento.'
+        "Não foi possível consultar o limite mensal de reservas neste momento.",
       );
     } finally {
       setCarregandoUso(false);
@@ -299,370 +286,349 @@ export default function NovaReservaPage() {
   }
 
   /*
+
     ============================================================
+
     LIMITE
+
     ============================================================
+
   */
 
   const limiteAtingido =
     Boolean(uso) &&
     !uso?.ilimitado &&
-    uso?.limite_reservas_mes !==
-      null &&
-    uso?.limite_reservas_mes !==
-      undefined &&
-    uso.total_reservas_mes >=
-      uso.limite_reservas_mes;
+    uso?.limite_reservas_mes !== null &&
+    uso?.limite_reservas_mes !== undefined &&
+    uso.total_reservas_mes >= uso.limite_reservas_mes;
 
   const percentualVisual =
-    uso?.percentual_uso ===
-      null ||
-    uso?.percentual_uso ===
-      undefined
+    uso?.percentual_uso === null || uso?.percentual_uso === undefined
       ? 0
       : Math.min(
           100,
+
           Math.max(
             0,
-            uso.percentual_uso
-          )
+
+            uso.percentual_uso,
+          ),
         );
 
   const restantes =
-    uso &&
-    !uso.ilimitado &&
-    uso.limite_reservas_mes !==
-      null
+    uso && !uso.ilimitado && uso.limite_reservas_mes !== null
       ? Math.max(
-          uso.limite_reservas_mes -
-            uso.total_reservas_mes,
-          0
+          uso.limite_reservas_mes - uso.total_reservas_mes,
+
+          0,
         )
       : null;
 
   /*
+
     ============================================================
+
     FORMULÁRIO
+
     ============================================================
+
   */
 
   const handleChange = (
     e: React.ChangeEvent<
-      | HTMLInputElement
-      | HTMLSelectElement
-      | HTMLTextAreaElement
-    >
+      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+    >,
   ) => {
     const {
       name,
+
       value,
     } = e.target;
 
-    setFormData(
-      (prev) => ({
-        ...prev,
-        [name]: value,
-        ...(name === 'cliente' ? { cliente_id: '' } : {}),
-        ...(name === 'pacote' ? { passeio_id: '' } : {}),
-      })
-    );
+    setFormData((prev) => ({
+      ...prev,
+
+      [name]: value,
+
+      ...(name === "cliente" ? { cliente_id: "" } : {}),
+
+      ...(name === "pacote" ? { passeio_id: "" } : {}),
+    }));
   };
 
-  const handleLimpar =
-    () => {
-      setFormData(
-        ESTADO_INICIAL
-      );
+  const handleLimpar = () => {
+    setFormData(ESTADO_INICIAL);
 
-      setFeedback(null);
-    };
+    setFeedback(null);
+  };
 
-  const handleCancelar =
-    () => {
-      router.push(
-        '/reservas'
-      );
-    };
+  const handleCancelar = () => {
+    router.push("/reservas");
+  };
 
   /*
+
     ============================================================
+
     SALVAR
+
     ============================================================
+
   */
 
-  const handleSubmit =
-    async (
-      e: React.FormEvent
-    ) => {
-      e.preventDefault();
-      if (envioReserva.current) return;
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-      setFeedback(null);
+    if (envioReserva.current) return;
 
-      /*
+    setFeedback(null);
+
+    /*
+
         --------------------------------------------------------
+
         LIMITE VISUAL
+
         --------------------------------------------------------
+
       */
 
-      if (
-        limiteAtingido
-      ) {
-        setFeedback({
-          tipo:
-            'erro',
+    if (limiteAtingido) {
+      setFeedback({
+        tipo: "erro",
 
-          mensagem:
-            'O limite mensal de reservas do seu plano foi atingido.',
-        });
+        mensagem: "O limite mensal de reservas do seu plano foi atingido.",
+      });
 
-        return;
-      }
+      return;
+    }
 
-      /*
+    /*
+
         --------------------------------------------------------
+
         CAMPOS OBRIGATÓRIOS
+
         --------------------------------------------------------
+
       */
 
-      if (
-        !formData.cliente.trim() ||
-        !formData.pacote.trim() ||
-        !formData.data_reserva.trim() ||
-        !formData.valor.trim()
-      ) {
-        setFeedback({
-          tipo:
-            'erro',
+    if (
+      !formData.cliente.trim() ||
+      !formData.pacote.trim() ||
+      !formData.data_reserva.trim() ||
+      !formData.valor.trim()
+    ) {
+      setFeedback({
+        tipo: "erro",
 
-          mensagem:
-            'Preencha todos os campos obrigatórios: Cliente, Pacote/Passeio, Data do Passeio e Valor Total.',
-        });
+        mensagem:
+          "Preencha todos os campos obrigatórios: Cliente, Pacote/Passeio, Data do Passeio e Valor Total.",
+      });
 
-        return;
-      }
+      return;
+    }
 
-      /*
+    /*
+
         --------------------------------------------------------
+
         DATA
+
         --------------------------------------------------------
+
       */
 
-      if (
-        !dataISOValida(
-          formData.data_reserva
-        )
-      ) {
-        setFeedback({
-          tipo:
-            'erro',
+    if (!quantidadePessoasValida(formData.quantidade_pessoas)) {
+      setFeedback({ tipo: "erro", mensagem: "Informe uma quantidade inteira de pessoas, maior que zero." });
+      return;
+    }
 
-          mensagem:
-            'Informe uma data válida para o passeio.',
-        });
+    if (!dataISOValida(formData.data_reserva)) {
+      setFeedback({
+        tipo: "erro",
 
-        return;
-      }
+        mensagem: "Informe uma data válida para o passeio.",
+      });
 
-      /*
+      return;
+    }
+
+    /*
+
         --------------------------------------------------------
+
         VALOR
+
         --------------------------------------------------------
+
       */
 
-      const valorTratado =
-        converterValor(
-          formData.valor
-        );
+    const valorTratado = converterValor(formData.valor);
 
-      if (
-        valorTratado ===
-          null ||
-        valorTratado < 0
-      ) {
-        setFeedback({
-          tipo:
-            'erro',
+    if (valorTratado === null || valorTratado < 0) {
+      setFeedback({
+        tipo: "erro",
 
-          mensagem:
-            'Informe um valor válido para a reserva.',
-        });
+        mensagem: "Informe um valor válido para a reserva.",
+      });
 
-        return;
-      }
+      return;
+    }
 
-      if (formData.horario && !/^([01]\d|2[0-3]):[0-5]\d$/.test(formData.horario)) {
-        setFeedback({
-          tipo: 'erro',
-          mensagem: 'Informe um horário válido entre 00:00 e 23:59.',
-        });
-        return;
-      }
+    if (
+      formData.horario &&
+      !/^([01]\d|2[0-3]):[0-5]\d$/.test(formData.horario)
+    ) {
+      setFeedback({
+        tipo: "erro",
 
-      envioReserva.current = true;
-      setLoading(true);
+        mensagem: "Informe um horário válido entre 00:00 e 23:59.",
+      });
 
-      try {
-        const {
-          error,
-        } =
-          await supabase
-            .from(
-              'reservas'
-            )
-            .insert([{
-                cliente_id: formData.cliente_id || null,
-                passeio_id: formData.passeio_id || null,
-        horario: formData.horario?.trim() || null,
-        embarcacao_id: formData.embarcacao_id || null,
-                cliente:
-                  formData.cliente.trim(),
+      return;
+    }
 
-                pacote:
-                  formData.pacote.trim(),
+    envioReserva.current = true;
 
-                data_reserva:
-                  formData.data_reserva,
+    setLoading(true);
 
-                agencia:
-                  formData.agencia.trim() ||
-                  null,
+    try {
+      const { error } = await supabase
 
-                guia:
-                  formData.guia.trim() ||
-                  null,
+        .from("reservas")
 
-                /*
+        .insert([
+          {
+            cliente_id: formData.cliente_id || null,
+
+            passeio_id: formData.passeio_id || null,
+
+            horario: formData.horario?.trim() || null,
+
+            embarcacao_id: formData.embarcacao_id || null,
+
+            cliente: formData.cliente.trim(),
+
+            pacote: formData.pacote.trim(),
+
+            quantidade_pessoas: Number(formData.quantidade_pessoas),
+            data_reserva: formData.data_reserva,
+
+            agencia: formData.agencia.trim() || null,
+
+            guia: formData.guia.trim() || null,
+
+            /*
+
                   Compatibilidade atual.
 
                   valor e valor_total
+
                   recebem exatamente
+
                   o mesmo número.
+
                 */
-                valor:
-                  valorTratado,
 
-                valor_total:
-                  valorTratado,
+            valor: valorTratado,
 
-                status:
-                  formData.status,
+            valor_total: valorTratado,
 
-                observacoes:
-                  formData.observacoes.trim() ||
-                  null,
-              },
-            ]).select('id').single();
+            status: formData.status,
 
-        if (error) {
-          throw error;
-        }
+            observacoes: formData.observacoes.trim() || null,
+          },
+        ])
+        .select("id")
+        .single();
+
+      if (error) {
+        throw error;
+      }
+
+      await carregarUsoReservas();
+
+      setFeedback({
+        tipo: "sucesso",
+
+        mensagem: "Reserva cadastrada com sucesso. Redirecionando...",
+      });
+
+      reservaGravada.current = true;
+
+      setTimeout(
+        () => {
+          router.push("/reservas");
+
+          router.refresh();
+        },
+
+        1200,
+      );
+    } catch (err: any) {
+      console.error(
+        "Erro ao cadastrar reserva:",
+
+        err,
+      );
+
+      const mensagem = String(err?.message || "");
+
+      if (mensagem.includes("ERN_LIMITE_RESERVAS_MES_ATINGIDO")) {
+        setFeedback({
+          tipo: "erro",
+
+          mensagem:
+            "O limite mensal de reservas do seu plano foi atingido. Para continuar cadastrando reservas neste mês, será necessário ampliar o plano.",
+        });
 
         await carregarUsoReservas();
 
-        setFeedback({
-          tipo:
-            'sucesso',
-
-          mensagem:
-            'Reserva cadastrada com sucesso. Redirecionando...',
-        });
-
-        reservaGravada.current = true;
-      setTimeout(
-          () => {
-            router.push(
-              '/reservas'
-            );
-
-            router.refresh();
-          },
-          1200
-        );
-      } catch (
-        err: any
-      ) {
-        console.error(
-          'Erro ao cadastrar reserva:',
-          err
-        );
-
-        const mensagem =
-          String(
-            err?.message ||
-              ''
-          );
-
-        if (
-          mensagem.includes(
-            'ERN_LIMITE_RESERVAS_MES_ATINGIDO'
-          )
-        ) {
-          setFeedback({
-            tipo:
-              'erro',
-
-            mensagem:
-              'O limite mensal de reservas do seu plano foi atingido. Para continuar cadastrando reservas neste mês, será necessário ampliar o plano.',
-          });
-
-          await carregarUsoReservas();
-
-          return;
-        }
-
-        if (
-          mensagem.includes(
-            'ERN_ASSINATURA_NAO_ENCONTRADA'
-          )
-        ) {
-          setFeedback({
-            tipo:
-              'erro',
-
-            mensagem:
-              'Não foi encontrada uma assinatura ativa para esta empresa.',
-          });
-
-          return;
-        }
-
-        if (
-          mensagem.includes(
-            'ERN_USUARIO_SEM_EMPRESA'
-          )
-        ) {
-          setFeedback({
-            tipo:
-              'erro',
-
-            mensagem:
-              'Seu usuário não possui uma empresa vinculada.',
-          });
-
-          return;
-        }
-
-        setFeedback({
-          tipo:
-            'erro',
-
-          mensagem:
-            err?.message ||
-            'Não foi possível salvar a reserva.',
-        });
-      } finally {
-        if (!reservaGravada.current) {
-          envioReserva.current = false;
-          setLoading(false);
-        }
+        return;
       }
-    };
+
+      if (mensagem.includes("ERN_ASSINATURA_NAO_ENCONTRADA")) {
+        setFeedback({
+          tipo: "erro",
+
+          mensagem:
+            "Não foi encontrada uma assinatura ativa para esta empresa.",
+        });
+
+        return;
+      }
+
+      if (mensagem.includes("ERN_USUARIO_SEM_EMPRESA")) {
+        setFeedback({
+          tipo: "erro",
+
+          mensagem: "Seu usuário não possui uma empresa vinculada.",
+        });
+
+        return;
+      }
+
+      setFeedback({
+        tipo: "erro",
+
+        mensagem: err?.message || "Não foi possível salvar a reserva.",
+      });
+    } finally {
+      if (!reservaGravada.current) {
+        envioReserva.current = false;
+
+        setLoading(false);
+      }
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#07110E] pb-16 text-[#EDEDE3]">
       {/* =====================================================
+
           CABEÇALHO
+
       ====================================================== */}
 
       <section className="border-b border-white/[0.07] bg-[#091510] px-5 py-9 md:px-8 md:py-11">
@@ -680,17 +646,15 @@ export default function NovaReservaPage() {
               <h1
                 className="mt-4 text-3xl tracking-[-0.025em] text-[#F0F0E8] md:text-4xl"
                 style={{
-                  fontFamily:
-                    'var(--font-fraunces), serif',
+                  fontFamily: "var(--font-fraunces), serif",
                 }}
               >
                 Nova reserva
               </h1>
 
               <p className="mt-3 max-w-[650px] text-sm leading-6 text-[#EDEDE3]/42">
-                Registre uma nova operação turística,
-                vinculando cliente, experiência, data,
-                equipe e valor da reserva.
+                Registre uma nova operação turística, vinculando cliente,
+                experiência, data, equipe e valor da reserva.
               </p>
             </div>
 
@@ -707,7 +671,9 @@ export default function NovaReservaPage() {
 
       <main className="mx-auto max-w-[1180px] px-5 py-8 md:px-8 md:py-10">
         {/* =====================================================
+
             USO MENSAL
+
         ====================================================== */}
 
         <section className="mb-6 overflow-hidden rounded-[22px] border border-white/[0.075] bg-[#0A1713]">
@@ -722,122 +688,90 @@ export default function NovaReservaPage() {
                   </p>
                 </div>
 
-                {!carregandoUso &&
-                  uso && (
-                    <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#EDEDE3]/42">
-                      {
-                        uso.plano_nome
-                      }
-                    </span>
-                  )}
+                {!carregandoUso && uso && (
+                  <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#EDEDE3]/42">
+                    {uso.plano_nome}
+                  </span>
+                )}
               </div>
 
               <h2
                 className="mt-3 text-2xl tracking-[-0.015em] text-[#F0F0E8]"
                 style={{
-                  fontFamily:
-                    'var(--font-fraunces), serif',
+                  fontFamily: "var(--font-fraunces), serif",
                 }}
               >
                 {carregandoUso
-                  ? 'Consultando limite...'
+                  ? "Consultando limite..."
                   : uso?.ilimitado
                     ? `${uso.total_reservas_mes} reservas neste mês`
                     : uso
                       ? `${uso.total_reservas_mes} de ${uso.limite_reservas_mes ?? 0} reservas`
-                      : 'Uso indisponível'}
+                      : "Uso indisponível"}
               </h2>
 
               <p className="mt-2 text-xs leading-5 text-[#EDEDE3]/32">
                 {carregandoUso
-                  ? 'Carregando os dados da assinatura.'
+                  ? "Carregando os dados da assinatura."
                   : uso
                     ? `Período: ${formatarData(
-                        uso.inicio_periodo
-                      )} — ${formatarData(
-                        uso.fim_periodo
-                      )}`
-                    : 'A franquia mensal continua protegida pelo servidor.'}
+                        uso.inicio_periodo,
+                      )} — ${formatarData(uso.fim_periodo)}`
+                    : "A franquia mensal continua protegida pelo servidor."}
               </p>
 
-              {!carregandoUso &&
-                uso &&
-                !uso.ilimitado &&
-                !limiteAtingido && (
-                  <p className="mt-1 text-[10px] text-[#EDEDE3]/24">
-                    {restantes} reserva
-                    {restantes ===
-                    1
-                      ? ''
-                      : 's'}{' '}
-                    restante
-                    {restantes ===
-                    1
-                      ? ''
-                      : 's'}{' '}
-                    neste período.
-                  </p>
-                )}
+              {!carregandoUso && uso && !uso.ilimitado && !limiteAtingido && (
+                <p className="mt-1 text-[10px] text-[#EDEDE3]/24">
+                  {restantes} reserva
+                  {restantes === 1 ? "" : "s"} restante
+                  {restantes === 1 ? "" : "s"} neste período.
+                </p>
+              )}
             </div>
 
-            {!carregandoUso &&
-              uso &&
-              !uso.ilimitado && (
-                <div className="w-full max-w-[310px] rounded-[17px] border border-white/[0.06] bg-white/[0.018] p-4">
-                  <div className="flex items-end justify-between">
-                    <div>
-                      <p className="text-[8px] font-semibold uppercase tracking-[0.15em] text-[#EDEDE3]/25">
-                        Consumo
-                      </p>
+            {!carregandoUso && uso && !uso.ilimitado && (
+              <div className="w-full max-w-[310px] rounded-[17px] border border-white/[0.06] bg-white/[0.018] p-4">
+                <div className="flex items-end justify-between">
+                  <div>
+                    <p className="text-[8px] font-semibold uppercase tracking-[0.15em] text-[#EDEDE3]/25">
+                      Consumo
+                    </p>
 
-                      <strong className="mt-1 block text-xl text-[#F0F0E8]">
-                        {
-                          uso.total_reservas_mes
-                        }
+                    <strong className="mt-1 block text-xl text-[#F0F0E8]">
+                      {uso.total_reservas_mes}
 
-                        <span className="text-sm font-normal text-[#EDEDE3]/28">
-                          {' '}
-                          /{' '}
-                          {
-                            uso.limite_reservas_mes
-                          }
-                        </span>
-                      </strong>
-                    </div>
-
-                    <span
-                      className={`text-xs font-bold ${
-                        limiteAtingido ||
-                        percentualVisual >=
-                          80
-                          ? 'text-[#F4C77E]'
-                          : 'text-emerald-300'
-                      }`}
-                    >
-                      {percentualVisual.toFixed(
-                        1
-                      )}
-                      %
-                    </span>
+                      <span className="text-sm font-normal text-[#EDEDE3]/28">
+                        {" "}
+                        / {uso.limite_reservas_mes}
+                      </span>
+                    </strong>
                   </div>
 
-                  <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.055]">
-                    <div
-                      className={`h-full rounded-full transition-all ${
-                        limiteAtingido ||
-                        percentualVisual >=
-                          80
-                          ? 'bg-[#E3A144]'
-                          : 'bg-emerald-400'
-                      }`}
-                      style={{
-                        width:
-                          `${percentualVisual}%`,
-                      }}
-                    />
-                  </div>
+                  <span
+                    className={`text-xs font-bold ${
+                      limiteAtingido || percentualVisual >= 80
+                        ? "text-[#F4C77E]"
+                        : "text-emerald-300"
+                    }`}
+                  >
+                    {percentualVisual.toFixed(1)}%
+                  </span>
                 </div>
-              )}
+
+                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.055]">
+                  <div
+                    className={`h-full rounded-full transition-all ${
+                      limiteAtingido || percentualVisual >= 80
+                        ? "bg-[#E3A144]"
+                        : "bg-emerald-400"
+                    }`}
+                    style={{
+                      width: `${percentualVisual}%`,
+                    }}
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {erroUso && (
@@ -848,7 +782,9 @@ export default function NovaReservaPage() {
         </section>
 
         {/* =====================================================
+
             LIMITE ATINGIDO
+
         ====================================================== */}
 
         {limiteAtingido && (
@@ -862,18 +798,16 @@ export default function NovaReservaPage() {
                 <h2
                   className="mt-2 text-xl text-[#F0F0E8]"
                   style={{
-                    fontFamily:
-                      'var(--font-fraunces), serif',
+                    fontFamily: "var(--font-fraunces), serif",
                   }}
                 >
                   Novas reservas estão temporariamente bloqueadas.
                 </h2>
 
                 <p className="mt-2 max-w-[720px] text-xs leading-6 text-[#EDEDE3]/40">
-                  As reservas existentes permanecem
-                  disponíveis normalmente. A franquia é
-                  renovada no próximo período mensal ou pode
-                  ser ampliada com outro plano.
+                  As reservas existentes permanecem disponíveis normalmente. A
+                  franquia é renovada no próximo período mensal ou pode ser
+                  ampliada com outro plano.
                 </p>
               </div>
 
@@ -889,32 +823,31 @@ export default function NovaReservaPage() {
         )}
 
         {/* =====================================================
+
             FEEDBACK
+
         ====================================================== */}
 
         {feedback && (
           <div
             className={`mb-6 rounded-[18px] border px-5 py-4 text-sm ${
-              feedback.tipo ===
-              'sucesso'
-                ? 'border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-200'
-                : 'border-red-400/20 bg-red-400/[0.07] text-red-200'
+              feedback.tipo === "sucesso"
+                ? "border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-200"
+                : "border-red-400/20 bg-red-400/[0.07] text-red-200"
             }`}
           >
-            {
-              feedback.mensagem
-            }
+            {feedback.mensagem}
           </div>
         )}
 
         {/* =====================================================
+
             FORMULÁRIO
+
         ====================================================== */}
 
         <form
-          onSubmit={
-            handleSubmit
-          }
+          onSubmit={handleSubmit}
           className="overflow-hidden rounded-[26px] border border-white/[0.075] bg-[#0A1713]"
         >
           <div className="border-b border-white/[0.06] px-5 py-5 md:px-6">
@@ -927,8 +860,7 @@ export default function NovaReservaPage() {
                 <h2
                   className="mt-2 text-2xl text-[#F0F0E8]"
                   style={{
-                    fontFamily:
-                      'var(--font-fraunces), serif',
+                    fontFamily: "var(--font-fraunces), serif",
                   }}
                 >
                   Dados da reserva
@@ -943,22 +875,28 @@ export default function NovaReservaPage() {
 
           <div className="grid gap-6 p-5 md:grid-cols-2 md:p-6">
             <div className="min-w-0 md:col-span-2">
-  <VinculosReserva
-    clienteId={formData.cliente_id ?? ''}
-    passeioId={formData.passeio_id ?? ''}
-    clienteNome={formData.cliente}
-    passeioNome={formData.pacote}
-    bloqueado={loading || limiteAtingido}
-    onChange={(campos) => setFormData((atual) => ({ ...atual, ...campos }))}
-  />
-  <LogisticaReserva
-    horario={formData.horario ?? ''}
-    embarcacaoId={formData.embarcacao_id ?? ''}
-    bloqueado={loading || limiteAtingido}
-    onChange={(campos) => setFormData((atual) => ({ ...atual, ...campos }))}
-  />
-</div>
-{/* CLIENTE */}
+              <VinculosReserva
+                clienteId={formData.cliente_id ?? ""}
+                passeioId={formData.passeio_id ?? ""}
+                clienteNome={formData.cliente}
+                passeioNome={formData.pacote}
+                bloqueado={loading || limiteAtingido}
+                onChange={(campos) =>
+                  setFormData((atual) => ({ ...atual, ...campos }))
+                }
+              />
+
+              <LogisticaReserva
+                horario={formData.horario ?? ""}
+                embarcacaoId={formData.embarcacao_id ?? ""}
+                bloqueado={loading || limiteAtingido}
+                onChange={(campos) =>
+                  setFormData((atual) => ({ ...atual, ...campos }))
+                }
+              />
+            </div>
+
+            {/* CLIENTE */}
 
             <div>
               <label
@@ -973,16 +911,9 @@ export default function NovaReservaPage() {
                 type="text"
                 name="cliente"
                 required
-                value={
-                  formData.cliente
-                }
-                onChange={
-                  handleChange
-                }
-                disabled={
-                  loading ||
-                  limiteAtingido
-                }
+                value={formData.cliente}
+                onChange={handleChange}
+                disabled={loading || limiteAtingido}
                 placeholder="Nome do cliente"
                 className="min-h-[48px] w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-sm text-[#F0F0E8] outline-none transition placeholder:text-[#EDEDE3]/18 focus:border-[#E3A144]/45 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-45"
               />
@@ -1003,16 +934,9 @@ export default function NovaReservaPage() {
                 type="text"
                 name="pacote"
                 required
-                value={
-                  formData.pacote
-                }
-                onChange={
-                  handleChange
-                }
-                disabled={
-                  loading ||
-                  limiteAtingido
-                }
+                value={formData.pacote}
+                onChange={handleChange}
+                disabled={loading || limiteAtingido}
                 placeholder="Experiência ou pacote contratado"
                 className="min-h-[48px] w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-sm text-[#F0F0E8] outline-none transition placeholder:text-[#EDEDE3]/18 focus:border-[#E3A144]/45 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-45"
               />
@@ -1033,22 +957,21 @@ export default function NovaReservaPage() {
                 type="date"
                 name="data_reserva"
                 required
-                value={
-                  formData.data_reserva
-                }
-                onChange={
-                  handleChange
-                }
-                disabled={
-                  loading ||
-                  limiteAtingido
-                }
+                value={formData.data_reserva}
+                onChange={handleChange}
+                disabled={loading || limiteAtingido}
                 className="min-h-[48px] w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-sm text-[#F0F0E8] outline-none transition focus:border-[#E3A144]/45 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-45"
               />
 
               <p className="mt-1.5 text-[9px] text-[#EDEDE3]/22">
                 Data programada para realização da operação.
               </p>
+            </div>
+
+            <div>
+              <label htmlFor="quantidade_pessoas" className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.13em] text-[#EDEDE3]/42">Quantidade de pessoas *</label>
+              <input id="quantidade_pessoas" name="quantidade_pessoas" type="number" inputMode="numeric" min={1} max={2147483647} step={1} required value={formData.quantidade_pessoas} onChange={handleChange} disabled={loading || limiteAtingido} className="min-h-[48px] w-full rounded-xl border border-white/10 bg-[#07110E] px-4 text-sm text-[#F0F0E8] disabled:opacity-45" />
+              <p className="mt-2 text-xs text-[#EDEDE3]/50">Total de participantes da reserva. O valor comercial permanece o total informado.</p>
             </div>
 
             {/* VALOR */}
@@ -1068,16 +991,9 @@ export default function NovaReservaPage() {
                 name="valor"
                 required
                 placeholder="Ex.: 3500 ou 3.500,00"
-                value={
-                  formData.valor
-                }
-                onChange={
-                  handleChange
-                }
-                disabled={
-                  loading ||
-                  limiteAtingido
-                }
+                value={formData.valor}
+                onChange={handleChange}
+                disabled={loading || limiteAtingido}
                 className="min-h-[48px] w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-sm text-[#F0F0E8] outline-none transition placeholder:text-[#EDEDE3]/18 focus:border-[#E3A144]/45 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-45"
               />
 
@@ -1100,16 +1016,9 @@ export default function NovaReservaPage() {
                 id="agencia"
                 type="text"
                 name="agencia"
-                value={
-                  formData.agencia
-                }
-                onChange={
-                  handleChange
-                }
-                disabled={
-                  loading ||
-                  limiteAtingido
-                }
+                value={formData.agencia}
+                onChange={handleChange}
+                disabled={loading || limiteAtingido}
                 placeholder="Opcional"
                 className="min-h-[48px] w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-sm text-[#F0F0E8] outline-none transition placeholder:text-[#EDEDE3]/18 focus:border-[#E3A144]/45 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-45"
               />
@@ -1129,16 +1038,9 @@ export default function NovaReservaPage() {
                 id="guia"
                 type="text"
                 name="guia"
-                value={
-                  formData.guia
-                }
-                onChange={
-                  handleChange
-                }
-                disabled={
-                  loading ||
-                  limiteAtingido
-                }
+                value={formData.guia}
+                onChange={handleChange}
+                disabled={loading || limiteAtingido}
                 placeholder="Opcional"
                 className="min-h-[48px] w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-sm text-[#F0F0E8] outline-none transition placeholder:text-[#EDEDE3]/18 focus:border-[#E3A144]/45 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-45"
               />
@@ -1157,29 +1059,16 @@ export default function NovaReservaPage() {
               <select
                 id="status"
                 name="status"
-                value={
-                  formData.status
-                }
-                onChange={
-                  handleChange
-                }
-                disabled={
-                  loading ||
-                  limiteAtingido
-                }
+                value={formData.status}
+                onChange={handleChange}
+                disabled={loading || limiteAtingido}
                 className="min-h-[48px] w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-sm text-[#F0F0E8] outline-none transition focus:border-[#E3A144]/45 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-45"
               >
-                <option value="Pendente">
-                  Pendente
-                </option>
+                <option value="Pendente">Pendente</option>
 
-                <option value="Confirmada">
-                  Confirmada
-                </option>
+                <option value="Confirmada">Confirmada</option>
 
-                <option value="Cancelada">
-                  Cancelada
-                </option>
+                <option value="Cancelada">Cancelada</option>
               </select>
             </div>
 
@@ -1197,16 +1086,9 @@ export default function NovaReservaPage() {
                 id="observacoes"
                 name="observacoes"
                 rows={4}
-                value={
-                  formData.observacoes
-                }
-                onChange={
-                  handleChange
-                }
-                disabled={
-                  loading ||
-                  limiteAtingido
-                }
+                value={formData.observacoes}
+                onChange={handleChange}
+                disabled={loading || limiteAtingido}
                 placeholder="Informações logísticas, solicitações especiais ou observações da operação..."
                 className="w-full resize-none rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm leading-6 text-[#F0F0E8] outline-none transition placeholder:text-[#EDEDE3]/18 focus:border-[#E3A144]/45 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-45"
               />
@@ -1214,23 +1096,22 @@ export default function NovaReservaPage() {
           </div>
 
           {/* =================================================
+
               AÇÕES
+
           ================================================== */}
 
           <div className="flex flex-col-reverse gap-3 border-t border-white/[0.06] bg-white/[0.008] px-5 py-5 sm:flex-row sm:items-center sm:justify-between md:px-6">
             <p className="hidden max-w-[500px] text-[10px] leading-5 text-[#EDEDE3]/22 sm:block">
-              A reserva será vinculada automaticamente à empresa autenticada e contabilizada na franquia mensal.
+              A reserva será vinculada automaticamente à empresa autenticada e
+              contabilizada na franquia mensal.
             </p>
 
             <div className="flex flex-col-reverse gap-3 sm:flex-row">
               <button
                 type="button"
-                onClick={
-                  handleCancelar
-                }
-                disabled={
-                  loading
-                }
+                onClick={handleCancelar}
+                disabled={loading}
                 className="min-h-[46px] rounded-xl border border-white/[0.09] bg-white/[0.02] px-5 text-sm font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.045] disabled:opacity-40"
               >
                 Cancelar
@@ -1238,13 +1119,8 @@ export default function NovaReservaPage() {
 
               <button
                 type="button"
-                onClick={
-                  handleLimpar
-                }
-                disabled={
-                  loading ||
-                  limiteAtingido
-                }
+                onClick={handleLimpar}
+                disabled={loading || limiteAtingido}
                 className="min-h-[46px] rounded-xl border border-white/[0.09] bg-white/[0.02] px-5 text-sm font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.045] disabled:cursor-not-allowed disabled:opacity-40"
               >
                 Limpar
@@ -1252,20 +1128,16 @@ export default function NovaReservaPage() {
 
               <button
                 type="submit"
-                disabled={
-                  loading ||
-                  carregandoUso ||
-                  limiteAtingido
-                }
+                disabled={loading || carregandoUso || limiteAtingido}
                 className="min-h-[46px] min-w-[160px] rounded-xl bg-[#E3A144] px-6 text-sm font-bold text-[#07130F] shadow-[0_8px_22px_rgba(227,161,68,0.12)] transition hover:bg-[#F0B35C] disabled:cursor-not-allowed disabled:opacity-45"
               >
                 {loading
-                  ? 'Salvando...'
+                  ? "Salvando..."
                   : limiteAtingido
-                    ? 'Limite mensal atingido'
+                    ? "Limite mensal atingido"
                     : carregandoUso
-                      ? 'Verificando plano...'
-                      : 'Salvar reserva'}
+                      ? "Verificando plano..."
+                      : "Salvar reserva"}
               </button>
             </div>
           </div>

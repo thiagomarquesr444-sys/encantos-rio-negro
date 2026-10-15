@@ -36,6 +36,7 @@ interface ReservaForm {
 
   embarcacao_id?: string;
 
+  quantidade_pessoas: string;
   cliente: string;
 
   pacote: string;
@@ -55,6 +56,7 @@ interface ReservaForm {
 }
 
 interface ReservaBanco {
+  quantidade_pessoas?: number | null;
 
   cliente_id?: string | null;
 
@@ -295,6 +297,12 @@ function dataISOValida(data: string): boolean {
   return verificacao.getUTCFullYear() === ano && verificacao.getUTCMonth() === mes - 1 && verificacao.getUTCDate() === dia;
 }
 
+function quantidadePessoasValida(valor: string): boolean {
+  if (!/^[0-9]+$/.test(valor)) return false;
+  const quantidade = Number(valor);
+  return Number.isInteger(quantidade) && quantidade >= 1 && quantidade <= 2147483647;
+}
+
 export default function EditarReservaPage() {
   const [reservaCarregadaId, setReservaCarregadaId] = useState<string | null>(null);
   const [tentativa, setTentativa] = useState(0);
@@ -383,6 +391,7 @@ export default function EditarReservaPage() {
 
     useState<ReservaForm>({
 
+      quantidade_pessoas: '',
       cliente: '',
 
       pacote: '',
@@ -530,6 +539,7 @@ export default function EditarReservaPage() {
           '';
 
         setForm({
+          quantidade_pessoas: reserva.quantidade_pessoas == null ? '' : String(reserva.quantidade_pessoas),
 
           cliente_id: reserva.cliente_id ?? '',
 
@@ -805,6 +815,11 @@ export default function EditarReservaPage() {
 
     }
 
+    if (!quantidadePessoasValida(form.quantidade_pessoas)) {
+      setFeedback({ tipo: 'erro', mensagem: 'Informe uma quantidade inteira de pessoas, maior que zero.' });
+      return;
+    }
+
     if (!dataISOValida(form.dataReserva)) {
       setFeedback({ tipo: 'erro', mensagem: 'Informe uma data válida para o passeio.' });
       return;
@@ -883,6 +898,7 @@ export default function EditarReservaPage() {
       */
 
       const payload = {
+        quantidade_pessoas: Number(form.quantidade_pessoas),
 
         cliente_id: form.cliente_id || null,
 
@@ -1489,6 +1505,12 @@ export default function EditarReservaPage() {
 
                   />
 
+                </div>
+
+                <div>
+                  <label htmlFor="quantidade-pessoas" className={labelClass}>Quantidade de pessoas *</label>
+                  <input id="quantidade-pessoas" type="number" inputMode="numeric" min={1} max={2147483647} step={1} required value={form.quantidade_pessoas} onChange={event => alterarCampo('quantidade_pessoas', event.target.value)} disabled={salvando} className={inputClass} />
+                  <p className="mt-2 text-xs text-[#EDEDE3]/50">Total de participantes da reserva. Preencha caso ainda não tenha sido informado. O valor comercial permanece o total informado.</p>
                 </div>
 
                 {/* VALOR */}
