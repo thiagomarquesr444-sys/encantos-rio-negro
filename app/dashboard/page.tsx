@@ -3,6 +3,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import GraficosOperadora from '@/app/components/GraficosOperadora';
+import MapaTerritorioERN from '@/app/components/MapaTerritorioERN';
 
 import { supabase } from '@/lib/supabase';
 
@@ -1631,7 +1632,9 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <div className="mt-7 grid gap-4 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <MapaTerritorioERN demandas={demandasOperacionais} carregando={loading} />
+
+        <div className="mt-7">
           <section className="overflow-hidden rounded-2xl border border-[#E3A144]/15 bg-[#0A1713] sm:rounded-[26px]">
             <div className="border-b border-white/[0.06] px-4 py-4 sm:px-6 sm:py-5">
               <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
@@ -1743,83 +1746,7 @@ export default function DashboardPage() {
             </div>
           </section>
 
-          <section className="relative overflow-hidden rounded-2xl border border-white/[0.075] bg-[#081611] sm:rounded-[26px]">
-            <div className="pointer-events-none absolute -right-28 top-8 h-72 w-72 rounded-full border border-[#E3A144]/10" />
-            <div className="pointer-events-none absolute left-1/2 top-1/2 h-80 w-20 -translate-x-1/2 -translate-y-1/2 rotate-[18deg] rounded-[50%] border border-[#7C9C87]/15" />
 
-            <div className="relative border-b border-white/[0.06] px-4 py-4 sm:px-6 sm:py-5">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
-                Território ERN
-              </p>
-
-              <h2
-                className="mt-2 text-2xl text-[#F0F0E8]"
-                style={{
-                  fontFamily:
-                    'var(--font-fraunces), serif',
-                }}
-              >
-                Alto e Baixo Rio Negro
-              </h2>
-
-              <p className="mt-2 max-w-xl text-xs leading-5 text-[#EDEDE3]/45">
-                Base territorial da rede,
-                preparada para receber operações,
-                parceiros, experiências e eventos.
-              </p>
-            </div>
-
-            <div className="relative grid gap-4 p-4 sm:grid-cols-2 sm:p-6">
-              <div className="rounded-2xl border border-white/[0.065] bg-white/[0.018] p-4">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#E3A144]">
-                  Baixo Rio Negro
-                </p>
-
-                <div className="mt-4 space-y-3">
-                  {[
-                    'Manaus',
-                    'Novo Airão',
-                  ].map((cidade) => (
-                    <div
-                      key={cidade}
-                      className="flex items-center gap-3"
-                    >
-                      <span className="h-2 w-2 rounded-full bg-[#E3A144]" />
-
-                      <span className="text-xs text-[#EDEDE3]/70">
-                        {cidade}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="rounded-2xl border border-white/[0.065] bg-white/[0.018] p-4">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#7C9C87]">
-                  Alto Rio Negro
-                </p>
-
-                <div className="mt-4 space-y-3">
-                  {[
-                    'Barcelos',
-                    'Santa Isabel do Rio Negro',
-                    'São Gabriel da Cachoeira',
-                  ].map((cidade) => (
-                    <div
-                      key={cidade}
-                      className="flex items-center gap-3"
-                    >
-                      <span className="h-2 w-2 rounded-full bg-[#7C9C87]" />
-
-                      <span className="text-xs text-[#EDEDE3]/70">
-                        {cidade}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </section>
         </div>
 
         <div className="mt-7 grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
