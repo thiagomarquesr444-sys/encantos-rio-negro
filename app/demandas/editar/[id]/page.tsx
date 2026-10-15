@@ -8,6 +8,7 @@ import {
 } from 'react';
 
 import Link from 'next/link';
+import { confirmarERN } from '@/lib/confirmarERN';
 import ItensDemanda from '@/app/components/ItensDemanda';
 
 import {
@@ -806,7 +807,7 @@ export default function EditarDemandaPage() {
     }
 
     const confirmou =
-      window.confirm(
+      await confirmarERN(
         'Deseja realmente excluir esta demanda? Esta ação não poderá ser desfeita.',
       );
 
@@ -1661,9 +1662,9 @@ export default function EditarDemandaPage() {
                 <button
                   type="button"
                   disabled={salvando}
-                  onClick={() => {
+                  onClick={async () => {
                     if (
-                      window.confirm(
+                      await confirmarERN(
                         'Confirmar encerramento desta demanda? Ela ficará preservada no histórico da operação.',
                       )
                     ) {
@@ -1680,9 +1681,9 @@ export default function EditarDemandaPage() {
                 <button
                   type="button"
                   disabled={salvando}
-                  onClick={() => {
+                  onClick={async () => {
                     if (
-                      window.confirm(
+                      await confirmarERN(
                         'Confirmar cancelamento desta demanda?',
                       )
                     ) {
@@ -1703,9 +1704,9 @@ export default function EditarDemandaPage() {
               <button
                 type="button"
                 disabled={salvando}
-                onClick={() => {
+                onClick={async () => {
                   if (
-                    window.confirm(
+                    await confirmarERN(
                       'Deseja cancelar este rascunho?',
                     )
                   ) {

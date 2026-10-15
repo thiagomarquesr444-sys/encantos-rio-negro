@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import SeletorERN from './SeletorERN';
+import { confirmarERN } from '@/lib/confirmarERN';
 import {
   CATEGORIAS_ITEM,
   SITUACOES_ITEM,
@@ -213,9 +214,9 @@ export default function ItensDemanda({ demandaId, bloqueado }: Props) {
                       type="button"
                       disabled={desabilitado}
                       aria-label={`Remover item ${indice + 1}: ${item.descricao || 'sem descrição'}`}
-                      onClick={() => {
+                      onClick={async () => {
                         if (trava.current) return;
-                        if (!window.confirm('Remover este item da lista? A remoção será aplicada ao salvar a lista.')) return;
+                        if (!await confirmarERN('Remover este item da lista? A remoção será aplicada ao salvar a lista.')) return;
                         setItens((atuais) => atuais.filter((linha) => linha.chave !== item.chave));
                         setAlterado(true);
                         setAviso('');
@@ -326,7 +327,7 @@ export default function ItensDemanda({ demandaId, bloqueado }: Props) {
             <button
               type="button"
               disabled={desabilitado || itens.length >= 200}
-              onClick={() => {
+              onClick={async () => {
                 if (trava.current) return;
                 setItens((atuais) => [
                   ...atuais,
@@ -361,9 +362,9 @@ export default function ItensDemanda({ demandaId, bloqueado }: Props) {
         <button
           type="button"
           disabled={bloqueado}
-          onClick={() => {
+          onClick={async () => {
             if (trava.current) return;
-            if (alterado && !window.confirm('Recarregar e descartar as alterações não salvas da lista?')) return;
+            if (alterado && !await confirmarERN('Recarregar e descartar as alterações não salvas da lista?')) return;
             setCarregando(true);
             setAviso('');
             setTentativa((atual) => atual + 1);

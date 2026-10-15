@@ -1,5 +1,7 @@
 'use client';
 
+import { confirmarERN } from '@/lib/confirmarERN';
+
 import React, {
   useEffect,
   useState,
@@ -255,9 +257,14 @@ export default function ClientesPage() {
             ? err.message
             : 'Erro desconhecido';
 
-        alert(
-          'Erro ao excluir cliente: ' +
-            mensagem
+        await confirmarERN(
+          'Não foi possível excluir o cliente. ' + mensagem,
+          {
+            titulo: 'Exclusão não concluída',
+            confirmar: 'Entendi',
+            destrutiva: false,
+            somenteInformacao: true,
+          },
         );
       }
     };
