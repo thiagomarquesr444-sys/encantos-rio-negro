@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import HorarioReserva from './HorarioReserva';
 
 type Embarcacao = {
   id: string;
@@ -133,13 +134,10 @@ export default function LogisticaReserva({
       <div className="mt-4 grid min-w-0 gap-4 sm:grid-cols-2">
         <label className="min-w-0 text-xs text-[#EDEDE3]/80">
           Horário de saída
-          <input
-            type="time"
-            step={60}
+          <HorarioReserva
             value={horario}
             disabled={bloqueado}
-            onChange={(event) => onChange({ horario: event.target.value })}
-            className={campo}
+            onChange={(valor) => onChange({ horario: valor })}
           />
         </label>
 

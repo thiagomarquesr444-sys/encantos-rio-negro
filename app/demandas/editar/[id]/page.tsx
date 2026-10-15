@@ -8,6 +8,7 @@ import {
 } from 'react';
 
 import Link from 'next/link';
+import ItensDemanda from '@/app/components/ItensDemanda';
 
 import {
   useParams,
@@ -901,6 +902,14 @@ export default function EditarDemandaPage() {
           </div>
         </div>
       </header>
+
+      <div className="mx-auto max-w-5xl px-4 pt-7 md:px-8">
+        <ItensDemanda
+          key={id}
+          demandaId={id}
+          bloqueado={terminal || salvando || excluindo}
+        />
+      </div>
 
       <form
         onSubmit={salvar}
