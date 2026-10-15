@@ -852,7 +852,7 @@ export default function ReservasPage() {
             INDICADORES
         ==================================================== */}
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-4">
           {indicadores.map(
             (indicador) => {
               const ativo =
@@ -1072,24 +1072,24 @@ export default function ReservasPage() {
             ) : (
               <>
   {/* ERN_RESERVAS_MOBILE */}
-  <div className="grid min-w-0 gap-4 p-4 lg:hidden">
+  <div className="grid min-w-0 gap-2 p-3 sm:grid-cols-2 lg:hidden">
     {reservasFiltradas.map((reserva, indice) => (
       <article
         key={reserva.id ?? indice}
-        className="min-w-0 rounded-2xl border border-white/10 bg-[#07110E] p-4"
+        className="min-w-0 rounded-2xl border border-white/10 bg-[#07110E] p-3"
       >
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0 flex-1">
-            <h3 className="break-words text-base font-semibold text-[#F0F0E8]">
+            <h3 className="break-words text-sm font-semibold text-[#F0F0E8]">
               {reserva.cliente}
             </h3>
-            <p className="mt-1 break-words text-sm leading-6 text-[#EDEDE3]/70">
+            <p className="mt-1 break-words text-xs leading-4 text-[#EDEDE3]/70">
               {reserva.pacote}
             </p>
           </div>
 
           <span
-            className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+            className={`rounded-full border px-2 py-1 text-[10px] font-semibold ${
               reserva.status === 'Confirmada'
                 ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-200'
                 : reserva.status === 'Cancelada'
@@ -1101,35 +1101,35 @@ export default function ReservasPage() {
           </span>
         </div>
 
-        <dl className="mt-5 grid grid-cols-2 gap-4 text-sm">
+        <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
           <div className="min-w-0">
-            <dt className="text-xs text-[#EDEDE3]/60">Data do passeio</dt>
+            <dt className="text-[10px] text-[#EDEDE3]/60">Data do passeio</dt>
             <dd className="mt-1 break-words">{reserva.data}</dd>
           </div>
 
           <div className="min-w-0">
-            <dt className="text-xs text-[#EDEDE3]/60">Valor comercial</dt>
+            <dt className="text-[10px] text-[#EDEDE3]/60">Valor comercial</dt>
             <dd className="mt-1 break-words font-semibold text-[#F4C77E]">
               {formatarMoeda(reserva.valor)}
             </dd>
           </div>
 
           <div className="min-w-0">
-            <dt className="text-xs text-[#EDEDE3]/60">Agência / Parceiro</dt>
+            <dt className="text-[10px] text-[#EDEDE3]/60">Agência / Parceiro</dt>
             <dd className="mt-1 break-words">{reserva.agencia}</dd>
           </div>
 
           <div className="min-w-0">
-            <dt className="text-xs text-[#EDEDE3]/60">Guia</dt>
+            <dt className="text-[10px] text-[#EDEDE3]/60">Guia</dt>
             <dd className="mt-1 break-words">{reserva.guia}</dd>
           </div>
         </dl>
 
-        <div className="mt-5 grid grid-cols-2 gap-2 border-t border-white/10 pt-4">
+        <div className="mt-3 grid grid-cols-3 gap-2 border-t border-white/10 pt-2">
           <button
             type="button"
             onClick={() => abrirObservacoes(reserva)}
-            className="min-h-12 rounded-xl border border-white/15 px-3 text-sm font-semibold"
+            className="min-h-11 rounded-xl border border-white/15 px-2 text-xs font-semibold"
           >
             Detalhes
           </button>
@@ -1138,7 +1138,7 @@ export default function ReservasPage() {
             <>
               <Link
                 href={`/reservas/editar/${reserva.id}`}
-                className="flex min-h-12 items-center justify-center rounded-xl border border-sky-400/25 px-3 text-sm font-semibold text-sky-200"
+                className="flex min-h-11 items-center justify-center rounded-xl border border-sky-400/25 px-2 text-xs font-semibold text-sky-200"
               >
                 Editar
               </Link>
@@ -1147,9 +1147,9 @@ export default function ReservasPage() {
                 type="button"
                 disabled={excluindo}
                 onClick={() => confirmarExclusao(reserva.id)}
-                className="col-span-2 min-h-12 rounded-xl border border-red-400/25 px-3 text-sm font-semibold text-red-200 disabled:opacity-50"
+                className="min-h-11 rounded-xl border border-red-400/25 px-2 text-xs font-semibold text-red-200 disabled:opacity-50"
               >
-                Excluir reserva
+                Excluir
               </button>
             </>
           )}
