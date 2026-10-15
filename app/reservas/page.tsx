@@ -9,6 +9,7 @@ import React, {
 import Link from 'next/link';
 
 import { supabase } from '@/lib/supabase';
+import GraficosReservas from '@/app/components/GraficosReservas';
 
 type StatusReserva =
   | 'Pendente'
@@ -134,14 +135,16 @@ function formatarMoeda(
   );
 }
 
-function escaparCSV(
-  valor: unknown
-) {
-  return `"${String(
-    valor ?? ''
-  ).replace(/"/g, '""')}"`;
-}
+function escaparCSV(valor: unknown) {
+  let texto = String(valor ?? '');
 
+  // Evita interpretar conteúdo exportado como fórmula de planilha.
+  if (/^[\s\uFEFF]*[=+\-@]/u.test(texto) || /^[\t\r\n]/.test(texto)) {
+    texto = "'" + texto;
+  }
+
+  return `"${texto.replace(/"/g, '""')}"`;
+}
 export default function ReservasPage() {
   const [
     reservas,
@@ -215,23 +218,66 @@ export default function ReservasPage() {
     setMensagemErro('');
 
     try {
-      const {
-        data,
-        error,
-      } = await supabase
-        .from('reservas')
-        .select('*')
-        .order('id', {
-          ascending: false,
-        });
+      // ERN_CONSULTA_RESERVAS_COMPLETA
+      const { data: autenticacao, error: erroAuth } =
+        await supabase.auth.getUser();
 
-      if (error) {
-        throw error;
+      if (erroAuth || !autenticacao.user) {
+        throw new Error('Entre novamente para consultar suas reservas.');
       }
 
-      const registros =
-        (data ||
-          []) as ReservaBanco[];
+      const { data: perfil, error: erroPerfil } = await supabase
+        .from('perfis')
+        .select('empresa_id')
+        .eq('id', autenticacao.user.id)
+        .single();
+
+      if (erroPerfil || !perfil?.empresa_id) {
+        throw new Error('Não foi possível identificar sua empresa.');
+      }
+
+      const registros: ReservaBanco[] = [];
+      let totalEsperado: number | null = null;
+
+      for (let inicio = 0; inicio < 10000; inicio += 200) {
+        const { data, error, count } = await supabase
+          .from('reservas')
+          .select('*', { count: 'exact' })
+          .eq('empresa_id', perfil.empresa_id)
+          .order('id', { ascending: false })
+          .range(inicio, inicio + 199);
+
+        if (error) throw error;
+
+        if (count === null || count > 10000) {
+          throw new Error(
+            'O volume de reservas exige uma consulta por período. Nenhum resultado parcial será apresentado.',
+          );
+        }
+
+        if (totalEsperado !== null && totalEsperado !== count) {
+          throw new Error(
+            'As reservas mudaram durante a consulta. Atualize a página.',
+          );
+        }
+
+        totalEsperado = count;
+        registros.push(...((data ?? []) as ReservaBanco[]));
+
+        if (registros.length >= count) break;
+
+        if (!data?.length) {
+          throw new Error('A consulta ficou incompleta. Atualize a página.');
+        }
+      }
+
+      if (
+        registros.length !== totalEsperado ||
+        registros.some((registro) => registro.id == null) ||
+        new Set(registros.map((registro) => registro.id)).size !== registros.length
+      ) {
+        throw new Error('Não foi possível obter uma lista consistente de reservas.');
+      }
 
       const reservasFormatadas =
         registros.map(
@@ -312,14 +358,11 @@ export default function ReservasPage() {
         reservasFormatadas
       );
     } catch (error) {
-      console.error(
-        'Erro ao buscar reservas:',
-        error
-      );
+      console.error('Erro ao buscar reservas:', error);
+      setReservas([]);
 
       setMensagemErro(
-        error instanceof Error
-          ? error.message
+        error && typeof error === 'object' && 'message' in error ? String(error.message)
           : 'Não foi possível carregar as reservas.'
       );
     } finally {
@@ -544,11 +587,7 @@ export default function ReservasPage() {
       const { error } =
         await supabase
           .from('reservas')
-          .delete()
-          .eq(
-            'id',
-            idParaExcluir
-          );
+          .delete().eq('id', idParaExcluir).select('id').single();
 
       if (error) {
         throw error;
@@ -575,8 +614,7 @@ export default function ReservasPage() {
       );
 
       setMensagemErro(
-        error instanceof Error
-          ? error.message
+        error && typeof error === 'object' && 'message' in error ? String(error.message)
           : 'Não foi possível excluir a reserva.'
       );
     } finally {
@@ -785,6 +823,13 @@ export default function ReservasPage() {
       </section>
 
       <main className="mx-auto max-w-[1360px] px-5 py-8 md:px-8 md:py-10">
+        {mensagemErro && (
+          <p role="alert" className="mb-5 rounded-xl border border-red-400/25 bg-red-400/10 p-4 text-sm text-red-200">
+            {mensagemErro}
+          </p>
+        )}
+        <div hidden={Boolean(mensagemErro)}>
+<GraficosReservas reservas={reservas} carregando={loading} />
         {mensagemErro && (
           <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-red-300">
             <span>
@@ -1025,7 +1070,95 @@ export default function ReservasPage() {
                 </div>
               </div>
             ) : (
-              <table className="min-w-[1180px] w-full border-collapse text-left">
+              <>
+  {/* ERN_RESERVAS_MOBILE */}
+  <div className="grid min-w-0 gap-4 p-4 lg:hidden">
+    {reservasFiltradas.map((reserva, indice) => (
+      <article
+        key={reserva.id ?? indice}
+        className="min-w-0 rounded-2xl border border-white/10 bg-[#07110E] p-4"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <h3 className="break-words text-base font-semibold text-[#F0F0E8]">
+              {reserva.cliente}
+            </h3>
+            <p className="mt-1 break-words text-sm leading-6 text-[#EDEDE3]/70">
+              {reserva.pacote}
+            </p>
+          </div>
+
+          <span
+            className={`rounded-full border px-3 py-1 text-xs font-semibold ${
+              reserva.status === 'Confirmada'
+                ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-200'
+                : reserva.status === 'Cancelada'
+                  ? 'border-red-400/25 bg-red-400/10 text-red-200'
+                  : 'border-amber-400/25 bg-amber-400/10 text-amber-200'
+            }`}
+          >
+            {reserva.status}
+          </span>
+        </div>
+
+        <dl className="mt-5 grid grid-cols-2 gap-4 text-sm">
+          <div className="min-w-0">
+            <dt className="text-xs text-[#EDEDE3]/60">Data do passeio</dt>
+            <dd className="mt-1 break-words">{reserva.data}</dd>
+          </div>
+
+          <div className="min-w-0">
+            <dt className="text-xs text-[#EDEDE3]/60">Valor comercial</dt>
+            <dd className="mt-1 break-words font-semibold text-[#F4C77E]">
+              {formatarMoeda(reserva.valor)}
+            </dd>
+          </div>
+
+          <div className="min-w-0">
+            <dt className="text-xs text-[#EDEDE3]/60">Agência / Parceiro</dt>
+            <dd className="mt-1 break-words">{reserva.agencia}</dd>
+          </div>
+
+          <div className="min-w-0">
+            <dt className="text-xs text-[#EDEDE3]/60">Guia</dt>
+            <dd className="mt-1 break-words">{reserva.guia}</dd>
+          </div>
+        </dl>
+
+        <div className="mt-5 grid grid-cols-2 gap-2 border-t border-white/10 pt-4">
+          <button
+            type="button"
+            onClick={() => abrirObservacoes(reserva)}
+            className="min-h-12 rounded-xl border border-white/15 px-3 text-sm font-semibold"
+          >
+            Detalhes
+          </button>
+
+          {reserva.id != null && (
+            <>
+              <Link
+                href={`/reservas/editar/${reserva.id}`}
+                className="flex min-h-12 items-center justify-center rounded-xl border border-sky-400/25 px-3 text-sm font-semibold text-sky-200"
+              >
+                Editar
+              </Link>
+
+              <button
+                type="button"
+                disabled={excluindo}
+                onClick={() => confirmarExclusao(reserva.id)}
+                className="col-span-2 min-h-12 rounded-xl border border-red-400/25 px-3 text-sm font-semibold text-red-200 disabled:opacity-50"
+              >
+                Excluir reserva
+              </button>
+            </>
+          )}
+        </div>
+      </article>
+    ))}
+  </div>
+
+<table className="hidden lg:table min-w-[1180px] w-full border-collapse text-left">
                 <thead>
                   <tr className="border-b border-white/[0.06] bg-white/[0.012]">
                     {[
@@ -1224,9 +1357,11 @@ export default function ReservasPage() {
                   )}
                 </tbody>
               </table>
+</>
             )}
           </div>
         </section>
+              </div>
       </main>
 
       {/* =====================================================
@@ -1236,7 +1371,7 @@ export default function ReservasPage() {
       {modalObsAberto &&
         reservaSelecionada && (
           <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-[680px] overflow-hidden rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.6)]">
+            <div className="max-h-[90dvh] w-full max-w-[680px] overflow-y-auto rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.6)]">
               <div className="flex items-start justify-between gap-5 border-b border-white/[0.07] px-6 py-5">
                 <div>
                   <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">

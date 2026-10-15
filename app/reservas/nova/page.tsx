@@ -1,9 +1,6 @@
 'use client';
 
-import React, {
-  useEffect,
-  useState,
-} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -63,74 +60,34 @@ const ESTADO_INICIAL: FormReserva = {
 
   Entrada inválida retorna null.
 */
-function converterValor(
-  valor: string
-): number | null {
-  let texto = valor
-    .trim()
-    .replace(/[^\d,.-]/g, '');
+function converterValor(valor: string): number | null {
+  let texto = valor.trim().replace(/^R\$\s*/i, '');
 
-  if (!texto) {
-    return null;
-  }
+  if (!texto) return null;
 
-  if (
-    texto.includes('.') &&
-    texto.includes(',')
-  ) {
-    texto = texto
-      .replace(/\./g, '')
-      .replace(',', '.');
-  } else if (
-    texto.includes(',')
-  ) {
-    texto = texto.replace(
-      ',',
-      '.'
-    );
-  } else if (
-    texto.includes('.')
-  ) {
-    const partes =
-      texto.split('.');
-
-    /*
-      3.500 -> separador de milhar
-      12.500 -> separador de milhar
-
-      3500.00 -> decimal
-      149.90 -> decimal
-    */
-    if (
-      partes.length > 2 ||
-      (
-        partes.length === 2 &&
-        partes[1].length === 3
-      )
-    ) {
-      texto = texto.replace(
-        /\./g,
-        ''
-      );
+  if (texto.includes(',')) {
+    if (!/^(?:\d+|\d{1,3}(?:\.\d{3})+),\d{1,2}$/.test(texto)) {
+      return null;
     }
-  }
 
-  const numero =
-    Number.parseFloat(
-      texto
-    );
-
-  if (
-    !Number.isFinite(
-      numero
-    )
-  ) {
+    texto = texto.replace(/\./g, '').replace(',', '.');
+  } else if (/^\d{1,3}(?:\.\d{3})+$/.test(texto)) {
+    texto = texto.replace(/\./g, '');
+  } else if (!/^\d+(?:\.\d{1,2})?$/.test(texto)) {
     return null;
   }
 
-  return numero;
-}
+  const [inteiro, decimal = ''] = texto.split('.');
+  const centavos =
+    Number(inteiro) * 100 +
+    Number(decimal.padEnd(2, '0'));
 
+  if (!Number.isSafeInteger(centavos) || centavos < 0) {
+    return null;
+  }
+
+  return centavos / 100;
+}
 function formatarData(
   data: string | null | undefined
 ) {
@@ -190,6 +147,10 @@ function dataISOValida(
 
 export default function NovaReservaPage() {
   const router = useRouter();
+
+  // ERN_CONFIRMACAO_RESERVA
+  const envioReserva = useRef(false);
+  const reservaGravada = useRef(false);
 
   const [
     formData,
@@ -427,6 +388,7 @@ export default function NovaReservaPage() {
       e: React.FormEvent
     ) => {
       e.preventDefault();
+      if (envioReserva.current) return;
 
       setFeedback(null);
 
@@ -522,6 +484,7 @@ export default function NovaReservaPage() {
         return;
       }
 
+      envioReserva.current = true;
       setLoading(true);
 
       try {
@@ -571,7 +534,7 @@ export default function NovaReservaPage() {
                   formData.observacoes.trim() ||
                   null,
               },
-            ]);
+            ]).select('id').single();
 
         if (error) {
           throw error;
@@ -587,7 +550,8 @@ export default function NovaReservaPage() {
             'Reserva cadastrada com sucesso. Redirecionando...',
         });
 
-        setTimeout(
+        reservaGravada.current = true;
+      setTimeout(
           () => {
             router.push(
               '/reservas'
@@ -670,7 +634,10 @@ export default function NovaReservaPage() {
             'Não foi possível salvar a reserva.',
         });
       } finally {
-        setLoading(false);
+        if (!reservaGravada.current) {
+          envioReserva.current = false;
+          setLoading(false);
+        }
       }
     };
 

@@ -1,9 +1,6 @@
 'use client';
 
-import React, {
-  useEffect,
-  useState,
-} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import Link from 'next/link';
 
@@ -103,158 +100,34 @@ function normalizarStatus(
   R$ 3.500,00
 */
 
-function converterValorMonetario(
-  valor: string
-): number {
-  let bruto = valor
-    .trim()
-    .replace(/\s/g, '')
-    .replace(/R\$/gi, '');
+function converterValorMonetario(valor: string): number {
+  let texto = valor.trim().replace(/^R\$\s*/i, '');
 
-  if (!bruto) {
-    return 0;
-  }
+  if (!texto) return Number.NaN;
 
-  bruto = bruto.replace(
-    /[^0-9.,]/g,
-    ''
-  );
+  if (texto.includes(',')) {
+    if (!/^(?:\d+|\d{1,3}(?:\.\d{3})+),\d{1,2}$/.test(texto)) {
+      return Number.NaN;
+    }
 
-  if (!bruto) {
+    texto = texto.replace(/\./g, '').replace(',', '.');
+  } else if (/^\d{1,3}(?:\.\d{3})+$/.test(texto)) {
+    texto = texto.replace(/\./g, '');
+  } else if (!/^\d+(?:\.\d{1,2})?$/.test(texto)) {
     return Number.NaN;
   }
 
-  const temVirgula =
-    bruto.includes(',');
+  const [inteiro, decimal = ''] = texto.split('.');
+  const centavos =
+    Number(inteiro) * 100 +
+    Number(decimal.padEnd(2, '0'));
 
-  const temPonto =
-    bruto.includes('.');
-
-  let normalizado =
-    bruto;
-
-  /*
-    3.500,50
-    3,500.50
-  */
-
-  if (
-    temVirgula &&
-    temPonto
-  ) {
-    const ultimaVirgula =
-      bruto.lastIndexOf(',');
-
-    const ultimoPonto =
-      bruto.lastIndexOf('.');
-
-    if (
-      ultimaVirgula >
-      ultimoPonto
-    ) {
-      /*
-        Formato brasileiro:
-        3.500,50
-      */
-      normalizado =
-        bruto
-          .replace(
-            /\./g,
-            ''
-          )
-          .replace(
-            ',',
-            '.'
-          );
-    } else {
-      /*
-        Formato internacional:
-        3,500.50
-      */
-      normalizado =
-        bruto.replace(
-          /,/g,
-          ''
-        );
-    }
+  if (!Number.isSafeInteger(centavos) || centavos < 0) {
+    return Number.NaN;
   }
 
-  /*
-    3,500 -> 3500
-    3,50  -> 3.50
-  */
-
-  else if (
-    temVirgula
-  ) {
-    if (
-      /^\d{1,3}(,\d{3})+$/.test(
-        bruto
-      )
-    ) {
-      normalizado =
-        bruto.replace(
-          /,/g,
-          ''
-        );
-    } else {
-      const partes =
-        bruto.split(',');
-
-      const decimal =
-        partes.pop() || '';
-
-      const inteiro =
-        partes.join('');
-
-      normalizado =
-        `${inteiro}.${decimal}`;
-    }
-  }
-
-  /*
-    3.500 -> 3500
-    3.50  -> 3.50
-  */
-
-  else if (
-    temPonto
-  ) {
-    if (
-      /^\d{1,3}(\.\d{3})+$/.test(
-        bruto
-      )
-    ) {
-      normalizado =
-        bruto.replace(
-          /\./g,
-          ''
-        );
-    } else {
-      const partes =
-        bruto.split('.');
-
-      const decimal =
-        partes.pop() || '';
-
-      const inteiro =
-        partes.join('');
-
-      normalizado =
-        `${inteiro}.${decimal}`;
-    }
-  }
-
-  const numero =
-    Number(normalizado);
-
-  return Number.isFinite(
-    numero
-  )
-    ? numero
-    : Number.NaN;
+  return centavos / 100;
 }
-
 function formatarValorCampo(
   numero: number
 ): string {
@@ -296,8 +169,11 @@ function valorBancoParaCampo(
 */
 
 export default function EditarReservaPage() {
-  const router =
-    useRouter();
+  const router = useRouter();
+
+  // ERN_CONFIRMACAO_RESERVA
+  const envioReserva = useRef(false);
+  const reservaGravada = useRef(false);
 
   const params =
     useParams();
@@ -573,6 +449,7 @@ export default function EditarReservaPage() {
       React.FormEvent
   ) {
     event.preventDefault();
+    if (envioReserva.current) return;
 
     if (!id) {
       return;
@@ -619,7 +496,8 @@ export default function EditarReservaPage() {
       return;
     }
 
-    setSalvando(true);
+    envioReserva.current = true;
+      setSalvando(true);
 
     try {
       /*
@@ -672,13 +550,7 @@ export default function EditarReservaPage() {
           .from(
             'reservas'
           )
-          .update(
-            payload
-          )
-          .eq(
-            'id',
-            id
-          );
+          .update(payload).eq('id', id).select('id').single();
 
       if (error) {
         throw error;
@@ -692,6 +564,7 @@ export default function EditarReservaPage() {
           'Reserva atualizada com sucesso.',
       });
 
+      reservaGravada.current = true;
       setTimeout(
         () => {
           router.push(
@@ -718,7 +591,10 @@ export default function EditarReservaPage() {
             : 'Erro ao atualizar reserva.',
       });
     } finally {
-      setSalvando(false);
+      if (!reservaGravada.current) {
+          envioReserva.current = false;
+          setSalvando(false);
+        }
     }
   }
 
