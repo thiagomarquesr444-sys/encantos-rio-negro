@@ -64,7 +64,7 @@ export function numeroItem(
   return Number.isFinite(numero) ? numero : null;
 }
 
-function prepararItem(item: ItemDemanda, indice: number) {
+export function prepararItem(item: ItemDemanda, indice: number) {
   const prefixo = `Item ${indice + 1}`;
   const descricao = item.descricao.trim();
   const unidade = item.unidade.trim();

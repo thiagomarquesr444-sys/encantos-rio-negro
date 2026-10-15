@@ -7,13 +7,16 @@ import {
   type FormEvent,
 } from 'react';
 import Link from 'next/link';
+import ItensDemanda from '@/app/components/ItensDemanda';
+import { criarDemandaComItens } from '@/lib/criarDemandaComItens';
+import type { ItemDemanda } from '@/lib/itensDemanda';
 import { useRouter } from 'next/navigation';
 
 import {
   CATEGORIAS_DEMANDA,
   PUBLICOS_ALVO,
   TIPOS_COMBUSTIVEL,
-  criarDemanda,
+
   mensagemErroDemandas,
   metodoEstimativaDaCategoria,
   obterContextoDemandas,
@@ -171,6 +174,7 @@ function arredondar(
 
 export default function NovaDemandaPage() {
   const router = useRouter();
+  const [itensMateriais, setItensMateriais] = useState<ItemDemanda[]>([]);
 
   const [
     formulario,
@@ -576,9 +580,10 @@ export default function NovaDemandaPage() {
 
     try {
       // ERN_CRIAR_DEMANDA_COM_MATERIAIS
-      const demandaCriada = await criarDemanda(
+      const demandaCriada = await criarDemandaComItens(
         estadoContexto.contexto,
         montarDados(),
+        itensMateriais,
       );
 
       router.push(
@@ -655,6 +660,10 @@ export default function NovaDemandaPage() {
             onSubmit={salvar}
             className="space-y-6"
           >
+            <ItensDemanda
+              bloqueado={bloqueado}
+              onItensChange={setItensMateriais}
+            />
             <section className="rounded-2xl border border-white/10 bg-[#0A1713] p-5 md:p-7">
               <h2 className="text-2xl">
                 Identificação
@@ -1291,7 +1300,7 @@ export default function NovaDemandaPage() {
               >
                 {salvando
                   ? 'Salvando...'
-                  : 'Salvar e organizar materiais'}
+                  : 'Salvar demanda e materiais'}
               </button>
             </div>
           </form>

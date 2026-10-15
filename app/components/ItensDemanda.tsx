@@ -18,8 +18,9 @@ import {
 type Linha = ItemDemanda & { chave: string };
 
 type Props = {
-  demandaId: string;
+  demandaId?: string;
   bloqueado: boolean;
+  onItensChange?: (itens: ItemDemanda[]) => void;
 };
 
 const campo =
@@ -56,7 +57,7 @@ function moeda(centavos: bigint) {
   return `R$ ${inteiro.replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${decimal}`;
 }
 
-export default function ItensDemanda({ demandaId, bloqueado }: Props) {
+export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Props) {
   const [itens, setItens] = useState<Linha[]>([]);
   const [versao, setVersao] = useState<number | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -68,15 +69,19 @@ export default function ItensDemanda({ demandaId, bloqueado }: Props) {
   const trava = useRef(false);
 
   useEffect(() => {
+    if (!demandaId) {
+      setVersao(0);
+      setCarregando(false);
+      return;
+    }
+
+    const idDaDemanda = demandaId;
     const controller = new AbortController();
     let ativo = true;
 
     async function carregar() {
       try {
-        const resultado = await carregarItensDemanda(
-          demandaId,
-          controller.signal,
-        );
+        const resultado = await carregarItensDemanda(idDaDemanda, controller.signal);
 
         if (!ativo) return;
 
@@ -113,6 +118,10 @@ export default function ItensDemanda({ demandaId, bloqueado }: Props) {
     return () => window.removeEventListener('beforeunload', avisar);
   }, [alterado]);
 
+  useEffect(() => {
+    if (!demandaId) onItensChange?.(itens);
+  }, [demandaId, itens, onItensChange]);
+
   const desabilitado = bloqueado || carregando || salvando || versao === null;
 
   function editar(chave: string, valores: Partial<ItemDemanda>) {
@@ -125,6 +134,7 @@ export default function ItensDemanda({ demandaId, bloqueado }: Props) {
   }
 
   async function salvar() {
+    if (!demandaId) return;
     if (desabilitado || trava.current || versao === null) return;
     if (!alterado) return;
 
@@ -172,11 +182,13 @@ export default function ItensDemanda({ demandaId, bloqueado }: Props) {
           </h2>
           <p className="mt-2 max-w-xl text-xs leading-5 text-[#B4C8BB]">
             Organize alimentação, limpeza, gelo, combustível e equipamentos.
-            Salve esta lista antes de mudar de página ou encerrar a demanda.
+            {demandaId
+              ? ' Salve esta lista antes de mudar de página ou encerrar a demanda.'
+              : ' Os materiais serão salvos junto com a nova demanda no botão final do formulário.'}
           </p>
         </div>
         <span className="self-start rounded-full border border-white/15 px-3 py-1 text-xs">
-          {alterado ? 'Alterações não salvas' : 'Lista interna'}
+          {!demandaId ? 'Nova lista · ainda não salva' : alterado ? 'Alterações não salvas' : 'Lista interna'}
         </span>
       </div>
 
@@ -341,6 +353,7 @@ export default function ItensDemanda({ demandaId, bloqueado }: Props) {
               + Adicionar material
             </button>
             <button
+              hidden={!demandaId}
               type="button"
               disabled={desabilitado || !alterado}
               onClick={() => void salvar()}
@@ -358,7 +371,7 @@ export default function ItensDemanda({ demandaId, bloqueado }: Props) {
         </div>
       )}
 
-      {!carregando && !salvando && (
+      {demandaId && !carregando && !salvando && (
         <button
           type="button"
           disabled={bloqueado}
