@@ -2,11 +2,13 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import ImagensLocalERN from "./ImagensLocalERN";
 import type {
   Map as LeafletMap,
   CircleMarker,
   Circle,
   LayerGroup,
+  LeafletMouseEvent,
 } from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -277,6 +279,8 @@ export default function MapaTerritorioERN({
   const gpsRef = useRef<{ ponto: CircleMarker; area: Circle } | null>(null);
   const seguirRef = useRef(false);
   const [cidadeId, setCidadeId] = useState("barcelos");
+  const [inspecionar, setInspecionar] = useState(false);
+  const [pontoInspecao, setPontoInspecao] = useState<Coordenadas | null>(null);
   const [atrativoId, setAtrativoId] = useState<string | null>(
     "praia-grande-barcelos",
   );
@@ -396,6 +400,7 @@ export default function MapaTerritorioERN({
           marcador.bindTooltip(rotulo, { direction: "top", offset: [0, -8] });
           marcador.on("click", () => {
             setCidadeId(local.id);
+            setPontoInspecao(null);
             setAtrativoId(null);
             setBusca("");
             seguirRef.current = false;
@@ -473,6 +478,7 @@ export default function MapaTerritorioERN({
       marcador.on("click", () => {
         setAtrativoId(a.id);
         setCidadeId(a.cidade);
+        setPontoInspecao(null);
         seguirRef.current = false;
         setSeguir(false);
       });
@@ -628,6 +634,38 @@ export default function MapaTerritorioERN({
       );
   }, [estado, geoAtivo, posicao, geoAntigo, geoMensagem, seguir]);
 
+  useEffect(() => {
+    const alvo = mapa.current;
+    if (estado !== "pronto" || !alvo || !inspecionar) return;
+    const aoClicar = (evento: LeafletMouseEvent) => {
+      if (evento.sourceTarget !== alvo) return;
+      setPontoInspecao([evento.latlng.lat, evento.latlng.lng]);
+      seguirRef.current = false;
+      setSeguir(false);
+    };
+    alvo.on("click", aoClicar);
+    return () => {
+      alvo.off("click", aoClicar);
+    };
+  }, [estado, inspecionar]);
+
+  useEffect(() => {
+    const alvo = mapa.current;
+    const L = Lref.current;
+    if (estado !== "pronto" || !alvo || !L || !pontoInspecao) return;
+    const ponto = L.circleMarker(pontoInspecao, {
+      radius: 7,
+      color: "#fff",
+      weight: 2,
+      fillColor: "#dc6c2f",
+      fillOpacity: 1,
+      interactive: false,
+    }).addTo(alvo);
+    return () => {
+      ponto.remove();
+    };
+  }, [estado, pontoInspecao]);
+
   function pausarSeguimento() {
     seguirRef.current = false;
     setSeguir(false);
@@ -636,6 +674,7 @@ export default function MapaTerritorioERN({
     const local = LOCALIDADES.find((c) => c.id === id);
     if (!local) return;
     setCidadeId(id);
+    setPontoInspecao(null);
     setBusca("");
     setAtrativoId(null);
     pausarSeguimento();
@@ -644,6 +683,7 @@ export default function MapaTerritorioERN({
   function selecionarAtrativo(a: Atrativo) {
     setAtrativoId(a.id);
     setCidadeId(a.cidade);
+    setPontoInspecao(null);
     pausarSeguimento();
     const local = LOCALIDADES.find((c) => c.id === a.cidade)!;
     mapa.current?.setView(
@@ -687,6 +727,7 @@ export default function MapaTerritorioERN({
     setBusca("");
     setCategoria("todas");
     setSomenteComDemandas(false);
+    setPontoInspecao(null);
     pausarSeguimento();
     mapa.current?.fitBounds(LIMITES, { padding: [24, 24], animate: false });
   }
@@ -742,6 +783,14 @@ export default function MapaTerritorioERN({
           </button>
           <button
             type="button"
+            aria-pressed={inspecionar}
+            onClick={() => setInspecionar((ativo) => !ativo)}
+            className={`${BOTAO} ${inspecionar ? "border-[#E3A144] text-[#F4C77E]" : "border-white/20"}`}
+          >
+            {inspecionar ? "Seleção de ponto ativa" : "Inspecionar um ponto"}
+          </button>
+          <button
+            type="button"
             onClick={verRegiao}
             className={`${BOTAO} border-white/20`}
           >
@@ -780,6 +829,16 @@ export default function MapaTerritorioERN({
           </label>
         </div>
       </div>
+      {inspecionar && (
+        <p
+          role="status"
+          className="border-b border-white/10 px-4 py-3 text-xs leading-6 text-[#F4C77E]"
+        >
+          Toque no mapa operacional para escolher uma referência. O painel de
+          imagens abaixo usará esse ponto; ele não identifica automaticamente o
+          endereço ou o imóvel.
+        </p>
+      )}
       <div className="grid min-w-0 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="min-w-0">
           <div className="relative isolate z-0 bg-[#d5dfd4]">
@@ -974,6 +1033,27 @@ export default function MapaTerritorioERN({
           )}
         </aside>
       </div>
+      <ImagensLocalERN
+        key={`${pontoInspecao?.join(",") ?? atrativo?.id ?? cidadeId}`}
+        nome={
+          pontoInspecao
+            ? "Ponto selecionado no mapa"
+            : (atrativo?.nome ?? cidade.nome)
+        }
+        municipio={cidade.nome}
+        coordenadas={
+          pontoInspecao ?? atrativo?.coordenadas ?? cidade.coordenadas
+        }
+        referencia={
+          pontoInspecao
+            ? "Ponto escolhido manualmente. O município abaixo continua sendo sua referência de consulta; confirme a localização antes de pesquisar um endereço."
+            : atrativo?.coordenadas
+              ? (atrativo.referencia ?? "Coordenada de referência do atrativo.")
+              : atrativo
+                ? "Este atrativo ainda não tem coordenada confirmada. As imagens começam na sede municipal, não no atrativo."
+                : "As imagens começam na referência aproximada da sede municipal."
+        }
+      />
       {modo === "turismo" ? (
         <div className="border-t border-white/10 p-4 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
