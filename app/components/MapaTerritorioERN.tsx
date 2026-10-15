@@ -655,13 +655,17 @@ export default function MapaTerritorioERN({
     gpsRef.current.ponto.setStyle({
       fillOpacity: geoAntigo || geoMensagem ? 0.45 : 1,
     });
+    gpsRef.current.ponto.getElement()?.classList.toggle(
+      "ern-gps-a-bordo-pulsando",
+      modoEmbarcacao === "gps" && !geoAntigo && !geoMensagem,
+    );
     if (seguirRef.current && !geoAntigo && !geoMensagem)
       alvo.setView(
         coords,
         Math.max(alvo.getZoom(), posicao.precisao > 1000 ? 10 : 14),
         { animate: false },
       );
-  }, [estado, geoAtivo, posicao, geoAntigo, geoMensagem, seguir]);
+  }, [estado, geoAtivo, posicao, geoAntigo, geoMensagem, seguir, modoEmbarcacao]);
 
   useEffect(() => {
     const alvo = mapa.current;
@@ -830,6 +834,18 @@ export default function MapaTerritorioERN({
       aria-labelledby="titulo-mapa-ern"
       className="mt-7 min-w-0 overflow-hidden rounded-2xl border border-[#E3A144]/25 bg-[#0A1713] text-[#EDEDE3] sm:rounded-[26px]"
     >
+      <style>{`
+        @keyframes ern-gps-a-bordo-pulso {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.4; }
+        }
+        .ern-gps-a-bordo-pulsando {
+          animation: ern-gps-a-bordo-pulso 1.8s ease-in-out infinite;
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .ern-gps-a-bordo-pulsando { animation: none; }
+        }
+      `}</style>
       <div className="border-b border-white/10 bg-gradient-to-br from-[#18372a] to-[#0A1713] p-4 sm:p-6">
         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
           ERN · território, turismo e operação
