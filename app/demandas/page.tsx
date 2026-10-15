@@ -7,6 +7,8 @@ import {
   type FormEvent,
 } from 'react';
 import Link from 'next/link';
+import { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 import { supabase } from '@/lib/supabase';
 
@@ -28,6 +30,8 @@ import {
 } from '@/lib/demandas';
 
 type Consulta = {
+  data_inicio_de?: string;
+  data_inicio_ate?: string;
   busca: string;
   categoria: CategoriaDemanda | '';
   status: StatusDemanda | '';
@@ -192,7 +196,39 @@ function SkeletonDemandas() {
   );
 }
 
+// ERN_DEMANDAS_FILTRO_DASHBOARD
+function consultaDaURL(parametros: string): Consulta {
+  const url = new URLSearchParams(parametros);
+  const status = url.get('status') ?? '';
+
+  return {
+    ...CONSULTA_INICIAL,
+    status: ehStatusDemanda(status) ? status : '',
+    data_inicio_de: url.get('inicio') || undefined,
+    data_inicio_ate: url.get('fim') || undefined,
+  };
+}
+
 export default function DemandasPage() {
+  return (
+    <Suspense fallback={<p role="status" className="p-6">Carregando demandas…</p>}>
+      <DemandasComParametros />
+    </Suspense>
+  );
+}
+
+function DemandasComParametros() {
+  const parametros = useSearchParams().toString();
+
+  return (
+    <DemandasConteudo
+      key={parametros}
+      parametros={parametros}
+    />
+  );
+}
+
+function DemandasConteudo({ parametros }: { parametros: string }) {
   const [
     rascunhoBusca,
     setRascunhoBusca,
@@ -201,9 +237,7 @@ export default function DemandasPage() {
   const [
     consulta,
     setConsulta,
-  ] = useState<Consulta>(
-    CONSULTA_INICIAL,
-  );
+  ] = useState<Consulta>(() => consultaDaURL(parametros));
 
   const [estado, setEstado] =
     useState<Estado>({
@@ -437,7 +471,8 @@ export default function DemandasPage() {
   const temFiltros =
     consulta.busca !== '' ||
     consulta.categoria !== '' ||
-    consulta.status !== '';
+    consulta.status !== '' ||
+    Boolean(consulta.data_inicio_de || consulta.data_inicio_ate);
 
   return (
     <main className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
@@ -507,6 +542,29 @@ export default function DemandasPage() {
       </header>
 
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-5 md:px-8 md:py-8">
+        {(consulta.data_inicio_de || consulta.data_inicio_ate) && (
+          <div className="flex flex-col gap-3 rounded-2xl border border-[#E3A144]/25 bg-[#E3A144]/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm leading-6 text-[#EDEDE3]">
+              Filtro do dashboard — início da demanda:
+              {' '}{formatarData(consulta.data_inicio_de ?? null)}
+              {' até '}
+              {formatarData(consulta.data_inicio_ate ?? null)}.
+            </p>
+            <button
+              type="button"
+              className={BOTAO}
+              onClick={() => alterarConsulta({
+                ...consulta,
+                data_inicio_de: undefined,
+                data_inicio_ate: undefined,
+                pagina: 0,
+              })}
+            >
+              Remover período
+            </button>
+          </div>
+        )}
+
         <form
           onSubmit={buscar}
           aria-label="Filtrar demandas"

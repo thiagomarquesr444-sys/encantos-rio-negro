@@ -7,6 +7,8 @@ import React, {
 } from 'react';
 
 import Link from 'next/link';
+import { Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 
 import { supabase } from '@/lib/supabase';
 import GraficosReservas from '@/app/components/GraficosReservas';
@@ -17,6 +19,10 @@ type StatusReserva =
   | 'Cancelada';
 
 interface Reserva {
+  horario?: string | null;
+  embarcacao_id?: string | null;
+  guiaInformado?: boolean;
+  statusOriginal?: string;
   id?: string | number;
   cliente: string;
   pacote: string;
@@ -30,6 +36,8 @@ interface Reserva {
 }
 
 interface ReservaBanco {
+  horario?: string | null;
+  embarcacao_id?: string | null;
   id?: string | number;
 
   cliente?: string | null;
@@ -145,7 +153,45 @@ function escaparCSV(valor: unknown) {
 
   return `"${texto.replace(/"/g, '""')}"`;
 }
+// ERN_RESERVAS_FILTRO_DASHBOARD
+function dataFiltroReservaValida(valor: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
+  const data = new Date(`${valor}T12:00:00Z`);
+  return Number.isFinite(data.getTime()) &&
+    data.toISOString().slice(0, 10) === valor;
+}
+
 export default function ReservasPage() {
+  return (
+    <Suspense fallback={<p role="status" className="p-6">Carregando reservas…</p>}>
+      <ReservasComParametros />
+    </Suspense>
+  );
+}
+
+function ReservasComParametros() {
+  const parametros = useSearchParams().toString();
+  return <ReservasConteudo key={parametros} parametros={parametros} />;
+}
+
+function ReservasConteudo({ parametros }: { parametros: string }) {
+  const urlOperacional = new URLSearchParams(parametros);
+  const alertaOperacional = urlOperacional.get('alerta') ?? '';
+  const inicioOperacional = urlOperacional.get('inicio') ?? '';
+  const fimOperacional = urlOperacional.get('fim') ?? '';
+
+  const nomesAlertas: Record<string, string> = {
+    pendentes: 'Reservas pendentes',
+    sem_horario: 'Sem horário',
+    sem_guia: 'Sem guia',
+    sem_embarcacao: 'Sem embarcação',
+  };
+
+  const filtroOperacionalValido =
+    Object.prototype.hasOwnProperty.call(nomesAlertas, alertaOperacional) &&
+    dataFiltroReservaValida(inicioOperacional) &&
+    dataFiltroReservaValida(fimOperacional) &&
+    inicioOperacional <= fimOperacional;
   const [
     reservas,
     setReservas,
@@ -309,6 +355,10 @@ export default function ReservasPage() {
 
             return {
               id: item.id,
+              horario: item.horario ?? null,
+              embarcacao_id: item.embarcacao_id ?? null,
+              guiaInformado: Boolean(item.guia?.trim()),
+              statusOriginal: (item.status || item.Status || '').trim().toLowerCase(),
 
               cliente:
                 item.cliente ||
@@ -376,22 +426,59 @@ export default function ReservasPage() {
     ============================================================
   */
 
+  const reservasDoDashboard = useMemo(() => {
+    if (!alertaOperacional) return reservas;
+    if (!filtroOperacionalValido) return [];
+
+    return reservas.filter((reserva) => {
+      const data = (reserva.dataOriginal ?? '').split('T')[0];
+
+      if (
+        !dataFiltroReservaValida(data) ||
+        data < inicioOperacional ||
+        data > fimOperacional ||
+        reserva.statusOriginal === 'cancelada'
+      ) {
+        return false;
+      }
+
+      switch (alertaOperacional) {
+        case 'pendentes':
+          return reserva.statusOriginal === 'pendente';
+        case 'sem_horario':
+          return !reserva.horario;
+        case 'sem_guia':
+          return !reserva.guiaInformado;
+        case 'sem_embarcacao':
+          return !reserva.embarcacao_id;
+        default:
+          return false;
+      }
+    });
+  }, [
+    reservas,
+    alertaOperacional,
+    inicioOperacional,
+    fimOperacional,
+    filtroOperacionalValido,
+  ]);
+
   const confirmadas =
-    reservas.filter(
+    reservasDoDashboard.filter(
       (reserva) =>
         reserva.status ===
         'Confirmada'
     );
 
   const pendentes =
-    reservas.filter(
+    reservasDoDashboard.filter(
       (reserva) =>
         reserva.status ===
         'Pendente'
     );
 
   const canceladas =
-    reservas.filter(
+    reservasDoDashboard.filter(
       (reserva) =>
         reserva.status ===
         'Cancelada'
@@ -485,7 +572,7 @@ export default function ReservasPage() {
           .trim()
           .toLowerCase();
 
-      return reservas.filter(
+      return reservasDoDashboard.filter(
         (reserva) => {
           const atendeBusca =
             termo.length === 0 ||
@@ -516,11 +603,7 @@ export default function ReservasPage() {
           );
         }
       );
-    }, [
-      reservas,
-      busca,
-      filtroStatus,
-    ]);
+    }, [reservasDoDashboard, busca, filtroStatus]);
 
   function alternarFiltro(
     status: StatusReserva
@@ -829,7 +912,32 @@ export default function ReservasPage() {
           </p>
         )}
         <div hidden={Boolean(mensagemErro)}>
-<GraficosReservas reservas={reservas} carregando={loading} />
+{alertaOperacional && (
+  <div className="mb-5 flex flex-col gap-3 rounded-2xl border border-[#E3A144]/25 bg-[#E3A144]/5 p-4 sm:flex-row sm:items-center sm:justify-between">
+    <div>
+      <p className="text-sm font-semibold text-[#F4C77E]">
+        {filtroOperacionalValido
+          ? `Filtro do dashboard: ${nomesAlertas[alertaOperacional]}`
+          : 'O link contém um filtro operacional inválido.'}
+      </p>
+      {filtroOperacionalValido && (
+        <p className="mt-2 text-xs leading-6 text-[#EDEDE3]/70">
+          {formatarData(inicioOperacional)} até {formatarData(fimOperacional)}.
+          Reservas canceladas ficam fora deste recorte.
+          Os indicadores, gráficos e a exportação respeitam este recorte;
+          a busca e o filtro de status refinam a listagem.
+        </p>
+      )}
+    </div>
+    <Link
+      href="/reservas"
+      className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/15 px-4 text-sm"
+    >
+      Ver todas as reservas
+    </Link>
+  </div>
+)}
+<GraficosReservas reservas={reservasDoDashboard} carregando={loading} />
         {mensagemErro && (
           <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-red-300">
             <span>

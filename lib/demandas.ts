@@ -118,6 +118,9 @@ export type ContextoDemandas = {
 };
 
 export type FiltrosDemandas = {
+  // ERN_FILTRO_PERIODO_DEMANDAS
+  data_inicio_de?: string;
+  data_inicio_ate?: string;
   busca?: string;
   categoria?: CategoriaDemanda | '';
   status?: StatusDemanda | '';
@@ -1004,8 +1007,29 @@ export async function listarDemandas(
     );
   }
 
-  consulta =
-    consulta.range(inicio, fim);
+  const inicioPeriodo = filtros.data_inicio_de?.trim() || '';
+  const fimPeriodo = filtros.data_inicio_ate?.trim() || '';
+
+  if (
+    (inicioPeriodo && !dataValida(inicioPeriodo)) ||
+    (fimPeriodo && !dataValida(fimPeriodo))
+  ) {
+    throw new ErroDemandas('O período da consulta contém uma data inválida.');
+  }
+
+  if (inicioPeriodo && fimPeriodo && inicioPeriodo > fimPeriodo) {
+    throw new ErroDemandas('O início do período não pode ser posterior ao fim.');
+  }
+
+  if (inicioPeriodo) {
+    consulta = consulta.gte('data_inicio', inicioPeriodo);
+  }
+
+  if (fimPeriodo) {
+    consulta = consulta.lte('data_inicio', fimPeriodo);
+  }
+
+  consulta = consulta.range(inicio, fim);
 
   if (signal) {
     consulta =

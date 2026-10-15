@@ -767,42 +767,42 @@ export default function DashboardPage() {
         valor: reservasPendentes,
         detalhe:
           'aguardando confirmação nos próximos 7 dias',
-        href: '/reservas',
+        href: `/reservas?alerta=pendentes&inicio=${hoje}&fim=${seteDias}`,
       },
       {
         titulo: 'Sem horário',
         valor: semHorario,
         detalhe:
           'operações próximas sem horário informado',
-        href: '/reservas',
+        href: `/reservas?alerta=sem_horario&inicio=${hoje}&fim=${seteDias}`,
       },
       {
         titulo: 'Sem guia',
         valor: semGuia,
         detalhe:
           'operações próximas sem guia informado',
-        href: '/reservas',
+        href: `/reservas?alerta=sem_guia&inicio=${hoje}&fim=${seteDias}`,
       },
       {
         titulo: 'Sem embarcação',
         valor: semEmbarcacao,
         detalhe:
           'operações próximas sem embarcação vinculada',
-        href: '/reservas',
+        href: `/reservas?alerta=sem_embarcacao&inicio=${hoje}&fim=${seteDias}`,
       },
       {
         titulo: 'Demandas em rascunho',
         valor: demandasRascunho,
         detalhe:
           'necessidades ainda não abertas',
-        href: '/demandas',
+        href: '/demandas?status=rascunho',
       },
       {
         titulo: 'Demandas próximas',
         valor: demandasProximas,
         detalhe:
           'demandas abertas com início em até 7 dias',
-        href: '/demandas',
+        href: `/demandas?status=aberta&inicio=${hoje}&fim=${seteDias}`,
       },
     ];
   }, [demandasOperacionais, reservasOperacionais]);
