@@ -7,6 +7,8 @@ type Props = {
   municipio: string;
   coordenadas: [number, number];
   referencia: string;
+  consultaInicial?: string;
+  consultaPorCoordenadas?: boolean;
 };
 type Visao = "satelite" | "rua" | "consulta";
 const BOTAO =
@@ -17,16 +19,24 @@ export default function ImagensLocalERN({
   municipio,
   coordenadas,
   referencia,
+  consultaInicial,
+  consultaPorCoordenadas = false,
 }: Props) {
-  const [visao, setVisao] = useState<Visao>("satelite");
-  const [aberto, setAberto] = useState(false);
+  const [visao, setVisao] = useState<Visao>(
+    consultaInicial ? "consulta" : "satelite",
+  );
+  const [aberto, setAberto] = useState(!!consultaInicial);
   const [termo, setTermo] = useState("");
   const [consulta, setConsulta] = useState("");
   // Chave de navegador: restringir por domínio e exclusivamente à Maps Embed API.
   // A ausência da chave mantém links oficiais, sem ativar serviços externos pagos.
   const chave = process.env.NEXT_PUBLIC_GOOGLE_MAPS_EMBED_KEY?.trim();
   const centro = coordenadas.join(",");
-  const busca = consulta || `${nome}, ${municipio}, Amazonas, Brasil`;
+  const busca =
+    consulta ||
+    (consultaPorCoordenadas
+      ? consultaInicial || "serviços"
+      : `${nome}, ${municipio}, Amazonas, Brasil`);
   const parametros = new URLSearchParams({ language: "pt-BR", region: "BR" });
   let modo = "view";
   if (visao === "rua") {
@@ -52,7 +62,10 @@ export default function ImagensLocalERN({
     externos.set("viewpoint", centro);
     linkExterno = `https://www.google.com/maps/@?${externos.toString()}`;
   } else if (visao === "consulta") {
-    externos.set("query", busca);
+    externos.set(
+      "query",
+      consultaPorCoordenadas ? `${busca} perto de ${centro}` : busca,
+    );
     linkExterno = `https://www.google.com/maps/search/?${externos.toString()}`;
   } else {
     externos.set("map_action", "map");
@@ -76,7 +89,9 @@ export default function ImagensLocalERN({
             {nome}
           </h3>
           <p className="mt-1 text-xs text-[#EDEDE3]/75">
-            {municipio} · Amazonas
+            {consultaPorCoordenadas
+              ? "Consulta a partir das coordenadas selecionadas"
+              : `${municipio} · Amazonas`}
           </p>
         </div>
         <button
@@ -121,6 +136,13 @@ export default function ImagensLocalERN({
               </button>
             ))}
           </div>
+          {visao === "consulta" && consultaPorCoordenadas && (
+            <p className="mt-3 text-xs leading-6 text-[#EDEDE3]/75">
+              A posição fornece a referência da busca. O Google define a
+              relevância e o alcance dos resultados, que podem incluir locais
+              mais distantes. Não há raio máximo garantido.
+            </p>
+          )}
           {visao === "consulta" && (
             <form
               className="mt-3 flex flex-wrap gap-2"
@@ -128,7 +150,9 @@ export default function ImagensLocalERN({
                 evento.preventDefault();
                 if (termo.trim())
                   setConsulta(
-                    `${termo.trim()}, ${municipio}, Amazonas, Brasil`,
+                    consultaPorCoordenadas
+                      ? termo.trim()
+                      : `${termo.trim()}, ${municipio}, Amazonas, Brasil`,
                   );
               }}
             >

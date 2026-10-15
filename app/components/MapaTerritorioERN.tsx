@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import ImagensLocalERN from "./ImagensLocalERN";
+import ReferenciaEmbarcacaoERN, {
+  type ReferenciaEmbarcacao,
+} from "./ReferenciaEmbarcacaoERN";
 import type {
   Map as LeafletMap,
   CircleMarker,
@@ -279,6 +282,17 @@ export default function MapaTerritorioERN({
   const gpsRef = useRef<{ ponto: CircleMarker; area: Circle } | null>(null);
   const seguirRef = useRef(false);
   const [cidadeId, setCidadeId] = useState("barcelos");
+  const [modoEmbarcacao, setModoEmbarcacao] = useState<
+    "nenhuma" | "manual" | "gps"
+  >("nenhuma");
+  const [marcandoEmbarcacao, setMarcandoEmbarcacao] = useState(false);
+  const [posicaoManual, setPosicaoManual] =
+    useState<ReferenciaEmbarcacao | null>(null);
+  const [consultaEmbarcacao, setConsultaEmbarcacao] = useState<{
+    referencia: ReferenciaEmbarcacao;
+    termo: string;
+  } | null>(null);
+  const painelImagens = useRef<HTMLDivElement>(null);
   const [inspecionar, setInspecionar] = useState(false);
   const [pontoInspecao, setPontoInspecao] = useState<Coordenadas | null>(null);
   const [atrativoId, setAtrativoId] = useState<string | null>(
@@ -351,6 +365,19 @@ export default function MapaTerritorioERN({
   const geoAntigo =
     !!posicao && (geoPausado || agora - posicao.instante > 45000);
 
+  const referenciaEmbarcacao: ReferenciaEmbarcacao | null =
+    modoEmbarcacao === "manual"
+      ? posicaoManual
+      : modoEmbarcacao === "gps" && geoAtivo && posicao
+        ? {
+            coordenadas: [posicao.latitude, posicao.longitude],
+            origem: "gps",
+            instante: posicao.instante,
+            precisao: posicao.precisao,
+            desatualizada: geoAntigo || !!geoMensagem,
+          }
+        : null;
+
   useEffect(() => {
     let cancelado = false;
     let instancia: LeafletMap | null = null;
@@ -401,6 +428,7 @@ export default function MapaTerritorioERN({
           marcador.on("click", () => {
             setCidadeId(local.id);
             setPontoInspecao(null);
+            setConsultaEmbarcacao(null);
             setAtrativoId(null);
             setBusca("");
             seguirRef.current = false;
@@ -479,6 +507,7 @@ export default function MapaTerritorioERN({
         setAtrativoId(a.id);
         setCidadeId(a.cidade);
         setPontoInspecao(null);
+        setConsultaEmbarcacao(null);
         seguirRef.current = false;
         setSeguir(false);
       });
@@ -636,10 +665,23 @@ export default function MapaTerritorioERN({
 
   useEffect(() => {
     const alvo = mapa.current;
-    if (estado !== "pronto" || !alvo || !inspecionar) return;
+    if (estado !== "pronto" || !alvo || (!inspecionar && !marcandoEmbarcacao))
+      return;
     const aoClicar = (evento: LeafletMouseEvent) => {
       if (evento.sourceTarget !== alvo) return;
-      setPontoInspecao([evento.latlng.lat, evento.latlng.lng]);
+      if (marcandoEmbarcacao) {
+        setPosicaoManual({
+          coordenadas: [evento.latlng.lat, evento.latlng.lng],
+          origem: "manual",
+          instante: Date.now(),
+        });
+        setModoEmbarcacao("manual");
+        setMarcandoEmbarcacao(false);
+        setConsultaEmbarcacao(null);
+      } else {
+        setPontoInspecao([evento.latlng.lat, evento.latlng.lng]);
+        setConsultaEmbarcacao(null);
+      }
       seguirRef.current = false;
       setSeguir(false);
     };
@@ -647,7 +689,7 @@ export default function MapaTerritorioERN({
     return () => {
       alvo.off("click", aoClicar);
     };
-  }, [estado, inspecionar]);
+  }, [estado, inspecionar, marcandoEmbarcacao]);
 
   useEffect(() => {
     const alvo = mapa.current;
@@ -666,6 +708,54 @@ export default function MapaTerritorioERN({
     };
   }, [estado, pontoInspecao]);
 
+  useEffect(() => {
+    const alvo = mapa.current;
+    const L = Lref.current;
+    if (estado !== "pronto" || !alvo || !L || !referenciaEmbarcacao) return;
+    const ponto = L.circleMarker(referenciaEmbarcacao.coordenadas, {
+      radius: 16,
+      color: referenciaEmbarcacao.origem === "gps" ? "#3b82f6" : "#E3A144",
+      weight: 3,
+      fillOpacity: 0,
+      interactive: false,
+    }).addTo(alvo);
+    const rotulo = document.createElement("span");
+    rotulo.textContent =
+      referenciaEmbarcacao.origem === "manual"
+        ? "Embarcação · posição manual"
+        : "Embarcação · aparelho a bordo";
+    ponto.bindTooltip(rotulo, {
+      permanent: true,
+      direction: "top",
+      offset: [0, -17],
+    });
+    return () => {
+      ponto.remove();
+    };
+  }, [
+    estado,
+    referenciaEmbarcacao?.coordenadas[0],
+    referenciaEmbarcacao?.coordenadas[1],
+    referenciaEmbarcacao?.origem,
+  ]);
+
+  function consultarEntorno(termo: string) {
+    if (!referenciaEmbarcacao) return;
+    setConsultaEmbarcacao({
+      referencia: {
+        ...referenciaEmbarcacao,
+        coordenadas: [...referenciaEmbarcacao.coordenadas],
+      },
+      termo,
+    });
+    painelImagens.current?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+      block: "start",
+    });
+  }
+
   function pausarSeguimento() {
     seguirRef.current = false;
     setSeguir(false);
@@ -675,6 +765,7 @@ export default function MapaTerritorioERN({
     if (!local) return;
     setCidadeId(id);
     setPontoInspecao(null);
+    setConsultaEmbarcacao(null);
     setBusca("");
     setAtrativoId(null);
     pausarSeguimento();
@@ -684,6 +775,7 @@ export default function MapaTerritorioERN({
     setAtrativoId(a.id);
     setCidadeId(a.cidade);
     setPontoInspecao(null);
+    setConsultaEmbarcacao(null);
     pausarSeguimento();
     const local = LOCALIDADES.find((c) => c.id === a.cidade)!;
     mapa.current?.setView(
@@ -728,6 +820,7 @@ export default function MapaTerritorioERN({
     setCategoria("todas");
     setSomenteComDemandas(false);
     setPontoInspecao(null);
+    setConsultaEmbarcacao(null);
     pausarSeguimento();
     mapa.current?.fitBounds(LIMITES, { padding: [24, 24], animate: false });
   }
@@ -784,7 +877,10 @@ export default function MapaTerritorioERN({
           <button
             type="button"
             aria-pressed={inspecionar}
-            onClick={() => setInspecionar((ativo) => !ativo)}
+            onClick={() => {
+              setMarcandoEmbarcacao(false);
+              setInspecionar((ativo) => !ativo);
+            }}
             className={`${BOTAO} ${inspecionar ? "border-[#E3A144] text-[#F4C77E]" : "border-white/20"}`}
           >
             {inspecionar ? "Seleção de ponto ativa" : "Inspecionar um ponto"}
@@ -829,6 +925,62 @@ export default function MapaTerritorioERN({
           </label>
         </div>
       </div>
+      <ReferenciaEmbarcacaoERN
+        referencia={referenciaEmbarcacao}
+        modo={modoEmbarcacao}
+        marcando={marcandoEmbarcacao}
+        localidades={LOCALIDADES}
+        atrativos={ATRATIVOS.flatMap((a) =>
+          a.coordenadas
+            ? [
+                {
+                  id: a.id,
+                  nome: a.nome,
+                  coordenadas: a.coordenadas,
+                  observacao: a.referencia,
+                },
+              ]
+            : [],
+        )}
+        aoMarcar={() => {
+          setInspecionar(false);
+          setMarcandoEmbarcacao((valor) => !valor);
+        }}
+        aoUsarGPS={() => {
+          setInspecionar(false);
+          setMarcandoEmbarcacao(false);
+          setConsultaEmbarcacao(null);
+          setModoEmbarcacao("gps");
+          if (!geoAtivo) alternarGeo();
+          else centralizarGeo();
+        }}
+        aoLimpar={() => {
+          if (modoEmbarcacao === "gps" && geoAtivo) alternarGeo();
+          setModoEmbarcacao("nenhuma");
+          setMarcandoEmbarcacao(false);
+          setPosicaoManual(null);
+          setConsultaEmbarcacao(null);
+        }}
+        aoCentralizar={() => {
+          if (referenciaEmbarcacao) {
+            pausarSeguimento();
+            mapa.current?.setView(referenciaEmbarcacao.coordenadas, 13, {
+              animate: false,
+            });
+          }
+        }}
+        aoSelecionarLocalidade={selecionarCidade}
+        aoSelecionarAtrativo={(id) => {
+          const a = ATRATIVOS.find((item) => item.id === id);
+          if (a) {
+            setModo("turismo");
+            setBusca("");
+            setCategoria("todas");
+            selecionarAtrativo(a);
+          }
+        }}
+        aoConsultarEntorno={consultarEntorno}
+      />
       {inspecionar && (
         <p
           role="status"
@@ -1033,27 +1185,42 @@ export default function MapaTerritorioERN({
           )}
         </aside>
       </div>
-      <ImagensLocalERN
-        key={`${pontoInspecao?.join(",") ?? atrativo?.id ?? cidadeId}`}
-        nome={
-          pontoInspecao
-            ? "Ponto selecionado no mapa"
-            : (atrativo?.nome ?? cidade.nome)
-        }
-        municipio={cidade.nome}
-        coordenadas={
-          pontoInspecao ?? atrativo?.coordenadas ?? cidade.coordenadas
-        }
-        referencia={
-          pontoInspecao
-            ? "Ponto escolhido manualmente. O município abaixo continua sendo sua referência de consulta; confirme a localização antes de pesquisar um endereço."
-            : atrativo?.coordenadas
-              ? (atrativo.referencia ?? "Coordenada de referência do atrativo.")
-              : atrativo
-                ? "Este atrativo ainda não tem coordenada confirmada. As imagens começam na sede municipal, não no atrativo."
-                : "As imagens começam na referência aproximada da sede municipal."
-        }
-      />
+      <div ref={painelImagens} className="scroll-mt-20">
+        {consultaEmbarcacao ? (
+          <ImagensLocalERN
+            key={`embarcacao-${consultaEmbarcacao.referencia.coordenadas.join(",")}-${consultaEmbarcacao.referencia.instante}-${consultaEmbarcacao.termo}`}
+            nome="Entorno da embarcação"
+            municipio="Ponto de referência escolhido"
+            coordenadas={consultaEmbarcacao.referencia.coordenadas}
+            referencia={`Consulta baseada na posição ${consultaEmbarcacao.referencia.origem === "manual" ? "manual" : "do aparelho declarado a bordo"} de ${new Date(consultaEmbarcacao.referencia.instante).toLocaleString("pt-BR")}. A consulta não acompanha novas posições automaticamente.${consultaEmbarcacao.referencia.precisao !== undefined ? ` Margem informada pelo aparelho: ${metrica(consultaEmbarcacao.referencia.precisao)}.` : ""}`}
+            consultaInicial={consultaEmbarcacao.termo}
+            consultaPorCoordenadas
+          />
+        ) : (
+          <ImagensLocalERN
+            key={`${pontoInspecao?.join(",") ?? atrativo?.id ?? cidadeId}`}
+            nome={
+              pontoInspecao
+                ? "Ponto selecionado no mapa"
+                : (atrativo?.nome ?? cidade.nome)
+            }
+            municipio={cidade.nome}
+            coordenadas={
+              pontoInspecao ?? atrativo?.coordenadas ?? cidade.coordenadas
+            }
+            referencia={
+              pontoInspecao
+                ? "Ponto escolhido manualmente. O município continua sendo sua referência de consulta; confirme a localização antes de pesquisar um endereço."
+                : atrativo?.coordenadas
+                  ? (atrativo.referencia ??
+                    "Coordenada de referência do atrativo.")
+                  : atrativo
+                    ? "Este atrativo ainda não tem coordenada confirmada. As imagens começam na sede municipal, não no atrativo."
+                    : "As imagens começam na referência aproximada da sede municipal."
+            }
+          />
+        )}
+      </div>
       {modo === "turismo" ? (
         <div className="border-t border-white/10 p-4 sm:p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
