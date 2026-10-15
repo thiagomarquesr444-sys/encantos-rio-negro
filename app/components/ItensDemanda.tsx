@@ -2,6 +2,9 @@
 
 import { useEffect, useRef, useState } from 'react';
 import SeletorERN from './SeletorERN';
+import GraficoMateriaisDemanda from './GraficoMateriaisDemanda';
+import { subtotal, moeda } from '@/lib/calculosMateriaisDemanda';
+import { exportarMateriaisDemanda } from '@/lib/exportarMateriaisDemanda';
 import { confirmarERN } from '@/lib/confirmarERN';
 import {
   CATEGORIAS_ITEM,
@@ -9,7 +12,7 @@ import {
   carregarItensDemanda,
   salvarItensDemanda,
   novoItemDemanda,
-  numeroItem,
+
   type ItemDemanda,
   type CategoriaItem,
   type SituacaoItem,
@@ -34,34 +37,12 @@ const situacoes = Object.entries(SITUACOES_ITEM).map(([value, label]) => ({
   value, label,
 }));
 
-// Quantidade em milésimos e preço em centavos.
-// O arredondamento ocorre por item, como no banco.
-function subtotal(item: ItemDemanda): bigint | null {
-  const quantidade = numeroItem(item.quantidade, 3);
-  const preco = numeroItem(item.preco_unitario_estimado, 2);
-
-  if (
-    quantidade === null || quantidade <= 0 ||
-    quantidade > 999999999.999 ||
-    preco === null || preco > 9999999999.99
-  ) return null;
-
-  const mil = BigInt(quantidade.toFixed(3).replace('.', ''));
-  const centavos = BigInt(preco.toFixed(2).replace('.', ''));
-  return (mil * centavos + BigInt(500)) / BigInt(1000);
-}
-
-function moeda(centavos: bigint) {
-  const inteiro = (centavos / BigInt(100)).toString();
-  const decimal = (centavos % BigInt(100)).toString().padStart(2, '0');
-  return `R$ ${inteiro.replace(/\B(?=(\d{3})+(?!\d))/g, '.')},${decimal}`;
-}
-
 export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Props) {
   const [itens, setItens] = useState<Linha[]>([]);
   const [versao, setVersao] = useState<number | null>(null);
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
+  const [exportando, setExportando] = useState(false);
   const [alterado, setAlterado] = useState(false);
   const [erro, setErro] = useState('');
   const [aviso, setAviso] = useState('');
@@ -122,7 +103,7 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
     if (!demandaId) onItensChange?.(itens);
   }, [demandaId, itens, onItensChange]);
 
-  const desabilitado = bloqueado || carregando || salvando || versao === null;
+  const desabilitado = bloqueado || carregando || salvando || exportando || versao === null;
 
   function editar(chave: string, valores: Partial<ItemDemanda>) {
     if (desabilitado || trava.current) return;
@@ -153,6 +134,29 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
     } finally {
       trava.current = false;
       setSalvando(false);
+    }
+  }
+
+  async function exportar() {
+    if (!demandaId || desabilitado || alterado || trava.current) return;
+
+    trava.current = true;
+    setExportando(true);
+    setErro('');
+    setAviso('');
+
+    try {
+      await exportarMateriaisDemanda(demandaId);
+      setAviso('Arquivo CSV gerado com a lista salva.');
+    } catch (falha) {
+      setErro(
+        falha instanceof Error
+          ? falha.message
+          : 'Não foi possível exportar a lista.',
+      );
+    } finally {
+      trava.current = false;
+      setExportando(false);
     }
   }
 
@@ -214,6 +218,11 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
               {semEstimativa} item(ns) sem estimativa válida. O valor acima é parcial.
             </p>
           )}
+
+          <GraficoMateriaisDemanda
+            itens={itens}
+            previa={!demandaId || alterado}
+          />
 
           <div className="mt-5 space-y-3">
             {itens.map((item, indice) => {
@@ -371,7 +380,25 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
         </div>
       )}
 
-      {demandaId && !carregando && !salvando && (
+      {demandaId && versao !== null && (
+        <div className="mt-4 border-t border-white/10 pt-4">
+          <button
+            type="button"
+            disabled={desabilitado || alterado}
+            onClick={() => void exportar()}
+            className="min-h-12 w-full rounded-xl border border-[#E3A144]/40 px-4 text-sm font-semibold text-[#F4C77E] disabled:opacity-50 sm:w-auto"
+          >
+            {exportando ? 'Gerando arquivo…' : 'Exportar materiais · CSV'}
+          </button>
+          <p className="mt-2 text-xs leading-5 text-[#B4C8BB]">
+            {alterado
+              ? 'Salve as alterações da lista antes de exportar.'
+              : 'Exporta a versão salva, com quantidades, preços e situação de cada item.'}
+          </p>
+        </div>
+      )}
+
+      {demandaId && !carregando && !salvando && !exportando && (
         <button
           type="button"
           disabled={bloqueado}
