@@ -11,6 +11,7 @@ import {
 
 import { supabase } from '@/lib/supabase';
 import VinculosReserva from '@/app/components/VinculosReserva';
+import LogisticaReserva from '@/app/components/LogisticaReserva';
 
 type StatusReserva =
   | 'Pendente'
@@ -20,6 +21,8 @@ type StatusReserva =
 interface ReservaForm {
   cliente_id?: string;
   passeio_id?: string;
+  horario?: string;
+  embarcacao_id?: string;
   cliente: string;
   pacote: string;
   dataReserva: string;
@@ -33,6 +36,8 @@ interface ReservaForm {
 interface ReservaBanco {
   cliente_id?: string | null;
   passeio_id?: string | null;
+  horario?: string | null;
+  embarcacao_id?: string | null;
   cliente?: string | null;
   nome_cliente?: string | null;
 
@@ -322,6 +327,8 @@ export default function EditarReservaPage() {
         setForm({
           cliente_id: reserva.cliente_id ?? '',
           passeio_id: reserva.passeio_id ?? '',
+          horario: reserva.horario?.slice(0, 5) ?? '',
+          embarcacao_id: reserva.embarcacao_id ?? '',
           cliente:
             reserva.cliente ||
             reserva.nome_cliente ||
@@ -504,7 +511,15 @@ export default function EditarReservaPage() {
       return;
     }
 
-    envioReserva.current = true;
+    if (form.horario && !/^([01]\d|2[0-3]):[0-5]\d$/.test(form.horario)) {
+        setFeedback({
+          tipo: 'erro',
+          mensagem: 'Informe um horário válido entre 00:00 e 23:59.',
+        });
+        return;
+      }
+
+      envioReserva.current = true;
       setSalvando(true);
 
     try {
@@ -522,6 +537,8 @@ export default function EditarReservaPage() {
       const payload = {
         cliente_id: form.cliente_id || null,
         passeio_id: form.passeio_id || null,
+        horario: form.horario?.trim() || null,
+        embarcacao_id: form.embarcacao_id || null,
         cliente:
           form.cliente.trim(),
 
@@ -734,6 +751,12 @@ export default function EditarReservaPage() {
     passeioId={form.passeio_id ?? ''}
     clienteNome={form.cliente}
     passeioNome={form.pacote}
+    bloqueado={salvando}
+    onChange={(campos) => setForm((atual) => ({ ...atual, ...campos }))}
+  />
+  <LogisticaReserva
+    horario={form.horario ?? ''}
+    embarcacaoId={form.embarcacao_id ?? ''}
     bloqueado={salvando}
     onChange={(campos) => setForm((atual) => ({ ...atual, ...campos }))}
   />

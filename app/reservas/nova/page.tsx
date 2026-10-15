@@ -7,6 +7,7 @@ import { useRouter } from 'next/navigation';
 
 import { supabase } from '@/lib/supabase';
 import VinculosReserva from '@/app/components/VinculosReserva';
+import LogisticaReserva from '@/app/components/LogisticaReserva';
 
 type Feedback = {
   tipo: 'sucesso' | 'erro';
@@ -27,6 +28,8 @@ type UsoReservas = {
 type FormReserva = {
   cliente_id?: string;
   passeio_id?: string;
+  horario?: string;
+  embarcacao_id?: string;
   cliente: string;
   pacote: string;
   data_reserva: string;
@@ -488,6 +491,14 @@ export default function NovaReservaPage() {
         return;
       }
 
+      if (formData.horario && !/^([01]\d|2[0-3]):[0-5]\d$/.test(formData.horario)) {
+        setFeedback({
+          tipo: 'erro',
+          mensagem: 'Informe um horário válido entre 00:00 e 23:59.',
+        });
+        return;
+      }
+
       envioReserva.current = true;
       setLoading(true);
 
@@ -502,6 +513,8 @@ export default function NovaReservaPage() {
             .insert([{
                 cliente_id: formData.cliente_id || null,
                 passeio_id: formData.passeio_id || null,
+        horario: formData.horario?.trim() || null,
+        embarcacao_id: formData.embarcacao_id || null,
                 cliente:
                   formData.cliente.trim(),
 
@@ -935,6 +948,12 @@ export default function NovaReservaPage() {
     passeioId={formData.passeio_id ?? ''}
     clienteNome={formData.cliente}
     passeioNome={formData.pacote}
+    bloqueado={loading || limiteAtingido}
+    onChange={(campos) => setFormData((atual) => ({ ...atual, ...campos }))}
+  />
+  <LogisticaReserva
+    horario={formData.horario ?? ''}
+    embarcacaoId={formData.embarcacao_id ?? ''}
     bloqueado={loading || limiteAtingido}
     onChange={(campos) => setFormData((atual) => ({ ...atual, ...campos }))}
   />
