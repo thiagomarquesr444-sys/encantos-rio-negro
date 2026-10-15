@@ -575,12 +575,15 @@ export default function NovaDemandaPage() {
     setErroFormulario(null);
 
     try {
-      await criarDemanda(
+      // ERN_CRIAR_DEMANDA_COM_MATERIAIS
+      const demandaCriada = await criarDemanda(
         estadoContexto.contexto,
         montarDados(),
       );
 
-      router.push('/demandas');
+      router.push(
+        `/demandas/editar/${encodeURIComponent(demandaCriada.id)}`,
+      );
       router.refresh();
     } catch (erro: unknown) {
       setErroFormulario(
@@ -1288,7 +1291,7 @@ export default function NovaDemandaPage() {
               >
                 {salvando
                   ? 'Salvando...'
-                  : 'Salvar demanda'}
+                  : 'Salvar e organizar materiais'}
               </button>
             </div>
           </form>
