@@ -9,6 +9,7 @@ import React, {
 import { useRouter } from 'next/navigation';
 
 import { supabase } from '@/lib/supabase';
+import GraficoPasseios from '@/app/components/GraficoPasseios';
 
 type Passeio = {
   id?: string;
@@ -49,148 +50,64 @@ type Feedback = {
 */
 
 function converterValor(
-  valor:
-    | number
-    | string
-    | null
-    | undefined
+  valor: number | string | null | undefined
 ): number {
-  if (
-    valor === null ||
-    valor === undefined ||
-    valor === ''
-  ) {
-    return 0;
+  if (typeof valor === 'number') {
+    const centavos = Math.round(valor * 100);
+    return Number.isFinite(valor) &&
+      valor >= 0 &&
+      Number.isSafeInteger(centavos) &&
+      Math.abs(valor * 100 - centavos) < 0.000001
+        ? centavos / 100
+        : Number.NaN;
   }
 
-  if (
-    typeof valor === 'number'
-  ) {
-    return Number.isFinite(valor)
-      ? valor
-      : 0;
+  if (valor == null) return Number.NaN;
+
+  let texto = valor.trim().replace(/^R\$\s*/i, '');
+  if (!texto) return Number.NaN;
+
+  if (texto.includes(',')) {
+    if (!/^(?:\d+|\d{1,3}(?:\.\d{3})+),\d{1,2}$/.test(texto)) {
+      return Number.NaN;
+    }
+    texto = texto.replace(/\./g, '').replace(',', '.');
+  } else if (/^\d{1,3}(?:\.\d{3})+$/.test(texto)) {
+    texto = texto.replace(/\./g, '');
+  } else if (!/^\d+(?:\.\d{1,2})?$/.test(texto)) {
+    return Number.NaN;
   }
 
-  let texto = String(valor)
-    .trim()
-    .replace(/\s/g, '')
-    .replace(/R\$/gi, '')
-    .replace(
-      /[^0-9.,-]/g,
-      ''
-    );
+  const [inteiro, decimal = ''] = texto.split('.');
+  const centavos =
+    Number(inteiro) * 100 + Number(decimal.padEnd(2, '0'));
 
-  if (!texto) {
-    return 0;
-  }
-
-  const temVirgula =
-    texto.includes(',');
-
-  const temPonto =
-    texto.includes('.');
-
-  if (
-    temVirgula &&
-    temPonto
-  ) {
-    const ultimaVirgula =
-      texto.lastIndexOf(',');
-
-    const ultimoPonto =
-      texto.lastIndexOf('.');
-
-    texto =
-      ultimaVirgula >
-      ultimoPonto
-        ? texto
-            .replace(
-              /\./g,
-              ''
-            )
-            .replace(
-              ',',
-              '.'
-            )
-        : texto.replace(
-            /,/g,
-            ''
-          );
-  } else if (
-    temVirgula
-  ) {
-    texto =
-      /^\d{1,3}(,\d{3})+$/.test(
-        texto
-      )
-        ? texto.replace(
-            /,/g,
-            ''
-          )
-        : texto.replace(
-            ',',
-            '.'
-          );
-  } else if (
-    temPonto &&
-    /^\d{1,3}(\.\d{3})+$/.test(
-      texto
-    )
-  ) {
-    texto =
-      texto.replace(
-        /\./g,
-        ''
-      );
-  }
-
-  const numero =
-    Number(texto);
-
-  return Number.isFinite(numero)
-    ? numero
-    : 0;
+  return Number.isSafeInteger(centavos) && centavos >= 0
+    ? centavos / 100
+    : Number.NaN;
 }
-
 function formatarMoeda(
-  valor:
-    | number
-    | string
-    | null
-    | undefined
+  valor: number | string | null | undefined
 ) {
-  return converterValor(
-    valor
-  ).toLocaleString(
-    'pt-BR',
-    {
-      style: 'currency',
-      currency: 'BRL',
-    }
-  );
+  const numero = converterValor(valor);
+  return Number.isFinite(numero)
+    ? numero.toLocaleString('pt-BR', {
+        style: 'currency',
+        currency: 'BRL',
+      })
+    : 'Valor a revisar';
 }
-
 function formatarValorCampo(
-  valor:
-    | number
-    | string
-    | null
-    | undefined
+  valor: number | string | null | undefined
 ) {
-  return converterValor(
-    valor
-  ).toLocaleString(
-    'pt-BR',
-    {
-      minimumFractionDigits:
-        2,
-
-      maximumFractionDigits:
-        2,
-    }
-  );
+  const numero = converterValor(valor);
+  return Number.isFinite(numero)
+    ? numero.toLocaleString('pt-BR', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })
+    : '';
 }
-
 /*
   valor é a fonte principal.
 
@@ -345,46 +262,77 @@ export default function PasseiosPage() {
     setLoading(true);
 
     try {
-      const {
-        data,
-        error,
-      } =
-        await supabase
-          .from(
-            'passeios'
-          )
-          .select('*')
-          .order(
-            'created_at',
-            {
-              ascending:
-                false,
-            }
-          );
+      // ERN_CONSULTA_PASSEIOS_COMPLETA
+      const { data: auth, error: erroAuth } =
+        await supabase.auth.getUser();
 
-      if (error) {
-        throw error;
+      if (erroAuth || !auth.user) {
+        throw new Error('Entre novamente para consultar os passeios.');
       }
 
-      setPasseios(
-        (
-          data ||
-          []
-        ) as Passeio[]
-      );
+      const { data: perfil, error: erroPerfil } = await supabase
+        .from('perfis')
+        .select('empresa_id')
+        .eq('id', auth.user.id)
+        .single();
+
+      if (erroPerfil || !perfil?.empresa_id) {
+        throw new Error('Não foi possível identificar sua empresa.');
+      }
+
+      const registros: Passeio[] = [];
+      let esperado: number | null = null;
+
+      for (let inicio = 0; inicio < 10000; inicio += 200) {
+        const { data, error, count } = await supabase
+          .from('passeios')
+          .select('*', { count: 'exact' })
+          .eq('empresa_id', perfil.empresa_id)
+          .order('created_at', { ascending: false, nullsFirst: false })
+          .order('id', { ascending: false })
+          .range(inicio, inicio + 199);
+
+        if (error) throw error;
+
+        if (count === null || count > 10000) {
+          throw new Error(
+            'O volume do catálogo exige consulta no servidor. A análise não será apresentada parcialmente.',
+          );
+        }
+
+        if (esperado !== null && esperado !== count) {
+          throw new Error('O catálogo mudou durante a consulta. Atualize a página.');
+        }
+
+        esperado = count;
+        registros.push(...((data ?? []) as Passeio[]));
+
+        if (registros.length >= count) break;
+
+        if (!data?.length) {
+          throw new Error('A consulta ficou incompleta. Atualize a página.');
+        }
+      }
+
+      if (
+        registros.length !== esperado ||
+        registros.some((item) => !item.id) ||
+        new Set(registros.map((item) => item.id)).size !== registros.length
+      ) {
+        throw new Error('Não foi possível obter um catálogo consistente.');
+      }
+
+      setPasseios(registros);
     } catch (error) {
-      console.error(
-        'Erro ao carregar passeios:',
-        error
-      );
+      console.error('Erro ao carregar passeios:', error);
+      setPasseios([]);
 
       setFeedback({
         tipo:
           'erro',
 
         texto:
-          error instanceof Error
-            ? error.message
+          error && typeof error === 'object' && 'message' in error ? String(error.message)
             : 'Não foi possível carregar os passeios.',
       });
     } finally {
@@ -759,13 +707,7 @@ export default function PasseiosPage() {
           .from(
             'passeios'
           )
-          .update(
-            payload
-          )
-          .eq(
-            'id',
-            passeioSelecionado.id
-          );
+          .update(payload).eq('id', passeioSelecionado.id).select('id').single();
 
       if (error) {
         throw error;
@@ -795,8 +737,7 @@ export default function PasseiosPage() {
           'erro',
 
         texto:
-          error instanceof Error
-            ? error.message
+          error && typeof error === 'object' && 'message' in error ? String(error.message)
             : 'Não foi possível atualizar o passeio.',
       });
     } finally {
@@ -829,11 +770,7 @@ export default function PasseiosPage() {
           .from(
             'passeios'
           )
-          .delete()
-          .eq(
-            'id',
-            idParaExcluir
-          );
+          .delete().eq('id', idParaExcluir).select('id').single();
 
       if (error) {
         throw error;
@@ -859,8 +796,7 @@ export default function PasseiosPage() {
           'erro',
 
         texto:
-          error instanceof Error
-            ? error.message
+          error && typeof error === 'object' && 'message' in error ? String(error.message)
             : 'Não foi possível excluir o passeio.',
       });
     } finally {
@@ -1011,6 +947,9 @@ export default function PasseiosPage() {
       </section>
 
       <main className="mx-auto max-w-[1360px] px-5 py-8 md:px-8 md:py-10">
+        {!loading && feedback?.tipo !== 'erro' && (
+          <GraficoPasseios passeios={passeiosFiltrados} />
+        )}
         {/* ===================================================
             ERROS
         ==================================================== */}
@@ -1042,7 +981,7 @@ export default function PasseiosPage() {
             INDICADORES
         ==================================================== */}
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-4">
           {cards.map(
             (
               card
@@ -1154,7 +1093,7 @@ export default function PasseiosPage() {
                           .value
                       )
                     }
-                    className="h-[44px] min-w-[260px] rounded-xl border border-white/[0.08] bg-[#07110E] pl-10 pr-4 text-xs text-[#EDEDE3] outline-none placeholder:text-[#EDEDE3]/22 focus:border-[#E3A144]/35"
+                    className="h-[44px] w-full min-w-0 sm:min-w-[260px] rounded-xl border border-white/[0.08] bg-[#07110E] pl-10 pr-4 text-xs text-[#EDEDE3] outline-none placeholder:text-[#EDEDE3]/22 focus:border-[#E3A144]/35"
                   />
                 </div>
 
@@ -1230,7 +1169,81 @@ export default function PasseiosPage() {
                 </div>
               </div>
             ) : (
-              <table className="w-full min-w-[1050px] border-collapse text-left">
+              <>
+  {/* ERN_PASSEIOS_MOBILE */}
+  <div className="grid gap-3 p-3 sm:grid-cols-2 lg:hidden">
+    {passeiosFiltrados.map((passeio, indice) => (
+      <article
+        key={passeio.id ?? indice}
+        className="min-w-0 rounded-2xl border border-white/10 bg-[#07110E] p-3"
+      >
+        <div className="flex flex-wrap items-start justify-between gap-2">
+          <h3 className="min-w-0 flex-1 break-words text-sm font-semibold">
+            {passeio.nome}
+          </h3>
+          <span className="rounded-full border border-white/15 px-2 py-1 text-[10px]">
+            {passeio.situacao || 'Não informada'}
+          </span>
+        </div>
+
+        <p className="mt-1 break-words text-xs text-[#EDEDE3]/70">
+          {passeio.categoria || 'Sem categoria'}
+        </p>
+
+        <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
+          <div>
+            <dt className="text-[#EDEDE3]/60">Preço cadastrado</dt>
+            <dd className="mt-1 font-semibold text-[#F4C77E]">
+              {formatarMoeda(obterValorPasseio(passeio))}
+            </dd>
+          </div>
+          <div>
+            <dt className="text-[#EDEDE3]/60">Vagas cadastradas</dt>
+            <dd className="mt-1">{passeio.vagas ?? 'Não informadas'}</dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-[#EDEDE3]/60">Cidade</dt>
+            <dd className="mt-1 break-words">{passeio.cidade || 'Não informada'}</dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="text-[#EDEDE3]/60">Duração</dt>
+            <dd className="mt-1 break-words">{passeio.duracao || 'Não informada'}</dd>
+          </div>
+        </dl>
+
+        <div className="mt-3 grid grid-cols-3 gap-2 border-t border-white/10 pt-2">
+          <button
+            type="button"
+            onClick={() => abrirVisualizacao(passeio)}
+            className="min-h-11 rounded-xl border border-white/15 text-xs"
+          >
+            Detalhes
+          </button>
+          <button
+            type="button"
+            disabled={!passeio.id}
+            onClick={() => abrirEdicao(passeio)}
+            className="min-h-11 rounded-xl border border-sky-400/25 text-xs text-sky-200 disabled:opacity-50"
+          >
+            Editar
+          </button>
+          <button
+            type="button"
+            disabled={!passeio.id || excluindo}
+            onClick={() => {
+              setFeedback(null);
+              setIdParaExcluir(passeio.id ?? null);
+            }}
+            className="min-h-11 rounded-xl border border-red-400/25 text-xs text-red-200 disabled:opacity-50"
+          >
+            Excluir
+          </button>
+        </div>
+      </article>
+    ))}
+  </div>
+
+<table className="hidden lg:table w-full min-w-[1050px] border-collapse text-left">
                 <thead>
                   <tr className="border-b border-white/[0.06] bg-white/[0.012]">
                     {[
@@ -1401,6 +1414,7 @@ export default function PasseiosPage() {
                   )}
                 </tbody>
               </table>
+</>
             )}
           </div>
         </section>

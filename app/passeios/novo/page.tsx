@@ -1,9 +1,6 @@
 'use client';
 
-import React, {
-  useEffect,
-  useState,
-} from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -64,85 +61,36 @@ const ESTADO_INICIAL: PasseioForm = {
   3500.00     -> 3500
   R$ 3.500,00 -> 3500
 */
-function converterValor(
-  valor: string
-): number | null {
-  let texto = valor
-    .trim()
-    .replace(/[^\d,.-]/g, '');
+function converterValor(valor: string): number | null {
+  let texto = valor.trim().replace(/^R\$\s*/i, '');
 
-  if (!texto) {
-    return null;
-  }
+  if (!texto) return null;
 
-  if (
-    texto.includes('.') &&
-    texto.includes(',')
-  ) {
-    /*
-      Formato brasileiro:
-      3.500,00
-    */
-    texto = texto
-      .replace(/\./g, '')
-      .replace(',', '.');
-  } else if (
-    texto.includes(',')
-  ) {
-    /*
-      3500,00
-    */
-    texto = texto.replace(
-      ',',
-      '.'
-    );
-  } else if (
-    texto.includes('.')
-  ) {
-    /*
-      Diferencia:
-
-      3.500  -> milhar
-      12.500 -> milhar
-      3500.00 -> decimal
-      149.90 -> decimal
-    */
-    const partes =
-      texto.split('.');
-
-    if (
-      partes.length > 2 ||
-      (
-        partes.length === 2 &&
-        partes[1].length === 3
-      )
-    ) {
-      texto =
-        texto.replace(
-          /\./g,
-          ''
-        );
+  if (texto.includes(',')) {
+    if (!/^(?:\d+|\d{1,3}(?:\.\d{3})+),\d{1,2}$/.test(texto)) {
+      return null;
     }
-  }
-
-  const numero =
-    Number.parseFloat(
-      texto
-    );
-
-  if (
-    !Number.isFinite(
-      numero
-    )
-  ) {
+    texto = texto.replace(/\./g, '').replace(',', '.');
+  } else if (/^\d{1,3}(?:\.\d{3})+$/.test(texto)) {
+    texto = texto.replace(/\./g, '');
+  } else if (!/^\d+(?:\.\d{1,2})?$/.test(texto)) {
     return null;
   }
 
-  return numero;
-}
+  const [inteiro, decimal = ''] = texto.split('.');
+  const centavos =
+    Number(inteiro) * 100 + Number(decimal.padEnd(2, '0'));
 
+  return Number.isSafeInteger(centavos) && centavos >= 0
+    ? centavos / 100
+    : null;
+}
 export default function NovoPasseioPage() {
   const router = useRouter();
+
+  // ERN_CADASTRO_PASSEIO_VALIDADO
+  const envioPasseio = useRef(false);
+  const passeioGravado = useRef(false);
 
   const [
     formData,
@@ -395,6 +343,7 @@ export default function NovoPasseioPage() {
       e: React.FormEvent
     ) => {
       e.preventDefault();
+      if (envioPasseio.current) return;
 
       setMensagem(null);
 
@@ -510,18 +459,68 @@ export default function NovoPasseioPage() {
           vagasNumero;
       }
 
+      if (carregandoUso || erroUso || !uso) {
+        setMensagem({
+          tipo: 'erro',
+          texto: 'Aguarde a confirmação do plano. Se a consulta falhou, atualize a página para tentar novamente.',
+        });
+        return;
+      }
+
+      if (!['Ativo', 'Inativo', 'Em Breve'].includes(formData.situacao)) {
+        setMensagem({
+          tipo: 'erro',
+          texto: 'Selecione uma situação válida para o passeio.',
+        });
+        return;
+      }
+
+      if (formData.foto_url.trim()) {
+        try {
+          const url = new URL(formData.foto_url.trim());
+          if (url.protocol !== 'https:') throw new Error();
+        } catch {
+          setMensagem({
+            tipo: 'erro',
+            texto: 'Informe uma URL completa de imagem com HTTPS ou deixe o campo vazio.',
+          });
+          return;
+        }
+      }
+
+      if (vagasTratadas > 2147483647) {
+        setMensagem({
+          tipo: 'erro',
+          texto: 'A quantidade de vagas excede o limite permitido.',
+        });
+        return;
+      }
+
+      envioPasseio.current = true;
       setSalvando(true);
 
       try {
-        const {
-          error,
-        } =
-          await supabase
-            .from(
-              'passeios'
-            )
-            .insert([
-              {
+        const { data: autenticacao, error: erroAuth } =
+          await supabase.auth.getUser();
+
+        if (erroAuth || !autenticacao.user) {
+          throw new Error('Entre novamente para cadastrar o passeio.');
+        }
+
+        const { data: perfil, error: erroPerfil } = await supabase
+          .from('perfis')
+          .select('empresa_id')
+          .eq('id', autenticacao.user.id)
+          .single();
+
+        if (erroPerfil || !perfil?.empresa_id) {
+          throw new Error('Não foi possível identificar sua empresa.');
+        }
+
+        const { error } = await supabase
+          .from('passeios')
+          .insert([{
+                empresa_id: perfil.empresa_id,
                 nome:
                   formData.nome.trim(),
 
@@ -566,8 +565,7 @@ export default function NovoPasseioPage() {
 
                 situacao:
                   formData.situacao,
-              },
-            ]);
+              }]).select('id').single();
 
         if (error) {
           throw error;
@@ -583,6 +581,7 @@ export default function NovoPasseioPage() {
             'Passeio cadastrado com sucesso. Redirecionando...',
         });
 
+        passeioGravado.current = true;
         setTimeout(
           () => {
             router.push(
@@ -666,7 +665,10 @@ export default function NovoPasseioPage() {
             'Não foi possível cadastrar o passeio.',
         });
       } finally {
-        setSalvando(false);
+        if (!passeioGravado.current) {
+          envioPasseio.current = false;
+          setSalvando(false);
+        }
       }
     };
 

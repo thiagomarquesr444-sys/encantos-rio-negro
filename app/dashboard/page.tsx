@@ -343,6 +343,72 @@ async function carregarReservasDashboard(
   }
 }
 
+// ERN_DEMANDAS_DASHBOARD_PAGINADAS
+async function carregarDemandasDashboard(): Promise<{
+  data: DemandaOperacional[];
+  error: Error | null;
+}> {
+  try {
+    const registros: DemandaOperacional[] = [];
+    let esperado: number | null = null;
+
+    for (let inicio = 0; inicio < 10000; inicio += 200) {
+      const { data, error, count } = await supabase
+        .from('demandas')
+        .select(
+          'id,titulo,categoria,localidade,data_inicio,data_fim,quantidade,unidade,status',
+          { count: 'exact' },
+        )
+        .in('status', ['rascunho', 'aberta'])
+        .order('data_inicio', { ascending: true, nullsFirst: false })
+        .order('created_at', { ascending: false, nullsFirst: false })
+        .order('id', { ascending: true })
+        .range(inicio, inicio + 199);
+
+      if (error) {
+        throw new Error('Não foi possível consultar as demandas operacionais.');
+      }
+
+      if (count === null || count > 10000) {
+        throw new Error(
+          'O volume de demandas exige agregação no servidor. Os alertas não serão apresentados parcialmente.',
+        );
+      }
+
+      if (esperado !== null && esperado !== count) {
+        throw new Error(
+          'As demandas mudaram durante a consulta. Atualize o dashboard.',
+        );
+      }
+
+      esperado = count;
+      registros.push(...((data ?? []) as DemandaOperacional[]));
+
+      if (registros.length >= count) break;
+
+      if (!data?.length) {
+        throw new Error('A consulta das demandas ficou incompleta.');
+      }
+    }
+
+    if (
+      registros.length !== esperado ||
+      new Set(registros.map((item) => item.id)).size !== registros.length
+    ) {
+      throw new Error('A consulta das demandas ficou inconsistente.');
+    }
+
+    return { data: registros, error: null };
+  } catch (falha) {
+    return {
+      data: [],
+      error: falha instanceof Error
+        ? falha
+        : new Error('Não foi possível carregar as demandas operacionais.'),
+    };
+  }
+}
+
 export default function DashboardPage() {
   const [stats, setStats] = useState<Stats>({
     clientes: 0,
@@ -411,18 +477,7 @@ export default function DashboardPage() {
 
           carregarReservasDashboard(hoje, horizonte, () => ativo),
 
-          supabase
-            .from('demandas')
-            .select(
-              'id,titulo,categoria,localidade,data_inicio,data_fim,quantidade,unidade,status',
-            )
-            .in('status', ['rascunho', 'aberta'])
-            .order('data_inicio', {
-              ascending: true,
-              nullsFirst: false,
-            })
-            .order('created_at', { ascending: false })
-            .limit(20),
+          carregarDemandasDashboard(),
 
           supabase.rpc('get_meu_plano'),
 
@@ -1287,6 +1342,7 @@ export default function DashboardPage() {
                 >
                   Pendências
                 </h2>
+                <p className="mt-2 text-xs leading-5 text-[#EDEDE3]/65">O total soma ocorrências. Uma operação pode ter mais de uma pendência.</p>
               </div>
 
               <span
@@ -1296,7 +1352,7 @@ export default function DashboardPage() {
                     : 'border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-300'
                 }`}
               >
-                {loading ? '—' : totalAlertas}
+                {loading ? '—' : totalAlertas} <span className="sr-only">ocorrências; uma mesma operação pode ter mais de uma pendência</span>
               </span>
             </div>
 
