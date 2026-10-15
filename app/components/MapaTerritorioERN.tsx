@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import CatalogoTerritorialERN from "./CatalogoTerritorialERN";
+import { LOCALIDADES_RIO_NEGRO } from "./territorioRioNegroERN";
 import ImagensLocalERN from "./ImagensLocalERN";
 import ReferenciaEmbarcacaoERN, {
   type ReferenciaEmbarcacao,
@@ -49,7 +51,7 @@ type Posicao = {
   instante: number;
 };
 type Modo = "turismo" | "demandas";
-const LOCALIDADES: Localidade[] = [
+const SEDES_BASE: Localidade[] = [
   {
     id: "manaus",
     nome: "Manaus",
@@ -85,7 +87,12 @@ const LOCALIDADES: Localidade[] = [
     resumo:
       "Paisagens de serras e diversidade cultural dos povos do Alto Rio Negro.",
   },
+  { id: "iranduba", nome: "Iranduba", coordenadas: [-3.28, -60.1847], resumo: "Referência municipal para localidades e experiências no entorno do Baixo Rio Negro." },
 ];
+const LOCALIDADES: Localidade[] = SEDES_BASE.map(sede => ({
+  ...sede,
+  coordenadas: LOCALIDADES_RIO_NEGRO.find(local => local.nome === sede.nome && local.municipio === sede.nome && local.categoria === "Cidade")?.coordenadas ?? sede.coordenadas,
+}));
 const MUNICIPIOS_FONTE = "https://www.amazonastur.am.gov.br/municipios/";
 const BARCELOS_FONTE = "https://turismo.barcelos.am.gov.br/atrativo/";
 const ICM =
@@ -245,8 +252,8 @@ const CATEGORIAS: Record<
   cultura: { nome: "Cultura", cor: "#baa2e4", simbolo: "C" },
 };
 const LIMITES: [Coordenadas, Coordenadas] = [
-  [-3.6, -67.7],
-  [0.5, -59.5],
+  [Math.min(...LOCALIDADES_RIO_NEGRO.map(l => l.coordenadas[0])) - .2, Math.min(...LOCALIDADES_RIO_NEGRO.map(l => l.coordenadas[1])) - .2],
+  [Math.max(...LOCALIDADES_RIO_NEGRO.map(l => l.coordenadas[0])) + .2, Math.max(...LOCALIDADES_RIO_NEGRO.map(l => l.coordenadas[1])) + .2],
 ];
 const BOTAO =
   "inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition disabled:cursor-wait disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#E3A144]";
@@ -996,6 +1003,19 @@ export default function MapaTerritorioERN({
           }
         }}
         aoConsultarEntorno={consultarEntorno}
+      />
+      <CatalogoTerritorialERN
+        mapa={estado === "pronto" ? mapa.current : null}
+        referencia={referenciaEmbarcacao}
+        aoExplorar={(ponto) => {
+          pausarSeguimento();
+          setInspecionar(false);
+          setMarcandoEmbarcacao(false);
+          setConsultaEmbarcacao(null);
+          setAtrativoId(null);
+          setPontoInspecao(ponto);
+          mapa.current?.setView(ponto, 13, { animate: false });
+        }}
       />
       {inspecionar && (
         <p

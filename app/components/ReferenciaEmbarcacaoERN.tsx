@@ -173,7 +173,7 @@ export default function ReferenciaEmbarcacaoERN(props: Props) {
                 Sedes municipais mais próximas
               </h4>
               <p className="mt-1 text-[11px] leading-5 text-[#EDEDE3]/65">
-                Entre as cinco referências municipais do mapa.
+                Entre as {props.localidades.length} referências municipais do mapa. As demais localidades aparecem no catálogo regional abaixo.
               </p>
               <ul className="mt-2 divide-y divide-white/10">
                 {localidades.map((local) => (
