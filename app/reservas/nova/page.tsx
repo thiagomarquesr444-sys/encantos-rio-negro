@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { supabase } from '@/lib/supabase';
+import VinculosReserva from '@/app/components/VinculosReserva';
 
 type Feedback = {
   tipo: 'sucesso' | 'erro';
@@ -24,6 +25,8 @@ type UsoReservas = {
 };
 
 type FormReserva = {
+  cliente_id?: string;
+  passeio_id?: string;
   cliente: string;
   pacote: string;
   data_reserva: string;
@@ -355,8 +358,9 @@ export default function NovaReservaPage() {
     setFormData(
       (prev) => ({
         ...prev,
-        [name]:
-          value,
+        [name]: value,
+        ...(name === 'cliente' ? { cliente_id: '' } : {}),
+        ...(name === 'pacote' ? { passeio_id: '' } : {}),
       })
     );
   };
@@ -495,8 +499,9 @@ export default function NovaReservaPage() {
             .from(
               'reservas'
             )
-            .insert([
-              {
+            .insert([{
+                cliente_id: formData.cliente_id || null,
+                passeio_id: formData.passeio_id || null,
                 cliente:
                   formData.cliente.trim(),
 
@@ -924,7 +929,17 @@ export default function NovaReservaPage() {
           </div>
 
           <div className="grid gap-6 p-5 md:grid-cols-2 md:p-6">
-            {/* CLIENTE */}
+            <div className="min-w-0 md:col-span-2">
+  <VinculosReserva
+    clienteId={formData.cliente_id ?? ''}
+    passeioId={formData.passeio_id ?? ''}
+    clienteNome={formData.cliente}
+    passeioNome={formData.pacote}
+    bloqueado={loading || limiteAtingido}
+    onChange={(campos) => setFormData((atual) => ({ ...atual, ...campos }))}
+  />
+</div>
+{/* CLIENTE */}
 
             <div>
               <label

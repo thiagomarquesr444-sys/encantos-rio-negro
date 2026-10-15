@@ -10,6 +10,7 @@ import {
 } from 'next/navigation';
 
 import { supabase } from '@/lib/supabase';
+import VinculosReserva from '@/app/components/VinculosReserva';
 
 type StatusReserva =
   | 'Pendente'
@@ -17,6 +18,8 @@ type StatusReserva =
   | 'Cancelada';
 
 interface ReservaForm {
+  cliente_id?: string;
+  passeio_id?: string;
   cliente: string;
   pacote: string;
   dataReserva: string;
@@ -28,6 +31,8 @@ interface ReservaForm {
 }
 
 interface ReservaBanco {
+  cliente_id?: string | null;
+  passeio_id?: string | null;
   cliente?: string | null;
   nome_cliente?: string | null;
 
@@ -315,6 +320,8 @@ export default function EditarReservaPage() {
           '';
 
         setForm({
+          cliente_id: reserva.cliente_id ?? '',
+          passeio_id: reserva.passeio_id ?? '',
           cliente:
             reserva.cliente ||
             reserva.nome_cliente ||
@@ -404,8 +411,9 @@ export default function EditarReservaPage() {
       (atual) => ({
         ...atual,
 
-        [campo]:
-          valor,
+        [campo]: valor,
+        ...(campo === 'cliente' ? { cliente_id: '' } : {}),
+        ...(campo === 'pacote' ? { passeio_id: '' } : {}),
       })
     );
   }
@@ -512,6 +520,8 @@ export default function EditarReservaPage() {
       */
 
       const payload = {
+        cliente_id: form.cliente_id || null,
+        passeio_id: form.passeio_id || null,
         cliente:
           form.cliente.trim(),
 
@@ -718,7 +728,17 @@ export default function EditarReservaPage() {
             </div>
 
             <div className="mt-6 space-y-5">
-              {/* CLIENTE */}
+              <div className="min-w-0 md:col-span-2">
+  <VinculosReserva
+    clienteId={form.cliente_id ?? ''}
+    passeioId={form.passeio_id ?? ''}
+    clienteNome={form.cliente}
+    passeioNome={form.pacote}
+    bloqueado={salvando}
+    onChange={(campos) => setForm((atual) => ({ ...atual, ...campos }))}
+  />
+</div>
+{/* CLIENTE */}
 
               <div>
                 <label
