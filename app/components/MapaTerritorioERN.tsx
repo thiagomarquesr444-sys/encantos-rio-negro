@@ -839,7 +839,7 @@ export default function MapaTerritorioERN({
   return (
     <section
       aria-labelledby="titulo-mapa-ern"
-      className="mt-7 min-w-0 overflow-hidden rounded-2xl border border-[#E3A144]/25 bg-[#0A1713] text-[#EDEDE3] sm:rounded-[26px]"
+      className="mt-7 min-w-0 overflow-hidden rounded-2xl border border-[#E3A144]/25 bg-[var(--ern-painel,#0A1713)] text-[color:var(--ern-texto,#EDEDE3)] sm:rounded-[26px]"
     >
       <style>{`
         @keyframes ern-gps-a-bordo-pulso {
@@ -853,8 +853,8 @@ export default function MapaTerritorioERN({
           .ern-gps-a-bordo-pulsando { animation: none; }
         }
       `}</style>
-      <div className="border-b border-white/10 bg-gradient-to-br from-[#18372a] to-[#0A1713] p-4 sm:p-6">
-        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+      <div className="border-b border-white/10 bg-gradient-to-br from-[var(--ern-fundo,#18372a)] to-[var(--ern-fundo,#0A1713)] p-4 sm:p-6">
+        <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--ern-destaque,#E3A144)]">
           ERN · território, turismo e operação
         </p>
         <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
@@ -866,12 +866,12 @@ export default function MapaTerritorioERN({
             >
               Explore o Rio Negro
             </h2>
-            <p className="mt-2 max-w-2xl text-xs leading-6 text-[#EDEDE3]/75">
+            <p className="mt-2 max-w-2xl text-xs leading-6 text-[color:var(--ern-secundario,#EDEDE3)]">
               Praias, natureza e cultura conectadas ao território da sua
               operação.
             </p>
           </div>
-          <span className="rounded-full border border-[#E3A144]/30 px-3 py-2 text-[10px] uppercase tracking-wider text-[#F4C77E]">
+          <span className="rounded-full border border-[#E3A144]/30 px-3 py-2 text-[10px] uppercase tracking-wider text-[color:var(--ern-destaque,#F4C77E)]">
             Alto e Baixo Rio Negro
           </span>
         </div>
@@ -885,7 +885,7 @@ export default function MapaTerritorioERN({
                 setModo(item);
                 setBusca("");
               }}
-              className={`${BOTAO} ${modo === item ? "border-[#E3A144] bg-[#E3A144]/10 text-[#F4C77E]" : "border-white/20"}`}
+              className={`${BOTAO} ${modo === item ? "border-[#E3A144] bg-[#E3A144]/10 text-[color:var(--ern-destaque,#F4C77E)]" : "border-white/20"}`}
             >
               {item === "turismo" ? "Explorar turismo" : "Demandas da empresa"}
             </button>
@@ -904,7 +904,7 @@ export default function MapaTerritorioERN({
               setMarcandoEmbarcacao(false);
               setInspecionar((ativo) => !ativo);
             }}
-            className={`${BOTAO} ${inspecionar ? "border-[#E3A144] text-[#F4C77E]" : "border-white/20"}`}
+            className={`${BOTAO} ${inspecionar ? "border-[#E3A144] text-[color:var(--ern-destaque,#F4C77E)]" : "border-white/20"}`}
           >
             {inspecionar ? "Seleção de ponto ativa" : "Inspecionar um ponto"}
           </button>
@@ -917,12 +917,12 @@ export default function MapaTerritorioERN({
           </button>
         </div>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <label className="text-[11px] text-[#EDEDE3]/75">
+          <label className="text-[11px] text-[color:var(--ern-secundario,#EDEDE3)]">
             Município de referência
             <select
               value={cidadeId}
               onChange={(e) => selecionarCidade(e.target.value)}
-              className="mt-1 min-h-11 w-full rounded-xl border border-white/20 bg-[#07110E] px-3 text-sm text-[#EDEDE3]"
+              className="mt-1 min-h-11 w-full rounded-xl border border-white/20 bg-[var(--ern-painel,#07110E)] px-3 text-sm text-[color:var(--ern-texto,#EDEDE3)]"
             >
               {LOCALIDADES.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -931,7 +931,7 @@ export default function MapaTerritorioERN({
               ))}
             </select>
           </label>
-          <label className="text-[11px] text-[#EDEDE3]/75">
+          <label className="text-[11px] text-[color:var(--ern-secundario,#EDEDE3)]">
             {modo === "turismo"
               ? "Buscar na região inteira"
               : "Buscar município"}
@@ -943,7 +943,7 @@ export default function MapaTerritorioERN({
                   ? "Praia Grande, Mariuá, Manaus…"
                   : "Nome do município…"
               }
-              className="mt-1 min-h-11 w-full rounded-xl border border-white/20 bg-[#07110E] px-3 text-sm text-[#EDEDE3] outline-none focus:border-[#E3A144]"
+              className="mt-1 min-h-11 w-full rounded-xl border border-white/20 bg-[var(--ern-painel,#07110E)] px-3 text-sm text-[color:var(--ern-texto,#EDEDE3)] outline-none focus:border-[#E3A144]"
             />
           </label>
         </div>
@@ -1020,7 +1020,7 @@ export default function MapaTerritorioERN({
       {inspecionar && (
         <p
           role="status"
-          className="border-b border-white/10 px-4 py-3 text-xs leading-6 text-[#F4C77E]"
+          className="border-b border-white/10 px-4 py-3 text-xs leading-6 text-[color:var(--ern-destaque,#F4C77E)]"
         >
           Toque no mapa operacional para escolher uma referência. O painel de
           imagens abaixo usará esse ponto; ele não identifica automaticamente o
@@ -1038,7 +1038,7 @@ export default function MapaTerritorioERN({
             {estado === "carregando" && (
               <div
                 role="status"
-                className="absolute inset-0 z-[1000] flex items-center justify-center bg-[#0A1713] text-sm"
+                className="absolute inset-0 z-[1000] flex items-center justify-center bg-[var(--ern-painel,#0A1713)] text-sm"
               >
                 Preparando o território ERN…
               </div>
@@ -1046,7 +1046,7 @@ export default function MapaTerritorioERN({
             {estado === "erro" && (
               <div
                 role="alert"
-                className="absolute inset-0 z-[1000] flex flex-col items-center justify-center gap-4 bg-[#0A1713] p-6 text-center text-sm"
+                className="absolute inset-0 z-[1000] flex flex-col items-center justify-center gap-4 bg-[var(--ern-painel,#0A1713)] p-6 text-center text-sm"
               >
                 <p>O mapa não abriu. O catálogo continua disponível abaixo.</p>
                 <button
@@ -1075,7 +1075,7 @@ export default function MapaTerritorioERN({
             </div>
           )}
           <div
-            className="flex flex-wrap gap-x-4 gap-y-2 border-t border-white/10 p-3 text-[11px] text-[#EDEDE3]/80"
+            className="flex flex-wrap gap-x-4 gap-y-2 border-t border-white/10 p-3 text-[11px] text-[color:var(--ern-secundario,#EDEDE3)]"
             aria-label="Legenda"
           >
             <span>● Sedes municipais</span>
@@ -1109,7 +1109,7 @@ export default function MapaTerritorioERN({
             </div>
             <div
               role="status"
-              className="mt-2 text-xs leading-6 text-[#EDEDE3]/75"
+              className="mt-2 text-xs leading-6 text-[color:var(--ern-secundario,#EDEDE3)]"
             >
               {geoAtivo && posicao && (
                 <p>
@@ -1131,7 +1131,7 @@ export default function MapaTerritorioERN({
                 </p>
               ) : null}
             </div>
-            <p className="mt-2 text-[11px] leading-5 text-[#EDEDE3]/60">
+            <p className="mt-2 text-[11px] leading-5 text-[color:var(--ern-secundario,#EDEDE3)]">
               Sua posição não é salva na ERN nem compartilhada com outros
               usuários. A atualização depende do aparelho e do sinal e pode
               consumir bateria. No computador, a precisão pode ser baixa.
@@ -1139,24 +1139,24 @@ export default function MapaTerritorioERN({
           </div>
         </div>
         <aside className="min-w-0 border-t border-white/10 p-4 sm:p-5 xl:border-l xl:border-t-0">
-          <p className="text-[10px] uppercase tracking-widest text-[#7C9C87]">
+          <p className="text-[10px] uppercase tracking-widest text-[color:var(--ern-secundario,#7C9C87)]">
             {atrativo ? "Conheça o atrativo" : "Município de referência"}
           </p>
-          <h3 className="mt-2 text-xl text-[#F4C77E]">
+          <h3 className="mt-2 text-xl text-[color:var(--ern-destaque,#F4C77E)]">
             {atrativo?.nome ?? cidade.nome}
           </h3>
-          <p className="mt-3 text-xs leading-6 text-[#EDEDE3]/80">
+          <p className="mt-3 text-xs leading-6 text-[color:var(--ern-secundario,#EDEDE3)]">
             {atrativo?.descricao ?? cidade.resumo}
           </p>
           {atrativo && (
             <>
               <div className="mt-4 rounded-xl border border-white/10 bg-white/[0.025] p-3">
-                <p className="text-[10px] font-semibold uppercase tracking-wider text-[#7C9C87]">
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-[color:var(--ern-secundario,#7C9C87)]">
                   Planeje a visita
                 </p>
                 <p className="mt-2 text-xs leading-6">{atrativo.visita}</p>
               </div>
-              <p className="mt-3 text-[11px] leading-5 text-[#EDEDE3]/65">
+              <p className="mt-3 text-[11px] leading-5 text-[color:var(--ern-secundario,#EDEDE3)]">
                 {atrativo.coordenadas
                   ? atrativo.referencia
                   : "Coordenada do atrativo ainda não confirmada. A seleção centraliza apenas a sede municipal; não há marcador deste atrativo."}
@@ -1165,7 +1165,7 @@ export default function MapaTerritorioERN({
                 href={atrativo.fonte}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`${BOTAO} mt-3 w-full border-[#E3A144]/40 text-[#F4C77E]`}
+                className={`${BOTAO} mt-3 w-full border-[#E3A144]/40 text-[color:var(--ern-destaque,#F4C77E)]`}
               >
                 Consultar fonte do atrativo ↗
               </a>
@@ -1174,7 +1174,7 @@ export default function MapaTerritorioERN({
                   href={atrativo.fonteCoordenadas}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-1 flex min-h-11 items-center text-[11px] text-[#EDEDE3]/75 underline"
+                  className="mt-1 flex min-h-11 items-center text-[11px] text-[color:var(--ern-secundario,#EDEDE3)] underline"
                 >
                   Fonte da coordenada ↗
                 </a>
@@ -1182,14 +1182,14 @@ export default function MapaTerritorioERN({
             </>
           )}
           {!atrativo && (
-            <p className="mt-3 text-[11px] leading-5 text-[#EDEDE3]/65">
+            <p className="mt-3 text-[11px] leading-5 text-[color:var(--ern-secundario,#EDEDE3)]">
               O círculo representa a sede municipal aproximada, não a posição de
               parceiros ou demandas.
             </p>
           )}
           <div className="mt-5 rounded-xl border border-white/10 p-3">
             <h4 className="text-sm">Demandas em {cidade.nome}</h4>
-            <p className="mt-2 text-xs text-[#EDEDE3]/75">
+            <p className="mt-2 text-xs text-[color:var(--ern-secundario,#EDEDE3)]">
               {carregando
                 ? "Consultando…"
                 : `${itens.length} aberta(s) ou em rascunho`}
@@ -1199,7 +1199,7 @@ export default function MapaTerritorioERN({
                 {itens.map((d) => (
                   <li key={d.id} className="border-t border-white/10 pt-2">
                     <p className="break-words text-xs leading-5">{d.titulo}</p>
-                    <span className="text-[10px] text-[#E3A144]">
+                    <span className="text-[10px] text-[color:var(--ern-destaque,#E3A144)]">
                       {d.status === "aberta" ? "Aberta" : "Rascunho"}
                     </span>
                   </li>
@@ -1208,13 +1208,13 @@ export default function MapaTerritorioERN({
             )}
             <Link
               href="/demandas"
-              className="mt-2 flex min-h-11 items-center text-xs text-[#F4C77E]"
+              className="mt-2 flex min-h-11 items-center text-xs text-[color:var(--ern-destaque,#F4C77E)]"
             >
               Gerenciar demandas →
             </Link>
           </div>
           {!carregando && resumo.semLocalizacao > 0 && (
-            <p className="mt-3 text-[11px] leading-5 text-[#F4C77E]">
+            <p className="mt-3 text-[11px] leading-5 text-[color:var(--ern-destaque,#F4C77E)]">
               {resumo.semLocalizacao} demanda(s) sem município reconhecido.
               Continuam disponíveis na lista completa.
             </p>
@@ -1264,7 +1264,7 @@ export default function MapaTerritorioERN({
               <h3 className="text-lg">
                 {busca ? "Resultados na região" : `Descubra ${cidade.nome}`}
               </h3>
-              <p className="mt-1 text-[11px] leading-5 text-[#EDEDE3]/65">
+              <p className="mt-1 text-[11px] leading-5 text-[color:var(--ern-secundario,#EDEDE3)]">
                 {atrativosVisiveis.length} referência(s) no catálogo ·{" "}
                 {semCoordenadas} sem marcador, aguardando coordenadas.
               </p>
@@ -1280,7 +1280,7 @@ export default function MapaTerritorioERN({
                     type="button"
                     aria-pressed={categoria === cat}
                     onClick={() => setCategoria(cat)}
-                    className={`${BOTAO} ${categoria === cat ? "border-[#E3A144] text-[#F4C77E]" : "border-white/20"}`}
+                    className={`${BOTAO} ${categoria === cat ? "border-[#E3A144] text-[color:var(--ern-destaque,#F4C77E)]" : "border-white/20"}`}
                   >
                     {cat === "todas" ? "Todos" : CATEGORIAS[cat].nome}
                   </button>
@@ -1304,13 +1304,13 @@ export default function MapaTerritorioERN({
                   {CATEGORIAS[a.categoria].nome} ·{" "}
                   {LOCALIDADES.find((c) => c.id === a.cidade)?.nome}
                 </span>
-                <strong className="mt-2 block text-sm text-[#F0F0E8]">
+                <strong className="mt-2 block text-sm text-[color:var(--ern-texto,#F0F0E8)]">
                   {a.nome}
                 </strong>
-                <span className="mt-2 block text-xs leading-6 text-[#EDEDE3]/75">
+                <span className="mt-2 block text-xs leading-6 text-[color:var(--ern-secundario,#EDEDE3)]">
                   {a.descricao}
                 </span>
-                <span className="mt-3 block text-[11px] text-[#F4C77E]">
+                <span className="mt-3 block text-[11px] text-[color:var(--ern-destaque,#F4C77E)]">
                   {a.coordenadas
                     ? "Ver referência no mapa →"
                     : "Ver detalhes e município →"}
@@ -1319,7 +1319,7 @@ export default function MapaTerritorioERN({
             ))}
           </div>
           {atrativosVisiveis.length === 0 && (
-            <p role="status" className="mt-4 text-sm text-[#EDEDE3]/75">
+            <p role="status" className="mt-4 text-sm text-[color:var(--ern-secundario,#EDEDE3)]">
               Nenhum atrativo corresponde à busca e à categoria selecionada.
             </p>
           )}
@@ -1331,7 +1331,7 @@ export default function MapaTerritorioERN({
               type="button"
               aria-pressed={somenteComDemandas}
               onClick={() => setSomenteComDemandas((v) => !v)}
-              className={`${BOTAO} ${somenteComDemandas ? "border-[#E3A144] text-[#F4C77E]" : "border-white/20"}`}
+              className={`${BOTAO} ${somenteComDemandas ? "border-[#E3A144] text-[color:var(--ern-destaque,#F4C77E)]" : "border-white/20"}`}
             >
               Somente com demandas
             </button>
@@ -1341,7 +1341,7 @@ export default function MapaTerritorioERN({
                 type="button"
                 aria-pressed={cidadeId === c.id}
                 onClick={() => selecionarCidade(c.id)}
-                className={`${BOTAO} ${cidadeId === c.id ? "border-[#E3A144] text-[#F4C77E]" : "border-white/20"}`}
+                className={`${BOTAO} ${cidadeId === c.id ? "border-[#E3A144] text-[color:var(--ern-destaque,#F4C77E)]" : "border-white/20"}`}
               >
                 {c.nome}
                 {!carregando && ` · ${resumo.porCidade[c.id].length}`}
@@ -1355,7 +1355,7 @@ export default function MapaTerritorioERN({
           )}
         </div>
       )}
-      <div className="border-t border-white/10 px-4 py-3 text-[11px] leading-5 text-[#EDEDE3]/65">
+      <div className="border-t border-white/10 px-4 py-3 text-[11px] leading-5 text-[color:var(--ern-secundario,#EDEDE3)]">
         <p>
           Catálogo inicial consultado em 15/10/2026. Praias e acessos variam
           conforme as condições do rio. Não há disponibilidade de passeios em

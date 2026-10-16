@@ -1,26 +1,276 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #07110e;
+  --foreground: #edede3;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-inter), Arial, Helvetica, sans-serif;
+  --font-mono: Consolas, "Courier New", monospace;
 }
 
 body {
+  margin: 0;
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-inter), Arial, Helvetica, sans-serif;
+}
+
+.ern-gestao {
+  --ern-fundo: #07110e;
+  --ern-painel: #0a1713;
+  --ern-elevado: #10231b;
+  --ern-texto: #edede3;
+  --ern-secundario: #b8c9bf;
+  --ern-borda: #355043;
+  --ern-destaque: #f4c77e;
+  --ern-botao: #e3a144;
+  --ern-sobre-botao: #07110e;
+  --ern-suave: rgb(237 237 227 / 5%);
+  --ern-hover: #193327;
+  --ern-sucesso: #a7f3d0;
+  --ern-alerta: #fde68a;
+  --ern-erro: #fecaca;
+
+  min-height: 100vh;
+  min-width: 0;
+  background: var(--ern-fundo);
+  color: var(--ern-texto);
+  color-scheme: dark;
+}
+
+.ern-gestao[data-ern-tema="azul"] {
+  --ern-fundo: #081525;
+  --ern-painel: #10263d;
+  --ern-elevado: #16324e;
+  --ern-texto: #f0f6fc;
+  --ern-secundario: #b7cae0;
+  --ern-borda: #35516f;
+  --ern-destaque: #9ad4ff;
+  --ern-botao: #9ad4ff;
+  --ern-sobre-botao: #081525;
+  --ern-suave: rgb(154 212 255 / 7%);
+  --ern-hover: #214462;
+}
+
+.ern-gestao[data-ern-tema="amarelo"] {
+  --ern-fundo: #fff7db;
+  --ern-painel: #fffcf0;
+  --ern-elevado: #f5e8b8;
+  --ern-texto: #30260d;
+  --ern-secundario: #695727;
+  --ern-borda: #cdba7a;
+  --ern-destaque: #805600;
+  --ern-botao: #805600;
+  --ern-sobre-botao: #ffffff;
+  --ern-suave: rgb(128 86 0 / 6%);
+  --ern-hover: #684500;
+  --ern-sucesso: #145c38;
+  --ern-alerta: #744700;
+  --ern-erro: #a51d2d;
+
+  color-scheme: light;
+}
+
+.ern-gestao[data-ern-tema="branco"] {
+  --ern-fundo: #f4f6f5;
+  --ern-painel: #ffffff;
+  --ern-elevado: #e8eeeb;
+  --ern-texto: #14271e;
+  --ern-secundario: #4e6257;
+  --ern-borda: #b8c9bf;
+  --ern-destaque: #176042;
+  --ern-botao: #176042;
+  --ern-sobre-botao: #ffffff;
+  --ern-suave: rgb(23 96 66 / 5%);
+  --ern-hover: #104a32;
+  --ern-sucesso: #145c38;
+  --ern-alerta: #744700;
+  --ern-erro: #a51d2d;
+
+  color-scheme: light;
+}
+
+/* Superfícies existentes da Operadora. */
+
+.ern-gestao :is(
+  [class~="bg-[#07110E]"],
+  [class~="bg-[#07110e]"],
+  [class~="bg-[#0B1512]"],
+  [class~="bg-[#0b1512]"]
+) {
+  background-color: var(--ern-fundo);
+}
+
+.ern-gestao :is(
+  [class~="bg-[#0A1713]"],
+  [class~="bg-[#0a1713]"],
+  [class~="bg-[#0C1C16]"],
+  [class~="bg-[#0c1c16]"],
+  [class~="bg-[#091510]"],
+  [class~="bg-[#041c17]"],
+  [class~="bg-[#02110e]"],
+  [class~="bg-[#072822]"]
+) {
+  background-color: var(--ern-painel);
+}
+
+.ern-gestao [class~="bg-[#0B2119]"] {
+  background-color: var(--ern-elevado);
+}
+
+/* Fundo do menu superior, incluindo sua transparência original. */
+
+.ern-gestao [class~="bg-[#07110E]/95"] {
+  background-color: var(--ern-fundo);
+}
+
+/* Menu mobile: substitui as cores fixas do styled-jsx. */
+
+.ern-gestao dialog.menu-mobile {
+  background: var(--ern-painel);
+  color: var(--ern-texto);
+  border-left-color: var(--ern-borda);
+}
+
+.ern-gestao :is(
+  [class~="bg-white/5"],
+  [class~="bg-white/[0.02]"],
+  [class~="bg-white/[0.03]"],
+  [class~="bg-white/[0.04]"],
+  [class~="bg-white/[0.05]"],
+  [class~="bg-[#E3A144]/5"],
+  [class~="bg-[#E3A144]/10"]
+) {
+  background-color: var(--ern-suave);
+}
+
+.ern-gestao [class~="bg-white/10"] {
+  background-color: var(--ern-elevado);
+}
+
+/* Texto principal. */
+
+.ern-gestao :is(
+  [class~="text-[#EDEDE3]"],
+  [class~="text-[#edede3]"],
+  [class~="text-[#F0F0E8]"],
+  [class~="text-[#F4F1E8]"]
+) {
+  color: var(--ern-texto);
+}
+
+/* Textos secundários usados pelo menu, reservas e gráficos. */
+
+.ern-gestao :is(
+  [class~="text-[#A8BCAF]"],
+  [class~="text-[#B4C8BB]"],
+  [class~="text-[#C5D4CA]"],
+  [class~="text-[#D6E2D9]"],
+  [class*="text-[#EDEDE3]/"],
+  [class*="text-[#edede3]/"],
+  [class*="text-[#F0F0E8]/"]
+) {
+  color: var(--ern-secundario);
+}
+
+.ern-gestao [class~="placeholder:text-[#B4C8BB]/60"]::placeholder {
+  color: var(--ern-secundario);
+  opacity: 1;
+}
+
+/* Destaques e botões. */
+
+.ern-gestao :is(
+  [class~="text-[#E3A144]"],
+  [class~="text-[#F4C77E]"]
+) {
+  color: var(--ern-destaque);
+}
+
+.ern-gestao :is(
+  [class~="bg-[#E3A144]"],
+  [class~="bg-[#F4C77E]"]
+) {
+  background-color: var(--ern-botao);
+}
+
+.ern-gestao :is(
+  [class~="bg-[#E3A144]"],
+  [class~="bg-[#F4C77E]"]
+):is(
+  [class~="text-[#07110E]"],
+  [class~="text-[#07130F]"]
+) {
+  color: var(--ern-sobre-botao);
+}
+
+.ern-gestao [class~="hover:bg-[#F0B35C]"]:hover {
+  background-color: var(--ern-hover);
+}
+
+.ern-gestao :is(
+  [class~="hover:bg-white/5"],
+  [class~="hover:bg-white/[0.02]"]
+):hover {
+  background-color: var(--ern-elevado);
+}
+
+.ern-gestao [class~="hover:text-white"]:hover {
+  color: var(--ern-texto);
+}
+
+/* Bordas, divisórias e foco. */
+
+.ern-gestao :is(
+  [class~="border-white/10"],
+  [class~="border-white/15"],
+  [class~="border-white/20"]
+) {
+  border-color: var(--ern-borda);
+}
+
+.ern-gestao :is(
+  [class~="border-[#E3A144]"],
+  [class~="border-[#E3A144]/25"],
+  [class~="border-[#E3A144]/40"],
+  [class~="border-[#E3A144]/50"]
+) {
+  border-color: var(--ern-destaque);
+}
+
+.ern-gestao [class~="divide-white/10"] > :not(:last-child) {
+  border-color: var(--ern-borda);
+}
+
+.ern-gestao [class~="focus:border-[#E3A144]"]:focus {
+  border-color: var(--ern-destaque);
+}
+
+/* Mantém o significado dos estados, com texto legível em temas claros. */
+
+.ern-gestao [class~="text-emerald-200"] {
+  color: var(--ern-sucesso);
+}
+
+.ern-gestao [class~="text-amber-200"] {
+  color: var(--ern-alerta);
+}
+
+.ern-gestao :is(
+  [class~="text-red-200"],
+  [class~="text-red-300"],
+  [class~="text-rose-300"]
+) {
+  color: var(--ern-erro);
+}
+
+/* Controles nativos, como calendário e seleção de mês. */
+
+.ern-gestao[data-ern-tema="amarelo"] [class~="[color-scheme:dark]"],
+.ern-gestao[data-ern-tema="branco"] [class~="[color-scheme:dark]"] {
+  color-scheme: light;
 }

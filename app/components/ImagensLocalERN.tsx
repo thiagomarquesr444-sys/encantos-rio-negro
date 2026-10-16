@@ -78,17 +78,17 @@ export default function ImagensLocalERN({
   return (
     <section
       aria-labelledby="ern-imagens-titulo"
-      className="border-t border-[#E3A144]/20 bg-[#0C1C16] p-4 sm:p-6"
+      className="border-t border-[#E3A144]/20 bg-[var(--ern-painel,#0C1C16)] p-4 sm:p-6"
     >
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--ern-secundario,#7C9C87)]">
             Explore o local em imagens
           </p>
-          <h3 id="ern-imagens-titulo" className="mt-2 text-xl text-[#F4C77E]">
+          <h3 id="ern-imagens-titulo" className="mt-2 text-xl text-[color:var(--ern-destaque,#F4C77E)]">
             {nome}
           </h3>
-          <p className="mt-1 text-xs text-[#EDEDE3]/75">
+          <p className="mt-1 text-xs text-[color:var(--ern-secundario,#EDEDE3)]">
             {consultaPorCoordenadas
               ? "Consulta a partir das coordenadas selecionadas"
               : `${municipio} · Amazonas`}
@@ -99,15 +99,15 @@ export default function ImagensLocalERN({
           aria-expanded={aberto}
           aria-controls="ern-imagens-conteudo"
           onClick={() => setAberto((valor) => !valor)}
-          className={`${BOTAO} border-[#E3A144]/50 text-[#F4C77E]`}
+          className={`${BOTAO} border-[#E3A144]/50 text-[color:var(--ern-destaque,#F4C77E)]`}
         >
           {aberto ? "Fechar imagens" : "Explorar imagens reais"}
         </button>
       </div>
-      <p className="mt-3 text-[11px] leading-5 text-[#EDEDE3]/70">
+      <p className="mt-3 text-[11px] leading-5 text-[color:var(--ern-secundario,#EDEDE3)]">
         {referencia}
       </p>
-      <p className="mt-1 text-[11px] leading-5 text-[#EDEDE3]/60">
+      <p className="mt-1 text-[11px] leading-5 text-[color:var(--ern-secundario,#EDEDE3)]">
         Ponto de referência: {coordenadas[0].toFixed(6)},{" "}
         {coordenadas[1].toFixed(6)}. Selecione um ponto no mapa operacional para
         mudar a referência.
@@ -130,14 +130,14 @@ export default function ImagensLocalERN({
                 type="button"
                 aria-pressed={visao === id}
                 onClick={() => setVisao(id)}
-                className={`${BOTAO} ${visao === id ? "border-[#E3A144] bg-[#E3A144]/10 text-[#F4C77E]" : "border-white/20"}`}
+                className={`${BOTAO} ${visao === id ? "border-[#E3A144] bg-[#E3A144]/10 text-[color:var(--ern-destaque,#F4C77E)]" : "border-white/20"}`}
               >
                 {label}
               </button>
             ))}
           </div>
           {visao === "consulta" && consultaPorCoordenadas && (
-            <p className="mt-3 text-xs leading-6 text-[#EDEDE3]/75">
+            <p className="mt-3 text-xs leading-6 text-[color:var(--ern-secundario,#EDEDE3)]">
               A posição fornece a referência da busca. O Google define a
               relevância e o alcance dos resultados, que podem incluir locais
               mais distantes. Não há raio máximo garantido.
@@ -165,12 +165,12 @@ export default function ImagensLocalERN({
                   maxLength={180}
                   onChange={(evento) => setTermo(evento.target.value)}
                   placeholder="Nome da pousada, comércio ou rua…"
-                  className="min-h-11 w-full rounded-xl border border-white/20 bg-[#07110E] px-3 text-sm outline-none focus:border-[#E3A144]"
+                  className="min-h-11 w-full rounded-xl border border-white/20 bg-[var(--ern-painel,#07110E)] px-3 text-sm outline-none focus:border-[#E3A144]"
                 />
               </label>
               <button
                 type="submit"
-                className={`${BOTAO} border-[#E3A144]/40 text-[#F4C77E]`}
+                className={`${BOTAO} border-[#E3A144]/40 text-[color:var(--ern-destaque,#F4C77E)]`}
               >
                 Consultar
               </button>
@@ -188,7 +188,7 @@ export default function ImagensLocalERN({
               )}
             </form>
           )}
-          <p className="mt-3 text-xs leading-6 text-[#EDEDE3]/75">
+          <p className="mt-3 text-xs leading-6 text-[color:var(--ern-secundario,#EDEDE3)]">
             {visao === "satelite"
               ? "Fotografias aéreas ou de satélite do provedor. A resolução e a data variam por local; ampliar não garante novos detalhes."
               : visao === "rua"
@@ -196,7 +196,7 @@ export default function ImagensLocalERN({
                 : "Consulte os resultados e endereços publicados pelo Google. Um resultado próximo não confirma a identidade de uma casa ou estabelecimento, nem sua situação atual."}
           </p>
           {chave ? (
-            <div className="mt-3 overflow-hidden rounded-xl border border-white/15 bg-[#07110E]">
+            <div className="mt-3 overflow-hidden rounded-xl border border-white/15 bg-[var(--ern-painel,#07110E)]">
               <iframe
                 key={origem}
                 title={`Google Maps · ${visao === "satelite" ? "imagens de satélite" : visao === "rua" ? "vista de rua" : "consulta de endereços"} · ${nome}`}
@@ -211,7 +211,7 @@ export default function ImagensLocalERN({
             </div>
           ) : (
             <div className="mt-3 rounded-xl border border-white/15 bg-white/[0.025] p-4">
-              <p className="text-sm text-[#EDEDE3]/85">
+              <p className="text-sm text-[color:var(--ern-secundario,#EDEDE3)]">
                 Consulte esta visão no Google Maps pelo botão abaixo.
               </p>
             </div>
@@ -220,7 +220,7 @@ export default function ImagensLocalERN({
             href={linkExterno}
             target="_blank"
             rel="noopener noreferrer"
-            className={`${BOTAO} mt-3 border-[#E3A144]/40 text-[#F4C77E]`}
+            className={`${BOTAO} mt-3 border-[#E3A144]/40 text-[color:var(--ern-destaque,#F4C77E)]`}
           >
             Abrir{" "}
             {visao === "satelite"
@@ -230,7 +230,7 @@ export default function ImagensLocalERN({
                 : "consulta"}{" "}
             no Google Maps ↗
           </a>
-          <p className="mt-3 text-[11px] leading-5 text-[#EDEDE3]/60">
+          <p className="mt-3 text-[11px] leading-5 text-[color:var(--ern-secundario,#EDEDE3)]">
             Imagens e resultados fornecidos pelo Google. Ao abrir a consulta, o
             local selecionado é enviado ao provedor. A posição do seu
             dispositivo não é transmitida automaticamente para este painel.

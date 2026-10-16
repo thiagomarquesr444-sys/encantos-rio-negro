@@ -71,15 +71,15 @@ export default function ReferenciaEmbarcacaoERN(props: Props) {
   return (
     <section
       aria-labelledby="ern-embarcacao-titulo"
-      className="border-b border-[#E3A144]/20 bg-[#0C211A] p-4 sm:p-6"
+      className="border-b border-[#E3A144]/20 bg-[var(--ern-painel,#0C211A)] p-4 sm:p-6"
     >
-      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--ern-secundario,#7C9C87)]">
         Planejamento territorial da operação
       </p>
-      <h3 id="ern-embarcacao-titulo" className="mt-2 text-xl text-[#F4C77E]">
+      <h3 id="ern-embarcacao-titulo" className="mt-2 text-xl text-[color:var(--ern-destaque,#F4C77E)]">
         Onde está sua embarcação?
       </h3>
-      <p className="mt-2 max-w-3xl text-xs leading-6 text-[#EDEDE3]/80">
+      <p className="mt-2 max-w-3xl text-xs leading-6 text-[color:var(--ern-secundario,#EDEDE3)]">
         Defina uma referência para explorar localidades, atrativos e serviços ao
         redor. O aparelho só representa a embarcação quando estiver a bordo.
       </p>
@@ -88,7 +88,7 @@ export default function ReferenciaEmbarcacaoERN(props: Props) {
           type="button"
           aria-pressed={props.marcando}
           onClick={props.aoMarcar}
-          className={`${BOTAO} ${props.marcando ? "border-[#E3A144] text-[#F4C77E]" : "border-white/20"}`}
+          className={`${BOTAO} ${props.marcando ? "border-[#E3A144] text-[color:var(--ern-destaque,#F4C77E)]" : "border-white/20"}`}
         >
           {props.marcando
             ? "Cancelar marcação da embarcação"
@@ -124,14 +124,14 @@ export default function ReferenciaEmbarcacaoERN(props: Props) {
       {props.marcando && (
         <p
           role="status"
-          className="mt-3 rounded-xl border border-[#E3A144]/40 p-3 text-sm text-[#F4C77E]"
+          className="mt-3 rounded-xl border border-[#E3A144]/40 p-3 text-sm text-[color:var(--ern-destaque,#F4C77E)]"
         >
           Toque no mapa operacional para marcar a posição informada da
           embarcação. A marcação é manual e não acompanha o deslocamento.
         </p>
       )}
       {!referencia && !props.marcando && (
-        <p role="status" className="mt-3 text-xs leading-6 text-[#EDEDE3]/70">
+        <p role="status" className="mt-3 text-xs leading-6 text-[color:var(--ern-secundario,#EDEDE3)]">
           {props.modo === "gps"
             ? "Aguardando a localização do aparelho. Confira a permissão e a mensagem em “Sua localização”, abaixo do mapa."
             : "Escolha uma posição para consultar proximidades. Nenhum parceiro cadastrado é necessário."}
@@ -140,7 +140,7 @@ export default function ReferenciaEmbarcacaoERN(props: Props) {
       {referencia && (
         <>
           <div className="mt-4 rounded-xl border border-white/15 bg-white/[0.025] p-3 text-xs leading-6">
-            <p className="font-semibold text-[#F4C77E]">
+            <p className="font-semibold text-[color:var(--ern-destaque,#F4C77E)]">
               {referencia.origem === "manual"
                 ? "Posição informada manualmente"
                 : referencia.desatualizada
@@ -172,7 +172,7 @@ export default function ReferenciaEmbarcacaoERN(props: Props) {
               <h4 className="text-sm font-semibold">
                 Sedes municipais mais próximas
               </h4>
-              <p className="mt-1 text-[11px] leading-5 text-[#EDEDE3]/65">
+              <p className="mt-1 text-[11px] leading-5 text-[color:var(--ern-secundario,#EDEDE3)]">
                 Entre as {props.localidades.length} referências municipais do mapa. As demais localidades aparecem no catálogo regional abaixo.
               </p>
               <ul className="mt-2 divide-y divide-white/10">
@@ -184,7 +184,7 @@ export default function ReferenciaEmbarcacaoERN(props: Props) {
                       className="flex min-h-12 w-full items-center justify-between gap-3 py-2 text-left text-xs focus-visible:outline-2 focus-visible:outline-[#E3A144]"
                     >
                       <span>{local.nome}</span>
-                      <strong className="shrink-0 text-[#F4C77E]">
+                      <strong className="shrink-0 text-[color:var(--ern-destaque,#F4C77E)]">
                         ≈ {distanciaFormatada(local.distancia)}
                       </strong>
                     </button>
@@ -196,7 +196,7 @@ export default function ReferenciaEmbarcacaoERN(props: Props) {
               <h4 className="text-sm font-semibold">
                 Atrativos com posição conhecida
               </h4>
-              <p className="mt-1 text-[11px] leading-5 text-[#EDEDE3]/65">
+              <p className="mt-1 text-[11px] leading-5 text-[color:var(--ern-secundario,#EDEDE3)]">
                 Somente referências com coordenadas no catálogo inicial. A lista
                 não cobre todos os atrativos da região.
               </p>
@@ -209,12 +209,12 @@ export default function ReferenciaEmbarcacaoERN(props: Props) {
                       className="flex min-h-12 w-full items-center justify-between gap-3 py-2 text-left text-xs focus-visible:outline-2 focus-visible:outline-[#E3A144]"
                     >
                       <span>{atrativo.nome}</span>
-                      <strong className="shrink-0 text-[#F4C77E]">
+                      <strong className="shrink-0 text-[color:var(--ern-destaque,#F4C77E)]">
                         ≈ {distanciaFormatada(atrativo.distancia)}
                       </strong>
                     </button>
                     {atrativo.observacao && (
-                      <p className="pb-2 text-[10px] leading-5 text-[#EDEDE3]/65">
+                      <p className="pb-2 text-[10px] leading-5 text-[color:var(--ern-secundario,#EDEDE3)]">
                         {atrativo.observacao}
                       </p>
                     )}
@@ -227,7 +227,7 @@ export default function ReferenciaEmbarcacaoERN(props: Props) {
             <h4 className="text-sm font-semibold">
               Consultar serviços no entorno
             </h4>
-            <p className="mt-1 text-[11px] leading-5 text-[#EDEDE3]/70">
+            <p className="mt-1 text-[11px] leading-5 text-[color:var(--ern-secundario,#EDEDE3)]">
               A consulta usa uma cópia desta posição e abre o painel de imagens
               abaixo. Os resultados são do Google, sem vínculo automático com a
               ERN e sem confirmação de disponibilidade.
@@ -239,7 +239,7 @@ export default function ReferenciaEmbarcacaoERN(props: Props) {
                     key={termo}
                     type="button"
                     onClick={() => props.aoConsultarEntorno(termo)}
-                    className={`${BOTAO} border-[#E3A144]/40 text-[#F4C77E]`}
+                    className={`${BOTAO} border-[#E3A144]/40 text-[color:var(--ern-destaque,#F4C77E)]`}
                   >
                     {termo}
                   </button>
@@ -247,13 +247,13 @@ export default function ReferenciaEmbarcacaoERN(props: Props) {
               )}
             </div>
           </div>
-          <p className="mt-4 text-[11px] leading-5 text-[#EDEDE3]/65">
+          <p className="mt-4 text-[11px] leading-5 text-[color:var(--ern-secundario,#EDEDE3)]">
             Todas as distâncias são em linha reta entre referências. Não indicam
             canais navegáveis, tempo de viagem ou ponto de desembarque.
           </p>
         </>
       )}
-      <p className="mt-3 text-[11px] leading-5 text-[#EDEDE3]/60">
+      <p className="mt-3 text-[11px] leading-5 text-[color:var(--ern-secundario,#EDEDE3)]">
         A referência é apagada ao recarregar esta página. Ela não representa
         rastreamento independente da embarcação.
       </p>
