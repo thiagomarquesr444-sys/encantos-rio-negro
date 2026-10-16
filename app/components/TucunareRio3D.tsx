@@ -3,7 +3,25 @@ import { useEffect, useId, useRef, useState } from 'react';
 
 function TucunareEstatico() {
   const id = useId().replace(/:/g, '');
-  return <svg viewBox="0 0 640 300" className="h-full w-full" aria-hidden="true"><defs><linearGradient id={id} x1="0" y1="0" x2="0.3" y2="1"><stop stopColor="#55712d"/><stop offset=".48" stopColor="#d6bd47"/><stop offset="1" stopColor="#f0dca0"/></linearGradient></defs><ellipse cx="340" cy="244" rx="153" ry="10" fill="none" stroke="#9acaba" strokeOpacity=".5" strokeWidth="2"/><ellipse cx="340" cy="244" rx="119" ry="5" fill="none" stroke="#9acaba" strokeOpacity=".4"/><g transform="translate(320 151) rotate(-12)"><path d="M-116 -8L-181 -58Q-193 -5 -180 56L-116 14" fill="#bb8036" stroke="#ead080" strokeWidth="2"/><path d="M-87 -32L-71 -72L-48 -58L-25 -80L-4 -59L17 -70L49 -35M-74 30L-54 68L-8 59L15 37" fill="#9d9c3f" stroke="#d6c16c" strokeWidth="2"/><path d="M-132 0C-91 -53 45 -64 107 -25L136 -7L121 9L132 18C80 52 -80 51 -132 0Z" fill={`url(#${id})`} stroke="#e4ce77" strokeWidth="2"/><path d="M-77 -36L-66 32M-18 -43L-8 39M39 -40L49 34" stroke="#233a25" strokeWidth="17"/><ellipse cx="-112" cy="0" rx="11" ry="12" fill="#dfb944"/><ellipse cx="-112" cy="0" rx="7" ry="8" fill="#1a2d23"/><path d="M79 -28Q58 0 81 28" fill="none" stroke="#66703b" strokeWidth="3"/><circle cx="100" cy="-17" r="9" fill="#f5ae35"/><circle cx="102" cy="-17" r="5" fill="#10251a"/><circle cx="104" cy="-19" r="2" fill="#fff6dc"/><path d="M47 8L11 41L52 33Z" fill="#b59a3b"/><path d="M120 8L136 -7" stroke="#253c28" strokeWidth="3"/></g></svg>;
+  return <svg viewBox="0 0 640 300" className="h-full w-full" aria-hidden="true"><defs>
+    <linearGradient id={id} x1="0" y1="0" x2="0.15" y2="1"><stop stopColor="#40584d"/><stop offset=".30" stopColor="#9f9f3b"/><stop offset=".64" stopColor="#c3b83b"/><stop offset="1" stopColor="#b8642d"/></linearGradient>
+    <linearGradient id={id + 'tail'} x1="0" y1="0" x2="0" y2="1"><stop stopColor="#55665e"/><stop offset=".42" stopColor="#5e6650"/><stop offset="1" stopColor="#9b3522"/></linearGradient>
+  </defs><ellipse cx="330" cy="254" rx="163" ry="10" fill="none" stroke="#9acaba" strokeOpacity=".45" strokeWidth="2"/><ellipse cx="330" cy="254" rx="126" ry="5" fill="none" stroke="#9acaba" strokeOpacity=".3"/>
+  <g transform="translate(335 153) rotate(-9)">
+    <path d="M-118 -9Q-152 -23 -179 -44Q-209 -59 -210 -20Q-214 13 -205 38Q-197 58 -176 41Q-145 19 -117 10Z" fill={`url(#${id}tail)`} stroke="#52604b"/>
+    <path d="M-97 -26Q-97 -77 -62 -67L-50 -85L-37 -63L-24 -91L-13 -62L3 -93L13 -59L28 -88L38 -54L53 -80L64 -42L78 -65L89 -33Z" fill="#566d67" stroke="#89968a"/>
+    <path d="M-82 27Q-91 76 -59 65L-34 39M49 34L25 85Q62 70 72 39" fill="#a13b24" stroke="#b06536"/>
+    <path d="M-127 -8C-105 -33 -71 -52 -21 -57C33 -62 74 -42 110 -12L135 3L115 14L132 23C93 46 53 55 -2 47C-62 43 -103 21 -127 -8Z" fill={`url(#${id})`} stroke="#a99b4a" strokeWidth="1.5"/>
+    <path d="M-79 -37L-70 31M-17 -55L-8 46M47 -43L58 44" stroke="#354538" strokeWidth="17" opacity=".83"/>
+    <path d="M83 -21Q60 -22 61 -2Q61 22 81 32" fill="none" stroke="#4e5b35" strokeWidth="2"/>
+    <path d="M80 -18l-14 -5l-12 6l4 8l10 -2l-1 8l8 5l10 -8Z" fill="#243a2c"/>
+    <g fill="#293c2a"><circle cx="68" cy="12" r="3"/><circle cx="78" cy="17" r="2.5"/><circle cx="58" cy="5" r="2"/><circle cx="85" cy="8" r="2.3"/></g>
+    <path d="M63 10Q23 14 -2 42Q28 48 64 21Z" fill="#806440" stroke="#aa9761"/>
+    <ellipse cx="-135" cy="-2" rx="8" ry="11" fill="#b6b449"/><ellipse cx="-135" cy="-2" rx="5" ry="8" fill="#182e24"/>
+    <ellipse cx="99" cy="-12" rx="6" ry="5" fill="#c04d36"/><ellipse cx="100" cy="-12" rx="3" ry="3.5" fill="#0d2018"/><circle cx="101" cy="-14" r="1.3" fill="#e8e4c7"/>
+    <path d="M135 3L112 10L98 9M114 16L132 23" fill="none" stroke="#56613a" strokeWidth="2"/>
+    <path d="M-196 -31L-130 -3M-204 -12L-130 -3M-204 12L-130 -3M-195 32L-130 -3" stroke="#454e3b" opacity=".6"/>
+  </g></svg>;
 }
 export default function TucunareRio3D() {
   const root = useRef<HTMLDivElement>(null), host = useRef<HTMLDivElement>(null);
@@ -44,7 +62,7 @@ export default function TucunareRio3D() {
     return () => { ativo = false; cancelAnimationFrame(quadro); tamanho?.disconnect(); window.removeEventListener('resize', redimensionar); cena?.canvas.removeEventListener('webglcontextlost', contextoPerdido); cena?.dispose(); setPronto(false); };
   }, [visivel, paginaVisivel, reduzido, pausado, falhou]);
   return <div ref={root} className="pointer-events-none absolute inset-y-0 right-0 w-full lg:w-[46%]">
-    <div role="img" aria-label={pronto ? "Tucunaré estilizado saltando e girando sobre as águas do Rio Negro" : "Tucunaré estilizado sobre as águas do Rio Negro"} className="absolute inset-0">
+    <div role="img" aria-label={pronto ? "Tucunaré saltando sobre as águas do Rio Negro" : "Tucunaré sobre as águas do Rio Negro"} className="absolute inset-0">
       <div ref={host} className="absolute inset-0" aria-hidden="true"/>
       {!pronto && <TucunareEstatico />}
     </div>

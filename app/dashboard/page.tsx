@@ -1820,15 +1820,15 @@ export default function DashboardPage() {
               </h2>
 
               <p className="mt-3 max-w-md text-xs leading-6 text-[#EDEDE3]/48">
-                Consulte os canais oficiais da Copa
-                e organize reservas, passeios e a
-                estrutura da sua operação de pesca
-                esportiva no Rio Negro.
+                Consulte a programação, as inscrições
+                e os regulamentos diretamente no
+                site oficial da Copa Brasil de
+                Pesca Esportiva.
               </p>
 
-              <Link href="/pesca-esportiva" className="mt-5 inline-flex min-h-11 items-center gap-3 rounded-xl border border-[#E3A144]/30 bg-[#E3A144]/10 px-4 text-xs font-semibold text-[#F4C77E] transition hover:bg-[#E3A144]/20 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F4C77E]">
-                Abrir central de pesca <span aria-hidden="true">→</span>
-              </Link>
+              <a href="https://copabrasildepescaesportiva.com.br/" target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex min-h-11 items-center gap-3 rounded-xl border border-[#E3A144]/30 bg-[#E3A144]/10 px-4 text-xs font-semibold text-[#F4C77E] transition hover:bg-[#E3A144]/20 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F4C77E]">
+                Acessar site oficial <span aria-hidden="true">↗</span><span className="sr-only"> · abre em nova aba</span>
+              </a>
             </div>
           </section>
         </div>
