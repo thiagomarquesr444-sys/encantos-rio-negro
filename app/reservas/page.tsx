@@ -15,6 +15,7 @@ import GraficosReservas from "@/app/components/GraficosReservas";
 type StatusReserva = "Pendente" | "Confirmada" | "Cancelada";
 
 interface Reserva {
+  quantidade_pessoas: number | null;
   horario?: string | null;
 
   embarcacao_id?: string | null;
@@ -45,6 +46,7 @@ interface Reserva {
 }
 
 interface ReservaBanco {
+  quantidade_pessoas?: number | null;
   horario?: string | null;
 
   embarcacao_id?: string | null;
@@ -78,6 +80,13 @@ interface ReservaBanco {
   Status?: string | null;
 
   observacoes?: string | null;
+}
+
+function normalizarQuantidadePessoas(valor: unknown): number | null {
+  return typeof valor === "number" && Number.isInteger(valor) && valor >= 1 && valor <= 2147483647 ? valor : null;
+}
+function formatarQuantidadePessoas(valor: number | null): string {
+  return valor === null ? "Não informada" : valor.toLocaleString("pt-BR");
 }
 
 function normalizarStatus(status?: string | null): StatusReserva {
@@ -369,6 +378,8 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
             .toLowerCase(),
 
           cliente: item.cliente || item.nome_cliente || "Cliente não informado",
+
+          quantidade_pessoas: normalizarQuantidadePessoas(item.quantidade_pessoas),
 
           pacote: item.pacote || item.passeio || "Passeio não informado",
 
@@ -712,6 +723,8 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
 
       "Passeio",
 
+      "Quantidade de pessoas",
+
       "Data do passeio",
 
       "Agência / Parceiro",
@@ -731,6 +744,8 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
       escaparCSV(reserva.cliente),
 
       escaparCSV(reserva.pacote),
+
+      escaparCSV(reserva.quantidade_pessoas ?? ""),
 
       escaparCSV(reserva.data),
 
@@ -1119,6 +1134,10 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
 
                         <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-2 text-xs">
                           <div className="min-w-0">
+                            <dt className="text-[10px] text-[#EDEDE3]/60">Quantidade de pessoas</dt>
+                            <dd className="mt-1 break-words">{formatarQuantidadePessoas(reserva.quantidade_pessoas)}</dd>
+                          </div>
+                          <div className="min-w-0">
                             <dt className="text-[10px] text-[#EDEDE3]/60">
                               Data do passeio
                             </dt>
@@ -1196,6 +1215,8 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
 
                           "Passeio",
 
+                          "Pessoas",
+
                           "Data",
 
                           "Agência / Parceiro",
@@ -1254,6 +1275,10 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
 
                               <td className="px-5 py-4 text-xs text-[#EDEDE3]/44">
                                 {reserva.pacote}
+                              </td>
+
+                              <td className="px-5 py-4 text-xs text-[#EDEDE3]/70">
+                                {formatarQuantidadePessoas(reserva.quantidade_pessoas)}
                               </td>
 
                               <td className="px-5 py-4 text-xs text-[#EDEDE3]/44">
@@ -1406,6 +1431,10 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
 
             <div className="grid gap-3 p-6 sm:grid-cols-2">
               {[
+                {
+                  label: "Quantidade de pessoas",
+                  valor: formatarQuantidadePessoas(reservaSelecionada.quantidade_pessoas),
+                },
                 {
                   label: "Data do passeio",
 
