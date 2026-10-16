@@ -1434,6 +1434,7 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
                 <Link href={`/vouchers/novo?reserva_id=${encodeURIComponent(String(reservaSelecionada.id))}`} className="inline-flex min-h-12 items-center rounded-xl bg-[#E3A144] px-4 text-sm font-semibold text-[#07110E]">Emitir voucher desta reserva</Link>
               </div>
             )}
+            {reservaSelecionada.id && <div className="px-6 pt-3"><Link href={`/financeiro/receita/novo?reserva_id=${encodeURIComponent(String(reservaSelecionada.id))}`} className="inline-flex min-h-12 items-center rounded-xl border border-[#E3A144]/40 px-4 text-sm font-semibold text-[#F4C77E]">Registrar receita desta reserva</Link></div>}
             <div className="grid gap-3 p-6 sm:grid-cols-2">
               {[
                 {
