@@ -1,2073 +1,1124 @@
 'use client';
+
 import React, {
+  useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import Link from 'next/link';
-import {
-  isSupabaseConfigured,
-  supabase,
-} from '@/lib/supabase';
-type StatusVoucher =
-  | 'Ativo'
-  | 'Utilizado'
-  | 'Cancelado';
+import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+
+type StatusVoucher = 'Ativo' | 'Utilizado' | 'Cancelado';
+type StatusExibido = StatusVoucher | 'Desconhecido';
+type FiltroStatus = '' | StatusExibido | 'Expirado';
+
 interface Voucher {
-  quantidade_pessoas?: number | null;
-  data_passeio?: string | null;
-  horario_passeio?: string | null;
-  id?: string;
-  created_at?: string | null;
-  codigo?: string | null;
-  reserva_id?: string | null;
-  status?: string | null;
-  data_emissao?: string | null;
-  cliente_id?: string | null;
-  cliente_nome?: string | null;
-  passeio_id?: string | null;
-  passeio_nome?: string | null;
-  valor?:
-    | number
-    | string
-    | null;
-  validade?: string | null;
-}
-interface Cliente {
   id: string;
-  nome?: string | null;
-  nome_completo?: string | null;
+  empresa_id: string | null;
+  created_at: string | null;
+  codigo: string;
+  reserva_id: string | null;
+  status: string | null;
+  data_emissao: string | null;
+  cliente_id: string | null;
+  cliente_nome: string | null;
+  passeio_id: string | null;
+  passeio_nome: string | null;
+  valor: number | string | null;
+  validade: string | null;
+  quantidade_pessoas: number | null;
+  data_passeio: string | null;
+  horario_passeio: string | null;
 }
-interface Passeio {
+
+interface Opcao {
   id: string;
-  nome?: string | null;
-  titulo?: string | null;
+  nome: string | null;
 }
-type Feedback = {
-  tipo:
-    | 'sucesso'
-    | 'erro';
-  texto: string;
+
+interface Edicao {
+  codigo: string;
+  clienteId: string;
+  passeioId: string;
+  valor: string;
+  validade: string;
+  status: StatusVoucher | '';
+}
+
+type ModalAberto = {
+  tipo: 'ver' | 'editar' | 'excluir';
+  item: Voucher;
+} | null;
+
+const buttonClass =
+  'inline-flex min-h-11 items-center justify-center rounded-xl border border-white/15 px-4 py-2 text-sm font-medium text-[#D6E2D9] transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50';
+
+const inputClass =
+  'min-h-12 w-full min-w-0 rounded-xl border border-white/15 bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none placeholder:text-[#B4C8BB]/60 focus:border-[#E3A144] disabled:opacity-60';
+
+const labelClass = 'mb-2 block text-sm font-medium text-[#C5D4CA]';
+
+const headingStyle = {
+  fontFamily: 'var(--font-fraunces), serif',
 };
-/*
-  ============================================================
-  TEXTO / STATUS
-  ============================================================
-*/
-function removerAcentos(
-  valor: string
-) {
+
+function normalizar(valor: string): string {
   return valor
     .normalize('NFD')
-    .replace(
-      /[\u0300-\u036f]/g,
-      ''
-    );
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase();
 }
-function normalizarStatus(
-  valor?: string | null
-): StatusVoucher {
-  const status =
-    removerAcentos(
-      (
-        valor ||
-        ''
-      )
-        .trim()
-        .toLowerCase()
-    );
-  if (
-    status ===
-    'utilizado'
-  ) {
-    return 'Utilizado';
-  }
-  if (
-    status ===
-    'cancelado'
-  ) {
-    return 'Cancelado';
-  }
-  return 'Ativo';
+
+function obterStatus(valor: string | null): StatusExibido {
+  const status = normalizar(valor ?? '');
+
+  if (status === 'ativo' || status === 'valido') return 'Ativo';
+  if (status === 'utilizado') return 'Utilizado';
+  if (status === 'cancelado') return 'Cancelado';
+
+  return 'Desconhecido';
 }
-/*
-  ============================================================
-  VALORES
-  Aceita:
-  3500
-  3500,00
-  3.500
-  3.500,00
-  3500.50
-  3,500.00
-  R$ 3.500,00
-  Não existe multiplicação artificial.
-  ============================================================
-*/
-function converterValor(
-  entrada: unknown
-): number {
-  if (
-    entrada === null ||
-    entrada === undefined ||
-    entrada === ''
-  ) {
-    return 0;
-  }
-  if (
-    typeof entrada ===
-    'number'
-  ) {
-    return Number.isFinite(
-      entrada
-    )
-      ? entrada
-      : 0;
-  }
-  let valor =
-    String(entrada)
-      .trim()
-      .replace(
-        /\s/g,
-        ''
-      )
-      .replace(
-        /R\$/gi,
-        ''
-      )
-      .replace(
-        /[^0-9.,-]/g,
-        ''
-      );
-  if (!valor) {
-    return 0;
-  }
-  const temVirgula =
-    valor.includes(',');
-  const temPonto =
-    valor.includes('.');
-  /*
-    Formatos mistos:
-    3.500,50
-    3,500.50
-  */
-  if (
-    temVirgula &&
-    temPonto
-  ) {
-    const ultimaVirgula =
-      valor.lastIndexOf(
-        ','
-      );
-    const ultimoPonto =
-      valor.lastIndexOf(
-        '.'
-      );
-    if (
-      ultimaVirgula >
-      ultimoPonto
-    ) {
-      /*
-        3.500,50
-      */
-      valor =
-        valor
-          .replace(
-            /\./g,
-            ''
-          )
-          .replace(
-            ',',
-            '.'
-          );
-    } else {
-      /*
-        3,500.50
-      */
-      valor =
-        valor.replace(
-          /,/g,
-          ''
-        );
-    }
-  }
-  /*
-    Apenas vírgula:
-    3,50   -> 3.50
-    3,500  -> 3500
-  */
-  else if (
-    temVirgula
-  ) {
-    if (
-      /^\d{1,3}(,\d{3})+$/.test(
-        valor
-      )
-    ) {
-      valor =
-        valor.replace(
-          /,/g,
-          ''
-        );
-    } else {
-      valor =
-        valor.replace(
-          ',',
-          '.'
-        );
-    }
-  }
-  /*
-    Apenas ponto:
-    3.500  -> 3500
-    3.50   -> 3.50
-  */
-  else if (
-    temPonto &&
-    /^\d{1,3}(\.\d{3})+$/.test(
-      valor
-    )
-  ) {
-    valor =
-      valor.replace(
-        /\./g,
-        ''
-      );
-  }
-  const numero =
-    Number(valor);
-  return Number.isFinite(
-    numero
-  )
-    ? numero
-    : 0;
+
+function apenasData(valor?: string | null): string {
+  return valor?.split('T')[0] ?? '';
 }
-function formatarMoeda(
-  valor: unknown
-) {
-  return converterValor(
-    valor
-  ).toLocaleString(
-    'pt-BR',
-    {
-      style:
-        'currency',
-      currency:
-        'BRL',
-    }
-  );
-}
-function formatarValorCampo(
-  valor: unknown
-) {
-  return converterValor(
-    valor
-  ).toLocaleString(
-    'pt-BR',
-    {
-      minimumFractionDigits:
-        2,
-      maximumFractionDigits:
-        2,
-    }
-  );
-}
-/*
-  ============================================================
-  DATAS
-  Evita conversão UTC para campos
-  que representam somente uma data.
-  ============================================================
-*/
-function formatarData(
-  valor?: string | null
-) {
-  if (!valor) {
-    return '—';
-  }
-  const data =
-    valor.split(
-      'T'
-    )[0];
-  const partes =
-    data.split('-');
-  if (
-    partes.length !== 3
-  ) {
-    return valor;
-  }
-  return `${partes[2]}/${partes[1]}/${partes[0]}`;
-}
-function dataExpirada(
-  validade?: string | null
-) {
-  if (!validade) {
-    return false;
-  }
-  const hoje =
-    new Date();
-  const ano =
-    hoje.getFullYear();
-  const mes =
-    String(
-      hoje.getMonth() +
-        1
-    ).padStart(
-      2,
-      '0'
-    );
-  const dia =
-    String(
-      hoje.getDate()
-    ).padStart(
-      2,
-      '0'
-    );
-  const hojeTexto =
-    `${ano}-${mes}-${dia}`;
-  const validadeTexto =
-    validade.split(
-      'T'
-    )[0];
+
+function dataValida(valor: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
+
+  const data = new Date(`${valor}T12:00:00Z`);
+
   return (
-    validadeTexto <
-    hojeTexto
+    Number.isFinite(data.getTime()) &&
+    data.toISOString().slice(0, 10) === valor
   );
 }
-/*
-  ============================================================
-  PÁGINA
-  ============================================================
-*/
-export default function VouchersPage() {
-  const [
-    vouchers,
-    setVouchers,
-  ] =
-    useState<Voucher[]>(
-      []
-    );
-  const [
-    clientes,
-    setClientes,
-  ] =
-    useState<Cliente[]>(
-      []
-    );
-  const [
-    passeios,
-    setPasseios,
-  ] =
-    useState<Passeio[]>(
-      []
-    );
-  const [
-    loading,
-    setLoading,
-  ] =
-    useState(true);
-  const [
-    busca,
-    setBusca,
-  ] =
-    useState('');
-  const [
-    filtroStatus,
-    setFiltroStatus,
-  ] =
-    useState<
-      '' | StatusVoucher
-    >('');
-  const [
-    feedback,
-    setFeedback,
-  ] =
-    useState<Feedback | null>(
-      null
-    );
-  const [
-    itemVisualizar,
-    setItemVisualizar,
-  ] =
-    useState<Voucher | null>(
-      null
-    );
-  const [
-    itemEditar,
-    setItemEditar,
-  ] =
-    useState<Voucher | null>(
-      null
-    );
-  const [
-    itemExcluir,
-    setItemExcluir,
-  ] =
-    useState<Voucher | null>(
-      null
-    );
-  const [
-    editCodigo,
-    setEditCodigo,
-  ] =
-    useState('');
-  const [
-    editClienteId,
-    setEditClienteId,
-  ] =
-    useState('');
-  const [
-    editPasseioId,
-    setEditPasseioId,
-  ] =
-    useState('');
-  const [
-    editValor,
-    setEditValor,
-  ] =
-    useState('');
-  const [
-    editStatus,
-    setEditStatus,
-  ] =
-    useState<StatusVoucher>(
-      'Ativo'
-    );
-  const [
-    editValidade,
-    setEditValidade,
-  ] =
-    useState('');
-  const [
-    salvandoEdicao,
-    setSalvandoEdicao,
-  ] =
-    useState(false);
-  const [
-    excluindo,
-    setExcluindo,
-  ] =
-    useState(false);
-  /*
-    ============================================================
-    FEEDBACK
-    ============================================================
-  */
-  function mostrarSucesso(
-    texto: string
-  ) {
-    setFeedback({
-      tipo:
-        'sucesso',
-      texto,
-    });
-    window.setTimeout(
-      () => {
-        setFeedback(
-          (
-            atual
-          ) =>
-            atual?.tipo ===
-            'sucesso'
-              ? null
-              : atual
-        );
-      },
-      3000
-    );
-  }
-  /*
-    ============================================================
-    CARREGAMENTO
-    ============================================================
-  */
-  async function fetchVouchers() {
-    if (
-      !isSupabaseConfigured
-    ) {
-      setLoading(false);
-      setFeedback({
-        tipo:
-          'erro',
-        texto:
-          'Supabase não está configurado.',
-      });
-      return;
-    }
-    setLoading(true);
-    try {
-      const [
-        vouchersResultado,
-        clientesResultado,
-        passeiosResultado,
-      ] =
-        await Promise.all([
-          supabase
-            .from(
-              'vouchers'
-            )
-            .select('*')
-            .order(
-              'created_at',
-              {
-                ascending:
-                  false,
-              }
-            ),
-          supabase
-            .from(
-              'clientes'
-            )
-            .select(
-              'id, nome'
-            ),
-          supabase
-            .from(
-              'passeios'
-            )
-            .select(
-              'id, nome'
-            ),
-        ]);
-      if (
-        vouchersResultado.error
-      ) {
-        throw vouchersResultado.error;
-      }
-      /*
-        Clientes e passeios são
-        dados auxiliares.
-        Se uma dessas consultas
-        falhar, os vouchers ainda
-        podem ser exibidos usando
-        os nomes já existentes
-        no próprio registro.
-      */
-      if (
-        clientesResultado.error
-      ) {
-        console.error(
-          'Erro ao carregar clientes dos vouchers:',
-          clientesResultado.error
-        );
-      }
-      if (
-        passeiosResultado.error
-      ) {
-        console.error(
-          'Erro ao carregar passeios dos vouchers:',
-          passeiosResultado.error
-        );
-      }
-      const clientesData =
-        (
-          clientesResultado.data ||
-          []
-        ) as Cliente[];
-      const passeiosData =
-        (
-          passeiosResultado.data ||
-          []
-        ) as Passeio[];
-      setClientes(
-        clientesData
-      );
-      setPasseios(
-        passeiosData
-      );
-      const mapaClientes =
-        new Map<
-          string,
-          string
-        >();
-      clientesData.forEach(
-        (
-          cliente
-        ) => {
-          mapaClientes.set(
-            cliente.id,
-            cliente.nome ||
-              cliente.nome_completo ||
-              'Cliente'
-          );
-        }
-      );
-      const mapaPasseios =
-        new Map<
-          string,
-          string
-        >();
-      passeiosData.forEach(
-        (
-          passeio
-        ) => {
-          mapaPasseios.set(
-            passeio.id,
-            passeio.nome ||
-              passeio.titulo ||
-              'Passeio'
-          );
-        }
-      );
-      const registros =
-        (
-          vouchersResultado.data ||
-          []
-        ).map(
-          (
-            item: any
-          ): Voucher => ({
-            ...item,
-            status:
-              normalizarStatus(
-                item.status
-              ),
-            valor:
-              converterValor(
-                item.valor
-              ),
-            cliente_nome:
-              item.cliente_nome ||
-              (
-                item.cliente_id &&
-                mapaClientes.get(
-                  item.cliente_id
-                )
-              ) ||
-              item.nome_cliente ||
-              '—',
-            passeio_nome:
-              item.passeio_nome ||
-              (
-                item.passeio_id &&
-                mapaPasseios.get(
-                  item.passeio_id
-                )
-              ) ||
-              item.nome_passeio ||
-              '—',
-          })
-        );
-      setVouchers(
-        registros
-      );
-    } catch (error) {
-      console.error(
-        'Erro ao carregar vouchers:',
-        error
-      );
-      setFeedback({
-        tipo:
-          'erro',
-        texto:
-          error instanceof Error
-            ? error.message
-            : 'Não foi possível carregar os vouchers.',
-      });
-      setVouchers([]);
-    } finally {
-      setLoading(false);
-    }
-  }
-  useEffect(() => {
-    fetchVouchers();
-  }, []);
-  /*
-    ============================================================
-    MÉTRICAS
-    ============================================================
-  */
-  const total =
-    vouchers.length;
-  const ativos =
-    vouchers.filter(
-      (
-        voucher
-      ) =>
-        normalizarStatus(
-          voucher.status
-        ) === 'Ativo'
-    ).length;
-  const utilizados =
-    vouchers.filter(
-      (
-        voucher
-      ) =>
-        normalizarStatus(
-          voucher.status
-        ) ===
-        'Utilizado'
-    ).length;
-  const cancelados =
-    vouchers.filter(
-      (
-        voucher
-      ) =>
-        normalizarStatus(
-          voucher.status
-        ) ===
-        'Cancelado'
-    ).length;
-  const valorAtivo =
-    vouchers.reduce(
-      (
-        totalValor,
-        voucher
-      ) => {
-        if (
-          normalizarStatus(
-            voucher.status
-          ) !== 'Ativo'
-        ) {
-          return totalValor;
-        }
-        return (
-          totalValor +
-          converterValor(
-            voucher.valor
-          )
-        );
-      },
-      0
-    );
-  /*
-    ============================================================
-    FILTROS
-    ============================================================
-  */
-  const vouchersFiltrados =
-    useMemo(() => {
-      const termo =
-        busca
-          .trim()
-          .toLowerCase();
-      return vouchers.filter(
-        (
-          voucher
-        ) => {
-          const status =
-            normalizarStatus(
-              voucher.status
-            );
-          const atendeBusca =
-            !termo ||
-            String(
-              voucher.codigo ||
-              ''
-            )
-              .toLowerCase()
-              .includes(
-                termo
-              ) ||
-            String(
-              voucher.cliente_nome ||
-              ''
-            )
-              .toLowerCase()
-              .includes(
-                termo
-              ) ||
-            String(
-              voucher.passeio_nome ||
-              ''
-            )
-              .toLowerCase()
-              .includes(
-                termo
-              ) ||
-            status
-              .toLowerCase()
-              .includes(
-                termo
-              );
-          const atendeStatus =
-            !filtroStatus ||
-            status ===
-              filtroStatus;
-          return (
-            atendeBusca &&
-            atendeStatus
-          );
-        }
-      );
-    }, [
-      vouchers,
-      busca,
-      filtroStatus,
-    ]);
-  function alternarStatus(
-    status: StatusVoucher
-  ) {
-    setFiltroStatus(
-      (
-        atual
-      ) =>
-        atual === status
-          ? ''
-          : status
-    );
-  }
-  /*
-    ============================================================
-    EDIÇÃO
-    ============================================================
-  */
-  function abrirEdicao(
-    voucher: Voucher
-  ) {
-    setItemEditar(
-      voucher
-    );
-    setEditCodigo(
-      voucher.codigo ||
-      ''
-    );
-    setEditClienteId(
-      voucher.cliente_id ||
-      ''
-    );
-    setEditPasseioId(
-      voucher.passeio_id ||
-      ''
-    );
-    setEditValor(
-      formatarValorCampo(
-        voucher.valor
-      )
-    );
-    setEditStatus(
-      normalizarStatus(
-        voucher.status
-      )
-    );
-    setEditValidade(
-      voucher.validade
-        ? voucher.validade.split(
-            'T'
-          )[0]
-        : ''
-    );
-    setFeedback(null);
-  }
-  async function salvarEdicao(
-    event:
-      React.FormEvent
-  ) {
-    event.preventDefault();
-    if (
-      !itemEditar?.id
-    ) {
-      return;
-    }
-    const codigo =
-      editCodigo.trim();
-    if (!codigo) {
-      setFeedback({
-        tipo:
-          'erro',
-        texto:
-          'Informe o código do voucher.',
-      });
-      return;
-    }
-    if (
-      !itemEditar.reserva_id && !editClienteId
-    ) {
-      setFeedback({
-        tipo:
-          'erro',
-        texto:
-          'Selecione o cliente.',
-      });
-      return;
-    }
-    if (
-      !itemEditar.reserva_id && !editPasseioId
-    ) {
-      setFeedback({
-        tipo:
-          'erro',
-        texto:
-          'Selecione o passeio.',
-      });
-      return;
-    }
-    const valor =
-      converterValor(
-        editValor
-      );
-    if (
-      !Number.isFinite(
-        valor
-      ) ||
-      valor <= 0
-    ) {
-      setFeedback({
-        tipo:
-          'erro',
-        texto:
-          'Informe um valor válido maior que zero.',
-      });
-      return;
-    }
-    setSalvandoEdicao(
-      true
-    );
-    setFeedback(null);
-    try {
-      const {
-        error,
-      } =
-        await supabase
-          .from(
-            'vouchers'
-          )
-          .update({
-            codigo,
-            cliente_id:
-              itemEditar.reserva_id ? itemEditar.cliente_id ?? null : editClienteId,
-            passeio_id:
-              itemEditar.reserva_id ? itemEditar.passeio_id ?? null : editPasseioId,
-            valor,
-            status:
-              editStatus,
-            validade:
-              editValidade ||
-              null,
-          })
-          .eq(
-            'id',
-            itemEditar.id
-          );
-      if (error) {
-        throw error;
-      }
-      setItemEditar(
-        null
-      );
-      mostrarSucesso(
-        'Voucher atualizado com sucesso.'
-      );
-      await fetchVouchers();
-    } catch (error) {
-      console.error(
-        'Erro ao atualizar voucher:',
-        error
-      );
-      setFeedback({
-        tipo:
-          'erro',
-        texto:
-          error instanceof Error
-            ? error.message
-            : 'Não foi possível atualizar o voucher.',
-      });
-    } finally {
-      setSalvandoEdicao(
-        false
-      );
-    }
-  }
-  /*
-    ============================================================
-    EXCLUSÃO
-    ============================================================
-  */
-  async function confirmarExclusao() {
-    if (
-      !itemExcluir?.id ||
-      excluindo
-    ) {
-      return;
-    }
-    setExcluindo(true);
-    setFeedback(null);
-    try {
-      const {
-        error,
-      } =
-        await supabase
-          .from(
-            'vouchers'
-          )
-          .delete()
-          .eq(
-            'id',
-            itemExcluir.id
-          );
-      if (error) {
-        throw error;
-      }
-      setVouchers(
-        (
-          atuais
-        ) =>
-          atuais.filter(
-            (
-              voucher
-            ) =>
-              voucher.id !==
-              itemExcluir.id
-          )
-      );
-      setItemExcluir(
-        null
-      );
-      mostrarSucesso(
-        'Voucher excluído com sucesso.'
-      );
-    } catch (error) {
-      console.error(
-        'Erro ao excluir voucher:',
-        error
-      );
-      setFeedback({
-        tipo:
-          'erro',
-        texto:
-          error instanceof Error
-            ? error.message
-            : 'Não foi possível excluir o voucher.',
-      });
-    } finally {
-      setExcluindo(false);
-    }
-  }
-  /*
-    ============================================================
-    VISUAL
-    ============================================================
-  */
-  function statusClasses(
-    status:
-      StatusVoucher
-  ) {
-    if (
-      status === 'Ativo'
-    ) {
-      return 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300';
-    }
-    if (
-      status ===
-      'Utilizado'
-    ) {
-      return 'border-amber-500/20 bg-amber-500/[0.07] text-amber-300';
-    }
-    return 'border-red-500/20 bg-red-500/[0.07] text-red-300';
-  }
-  function statusDot(
-    status:
-      StatusVoucher
-  ) {
-    if (
-      status === 'Ativo'
-    ) {
-      return 'bg-emerald-400';
-    }
-    if (
-      status ===
-      'Utilizado'
-    ) {
-      return 'bg-amber-400';
-    }
-    return 'bg-red-400';
-  }
-  const inputClass =
-    'w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/40 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-50';
-  const labelClass =
-    'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34';
-  const cards = [
-    {
-      titulo:
-        'Total de vouchers',
-      valor:
-        loading
-          ? '—'
-          : String(
-              total
-            ),
-      detalhe:
-        'documentos cadastrados',
-      filtro:
-        null,
-    },
-    {
-      titulo:
-        'Vouchers ativos',
-      valor:
-        loading
-          ? '—'
-          : String(
-              ativos
-            ),
-      detalhe:
-        'com status ativo',
-      filtro:
-        'Ativo' as StatusVoucher,
-    },
-    {
-      titulo:
-        'Utilizados',
-      valor:
-        loading
-          ? '—'
-          : String(
-              utilizados
-            ),
-      detalhe:
-        'já utilizados',
-      filtro:
-        'Utilizado' as StatusVoucher,
-    },
-    {
-      titulo:
-        'Valor ativo',
-      valor:
-        loading
-          ? '—'
-          : formatarMoeda(
-              valorAtivo
-            ),
-      detalhe:
-        'soma dos vouchers ativos',
-      filtro:
-        null,
-    },
-  ];
+
+function hojeManaus(): string {
+  const partes = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/Manaus',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date());
+
+  const obter = (tipo: string) =>
+    partes.find((parte) => parte.type === tipo)?.value ?? '';
+
+  return `${obter('year')}-${obter('month')}-${obter('day')}`;
+}
+
+function formatarData(valor?: string | null): string {
+  const data = apenasData(valor);
+  if (!data) return 'Não informada';
+  if (!dataValida(data)) return 'Data inválida';
+
+  const [ano, mes, dia] = data.split('-');
+  return `${dia}/${mes}/${ano}`;
+}
+
+function formatarEmissao(valor: string | null): string {
+  if (!valor) return 'Não informada';
+
+  const data = new Date(valor);
+  if (!Number.isFinite(data.getTime())) return 'Data inválida';
+
+  return new Intl.DateTimeFormat('pt-BR', {
+    timeZone: 'America/Manaus',
+    dateStyle: 'short',
+    timeStyle: 'short',
+  }).format(data);
+}
+
+function expirado(item: Voucher, hoje: string): boolean {
+  const validade = apenasData(item.validade);
+
   return (
-    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
-      {/* =====================================================
-          FEEDBACK
-      ====================================================== */}
-      {feedback?.tipo ===
-        'sucesso' && (
-        <div className="fixed left-1/2 top-[100px] z-[90] -translate-x-1/2 rounded-2xl border border-emerald-500/20 bg-[#0B2119] px-5 py-3 text-xs font-semibold text-emerald-300 shadow-2xl">
-          {
-            feedback.texto
-          }
-        </div>
-      )}
-      {/* =====================================================
-          CABEÇALHO
-      ====================================================== */}
-      <section className="border-b border-white/[0.07] bg-[#091510]">
-        <div className="mx-auto flex max-w-[1360px] flex-col gap-8 px-5 py-10 md:px-8 md:py-12 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <span className="h-px w-8 bg-[#E3A144]" />
-              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
-                Operação • Vouchers
-              </span>
-            </div>
-            <h1
-              className="mt-4 text-4xl leading-none tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
-              style={{
-                fontFamily:
-                  'var(--font-fraunces), serif',
-              }}
-            >
-              Vouchers
-            </h1>
-            <p className="mt-4 max-w-[720px] text-sm leading-7 text-[#EDEDE3]/42">
-              Organize comprovantes, clientes,
-              experiências, valores, validade e
-              utilização dos vouchers.
-            </p>
-          </div>
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <button
-              type="button"
-              onClick={
-                fetchVouchers
-              }
-              disabled={
-                loading
-              }
-              className="inline-flex min-h-[50px] items-center justify-center rounded-xl border border-white/[0.09] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.055] disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              ↻ Atualizar
-            </button>
-            <Link
-              href="/vouchers/novo"
-              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl bg-[#E3A144] px-6 text-sm font-bold text-[#07130F] transition hover:-translate-y-0.5 hover:bg-[#F0B35C]"
-            >
-              <span className="text-lg">
-                +
-              </span>
-              Novo voucher
-            </Link>
-          </div>
-        </div>
-      </section>
-      <main className="mx-auto max-w-[1360px] px-5 py-8 md:px-8 md:py-10">
-        {/* ===================================================
-            ERRO
-        ==================================================== */}
-        {feedback?.tipo ===
-          'erro' && (
-          <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-red-300">
-            <span>
-              {
-                feedback.texto
-              }
-            </span>
-            <button
-              type="button"
-              onClick={() =>
-                setFeedback(
-                  null
-                )
-              }
-              className="text-red-300/60 transition hover:text-red-200"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-        {/* ===================================================
-            INDICADORES
-        ==================================================== */}
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {cards.map(
-            (
-              card
-            ) => {
-              const selecionado =
-                card.filtro !==
-                  null &&
-                filtroStatus ===
-                  card.filtro;
-              return (
-                <button
-                  type="button"
-                  key={
-                    card.titulo
-                  }
-                  onClick={() => {
-                    if (
-                      card.filtro
-                    ) {
-                      alternarStatus(
-                        card.filtro
-                      );
-                    }
-                  }}
-                  className={`rounded-[22px] border p-5 text-left transition ${
-                    card.filtro
-                      ? 'cursor-pointer'
-                      : 'cursor-default'
-                  } ${
-                    selecionado
-                      ? 'border-[#E3A144]/35 bg-[#E3A144]/[0.08]'
-                      : 'border-white/[0.075] bg-[#0A1713]'
-                  }`}
-                >
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
-                    {
-                      card.titulo
-                    }
-                  </p>
-                  <strong
-                    className={`mt-5 block font-medium tracking-[-0.04em] text-[#F0F0E8] ${
-                      card.titulo ===
-                      'Valor ativo'
-                        ? 'text-2xl'
-                        : 'text-4xl'
-                    }`}
-                    style={{
-                      fontFamily:
-                        'var(--font-fraunces), serif',
-                    }}
-                  >
-                    {
-                      card.valor
-                    }
-                  </strong>
-                  <p className="mt-2 text-[11px] text-[#EDEDE3]/28">
-                    {
-                      card.detalhe
-                    }
-                  </p>
-                </button>
-              );
-            }
-          )}
-        </div>
-        {/* CANCELADOS */}
-        <div className="mt-4">
-          <button
-            type="button"
-            onClick={() =>
-              alternarStatus(
-                'Cancelado'
-              )
-            }
-            className={`rounded-full border px-3 py-1.5 text-[9px] font-semibold transition ${
-              filtroStatus ===
-              'Cancelado'
-                ? 'border-red-500/30 bg-red-500/[0.08] text-red-300'
-                : 'border-white/[0.07] bg-white/[0.02] text-[#EDEDE3]/35'
-            }`}
-          >
-            {cancelados}{' '}
-            cancelado
-            {cancelados !== 1
-              ? 's'
-              : ''}
-          </button>
-        </div>
-        {/* ===================================================
-            TABELA
-        ==================================================== */}
-        <section className="mt-6 overflow-hidden rounded-[26px] border border-white/[0.075] bg-[#0A1713]">
-          <div className="border-b border-white/[0.065] p-5 md:p-6">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-              <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-                  Controle operacional
-                </p>
-                <h2
-                  className="mt-2 text-2xl text-[#F0F0E8]"
-                  style={{
-                    fontFamily:
-                      'var(--font-fraunces), serif',
-                  }}
-                >
-                  Vouchers cadastrados
-                </h2>
-                <p className="mt-2 text-xs text-[#EDEDE3]/30">
-                  {
-                    vouchersFiltrados.length
-                  }{' '}
-                  de{' '}
-                  {
-                    vouchers.length
-                  }{' '}
-                  registro
-                  {vouchers.length !==
-                  1
-                    ? 's'
-                    : ''}
-                </p>
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <input
-                  type="text"
-                  value={
-                    busca
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    setBusca(
-                      event.target
-                        .value
-                    )
-                  }
-                  placeholder="Buscar código, cliente ou passeio..."
-                  className="h-[44px] min-w-[310px] rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-xs text-[#EDEDE3] outline-none placeholder:text-[#EDEDE3]/22 focus:border-[#E3A144]/35"
-                />
-                <select
-                  value={
-                    filtroStatus
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    setFiltroStatus(
-                      event.target
-                        .value as
-                        | ''
-                        | StatusVoucher
-                    )
-                  }
-                  className="h-[44px] rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-xs text-[#EDEDE3]/70 outline-none focus:border-[#E3A144]/35"
-                >
-                  <option value="">
-                    Todos os status
-                  </option>
-                  <option value="Ativo">
-                    Ativos
-                  </option>
-                  <option value="Utilizado">
-                    Utilizados
-                  </option>
-                  <option value="Cancelado">
-                    Cancelados
-                  </option>
-                </select>
-              </div>
-            </div>
-          </div>
-          <div className="overflow-x-auto">
-            {loading ? (
-              <LoadingTabela />
-            ) : vouchersFiltrados.length ===
-              0 ? (
-              <div className="flex min-h-[330px] items-center justify-center px-5 text-center">
-                <div>
-                  <h3
-                    className="text-2xl text-[#F0F0E8]"
-                    style={{
-                      fontFamily:
-                        'var(--font-fraunces), serif',
-                    }}
-                  >
-                    Nenhum voucher encontrado.
-                  </h3>
-                  <p className="mt-2 text-xs text-[#EDEDE3]/30">
-                    Ajuste os filtros ou cadastre um novo voucher.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <table className="w-full min-w-[1180px] border-collapse text-left">
-                <thead>
-                  <tr className="border-b border-white/[0.06] bg-white/[0.012]">
-                    {[
-                      'Código',
-                      'Cliente',
-                      'Passeio',
-                      'Validade',
-                      'Valor',
-                      'Status',
-                      'Ações',
-                    ].map(
-                      (
-                        titulo
-                      ) => (
-                        <th
-                          key={
-                            titulo
-                          }
-                          className={`px-5 py-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28 ${
-                            titulo ===
-                            'Ações'
-                              ? 'text-center'
-                              : ''
-                          }`}
-                        >
-                          {
-                            titulo
-                          }
-                        </th>
-                      )
-                    )}
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-white/[0.055]">
-                  {vouchersFiltrados.map(
-                    (
-                      voucher,
-                      index
-                    ) => {
-                      const status =
-                        normalizarStatus(
-                          voucher.status
-                        );
-                      const vencido =
-                        status ===
-                          'Ativo' &&
-                        dataExpirada(
-                          voucher.validade
-                        );
-                      return (
-                        <tr
-                          key={
-                            voucher.id ||
-                            index
-                          }
-                          className="transition hover:bg-white/[0.018]"
-                        >
-                          <td className="px-5 py-4 font-mono text-xs font-semibold text-[#F4C77E]">
-                            {voucher.codigo ||
-                              '—'}
-                          </td>
-                          <td className="px-5 py-4 text-xs font-semibold text-[#EDEDE3]/78">
-                            {voucher.cliente_nome ||
-                              '—'}
-                          </td>
-                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
-                            {voucher.passeio_nome ||
-                              '—'}
-                            {voucher.reserva_id && <p className="mt-1 text-[10px] text-[#F4C77E]">Reserva vinculada · {voucher.quantidade_pessoas == null ? 'Quantidade não informada' : `${voucher.quantidade_pessoas} pessoas`}</p>}
-                          </td>
-                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
-                            <div>
-                              {formatarData(
-                                voucher.validade
-                              )}
-                              {vencido && (
-                                <p className="mt-1 text-[8px] font-semibold uppercase tracking-[0.1em] text-red-300">
-                                  Validade expirada
-                                </p>
-                              )}
-                            </div>
-                          </td>
-                          <td className="px-5 py-4 text-xs font-semibold text-emerald-300">
-                            {formatarMoeda(
-                              voucher.valor
-                            )}
-                          </td>
-                          <td className="px-5 py-4">
-                            <span
-                              className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[9px] font-semibold ${statusClasses(
-                                status
-                              )}`}
-                            >
-                              <span
-                                className={`h-1.5 w-1.5 rounded-full ${statusDot(
-                                  status
-                                )}`}
-                              />
-                              {
-                                status
-                              }
-                            </span>
-                          </td>
-                          <td className="px-5 py-4">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <button
-                                type="button"
-                                title="Visualizar"
-                                onClick={() =>
-                                  setItemVisualizar(
-                                    voucher
-                                  )
-                                }
-                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-[#E3A144]/20 hover:text-[#E3A144]"
-                              >
-                                ◉
-                              </button>
-                              <button
-                                type="button"
-                                title="Editar"
-                                onClick={() =>
-                                  abrirEdicao(
-                                    voucher
-                                  )
-                                }
-                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-sky-400/20 hover:text-sky-300"
-                              >
-                                ✎
-                              </button>
-                              <button
-                                type="button"
-                                title="Excluir"
-                                onClick={() =>
-                                  setItemExcluir(
-                                    voucher
-                                  )
-                                }
-                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-red-400/20 hover:text-red-300"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      );
-                    }
-                  )}
-                </tbody>
-              </table>
-            )}
-          </div>
-        </section>
-      </main>
-      {/* =====================================================
-          VISUALIZAÇÃO
-      ====================================================== */}
-      {itemVisualizar && (
-        <ModalBase
-          titulo="Detalhes do voucher"
-          subtitulo={
-            itemVisualizar.codigo ||
-            'Voucher'
-          }
-          onClose={() =>
-            setItemVisualizar(
-              null
-            )
-          }
-        >
-          <div className="grid gap-3 p-6 sm:grid-cols-2">
-            <Detalhe
-              label="Cliente"
-              valor={
-                itemVisualizar.cliente_nome ||
-                'Não informado'
-              }
-            />
-            <Detalhe
-              label="Passeio"
-              valor={
-                itemVisualizar.passeio_nome ||
-                'Não informado'
-              }
-            />
-            <Detalhe label="Reserva vinculada" valor={itemVisualizar.reserva_id || 'Voucher avulso'} />
-            <Detalhe label="Quantidade de pessoas" valor={itemVisualizar.quantidade_pessoas == null ? 'Não informada' : String(itemVisualizar.quantidade_pessoas)} />
-            <Detalhe label="Data do passeio na emissão" valor={formatarData(itemVisualizar.data_passeio)} />
-            <Detalhe label="Horário do passeio na emissão" valor={itemVisualizar.horario_passeio?.slice(0,5) || 'Não informado'} />
-            <Detalhe
-              label="Valor"
-              valor={formatarMoeda(
-                itemVisualizar.valor
-              )}
-            />
-            <Detalhe
-              label="Emissão"
-              valor={formatarData(
-                itemVisualizar.data_emissao ||
-                itemVisualizar.created_at
-              )}
-            />
-            <Detalhe
-              label="Validade"
-              valor={formatarData(
-                itemVisualizar.validade
-              )}
-            />
-            <Detalhe
-              label="Status"
-              valor={normalizarStatus(
-                itemVisualizar.status
-              )}
-            />
-          </div>
-          <div className="flex justify-end border-t border-white/[0.07] px-6 py-4">
-            <button
-              type="button"
-              onClick={() =>
-                setItemVisualizar(
-                  null
-                )
-              }
-              className="rounded-xl bg-[#E3A144] px-5 py-2.5 text-xs font-bold text-[#07130F] transition hover:bg-[#F0B35C]"
-            >
-              Fechar
-            </button>
-          </div>
-        </ModalBase>
-      )}
-      {/* =====================================================
-          EDIÇÃO
-      ====================================================== */}
-      {itemEditar && (
-        <ModalBase
-          titulo="Operação • Edição"
-          subtitulo="Editar voucher"
-          onClose={() =>
-            !salvandoEdicao &&
-            setItemEditar(
-              null
-            )
-          }
-        >
-          <form
-            onSubmit={
-              salvarEdicao
-            }
-            className="space-y-5 p-6"
-          >
-            {itemEditar.reserva_id && <p className="rounded-xl border border-white/15 p-3 text-xs leading-6">Este voucher preserva os dados da reserva no momento da emissão. Cliente: {itemEditar.cliente_nome || 'Não informado'} · Passeio: {itemEditar.passeio_nome || 'Não informado'}. Para corrigir os dados da emissão, cancele este voucher e emita outro.</p>}
-            <div>
-              <label className={labelClass}>
-                Código *
-              </label>
-              <input
-                type="text"
-                required
-                disabled={
-                  salvandoEdicao
-                }
-                value={
-                  editCodigo
-                }
-                onChange={(
-                  event
-                ) =>
-                  setEditCodigo(
-                    event.target
-                      .value
-                  )
-                }
-                className={
-                  inputClass
-                }
-              />
-            </div>
-            <div>
-              <label className={labelClass}>
-                Cliente *
-              </label>
-              <select
-                required={!itemEditar.reserva_id}
-                disabled={
-                  salvandoEdicao || Boolean(itemEditar.reserva_id)
-                }
-                value={
-                  editClienteId
-                }
-                onChange={(
-                  event
-                ) =>
-                  setEditClienteId(
-                    event.target
-                      .value
-                  )
-                }
-                className={
-                  inputClass
-                }
-              >
-                <option value="">
-                  Selecione...
-                </option>
-                {clientes.map(
-                  (
-                    cliente
-                  ) => (
-                    <option
-                      key={
-                        cliente.id
-                      }
-                      value={
-                        cliente.id
-                      }
-                    >
-                      {cliente.nome ||
-                        cliente.nome_completo ||
-                        cliente.id}
-                    </option>
-                  )
-                )}
-              </select>
-            </div>
-            <div>
-              <label className={labelClass}>
-                Passeio *
-              </label>
-              <select
-                required={!itemEditar.reserva_id}
-                disabled={
-                  salvandoEdicao || Boolean(itemEditar.reserva_id)
-                }
-                value={
-                  editPasseioId
-                }
-                onChange={(
-                  event
-                ) =>
-                  setEditPasseioId(
-                    event.target
-                      .value
-                  )
-                }
-                className={
-                  inputClass
-                }
-              >
-                <option value="">
-                  Selecione...
-                </option>
-                {passeios.map(
-                  (
-                    passeio
-                  ) => (
-                    <option
-                      key={
-                        passeio.id
-                      }
-                      value={
-                        passeio.id
-                      }
-                    >
-                      {passeio.nome ||
-                        passeio.titulo ||
-                        passeio.id}
-                    </option>
-                  )
-                )}
-              </select>
-            </div>
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div>
-                <label className={labelClass}>
-                  Valor (R$) *
-                </label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  required
-                  disabled={
-                    salvandoEdicao
-                  }
-                  value={
-                    editValor
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    setEditValor(
-                      event.target
-                        .value
-                    )
-                  }
-                  onBlur={() => {
-                    const valor =
-                      converterValor(
-                        editValor
-                      );
-                    if (
-                      valor > 0
-                    ) {
-                      setEditValor(
-                        formatarValorCampo(
-                          valor
-                        )
-                      );
-                    }
-                  }}
-                  placeholder="Ex.: 3.500,00"
-                  className={
-                    inputClass
-                  }
-                />
-                <p className="mt-2 text-[9px] text-[#EDEDE3]/22">
-                  Aceita 3500, 3.500 ou 3.500,00.
-                </p>
-              </div>
-              <div>
-                <label className={labelClass}>
-                  Validade
-                </label>
-                <input
-                  type="date"
-                  disabled={
-                    salvandoEdicao
-                  }
-                  value={
-                    editValidade
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    setEditValidade(
-                      event.target
-                        .value
-                    )
-                  }
-                  className={
-                    inputClass
-                  }
-                />
-              </div>
-            </div>
-            <div>
-              <label className={labelClass}>
-                Status
-              </label>
-              <select
-                disabled={
-                  salvandoEdicao
-                }
-                value={
-                  editStatus
-                }
-                onChange={(
-                  event
-                ) =>
-                  setEditStatus(
-                    event.target
-                      .value as StatusVoucher
-                  )
-                }
-                className={
-                  inputClass
-                }
-              >
-                <option value="Ativo">
-                  Ativo
-                </option>
-                <option value="Utilizado">
-                  Utilizado
-                </option>
-                <option value="Cancelado">
-                  Cancelado
-                </option>
-              </select>
-            </div>
-            <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-5 sm:flex-row sm:justify-end">
-              <button
-                type="button"
-                disabled={
-                  salvandoEdicao
-                }
-                onClick={() =>
-                  setItemEditar(
-                    null
-                  )
-                }
-                className="rounded-xl border border-white/[0.08] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/55 disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="submit"
-                disabled={
-                  salvandoEdicao
-                }
-                className="rounded-xl bg-[#E3A144] px-6 py-3 text-xs font-bold text-[#07130F] transition hover:bg-[#F0B35C] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {salvandoEdicao
-                  ? 'Salvando...'
-                  : 'Salvar alterações'}
-              </button>
-            </div>
-          </form>
-        </ModalBase>
-      )}
-      {/* =====================================================
-          EXCLUSÃO
-      ====================================================== */}
-      {itemExcluir && (
-        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-[430px] rounded-[26px] border border-white/[0.09] bg-[#091510] p-6 text-center">
-            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-red-500/20 bg-red-500/[0.08] text-lg text-red-300">
-              !
-            </div>
-            <h3
-              className="mt-4 text-2xl text-[#F0F0E8]"
-              style={{
-                fontFamily:
-                  'var(--font-fraunces), serif',
-              }}
-            >
-              Excluir voucher?
-            </h3>
-            <p className="mt-3 text-xs leading-6 text-[#EDEDE3]/38">
-              O voucher{' '}
-              <strong className="text-[#EDEDE3]/70">
-                {itemExcluir.codigo ||
-                  'selecionado'}
-              </strong>{' '}
-              será removido permanentemente.
-            </p>
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                disabled={
-                  excluindo
-                }
-                onClick={() =>
-                  setItemExcluir(
-                    null
-                  )
-                }
-                className="rounded-xl border border-white/[0.09] px-4 py-3 text-xs font-semibold text-[#EDEDE3]/60 disabled:opacity-50"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                disabled={
-                  excluindo
-                }
-                onClick={
-                  confirmarExclusao
-                }
-                className="rounded-xl border border-red-500/20 bg-red-500/[0.1] px-4 py-3 text-xs font-semibold text-red-300 transition hover:bg-red-500/[0.15] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {excluindo
-                  ? 'Excluindo...'
-                  : 'Excluir'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+    obterStatus(item.status) === 'Ativo' &&
+    dataValida(validade) &&
+    validade < hoje
   );
 }
-/*
-  ============================================================
-  COMPONENTES INTERNOS
-  ============================================================
-*/
-function LoadingTabela() {
-  return (
-    <div className="flex min-h-[330px] items-center justify-center">
-      <div className="text-center">
-        <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/[0.08] border-t-[#E3A144]" />
-        <p className="mt-4 text-xs text-[#EDEDE3]/35">
-          Carregando vouchers...
-        </p>
-      </div>
-    </div>
-  );
+
+// A coluna numeric do banco retorna número ou texto decimal sem milhar.
+function valorDoBanco(valor: Voucher['valor']): number | null {
+  if (valor === null || valor === '') return null;
+
+  const numero = typeof valor === 'number' ? valor : Number(valor);
+
+  return Number.isFinite(numero) ? numero : null;
 }
-function Detalhe({
-  label,
-  valor,
-}: {
-  label: string;
-  valor: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/[0.065] bg-white/[0.018] p-4">
-      <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28">
-        {label}
-      </p>
-      <p className="mt-2 text-xs font-medium text-[#EDEDE3]/72">
-        {valor}
-      </p>
-    </div>
-  );
+
+function moeda(valor: number | null): string {
+  if (valor === null) return 'Não informado';
+
+  return valor.toLocaleString('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+  });
 }
-function ModalBase({
+
+function valorDoCampo(entrada: string): number | null {
+  let valor = entrada.trim().replace(/^R\$\s*/i, '').replace(/\s/g, '');
+
+  if (!valor) return null;
+
+  if (valor.includes(',')) {
+    if (!/^(?:\d+|\d{1,3}(?:\.\d{3})+),\d{1,2}$/.test(valor)) {
+      return null;
+    }
+    valor = valor.replace(/\./g, '').replace(',', '.');
+  } else if (/^\d{1,3}(?:\.\d{3})+$/.test(valor)) {
+    valor = valor.replace(/\./g, '');
+  } else if (!/^\d+(?:\.\d{1,2})?$/.test(valor)) {
+    return null;
+  }
+
+  const numero = Number(valor);
+
+  if (
+    !Number.isFinite(numero) ||
+    !Number.isSafeInteger(Math.round(numero * 100))
+  ) {
+    return null;
+  }
+
+  return numero;
+}
+
+function erroTexto(erro: unknown, padrao: string): string {
+  if (erro instanceof Error) return erro.message;
+
+  if (
+    typeof erro === 'object' &&
+    erro !== null &&
+    'message' in erro &&
+    typeof erro.message === 'string'
+  ) {
+    return erro.message;
+  }
+
+  return padrao;
+}
+
+async function obterEmpresa(): Promise<string> {
+  const { data: auth, error: erroAuth } = await supabase.auth.getUser();
+
+  if (erroAuth || !auth.user) {
+    throw new Error('Sua sessão não está disponível. Entre novamente.');
+  }
+
+  const { data: perfil, error: erroPerfil } = await supabase
+    .from('perfis')
+    .select('empresa_id')
+    .eq('id', auth.user.id)
+    .single();
+
+  if (erroPerfil || !perfil?.empresa_id) {
+    throw new Error('Não foi possível identificar sua empresa.');
+  }
+
+  return String(perfil.empresa_id);
+}
+
+async function consultarTabela<T extends { id: string }>(
+  tabela: 'vouchers' | 'clientes' | 'passeios',
+  empresaId: string
+): Promise<T[]> {
+  const registros: T[] = [];
+  let total: number | null = null;
+  const limite = 10000;
+  const tamanho = 200;
+
+  for (let inicio = 0; inicio < limite; inicio += tamanho) {
+    const { data, error, count } = await supabase
+      .from(tabela)
+      .select(tabela === 'vouchers' ? '*' : 'id, nome', {
+        count: 'exact',
+      })
+      .eq('empresa_id', empresaId)
+      .order('id', { ascending: true })
+      .range(inicio, inicio + tamanho - 1);
+
+    if (error) throw error;
+
+    if (count === null || count > limite) {
+      throw new Error(
+        `A consulta de ${tabela} exige filtros no servidor para evitar resultados parciais.`
+      );
+    }
+
+    if (total !== null && total !== count) {
+      throw new Error(
+        `Os registros de ${tabela} mudaram durante a consulta. Atualize a página.`
+      );
+    }
+
+    total = count;
+
+    const pagina = (data ?? []) as unknown as T[];
+    registros.push(...pagina);
+
+    if (registros.length >= count) break;
+
+    if (!pagina.length) {
+      throw new Error(`A consulta de ${tabela} ficou incompleta.`);
+    }
+  }
+
+  if (
+    registros.length !== total ||
+    registros.some((item) => !item.id) ||
+    new Set(registros.map((item) => item.id)).size !== registros.length
+  ) {
+    throw new Error(`Não foi possível carregar ${tabela} de forma consistente.`);
+  }
+
+  return registros;
+}
+
+function Modal({
   titulo,
-  subtitulo,
-  onClose,
+  bloqueado,
+  aoFechar,
   children,
 }: {
   titulo: string;
-  subtitulo: string;
-  onClose: () => void;
-  children:
-    React.ReactNode;
+  bloqueado: boolean;
+  aoFechar: () => void;
+  children: React.ReactNode;
 }) {
+  const tituloId = React.useId();
+  const container = useRef<HTMLDivElement>(null);
+  const fecharRef = useRef(aoFechar);
+  const bloqueadoRef = useRef(bloqueado);
+
+  fecharRef.current = aoFechar;
+  bloqueadoRef.current = bloqueado;
+
+  useEffect(() => {
+    const anterior = document.activeElement as HTMLElement | null;
+    const overflow = document.body.style.overflow;
+
+    document.body.style.overflow = 'hidden';
+    container.current?.focus();
+
+    function teclado(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        if (!bloqueadoRef.current) fecharRef.current();
+      }
+
+      if (event.key !== 'Tab' || !container.current) return;
+
+      const elementos = Array.from(
+        container.current.querySelectorAll<HTMLElement>(
+          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), [tabindex="0"]'
+        )
+      ).filter((elemento) => elemento.getClientRects().length > 0);
+
+      const primeiro = elementos[0];
+      const ultimo = elementos[elementos.length - 1];
+
+      if (!primeiro || !ultimo) {
+        event.preventDefault();
+        container.current.focus();
+        return;
+      }
+
+      if (
+        event.shiftKey &&
+        (document.activeElement === primeiro ||
+          document.activeElement === container.current)
+      ) {
+        event.preventDefault();
+        ultimo.focus();
+      } else if (
+        !event.shiftKey &&
+        (document.activeElement === ultimo ||
+          document.activeElement === container.current)
+      ) {
+        event.preventDefault();
+        primeiro.focus();
+      }
+    }
+
+    document.addEventListener('keydown', teclado);
+
+    return () => {
+      document.body.style.overflow = overflow;
+      document.removeEventListener('keydown', teclado);
+      anterior?.focus();
+    };
+  }, []);
+
   return (
-    <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-      <div className="max-h-[92vh] w-full max-w-[720px] overflow-y-auto rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
-        <div className="flex items-start justify-between gap-4 border-b border-white/[0.07] px-6 py-5">
-          <div>
-            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-              {titulo}
-            </p>
-            <h3
-              className="mt-2 text-2xl text-[#F0F0E8]"
-              style={{
-                fontFamily:
-                  'var(--font-fraunces), serif',
-              }}
-            >
-              {subtitulo}
-            </h3>
-          </div>
+    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-3 backdrop-blur-sm sm:p-5">
+      <div
+        ref={container}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={tituloId}
+        aria-busy={bloqueado}
+        tabIndex={-1}
+        className="max-h-[90dvh] w-full max-w-[720px] overflow-y-auto rounded-2xl border border-white/15 bg-[#091510] shadow-2xl outline-none"
+      >
+        <div className="flex items-start justify-between gap-4 border-b border-white/10 p-5">
+          <h2 id={tituloId} className="break-words text-2xl" style={headingStyle}>
+            {titulo}
+          </h2>
           <button
             type="button"
-            onClick={
-              onClose
-            }
-            className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] text-[#EDEDE3]/45 transition hover:bg-white/[0.05]"
+            aria-label="Fechar janela"
+            disabled={bloqueado}
+            onClick={aoFechar}
+            className={`${buttonClass} shrink-0`}
           >
             ✕
           </button>
         </div>
         {children}
       </div>
+    </div>
+  );
+}
+
+export default function VouchersPage() {
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [clientes, setClientes] = useState<Opcao[]>([]);
+  const [passeios, setPasseios] = useState<Opcao[]>([]);
+
+  const [carregando, setCarregando] = useState(true);
+  const [erroConsulta, setErroConsulta] = useState<string | null>(null);
+  const [erroAuxiliares, setErroAuxiliares] = useState<string | null>(null);
+  const [erroModal, setErroModal] = useState<string | null>(null);
+  const [sucesso, setSucesso] = useState<string | null>(null);
+
+  const [busca, setBusca] = useState('');
+  const [filtroStatus, setFiltroStatus] = useState<FiltroStatus>('');
+  const [reservaFiltro, setReservaFiltro] = useState('');
+  const [hoje, setHoje] = useState(hojeManaus);
+
+  const [modal, setModal] = useState<ModalAberto>(null);
+  const [edicao, setEdicao] = useState<Edicao | null>(null);
+  const [ocupado, setOcupado] = useState(false);
+
+  const mutacao = useRef(false);
+  const versaoConsulta = useRef(0);
+
+  const carregar = useCallback(async () => {
+    const versao = ++versaoConsulta.current;
+
+    setCarregando(true);
+    setErroConsulta(null);
+    setErroAuxiliares(null);
+    setClientes([]);
+    setPasseios([]);
+
+    try {
+      if (!isSupabaseConfigured) {
+        throw new Error('Supabase não está configurado.');
+      }
+
+      const empresaId = await obterEmpresa();
+
+      const [resultadoVouchers, resultadoClientes, resultadoPasseios] =
+        await Promise.allSettled([
+          consultarTabela<Voucher>('vouchers', empresaId),
+          consultarTabela<Opcao>('clientes', empresaId),
+          consultarTabela<Opcao>('passeios', empresaId),
+        ]);
+
+      if (versao !== versaoConsulta.current) return;
+
+      if (resultadoVouchers.status === 'rejected') {
+        throw resultadoVouchers.reason;
+      }
+
+      const ordenarNomes = (itens: Opcao[]) =>
+        [...itens].sort((a, b) =>
+          (a.nome ?? '').localeCompare(b.nome ?? '', 'pt-BR')
+        );
+
+      if (resultadoClientes.status === 'fulfilled') {
+        setClientes(ordenarNomes(resultadoClientes.value));
+      }
+
+      if (resultadoPasseios.status === 'fulfilled') {
+        setPasseios(ordenarNomes(resultadoPasseios.value));
+      }
+
+      if (
+        resultadoClientes.status === 'rejected' ||
+        resultadoPasseios.status === 'rejected'
+      ) {
+        setErroAuxiliares(
+          'Não foi possível carregar todos os clientes e passeios. Os vouchers continuam disponíveis, mas a edição de vouchers avulsos está bloqueada até atualizar os dados.'
+        );
+      }
+
+      setVouchers(
+        [...resultadoVouchers.value].sort((a, b) => {
+          const dataA = a.created_at ?? '';
+          const dataB = b.created_at ?? '';
+          return dataB.localeCompare(dataA) || a.id.localeCompare(b.id);
+        })
+      );
+      setHoje(hojeManaus());
+    } catch (erro) {
+      if (versao !== versaoConsulta.current) return;
+
+      setVouchers([]);
+      setErroConsulta(erroTexto(erro, 'Não foi possível carregar os vouchers.'));
+    } finally {
+      if (versao === versaoConsulta.current) setCarregando(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const parametros = new URLSearchParams(window.location.search);
+    setReservaFiltro(parametros.get('reserva_id') ?? '');
+    void carregar();
+
+    return () => {
+      versaoConsulta.current += 1;
+    };
+  }, [carregar]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setHoje(hojeManaus()), 60000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (!sucesso) return;
+    const timer = window.setTimeout(() => setSucesso(null), 4000);
+    return () => window.clearTimeout(timer);
+  }, [sucesso]);
+
+  const mapaClientes = useMemo(
+    () => new Map(clientes.map((item) => [item.id, item.nome])),
+    [clientes]
+  );
+
+  const mapaPasseios = useMemo(
+    () => new Map(passeios.map((item) => [item.id, item.nome])),
+    [passeios]
+  );
+
+  function nomeCliente(item: Voucher): string {
+    if (item.cliente_nome?.trim()) return item.cliente_nome;
+
+    // Não reconstruir os dados históricos de uma emissão pela reserva atual.
+    if (item.reserva_id) return 'Não registrado na emissão';
+
+    return (
+      (item.cliente_id && mapaClientes.get(item.cliente_id)) ||
+      'Não informado'
+    );
+  }
+
+  function nomePasseio(item: Voucher): string {
+    if (item.passeio_nome?.trim()) return item.passeio_nome;
+    if (item.reserva_id) return 'Não registrado na emissão';
+
+    return (
+      (item.passeio_id && mapaPasseios.get(item.passeio_id)) ||
+      'Não informado'
+    );
+  }
+
+  const metricas = useMemo(() => {
+    const ativos = vouchers.filter((item) => obterStatus(item.status) === 'Ativo');
+    const valores = ativos.map((item) => valorDoBanco(item.valor));
+
+    return {
+      total: vouchers.length,
+      ativos: ativos.length,
+      utilizados: vouchers.filter((item) => obterStatus(item.status) === 'Utilizado').length,
+      cancelados: vouchers.filter((item) => obterStatus(item.status) === 'Cancelado').length,
+      expirados: vouchers.filter((item) => expirado(item, hoje)).length,
+      desconhecidos: vouchers.filter((item) => obterStatus(item.status) === 'Desconhecido').length,
+      valorAtivo: valores.some((valor) => valor === null)
+        ? null
+        : valores.reduce<number>((total, valor) => total + (valor ?? 0), 0),
+    };
+  }, [vouchers, hoje]);
+
+  const filtrados = vouchers.filter((item) => {
+    if (reservaFiltro && item.reserva_id !== reservaFiltro) return false;
+
+    const status = obterStatus(item.status);
+
+    if (filtroStatus === 'Expirado') {
+      if (!expirado(item, hoje)) return false;
+    } else if (filtroStatus && status !== filtroStatus) {
+      return false;
+    }
+
+    const termo = normalizar(busca);
+
+    return (
+      !termo ||
+      normalizar(
+        `${item.codigo} ${nomeCliente(item)} ${nomePasseio(item)} ${status} ${item.reserva_id ?? ''}`
+      ).includes(termo)
+    );
+  });
+
+  function fecharModal() {
+    if (mutacao.current) return;
+    setModal(null);
+    setEdicao(null);
+    setErroModal(null);
+  }
+
+  function abrir(tipo: 'ver' | 'editar' | 'excluir', item: Voucher) {
+    if (mutacao.current) return;
+
+    setErroModal(null);
+    setModal({ tipo, item });
+
+    if (tipo === 'editar') {
+      const status = obterStatus(item.status);
+      const valor = valorDoBanco(item.valor);
+
+      setEdicao({
+        codigo: item.codigo ?? '',
+        clienteId: item.cliente_id ?? '',
+        passeioId: item.passeio_id ?? '',
+        valor: valor === null
+          ? ''
+          : valor.toLocaleString('pt-BR', {
+              useGrouping: false,
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2,
+            }),
+        validade: apenasData(item.validade),
+        status: status === 'Desconhecido' ? '' : status,
+      });
+    }
+  }
+
+  async function salvar(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    if (modal?.tipo !== 'editar' || !edicao || mutacao.current) return;
+
+    setErroModal(null);
+
+    const item = modal.item;
+    const codigo = edicao.codigo.trim();
+    const valor = valorDoCampo(edicao.valor);
+
+    if (!codigo) {
+      setErroModal('Informe o código do voucher.');
+      return;
+    }
+
+    if (!edicao.status) {
+      setErroModal('Selecione um status válido para este voucher.');
+      return;
+    }
+
+    if (valor === null || valor <= 0) {
+      setErroModal('Informe um valor maior que zero, com até duas casas decimais.');
+      return;
+    }
+
+    if (edicao.validade && !dataValida(edicao.validade)) {
+      setErroModal('Informe uma validade válida ou deixe o campo vazio.');
+      return;
+    }
+
+    const cliente = clientes.find((opcao) => opcao.id === edicao.clienteId);
+    const passeio = passeios.find((opcao) => opcao.id === edicao.passeioId);
+
+    if (!item.reserva_id && (erroAuxiliares || !cliente || !passeio)) {
+      setErroModal('Atualize os dados e selecione um cliente e um passeio disponíveis.');
+      return;
+    }
+
+    mutacao.current = true;
+    setOcupado(true);
+
+    try {
+      const empresaId = await obterEmpresa();
+
+      if (!item.empresa_id || item.empresa_id !== empresaId) {
+        throw new Error('Este voucher não pertence à empresa da sessão atual. Atualize a lista.');
+      }
+
+      const alteracoes = {
+        codigo,
+        valor,
+        status: edicao.status,
+        validade: edicao.validade || null,
+        ...(!item.reserva_id
+          ? {
+              cliente_id: edicao.clienteId,
+              passeio_id: edicao.passeioId,
+              cliente_nome: cliente?.nome ?? null,
+              passeio_nome: passeio?.nome ?? null,
+            }
+          : {}),
+      };
+
+      const { data, error } = await supabase
+        .from('vouchers')
+        .update(alteracoes)
+        .eq('id', item.id)
+        .eq('empresa_id', empresaId)
+        .select('id')
+        .single();
+
+      if (error) throw error;
+      if (!data?.id) {
+        throw new Error('Não foi possível confirmar a atualização. Atualize a lista.');
+      }
+
+      setModal(null);
+      setEdicao(null);
+      setSucesso('Voucher atualizado com sucesso.');
+      await carregar();
+    } catch (erro) {
+      setErroModal(erroTexto(erro, 'Não foi possível atualizar o voucher.'));
+    } finally {
+      mutacao.current = false;
+      setOcupado(false);
+    }
+  }
+
+  async function excluir() {
+    if (modal?.tipo !== 'excluir' || mutacao.current) return;
+
+    const item = modal.item;
+    mutacao.current = true;
+    setOcupado(true);
+    setErroModal(null);
+
+    try {
+      const empresaId = await obterEmpresa();
+
+      if (!item.empresa_id || item.empresa_id !== empresaId) {
+        throw new Error('Este voucher não pertence à empresa da sessão atual. Atualize a lista.');
+      }
+
+      const { data, error } = await supabase
+        .from('vouchers')
+        .delete()
+        .eq('id', item.id)
+        .eq('empresa_id', empresaId)
+        .select('id')
+        .single();
+
+      if (error) throw error;
+      if (!data?.id) {
+        throw new Error('Não foi possível confirmar a exclusão. Atualize a lista.');
+      }
+
+      setVouchers((atuais) => atuais.filter((voucher) => voucher.id !== item.id));
+      setModal(null);
+      setSucesso('Voucher excluído com sucesso.');
+    } catch (erro) {
+      setErroModal(erroTexto(erro, 'Não foi possível excluir o voucher.'));
+    } finally {
+      mutacao.current = false;
+      setOcupado(false);
+    }
+  }
+
+  function etiqueta(item: Voucher) {
+    const status = obterStatus(item.status);
+    const classe =
+      status === 'Ativo'
+        ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300'
+        : status === 'Utilizado'
+          ? 'border-amber-400/25 bg-amber-400/10 text-amber-300'
+          : status === 'Cancelado'
+            ? 'border-red-400/25 bg-red-400/10 text-red-300'
+            : 'border-white/25 bg-white/5 text-[#D6E2D9]';
+
+    return (
+      <div className="space-y-2">
+        <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${classe}`}>
+          {status}
+        </span>
+        {expirado(item, hoje) && (
+          <p className="text-xs font-medium text-red-300">Validade expirada</p>
+        )}
+      </div>
+    );
+  }
+
+  function acoes(item: Voucher) {
+    return (
+      <div className="flex flex-wrap gap-2">
+        <button type="button" disabled={ocupado} onClick={() => abrir('ver', item)} className={buttonClass}>
+          Ver
+        </button>
+        <button
+          type="button"
+          disabled={ocupado || (!item.reserva_id && Boolean(erroAuxiliares))}
+          onClick={() => abrir('editar', item)}
+          className={buttonClass}
+        >
+          Editar
+        </button>
+        <button
+          type="button"
+          disabled={ocupado}
+          onClick={() => abrir('excluir', item)}
+          className={`${buttonClass} border-red-400/25 text-red-300`}
+        >
+          Excluir
+        </button>
+      </div>
+    );
+  }
+
+  function vinculo(item: Voucher) {
+    if (!item.reserva_id) {
+      return <p className="mt-2 text-xs text-[#B4C8BB]">Voucher avulso</p>;
+    }
+
+    return (
+      <Link
+        href={`/reservas/editar/${encodeURIComponent(item.reserva_id)}`}
+        className="mt-2 inline-flex min-h-11 items-center text-xs text-[#F4C77E] underline underline-offset-4"
+      >
+        Abrir reserva vinculada
+      </Link>
+    );
+  }
+
+  const cards: {
+    titulo: string;
+    valor: string;
+    filtro: FiltroStatus;
+  }[] = [
+    { titulo: 'Total', valor: String(metricas.total), filtro: '' },
+    { titulo: 'Ativos', valor: String(metricas.ativos), filtro: 'Ativo' },
+    { titulo: 'Utilizados', valor: String(metricas.utilizados), filtro: 'Utilizado' },
+    { titulo: 'Cancelados', valor: String(metricas.cancelados), filtro: 'Cancelado' },
+    { titulo: 'Ativos expirados', valor: String(metricas.expirados), filtro: 'Expirado' },
+    { titulo: 'Valor dos ativos', valor: moeda(metricas.valorAtivo), filtro: 'Ativo' },
+  ];
+
+  const itemModal = modal?.item;
+
+  return (
+    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+      {sucesso && (
+        <div role="status" className="fixed left-3 right-3 top-24 z-[90] mx-auto max-w-lg rounded-2xl border border-emerald-400/25 bg-[#0B2119] p-4 text-sm text-emerald-200 shadow-2xl">
+          {sucesso}
+        </div>
+      )}
+
+      <header className="border-b border-white/10 bg-[#091510]">
+        <div className="mx-auto flex max-w-[1440px] flex-col gap-6 px-4 py-8 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+              Operação · Vouchers
+            </p>
+            <h1 className="mt-3 text-4xl sm:text-5xl" style={headingStyle}>Vouchers</h1>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-[#B4C8BB]">
+              Consulte emissões, clientes, passeios, validade e utilização dos vouchers.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <button type="button" disabled={carregando || ocupado} onClick={() => void carregar()} className={buttonClass}>
+              {carregando ? 'Atualizando…' : 'Atualizar'}
+            </button>
+            <Link href="/vouchers/novo" className={`${buttonClass} border-[#E3A144] bg-[#E3A144] font-bold text-[#07130F] hover:bg-[#F0B35C]`}>
+              + Novo voucher
+            </Link>
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
+        {erroConsulta && (
+          <div role="alert" className="mb-5 rounded-2xl border border-red-400/25 bg-red-400/10 p-4 text-sm text-red-200">
+            {erroConsulta}
+          </div>
+        )}
+        {erroAuxiliares && (
+          <div role="alert" className="mb-5 rounded-2xl border border-amber-400/25 bg-amber-400/10 p-4 text-sm text-amber-200">
+            {erroAuxiliares}
+          </div>
+        )}
+        {!carregando && !erroConsulta && metricas.desconhecidos > 0 && (
+          <p role="status" className="mb-5 rounded-xl border border-amber-400/25 p-4 text-sm text-amber-200">
+            {metricas.desconhecidos} voucher(s) com status desconhecido. Revise esses registros pelo filtro de status.
+          </p>
+        )}
+
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
+          {cards.map((card) => (
+            <button
+              key={card.titulo}
+              type="button"
+              onClick={() => setFiltroStatus(card.filtro)}
+              className="min-w-0 rounded-2xl border border-white/10 bg-[#0A1713] p-4 text-left transition hover:border-[#E3A144]/50"
+            >
+              <span className="block text-sm text-[#B4C8BB]">{card.titulo}</span>
+              <strong className="mt-3 block break-words text-xl tabular-nums text-[#F4C77E] sm:text-2xl">
+                {carregando || erroConsulta ? '—' : card.valor}
+              </strong>
+            </button>
+          ))}
+        </div>
+
+        <p className="mt-4 text-xs leading-6 text-[#B4C8BB]">
+          Indicadores de todos os vouchers carregados, independentemente dos filtros.
+          Ativos incluem os que têm validade expirada. O valor dos ativos é nominal;
+          não representa dinheiro recebido.
+        </p>
+
+        {reservaFiltro && (
+          <div className="mt-5 flex flex-wrap items-center gap-3 rounded-xl border border-[#E3A144]/30 p-4 text-sm">
+            <span className="min-w-0 break-all">Reserva filtrada: {reservaFiltro}</span>
+            <button type="button" onClick={() => setReservaFiltro('')} className={buttonClass}>
+              Limpar reserva
+            </button>
+          </div>
+        )}
+
+        <section aria-label="Filtros de vouchers" className="mt-6 grid gap-4 rounded-2xl border border-white/10 bg-[#0A1713] p-4 sm:grid-cols-[1fr_220px]">
+          <div className="min-w-0">
+            <label htmlFor="voucher-busca" className={labelClass}>Buscar</label>
+            <input
+              id="voucher-busca"
+              type="search"
+              value={busca}
+              onChange={(event) => setBusca(event.target.value)}
+              placeholder="Código, cliente, passeio ou reserva"
+              className={inputClass}
+            />
+          </div>
+          <div className="min-w-0">
+            <label htmlFor="voucher-filtro" className={labelClass}>Status</label>
+            <select id="voucher-filtro" value={filtroStatus} onChange={(event) => setFiltroStatus(event.target.value as FiltroStatus)} className={inputClass}>
+              <option value="">Todos</option>
+              <option value="Ativo">Ativos</option>
+              <option value="Utilizado">Utilizados</option>
+              <option value="Cancelado">Cancelados</option>
+              <option value="Expirado">Ativos expirados</option>
+              <option value="Desconhecido">Desconhecidos</option>
+            </select>
+          </div>
+        </section>
+
+        <section aria-busy={carregando} className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-[#0A1713]">
+          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-white/10 p-5">
+            <h2 className="text-2xl" style={headingStyle}>Vouchers emitidos</h2>
+            <p className="text-sm text-[#B4C8BB]">
+              {carregando || erroConsulta ? '—' : `${filtrados.length} de ${vouchers.length} registros`}
+            </p>
+          </div>
+
+          {carregando ? (
+            <p role="status" className="p-10 text-center text-sm text-[#B4C8BB]">Carregando vouchers…</p>
+          ) : erroConsulta ? (
+            <p className="p-10 text-center text-sm text-red-200">Consulta indisponível. Use Atualizar para tentar novamente.</p>
+          ) : filtrados.length === 0 ? (
+            <div className="p-10 text-center">
+              <h3 className="text-xl" style={headingStyle}>Nenhum voucher encontrado</h3>
+              <p className="mt-3 text-sm text-[#B4C8BB]">
+                Confira os filtros e se seu plano possui acesso ao recurso de vouchers.
+              </p>
+            </div>
+          ) : (
+            <>
+              <div className="divide-y divide-white/10 lg:hidden">
+                {filtrados.map((item) => (
+                  <article key={item.id} className="min-w-0 p-4 sm:p-5">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <h3 className="break-all font-mono text-base font-semibold text-[#F4C77E]">{item.codigo}</h3>
+                      {etiqueta(item)}
+                    </div>
+                    <p className="mt-4 break-words font-semibold">{nomeCliente(item)}</p>
+                    <p className="mt-2 break-words text-sm text-[#C5D4CA]">{nomePasseio(item)}</p>
+                    <dl className="mt-4 grid grid-cols-2 gap-4 text-sm">
+                      <div><dt className="text-[#B4C8BB]">Valor</dt><dd className="mt-1">{moeda(valorDoBanco(item.valor))}</dd></div>
+                      <div><dt className="text-[#B4C8BB]">Validade</dt><dd className="mt-1">{formatarData(item.validade)}</dd></div>
+                      <div><dt className="text-[#B4C8BB]">Data do passeio</dt><dd className="mt-1">{formatarData(item.data_passeio)}</dd></div>
+                      <div><dt className="text-[#B4C8BB]">Pessoas</dt><dd className="mt-1">{item.quantidade_pessoas ?? 'Não informado'}</dd></div>
+                    </dl>
+                    {vinculo(item)}
+                    <div className="mt-4 border-t border-white/10 pt-4">{acoes(item)}</div>
+                  </article>
+                ))}
+              </div>
+
+              <div className="hidden overflow-x-auto lg:block">
+                <table className="w-full min-w-[1100px] border-collapse text-left text-sm">
+                  <thead className="border-b border-white/10 text-xs text-[#B4C8BB]">
+                    <tr>
+                      {['Código', 'Cliente / Passeio', 'Validade', 'Valor', 'Status', 'Ações'].map((titulo) => (
+                        <th scope="col" key={titulo} className="px-4 py-4">{titulo}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-white/10">
+                    {filtrados.map((item) => (
+                      <tr key={item.id} className="hover:bg-white/[0.02]">
+                        <td className="max-w-[180px] break-all px-4 py-4 font-mono font-semibold text-[#F4C77E]">{item.codigo}</td>
+                        <td className="max-w-sm px-4 py-4">
+                          <p className="break-words font-medium">{nomeCliente(item)}</p>
+                          <p className="mt-2 break-words text-[#B4C8BB]">{nomePasseio(item)}</p>
+                          {vinculo(item)}
+                        </td>
+                        <td className="px-4 py-4">{formatarData(item.validade)}</td>
+                        <td className="whitespace-nowrap px-4 py-4 font-semibold tabular-nums">{moeda(valorDoBanco(item.valor))}</td>
+                        <td className="px-4 py-4">{etiqueta(item)}</td>
+                        <td className="min-w-[240px] px-4 py-4">{acoes(item)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </section>
+      </main>
+
+      {modal && itemModal && (
+        <Modal
+          titulo={modal.tipo === 'editar' ? 'Editar voucher' : modal.tipo === 'excluir' ? 'Excluir voucher?' : `Voucher ${itemModal.codigo}`}
+          bloqueado={ocupado}
+          aoFechar={fecharModal}
+        >
+          {modal.tipo === 'ver' && (
+            <div className="p-5">
+              <dl className="grid gap-3 sm:grid-cols-2">
+                {[
+                  ['Cliente', nomeCliente(itemModal)],
+                  ['Passeio', nomePasseio(itemModal)],
+                  ['Reserva vinculada', itemModal.reserva_id || 'Voucher avulso'],
+                  ['Quantidade de pessoas', itemModal.quantidade_pessoas == null ? 'Não informada' : String(itemModal.quantidade_pessoas)],
+                  ['Data do passeio na emissão', formatarData(itemModal.data_passeio)],
+                  ['Horário na emissão', itemModal.horario_passeio?.slice(0, 5) || 'Não informado'],
+                  ['Valor', moeda(valorDoBanco(itemModal.valor))],
+                  ['Emissão · Manaus', formatarEmissao(itemModal.data_emissao || itemModal.created_at)],
+                  ['Validade', formatarData(itemModal.validade)],
+                  ['Status', obterStatus(itemModal.status)],
+                  ['Validade expirada', expirado(itemModal, hoje) ? 'Sim' : 'Não'],
+                ].map(([label, valor]) => (
+                  <div key={label} className="min-w-0 rounded-xl border border-white/10 p-4">
+                    <dt className="text-xs text-[#B4C8BB]">{label}</dt>
+                    <dd className="mt-2 break-words text-sm">{valor}</dd>
+                  </div>
+                ))}
+              </dl>
+              {vinculo(itemModal)}
+              <div className="mt-5 flex justify-end">
+                <button type="button" className={buttonClass} onClick={fecharModal}>Fechar</button>
+              </div>
+            </div>
+          )}
+
+          {modal.tipo === 'editar' && edicao && (
+            <form onSubmit={salvar} className="p-5">
+              <fieldset disabled={ocupado} className="min-w-0 space-y-5">
+                {itemModal.reserva_id && (
+                  <div className="rounded-xl border border-[#E3A144]/25 p-4 text-sm leading-7 text-[#C5D4CA]">
+                    Cliente, passeio, quantidade, data e horário preservam os dados
+                    registrados na emissão. Para corrigir esses dados, cancele o
+                    voucher e emita outro.
+                  </div>
+                )}
+
+                <div>
+                  <label htmlFor="voucher-codigo" className={labelClass}>Código *</label>
+                  <input id="voucher-codigo" required value={edicao.codigo} onChange={(event) => setEdicao({ ...edicao, codigo: event.target.value })} className={inputClass} />
+                </div>
+
+                {itemModal.reserva_id ? (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div><p className={labelClass}>Cliente na emissão</p><p className="break-words text-sm">{nomeCliente(itemModal)}</p></div>
+                    <div><p className={labelClass}>Passeio na emissão</p><p className="break-words text-sm">{nomePasseio(itemModal)}</p></div>
+                  </div>
+                ) : (
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div>
+                      <label htmlFor="voucher-cliente" className={labelClass}>Cliente *</label>
+                      <select id="voucher-cliente" required value={edicao.clienteId} onChange={(event) => setEdicao({ ...edicao, clienteId: event.target.value })} className={inputClass}>
+                        <option value="">Selecione…</option>
+                        {edicao.clienteId && !clientes.some((item) => item.id === edicao.clienteId) && (
+                          <option value={edicao.clienteId} disabled>Cliente atual indisponível</option>
+                        )}
+                        {clientes.map((item) => <option key={item.id} value={item.id}>{item.nome || item.id}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label htmlFor="voucher-passeio" className={labelClass}>Passeio *</label>
+                      <select id="voucher-passeio" required value={edicao.passeioId} onChange={(event) => setEdicao({ ...edicao, passeioId: event.target.value })} className={inputClass}>
+                        <option value="">Selecione…</option>
+                        {edicao.passeioId && !passeios.some((item) => item.id === edicao.passeioId) && (
+                          <option value={edicao.passeioId} disabled>Passeio atual indisponível</option>
+                        )}
+                        {passeios.map((item) => <option key={item.id} value={item.id}>{item.nome || item.id}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                )}
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="voucher-valor" className={labelClass}>Valor (R$) *</label>
+                    <input id="voucher-valor" type="text" inputMode="decimal" required value={edicao.valor} onChange={(event) => setEdicao({ ...edicao, valor: event.target.value })} placeholder="Ex.: 1.500,00" className={inputClass} />
+                  </div>
+                  <div>
+                    <label htmlFor="voucher-validade" className={labelClass}>Validade</label>
+                    <input id="voucher-validade" type="date" value={edicao.validade} onChange={(event) => setEdicao({ ...edicao, validade: event.target.value })} className={`${inputClass} [color-scheme:dark]`} />
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="voucher-status" className={labelClass}>Status *</label>
+                  <select id="voucher-status" required value={edicao.status} onChange={(event) => setEdicao({ ...edicao, status: event.target.value as StatusVoucher | '' })} className={inputClass}>
+                    <option value="" disabled>Selecione um status válido</option>
+                    <option value="Ativo">Ativo</option>
+                    <option value="Utilizado">Utilizado</option>
+                    <option value="Cancelado">Cancelado</option>
+                  </select>
+                </div>
+
+                {erroModal && <p role="alert" className="rounded-xl border border-red-400/25 bg-red-400/10 p-4 text-sm text-red-200">{erroModal}</p>}
+
+                <div className="flex flex-col-reverse gap-3 border-t border-white/10 pt-5 sm:flex-row sm:justify-end">
+                  <button type="button" className={buttonClass} onClick={fecharModal}>Cancelar</button>
+                  <button type="submit" className={`${buttonClass} border-[#E3A144] bg-[#E3A144] font-bold text-[#07130F] hover:bg-[#F0B35C]`}>
+                    {ocupado ? 'Salvando…' : 'Salvar alterações'}
+                  </button>
+                </div>
+              </fieldset>
+            </form>
+          )}
+
+          {modal.tipo === 'excluir' && (
+            <div className="p-5">
+              <p className="break-words text-sm leading-7 text-[#C5D4CA]">
+                O voucher <strong>{itemModal.codigo}</strong> será removido
+                permanentemente. Para manter o histórico da emissão, use
+                Editar e altere o status para Cancelado.
+              </p>
+              {erroModal && <p role="alert" className="mt-4 rounded-xl border border-red-400/25 bg-red-400/10 p-4 text-sm text-red-200">{erroModal}</p>}
+              <div className="mt-6 flex flex-wrap justify-end gap-3">
+                <button type="button" disabled={ocupado} onClick={fecharModal} className={buttonClass}>Voltar</button>
+                <button type="button" disabled={ocupado} onClick={() => void excluir()} className={`${buttonClass} border-red-400/30 bg-red-400/10 text-red-200`}>
+                  {ocupado ? 'Excluindo…' : 'Excluir permanentemente'}
+                </button>
+              </div>
+            </div>
+          )}
+        </Modal>
+      )}
     </div>
   );
 }
