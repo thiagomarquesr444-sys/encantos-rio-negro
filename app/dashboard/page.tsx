@@ -1184,6 +1184,8 @@ export default function DashboardPage() {
         </section>
 
         <GraficosOperadora
+          plano={plano}
+          carregandoPlano={loadingPlano}
           reservas={reservasOperacionais}
           inicio={inicioPeriodo}
           carregando={loading}
