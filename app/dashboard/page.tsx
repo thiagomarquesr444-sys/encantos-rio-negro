@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import GraficosOperadora from '@/app/components/GraficosOperadora';
 import MapaTerritorioERN from '@/app/components/MapaTerritorioERN';
+import TucunareRio3D from '@/app/components/TucunareRio3D';
 
 import { supabase } from '@/lib/supabase';
 
@@ -1005,13 +1006,13 @@ export default function DashboardPage() {
     <div className="min-h-screen min-w-0 w-full break-words bg-[#07110E] text-[#EDEDE3]">
       <section className="relative overflow-hidden border-b border-white/[0.07] bg-[#091510]">
         <div
-          aria-hidden="true"
           className="relative h-48 w-full bg-cover bg-[position:50%_55%] sm:h-60 lg:absolute lg:inset-0 lg:h-full lg:bg-[position:65%_50%]"
           style={{
             backgroundImage: "url('/images/regiao/ilha.png.jpeg')",
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-t from-[#091510] via-transparent to-transparent lg:hidden" />
+          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-[#091510] via-transparent to-transparent lg:hidden" />
+          <TucunareRio3D />
         </div>
 
         <div
@@ -1019,8 +1020,8 @@ export default function DashboardPage() {
           className="pointer-events-none absolute inset-0 hidden bg-[linear-gradient(90deg,rgba(6,16,13,0.96)_0%,rgba(6,16,13,0.88)_30%,rgba(6,16,13,0.42)_60%,rgba(6,16,13,0.08)_100%)] lg:block"
         />
 
-        <div className="relative mx-auto max-w-[1360px] px-4 pb-7 pt-3 sm:px-5 sm:pb-9 md:px-8 lg:flex lg:min-h-[300px] lg:items-center lg:py-10">
-          <div className="flex w-full min-w-0 flex-col gap-5">
+        <div className="pointer-events-none relative mx-auto max-w-[1360px] px-4 pb-7 pt-3 sm:px-5 sm:pb-9 md:px-8 lg:flex lg:min-h-[300px] lg:items-center lg:py-10">
+          <div className="pointer-events-auto flex w-full min-w-0 flex-col gap-5 lg:max-w-[57%]">
             <div>
               <div className="flex items-center gap-3">
                 <span className="h-px w-8 bg-[#E3A144]" />
@@ -1632,7 +1633,9 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        <MapaTerritorioERN demandas={demandasOperacionais} carregando={loading} />
+        <div id="mapa-ern" className="scroll-mt-28">
+          <MapaTerritorioERN demandas={demandasOperacionais} carregando={loading} />
+        </div>
 
         <div className="mt-7">
           <section className="overflow-hidden rounded-2xl border border-[#E3A144]/15 bg-[#0A1713] sm:rounded-[26px]">
@@ -1817,15 +1820,15 @@ export default function DashboardPage() {
               </h2>
 
               <p className="mt-3 max-w-md text-xs leading-6 text-[#EDEDE3]/48">
-                Área preparada para integrar
-                informações, destinos e conteúdos
-                ligados à pesca esportiva no Rio
-                Negro.
+                Consulte os canais oficiais da Copa
+                e organize reservas, passeios e a
+                estrutura da sua operação de pesca
+                esportiva no Rio Negro.
               </p>
 
-              <span className="mt-5 inline-flex min-h-10 items-center rounded-xl border border-[#E3A144]/15 bg-[#E3A144]/[0.055] px-4 text-[10px] font-semibold uppercase tracking-[0.1em] text-[#F4C77E]">
-                Integração em preparação
-              </span>
+              <Link href="/pesca-esportiva" className="mt-5 inline-flex min-h-11 items-center gap-3 rounded-xl border border-[#E3A144]/30 bg-[#E3A144]/10 px-4 text-xs font-semibold text-[#F4C77E] transition hover:bg-[#E3A144]/20 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F4C77E]">
+                Abrir central de pesca <span aria-hidden="true">→</span>
+              </Link>
             </div>
           </section>
         </div>
