@@ -1,773 +1,597 @@
-"use client";
+'use client';
 
-import React, { useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import VinculosReserva from '@/app/components/VinculosReserva';
+import LogisticaReserva from '@/app/components/LogisticaReserva';
 
-import Link from "next/link";
-
-import { useRouter } from "next/navigation";
-
-import { supabase } from "@/lib/supabase";
-
-import VinculosReserva from "@/app/components/VinculosReserva";
-
-import LogisticaReserva from "@/app/components/LogisticaReserva";
+type StatusReserva = 'Pendente' | 'Confirmada' | 'Cancelada';
 
 type Feedback = {
-  tipo: "sucesso" | "erro";
-
+  tipo: 'sucesso' | 'erro';
   mensagem: string;
 };
 
 type UsoReservas = {
   plano_codigo: string;
-
   plano_nome: string;
-
   total_reservas_mes: number;
-
   limite_reservas_mes: number | null;
-
   ilimitado: boolean;
-
   percentual_uso: number | null;
-
   inicio_periodo: string;
-
   fim_periodo: string;
 };
 
 type FormReserva = {
-  cliente_id?: string;
-
-  passeio_id?: string;
-
-  horario?: string;
-
-  embarcacao_id?: string;
-
+  cliente_id: string;
+  passeio_id: string;
+  horario: string;
+  embarcacao_id: string;
   quantidade_pessoas: string;
   cliente: string;
-
   pacote: string;
-
   data_reserva: string;
-
   agencia: string;
-
   guia: string;
-
   valor: string;
-
-  status: string;
-
+  status: StatusReserva;
   observacoes: string;
 };
 
 const ESTADO_INICIAL: FormReserva = {
-  quantidade_pessoas: "1",
-  cliente: "",
-
-  pacote: "",
-
-  data_reserva: "",
-
-  agencia: "",
-
-  guia: "",
-
-  valor: "",
-
-  status: "Pendente",
-
-  observacoes: "",
+  cliente_id: '',
+  passeio_id: '',
+  horario: '',
+  embarcacao_id: '',
+  quantidade_pessoas: '1',
+  cliente: '',
+  pacote: '',
+  data_reserva: '',
+  agencia: '',
+  guia: '',
+  valor: '',
+  status: 'Pendente',
+  observacoes: '',
 };
 
-/*
+const inputClass =
+  'min-h-12 w-full min-w-0 max-w-full rounded-xl border border-white/15 bg-[#07110E] px-4 py-3 text-base text-[#EDEDE3] outline-none transition placeholder:text-[#B4C8BB]/60 focus:border-[#E3A144] disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm';
 
-  ============================================================
+const labelClass =
+  'mb-2 block text-sm font-medium text-[#C5D4CA]';
 
-  VALOR MONETÁRIO
+const buttonClass =
+  'inline-flex min-h-12 items-center justify-center rounded-xl border border-white/15 px-4 py-3 text-sm font-semibold text-[#D6E2D9] transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50';
 
-  ============================================================
-
-  Exemplos:
-
-  3500        -> 3500
-
-  3500,00     -> 3500
-
-  3.500       -> 3500
-
-  3.500,00    -> 3500
-
-  3500.00     -> 3500
-
-  Entrada inválida retorna null.
-
-*/
+const headingStyle = {
+  fontFamily: 'var(--font-fraunces), serif',
+};
 
 function converterValor(valor: string): number | null {
-  let texto = valor.trim().replace(/^R\$\s*/i, "");
+  let texto = valor.trim().replace(/^R\$\s*/i, '');
 
   if (!texto) return null;
 
-  if (texto.includes(",")) {
+  if (texto.includes(',')) {
     if (!/^(?:\d+|\d{1,3}(?:\.\d{3})+),\d{1,2}$/.test(texto)) {
       return null;
     }
-
-    texto = texto.replace(/\./g, "").replace(",", ".");
+    texto = texto.replace(/\./g, '').replace(',', '.');
   } else if (/^\d{1,3}(?:\.\d{3})+$/.test(texto)) {
-    texto = texto.replace(/\./g, "");
+    texto = texto.replace(/\./g, '');
   } else if (!/^\d+(?:\.\d{1,2})?$/.test(texto)) {
     return null;
   }
 
-  const [inteiro, decimal = ""] = texto.split(".");
+  const [inteiro, decimal = ''] = texto.split('.');
+  const centavos =
+    Number(inteiro) * 100 + Number(decimal.padEnd(2, '0'));
 
-  const centavos = Number(inteiro) * 100 + Number(decimal.padEnd(2, "0"));
-
-  if (!Number.isSafeInteger(centavos) || centavos < 0) {
-    return null;
-  }
-
-  return centavos / 100;
+  return Number.isSafeInteger(centavos) && centavos >= 0
+    ? centavos / 100
+    : null;
 }
 
-function formatarData(data: string | null | undefined) {
-  if (!data) {
-    return "—";
-  }
-
-  const partes = data.split("-");
-
-  if (partes.length !== 3) {
-    return data;
-  }
-
-  return `${partes[2]}/${partes[1]}/${partes[0]}`;
+function formatarValorCampo(valor: number): string {
+  return valor.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
 }
 
-function dataISOValida(data: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(data)) {
-    return false;
-  }
+function formatarData(valor?: string | null): string {
+  if (!valor) return '—';
 
-  const [ano, mes, dia] = data
+  const partes = valor.split('T')[0].split('-');
+  return partes.length === 3
+    ? `${partes[2]}/${partes[1]}/${partes[0]}`
+    : valor;
+}
 
-    .split("-")
+function dataISOValida(valor: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
 
-    .map(Number);
-
-  const verificacao = new Date(
-    Date.UTC(
-      ano,
-
-      mes - 1,
-
-      dia,
-    ),
-  );
+  const data = new Date(`${valor}T12:00:00Z`);
 
   return (
-    verificacao.getUTCFullYear() === ano &&
-    verificacao.getUTCMonth() === mes - 1 &&
-    verificacao.getUTCDate() === dia
+    Number.isFinite(data.getTime()) &&
+    data.toISOString().slice(0, 10) === valor
   );
 }
 
 function quantidadePessoasValida(valor: string): boolean {
   if (!/^[0-9]+$/.test(valor)) return false;
+
   const quantidade = Number(valor);
-  return Number.isInteger(quantidade) && quantidade >= 1 && quantidade <= 2147483647;
+
+  return (
+    Number.isInteger(quantidade) &&
+    quantidade >= 1 &&
+    quantidade <= 2147483647
+  );
+}
+
+function mensagemDoErro(erro: unknown, padrao: string): string {
+  if (erro instanceof Error) return erro.message;
+
+  if (
+    typeof erro === 'object' &&
+    erro !== null &&
+    'message' in erro &&
+    typeof erro.message === 'string'
+  ) {
+    return erro.message;
+  }
+
+  return padrao;
+}
+
+async function obterEmpresa(): Promise<string> {
+  const { data: auth, error: erroAuth } = await supabase.auth.getUser();
+
+  if (erroAuth || !auth.user) {
+    throw new Error('Sua sessão não está disponível. Entre novamente.');
+  }
+
+  const { data: perfil, error: erroPerfil } = await supabase
+    .from('perfis')
+    .select('empresa_id')
+    .eq('id', auth.user.id)
+    .single();
+
+  if (erroPerfil || !perfil?.empresa_id) {
+    throw new Error('Não foi possível identificar sua empresa.');
+  }
+
+  return String(perfil.empresa_id);
 }
 
 export default function NovaReservaPage() {
   const router = useRouter();
 
-  // ERN_CONFIRMACAO_RESERVA
-
-  const envioReserva = useRef(false);
-
-  const reservaGravada = useRef(false);
-
-  const [formData, setFormData] = useState<FormReserva>(ESTADO_INICIAL);
-
-  const [loading, setLoading] = useState(false);
-
+  const [form, setForm] = useState<FormReserva>(ESTADO_INICIAL);
+  const [salvando, setSalvando] = useState(false);
+  const [gravada, setGravada] = useState(false);
   const [carregandoUso, setCarregandoUso] = useState(true);
-
   const [uso, setUso] = useState<UsoReservas | null>(null);
-
   const [erroUso, setErroUso] = useState<string | null>(null);
-
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
-  /*
-
-    ============================================================
-
-    USO MENSAL DO PLANO
-
-    ============================================================
-
-  */
+  const envioReserva = useRef(false);
+  const montado = useRef(true);
+  const empresaDoUso = useRef<string | null>(null);
+  const versaoUso = useRef(0);
+  const feedbackRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    carregarUsoReservas();
+    montado.current = true;
+
+    return () => {
+      montado.current = false;
+      versaoUso.current += 1;
+    };
   }, []);
 
-  async function carregarUsoReservas() {
-    setCarregandoUso(true);
+  const carregarUsoReservas = useCallback(async () => {
+    const versao = ++versaoUso.current;
 
+    setCarregandoUso(true);
     setErroUso(null);
+    setUso(null);
+    empresaDoUso.current = null;
 
     try {
-      const {
-        data,
+      const empresaId = await obterEmpresa();
 
-        error,
-      } = await supabase.rpc("get_meu_uso_reservas_mes");
+      const { data, error } = await supabase.rpc(
+        'get_meu_uso_reservas_mes'
+      );
 
-      if (error) {
-        throw error;
-      }
+      if (error) throw error;
 
       const resultado = Array.isArray(data) ? data[0] : data;
 
       if (!resultado) {
-        setUso(null);
-
-        setErroUso(
-          "Não foi possível identificar o uso mensal de reservas desta assinatura.",
+        throw new Error(
+          'Não foi possível identificar o uso mensal desta assinatura.'
         );
-
-        return;
       }
 
+      const total = Number(resultado.total_reservas_mes ?? 0);
+      const limite = resultado.limite_reservas_mes == null
+        ? null
+        : Number(resultado.limite_reservas_mes);
+      const percentual = resultado.percentual_uso == null
+        ? null
+        : Number(resultado.percentual_uso);
+
+      if (
+        !Number.isSafeInteger(total) ||
+        total < 0 ||
+        (limite !== null &&
+          (!Number.isSafeInteger(limite) || limite < 0)) ||
+        (percentual !== null && !Number.isFinite(percentual))
+      ) {
+        throw new Error('A consulta retornou dados de uso inválidos.');
+      }
+
+      if (!montado.current || versao !== versaoUso.current) return;
+
+      empresaDoUso.current = empresaId;
+
       setUso({
-        plano_codigo: resultado.plano_codigo,
-
-        plano_nome: resultado.plano_nome,
-
-        total_reservas_mes: Number(resultado.total_reservas_mes ?? 0),
-
-        limite_reservas_mes:
-          resultado.limite_reservas_mes === null
-            ? null
-            : Number(resultado.limite_reservas_mes),
-
+        plano_codigo: String(resultado.plano_codigo ?? ''),
+        plano_nome: String(resultado.plano_nome ?? 'Plano atual'),
+        total_reservas_mes: total,
+        limite_reservas_mes: limite,
         ilimitado: Boolean(resultado.ilimitado),
-
-        percentual_uso:
-          resultado.percentual_uso === null
-            ? null
-            : Number(resultado.percentual_uso),
-
-        inicio_periodo: resultado.inicio_periodo,
-
-        fim_periodo: resultado.fim_periodo,
+        percentual_uso: percentual,
+        inicio_periodo: String(resultado.inicio_periodo ?? ''),
+        fim_periodo: String(resultado.fim_periodo ?? ''),
       });
-    } catch (error) {
-      console.error(
-        "Erro ao consultar uso mensal de reservas:",
-
-        error,
-      );
+    } catch (erro) {
+      if (!montado.current || versao !== versaoUso.current) return;
 
       setUso(null);
-
       setErroUso(
-        "Não foi possível consultar o limite mensal de reservas neste momento.",
+        mensagemDoErro(
+          erro,
+          'Não foi possível consultar o limite mensal neste momento.'
+        )
       );
     } finally {
-      setCarregandoUso(false);
+      if (montado.current && versao === versaoUso.current) {
+        setCarregandoUso(false);
+      }
     }
-  }
+  }, []);
 
-  /*
+  useEffect(() => {
+    void carregarUsoReservas();
+  }, [carregarUsoReservas]);
 
-    ============================================================
+  useEffect(() => {
+    if (feedback?.tipo !== 'erro') return;
 
-    LIMITE
+    feedbackRef.current?.focus();
+    feedbackRef.current?.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+    });
+  }, [feedback]);
 
-    ============================================================
+  useEffect(() => {
+    if (!gravada) return;
 
-  */
+    const timer = window.setTimeout(() => {
+      router.push('/reservas');
+      router.refresh();
+    }, 1200);
 
-  const limiteAtingido =
-    Boolean(uso) &&
-    !uso?.ilimitado &&
-    uso?.limite_reservas_mes !== null &&
-    uso?.limite_reservas_mes !== undefined &&
-    uso.total_reservas_mes >= uso.limite_reservas_mes;
+    return () => window.clearTimeout(timer);
+  }, [gravada, router]);
 
-  const percentualVisual =
-    uso?.percentual_uso === null || uso?.percentual_uso === undefined
-      ? 0
-      : Math.min(
-          100,
+  const limiteAtingido = Boolean(
+    uso &&
+    !uso.ilimitado &&
+    uso.limite_reservas_mes !== null &&
+    uso.total_reservas_mes >= uso.limite_reservas_mes
+  );
 
-          Math.max(
-            0,
-
-            uso.percentual_uso,
-          ),
-        );
+  const percentualVisual = Math.min(
+    100,
+    Math.max(0, uso?.percentual_uso ?? 0)
+  );
 
   const restantes =
     uso && !uso.ilimitado && uso.limite_reservas_mes !== null
-      ? Math.max(
-          uso.limite_reservas_mes - uso.total_reservas_mes,
-
-          0,
-        )
+      ? Math.max(uso.limite_reservas_mes - uso.total_reservas_mes, 0)
       : null;
 
-  /*
+  const bloqueado = salvando || gravada || limiteAtingido;
+  const bloqueadoSalvar = bloqueado || carregandoUso;
 
-    ============================================================
-
-    FORMULÁRIO
-
-    ============================================================
-
-  */
-
-  const handleChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >,
-  ) => {
-    const {
-      name,
-
-      value,
-    } = e.target;
-
-    setFormData((prev) => ({
-      ...prev,
-
-      [name]: value,
-
-      ...(name === "cliente" ? { cliente_id: "" } : {}),
-
-      ...(name === "pacote" ? { passeio_id: "" } : {}),
-    }));
-  };
-
-  const handleLimpar = () => {
-    setFormData(ESTADO_INICIAL);
-
-    setFeedback(null);
-  };
-
-  const handleCancelar = () => {
-    router.push("/reservas");
-  };
-
-  /*
-
-    ============================================================
-
-    SALVAR
-
-    ============================================================
-
-  */
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  function alterarCampo(campo: keyof FormReserva, valor: string) {
     if (envioReserva.current) return;
 
+    setForm((atual) => ({
+      ...atual,
+      [campo]: valor,
+      ...(campo === 'cliente' ? { cliente_id: '' } : {}),
+      ...(campo === 'pacote' ? { passeio_id: '' } : {}),
+    }));
+  }
+
+  function limpar() {
+    if (envioReserva.current) return;
+    setForm({ ...ESTADO_INICIAL });
     setFeedback(null);
+  }
 
-    /*
+  function formatarValorAoSair() {
+    const numero = converterValor(form.valor);
 
-        --------------------------------------------------------
+    if (numero !== null) {
+      alterarCampo('valor', formatarValorCampo(numero));
+    }
+  }
 
-        LIMITE VISUAL
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
 
-        --------------------------------------------------------
+    if (envioReserva.current || gravada || carregandoUso) return;
 
-      */
+    setFeedback(null);
 
     if (limiteAtingido) {
       setFeedback({
-        tipo: "erro",
-
-        mensagem: "O limite mensal de reservas do seu plano foi atingido.",
+        tipo: 'erro',
+        mensagem: 'O limite mensal de reservas do seu plano foi atingido.',
       });
-
       return;
     }
-
-    /*
-
-        --------------------------------------------------------
-
-        CAMPOS OBRIGATÓRIOS
-
-        --------------------------------------------------------
-
-      */
 
     if (
-      !formData.cliente.trim() ||
-      !formData.pacote.trim() ||
-      !formData.data_reserva.trim() ||
-      !formData.valor.trim()
+      !form.cliente.trim() ||
+      !form.pacote.trim() ||
+      !form.data_reserva ||
+      !form.valor.trim()
     ) {
       setFeedback({
-        tipo: "erro",
-
-        mensagem:
-          "Preencha todos os campos obrigatórios: Cliente, Pacote/Passeio, Data do Passeio e Valor Total.",
+        tipo: 'erro',
+        mensagem: 'Preencha cliente, passeio, data do passeio e valor total.',
       });
-
       return;
     }
 
-    /*
-
-        --------------------------------------------------------
-
-        DATA
-
-        --------------------------------------------------------
-
-      */
-
-    if (!quantidadePessoasValida(formData.quantidade_pessoas)) {
-      setFeedback({ tipo: "erro", mensagem: "Informe uma quantidade inteira de pessoas, maior que zero." });
-      return;
-    }
-
-    if (!dataISOValida(formData.data_reserva)) {
+    if (!quantidadePessoasValida(form.quantidade_pessoas)) {
       setFeedback({
-        tipo: "erro",
-
-        mensagem: "Informe uma data válida para o passeio.",
+        tipo: 'erro',
+        mensagem: 'Informe uma quantidade inteira de pessoas, maior que zero.',
       });
-
       return;
     }
 
-    /*
+    if (!dataISOValida(form.data_reserva)) {
+      setFeedback({
+        tipo: 'erro',
+        mensagem: 'Informe uma data válida para o passeio.',
+      });
+      return;
+    }
 
-        --------------------------------------------------------
-
-        VALOR
-
-        --------------------------------------------------------
-
-      */
-
-    const valorTratado = converterValor(formData.valor);
+    const valorTratado = converterValor(form.valor);
 
     if (valorTratado === null || valorTratado < 0) {
       setFeedback({
-        tipo: "erro",
-
-        mensagem: "Informe um valor válido para a reserva.",
+        tipo: 'erro',
+        mensagem: 'Informe um valor válido, com até duas casas decimais.',
       });
-
       return;
     }
 
     if (
-      formData.horario &&
-      !/^([01]\d|2[0-3]):[0-5]\d$/.test(formData.horario)
+      form.horario &&
+      !/^([01]\d|2[0-3]):[0-5]\d$/.test(form.horario)
     ) {
       setFeedback({
-        tipo: "erro",
-
-        mensagem: "Informe um horário válido entre 00:00 e 23:59.",
+        tipo: 'erro',
+        mensagem: 'Informe um horário válido entre 00:00 e 23:59.',
       });
+      return;
+    }
 
+    if (!['Pendente', 'Confirmada', 'Cancelada'].includes(form.status)) {
+      setFeedback({
+        tipo: 'erro',
+        mensagem: 'Selecione um status válido.',
+      });
       return;
     }
 
     envioReserva.current = true;
+    setSalvando(true);
 
-    setLoading(true);
+    let concluido = false;
 
     try {
-      const { error } = await supabase
+      const empresaId = await obterEmpresa();
 
-        .from("reservas")
+      if (
+        empresaDoUso.current &&
+        empresaDoUso.current !== empresaId
+      ) {
+        throw new Error(
+          'A empresa da sessão mudou. Reabra o cadastro antes de salvar.'
+        );
+      }
 
-        .insert([
-          {
-            cliente_id: formData.cliente_id || null,
-
-            passeio_id: formData.passeio_id || null,
-
-            horario: formData.horario?.trim() || null,
-
-            embarcacao_id: formData.embarcacao_id || null,
-
-            cliente: formData.cliente.trim(),
-
-            pacote: formData.pacote.trim(),
-
-            quantidade_pessoas: Number(formData.quantidade_pessoas),
-            data_reserva: formData.data_reserva,
-
-            agencia: formData.agencia.trim() || null,
-
-            guia: formData.guia.trim() || null,
-
-            /*
-
-                  Compatibilidade atual.
-
-                  valor e valor_total
-
-                  recebem exatamente
-
-                  o mesmo número.
-
-                */
-
-            valor: valorTratado,
-
-            valor_total: valorTratado,
-
-            status: formData.status,
-
-            observacoes: formData.observacoes.trim() || null,
-          },
-        ])
-        .select("id")
+      const { data, error } = await supabase
+        .from('reservas')
+        .insert({
+          empresa_id: empresaId,
+          cliente_id: form.cliente_id || null,
+          passeio_id: form.passeio_id || null,
+          horario: form.horario.trim() || null,
+          embarcacao_id: form.embarcacao_id || null,
+          cliente: form.cliente.trim(),
+          pacote: form.pacote.trim(),
+          quantidade_pessoas: Number(form.quantidade_pessoas),
+          data_reserva: form.data_reserva,
+          agencia: form.agencia.trim() || null,
+          guia: form.guia.trim() || null,
+          valor: valorTratado,
+          valor_total: valorTratado,
+          status: form.status,
+          observacoes: form.observacoes.trim() || null,
+        })
+        .select('id')
         .single();
 
-      if (error) {
-        throw error;
+      if (error) throw error;
+
+      if (!data?.id) {
+        throw new Error(
+          'Não foi possível confirmar a criação. Confira a listagem antes de tentar novamente.'
+        );
       }
 
-      await carregarUsoReservas();
+      concluido = true;
 
+      if (!montado.current) return;
+
+      setGravada(true);
       setFeedback({
-        tipo: "sucesso",
-
-        mensagem: "Reserva cadastrada com sucesso. Redirecionando...",
+        tipo: 'sucesso',
+        mensagem: 'Reserva cadastrada com sucesso. Voltando à listagem…',
       });
+    } catch (erro) {
+      if (!montado.current) return;
 
-      reservaGravada.current = true;
-
-      setTimeout(
-        () => {
-          router.push("/reservas");
-
-          router.refresh();
-        },
-
-        1200,
-      );
-    } catch (err: any) {
-      console.error(
-        "Erro ao cadastrar reserva:",
-
-        err,
+      const mensagem = mensagemDoErro(
+        erro,
+        'Não foi possível salvar a reserva.'
       );
 
-      const mensagem = String(err?.message || "");
-
-      if (mensagem.includes("ERN_LIMITE_RESERVAS_MES_ATINGIDO")) {
+      if (mensagem.includes('ERN_LIMITE_RESERVAS_MES_ATINGIDO')) {
         setFeedback({
-          tipo: "erro",
-
+          tipo: 'erro',
           mensagem:
-            "O limite mensal de reservas do seu plano foi atingido. Para continuar cadastrando reservas neste mês, será necessário ampliar o plano.",
+            'O limite mensal de reservas do seu plano foi atingido. Consulte os planos para ampliar a franquia.',
         });
-
         await carregarUsoReservas();
-
-        return;
-      }
-
-      if (mensagem.includes("ERN_ASSINATURA_NAO_ENCONTRADA")) {
+      } else if (mensagem.includes('ERN_ASSINATURA_NAO_ENCONTRADA')) {
         setFeedback({
-          tipo: "erro",
-
-          mensagem:
-            "Não foi encontrada uma assinatura ativa para esta empresa.",
+          tipo: 'erro',
+          mensagem: 'Não foi encontrada uma assinatura ativa para esta empresa.',
         });
-
-        return;
-      }
-
-      if (mensagem.includes("ERN_USUARIO_SEM_EMPRESA")) {
+      } else if (mensagem.includes('ERN_USUARIO_SEM_EMPRESA')) {
         setFeedback({
-          tipo: "erro",
-
-          mensagem: "Seu usuário não possui uma empresa vinculada.",
+          tipo: 'erro',
+          mensagem: 'Seu usuário não possui uma empresa vinculada.',
         });
-
-        return;
+      } else {
+        setFeedback({ tipo: 'erro', mensagem });
       }
-
-      setFeedback({
-        tipo: "erro",
-
-        mensagem: err?.message || "Não foi possível salvar a reserva.",
-      });
     } finally {
-      if (!reservaGravada.current) {
+      if (!concluido) {
         envioReserva.current = false;
-
-        setLoading(false);
+        if (montado.current) setSalvando(false);
       }
     }
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-[#07110E] pb-16 text-[#EDEDE3]">
-      {/* =====================================================
-
-          CABEÇALHO
-
-      ====================================================== */}
-
-      <section className="border-b border-white/[0.07] bg-[#091510] px-5 py-9 md:px-8 md:py-11">
-        <div className="mx-auto max-w-[1180px]">
-          <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <div className="flex items-center gap-3">
-                <span className="h-px w-8 bg-[#E3A144]" />
-
-                <span className="text-[10px] font-semibold uppercase tracking-[0.21em] text-[#E3A144]">
-                  Reservas
-                </span>
-              </div>
-
-              <h1
-                className="mt-4 text-3xl tracking-[-0.025em] text-[#F0F0E8] md:text-4xl"
-                style={{
-                  fontFamily: "var(--font-fraunces), serif",
-                }}
-              >
-                Nova reserva
-              </h1>
-
-              <p className="mt-3 max-w-[650px] text-sm leading-6 text-[#EDEDE3]/42">
-                Registre uma nova operação turística, vinculando cliente,
-                experiência, data, equipe e valor da reserva.
-              </p>
-            </div>
-
-            <Link
-              href="/reservas"
-              className="inline-flex min-h-[44px] items-center justify-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.025] px-5 text-sm font-semibold text-[#EDEDE3]/65 transition hover:border-white/[0.15] hover:bg-white/[0.05] hover:text-[#EDEDE3]/85"
-            >
-              <span>←</span>
-              Voltar para reservas
-            </Link>
+    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+      <header className="border-b border-white/10 bg-[#091510]">
+        <div className="mx-auto flex max-w-[1280px] flex-col gap-5 px-4 py-8 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+              Operação · Reservas
+            </p>
+            <h1 className="mt-3 text-3xl sm:text-4xl" style={headingStyle}>
+              Nova reserva
+            </h1>
+            <p className="mt-4 max-w-2xl text-sm leading-7 text-[#B4C8BB]">
+              Registre cliente, passeio, participantes, logística e valor
+              comercial da operação.
+            </p>
           </div>
+          <button
+            type="button"
+            disabled={salvando || gravada}
+            onClick={() => router.push('/reservas')}
+            className={buttonClass}
+          >
+            Voltar às reservas
+          </button>
         </div>
-      </section>
+      </header>
 
-      <main className="mx-auto max-w-[1180px] px-5 py-8 md:px-8 md:py-10">
-        {/* =====================================================
-
-            USO MENSAL
-
-        ====================================================== */}
-
-        <section className="mb-6 overflow-hidden rounded-[22px] border border-white/[0.075] bg-[#0A1713]">
-          <div className="flex flex-col gap-5 p-5 md:flex-row md:items-center md:justify-between md:p-6">
-            <div>
-              <div className="flex flex-wrap items-center gap-3">
-                <div className="flex items-center gap-2.5">
-                  <span className="h-px w-7 bg-[#E3A144]" />
-
-                  <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-[#E3A144]">
-                    Uso mensal do plano
-                  </p>
-                </div>
-
-                {!carregandoUso && uso && (
-                  <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-2.5 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#EDEDE3]/42">
-                    {uso.plano_nome}
-                  </span>
-                )}
-              </div>
-
-              <h2
-                className="mt-3 text-2xl tracking-[-0.015em] text-[#F0F0E8]"
-                style={{
-                  fontFamily: "var(--font-fraunces), serif",
-                }}
-              >
+      <main className="mx-auto max-w-[1280px] px-4 py-6 sm:px-6 lg:px-8">
+        <section className="mb-5 min-w-0 rounded-2xl border border-white/10 bg-[#0A1713] p-4 sm:p-6">
+          <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
+            <div className="min-w-0">
+              <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#E3A144]">
+                Uso mensal do plano
+              </p>
+              <h2 className="mt-3 break-words text-2xl" style={headingStyle}>
                 {carregandoUso
-                  ? "Consultando limite..."
+                  ? 'Consultando limite…'
                   : uso?.ilimitado
                     ? `${uso.total_reservas_mes} reservas neste mês`
-                    : uso
-                      ? `${uso.total_reservas_mes} de ${uso.limite_reservas_mes ?? 0} reservas`
-                      : "Uso indisponível"}
+                    : uso && uso.limite_reservas_mes !== null
+                      ? `${uso.total_reservas_mes} de ${uso.limite_reservas_mes} reservas`
+                      : uso
+                        ? `${uso.total_reservas_mes} reservas · limite não informado`
+                        : 'Uso indisponível'}
               </h2>
 
-              <p className="mt-2 text-xs leading-5 text-[#EDEDE3]/32">
-                {carregandoUso
-                  ? "Carregando os dados da assinatura."
-                  : uso
-                    ? `Período: ${formatarData(
-                        uso.inicio_periodo,
-                      )} — ${formatarData(uso.fim_periodo)}`
-                    : "A franquia mensal continua protegida pelo servidor."}
-              </p>
-
-              {!carregandoUso && uso && !uso.ilimitado && !limiteAtingido && (
-                <p className="mt-1 text-[10px] text-[#EDEDE3]/24">
-                  {restantes} reserva
-                  {restantes === 1 ? "" : "s"} restante
-                  {restantes === 1 ? "" : "s"} neste período.
-                </p>
+              {uso && (
+                <>
+                  <p className="mt-2 break-words text-sm text-[#C5D4CA]">
+                    {uso.plano_nome}
+                    {uso.ilimitado ? ' · Sem limite mensal de reservas' : ''}
+                  </p>
+                  <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">
+                    Período: {formatarData(uso.inicio_periodo)} até{' '}
+                    {formatarData(uso.fim_periodo)}
+                  </p>
+                  {restantes !== null && (
+                    <p className="mt-1 text-xs leading-6 text-[#B4C8BB]">
+                      {restantes} reserva(s) restante(s) neste período.
+                    </p>
+                  )}
+                </>
               )}
             </div>
 
-            {!carregandoUso && uso && !uso.ilimitado && (
-              <div className="w-full max-w-[310px] rounded-[17px] border border-white/[0.06] bg-white/[0.018] p-4">
-                <div className="flex items-end justify-between">
-                  <div>
-                    <p className="text-[8px] font-semibold uppercase tracking-[0.15em] text-[#EDEDE3]/25">
-                      Consumo
-                    </p>
-
-                    <strong className="mt-1 block text-xl text-[#F0F0E8]">
-                      {uso.total_reservas_mes}
-
-                      <span className="text-sm font-normal text-[#EDEDE3]/28">
-                        {" "}
-                        / {uso.limite_reservas_mes}
-                      </span>
-                    </strong>
-                  </div>
-
-                  <span
-                    className={`text-xs font-bold ${
-                      limiteAtingido || percentualVisual >= 80
-                        ? "text-[#F4C77E]"
-                        : "text-emerald-300"
-                    }`}
-                  >
+            {uso && !uso.ilimitado && uso.limite_reservas_mes !== null && (
+              <div className="w-full min-w-0 rounded-xl border border-white/10 p-4 md:max-w-xs">
+                <div className="flex flex-wrap justify-between gap-3 text-sm">
+                  <span className="text-[#B4C8BB]">Consumo mensal</span>
+                  <strong className="text-[#F4C77E]">
                     {percentualVisual.toFixed(1)}%
-                  </span>
+                  </strong>
                 </div>
-
-                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/[0.055]">
+                <div
+                  role="progressbar"
+                  aria-label="Consumo da franquia mensal de reservas"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={percentualVisual}
+                  className="mt-3 h-2 overflow-hidden rounded-full bg-white/10"
+                >
                   <div
-                    className={`h-full rounded-full transition-all ${
-                      limiteAtingido || percentualVisual >= 80
-                        ? "bg-[#E3A144]"
-                        : "bg-emerald-400"
-                    }`}
-                    style={{
-                      width: `${percentualVisual}%`,
-                    }}
+                    className="h-full rounded-full bg-[#E3A144] transition-all"
+                    style={{ width: `${percentualVisual}%` }}
                   />
                 </div>
               </div>
@@ -775,372 +599,311 @@ export default function NovaReservaPage() {
           </div>
 
           {erroUso && (
-            <div className="border-t border-white/[0.055] px-5 py-3 text-[10px] text-[#EDEDE3]/30 md:px-6">
-              {erroUso}
+            <div role="status" className="mt-4 rounded-xl border border-amber-400/25 p-4 text-sm leading-7 text-amber-200">
+              <p>{erroUso}</p>
+              <p className="mt-2">
+                A consulta de uso está indisponível. A tentativa de cadastro
+                continuará sujeita às regras do servidor.
+              </p>
             </div>
+          )}
+
+          {!gravada && (
+            <button
+              type="button"
+              disabled={carregandoUso || salvando}
+              onClick={() => void carregarUsoReservas()}
+              className={`${buttonClass} mt-4`}
+            >
+              {carregandoUso ? 'Consultando…' : 'Atualizar uso do plano'}
+            </button>
           )}
         </section>
 
-        {/* =====================================================
-
-            LIMITE ATINGIDO
-
-        ====================================================== */}
-
         {limiteAtingido && (
-          <section className="mb-6 overflow-hidden rounded-[20px] border border-[#E3A144]/20 bg-[#E3A144]/[0.05]">
-            <div className="flex flex-col gap-5 p-5 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-[9px] font-bold uppercase tracking-[0.19em] text-[#F4C77E]">
-                  Limite mensal atingido
-                </p>
-
-                <h2
-                  className="mt-2 text-xl text-[#F0F0E8]"
-                  style={{
-                    fontFamily: "var(--font-fraunces), serif",
-                  }}
-                >
-                  Novas reservas estão temporariamente bloqueadas.
-                </h2>
-
-                <p className="mt-2 max-w-[720px] text-xs leading-6 text-[#EDEDE3]/40">
-                  As reservas existentes permanecem disponíveis normalmente. A
-                  franquia é renovada no próximo período mensal ou pode ser
-                  ampliada com outro plano.
-                </p>
-              </div>
-
-              <Link
-                href="/planos"
-                className="inline-flex min-h-[42px] shrink-0 items-center justify-center gap-2 rounded-xl bg-[#E3A144] px-5 text-xs font-bold text-[#07130F] transition hover:bg-[#F0B35C]"
-              >
-                Ver planos
-                <span>→</span>
-              </Link>
-            </div>
+          <section className="mb-5 rounded-2xl border border-amber-400/25 bg-amber-400/10 p-4 sm:p-5">
+            <h2 className="text-xl text-[#F4C77E]" style={headingStyle}>
+              Limite mensal atingido
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-[#C5D4CA]">
+              O cadastro de novas reservas está bloqueado para este período.
+              As reservas existentes continuam disponíveis.
+            </p>
+            <button
+              type="button"
+              disabled={salvando}
+              onClick={() => router.push('/planos')}
+              className={`${buttonClass} mt-4`}
+            >
+              Consultar planos
+            </button>
           </section>
         )}
 
-        {/* =====================================================
-
-            FEEDBACK
-
-        ====================================================== */}
-
         {feedback && (
           <div
-            className={`mb-6 rounded-[18px] border px-5 py-4 text-sm ${
-              feedback.tipo === "sucesso"
-                ? "border-emerald-400/20 bg-emerald-400/[0.07] text-emerald-200"
-                : "border-red-400/20 bg-red-400/[0.07] text-red-200"
+            ref={feedbackRef}
+            tabIndex={-1}
+            role={feedback.tipo === 'erro' ? 'alert' : 'status'}
+            className={`mb-5 rounded-2xl border p-4 text-sm leading-7 outline-none ${
+              feedback.tipo === 'sucesso'
+                ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-200'
+                : 'border-red-400/25 bg-red-400/10 text-red-200'
             }`}
           >
             {feedback.mensagem}
           </div>
         )}
 
-        {/* =====================================================
-
-            FORMULÁRIO
-
-        ====================================================== */}
-
-        <form
-          onSubmit={handleSubmit}
-          className="overflow-hidden rounded-[26px] border border-white/[0.075] bg-[#0A1713]"
-        >
-          <div className="border-b border-white/[0.06] px-5 py-5 md:px-6">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-              <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
-                  Operação
-                </p>
-
-                <h2
-                  className="mt-2 text-2xl text-[#F0F0E8]"
-                  style={{
-                    fontFamily: "var(--font-fraunces), serif",
-                  }}
-                >
-                  Dados da reserva
-                </h2>
-              </div>
-
-              <p className="text-[10px] text-[#EDEDE3]/25">
+        <form onSubmit={handleSubmit} aria-busy={salvando}>
+          <fieldset
+            disabled={bloqueado}
+            className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]"
+          >
+            <section className="min-w-0 rounded-2xl border border-white/10 bg-[#0A1713] p-4 sm:p-6">
+              <h2 className="text-2xl" style={headingStyle}>
+                Atendimento e passeio
+              </h2>
+              <p className="mt-2 text-xs text-[#B4C8BB]">
                 * Campos obrigatórios
               </p>
-            </div>
-          </div>
 
-          <div className="grid gap-6 p-5 md:grid-cols-2 md:p-6">
-            <div className="min-w-0 md:col-span-2">
-              <VinculosReserva
-                clienteId={formData.cliente_id ?? ""}
-                passeioId={formData.passeio_id ?? ""}
-                clienteNome={formData.cliente}
-                passeioNome={formData.pacote}
-                bloqueado={loading || limiteAtingido}
-                onChange={(campos) =>
-                  setFormData((atual) => ({ ...atual, ...campos }))
-                }
-              />
+              <div className="mt-5 min-w-0 space-y-5">
+                <div className="min-w-0">
+                  <VinculosReserva
+                    clienteId={form.cliente_id}
+                    passeioId={form.passeio_id}
+                    clienteNome={form.cliente}
+                    passeioNome={form.pacote}
+                    bloqueado={bloqueado}
+                    onChange={(campos) => {
+                      if (envioReserva.current) return;
+                      setForm((atual) => ({ ...atual, ...campos }));
+                    }}
+                  />
+                </div>
 
-              <LogisticaReserva
-                horario={formData.horario ?? ""}
-                embarcacaoId={formData.embarcacao_id ?? ""}
-                bloqueado={loading || limiteAtingido}
-                onChange={(campos) =>
-                  setFormData((atual) => ({ ...atual, ...campos }))
-                }
-              />
-            </div>
+                <div>
+                  <label htmlFor="nova-cliente" className={labelClass}>
+                    Cliente *
+                  </label>
+                  <input
+                    id="nova-cliente"
+                    required
+                    value={form.cliente}
+                    onChange={(event) => alterarCampo('cliente', event.target.value)}
+                    placeholder="Nome do cliente"
+                    className={inputClass}
+                  />
+                  {form.cliente_id && (
+                    <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">
+                      Cliente vinculado ao cadastro. Alterar o nome manualmente
+                      remove esse vínculo.
+                    </p>
+                  )}
+                </div>
 
-            {/* CLIENTE */}
+                <div>
+                  <label htmlFor="nova-pacote" className={labelClass}>
+                    Pacote / Passeio *
+                  </label>
+                  <input
+                    id="nova-pacote"
+                    required
+                    value={form.pacote}
+                    onChange={(event) => alterarCampo('pacote', event.target.value)}
+                    placeholder="Experiência ou pacote contratado"
+                    className={inputClass}
+                  />
+                  {form.passeio_id && (
+                    <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">
+                      Passeio vinculado ao cadastro. Alterar o nome manualmente
+                      remove esse vínculo.
+                    </p>
+                  )}
+                </div>
 
-            <div>
-              <label
-                htmlFor="cliente"
-                className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.13em] text-[#EDEDE3]/42"
-              >
-                Cliente *
-              </label>
+                <div className="grid min-w-0 gap-5 sm:grid-cols-2">
+                  <div className="min-w-0">
+                    <label htmlFor="nova-data" className={labelClass}>
+                      Data do passeio *
+                    </label>
+                    <input
+                      id="nova-data"
+                      type="date"
+                      required
+                      value={form.data_reserva}
+                      onChange={(event) => alterarCampo('data_reserva', event.target.value)}
+                      className={`${inputClass} [color-scheme:dark]`}
+                    />
+                  </div>
 
-              <input
-                id="cliente"
-                type="text"
-                name="cliente"
-                required
-                value={formData.cliente}
-                onChange={handleChange}
-                disabled={loading || limiteAtingido}
-                placeholder="Nome do cliente"
-                className="min-h-[48px] w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-sm text-[#F0F0E8] outline-none transition placeholder:text-[#EDEDE3]/18 focus:border-[#E3A144]/45 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-45"
-              />
-            </div>
+                  <div className="min-w-0">
+                    <label htmlFor="nova-pessoas" className={labelClass}>
+                      Quantidade de pessoas *
+                    </label>
+                    <input
+                      id="nova-pessoas"
+                      type="number"
+                      inputMode="numeric"
+                      min={1}
+                      max={2147483647}
+                      step={1}
+                      required
+                      value={form.quantidade_pessoas}
+                      onChange={(event) => alterarCampo('quantidade_pessoas', event.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
 
-            {/* PASSEIO */}
+                  <div className="min-w-0 sm:col-span-2">
+                    <label htmlFor="nova-valor" className={labelClass}>
+                      Valor comercial total (R$) *
+                    </label>
+                    <input
+                      id="nova-valor"
+                      type="text"
+                      inputMode="decimal"
+                      required
+                      value={form.valor}
+                      onChange={(event) => alterarCampo('valor', event.target.value)}
+                      onBlur={formatarValorAoSair}
+                      placeholder="Ex.: 1.500,00"
+                      className={inputClass}
+                    />
+                    <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">
+                      Total da reserva, sem multiplicação automática pela
+                      quantidade de pessoas. Não confirma recebimento.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </section>
 
-            <div>
-              <label
-                htmlFor="pacote"
-                className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.13em] text-[#EDEDE3]/42"
-              >
-                Pacote / Passeio *
-              </label>
+            <section className="min-w-0 rounded-2xl border border-white/10 bg-[#0A1713] p-4 sm:p-6">
+              <h2 className="text-2xl" style={headingStyle}>
+                Operação e status
+              </h2>
 
-              <input
-                id="pacote"
-                type="text"
-                name="pacote"
-                required
-                value={formData.pacote}
-                onChange={handleChange}
-                disabled={loading || limiteAtingido}
-                placeholder="Experiência ou pacote contratado"
-                className="min-h-[48px] w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-sm text-[#F0F0E8] outline-none transition placeholder:text-[#EDEDE3]/18 focus:border-[#E3A144]/45 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-45"
-              />
-            </div>
+              <div className="mt-5 min-w-0 space-y-5">
+                <div className="min-w-0">
+                  <LogisticaReserva
+                    horario={form.horario}
+                    embarcacaoId={form.embarcacao_id}
+                    bloqueado={bloqueado}
+                    onChange={(campos) => {
+                      if (envioReserva.current) return;
+                      setForm((atual) => ({ ...atual, ...campos }));
+                    }}
+                  />
+                </div>
 
-            {/* DATA */}
+                <div>
+                  <label htmlFor="nova-agencia" className={labelClass}>
+                    Agência / Parceiro
+                  </label>
+                  <input
+                    id="nova-agencia"
+                    value={form.agencia}
+                    onChange={(event) => alterarCampo('agencia', event.target.value)}
+                    placeholder="Opcional"
+                    className={inputClass}
+                  />
+                </div>
 
-            <div>
-              <label
-                htmlFor="data_reserva"
-                className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.13em] text-[#EDEDE3]/42"
-              >
-                Data do passeio *
-              </label>
+                <div>
+                  <label htmlFor="nova-guia" className={labelClass}>
+                    Guia responsável
+                  </label>
+                  <input
+                    id="nova-guia"
+                    value={form.guia}
+                    onChange={(event) => alterarCampo('guia', event.target.value)}
+                    placeholder="Opcional"
+                    className={inputClass}
+                  />
+                </div>
 
-              <input
-                id="data_reserva"
-                type="date"
-                name="data_reserva"
-                required
-                value={formData.data_reserva}
-                onChange={handleChange}
-                disabled={loading || limiteAtingido}
-                className="min-h-[48px] w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-sm text-[#F0F0E8] outline-none transition focus:border-[#E3A144]/45 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-45"
-              />
+                <div>
+                  <label htmlFor="nova-status" className={labelClass}>
+                    Status da reserva
+                  </label>
+                  <select
+                    id="nova-status"
+                    value={form.status}
+                    onChange={(event) => alterarCampo('status', event.target.value)}
+                    className={inputClass}
+                  >
+                    <option value="Pendente">Pendente</option>
+                    <option value="Confirmada">Confirmada</option>
+                    <option value="Cancelada">Cancelada</option>
+                  </select>
+                </div>
 
-              <p className="mt-1.5 text-[9px] text-[#EDEDE3]/22">
-                Data programada para realização da operação.
-              </p>
-            </div>
+                {form.status === 'Cancelada' && (
+                  <p
+                    role="status"
+                    className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-4 text-sm leading-7 text-amber-200"
+                  >
+                    A reserva será cadastrada com status Cancelada.
+                    Se você quer apenas sair do formulário, use Voltar sem salvar.
+                  </p>
+                )}
+              </div>
+            </section>
 
-            <div>
-              <label htmlFor="quantidade_pessoas" className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.13em] text-[#EDEDE3]/42">Quantidade de pessoas *</label>
-              <input id="quantidade_pessoas" name="quantidade_pessoas" type="number" inputMode="numeric" min={1} max={2147483647} step={1} required value={formData.quantidade_pessoas} onChange={handleChange} disabled={loading || limiteAtingido} className="min-h-[48px] w-full rounded-xl border border-white/10 bg-[#07110E] px-4 text-sm text-[#F0F0E8] disabled:opacity-45" />
-              <p className="mt-2 text-xs text-[#EDEDE3]/50">Total de participantes da reserva. O valor comercial permanece o total informado.</p>
-            </div>
-
-            {/* VALOR */}
-
-            <div>
-              <label
-                htmlFor="valor"
-                className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.13em] text-[#EDEDE3]/42"
-              >
-                Valor total (R$) *
-              </label>
-
-              <input
-                id="valor"
-                type="text"
-                inputMode="decimal"
-                name="valor"
-                required
-                placeholder="Ex.: 3500 ou 3.500,00"
-                value={formData.valor}
-                onChange={handleChange}
-                disabled={loading || limiteAtingido}
-                className="min-h-[48px] w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-sm text-[#F0F0E8] outline-none transition placeholder:text-[#EDEDE3]/18 focus:border-[#E3A144]/45 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-45"
-              />
-
-              <p className="mt-1.5 text-[9px] text-[#EDEDE3]/22">
-                Aceita formatos como 3500, 3.500, 3500,00 ou 3.500,00.
-              </p>
-            </div>
-
-            {/* AGÊNCIA */}
-
-            <div>
-              <label
-                htmlFor="agencia"
-                className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.13em] text-[#EDEDE3]/42"
-              >
-                Agência / Parceiro
-              </label>
-
-              <input
-                id="agencia"
-                type="text"
-                name="agencia"
-                value={formData.agencia}
-                onChange={handleChange}
-                disabled={loading || limiteAtingido}
-                placeholder="Opcional"
-                className="min-h-[48px] w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-sm text-[#F0F0E8] outline-none transition placeholder:text-[#EDEDE3]/18 focus:border-[#E3A144]/45 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-45"
-              />
-            </div>
-
-            {/* GUIA */}
-
-            <div>
-              <label
-                htmlFor="guia"
-                className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.13em] text-[#EDEDE3]/42"
-              >
-                Guia responsável
-              </label>
-
-              <input
-                id="guia"
-                type="text"
-                name="guia"
-                value={formData.guia}
-                onChange={handleChange}
-                disabled={loading || limiteAtingido}
-                placeholder="Opcional"
-                className="min-h-[48px] w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-sm text-[#F0F0E8] outline-none transition placeholder:text-[#EDEDE3]/18 focus:border-[#E3A144]/45 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-45"
-              />
-            </div>
-
-            {/* STATUS */}
-
-            <div className="md:col-span-2">
-              <label
-                htmlFor="status"
-                className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.13em] text-[#EDEDE3]/42"
-              >
-                Status da reserva
-              </label>
-
-              <select
-                id="status"
-                name="status"
-                value={formData.status}
-                onChange={handleChange}
-                disabled={loading || limiteAtingido}
-                className="min-h-[48px] w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-sm text-[#F0F0E8] outline-none transition focus:border-[#E3A144]/45 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-45"
-              >
-                <option value="Pendente">Pendente</option>
-
-                <option value="Confirmada">Confirmada</option>
-
-                <option value="Cancelada">Cancelada</option>
-              </select>
-            </div>
-
-            {/* OBSERVAÇÕES */}
-
-            <div className="md:col-span-2">
-              <label
-                htmlFor="observacoes"
-                className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.13em] text-[#EDEDE3]/42"
-              >
+            <section className="min-w-0 rounded-2xl border border-white/10 bg-[#0A1713] p-4 sm:p-6 lg:col-span-2">
+              <label htmlFor="nova-observacoes" className={labelClass}>
                 Observações
               </label>
-
               <textarea
-                id="observacoes"
-                name="observacoes"
-                rows={4}
-                value={formData.observacoes}
-                onChange={handleChange}
-                disabled={loading || limiteAtingido}
-                placeholder="Informações logísticas, solicitações especiais ou observações da operação..."
-                className="w-full resize-none rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm leading-6 text-[#F0F0E8] outline-none transition placeholder:text-[#EDEDE3]/18 focus:border-[#E3A144]/45 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-45"
+                id="nova-observacoes"
+                rows={5}
+                value={form.observacoes}
+                onChange={(event) => alterarCampo('observacoes', event.target.value)}
+                placeholder="Informações logísticas, solicitações especiais ou observações…"
+                className={`${inputClass} resize-y leading-7`}
               />
+            </section>
+
+            <div className="min-w-0 border-t border-white/10 pt-5 lg:col-span-2">
+              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  disabled={salvando || gravada}
+                  onClick={() => router.push('/reservas')}
+                  className={buttonClass}
+                >
+                  Voltar sem salvar
+                </button>
+
+                <button
+                  type="button"
+                  disabled={bloqueado}
+                  onClick={limpar}
+                  className={buttonClass}
+                >
+                  Limpar formulário
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={bloqueadoSalvar}
+                  className={`${buttonClass} border-[#E3A144] bg-[#E3A144] font-bold text-[#07130F] hover:bg-[#F0B35C]`}
+                >
+                  {gravada
+                    ? 'Salvo · voltando…'
+                    : salvando
+                      ? 'Salvando…'
+                      : limiteAtingido
+                        ? 'Limite mensal atingido'
+                        : carregandoUso
+                          ? 'Verificando plano…'
+                          : 'Salvar reserva'}
+                </button>
+              </div>
             </div>
-          </div>
-
-          {/* =================================================
-
-              AÇÕES
-
-          ================================================== */}
-
-          <div className="flex flex-col-reverse gap-3 border-t border-white/[0.06] bg-white/[0.008] px-5 py-5 sm:flex-row sm:items-center sm:justify-between md:px-6">
-            <p className="hidden max-w-[500px] text-[10px] leading-5 text-[#EDEDE3]/22 sm:block">
-              A reserva será vinculada automaticamente à empresa autenticada e
-              contabilizada na franquia mensal.
-            </p>
-
-            <div className="flex flex-col-reverse gap-3 sm:flex-row">
-              <button
-                type="button"
-                onClick={handleCancelar}
-                disabled={loading}
-                className="min-h-[46px] rounded-xl border border-white/[0.09] bg-white/[0.02] px-5 text-sm font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.045] disabled:opacity-40"
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="button"
-                onClick={handleLimpar}
-                disabled={loading || limiteAtingido}
-                className="min-h-[46px] rounded-xl border border-white/[0.09] bg-white/[0.02] px-5 text-sm font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.045] disabled:cursor-not-allowed disabled:opacity-40"
-              >
-                Limpar
-              </button>
-
-              <button
-                type="submit"
-                disabled={loading || carregandoUso || limiteAtingido}
-                className="min-h-[46px] min-w-[160px] rounded-xl bg-[#E3A144] px-6 text-sm font-bold text-[#07130F] shadow-[0_8px_22px_rgba(227,161,68,0.12)] transition hover:bg-[#F0B35C] disabled:cursor-not-allowed disabled:opacity-45"
-              >
-                {loading
-                  ? "Salvando..."
-                  : limiteAtingido
-                    ? "Limite mensal atingido"
-                    : carregandoUso
-                      ? "Verificando plano..."
-                      : "Salvar reserva"}
-              </button>
-            </div>
-          </div>
+          </fieldset>
         </form>
       </main>
     </div>
