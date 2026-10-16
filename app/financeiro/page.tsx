@@ -751,7 +751,7 @@ export default function FinanceiroPage() {
             </button>
           </div>
         )}
-        <GraficosFinanceiros />
+        <GraficosFinanceiros registros={lancamentos} carregando={carregando} erro={falhaConsulta ? error || 'Não foi possível carregar os lançamentos.' : ''} aoAtualizar={carregarFinanceiro} />
         <p className="mb-4 text-sm text-[#EDEDE3]/65">
           Resumo geral de todo o histórico — independente do período da análise acima.
         </p>
