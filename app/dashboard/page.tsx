@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import GraficosOperadora from '@/app/components/GraficosOperadora';
 import MapaTerritorioERN from '@/app/components/MapaTerritorioERN';
-import TucunareRio3D from '@/app/components/TucunareRio3D';
+import MarcaERN3D from '@/app/components/MarcaERN3D';
 
 import { supabase } from '@/lib/supabase';
 
@@ -1012,7 +1012,7 @@ export default function DashboardPage() {
           }}
         >
           <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-[#091510] via-transparent to-transparent lg:hidden" />
-          <TucunareRio3D />
+          <MarcaERN3D />
         </div>
 
         <div
