@@ -752,9 +752,13 @@ export default function FinanceiroPage() {
           </div>
         )}
         <GraficosFinanceiros registros={lancamentos} carregando={carregando} erro={falhaConsulta ? error || 'Não foi possível carregar os lançamentos.' : ''} aoAtualizar={carregarFinanceiro} />
-        <p className="mb-4 text-sm text-[#EDEDE3]/65">
-          Resumo geral de todo o histórico — independente do período da análise acima.
-        </p>
+        <details className="mt-4 rounded-2xl border border-white/10 bg-[#0A1713] p-4">
+          <summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold text-[#F4C77E]">
+            Consultar todo o histórico financeiro
+          </summary>
+          <p className="mb-4 text-xs leading-6 text-[#EDEDE3]/65">
+            Estes totais abrangem todo o histórico acessível à sua conta e não seguem o período dos gráficos nem os filtros da listagem. Por isso, podem apresentar valores diferentes dos cards acima.
+          </p>
         {/* INDICADORES */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {cards.map(
@@ -803,6 +807,7 @@ export default function FinanceiroPage() {
             )
           )}
         </div>
+        </details>
         {/* FILTROS */}
         <section className="mt-6 rounded-[22px] border border-white/[0.075] bg-[#0A1713] p-4">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
