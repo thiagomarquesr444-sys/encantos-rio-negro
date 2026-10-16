@@ -1429,6 +1429,11 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
               </button>
             </div>
 
+            {reservaSelecionada.id && reservaSelecionada.status !== "Cancelada" && (
+              <div className="px-6 pt-5">
+                <Link href={`/vouchers/novo?reserva_id=${encodeURIComponent(String(reservaSelecionada.id))}`} className="inline-flex min-h-12 items-center rounded-xl bg-[#E3A144] px-4 text-sm font-semibold text-[#07110E]">Emitir voucher desta reserva</Link>
+              </div>
+            )}
             <div className="grid gap-3 p-6 sm:grid-cols-2">
               {[
                 {

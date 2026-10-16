@@ -1,82 +1,59 @@
 'use client';
-
 import React, {
   useEffect,
   useMemo,
   useState,
 } from 'react';
-
 import Link from 'next/link';
-
 import {
   isSupabaseConfigured,
   supabase,
 } from '@/lib/supabase';
-
 type StatusVoucher =
   | 'Ativo'
   | 'Utilizado'
   | 'Cancelado';
-
 interface Voucher {
+  quantidade_pessoas?: number | null;
+  data_passeio?: string | null;
+  horario_passeio?: string | null;
   id?: string;
-
   created_at?: string | null;
-
   codigo?: string | null;
-
   reserva_id?: string | null;
-
   status?: string | null;
-
   data_emissao?: string | null;
-
   cliente_id?: string | null;
-
   cliente_nome?: string | null;
-
   passeio_id?: string | null;
-
   passeio_nome?: string | null;
-
   valor?:
     | number
     | string
     | null;
-
   validade?: string | null;
 }
-
 interface Cliente {
   id: string;
-
   nome?: string | null;
-
   nome_completo?: string | null;
 }
-
 interface Passeio {
   id: string;
-
   nome?: string | null;
-
   titulo?: string | null;
 }
-
 type Feedback = {
   tipo:
     | 'sucesso'
     | 'erro';
-
   texto: string;
 };
-
 /*
   ============================================================
   TEXTO / STATUS
   ============================================================
 */
-
 function removerAcentos(
   valor: string
 ) {
@@ -87,7 +64,6 @@ function removerAcentos(
       ''
     );
 }
-
 function normalizarStatus(
   valor?: string | null
 ): StatusVoucher {
@@ -100,30 +76,24 @@ function normalizarStatus(
         .trim()
         .toLowerCase()
     );
-
   if (
     status ===
     'utilizado'
   ) {
     return 'Utilizado';
   }
-
   if (
     status ===
     'cancelado'
   ) {
     return 'Cancelado';
   }
-
   return 'Ativo';
 }
-
 /*
   ============================================================
   VALORES
-
   Aceita:
-
   3500
   3500,00
   3.500
@@ -131,11 +101,9 @@ function normalizarStatus(
   3500.50
   3,500.00
   R$ 3.500,00
-
   Não existe multiplicação artificial.
   ============================================================
 */
-
 function converterValor(
   entrada: unknown
 ): number {
@@ -146,7 +114,6 @@ function converterValor(
   ) {
     return 0;
   }
-
   if (
     typeof entrada ===
     'number'
@@ -157,7 +124,6 @@ function converterValor(
       ? entrada
       : 0;
   }
-
   let valor =
     String(entrada)
       .trim()
@@ -173,24 +139,18 @@ function converterValor(
         /[^0-9.,-]/g,
         ''
       );
-
   if (!valor) {
     return 0;
   }
-
   const temVirgula =
     valor.includes(',');
-
   const temPonto =
     valor.includes('.');
-
   /*
     Formatos mistos:
-
     3.500,50
     3,500.50
   */
-
   if (
     temVirgula &&
     temPonto
@@ -199,12 +159,10 @@ function converterValor(
       valor.lastIndexOf(
         ','
       );
-
     const ultimoPonto =
       valor.lastIndexOf(
         '.'
       );
-
     if (
       ultimaVirgula >
       ultimoPonto
@@ -212,7 +170,6 @@ function converterValor(
       /*
         3.500,50
       */
-
       valor =
         valor
           .replace(
@@ -227,7 +184,6 @@ function converterValor(
       /*
         3,500.50
       */
-
       valor =
         valor.replace(
           /,/g,
@@ -235,14 +191,11 @@ function converterValor(
         );
     }
   }
-
   /*
     Apenas vírgula:
-
     3,50   -> 3.50
     3,500  -> 3500
   */
-
   else if (
     temVirgula
   ) {
@@ -264,14 +217,11 @@ function converterValor(
         );
     }
   }
-
   /*
     Apenas ponto:
-
     3.500  -> 3500
     3.50   -> 3.50
   */
-
   else if (
     temPonto &&
     /^\d{1,3}(\.\d{3})+$/.test(
@@ -284,17 +234,14 @@ function converterValor(
         ''
       );
   }
-
   const numero =
     Number(valor);
-
   return Number.isFinite(
     numero
   )
     ? numero
     : 0;
 }
-
 function formatarMoeda(
   valor: unknown
 ) {
@@ -305,13 +252,11 @@ function formatarMoeda(
     {
       style:
         'currency',
-
       currency:
         'BRL',
     }
   );
 }
-
 function formatarValorCampo(
   valor: unknown
 ) {
@@ -322,59 +267,47 @@ function formatarValorCampo(
     {
       minimumFractionDigits:
         2,
-
       maximumFractionDigits:
         2,
     }
   );
 }
-
 /*
   ============================================================
   DATAS
-
   Evita conversão UTC para campos
   que representam somente uma data.
   ============================================================
 */
-
 function formatarData(
   valor?: string | null
 ) {
   if (!valor) {
     return '—';
   }
-
   const data =
     valor.split(
       'T'
     )[0];
-
   const partes =
     data.split('-');
-
   if (
     partes.length !== 3
   ) {
     return valor;
   }
-
   return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
-
 function dataExpirada(
   validade?: string | null
 ) {
   if (!validade) {
     return false;
   }
-
   const hoje =
     new Date();
-
   const ano =
     hoje.getFullYear();
-
   const mes =
     String(
       hoje.getMonth() +
@@ -383,7 +316,6 @@ function dataExpirada(
       2,
       '0'
     );
-
   const dia =
     String(
       hoje.getDate()
@@ -391,27 +323,22 @@ function dataExpirada(
       2,
       '0'
     );
-
   const hojeTexto =
     `${ano}-${mes}-${dia}`;
-
   const validadeTexto =
     validade.split(
       'T'
     )[0];
-
   return (
     validadeTexto <
     hojeTexto
   );
 }
-
 /*
   ============================================================
   PÁGINA
   ============================================================
 */
-
 export default function VouchersPage() {
   const [
     vouchers,
@@ -420,7 +347,6 @@ export default function VouchersPage() {
     useState<Voucher[]>(
       []
     );
-
   const [
     clientes,
     setClientes,
@@ -428,7 +354,6 @@ export default function VouchersPage() {
     useState<Cliente[]>(
       []
     );
-
   const [
     passeios,
     setPasseios,
@@ -436,19 +361,16 @@ export default function VouchersPage() {
     useState<Passeio[]>(
       []
     );
-
   const [
     loading,
     setLoading,
   ] =
     useState(true);
-
   const [
     busca,
     setBusca,
   ] =
     useState('');
-
   const [
     filtroStatus,
     setFiltroStatus,
@@ -456,7 +378,6 @@ export default function VouchersPage() {
     useState<
       '' | StatusVoucher
     >('');
-
   const [
     feedback,
     setFeedback,
@@ -464,7 +385,6 @@ export default function VouchersPage() {
     useState<Feedback | null>(
       null
     );
-
   const [
     itemVisualizar,
     setItemVisualizar,
@@ -472,7 +392,6 @@ export default function VouchersPage() {
     useState<Voucher | null>(
       null
     );
-
   const [
     itemEditar,
     setItemEditar,
@@ -480,7 +399,6 @@ export default function VouchersPage() {
     useState<Voucher | null>(
       null
     );
-
   const [
     itemExcluir,
     setItemExcluir,
@@ -488,31 +406,26 @@ export default function VouchersPage() {
     useState<Voucher | null>(
       null
     );
-
   const [
     editCodigo,
     setEditCodigo,
   ] =
     useState('');
-
   const [
     editClienteId,
     setEditClienteId,
   ] =
     useState('');
-
   const [
     editPasseioId,
     setEditPasseioId,
   ] =
     useState('');
-
   const [
     editValor,
     setEditValor,
   ] =
     useState('');
-
   const [
     editStatus,
     setEditStatus,
@@ -520,41 +433,34 @@ export default function VouchersPage() {
     useState<StatusVoucher>(
       'Ativo'
     );
-
   const [
     editValidade,
     setEditValidade,
   ] =
     useState('');
-
   const [
     salvandoEdicao,
     setSalvandoEdicao,
   ] =
     useState(false);
-
   const [
     excluindo,
     setExcluindo,
   ] =
     useState(false);
-
   /*
     ============================================================
     FEEDBACK
     ============================================================
   */
-
   function mostrarSucesso(
     texto: string
   ) {
     setFeedback({
       tipo:
         'sucesso',
-
       texto,
     });
-
     window.setTimeout(
       () => {
         setFeedback(
@@ -570,32 +476,25 @@ export default function VouchersPage() {
       3000
     );
   }
-
   /*
     ============================================================
     CARREGAMENTO
     ============================================================
   */
-
   async function fetchVouchers() {
     if (
       !isSupabaseConfigured
     ) {
       setLoading(false);
-
       setFeedback({
         tipo:
           'erro',
-
         texto:
           'Supabase não está configurado.',
       });
-
       return;
     }
-
     setLoading(true);
-
     try {
       const [
         vouchersResultado,
@@ -615,7 +514,6 @@ export default function VouchersPage() {
                   false,
               }
             ),
-
           supabase
             .from(
               'clientes'
@@ -623,7 +521,6 @@ export default function VouchersPage() {
             .select(
               'id, nome'
             ),
-
           supabase
             .from(
               'passeios'
@@ -632,24 +529,20 @@ export default function VouchersPage() {
               'id, nome'
             ),
         ]);
-
       if (
         vouchersResultado.error
       ) {
         throw vouchersResultado.error;
       }
-
       /*
         Clientes e passeios são
         dados auxiliares.
-
         Se uma dessas consultas
         falhar, os vouchers ainda
         podem ser exibidos usando
         os nomes já existentes
         no próprio registro.
       */
-
       if (
         clientesResultado.error
       ) {
@@ -658,7 +551,6 @@ export default function VouchersPage() {
           clientesResultado.error
         );
       }
-
       if (
         passeiosResultado.error
       ) {
@@ -667,67 +559,56 @@ export default function VouchersPage() {
           passeiosResultado.error
         );
       }
-
       const clientesData =
         (
           clientesResultado.data ||
           []
         ) as Cliente[];
-
       const passeiosData =
         (
           passeiosResultado.data ||
           []
         ) as Passeio[];
-
       setClientes(
         clientesData
       );
-
       setPasseios(
         passeiosData
       );
-
       const mapaClientes =
         new Map<
           string,
           string
         >();
-
       clientesData.forEach(
         (
           cliente
         ) => {
           mapaClientes.set(
             cliente.id,
-
             cliente.nome ||
               cliente.nome_completo ||
               'Cliente'
           );
         }
       );
-
       const mapaPasseios =
         new Map<
           string,
           string
         >();
-
       passeiosData.forEach(
         (
           passeio
         ) => {
           mapaPasseios.set(
             passeio.id,
-
             passeio.nome ||
               passeio.titulo ||
               'Passeio'
           );
         }
       );
-
       const registros =
         (
           vouchersResultado.data ||
@@ -737,41 +618,36 @@ export default function VouchersPage() {
             item: any
           ): Voucher => ({
             ...item,
-
             status:
               normalizarStatus(
                 item.status
               ),
-
             valor:
               converterValor(
                 item.valor
               ),
-
             cliente_nome:
+              item.cliente_nome ||
               (
                 item.cliente_id &&
                 mapaClientes.get(
                   item.cliente_id
                 )
               ) ||
-              item.cliente_nome ||
               item.nome_cliente ||
               '—',
-
             passeio_nome:
+              item.passeio_nome ||
               (
                 item.passeio_id &&
                 mapaPasseios.get(
                   item.passeio_id
                 )
               ) ||
-              item.passeio_nome ||
               item.nome_passeio ||
               '—',
           })
         );
-
       setVouchers(
         registros
       );
@@ -780,36 +656,29 @@ export default function VouchersPage() {
         'Erro ao carregar vouchers:',
         error
       );
-
       setFeedback({
         tipo:
           'erro',
-
         texto:
           error instanceof Error
             ? error.message
             : 'Não foi possível carregar os vouchers.',
       });
-
       setVouchers([]);
     } finally {
       setLoading(false);
     }
   }
-
   useEffect(() => {
     fetchVouchers();
   }, []);
-
   /*
     ============================================================
     MÉTRICAS
     ============================================================
   */
-
   const total =
     vouchers.length;
-
   const ativos =
     vouchers.filter(
       (
@@ -819,7 +688,6 @@ export default function VouchersPage() {
           voucher.status
         ) === 'Ativo'
     ).length;
-
   const utilizados =
     vouchers.filter(
       (
@@ -830,7 +698,6 @@ export default function VouchersPage() {
         ) ===
         'Utilizado'
     ).length;
-
   const cancelados =
     vouchers.filter(
       (
@@ -841,7 +708,6 @@ export default function VouchersPage() {
         ) ===
         'Cancelado'
     ).length;
-
   const valorAtivo =
     vouchers.reduce(
       (
@@ -855,7 +721,6 @@ export default function VouchersPage() {
         ) {
           return totalValor;
         }
-
         return (
           totalValor +
           converterValor(
@@ -865,20 +730,17 @@ export default function VouchersPage() {
       },
       0
     );
-
   /*
     ============================================================
     FILTROS
     ============================================================
   */
-
   const vouchersFiltrados =
     useMemo(() => {
       const termo =
         busca
           .trim()
           .toLowerCase();
-
       return vouchers.filter(
         (
           voucher
@@ -887,7 +749,6 @@ export default function VouchersPage() {
             normalizarStatus(
               voucher.status
             );
-
           const atendeBusca =
             !termo ||
             String(
@@ -919,12 +780,10 @@ export default function VouchersPage() {
               .includes(
                 termo
               );
-
           const atendeStatus =
             !filtroStatus ||
             status ===
               filtroStatus;
-
           return (
             atendeBusca &&
             atendeStatus
@@ -936,7 +795,6 @@ export default function VouchersPage() {
       busca,
       filtroStatus,
     ]);
-
   function alternarStatus(
     status: StatusVoucher
   ) {
@@ -949,47 +807,39 @@ export default function VouchersPage() {
           : status
     );
   }
-
   /*
     ============================================================
     EDIÇÃO
     ============================================================
   */
-
   function abrirEdicao(
     voucher: Voucher
   ) {
     setItemEditar(
       voucher
     );
-
     setEditCodigo(
       voucher.codigo ||
       ''
     );
-
     setEditClienteId(
       voucher.cliente_id ||
       ''
     );
-
     setEditPasseioId(
       voucher.passeio_id ||
       ''
     );
-
     setEditValor(
       formatarValorCampo(
         voucher.valor
       )
     );
-
     setEditStatus(
       normalizarStatus(
         voucher.status
       )
     );
-
     setEditValidade(
       voucher.validade
         ? voucher.validade.split(
@@ -997,70 +847,55 @@ export default function VouchersPage() {
           )[0]
         : ''
     );
-
     setFeedback(null);
   }
-
   async function salvarEdicao(
     event:
       React.FormEvent
   ) {
     event.preventDefault();
-
     if (
       !itemEditar?.id
     ) {
       return;
     }
-
     const codigo =
       editCodigo.trim();
-
     if (!codigo) {
       setFeedback({
         tipo:
           'erro',
-
         texto:
           'Informe o código do voucher.',
       });
-
       return;
     }
-
     if (
-      !editClienteId
+      !itemEditar.reserva_id && !editClienteId
     ) {
       setFeedback({
         tipo:
           'erro',
-
         texto:
           'Selecione o cliente.',
       });
-
       return;
     }
-
     if (
-      !editPasseioId
+      !itemEditar.reserva_id && !editPasseioId
     ) {
       setFeedback({
         tipo:
           'erro',
-
         texto:
           'Selecione o passeio.',
       });
-
       return;
     }
-
     const valor =
       converterValor(
         editValor
       );
-
     if (
       !Number.isFinite(
         valor
@@ -1070,20 +905,15 @@ export default function VouchersPage() {
       setFeedback({
         tipo:
           'erro',
-
         texto:
           'Informe um valor válido maior que zero.',
       });
-
       return;
     }
-
     setSalvandoEdicao(
       true
     );
-
     setFeedback(null);
-
     try {
       const {
         error,
@@ -1094,18 +924,13 @@ export default function VouchersPage() {
           )
           .update({
             codigo,
-
             cliente_id:
-              editClienteId,
-
+              itemEditar.reserva_id ? itemEditar.cliente_id ?? null : editClienteId,
             passeio_id:
-              editPasseioId,
-
+              itemEditar.reserva_id ? itemEditar.passeio_id ?? null : editPasseioId,
             valor,
-
             status:
               editStatus,
-
             validade:
               editValidade ||
               null,
@@ -1114,30 +939,24 @@ export default function VouchersPage() {
             'id',
             itemEditar.id
           );
-
       if (error) {
         throw error;
       }
-
       setItemEditar(
         null
       );
-
       mostrarSucesso(
         'Voucher atualizado com sucesso.'
       );
-
       await fetchVouchers();
     } catch (error) {
       console.error(
         'Erro ao atualizar voucher:',
         error
       );
-
       setFeedback({
         tipo:
           'erro',
-
         texto:
           error instanceof Error
             ? error.message
@@ -1149,13 +968,11 @@ export default function VouchersPage() {
       );
     }
   }
-
   /*
     ============================================================
     EXCLUSÃO
     ============================================================
   */
-
   async function confirmarExclusao() {
     if (
       !itemExcluir?.id ||
@@ -1163,10 +980,8 @@ export default function VouchersPage() {
     ) {
       return;
     }
-
     setExcluindo(true);
     setFeedback(null);
-
     try {
       const {
         error,
@@ -1180,11 +995,9 @@ export default function VouchersPage() {
             'id',
             itemExcluir.id
           );
-
       if (error) {
         throw error;
       }
-
       setVouchers(
         (
           atuais
@@ -1197,11 +1010,9 @@ export default function VouchersPage() {
               itemExcluir.id
           )
       );
-
       setItemExcluir(
         null
       );
-
       mostrarSucesso(
         'Voucher excluído com sucesso.'
       );
@@ -1210,11 +1021,9 @@ export default function VouchersPage() {
         'Erro ao excluir voucher:',
         error
       );
-
       setFeedback({
         tipo:
           'erro',
-
         texto:
           error instanceof Error
             ? error.message
@@ -1224,13 +1033,11 @@ export default function VouchersPage() {
       setExcluindo(false);
     }
   }
-
   /*
     ============================================================
     VISUAL
     ============================================================
   */
-
   function statusClasses(
     status:
       StatusVoucher
@@ -1240,17 +1047,14 @@ export default function VouchersPage() {
     ) {
       return 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300';
     }
-
     if (
       status ===
       'Utilizado'
     ) {
       return 'border-amber-500/20 bg-amber-500/[0.07] text-amber-300';
     }
-
     return 'border-red-500/20 bg-red-500/[0.07] text-red-300';
   }
-
   function statusDot(
     status:
       StatusVoucher
@@ -1260,103 +1064,81 @@ export default function VouchersPage() {
     ) {
       return 'bg-emerald-400';
     }
-
     if (
       status ===
       'Utilizado'
     ) {
       return 'bg-amber-400';
     }
-
     return 'bg-red-400';
   }
-
   const inputClass =
     'w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/40 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-50';
-
   const labelClass =
     'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34';
-
   const cards = [
     {
       titulo:
         'Total de vouchers',
-
       valor:
         loading
           ? '—'
           : String(
               total
             ),
-
       detalhe:
         'documentos cadastrados',
-
       filtro:
         null,
     },
-
     {
       titulo:
         'Vouchers ativos',
-
       valor:
         loading
           ? '—'
           : String(
               ativos
             ),
-
       detalhe:
         'com status ativo',
-
       filtro:
         'Ativo' as StatusVoucher,
     },
-
     {
       titulo:
         'Utilizados',
-
       valor:
         loading
           ? '—'
           : String(
               utilizados
             ),
-
       detalhe:
         'já utilizados',
-
       filtro:
         'Utilizado' as StatusVoucher,
     },
-
     {
       titulo:
         'Valor ativo',
-
       valor:
         loading
           ? '—'
           : formatarMoeda(
               valorAtivo
             ),
-
       detalhe:
         'soma dos vouchers ativos',
-
       filtro:
         null,
     },
   ];
-
   return (
     <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
       {/* =====================================================
           FEEDBACK
       ====================================================== */}
-
       {feedback?.tipo ===
         'sucesso' && (
         <div className="fixed left-1/2 top-[100px] z-[90] -translate-x-1/2 rounded-2xl border border-emerald-500/20 bg-[#0B2119] px-5 py-3 text-xs font-semibold text-emerald-300 shadow-2xl">
@@ -1365,22 +1147,18 @@ export default function VouchersPage() {
           }
         </div>
       )}
-
       {/* =====================================================
           CABEÇALHO
       ====================================================== */}
-
       <section className="border-b border-white/[0.07] bg-[#091510]">
         <div className="mx-auto flex max-w-[1360px] flex-col gap-8 px-5 py-10 md:px-8 md:py-12 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="flex items-center gap-3">
               <span className="h-px w-8 bg-[#E3A144]" />
-
               <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
                 Operação • Vouchers
               </span>
             </div>
-
             <h1
               className="mt-4 text-4xl leading-none tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
               style={{
@@ -1390,14 +1168,12 @@ export default function VouchersPage() {
             >
               Vouchers
             </h1>
-
             <p className="mt-4 max-w-[720px] text-sm leading-7 text-[#EDEDE3]/42">
               Organize comprovantes, clientes,
               experiências, valores, validade e
               utilização dos vouchers.
             </p>
           </div>
-
           <div className="flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
@@ -1411,7 +1187,6 @@ export default function VouchersPage() {
             >
               ↻ Atualizar
             </button>
-
             <Link
               href="/vouchers/novo"
               className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl bg-[#E3A144] px-6 text-sm font-bold text-[#07130F] transition hover:-translate-y-0.5 hover:bg-[#F0B35C]"
@@ -1419,18 +1194,15 @@ export default function VouchersPage() {
               <span className="text-lg">
                 +
               </span>
-
               Novo voucher
             </Link>
           </div>
         </div>
       </section>
-
       <main className="mx-auto max-w-[1360px] px-5 py-8 md:px-8 md:py-10">
         {/* ===================================================
             ERRO
         ==================================================== */}
-
         {feedback?.tipo ===
           'erro' && (
           <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-red-300">
@@ -1439,7 +1211,6 @@ export default function VouchersPage() {
                 feedback.texto
               }
             </span>
-
             <button
               type="button"
               onClick={() =>
@@ -1453,11 +1224,9 @@ export default function VouchersPage() {
             </button>
           </div>
         )}
-
         {/* ===================================================
             INDICADORES
         ==================================================== */}
-
         <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
           {cards.map(
             (
@@ -1468,7 +1237,6 @@ export default function VouchersPage() {
                   null &&
                 filtroStatus ===
                   card.filtro;
-
               return (
                 <button
                   type="button"
@@ -1499,7 +1267,6 @@ export default function VouchersPage() {
                       card.titulo
                     }
                   </p>
-
                   <strong
                     className={`mt-5 block font-medium tracking-[-0.04em] text-[#F0F0E8] ${
                       card.titulo ===
@@ -1516,7 +1283,6 @@ export default function VouchersPage() {
                       card.valor
                     }
                   </strong>
-
                   <p className="mt-2 text-[11px] text-[#EDEDE3]/28">
                     {
                       card.detalhe
@@ -1527,9 +1293,7 @@ export default function VouchersPage() {
             }
           )}
         </div>
-
         {/* CANCELADOS */}
-
         <div className="mt-4">
           <button
             type="button"
@@ -1552,11 +1316,9 @@ export default function VouchersPage() {
               : ''}
           </button>
         </div>
-
         {/* ===================================================
             TABELA
         ==================================================== */}
-
         <section className="mt-6 overflow-hidden rounded-[26px] border border-white/[0.075] bg-[#0A1713]">
           <div className="border-b border-white/[0.065] p-5 md:p-6">
             <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
@@ -1564,7 +1326,6 @@ export default function VouchersPage() {
                 <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
                   Controle operacional
                 </p>
-
                 <h2
                   className="mt-2 text-2xl text-[#F0F0E8]"
                   style={{
@@ -1574,7 +1335,6 @@ export default function VouchersPage() {
                 >
                   Vouchers cadastrados
                 </h2>
-
                 <p className="mt-2 text-xs text-[#EDEDE3]/30">
                   {
                     vouchersFiltrados.length
@@ -1590,7 +1350,6 @@ export default function VouchersPage() {
                     : ''}
                 </p>
               </div>
-
               <div className="flex flex-col gap-3 sm:flex-row">
                 <input
                   type="text"
@@ -1608,7 +1367,6 @@ export default function VouchersPage() {
                   placeholder="Buscar código, cliente ou passeio..."
                   className="h-[44px] min-w-[310px] rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-xs text-[#EDEDE3] outline-none placeholder:text-[#EDEDE3]/22 focus:border-[#E3A144]/35"
                 />
-
                 <select
                   value={
                     filtroStatus
@@ -1628,15 +1386,12 @@ export default function VouchersPage() {
                   <option value="">
                     Todos os status
                   </option>
-
                   <option value="Ativo">
                     Ativos
                   </option>
-
                   <option value="Utilizado">
                     Utilizados
                   </option>
-
                   <option value="Cancelado">
                     Cancelados
                   </option>
@@ -1644,7 +1399,6 @@ export default function VouchersPage() {
               </div>
             </div>
           </div>
-
           <div className="overflow-x-auto">
             {loading ? (
               <LoadingTabela />
@@ -1661,7 +1415,6 @@ export default function VouchersPage() {
                   >
                     Nenhum voucher encontrado.
                   </h3>
-
                   <p className="mt-2 text-xs text-[#EDEDE3]/30">
                     Ajuste os filtros ou cadastre um novo voucher.
                   </p>
@@ -1702,7 +1455,6 @@ export default function VouchersPage() {
                     )}
                   </tr>
                 </thead>
-
                 <tbody className="divide-y divide-white/[0.055]">
                   {vouchersFiltrados.map(
                     (
@@ -1713,14 +1465,12 @@ export default function VouchersPage() {
                         normalizarStatus(
                           voucher.status
                         );
-
                       const vencido =
                         status ===
                           'Ativo' &&
                         dataExpirada(
                           voucher.validade
                         );
-
                       return (
                         <tr
                           key={
@@ -1733,23 +1483,20 @@ export default function VouchersPage() {
                             {voucher.codigo ||
                               '—'}
                           </td>
-
                           <td className="px-5 py-4 text-xs font-semibold text-[#EDEDE3]/78">
                             {voucher.cliente_nome ||
                               '—'}
                           </td>
-
                           <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
                             {voucher.passeio_nome ||
                               '—'}
+                            {voucher.reserva_id && <p className="mt-1 text-[10px] text-[#F4C77E]">Reserva vinculada · {voucher.quantidade_pessoas == null ? 'Quantidade não informada' : `${voucher.quantidade_pessoas} pessoas`}</p>}
                           </td>
-
                           <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
                             <div>
                               {formatarData(
                                 voucher.validade
                               )}
-
                               {vencido && (
                                 <p className="mt-1 text-[8px] font-semibold uppercase tracking-[0.1em] text-red-300">
                                   Validade expirada
@@ -1757,13 +1504,11 @@ export default function VouchersPage() {
                               )}
                             </div>
                           </td>
-
                           <td className="px-5 py-4 text-xs font-semibold text-emerald-300">
                             {formatarMoeda(
                               voucher.valor
                             )}
                           </td>
-
                           <td className="px-5 py-4">
                             <span
                               className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[9px] font-semibold ${statusClasses(
@@ -1775,13 +1520,11 @@ export default function VouchersPage() {
                                   status
                                 )}`}
                               />
-
                               {
                                 status
                               }
                             </span>
                           </td>
-
                           <td className="px-5 py-4">
                             <div className="flex items-center justify-center gap-1.5">
                               <button
@@ -1796,7 +1539,6 @@ export default function VouchersPage() {
                               >
                                 ◉
                               </button>
-
                               <button
                                 type="button"
                                 title="Editar"
@@ -1809,7 +1551,6 @@ export default function VouchersPage() {
                               >
                                 ✎
                               </button>
-
                               <button
                                 type="button"
                                 title="Excluir"
@@ -1834,11 +1575,9 @@ export default function VouchersPage() {
           </div>
         </section>
       </main>
-
       {/* =====================================================
           VISUALIZAÇÃO
       ====================================================== */}
-
       {itemVisualizar && (
         <ModalBase
           titulo="Detalhes do voucher"
@@ -1860,7 +1599,6 @@ export default function VouchersPage() {
                 'Não informado'
               }
             />
-
             <Detalhe
               label="Passeio"
               valor={
@@ -1868,14 +1606,16 @@ export default function VouchersPage() {
                 'Não informado'
               }
             />
-
+            <Detalhe label="Reserva vinculada" valor={itemVisualizar.reserva_id || 'Voucher avulso'} />
+            <Detalhe label="Quantidade de pessoas" valor={itemVisualizar.quantidade_pessoas == null ? 'Não informada' : String(itemVisualizar.quantidade_pessoas)} />
+            <Detalhe label="Data do passeio na emissão" valor={formatarData(itemVisualizar.data_passeio)} />
+            <Detalhe label="Horário do passeio na emissão" valor={itemVisualizar.horario_passeio?.slice(0,5) || 'Não informado'} />
             <Detalhe
               label="Valor"
               valor={formatarMoeda(
                 itemVisualizar.valor
               )}
             />
-
             <Detalhe
               label="Emissão"
               valor={formatarData(
@@ -1883,14 +1623,12 @@ export default function VouchersPage() {
                 itemVisualizar.created_at
               )}
             />
-
             <Detalhe
               label="Validade"
               valor={formatarData(
                 itemVisualizar.validade
               )}
             />
-
             <Detalhe
               label="Status"
               valor={normalizarStatus(
@@ -1898,7 +1636,6 @@ export default function VouchersPage() {
               )}
             />
           </div>
-
           <div className="flex justify-end border-t border-white/[0.07] px-6 py-4">
             <button
               type="button"
@@ -1914,11 +1651,9 @@ export default function VouchersPage() {
           </div>
         </ModalBase>
       )}
-
       {/* =====================================================
           EDIÇÃO
       ====================================================== */}
-
       {itemEditar && (
         <ModalBase
           titulo="Operação • Edição"
@@ -1936,11 +1671,11 @@ export default function VouchersPage() {
             }
             className="space-y-5 p-6"
           >
+            {itemEditar.reserva_id && <p className="rounded-xl border border-white/15 p-3 text-xs leading-6">Este voucher preserva os dados da reserva no momento da emissão. Cliente: {itemEditar.cliente_nome || 'Não informado'} · Passeio: {itemEditar.passeio_nome || 'Não informado'}. Para corrigir os dados da emissão, cancele este voucher e emita outro.</p>}
             <div>
               <label className={labelClass}>
                 Código *
               </label>
-
               <input
                 type="text"
                 required
@@ -1963,16 +1698,14 @@ export default function VouchersPage() {
                 }
               />
             </div>
-
             <div>
               <label className={labelClass}>
                 Cliente *
               </label>
-
               <select
-                required
+                required={!itemEditar.reserva_id}
                 disabled={
-                  salvandoEdicao
+                  salvandoEdicao || Boolean(itemEditar.reserva_id)
                 }
                 value={
                   editClienteId
@@ -1992,7 +1725,6 @@ export default function VouchersPage() {
                 <option value="">
                   Selecione...
                 </option>
-
                 {clientes.map(
                   (
                     cliente
@@ -2013,16 +1745,14 @@ export default function VouchersPage() {
                 )}
               </select>
             </div>
-
             <div>
               <label className={labelClass}>
                 Passeio *
               </label>
-
               <select
-                required
+                required={!itemEditar.reserva_id}
                 disabled={
-                  salvandoEdicao
+                  salvandoEdicao || Boolean(itemEditar.reserva_id)
                 }
                 value={
                   editPasseioId
@@ -2042,7 +1772,6 @@ export default function VouchersPage() {
                 <option value="">
                   Selecione...
                 </option>
-
                 {passeios.map(
                   (
                     passeio
@@ -2063,13 +1792,11 @@ export default function VouchersPage() {
                 )}
               </select>
             </div>
-
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className={labelClass}>
                   Valor (R$) *
                 </label>
-
                 <input
                   type="text"
                   inputMode="decimal"
@@ -2093,7 +1820,6 @@ export default function VouchersPage() {
                       converterValor(
                         editValor
                       );
-
                     if (
                       valor > 0
                     ) {
@@ -2109,17 +1835,14 @@ export default function VouchersPage() {
                     inputClass
                   }
                 />
-
                 <p className="mt-2 text-[9px] text-[#EDEDE3]/22">
                   Aceita 3500, 3.500 ou 3.500,00.
                 </p>
               </div>
-
               <div>
                 <label className={labelClass}>
                   Validade
                 </label>
-
                 <input
                   type="date"
                   disabled={
@@ -2142,12 +1865,10 @@ export default function VouchersPage() {
                 />
               </div>
             </div>
-
             <div>
               <label className={labelClass}>
                 Status
               </label>
-
               <select
                 disabled={
                   salvandoEdicao
@@ -2170,17 +1891,14 @@ export default function VouchersPage() {
                 <option value="Ativo">
                   Ativo
                 </option>
-
                 <option value="Utilizado">
                   Utilizado
                 </option>
-
                 <option value="Cancelado">
                   Cancelado
                 </option>
               </select>
             </div>
-
             <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-5 sm:flex-row sm:justify-end">
               <button
                 type="button"
@@ -2196,7 +1914,6 @@ export default function VouchersPage() {
               >
                 Cancelar
               </button>
-
               <button
                 type="submit"
                 disabled={
@@ -2212,18 +1929,15 @@ export default function VouchersPage() {
           </form>
         </ModalBase>
       )}
-
       {/* =====================================================
           EXCLUSÃO
       ====================================================== */}
-
       {itemExcluir && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
           <div className="w-full max-w-[430px] rounded-[26px] border border-white/[0.09] bg-[#091510] p-6 text-center">
             <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-red-500/20 bg-red-500/[0.08] text-lg text-red-300">
               !
             </div>
-
             <h3
               className="mt-4 text-2xl text-[#F0F0E8]"
               style={{
@@ -2233,7 +1947,6 @@ export default function VouchersPage() {
             >
               Excluir voucher?
             </h3>
-
             <p className="mt-3 text-xs leading-6 text-[#EDEDE3]/38">
               O voucher{' '}
               <strong className="text-[#EDEDE3]/70">
@@ -2242,7 +1955,6 @@ export default function VouchersPage() {
               </strong>{' '}
               será removido permanentemente.
             </p>
-
             <div className="mt-6 grid grid-cols-2 gap-3">
               <button
                 type="button"
@@ -2258,7 +1970,6 @@ export default function VouchersPage() {
               >
                 Cancelar
               </button>
-
               <button
                 type="button"
                 disabled={
@@ -2280,19 +1991,16 @@ export default function VouchersPage() {
     </div>
   );
 }
-
 /*
   ============================================================
   COMPONENTES INTERNOS
   ============================================================
 */
-
 function LoadingTabela() {
   return (
     <div className="flex min-h-[330px] items-center justify-center">
       <div className="text-center">
         <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/[0.08] border-t-[#E3A144]" />
-
         <p className="mt-4 text-xs text-[#EDEDE3]/35">
           Carregando vouchers...
         </p>
@@ -2300,7 +2008,6 @@ function LoadingTabela() {
     </div>
   );
 }
-
 function Detalhe({
   label,
   valor,
@@ -2313,14 +2020,12 @@ function Detalhe({
       <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28">
         {label}
       </p>
-
       <p className="mt-2 text-xs font-medium text-[#EDEDE3]/72">
         {valor}
       </p>
     </div>
   );
 }
-
 function ModalBase({
   titulo,
   subtitulo,
@@ -2341,7 +2046,6 @@ function ModalBase({
             <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
               {titulo}
             </p>
-
             <h3
               className="mt-2 text-2xl text-[#F0F0E8]"
               style={{
@@ -2352,7 +2056,6 @@ function ModalBase({
               {subtitulo}
             </h3>
           </div>
-
           <button
             type="button"
             onClick={
@@ -2363,7 +2066,6 @@ function ModalBase({
             ✕
           </button>
         </div>
-
         {children}
       </div>
     </div>

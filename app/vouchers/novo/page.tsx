@@ -1,1150 +1,183 @@
-'use client';
+"use client";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { supabase } from "@/lib/supabase";
 
-import React, {
-  useEffect,
-  useState,
-} from 'react';
-
-import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-
-import { supabase } from '@/lib/supabase';
-
-type StatusVoucher =
-  | 'Ativo'
-  | 'Utilizado'
-  | 'Cancelado';
-
-interface Cliente {
-  id: string;
-  nome?: string | null;
-  nome_completo?: string | null;
+type Opcao = { id: string; nome: string };
+type Reserva = { id: string; cliente: string | null; pacote: string | null; cliente_id: string | null; passeio_id: string | null; quantidade_pessoas: number | null; data_reserva: string; horario: string | null; valor_total: number | string | null; valor: number | string | null; status: string | null };
+type Existente = { id: string; codigo: string; status: string | null };
+type Status = "Ativo" | "Utilizado" | "Cancelado";
+type Formulario = { codigo: string; clienteId: string; passeioId: string; valor: string; validade: string; status: Status };
+const INICIAL: Formulario = { codigo: "", clienteId: "", passeioId: "", valor: "", validade: "", status: "Ativo" };
+function converterValorVoucher(entrada: string): number {
+  let texto = entrada.trim().replace(/^R\$\s*/i, "");
+  if (texto.includes(",")) {
+    if (!/^(?:\d+|\d{1,3}(?:\.\d{3})+),\d{1,2}$/.test(texto)) return NaN;
+    texto = texto.replace(/\./g, "").replace(",", ".");
+  } else if (/^\d{1,3}(?:\.\d{3})+$/.test(texto)) texto = texto.replace(/\./g, "");
+  else if (!/^\d+(?:\.\d{1,2})?$/.test(texto)) return NaN;
+  const [inteiro, decimal = ""] = texto.split(".");
+  const centavos = Number(inteiro) * 100 + Number(decimal.padEnd(2, "0"));
+  return Number.isSafeInteger(centavos) && centavos > 0 ? centavos / 100 : NaN;
 }
-
-interface Passeio {
-  id: string;
-  nome?: string | null;
-  titulo?: string | null;
+function dataVoucherValida(valor: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
+  const data = new Date(`${valor}T12:00:00Z`);
+  return Number.isFinite(data.getTime()) && data.toISOString().slice(0,10) === valor;
 }
-
-interface VoucherForm {
-  codigo: string;
-  clienteId: string;
-  passeioId: string;
-  valor: string;
-  status: StatusVoucher;
-  validade: string;
-}
-
-const estadoInicial: VoucherForm = {
-  codigo: '',
-  clienteId: '',
-  passeioId: '',
-  valor: '',
-  status: 'Ativo',
-  validade: '',
-};
-
-/*
-  ============================================================
-  CONVERSÃO MONETÁRIA
-  ============================================================
-
-  Aceita:
-
-  3500
-  3500,00
-  3.500
-  3.500,00
-  3500.00
-  3,500.00
-  R$ 3.500,00
-
-  Nenhuma multiplicação artificial é aplicada.
-*/
-
-function converterValor(
-  entrada: string
-): number {
-  let valor = entrada
-    .trim()
-    .replace(/\s/g, '')
-    .replace(/R\$/gi, '')
-    .replace(
-      /[^0-9.,-]/g,
-      ''
-    );
-
-  if (!valor) {
-    return Number.NaN;
+const moeda = (valor: number) => valor.toLocaleString("pt-BR", {minimumFractionDigits:2,maximumFractionDigits:2});
+const cancelada = (status: string | null) => (status ?? "").trim().toLowerCase().startsWith("cancelad");
+const mensagem = (erro: unknown, fallback: string) => erro && typeof erro === "object" && "message" in erro && typeof erro.message === "string" ? erro.message : fallback;
+const codigoNovo = () => `ERN-${crypto.randomUUID().toUpperCase()}`;
+const CAMPOS_RESERVA = "id,cliente,pacote,cliente_id,passeio_id,quantidade_pessoas,data_reserva,horario,valor_total,valor,status";
+async function listar<T>(tabela: "clientes" | "passeios" | "reservas", colunas: string, empresa: string): Promise<T[]> {
+  const registros: T[] = [];
+  let total: number | null = null;
+  for (let inicio = 0; inicio < 10000; inicio += 200) {
+    const {data,error,count} = await supabase.from(tabela).select(colunas,{count:"exact"}).eq("empresa_id",empresa).order("id").range(inicio,inicio+199);
+    if (error) throw error;
+    if (count === null || count > 10000) throw new Error("O volume de cadastros exige uma busca no servidor. Não foi carregada uma lista parcial.");
+    if (total !== null && total !== count) throw new Error("Os cadastros mudaram durante a consulta. Tente novamente.");
+    total=count;
+    registros.push(...((data ?? []) as unknown as T[]));
+    if (registros.length >= count) break;
+    if (!data?.length) throw new Error("A consulta ficou incompleta. Tente novamente.");
   }
-
-  const temVirgula =
-    valor.includes(',');
-
-  const temPonto =
-    valor.includes('.');
-
-  /*
-    ----------------------------------------------------------
-    DUAS MARCAÇÕES
-    ----------------------------------------------------------
-
-    3.500,50 -> brasileiro
-    3,500.50 -> internacional
-  */
-
-  if (
-    temVirgula &&
-    temPonto
-  ) {
-    const ultimaVirgula =
-      valor.lastIndexOf(',');
-
-    const ultimoPonto =
-      valor.lastIndexOf('.');
-
-    if (
-      ultimaVirgula >
-      ultimoPonto
-    ) {
-      valor = valor
-        .replace(
-          /\./g,
-          ''
-        )
-        .replace(
-          ',',
-          '.'
-        );
-    } else {
-      valor =
-        valor.replace(
-          /,/g,
-          ''
-        );
-    }
-  }
-
-  /*
-    ----------------------------------------------------------
-    SOMENTE VÍRGULA
-    ----------------------------------------------------------
-
-    3,500 -> 3500
-    3,50  -> 3.50
-  */
-
-  else if (
-    temVirgula
-  ) {
-    if (
-      /^\d{1,3}(,\d{3})+$/.test(
-        valor
-      )
-    ) {
-      valor =
-        valor.replace(
-          /,/g,
-          ''
-        );
-    } else {
-      valor =
-        valor.replace(
-          ',',
-          '.'
-        );
-    }
-  }
-
-  /*
-    ----------------------------------------------------------
-    SOMENTE PONTO
-    ----------------------------------------------------------
-
-    3.500 -> 3500
-    3.50  -> 3.50
-  */
-
-  else if (
-    temPonto
-  ) {
-    if (
-      /^\d{1,3}(\.\d{3})+$/.test(
-        valor
-      )
-    ) {
-      valor =
-        valor.replace(
-          /\./g,
-          ''
-        );
-    }
-  }
-
-  const numero =
-    Number(valor);
-
-  return Number.isFinite(
-    numero
-  )
-    ? numero
-    : Number.NaN;
+  if (registros.length !== total || new Set(registros.map(r => (r as {id:string}).id)).size !== registros.length) throw new Error("A consulta não retornou cadastros consistentes.");
+  return registros;
 }
-
-function formatarValorCampo(
-  numero: number
-) {
-  return numero.toLocaleString(
-    'pt-BR',
-    {
-      minimumFractionDigits:
-        2,
-
-      maximumFractionDigits:
-        2,
-    }
-  );
-}
-
 export default function NovoVoucherPage() {
-  const router =
-    useRouter();
-
-  const [
-    formData,
-    setFormData,
-  ] =
-    useState<VoucherForm>(
-      estadoInicial
-    );
-
-  const [
-    clientes,
-    setClientes,
-  ] =
-    useState<Cliente[]>(
-      []
-    );
-
-  const [
-    passeios,
-    setPasseios,
-  ] =
-    useState<Passeio[]>(
-      []
-    );
-
-  const [
-    carregandoRelacionados,
-    setCarregandoRelacionados,
-  ] =
-    useState(true);
-
-  const [
-    salvando,
-    setSalvando,
-  ] =
-    useState(false);
-
-  const [
-    erro,
-    setErro,
-  ] =
-    useState<string | null>(
-      null
-    );
-
-  const [
-    sucesso,
-    setSucesso,
-  ] =
-    useState<string | null>(
-      null
-    );
-
-  const inputClass =
-    'w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/40 focus:ring-1 focus:ring-[#E3A144]/10 disabled:cursor-not-allowed disabled:opacity-50';
-
-  const labelClass =
-    'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34';
-
-  /*
-    ============================================================
-    CLIENTES E PASSEIOS
-    ============================================================
-  */
-
-  async function carregarRelacionados() {
-    setCarregandoRelacionados(
-      true
-    );
-
-    setErro(null);
-
-    try {
-      const [
-        clientesResultado,
-        passeiosResultado,
-      ] =
-        await Promise.all([
-          supabase
-            .from(
-              'clientes'
-            )
-            .select(
-              'id, nome'
-            )
-            .order(
-              'nome',
-              {
-                ascending:
-                  true,
-              }
-            ),
-
-          supabase
-            .from(
-              'passeios'
-            )
-            .select(
-              'id, nome'
-            )
-            .order(
-              'created_at',
-              {
-                ascending:
-                  false,
-              }
-            ),
-        ]);
-
-      if (
-        clientesResultado.error
-      ) {
-        throw clientesResultado.error;
-      }
-
-      if (
-        passeiosResultado.error
-      ) {
-        throw passeiosResultado.error;
-      }
-
-      setClientes(
-        (
-          clientesResultado.data ||
-          []
-        ) as Cliente[]
-      );
-
-      setPasseios(
-        (
-          passeiosResultado.data ||
-          []
-        ) as Passeio[]
-      );
-    } catch (err) {
-      console.error(
-        'Erro ao carregar dados relacionados:',
-        err
-      );
-
-      setClientes([]);
-      setPasseios([]);
-
-      setErro(
-        err instanceof Error
-          ? err.message
-          : 'Não foi possível carregar clientes e passeios.'
-      );
-    } finally {
-      setCarregandoRelacionados(
-        false
-      );
+  const router=useRouter();
+  const [form,setForm]=useState<Formulario>(INICIAL);
+  const [empresa,setEmpresa]=useState("");
+  const [clientes,setClientes]=useState<Opcao[]>([]);
+  const [passeios,setPasseios]=useState<Opcao[]>([]);
+  const [reservas,setReservas]=useState<Reserva[]>([]);
+  const [reservaId,setReservaId]=useState("");
+  const [busca,setBusca]=useState("");
+  const [carregando,setCarregando]=useState(true);
+  const [erroCarga,setErroCarga]=useState("");
+  const [erro,setErro]=useState("");
+  const [sucesso,setSucesso]=useState(false);
+  const [salvando,setSalvando]=useState(false);
+  const [tentativa,setTentativa]=useState(0);
+  const [existentes,setExistentes]=useState<Existente[]>([]);
+  const [totalExistentes,setTotalExistentes]=useState(0);
+  const [consultando,setConsultando]=useState(false);
+  const [erroExistentes,setErroExistentes]=useState("");
+  const [confirmarOutro,setConfirmarOutro]=useState(false);
+  const envio=useRef(false);
+  const gravado=useRef(false);
+  const temporizador=useRef<ReturnType<typeof setTimeout> | null>(null);
+  const reserva=reservas.find(r=>r.id===reservaId);
+  useEffect(()=>()=>{if(temporizador.current)clearTimeout(temporizador.current);},[]);
+  useEffect(()=>{
+    let ativo=true;
+    async function carregar(){
+      setCarregando(true);setErroCarga("");
+      try{
+        const {data:auth,error:erroAuth}=await supabase.auth.getUser();
+        if(erroAuth||!auth.user)throw new Error("Entre novamente para emitir o voucher.");
+        const {data:perfil,error:erroPerfil}=await supabase.from("perfis").select("empresa_id").eq("id",auth.user.id).single();
+        if(erroPerfil||!perfil?.empresa_id)throw new Error("Sua conta não possui empresa disponível.");
+        const emp=String(perfil.empresa_id);
+        const [cs,ps,rs]=await Promise.all([listar<Opcao>("clientes","id,nome",emp),listar<Opcao>("passeios","id,nome",emp),listar<Reserva>("reservas",CAMPOS_RESERVA,emp)]);
+        if(!ativo)return;
+        setEmpresa(emp);setClientes(cs);setPasseios(ps);setReservas(rs);
+        setForm(atual=>({...atual,codigo:atual.codigo||codigoNovo()}));
+        const pedido=new URLSearchParams(window.location.search).get("reserva_id");
+        if(pedido){const r=rs.find(item=>item.id===pedido);if(!r)throw new Error("A reserva indicada não está disponível para sua empresa.");if(cancelada(r.status))throw new Error("A reserva indicada está cancelada.");selecionar(r);}
+      }catch(falha){if(ativo)setErroCarga(mensagem(falha,"Não foi possível carregar os cadastros."));}
+      finally{if(ativo)setCarregando(false);}
     }
+    void carregar();return()=>{ativo=false;};
+  },[tentativa]);
+  async function consultarVinculados(id: string, emp: string){
+    const {data,error,count}=await supabase.from("vouchers").select("id,codigo,status",{count:"exact"}).eq("empresa_id",emp).eq("reserva_id",id).order("created_at",{ascending:false}).range(0,4);
+    if(error)throw error;if(count===null)throw new Error("Não foi possível conferir os vouchers da reserva.");
+    return {itens:(data ?? []) as Existente[],total:count};
   }
-
-  useEffect(() => {
-    carregarRelacionados();
-  }, []);
-
-  /*
-    ============================================================
-    CAMPOS
-    ============================================================
-  */
-
-  function alterarCampo<
-    K extends keyof VoucherForm,
-  >(
-    campo: K,
-    valor: VoucherForm[K]
-  ) {
-    setFormData(
-      (
-        atual
-      ) => ({
-        ...atual,
-
-        [campo]:
-          valor,
-      })
-    );
+  useEffect(()=>{
+    let ativo=true;setExistentes([]);setTotalExistentes(0);setConfirmarOutro(false);setErroExistentes("");
+    if(!reservaId||!empresa){setConsultando(false);return;}
+    setConsultando(true);
+    void consultarVinculados(reservaId,empresa).then(resultado=>{if(ativo){setExistentes(resultado.itens);setTotalExistentes(resultado.total);}}).catch(falha=>{if(ativo)setErroExistentes(mensagem(falha,"Não foi possível conferir os vouchers existentes."));}).finally(()=>{if(ativo)setConsultando(false);});
+    return()=>{ativo=false;};
+  },[reservaId,empresa,tentativa]);
+  function selecionar(r: Reserva | null){
+    if(envio.current)return;
+    setReservaId(r?.id??"");setErro("");setConfirmarOutro(false);
+    const valor=Number(r?.valor_total??r?.valor);
+    setForm(atual=>({...atual,clienteId:r?.cliente_id??"",passeioId:r?.passeio_id??"",valor:r&&Number.isFinite(valor)&&valor>0?moeda(valor):"",validade:""}));
   }
-
-  function handleLimpar() {
-    if (
-      salvando
-    ) {
-      return;
-    }
-
-    setFormData(
-      estadoInicial
-    );
-
-    setErro(null);
-    setSucesso(null);
-  }
-
-  function formatarValorAoSair() {
-    if (
-      !formData.valor.trim()
-    ) {
-      return;
-    }
-
-    const valor =
-      converterValor(
-        formData.valor
-      );
-
-    if (
-      !Number.isFinite(
-        valor
-      )
-    ) {
-      return;
-    }
-
-    alterarCampo(
-      'valor',
-      formatarValorCampo(
-        valor
-      )
-    );
-  }
-
-  /*
-    ============================================================
-    SALVAR
-    ============================================================
-  */
-
-  async function handleSubmit(
-    event:
-      React.FormEvent
-  ) {
+  async function salvar(event: FormEvent<HTMLFormElement>){
     event.preventDefault();
-
-    if (
-      salvando
-    ) {
-      return;
-    }
-
-    setErro(null);
-    setSucesso(null);
-
-    const codigo =
-      formData.codigo
-        .trim();
-
-    if (!codigo) {
-      setErro(
-        'Informe o código do voucher.'
-      );
-
-      return;
-    }
-
-    if (
-      !formData.clienteId
-    ) {
-      setErro(
-        'Selecione o cliente.'
-      );
-
-      return;
-    }
-
-    if (
-      !formData.passeioId
-    ) {
-      setErro(
-        'Selecione o passeio ou roteiro.'
-      );
-
-      return;
-    }
-
-    if (
-      !formData.valor.trim()
-    ) {
-      setErro(
-        'Informe o valor do voucher.'
-      );
-
-      return;
-    }
-
-    const valor =
-      converterValor(
-        formData.valor
-      );
-
-    if (
-      !Number.isFinite(
-        valor
-      ) ||
-      valor <= 0
-    ) {
-      setErro(
-        'Informe um valor válido maior que zero.'
-      );
-
-      return;
-    }
-
-    setSalvando(true);
-
-    try {
-      const {
-        error:
-          insertError,
-      } =
-        await supabase
-          .from(
-            'vouchers'
-          )
-          .insert([
-            {
-              codigo,
-
-              cliente_id:
-                formData.clienteId,
-
-              passeio_id:
-                formData.passeioId,
-
-              valor,
-
-              status:
-                formData.status,
-
-              validade:
-                formData.validade ||
-                null,
-            },
-          ]);
-
-      if (
-        insertError
-      ) {
-        throw insertError;
+    if(envio.current||carregando||erroCarga||consultando||erroExistentes)return;
+    setErro("");const valor=converterValorVoucher(form.valor);
+    if(!form.codigo.trim()){setErro("Informe o código do voucher.");return;}
+    if(!Number.isFinite(valor)){setErro("Informe um valor maior que zero, com até duas casas decimais.");return;}
+    if(form.validade&&!dataVoucherValida(form.validade)){setErro("Informe uma validade válida.");return;}
+    if(!reservaId&&(!form.clienteId||!form.passeioId)){setErro("Selecione cliente e passeio para o voucher avulso.");return;}
+    if(reservaId&&(!reserva||cancelada(reserva.status))){setErro("Selecione uma reserva disponível.");return;}
+    if(totalExistentes>0&&!confirmarOutro){setErro("Confira os vouchers já emitidos e confirme se deseja emitir outro.");return;}
+    envio.current=true;setSalvando(true);
+    try{
+      const {data:auth,error:erroAuth}=await supabase.auth.getUser();if(erroAuth||!auth.user)throw new Error("Sua sessão expirou. Entre novamente.");
+      const {data:perfil,error:erroPerfil}=await supabase.from("perfis").select("empresa_id").eq("id",auth.user.id).single();
+      if(erroPerfil||perfil?.empresa_id!==empresa)throw new Error("O vínculo da sua conta mudou. Recarregue a página.");
+      let atual=reserva;
+      if(reservaId){
+        const {data,error}=await supabase.from("reservas").select(CAMPOS_RESERVA).eq("empresa_id",empresa).eq("id",reservaId).single();
+        if(error||!data)throw new Error("A reserva não está mais disponível.");atual=data as Reserva;
+        if(cancelada(atual.status))throw new Error("Esta reserva foi cancelada.");
+        if(CAMPOS_RESERVA.split(",").some(campo => atual![campo as keyof Reserva] !== reserva?.[campo as keyof Reserva])){
+          setReservas(lista=>lista.map(r=>r.id===atual!.id?atual!:r));
+          throw new Error("A reserva foi alterada. Confira os dados atualizados antes de emitir. O valor do voucher deve ser revisado por você.");
+        }
+        const vinculados=await consultarVinculados(reservaId,empresa);
+        if(vinculados.total!==totalExistentes){setExistentes(vinculados.itens);setTotalExistentes(vinculados.total);setConfirmarOutro(false);throw new Error("A quantidade de vouchers vinculados mudou. Confira a lista antes de emitir.");}
       }
-
-      setSucesso(
-        'Voucher cadastrado com sucesso.'
-      );
-
-      window.setTimeout(
-        () => {
-          router.push(
-            '/vouchers'
-          );
-
-          router.refresh();
-        },
-        1000
-      );
-    } catch (err) {
-      console.error(
-        'Erro ao salvar voucher:',
-        err
-      );
-
-      const mensagem =
-        String(
-          err instanceof Error
-            ? err.message
-            : ''
-        );
-
-      if (
-        mensagem.includes(
-          'ERN_USUARIO_SEM_EMPRESA'
-        )
-      ) {
-        setErro(
-          'Seu usuário não possui uma empresa vinculada.'
-        );
-
-        return;
-      }
-
-      setErro(
-        err instanceof Error
-          ? err.message
-          : 'Não foi possível cadastrar o voucher.'
-      );
-    } finally {
-      setSalvando(false);
-    }
+      const {data:emitido,error}=await supabase.from("vouchers").insert({codigo:form.codigo.trim(),reserva_id:reservaId||null,cliente_id:atual?.cliente_id??(reservaId?null:form.clienteId),passeio_id:atual?.passeio_id??(reservaId?null:form.passeioId),valor,status:form.status,validade:form.validade||null,empresa_id:empresa}).select("id").single();
+      if(error)throw error;if(!emitido?.id)throw new Error("Não foi possível confirmar a emissão. Consulte a lista antes de tentar novamente.");
+      gravado.current=true;setSucesso(true);
+      temporizador.current=setTimeout(()=>{router.push("/vouchers");router.refresh();},1000);
+    }catch(falha){setErro(mensagem(falha,"Não foi possível emitir. Consulte a lista antes de repetir se houve falha de conexão."));}
+    finally{if(!gravado.current){envio.current=false;setSalvando(false);}}
   }
-
-  return (
-    <div className="min-h-screen bg-[#07110E] pb-16 text-[#EDEDE3]">
-      {/* =====================================================
-          CABEÇALHO
-      ====================================================== */}
-
-      <section className="border-b border-white/[0.07] bg-[#091510]">
-        <div className="mx-auto max-w-[1180px] px-5 py-10 md:px-8 md:py-12">
-          <Link
-            href="/vouchers"
-            className="inline-flex items-center gap-2 text-xs font-semibold text-[#EDEDE3]/38 transition hover:text-[#E3A144]"
-          >
-            <span>←</span>
-            Vouchers
-          </Link>
-
-          <div className="mt-7">
-            <div className="flex items-center gap-3">
-              <span className="h-px w-8 bg-[#E3A144]" />
-
-              <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
-                Operação • Emissão
-              </p>
-            </div>
-
-            <h1
-              className="mt-4 text-4xl tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
-              style={{
-                fontFamily:
-                  'var(--font-fraunces), serif',
-              }}
-            >
-              Novo voucher
-            </h1>
-
-            <p className="mt-4 max-w-[680px] text-sm leading-7 text-[#EDEDE3]/40">
-              Vincule o comprovante ao cliente e à
-              experiência, informe valor, validade e
-              situação operacional.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <main className="mx-auto max-w-[1180px] px-5 py-8 md:px-8 md:py-10">
-        {/* ===================================================
-            FEEDBACK
-        ==================================================== */}
-
-        {erro && (
-          <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-red-300">
-            <span>
-              {erro}
-            </span>
-
-            <button
-              type="button"
-              onClick={() =>
-                setErro(
-                  null
-                )
-              }
-              className="text-red-300/60 transition hover:text-red-200"
-            >
-              ✕
-            </button>
-          </div>
-        )}
-
-        {sucesso && (
-          <div className="mb-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.07] px-5 py-4 text-xs text-emerald-300">
-            {sucesso}
-          </div>
-        )}
-
-        <form
-          onSubmit={
-            handleSubmit
-          }
-          className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]"
-        >
-          {/* =================================================
-              DADOS
-          ================================================== */}
-
-          <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-7">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
-              Identificação
-            </p>
-
-            <h2
-              className="mt-2 text-2xl text-[#F0F0E8]"
-              style={{
-                fontFamily:
-                  'var(--font-fraunces), serif',
-              }}
-            >
-              Dados do voucher
-            </h2>
-
-            <div className="mt-6 space-y-5">
-              {/* CÓDIGO */}
-
-              <div>
-                <label
-                  htmlFor="codigo"
-                  className={
-                    labelClass
-                  }
-                >
-                  Código do voucher *
-                </label>
-
-                <input
-                  id="codigo"
-                  type="text"
-                  required
-                  disabled={
-                    salvando
-                  }
-                  value={
-                    formData.codigo
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    alterarCampo(
-                      'codigo',
-                      event.target
-                        .value
-                    )
-                  }
-                  placeholder="Ex.: ERN-2026-001"
-                  className={
-                    inputClass
-                  }
-                />
-              </div>
-
-              {/* CLIENTE */}
-
-              <div>
-                <label
-                  htmlFor="cliente"
-                  className={
-                    labelClass
-                  }
-                >
-                  Cliente *
-                </label>
-
-                <select
-                  id="cliente"
-                  required
-                  disabled={
-                    carregandoRelacionados ||
-                    salvando
-                  }
-                  value={
-                    formData.clienteId
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    alterarCampo(
-                      'clienteId',
-                      event.target
-                        .value
-                    )
-                  }
-                  className={
-                    inputClass
-                  }
-                >
-                  <option value="">
-                    {carregandoRelacionados
-                      ? 'Carregando clientes...'
-                      : clientes.length ===
-                          0
-                        ? 'Nenhum cliente disponível'
-                        : 'Selecione um cliente'}
-                  </option>
-
-                  {clientes.map(
-                    (
-                      cliente
-                    ) => (
-                      <option
-                        key={
-                          cliente.id
-                        }
-                        value={
-                          cliente.id
-                        }
-                      >
-                        {cliente.nome ||
-                          cliente.nome_completo ||
-                          `Cliente ${cliente.id}`}
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
-
-              {/* PASSEIO */}
-
-              <div>
-                <label
-                  htmlFor="passeio"
-                  className={
-                    labelClass
-                  }
-                >
-                  Passeio / roteiro *
-                </label>
-
-                <select
-                  id="passeio"
-                  required
-                  disabled={
-                    carregandoRelacionados ||
-                    salvando
-                  }
-                  value={
-                    formData.passeioId
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    alterarCampo(
-                      'passeioId',
-                      event.target
-                        .value
-                    )
-                  }
-                  className={
-                    inputClass
-                  }
-                >
-                  <option value="">
-                    {carregandoRelacionados
-                      ? 'Carregando passeios...'
-                      : passeios.length ===
-                          0
-                        ? 'Nenhum passeio disponível'
-                        : 'Selecione um passeio'}
-                  </option>
-
-                  {passeios.map(
-                    (
-                      passeio
-                    ) => (
-                      <option
-                        key={
-                          passeio.id
-                        }
-                        value={
-                          passeio.id
-                        }
-                      >
-                        {passeio.nome ||
-                          passeio.titulo ||
-                          `Passeio ${passeio.id}`}
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                {/* VALOR */}
-
-                <div>
-                  <label
-                    htmlFor="valor"
-                    className={
-                      labelClass
-                    }
-                  >
-                    Valor (R$) *
-                  </label>
-
-                  <input
-                    id="valor"
-                    type="text"
-                    inputMode="decimal"
-                    required
-                    disabled={
-                      salvando
-                    }
-                    value={
-                      formData.valor
-                    }
-                    onChange={(
-                      event
-                    ) =>
-                      alterarCampo(
-                        'valor',
-                        event.target
-                          .value
-                      )
-                    }
-                    onBlur={
-                      formatarValorAoSair
-                    }
-                    placeholder="Ex.: 3.500,00"
-                    className={
-                      inputClass
-                    }
-                  />
-
-                  <p className="mt-2 text-[9px] leading-4 text-[#EDEDE3]/24">
-                    Aceita 3500, 3.500, 3500,00 ou 3.500,00.
-                  </p>
-                </div>
-
-                {/* VALIDADE */}
-
-                <div>
-                  <label
-                    htmlFor="validade"
-                    className={
-                      labelClass
-                    }
-                  >
-                    Data de validade
-                  </label>
-
-                  <input
-                    id="validade"
-                    type="date"
-                    disabled={
-                      salvando
-                    }
-                    value={
-                      formData.validade
-                    }
-                    onChange={(
-                      event
-                    ) =>
-                      alterarCampo(
-                        'validade',
-                        event.target
-                          .value
-                      )
-                    }
-                    className={
-                      inputClass
-                    }
-                  />
-                </div>
-              </div>
-            </div>
+  const campo="mt-2 min-h-12 w-full min-w-0 rounded-xl border border-white/15 bg-[#07110E] px-3 py-2 text-sm text-[#EDEDE3] disabled:opacity-50";
+  const botao="min-h-12 rounded-xl border border-white/20 px-4 py-3 text-sm disabled:opacity-50";
+  const candidatas=reservas.filter(r=>!cancelada(r.status)&&`${r.cliente} ${r.pacote} ${r.data_reserva} ${r.id}`.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().includes(busca.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()));
+  return <main className="min-h-screen min-w-0 bg-[#07110E] px-4 py-8 text-[#EDEDE3] sm:px-6">
+    <div className="mx-auto max-w-5xl"><Link href="/vouchers" className="inline-flex min-h-11 items-center text-sm text-[#F4C77E]">← Vouchers</Link>
+      <h1 className="mt-5 text-3xl sm:text-4xl" style={{fontFamily:"var(--font-fraunces), serif"}}>Emitir voucher</h1>
+      <p className="mt-3 text-sm leading-7 text-[#EDEDE3]/65">Use os dados de uma reserva ou emita um voucher avulso. A emissão não registra um pagamento.</p>
+      {carregando&&<p role="status" className="mt-6">Carregando cadastros…</p>}
+      {erroCarga&&<div role="alert" className="mt-5 rounded-xl border border-red-400/30 p-4"><p>{erroCarga}</p><button type="button" className={botao+" mt-3"} onClick={()=>setTentativa(t=>t+1)}>Tentar carregar novamente</button></div>}
+      {!carregando&&!erroCarga&&<form onSubmit={salvar} className="mt-6 space-y-5">
+        <fieldset disabled={salvando} className="min-w-0 space-y-5 disabled:opacity-70">
+          <section className="rounded-2xl border border-[#E3A144]/25 bg-[#0C211A] p-4 sm:p-6">
+            <h2 className="text-lg text-[#F4C77E]">Origem do voucher</h2>
+            <label className="mt-4 block text-sm">Buscar reserva<input aria-label="Buscar reserva" value={busca} onChange={e=>setBusca(e.target.value)} placeholder="Cliente, passeio ou data" className={campo}/></label>
+            <label className="mt-4 block text-sm">Reserva vinculada<select aria-label="Reserva vinculada" value={reservaId} className={campo} onChange={e=>selecionar(reservas.find(r=>r.id===e.target.value)??null)}><option value="">Voucher avulso — sem reserva</option>{reserva&&!candidatas.slice(0,100).some(r=>r.id===reservaId)&&<option value={reservaId}>{reserva.cliente} · {reserva.pacote}</option>}{candidatas.slice(0,100).map(r=><option key={r.id} value={r.id}>{r.cliente||"Cliente não informado"} · {r.pacote||"Passeio não informado"} · {r.data_reserva} · {r.id.slice(0,8)}</option>)}</select></label>
+            <p className="mt-2 text-xs text-[#EDEDE3]/65">{candidatas.length} reservas disponíveis na busca.{candidatas.length>100?" Refine a busca para localizar sua reserva; o seletor mostra até 100 resultados.":""}</p>
+            {reserva&&<div className="mt-4 rounded-xl border border-white/15 p-4 text-sm leading-7"><p><strong>{reserva.cliente}</strong> · {reserva.pacote}</p><p>{reserva.quantidade_pessoas == null ? "Quantidade não informada" : `${reserva.quantidade_pessoas} pessoas`} · {reserva.data_reserva} · {reserva.horario?.slice(0,5)||"Horário não informado"}</p><p className="mt-2 text-xs text-[#EDEDE3]/65">Esses dados serão preservados no voucher no momento da emissão, inclusive quando a reserva usa digitação livre.</p></div>}
+            {consultando&&<p role="status" className="mt-3 text-xs">Conferindo vouchers já vinculados…</p>}
+            {erroExistentes&&<div role="alert" className="mt-3 text-amber-200"><p>{erroExistentes}</p><button type="button" className={botao} onClick={()=>setTentativa(t=>t+1)}>Conferir novamente</button></div>}
+            {totalExistentes>0&&<div className="mt-4 rounded-xl border border-amber-400/30 p-4 text-sm"><p>Esta reserva já possui {totalExistentes} voucher(s).</p><ul className="mt-2 space-y-1">{existentes.map(v=><li key={v.id}>{v.codigo} · {v.status}</li>)}</ul>{totalExistentes>5&&<p className="mt-2 text-xs">Exibindo os cinco mais recentes. Confira os demais na listagem.</p>}<label className="mt-3 flex min-h-11 items-center gap-3"><input type="checkbox" checked={confirmarOutro} onChange={e=>setConfirmarOutro(e.target.checked)}/>Conferi os vouchers existentes e quero emitir outro para esta reserva.</label></div>}
           </section>
-
-          {/* =================================================
-              LATERAL
-          ================================================== */}
-
-          <div className="space-y-6">
-            {/* STATUS */}
-
-            <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-6">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-                Situação
-              </p>
-
-              <h2
-                className="mt-2 text-2xl text-[#F0F0E8]"
-                style={{
-                  fontFamily:
-                    'var(--font-fraunces), serif',
-                }}
-              >
-                Status do voucher
-              </h2>
-
-              <p className="mt-4 text-xs leading-6 text-[#EDEDE3]/35">
-                Um novo voucher normalmente é emitido
-                como ativo. Depois ele pode ser marcado
-                como utilizado ou cancelado conforme a
-                operação.
-              </p>
-
-              <div className="mt-6">
-                <label
-                  htmlFor="status"
-                  className={
-                    labelClass
-                  }
-                >
-                  Status inicial
-                </label>
-
-                <select
-                  id="status"
-                  disabled={
-                    salvando
-                  }
-                  value={
-                    formData.status
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    alterarCampo(
-                      'status',
-                      event.target
-                        .value as StatusVoucher
-                    )
-                  }
-                  className={
-                    inputClass
-                  }
-                >
-                  <option value="Ativo">
-                    Ativo
-                  </option>
-
-                  <option value="Utilizado">
-                    Utilizado
-                  </option>
-
-                  <option value="Cancelado">
-                    Cancelado
-                  </option>
-                </select>
-              </div>
-            </section>
-
-            {/* VÍNCULOS */}
-
-            <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-6">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
-                Estrutura do registro
-              </p>
-
-              <h2
-                className="mt-2 text-lg text-[#F0F0E8]"
-                style={{
-                  fontFamily:
-                    'var(--font-fraunces), serif',
-                }}
-              >
-                Informações vinculadas
-              </h2>
-
-              <div className="mt-5 space-y-2">
-                {[
-                  'Código do voucher',
-                  'Cliente',
-                  'Passeio / roteiro',
-                  'Valor',
-                  'Validade',
-                  'Status operacional',
-                ].map(
-                  (
-                    item
-                  ) => (
-                    <div
-                      key={
-                        item
-                      }
-                      className="flex items-center gap-3 rounded-xl border border-white/[0.055] bg-white/[0.018] px-3 py-2.5"
-                    >
-                      <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#E3A144]" />
-
-                      <span className="text-[11px] text-[#EDEDE3]/48">
-                        {item}
-                      </span>
-                    </div>
-                  )
-                )}
-              </div>
-            </section>
-
-            {/* PROTEÇÃO */}
-
-            <section className="rounded-[20px] border border-emerald-500/10 bg-emerald-500/[0.025] p-5">
-              <div className="flex items-start gap-3">
-                <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-emerald-400" />
-
-                <p className="text-[10px] leading-5 text-[#EDEDE3]/32">
-                  O voucher será vinculado automaticamente
-                  à empresa autenticada pela proteção do
-                  servidor.
-                </p>
-              </div>
-            </section>
-          </div>
-
-          {/* =================================================
-              AÇÕES
-          ================================================== */}
-
-          <div className="lg:col-span-2">
-            <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-6 sm:flex-row sm:items-center sm:justify-between">
-              <button
-                type="button"
-                disabled={
-                  salvando
-                }
-                onClick={
-                  handleLimpar
-                }
-                className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/45 transition hover:bg-white/[0.045] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Limpar formulário
-              </button>
-
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Link
-                  href="/vouchers"
-                  className="inline-flex min-h-[46px] items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.045]"
-                >
-                  Cancelar
-                </Link>
-
-                <button
-                  type="submit"
-                  disabled={
-                    salvando ||
-                    carregandoRelacionados ||
-                    clientes.length ===
-                      0 ||
-                    passeios.length ===
-                      0
-                  }
-                  className="inline-flex min-h-[46px] min-w-[170px] items-center justify-center rounded-xl bg-[#E3A144] px-6 text-xs font-bold text-[#07130F] shadow-[0_8px_22px_rgba(227,161,68,0.12)] transition hover:bg-[#F0B35C] disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {salvando
-                    ? 'Salvando...'
-                    : carregandoRelacionados
-                      ? 'Carregando dados...'
-                      : 'Cadastrar voucher'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </form>
-      </main>
+          {!reservaId&&<section className="grid gap-4 rounded-2xl border border-white/10 p-4 sm:grid-cols-2 sm:p-6"><label className="text-sm">Cliente cadastrado *<select aria-label="Cliente cadastrado" required value={form.clienteId} className={campo} onChange={e=>setForm(f=>({...f,clienteId:e.target.value}))}><option value="">Selecione</option>{clientes.map(c=><option key={c.id} value={c.id}>{c.nome}</option>)}</select></label><label className="text-sm">Passeio cadastrado *<select aria-label="Passeio cadastrado" required value={form.passeioId} className={campo} onChange={e=>setForm(f=>({...f,passeioId:e.target.value}))}><option value="">Selecione</option>{passeios.map(p=><option key={p.id} value={p.id}>{p.nome}</option>)}</select></label></section>}
+          <section className="grid gap-4 rounded-2xl border border-white/10 p-4 sm:grid-cols-2 sm:p-6">
+            <label className="text-sm">Código único *<input aria-label="Código do voucher" required value={form.codigo} className={campo} onChange={e=>setForm(f=>({...f,codigo:e.target.value}))}/></label>
+            <label className="text-sm">Valor do voucher (R$) *<input aria-label="Valor do voucher" required inputMode="decimal" value={form.valor} className={campo} onChange={e=>setForm(f=>({...f,valor:e.target.value}))} onBlur={()=>{const v=converterValorVoucher(form.valor);if(Number.isFinite(v))setForm(f=>({...f,valor:moeda(v)}));}}/></label>
+            <label className="text-sm">Validade opcional<input aria-label="Validade do voucher" type="date" value={form.validade} className={campo} onChange={e=>setForm(f=>({...f,validade:e.target.value}))}/></label>
+            <label className="text-sm">Status<select aria-label="Status do voucher" value={form.status} className={campo} onChange={e=>setForm(f=>({...f,status:e.target.value as Status}))}>{["Ativo","Utilizado","Cancelado"].map(s=><option key={s}>{s}</option>)}</select></label>
+          </section>
+        </fieldset>
+        {erro&&<p role="alert" className="rounded-xl border border-red-400/30 p-4 text-sm text-red-200">{erro}</p>}
+        {sucesso&&<p role="status" className="rounded-xl border border-emerald-400/30 p-4 text-sm text-emerald-200">Voucher emitido com sucesso.</p>}
+        <div className="flex flex-wrap justify-end gap-3"><Link href="/vouchers" className={botao}>Voltar</Link><button type="submit" disabled={salvando||consultando||!!erroExistentes} className={botao+" bg-[#E3A144] font-semibold text-[#07110E]"}>{salvando?"Emitindo…":"Emitir voucher"}</button></div>
+      </form>}
     </div>
-  );
+  </main>;
 }
