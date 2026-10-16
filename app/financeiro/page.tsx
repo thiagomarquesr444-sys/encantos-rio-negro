@@ -1,63 +1,45 @@
 'use client';
-
 import React, {
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
-
 import Link from 'next/link';
-
 import { supabase } from '@/lib/supabase';
+import { consultarFinanceiroERN, filtrarFinanceiroERN, periodoFinanceiroERN, type FiltroPeriodoFinanceiroERN } from '@/lib/financeiroConsultaERN';
 import GraficosFinanceiros from '@/app/components/GraficosFinanceiros';
-
 type TipoLancamento =
   | 'receita'
   | 'despesa';
-
 type StatusLancamento =
   | 'Recebido'
   | 'Pago'
   | 'Pendente';
-
 interface LancamentoFinanceiro {
+  reserva_id?: string | null;
+  empresa_id?: string | null;
   id?: string;
-
   descricao?: string | null;
   descrição?: string | null;
-
   tipo?: string | null;
-
   valor?:
     | number
     | string
     | null;
-
   Valor?:
     | number
     | string
     | null;
-
   categoria?: string | null;
-
   data_vencimento?: string | null;
   data_liquidacao?: string | null;
-
   status?: string | null;
   Status?: string | null;
-
   user_id?: string | null;
-
   created_at?: string | null;
 }
-
-type FiltroPeriodo =
-  | 'mes_atual'
-  | 'todos'
-  | 'receitas'
-  | 'despesas'
-  | 'pendentes';
-
+type FiltroPeriodo = FiltroPeriodoFinanceiroERN;
 function removerAcentos(
   valor: string
 ) {
@@ -68,7 +50,6 @@ function removerAcentos(
       ''
     );
 }
-
 function normalizarTipo(
   valor?: string | null
 ): TipoLancamento {
@@ -77,12 +58,10 @@ function normalizarTipo(
       .trim()
       .toLowerCase()
   );
-
   return tipo === 'despesa'
     ? 'despesa'
     : 'receita';
 }
-
 function normalizarStatus(
   tipo: TipoLancamento,
   valor?: string | null
@@ -92,13 +71,11 @@ function normalizarStatus(
       .trim()
       .toLowerCase()
   );
-
   if (
     status === 'pendente'
   ) {
     return 'Pendente';
   }
-
   if (
     tipo === 'despesa'
   ) {
@@ -106,23 +83,19 @@ function normalizarStatus(
       ? 'Pago'
       : 'Pendente';
   }
-
   return status === 'recebido'
     ? 'Recebido'
     : 'Pendente';
 }
-
 /*
   ============================================================
   CONVERSÃO MONETÁRIA
   ============================================================
-
   3500      -> 3500
   3.500     -> 3500
   3500.50   -> 3500.50
   3.500,50  -> 3500.50
 */
-
 function converterValor(
   entrada: unknown
 ): number {
@@ -133,7 +106,6 @@ function converterValor(
   ) {
     return 0;
   }
-
   if (
     typeof entrada === 'number'
   ) {
@@ -141,16 +113,13 @@ function converterValor(
       ? entrada
       : 0;
   }
-
   let valor = String(entrada)
     .trim()
     .replace(/R\$/gi, '')
     .replace(/\s/g, '');
-
   if (!valor) {
     return 0;
   }
-
   if (
     valor.includes('.') &&
     valor.includes(',')
@@ -175,15 +144,12 @@ function converterValor(
       '.'
     );
   }
-
   const numero =
     Number(valor);
-
   return Number.isFinite(numero)
     ? numero
     : 0;
 }
-
 function obterValor(
   item: LancamentoFinanceiro
 ) {
@@ -193,7 +159,6 @@ function obterValor(
       : item.Valor
   );
 }
-
 function obterDescricao(
   item: LancamentoFinanceiro
 ) {
@@ -203,7 +168,6 @@ function obterDescricao(
     ''
   );
 }
-
 function obterStatus(
   item: LancamentoFinanceiro
 ) {
@@ -211,7 +175,6 @@ function obterStatus(
     normalizarTipo(
       item.tipo
     );
-
   return normalizarStatus(
     tipo,
     item.status !== undefined
@@ -219,7 +182,6 @@ function obterStatus(
       : item.Status
   );
 }
-
 function formatarMoeda(
   valor: number
 ) {
@@ -231,41 +193,32 @@ function formatarMoeda(
     }
   );
 }
-
 function formatarData(
   data?: string | null
 ) {
   if (!data) {
     return '—';
   }
-
   const parte =
     data.split('T')[0];
-
   const partes =
     parte.split('-');
-
   if (
     partes.length !== 3
   ) {
     return data;
   }
-
   return `${partes[2]}/${partes[1]}/${partes[0]}`;
 }
-
 // ERN_LIQUIDACAO_EDICAO
 function dataFinanceiraValida(valor: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(valor)) return false;
-
   const data = new Date(`${valor}T12:00:00Z`);
-
   return (
     Number.isFinite(data.getTime()) &&
     data.toISOString().slice(0, 10) === valor
   );
 }
-
 function hojeFinanceiroManaus(): string {
   const partes = new Intl.DateTimeFormat('en-US', {
     timeZone: 'America/Manaus',
@@ -273,14 +226,15 @@ function hojeFinanceiroManaus(): string {
     month: '2-digit',
     day: '2-digit',
   }).formatToParts(new Date());
-
   const obter = (tipo: string) =>
     partes.find((parte) => parte.type === tipo)?.value ?? '';
-
   return `${obter('year')}-${obter('month')}-${obter('day')}`;
 }
-
 export default function FinanceiroPage() {
+  const [reservaFiltro, setReservaFiltro] = useState('');
+  const [falhaConsulta, setFalhaConsulta] = useState(false);
+  const mutacaoEmAndamento = useRef(false);
+
   const [
     lancamentos,
     setLancamentos,
@@ -288,19 +242,16 @@ export default function FinanceiroPage() {
     useState<
       LancamentoFinanceiro[]
     >([]);
-
   const [
     carregando,
     setCarregando,
   ] = useState(true);
-
   const [
     error,
     setError,
   ] = useState<string | null>(
     null
   );
-
   const [
     filtroPeriodo,
     setFiltroPeriodo,
@@ -308,12 +259,10 @@ export default function FinanceiroPage() {
     useState<FiltroPeriodo>(
       'mes_atual'
     );
-
   const [
     busca,
     setBusca,
   ] = useState('');
-
   const [
     itemVisualizar,
     setItemVisualizar,
@@ -321,7 +270,6 @@ export default function FinanceiroPage() {
     useState<LancamentoFinanceiro | null>(
       null
     );
-
   const [
     itemEditar,
     setItemEditar,
@@ -329,12 +277,10 @@ export default function FinanceiroPage() {
     useState<LancamentoFinanceiro | null>(
       null
     );
-
   const [
     valorEdicao,
     setValorEdicao,
   ] = useState('');
-
   const [
     itemExcluir,
     setItemExcluir,
@@ -342,17 +288,14 @@ export default function FinanceiroPage() {
     useState<LancamentoFinanceiro | null>(
       null
     );
-
   const [
     salvandoEdicao,
     setSalvandoEdicao,
   ] = useState(false);
-
   const [
     excluindo,
     setExcluindo,
   ] = useState(false);
-
   const [
     mensagemSucesso,
     setMensagemSucesso,
@@ -360,101 +303,76 @@ export default function FinanceiroPage() {
     useState<string | null>(
       null
     );
-
   function mostrarToast(
     mensagem: string
   ) {
     setMensagemSucesso(
       mensagem
     );
-
     setTimeout(() => {
       setMensagemSucesso(
         null
       );
     }, 3000);
   }
-
   /*
     ============================================================
     CARREGAR
     ============================================================
   */
-
   async function carregarFinanceiro() {
     setCarregando(true);
+    setFalhaConsulta(false);
     setError(null);
-
     try {
-      const {
-        data,
-        error: supabaseError,
-      } = await supabase
-        .from('financeiro')
-        .select('*')
-        .order(
-          'data_vencimento',
-          {
-            ascending: false,
-          }
-        );
-
-      if (supabaseError) {
-        throw supabaseError;
-      }
-
-      setLancamentos(
-        (data || []) as
-          LancamentoFinanceiro[]
-      );
+      const dados = await consultarFinanceiroERN<LancamentoFinanceiro>();
+      setLancamentos(dados);
     } catch (err) {
+      setFalhaConsulta(true);
       console.error(
         'Erro ao carregar financeiro:',
         err
       );
-
       setError(
         err instanceof Error
           ? err.message
           : 'Não foi possível carregar os lançamentos financeiros.'
       );
-
       setLancamentos([]);
     } finally {
       setCarregando(false);
     }
   }
-
   useEffect(() => {
-    carregarFinanceiro();
+    const parametros = new URLSearchParams(window.location.search);
+    const reserva = parametros.get('reserva_id') ?? '';
+    setReservaFiltro(reserva);
+    if (parametros.has('periodo')) setFiltroPeriodo(periodoFinanceiroERN(parametros.get('periodo')));
+    else if (reserva) setFiltroPeriodo('todos');
+    if (parametros.has('busca')) setBusca(parametros.get('busca') ?? '');
+    void carregarFinanceiro();
   }, []);
-
   /*
     ============================================================
     INDICADORES FINANCEIROS
     ============================================================
   */
-
   const financeiro =
     useMemo(() => {
       let recebido = 0;
       let pago = 0;
       let receber = 0;
       let pagar = 0;
-
       lancamentos.forEach(
         (item) => {
           const tipo =
             normalizarTipo(
               item.tipo
             );
-
           const status =
             obterStatus(item);
-
           const valor =
             obterValor(item);
-
           if (
             tipo === 'receita'
           ) {
@@ -477,7 +395,6 @@ export default function FinanceiroPage() {
           }
         }
       );
-
       return {
         recebido,
         pago,
@@ -487,189 +404,58 @@ export default function FinanceiroPage() {
           recebido - pago,
       };
     }, [lancamentos]);
-
   /*
     ============================================================
     FILTRO
     ============================================================
   */
-
-  const lancamentosFiltrados =
-    useMemo(() => {
-      const hoje =
-        new Date();
-
-      const mes =
-        hoje.getMonth();
-
-      const ano =
-        hoje.getFullYear();
-
-      const termo =
-        busca
-          .trim()
-          .toLowerCase();
-
-      return lancamentos.filter(
-        (item) => {
-          const tipo =
-            normalizarTipo(
-              item.tipo
-            );
-
-          const status =
-            obterStatus(item);
-
-          let atendeFiltro =
-            true;
-
-          if (
-            filtroPeriodo ===
-            'mes_atual'
-          ) {
-            if (
-              !item.data_vencimento
-            ) {
-              atendeFiltro =
-                false;
-            } else {
-              const partes =
-                item.data_vencimento
-                  .split('T')[0]
-                  .split('-');
-
-              if (
-                partes.length ===
-                3
-              ) {
-                atendeFiltro =
-                  Number(
-                    partes[1]
-                  ) -
-                    1 ===
-                    mes &&
-                  Number(
-                    partes[0]
-                  ) === ano;
-              } else {
-                atendeFiltro =
-                  false;
-              }
-            }
-          }
-
-          if (
-            filtroPeriodo ===
-            'receitas'
-          ) {
-            atendeFiltro =
-              tipo ===
-              'receita';
-          }
-
-          if (
-            filtroPeriodo ===
-            'despesas'
-          ) {
-            atendeFiltro =
-              tipo ===
-              'despesa';
-          }
-
-          if (
-            filtroPeriodo ===
-            'pendentes'
-          ) {
-            atendeFiltro =
-              status ===
-              'Pendente';
-          }
-
-          const atendeBusca =
-            !termo ||
-            obterDescricao(item)
-              .toLowerCase()
-              .includes(termo) ||
-            (
-              item.categoria ||
-              ''
-            )
-              .toLowerCase()
-              .includes(termo) ||
-            tipo.includes(
-              termo
-            ) ||
-            status
-              .toLowerCase()
-              .includes(termo);
-
-          return (
-            atendeFiltro &&
-            atendeBusca
-          );
-        }
-      );
-    }, [
-      lancamentos,
-      filtroPeriodo,
-      busca,
-    ]);
-
+  const lancamentosFiltrados = useMemo(() => filtrarFinanceiroERN(lancamentos, filtroPeriodo, busca, reservaFiltro), [lancamentos, filtroPeriodo, busca, reservaFiltro]);
+  const parametrosExportacao = new URLSearchParams({periodo:filtroPeriodo, busca});
+  if(reservaFiltro)parametrosExportacao.set('reserva_id',reservaFiltro);
+  const linkExportacao = `/financeiro/exportar?${parametrosExportacao.toString()}`;
   /*
     ============================================================
     EDIÇÃO
     ============================================================
   */
-
   function abrirEdicao(
     item: LancamentoFinanceiro
   ) {
     setItemEditar({
       ...item,
-
       descricao:
         obterDescricao(item),
-
       status:
         obterStatus(item),
     });
-
     setValorEdicao(
       String(
         obterValor(item)
       )
     );
-
     setError(null);
   }
-
   async function salvarEdicao(
     event: React.FormEvent
   ) {
     event.preventDefault();
-
-    if (!itemEditar?.id) {
+    if (!itemEditar?.id || mutacaoEmAndamento.current) {
       return;
     }
-
     const descricao =
       obterDescricao(
         itemEditar
       ).trim();
-
     if (!descricao) {
       setError(
         'Informe a descrição do lançamento.'
       );
-
       return;
     }
-
     const valor =
       converterValor(
         valorEdicao
       );
-
     if (
       !Number.isFinite(valor) ||
       valor <= 0
@@ -677,40 +463,31 @@ export default function FinanceiroPage() {
       setError(
         'Informe um valor válido maior que zero.'
       );
-
       return;
     }
-
     const tipo =
       normalizarTipo(
         itemEditar.tipo
       );
-
     const status =
       normalizarStatus(
         tipo,
         itemEditar.status
       );
-
     const tipoOriginal = (itemEditar.tipo ?? '').trim().toLowerCase();
-
     if (tipoOriginal !== 'receita' && tipoOriginal !== 'despesa') {
       setError('Este lançamento tem um tipo inválido e precisa ser revisado.');
       return;
     }
-
     const vencimento = itemEditar.data_vencimento ?? '';
-
     if (!dataFinanceiraValida(vencimento)) {
       setError('Informe uma data de vencimento válida.');
       return;
     }
-
     const liquidacao =
       status === 'Pendente'
         ? null
         : itemEditar.data_liquidacao?.trim() || null;
-
     if (
       status !== 'Pendente' &&
       (!liquidacao || !dataFinanceiraValida(liquidacao))
@@ -718,40 +495,32 @@ export default function FinanceiroPage() {
       setError('Informe a data efetiva do recebimento ou pagamento.');
       return;
     }
-
     if (liquidacao && liquidacao > hojeFinanceiroManaus()) {
       setError('Um recebimento ou pagamento realizado não pode ter data futura.');
       return;
     }
-
+    mutacaoEmAndamento.current = true;
     setSalvandoEdicao(true);
-
     setError(null);
-
     try {
       const {
+        data: atualizado,
         error: updateError,
       } = await supabase
         .from('financeiro')
         .update({
           descricao,
-
           valor,
-
           categoria:
             itemEditar.categoria
               ?.trim() ||
             null,
-
           data_vencimento: vencimento,
           data_liquidacao: liquidacao,
-
           status,
-
           /*
             O tipo não será trocado
             durante a edição.
-
             Receita continua receita.
             Despesa continua despesa.
           */
@@ -760,53 +529,47 @@ export default function FinanceiroPage() {
         .eq(
           'id',
           itemEditar.id
-        );
-
-      if (updateError) {
-        throw updateError;
+        ).select('id').single();
+      if (updateError || !atualizado?.id) {
+        throw new Error(updateError?.message || 'Não foi possível confirmar a atualização. Recarregue a lista antes de tentar novamente.');
       }
-
       setItemEditar(null);
-
       mostrarToast(
         'Lançamento atualizado com sucesso.'
       );
-
       await carregarFinanceiro();
     } catch (err) {
       console.error(
         'Erro ao atualizar lançamento:',
         err
       );
-
       setError(
         err instanceof Error
           ? err.message
           : 'Não foi possível atualizar o lançamento.'
       );
     } finally {
+      mutacaoEmAndamento.current = false;
       setSalvandoEdicao(
         false
       );
     }
   }
-
   /*
     ============================================================
     EXCLUSÃO
     ============================================================
   */
-
   async function confirmarExclusao() {
-    if (!itemExcluir?.id) {
+    if (!itemExcluir?.id || mutacaoEmAndamento.current) {
       return;
     }
-
+    mutacaoEmAndamento.current = true;
     setExcluindo(true);
     setError(null);
-
     try {
       const {
+        data: excluido,
         error: deleteError,
       } = await supabase
         .from('financeiro')
@@ -814,12 +577,10 @@ export default function FinanceiroPage() {
         .eq(
           'id',
           itemExcluir.id
-        );
-
-      if (deleteError) {
-        throw deleteError;
+        ).select('id').single();
+      if (deleteError || !excluido?.id) {
+        throw new Error(deleteError?.message || 'Não foi possível confirmar a exclusão. Recarregue a lista.');
       }
-
       setLancamentos(
         (atuais) =>
           atuais.filter(
@@ -828,9 +589,7 @@ export default function FinanceiroPage() {
               itemExcluir.id
           )
       );
-
       setItemExcluir(null);
-
       mostrarToast(
         'Lançamento excluído com sucesso.'
       );
@@ -839,23 +598,21 @@ export default function FinanceiroPage() {
         'Erro ao excluir lançamento:',
         err
       );
-
       setError(
         err instanceof Error
           ? err.message
           : 'Não foi possível excluir o lançamento.'
       );
     } finally {
+      mutacaoEmAndamento.current = false;
       setExcluindo(false);
     }
   }
-
   /*
     ============================================================
     VISUAL
     ============================================================
   */
-
   function tipoClasses(
     tipo: TipoLancamento
   ) {
@@ -863,7 +620,6 @@ export default function FinanceiroPage() {
       ? 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300'
       : 'border-red-500/20 bg-red-500/[0.07] text-red-300';
   }
-
   function statusClasses(
     status: StatusLancamento
   ) {
@@ -873,96 +629,72 @@ export default function FinanceiroPage() {
     ) {
       return 'border-amber-500/20 bg-amber-500/[0.07] text-amber-300';
     }
-
     return 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300';
   }
-
   const inputClass =
     'w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/40';
-
   const labelClass =
     'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34';
-
   const cards = [
     {
       titulo:
         'Receitas recebidas',
-
       valor:
         financeiro.recebido,
-
       detalhe:
         'entradas realizadas',
     },
-
     {
       titulo:
         'Despesas pagas',
-
       valor:
         financeiro.pago,
-
       detalhe:
         'saídas realizadas',
     },
-
     {
       titulo:
         'Saldo realizado',
-
       valor:
         financeiro.saldo,
-
       detalhe:
         'recebido − pago',
     },
-
     {
       titulo:
         'A receber',
-
       valor:
         financeiro.receber,
-
       detalhe:
         'receitas pendentes',
     },
-
     {
       titulo:
         'A pagar',
-
       valor:
         financeiro.pagar,
-
       detalhe:
         'despesas pendentes',
     },
   ];
-
   return (
     <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
       {/* TOAST */}
-
       {mensagemSucesso && (
         <div className="fixed left-1/2 top-[100px] z-[80] -translate-x-1/2 rounded-2xl border border-emerald-500/20 bg-[#0B2119] px-5 py-3 text-xs font-semibold text-emerald-300 shadow-2xl">
           {mensagemSucesso}
         </div>
       )}
-
       {/* CABEÇALHO */}
-
       <section className="border-b border-white/[0.07] bg-[#091510]">
         <div className="mx-auto flex max-w-[1360px] flex-col gap-8 px-5 py-10 md:px-8 md:py-12 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <div className="flex items-center gap-3">
               <span className="h-px w-8 bg-[#E3A144]" />
-
               <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
                 Financeiro • Controle
               </span>
             </div>
-
             <h1
               className="mt-4 text-4xl leading-none tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
               style={{
@@ -972,7 +704,6 @@ export default function FinanceiroPage() {
             >
               Financeiro
             </h1>
-
             <p className="mt-4 max-w-[720px] text-sm leading-7 text-[#EDEDE3]/42">
               Controle entradas,
               despesas, valores
@@ -981,7 +712,6 @@ export default function FinanceiroPage() {
               realizado.
             </p>
           </div>
-
           <div className="flex flex-wrap gap-3">
             <Link
               href="/financeiro/receita/novo"
@@ -989,16 +719,14 @@ export default function FinanceiroPage() {
             >
               + Nova receita
             </Link>
-
             <Link
               href="/financeiro/despesa/novo"
               className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-red-500/20 bg-red-500/[0.08] px-5 text-xs font-semibold text-red-300 transition hover:bg-red-500/[0.12]"
             >
               − Nova despesa
             </Link>
-
             <Link
-              href="/financeiro/exportar"
+              href={linkExportacao}
               className="inline-flex min-h-[48px] items-center justify-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.05]"
             >
               Exportar
@@ -1006,12 +734,13 @@ export default function FinanceiroPage() {
           </div>
         </div>
       </section>
-
       <main className="mx-auto max-w-[1360px] px-5 py-8 md:px-8 md:py-10">
+        <p className="mb-4 text-xs leading-6 text-[#B4C8BB]">Os indicadores financeiros consideram todos os lançamentos carregados e acessíveis à sua conta. Os filtros abaixo selecionam a listagem e a exportação. O mês atual usa vencimentos no calendário de Manaus.</p>
+        {reservaFiltro && <div className="mb-4 flex flex-wrap items-center gap-3 rounded-xl border border-[#E3A144]/30 p-4 text-xs"><span>Reserva filtrada: {reservaFiltro}</span><button type="button" className="min-h-11 rounded-xl border border-white/20 px-3" onClick={()=>setReservaFiltro('')}>Limpar filtro de reserva</button></div>}
+        {error && <button type="button" disabled={carregando} onClick={()=>void carregarFinanceiro()} className="mb-3 min-h-11 rounded-xl border border-white/20 px-4 text-xs">Atualizar lançamentos</button>}
         {error && (
           <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-red-300">
             <span>{error}</span>
-
             <button
               type="button"
               onClick={() =>
@@ -1022,15 +751,11 @@ export default function FinanceiroPage() {
             </button>
           </div>
         )}
-
         <GraficosFinanceiros />
-
         <p className="mb-4 text-sm text-[#EDEDE3]/65">
           Resumo geral de todo o histórico — independente do período da análise acima.
         </p>
-
         {/* INDICADORES */}
-
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {cards.map(
             (card) => (
@@ -1043,7 +768,6 @@ export default function FinanceiroPage() {
                 <p className="text-[9px] font-semibold uppercase tracking-[0.16em] text-[#7C9C87]">
                   {card.titulo}
                 </p>
-
                 <strong
                   className={`mt-5 block text-2xl font-medium tracking-[-0.04em] ${
                     card.titulo ===
@@ -1066,13 +790,12 @@ export default function FinanceiroPage() {
                       'var(--font-fraunces), serif',
                   }}
                 >
-                  {carregando
+                  {carregando || falhaConsulta
                     ? '—'
                     : formatarMoeda(
                         card.valor
                       )}
                 </strong>
-
                 <p className="mt-2 text-[10px] text-[#EDEDE3]/28">
                   {card.detalhe}
                 </p>
@@ -1080,9 +803,7 @@ export default function FinanceiroPage() {
             )
           )}
         </div>
-
         {/* FILTROS */}
-
         <section className="mt-6 rounded-[22px] border border-white/[0.075] bg-[#0A1713] p-4">
           <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
             <div className="flex flex-wrap gap-2">
@@ -1093,39 +814,35 @@ export default function FinanceiroPage() {
                   label:
                     'Mês atual',
                 },
-
                 {
                   chave:
                     'todos',
                   label:
                     'Histórico',
                 },
-
                 {
                   chave:
                     'receitas',
                   label:
                     'Receitas',
                 },
-
                 {
                   chave:
                     'despesas',
                   label:
                     'Despesas',
                 },
-
                 {
                   chave:
                     'pendentes',
                   label:
                     'Pendentes',
                 },
+                { chave: 'com_reserva', label: 'Com reserva' },
               ].map((filtro) => {
                 const ativo =
                   filtroPeriodo ===
                   filtro.chave;
-
                 return (
                   <button
                     key={
@@ -1148,7 +865,6 @@ export default function FinanceiroPage() {
                 );
               })}
             </div>
-
             <div className="relative">
               <svg
                 className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EDEDE3]/25"
@@ -1163,7 +879,6 @@ export default function FinanceiroPage() {
                   d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
-
               <input
                 type="text"
                 value={busca}
@@ -1181,16 +896,13 @@ export default function FinanceiroPage() {
             </div>
           </div>
         </section>
-
         {/* LANÇAMENTOS */}
-
         <section className="mt-6 overflow-hidden rounded-[26px] border border-white/[0.075] bg-[#0A1713]">
           <div className="flex flex-col gap-3 border-b border-white/[0.065] p-5 md:flex-row md:items-end md:justify-between md:p-6">
             <div>
               <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
                 Movimentações
               </p>
-
               <h2
                 className="mt-2 text-2xl text-[#F0F0E8]"
                 style={{
@@ -1201,7 +913,6 @@ export default function FinanceiroPage() {
                 Lançamentos financeiros
               </h2>
             </div>
-
             <p className="text-[10px] text-[#EDEDE3]/30">
               {
                 lancamentosFiltrados.length
@@ -1217,13 +928,11 @@ export default function FinanceiroPage() {
                 : ''}
             </p>
           </div>
-
           <div className="overflow-x-auto">
             {carregando ? (
               <div className="flex min-h-[330px] items-center justify-center">
                 <div className="text-center">
                   <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/[0.08] border-t-[#E3A144]" />
-
                   <p className="mt-4 text-xs text-[#EDEDE3]/35">
                     Carregando financeiro...
                   </p>
@@ -1242,7 +951,6 @@ export default function FinanceiroPage() {
                   >
                     Nenhum lançamento encontrado.
                   </h3>
-
                   <p className="mt-2 text-xs text-[#EDEDE3]/30">
                     Ajuste os filtros ou
                     registre uma nova
@@ -1277,7 +985,6 @@ export default function FinanceiroPage() {
                     ))}
                   </tr>
                 </thead>
-
                 <tbody className="divide-y divide-white/[0.055]">
                   {lancamentosFiltrados.map(
                     (
@@ -1288,17 +995,14 @@ export default function FinanceiroPage() {
                         normalizarTipo(
                           item.tipo
                         );
-
                       const status =
                         obterStatus(
                           item
                         );
-
                       const valor =
                         obterValor(
                           item
                         );
-
                       return (
                         <tr
                           key={
@@ -1312,7 +1016,6 @@ export default function FinanceiroPage() {
                               item.data_vencimento
                             )}
                           </td>
-
                           <td className="px-5 py-4">
                             <span
                               className={`rounded-full border px-2.5 py-1 text-[9px] font-semibold ${tipoClasses(
@@ -1325,7 +1028,6 @@ export default function FinanceiroPage() {
                                 : 'Despesa'}
                             </span>
                           </td>
-
                           <td className="px-5 py-4">
                             <p className="text-xs font-semibold text-[#EDEDE3]/82">
                               {obterDescricao(
@@ -1333,13 +1035,13 @@ export default function FinanceiroPage() {
                               ) ||
                                 '—'}
                             </p>
-                          </td>
+                            {item.reserva_id && <div className="mt-2 space-y-1 text-[10px] font-normal text-[#F4C77E]"><p className="break-all">Reserva: {item.reserva_id}</p><div className="flex flex-wrap gap-3"><button type="button" className="min-h-11 underline" onClick={()=>{setReservaFiltro(item.reserva_id!);setFiltroPeriodo('todos');setBusca('');}}>Filtrar esta reserva</button><Link className="inline-flex min-h-11 items-center underline" href={`/reservas/editar/${encodeURIComponent(item.reserva_id)}`}>Abrir reserva</Link></div></div>}
 
+                          </td>
                           <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
                             {item.categoria ||
                               '—'}
                           </td>
-
                           <td
                             className={`px-5 py-4 text-xs font-semibold ${
                               tipo ===
@@ -1352,12 +1054,10 @@ export default function FinanceiroPage() {
                             'receita'
                               ? '+ '
                               : '− '}
-
                             {formatarMoeda(
                               valor
                             )}
                           </td>
-
                           <td className="px-5 py-4">
                             <span
                               className={`rounded-full border px-2.5 py-1 text-[9px] font-semibold ${statusClasses(
@@ -1367,7 +1067,6 @@ export default function FinanceiroPage() {
                               {status}
                             </span>
                           </td>
-
                           <td className="px-5 py-4">
                             <div className="flex items-center justify-center gap-1.5">
                               <button
@@ -1392,7 +1091,6 @@ export default function FinanceiroPage() {
                                     strokeLinejoin="round"
                                     d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"
                                   />
-
                                   <circle
                                     cx="12"
                                     cy="12"
@@ -1400,7 +1098,6 @@ export default function FinanceiroPage() {
                                   />
                                 </svg>
                               </button>
-
                               <button
                                 type="button"
                                 title="Editar"
@@ -1413,7 +1110,6 @@ export default function FinanceiroPage() {
                               >
                                 ✎
                               </button>
-
                               <button
                                 type="button"
                                 title="Excluir"
@@ -1438,20 +1134,16 @@ export default function FinanceiroPage() {
           </div>
         </section>
       </main>
-
       {/* VISUALIZAÇÃO */}
-
       {itemVisualizar && (() => {
         const tipo =
           normalizarTipo(
             itemVisualizar.tipo
           );
-
         const status =
           obterStatus(
             itemVisualizar
           );
-
         return (
           <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
             <div className="w-full max-w-[620px] overflow-hidden rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
@@ -1460,7 +1152,6 @@ export default function FinanceiroPage() {
                   <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
                     Detalhes financeiros
                   </p>
-
                   <h3
                     className="mt-2 text-2xl text-[#F0F0E8]"
                     style={{
@@ -1474,7 +1165,6 @@ export default function FinanceiroPage() {
                       'Lançamento'}
                   </h3>
                 </div>
-
                 <button
                   type="button"
                   onClick={() =>
@@ -1487,9 +1177,10 @@ export default function FinanceiroPage() {
                   ✕
                 </button>
               </div>
-
               <div className="grid gap-3 p-6 sm:grid-cols-2">
                 {[
+                  { label: 'Reserva vinculada', valor: itemVisualizar.reserva_id || 'Lançamento avulso' },
+                  { label: 'Recebimento / pagamento efetivo', valor: itemVisualizar.data_liquidacao ? formatarData(itemVisualizar.data_liquidacao) : 'Não informado' },
                   {
                     label:
                       'Tipo',
@@ -1499,7 +1190,6 @@ export default function FinanceiroPage() {
                         ? 'Receita'
                         : 'Despesa',
                   },
-
                   {
                     label:
                       'Valor',
@@ -1510,7 +1200,6 @@ export default function FinanceiroPage() {
                         )
                       ),
                   },
-
                   {
                     label:
                       'Categoria',
@@ -1518,7 +1207,6 @@ export default function FinanceiroPage() {
                       itemVisualizar.categoria ||
                       'Não informada',
                   },
-
                   {
                     label:
                       'Vencimento',
@@ -1527,7 +1215,6 @@ export default function FinanceiroPage() {
                         itemVisualizar.data_vencimento
                       ),
                   },
-
                   {
                     label:
                       'Status',
@@ -1542,14 +1229,12 @@ export default function FinanceiroPage() {
                     <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28">
                       {item.label}
                     </p>
-
                     <p className="mt-2 text-xs font-medium text-[#EDEDE3]/72">
                       {item.valor}
                     </p>
                   </div>
                 ))}
               </div>
-
               <div className="flex justify-end border-t border-white/[0.07] px-6 py-4">
                 <button
                   type="button"
@@ -1567,20 +1252,16 @@ export default function FinanceiroPage() {
           </div>
         );
       })()}
-
       {/* EDIÇÃO */}
-
       {itemEditar && (() => {
         const tipo =
           normalizarTipo(
             itemEditar.tipo
           );
-
         const status =
           obterStatus(
             itemEditar
           );
-
         return (
           <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
             <div className="max-h-[92vh] w-full max-w-[680px] overflow-y-auto rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
@@ -1589,7 +1270,6 @@ export default function FinanceiroPage() {
                   <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
                     Financeiro • Edição
                   </p>
-
                   <h3
                     className="mt-2 text-2xl text-[#F0F0E8]"
                     style={{
@@ -1600,7 +1280,6 @@ export default function FinanceiroPage() {
                     Editar lançamento
                   </h3>
                 </div>
-
                 <button
                   type="button"
                   onClick={() =>
@@ -1613,7 +1292,6 @@ export default function FinanceiroPage() {
                   ✕
                 </button>
               </div>
-
               <form
                 onSubmit={
                   salvarEdicao
@@ -1628,7 +1306,6 @@ export default function FinanceiroPage() {
                   >
                     Natureza
                   </label>
-
                   <div
                     className={`inline-flex rounded-full border px-3 py-1.5 text-[10px] font-semibold ${tipoClasses(
                       tipo
@@ -1640,7 +1317,6 @@ export default function FinanceiroPage() {
                       : 'Despesa'}
                   </div>
                 </div>
-
                 <div>
                   <label
                     className={
@@ -1649,7 +1325,6 @@ export default function FinanceiroPage() {
                   >
                     Descrição *
                   </label>
-
                   <input
                     type="text"
                     required
@@ -1663,7 +1338,6 @@ export default function FinanceiroPage() {
                     ) =>
                       setItemEditar({
                         ...itemEditar,
-
                         descricao:
                           event.target
                             .value,
@@ -1674,7 +1348,6 @@ export default function FinanceiroPage() {
                     }
                   />
                 </div>
-
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label
@@ -1684,7 +1357,6 @@ export default function FinanceiroPage() {
                     >
                       Valor (R$) *
                     </label>
-
                     <input
                       type="text"
                       inputMode="decimal"
@@ -1706,7 +1378,6 @@ export default function FinanceiroPage() {
                       }
                     />
                   </div>
-
                   <div>
                     <label
                       className={
@@ -1715,7 +1386,6 @@ export default function FinanceiroPage() {
                     >
                       Categoria
                     </label>
-
                     <input
                       type="text"
                       value={
@@ -1727,7 +1397,6 @@ export default function FinanceiroPage() {
                       ) =>
                         setItemEditar({
                           ...itemEditar,
-
                           categoria:
                             event.target
                               .value,
@@ -1739,7 +1408,6 @@ export default function FinanceiroPage() {
                     />
                   </div>
                 </div>
-
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
                     <label
@@ -1749,7 +1417,6 @@ export default function FinanceiroPage() {
                     >
                       Data de vencimento *
                     </label>
-
                     <input
                       type="date"
                       required
@@ -1765,7 +1432,6 @@ export default function FinanceiroPage() {
                       ) =>
                         setItemEditar({
                           ...itemEditar,
-
                           data_vencimento:
                             event.target
                               .value,
@@ -1776,7 +1442,6 @@ export default function FinanceiroPage() {
                       }
                     />
                   </div>
-
                   <div>
                     <label
                       className={
@@ -1785,7 +1450,6 @@ export default function FinanceiroPage() {
                     >
                       Status
                     </label>
-
                     <select
                       value={status}
                       onChange={(
@@ -1793,7 +1457,6 @@ export default function FinanceiroPage() {
                       ) =>
                         setItemEditar({
                           ...itemEditar,
-
                           status:
                             event.target
                               .value,
@@ -1809,7 +1472,6 @@ export default function FinanceiroPage() {
                           <option value="Recebido">
                             Recebido
                           </option>
-
                           <option value="Pendente">
                             Pendente
                           </option>
@@ -1819,7 +1481,6 @@ export default function FinanceiroPage() {
                           <option value="Pago">
                             Pago
                           </option>
-
                           <option value="Pendente">
                             Pendente
                           </option>
@@ -1828,7 +1489,6 @@ export default function FinanceiroPage() {
                     </select>
                   </div>
                 </div>
-
                 <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
                   {status !== 'Pendente' ? (
                     <>
@@ -1840,7 +1500,6 @@ export default function FinanceiroPage() {
                           ? 'Data efetiva do recebimento'
                           : 'Data efetiva do pagamento'}
                       </label>
-
                       <input
                         id="ern-data-liquidacao"
                         type="date"
@@ -1856,7 +1515,6 @@ export default function FinanceiroPage() {
                         }
                         className={`${inputClass} min-h-12 [color-scheme:dark]`}
                       />
-
                       <p className="mt-2 text-xs leading-6 text-[#EDEDE3]/65">
                         Informe quando o dinheiro realmente entrou ou saiu.
                         Essa data determina o mês nos gráficos realizados.
@@ -1869,7 +1527,6 @@ export default function FinanceiroPage() {
                     </p>
                   )}
                 </div>
-
                 {error && (
                   <p
                     role="alert"
@@ -1878,7 +1535,6 @@ export default function FinanceiroPage() {
                     {error}
                   </p>
                 )}
-
                 <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-5 sm:flex-row sm:justify-end">
                   <button
                     type="button"
@@ -1891,7 +1547,6 @@ export default function FinanceiroPage() {
                   >
                     Cancelar
                   </button>
-
                   <button
                     type="submit"
                     disabled={
@@ -1909,9 +1564,7 @@ export default function FinanceiroPage() {
           </div>
         );
       })()}
-
       {/* EXCLUSÃO */}
-
       {itemExcluir && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
           <div className="w-full max-w-[430px] rounded-[26px] border border-white/[0.09] bg-[#091510] p-6 text-center">
@@ -1924,7 +1577,6 @@ export default function FinanceiroPage() {
             >
               Excluir lançamento?
             </h3>
-
             <p className="mt-3 text-xs leading-6 text-[#EDEDE3]/38">
               O lançamento{' '}
               <strong className="text-[#EDEDE3]/70">
@@ -1936,7 +1588,7 @@ export default function FinanceiroPage() {
               será removido
               permanentemente.
             </p>
-
+            {error && <p role="alert" className="mt-4 text-xs text-red-300">{error}</p>}
             <div className="mt-6 grid grid-cols-2 gap-3">
               <button
                 type="button"
@@ -1948,7 +1600,6 @@ export default function FinanceiroPage() {
               >
                 Cancelar
               </button>
-
               <button
                 type="button"
                 disabled={excluindo}
