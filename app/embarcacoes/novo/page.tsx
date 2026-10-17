@@ -37,6 +37,10 @@ const estadoInicial: EmbarcacaoForm = {
 
 export default function NovaEmbarcacaoPage() {
   const router = useRouter();
+  const envioFrotaERN = React.useRef(false);
+  const gravadoFrotaERN = React.useRef(false);
+  const idFrotaERN = React.useRef<string | null>(null);
+  const empresaEnvioFrotaERN = React.useRef<string | null>(null);
 
   const [
     formData,
@@ -60,10 +64,10 @@ export default function NovaEmbarcacaoPage() {
   } | null>(null);
 
   const inputClass =
-    'w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/40';
+    'w-full rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 py-3 text-sm text-[var(--ern-texto)] outline-none transition placeholder:text-[var(--ern-secundario)] focus:border-[var(--ern-destaque)]';
 
   const labelClass =
-    'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34';
+    'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)]';
 
   function handleChange(
     event: React.ChangeEvent<
@@ -86,6 +90,7 @@ export default function NovaEmbarcacaoPage() {
   }
 
   function handleLimpar() {
+    if (envioFrotaERN.current || gravadoFrotaERN.current) return;
     setFormData(
       estadoInicial
     );
@@ -103,6 +108,7 @@ export default function NovaEmbarcacaoPage() {
     event: React.FormEvent
   ) {
     event.preventDefault();
+    if (envioFrotaERN.current || gravadoFrotaERN.current) return;
 
     setMensagem(null);
 
@@ -131,7 +137,7 @@ export default function NovaEmbarcacaoPage() {
       !Number.isInteger(
         capacidade
       ) ||
-      capacidade <= 0
+      capacidade <= 0 || capacidade > 2147483647
     ) {
       setMensagem({
         tipo: 'erro',
@@ -142,6 +148,7 @@ export default function NovaEmbarcacaoPage() {
       return;
     }
 
+    envioFrotaERN.current = true;
     setSalvando(true);
 
     try {
@@ -178,14 +185,59 @@ export default function NovaEmbarcacaoPage() {
           formData.status,
       };
 
-      const { error } =
-        await supabase
-          .from('embarcacoes')
-          .insert([payload]);
+      const { data: auth, error: erroAuth } =
+        await supabase.auth.getUser();
+
+      if (erroAuth || !auth.user) {
+        throw new Error('Entre novamente para cadastrar a embarcacao.');
+      }
+
+      const { data: perfil, error: erroPerfil } = await supabase
+        .from('perfis')
+        .select('empresa_id')
+        .eq('id', auth.user.id)
+        .single();
+
+      if (erroPerfil || !perfil?.empresa_id) {
+        throw new Error('Nao foi possivel identificar sua empresa.');
+      }
+
+      const empresa = String(perfil.empresa_id);
+
+      if (
+        empresaEnvioFrotaERN.current &&
+        empresaEnvioFrotaERN.current !== empresa
+      ) {
+        throw new Error('Sua empresa mudou. Reabra o formulario.');
+      }
+
+      empresaEnvioFrotaERN.current = empresa;
+      idFrotaERN.current ??= crypto.randomUUID();
+
+      const { data: registro, error } = await supabase
+        .from('embarcacoes')
+        .insert([{
+          ...payload,
+          id: idFrotaERN.current,
+          empresa_id: empresa,
+        }])
+        .select('id')
+        .single();
+
+      if (!error && registro?.id !== idFrotaERN.current) {
+        throw new Error('Nao foi possivel confirmar o cadastro.');
+      }
 
       if (error) {
+        if (error.code === '23505') {
+          throw new Error(
+            'Este envio pode ja ter sido registrado. Confira a listagem antes de cadastrar novamente.'
+          );
+        }
         throw error;
       }
+
+      gravadoFrotaERN.current = true;
 
       setMensagem({
         tipo: 'sucesso',
@@ -214,21 +266,24 @@ export default function NovaEmbarcacaoPage() {
             : 'Não foi possível cadastrar a embarcação.',
       });
     } finally {
-      setSalvando(false);
+      if (!gravadoFrotaERN.current) {
+        envioFrotaERN.current = false;
+        setSalvando(false);
+      }
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+    <div className="min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
       {/* =====================================================
           CABEÇALHO
       ====================================================== */}
 
-      <section className="border-b border-white/[0.07] bg-[#091510]">
+      <section className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
         <div className="mx-auto max-w-[1180px] px-5 py-10 md:px-8 md:py-12">
           <Link
             href="/embarcacoes"
-            className="inline-flex items-center gap-2 text-xs font-semibold text-[#EDEDE3]/38 transition hover:text-[#E3A144]"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-[var(--ern-secundario)] transition hover:text-[var(--ern-destaque)]"
           >
             <span>←</span>
 
@@ -237,12 +292,12 @@ export default function NovaEmbarcacaoPage() {
 
           <div className="mt-7 flex flex-col gap-5 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[var(--ern-destaque)]">
                 Estrutura • Frota
               </p>
 
               <h1
-                className="mt-3 text-4xl tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
+                className="mt-3 text-4xl tracking-[-0.035em] text-[var(--ern-texto)] md:text-5xl"
                 style={{
                   fontFamily:
                     'var(--font-fraunces), serif',
@@ -251,7 +306,7 @@ export default function NovaEmbarcacaoPage() {
                 Nova embarcação
               </h1>
 
-              <p className="mt-4 max-w-[680px] text-sm leading-7 text-[#EDEDE3]/40">
+              <p className="mt-4 max-w-[680px] text-sm leading-7 text-[var(--ern-secundario)]">
                 Cadastre uma embarcação
                 e organize capacidade,
                 responsável, motor e
@@ -259,7 +314,7 @@ export default function NovaEmbarcacaoPage() {
               </p>
             </div>
 
-            <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1.5 text-[9px] uppercase tracking-[0.15em] text-[#EDEDE3]/28">
+            <span className="rounded-full border border-[var(--ern-borda)] bg-[var(--ern-suave)] px-3 py-1.5 text-[9px] uppercase tracking-[0.15em] text-[var(--ern-secundario)]">
               ERN Gestão
             </span>
           </div>
@@ -272,8 +327,8 @@ export default function NovaEmbarcacaoPage() {
             className={`mb-6 rounded-2xl border px-5 py-4 text-xs ${
               mensagem.tipo ===
               'sucesso'
-                ? 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300'
-                : 'border-red-500/20 bg-red-500/[0.07] text-red-300'
+                ? 'border-emerald-500/20 bg-emerald-500/[0.07] text-[var(--ern-sucesso)]'
+                : 'border-red-500/20 bg-red-500/[0.07] text-[var(--ern-erro)]'
             }`}
           >
             {mensagem.texto}
@@ -288,14 +343,14 @@ export default function NovaEmbarcacaoPage() {
               IDENTIFICAÇÃO
           ================================================== */}
 
-          <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-7">
-            <div className="border-b border-white/[0.065] pb-5">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+          <section className="rounded-[26px] border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7">
+            <div className="border-b border-[var(--ern-borda)] pb-5">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--ern-secundario)]">
                 Identificação
               </p>
 
               <h2
-                className="mt-2 text-2xl text-[#F0F0E8]"
+                className="mt-2 text-2xl text-[var(--ern-texto)]"
                 style={{
                   fontFamily:
                     'var(--font-fraunces), serif',
@@ -415,7 +470,7 @@ export default function NovaEmbarcacaoPage() {
                     }
                   />
 
-                  <p className="mt-2 text-[9px] text-[#EDEDE3]/24">
+                  <p className="mt-2 text-[9px] text-[var(--ern-secundario)]">
                     Número máximo de
                     passageiros.
                   </p>
@@ -507,13 +562,13 @@ export default function NovaEmbarcacaoPage() {
           ================================================== */}
 
           <div className="space-y-6">
-            <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-6">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+            <section className="rounded-[26px] border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-6">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--ern-destaque)]">
                 Operação
               </p>
 
               <h2
-                className="mt-2 text-2xl text-[#F0F0E8]"
+                className="mt-2 text-2xl text-[var(--ern-texto)]"
                 style={{
                   fontFamily:
                     'var(--font-fraunces), serif',
@@ -522,7 +577,7 @@ export default function NovaEmbarcacaoPage() {
                 Status operacional
               </h2>
 
-              <p className="mt-4 text-xs leading-6 text-[#EDEDE3]/35">
+              <p className="mt-4 text-xs leading-6 text-[var(--ern-secundario)]">
                 Informe a condição
                 atual da embarcação
                 dentro da frota.
@@ -568,13 +623,13 @@ export default function NovaEmbarcacaoPage() {
               </div>
             </section>
 
-            <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-6">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+            <section className="rounded-[26px] border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-6">
+              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--ern-secundario)]">
                 Controle da frota
               </p>
 
               <h3
-                className="mt-2 text-xl text-[#F0F0E8]"
+                className="mt-2 text-xl text-[var(--ern-texto)]"
                 style={{
                   fontFamily:
                     'var(--font-fraunces), serif',
@@ -594,11 +649,11 @@ export default function NovaEmbarcacaoPage() {
                 ].map((item) => (
                   <div
                     key={item}
-                    className="flex items-center gap-3 rounded-xl border border-white/[0.055] bg-white/[0.018] px-3 py-2.5"
+                    className="flex items-center gap-3 rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] px-3 py-2.5"
                   >
-                    <span className="h-1.5 w-1.5 rounded-full bg-[#E3A144]" />
+                    <span className="h-1.5 w-1.5 rounded-full bg-[var(--ern-botao)]" />
 
-                    <span className="text-[11px] text-[#EDEDE3]/48">
+                    <span className="text-[11px] text-[var(--ern-secundario)]">
                       {item}
                     </span>
                   </div>
@@ -612,7 +667,7 @@ export default function NovaEmbarcacaoPage() {
           ================================================== */}
 
           <div className="lg:col-span-2">
-            <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-6 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col-reverse gap-3 border-t border-[var(--ern-borda)] pt-6 sm:flex-row sm:items-center sm:justify-between">
               <button
                 type="button"
                 onClick={
@@ -621,7 +676,7 @@ export default function NovaEmbarcacaoPage() {
                 disabled={
                   salvando
                 }
-                className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/45 transition hover:bg-white/[0.05] disabled:opacity-50"
+                className="rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] px-5 py-3 text-xs font-semibold text-[var(--ern-secundario)] transition hover:bg-[var(--ern-suave)] disabled:opacity-50"
               >
                 Limpar formulário
               </button>
@@ -629,7 +684,7 @@ export default function NovaEmbarcacaoPage() {
               <div className="flex flex-col gap-3 sm:flex-row">
                 <Link
                   href="/embarcacoes"
-                  className="inline-flex min-h-[46px] items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.05]"
+                  className="inline-flex min-h-[46px] items-center justify-center rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] px-5 text-xs font-semibold text-[var(--ern-secundario)] transition hover:bg-[var(--ern-suave)]"
                 >
                   Cancelar
                 </Link>
@@ -639,7 +694,7 @@ export default function NovaEmbarcacaoPage() {
                   disabled={
                     salvando
                   }
-                  className="inline-flex min-h-[46px] items-center justify-center rounded-xl bg-[#E3A144] px-6 text-xs font-bold text-[#07130F] transition hover:bg-[#F0B35C] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="inline-flex min-h-[46px] items-center justify-center rounded-xl bg-[var(--ern-botao)] px-6 text-xs font-bold text-[var(--ern-sobre-botao)] transition hover:bg-[var(--ern-botao)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {salvando
                     ? 'Salvando...'
