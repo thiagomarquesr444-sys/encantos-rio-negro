@@ -230,7 +230,7 @@ export async function GET(
       )
       .select(`
         status,
-        planos (
+        planos!assinaturas_empresas_plano_id_fkey (
           codigo,
           nome,
           limite_usuarios
@@ -246,10 +246,14 @@ export async function GET(
       )
       .single();
 
-    if (
-      assinaturaError ||
-      !assinatura
-    ) {
+    if (assinaturaError || !assinatura) {
+      console.error('[ERN equipe: consulta assinatura]', {
+        empresa_id: perfil.empresa_id,
+        codigo: assinaturaError?.code,
+        mensagem: assinaturaError?.message,
+        detalhes: assinaturaError?.details,
+        dica: assinaturaError?.hint,
+      });
       return respostaErro(
         'Assinatura ativa não encontrada.',
         403,
@@ -493,7 +497,7 @@ export async function POST(
       )
       .select(`
         status,
-        planos (
+        planos!assinaturas_empresas_plano_id_fkey (
           codigo,
           nome,
           limite_usuarios
@@ -509,10 +513,14 @@ export async function POST(
       )
       .single();
 
-    if (
-      assinaturaError ||
-      !assinatura
-    ) {
+    if (assinaturaError || !assinatura) {
+      console.error('[ERN equipe: consulta assinatura]', {
+        empresa_id: perfil.empresa_id,
+        codigo: assinaturaError?.code,
+        mensagem: assinaturaError?.message,
+        detalhes: assinaturaError?.details,
+        dica: assinaturaError?.hint,
+      });
       return respostaErro(
         'Assinatura ativa não encontrada.',
         403,
@@ -601,11 +609,10 @@ export async function POST(
       ----------------------------------------------------------
     */
 
-    const redirectTo =
-      new URL(
-        '/login',
-        request.nextUrl.origin
-      ).toString();
+    const redirectTo = new URL(
+      '/auth/nova-senha',
+      request.nextUrl.origin
+    ).toString();
 
     const {
       data: convite,
