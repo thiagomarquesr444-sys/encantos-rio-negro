@@ -1,20 +1,12 @@
 'use client';
 
-import React, {
-  useEffect,
-  useState,
-} from 'react';
-
+import { useEffect, useRef, useState } from 'react';
+import type { FormEvent } from 'react';
 import Link from 'next/link';
-
-import {
-  useParams,
-  useRouter,
-} from 'next/navigation';
-
+import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-type ClienteForm = {
+type Formulario = {
   nome: string;
   documento: string;
   telefone: string;
@@ -25,517 +17,482 @@ type ClienteForm = {
   observacoes: string;
 };
 
+type Contexto = {
+  usuarioId: string;
+  empresaId: string;
+  clienteId: string;
+};
+
+const inicial: Formulario = {
+  nome: '',
+  documento: '',
+  telefone: '',
+  email: '',
+  cidade: '',
+  nacionalidade: '',
+  situacao: 'Ativo',
+  observacoes: '',
+};
+
+const painel =
+  'min-w-0 rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-4 sm:p-6';
+
+const botao =
+  'inline-flex min-h-12 items-center justify-center rounded-xl border border-[var(--ern-borda)] px-4 text-sm font-semibold hover:bg-[var(--ern-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ern-destaque)] disabled:cursor-not-allowed disabled:opacity-50';
+
+const campo =
+  'min-h-12 w-full min-w-0 rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-3 text-base text-[var(--ern-texto)] outline-none focus:ring-2 focus:ring-[var(--ern-destaque)] disabled:opacity-50';
+
+async function consultarConta() {
+  const { data, error } = await supabase.auth.getUser();
+
+  if (error || !data.user) {
+    throw new Error('Sua sessão expirou. Entre novamente.');
+  }
+
+  const { data: perfil, error: perfilError } = await supabase
+    .from('perfis')
+    .select('empresa_id')
+    .eq('id', data.user.id)
+    .single();
+
+  if (perfilError || !perfil?.empresa_id) {
+    throw new Error('Não foi possível identificar sua empresa.');
+  }
+
+  return {
+    usuarioId: data.user.id,
+    empresaId: String(perfil.empresa_id),
+  };
+}
+
+function normalizarSituacao(valor: string | null) {
+  const texto = valor?.trim() || '';
+  if (!texto || texto.toLowerCase() === 'ativo') return 'Ativo';
+  if (texto.toLowerCase() === 'inativo') return 'Inativo';
+  return texto;
+}
+
 export default function EditarClientePage() {
   const router = useRouter();
   const params = useParams();
+  const id = typeof params?.id === 'string' ? params.id : '';
 
-  const id = params?.id;
+  const [form, setForm] = useState<Formulario>(inicial);
+  const [contexto, setContexto] = useState<Contexto | null>(null);
+  const [carregando, setCarregando] = useState(true);
+  const [erroCarga, setErroCarga] = useState('');
+  const [erro, setErro] = useState('');
+  const [salvando, setSalvando] = useState(false);
+  const [sucesso, setSucesso] = useState(false);
+  const [resultadoIncerto, setResultadoIncerto] = useState(false);
+  const [tentativa, setTentativa] = useState(0);
 
-  const [loading, setLoading] =
-    useState(true);
-
-  const [salvando, setSalvando] =
-    useState(false);
-
-  const [
-    mensagemSucesso,
-    setMensagemSucesso,
-  ] = useState('');
-
-  const [
-    mensagemErro,
-    setMensagemErro,
-  ] = useState('');
-
-  const [form, setForm] =
-    useState<ClienteForm>({
-      nome: '',
-      documento: '',
-      telefone: '',
-      email: '',
-      cidade: '',
-      nacionalidade: '',
-      situacao: 'Ativo',
-      observacoes: '',
-    });
-
-  /*
-    ============================================================
-    CARREGAMENTO
-    ============================================================
-  */
+  const trava = useRef(false);
+  const rotaAtual = useRef(id);
+  rotaAtual.current = id;
 
   useEffect(() => {
-    if (!id) return;
+    let ativo = true;
 
     async function carregar() {
+      setCarregando(true);
+      setErroCarga('');
+      setErro('');
+      setSucesso(false);
+      setResultadoIncerto(false);
+      setContexto(null);
+      setForm({ ...inicial });
+
       try {
-        const { data, error } =
-          await supabase
-            .from('clientes')
-            .select('*')
-            .eq('id', id)
-            .single();
+        if (
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id)
+        ) {
+          throw new Error('O endereço deste cadastro não é válido.');
+        }
+
+        const conta = await consultarConta();
+
+        const { data, error } = await supabase
+          .from('clientes')
+          .select(
+            'id,empresa_id,nome,documento,telefone,email,cidade,nacionalidade,situacao,observacoes',
+          )
+          .eq('id', id)
+          .eq('empresa_id', conta.empresaId)
+          .maybeSingle();
 
         if (error) {
-          throw error;
+          throw new Error('Não foi possível consultar este cliente.');
         }
 
-        if (data) {
+        if (!data || data.empresa_id !== conta.empresaId) {
+          throw new Error(
+            'Cliente não encontrado ou indisponível para sua conta.',
+          );
+        }
+
+        const confirmado = await consultarConta();
+
+        if (
+          confirmado.usuarioId !== conta.usuarioId ||
+          confirmado.empresaId !== conta.empresaId
+        ) {
+          throw new Error('A sessão mudou. Atualize a página.');
+        }
+
+        if (ativo) {
           setForm({
-            nome:
-              data.nome || '',
-            documento:
-              data.documento || '',
-            telefone:
-              data.telefone || '',
-            email:
-              data.email || '',
-            cidade:
-              data.cidade || '',
-            nacionalidade:
-              data.nacionalidade || '',
-            situacao:
-              data.situacao ||
-              data.situação ||
-              'Ativo',
-            observacoes:
-              data.observacoes || '',
+            nome: data.nome ?? '',
+            documento: data.documento ?? '',
+            telefone: data.telefone ?? '',
+            email: data.email ?? '',
+            cidade: data.cidade ?? '',
+            nacionalidade: data.nacionalidade ?? '',
+            situacao: normalizarSituacao(data.situacao),
+            observacoes: data.observacoes ?? '',
           });
-        }
-      } catch (error) {
-        console.error(
-          'Erro ao buscar cliente:',
-          error
-        );
 
-        setMensagemErro(
-          'Não foi possível carregar os dados do cliente.'
-        );
+          setContexto({ ...conta, clienteId: id });
+        }
+      } catch (falha) {
+        if (ativo) {
+          setErroCarga(
+            falha instanceof Error
+              ? falha.message
+              : 'Não foi possível carregar o cliente.',
+          );
+        }
       } finally {
-        setLoading(false);
+        if (ativo) setCarregando(false);
       }
     }
 
-    carregar();
-  }, [id]);
+    void carregar();
+    return () => { ativo = false; };
+  }, [id, tentativa]);
 
-  /*
-    ============================================================
-    FORM
-    ============================================================
-  */
+  const bloqueado =
+    carregando ||
+    !contexto ||
+    contexto.clienteId !== id ||
+    Boolean(erroCarga) ||
+    salvando ||
+    sucesso ||
+    resultadoIncerto;
 
-  const handleChange = (
-    event: React.ChangeEvent<
-      | HTMLInputElement
-      | HTMLSelectElement
-      | HTMLTextAreaElement
-    >
-  ) => {
-    const { name, value } =
-      event.target;
+  function alterar(chave: keyof Formulario, valor: string) {
+    if (bloqueado) return;
+    setForm((atual) => ({ ...atual, [chave]: valor }));
+    setErro('');
+  }
 
-    setForm((atual) => ({
-      ...atual,
-      [name]: value,
-    }));
-  };
-
-  const handleSubmit = async (
-    event: React.FormEvent
-  ) => {
+  async function salvar(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
-    setMensagemErro('');
-    setMensagemSucesso('');
+    if (trava.current || bloqueado || !contexto) return;
 
-    if (!form.nome.trim()) {
-      setMensagemErro(
-        'O nome do cliente é obrigatório.'
-      );
+    setErro('');
 
+    if (form.nome.trim().length < 3) {
+      setErro('Informe um nome com pelo menos 3 caracteres.');
       return;
     }
 
+    if (
+      form.email.trim() &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())
+    ) {
+      setErro('Informe um e-mail válido ou deixe o campo vazio.');
+      return;
+    }
+
+    if (!['Ativo', 'Inativo'].includes(form.situacao)) {
+      setErro('Selecione Ativo ou Inativo para a situação do cliente.');
+      return;
+    }
+
+    trava.current = true;
     setSalvando(true);
+    let gravacaoIniciada = false;
+    const clienteId = contexto.clienteId;
 
     try {
-      const { error } =
-        await supabase
-          .from('clientes')
-          .update({
-            nome: form.nome,
-            documento:
-              form.documento,
-            telefone:
-              form.telefone,
-            email: form.email,
-            cidade: form.cidade,
-            nacionalidade:
-              form.nacionalidade,
-            situacao:
-              form.situacao,
-            observacoes:
-              form.observacoes,
-          })
-          .eq('id', id);
+      const conta = await consultarConta();
 
-      if (error) {
-        throw error;
+      if (
+        conta.usuarioId !== contexto.usuarioId ||
+        conta.empresaId !== contexto.empresaId ||
+        rotaAtual.current !== clienteId
+      ) {
+        throw new Error('A sessão ou o cadastro mudou. Atualize a página.');
       }
 
-      setMensagemSucesso(
-        'Cliente atualizado com sucesso.'
-      );
+      const payload = {
+        nome: form.nome.trim(),
+        documento: form.documento.trim() || null,
+        telefone: form.telefone.trim() || null,
+        email: form.email.trim().toLowerCase() || null,
+        cidade: form.cidade.trim() || null,
+        nacionalidade: form.nacionalidade.trim() || null,
+        situacao: form.situacao,
+        observacoes: form.observacoes.trim() || null,
+      };
 
-      setTimeout(() => {
-        router.push('/clientes');
-      }, 1200);
-    } catch (error) {
-      const mensagem =
-        error instanceof Error
-          ? error.message
-          : 'Erro desconhecido';
+      gravacaoIniciada = true;
 
-      setMensagemErro(
-        'Erro ao atualizar cliente: ' +
-          mensagem
-      );
+      const { data, error } = await supabase
+        .from('clientes')
+        .update(payload)
+        .eq('id', clienteId)
+        .eq('empresa_id', conta.empresaId)
+        .select(
+          'id,empresa_id,nome,documento,telefone,email,cidade,nacionalidade,situacao,observacoes',
+        )
+        .maybeSingle();
+
+      if (error) {
+        throw new Error('A atualização não foi confirmada pelo serviço.');
+      }
+
+      if (!data) {
+        gravacaoIniciada = false;
+        throw new Error(
+          'Nenhum cadastro foi atualizado. O cliente pode ter sido removido ou seu acesso pode ter mudado.',
+        );
+      }
+
+      const campos = Object.keys(payload) as Array<keyof typeof payload>;
+
+      if (
+        data.id !== clienteId ||
+        data.empresa_id !== conta.empresaId ||
+        campos.some((chave) => data[chave] !== payload[chave])
+      ) {
+        throw new Error(
+          'Os dados retornados não confirmam todas as alterações.',
+        );
+      }
+
+      if (rotaAtual.current !== clienteId) return;
+
+      setSucesso(true);
+      router.replace('/clientes');
+      router.refresh();
+    } catch (falha) {
+      if (rotaAtual.current !== clienteId) return;
+
+      if (gravacaoIniciada) {
+        setResultadoIncerto(true);
+        setErro(
+          'Não foi possível confirmar a atualização. Confira o cliente na listagem antes de editar novamente.',
+        );
+      } else {
+        setErro(
+          falha instanceof Error
+            ? falha.message
+            : 'Não foi possível salvar as alterações.',
+        );
+      }
     } finally {
+      trava.current = false;
       setSalvando(false);
     }
-  };
-
-  const inputClass =
-    'w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/40';
-
-  const labelClass =
-    'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34';
-
-  if (loading) {
-    return (
-      <div className="flex min-h-[calc(100vh-82px)] items-center justify-center bg-[#07110E] text-[#EDEDE3]">
-        <div className="text-center">
-          <div className="mx-auto h-9 w-9 animate-spin rounded-full border-2 border-white/[0.08] border-t-[#E3A144]" />
-
-          <p className="mt-4 text-xs text-[#EDEDE3]/35">
-            Carregando cliente...
-          </p>
-        </div>
-      </div>
-    );
   }
 
+  const campos: Array<{
+    chave: keyof Formulario;
+    titulo: string;
+    tipo: string;
+    autocomplete?: string;
+  }> = [
+    {
+      chave: 'nome',
+      titulo: 'Nome completo *',
+      tipo: 'text',
+      autocomplete: 'name',
+    },
+    { chave: 'documento', titulo: 'CPF / Documento', tipo: 'text' },
+    {
+      chave: 'telefone',
+      titulo: 'Telefone / WhatsApp',
+      tipo: 'tel',
+      autocomplete: 'tel',
+    },
+    {
+      chave: 'email',
+      titulo: 'E-mail',
+      tipo: 'email',
+      autocomplete: 'email',
+    },
+    {
+      chave: 'cidade',
+      titulo: 'Cidade / UF',
+      tipo: 'text',
+      autocomplete: 'address-level2',
+    },
+    { chave: 'nacionalidade', titulo: 'Nacionalidade', tipo: 'text' },
+  ];
+
   return (
-    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
-      {/* =======================================================
-          CABEÇALHO
-      ======================================================== */}
-
-      <section className="border-b border-white/[0.07] bg-[#091510]">
-        <div className="mx-auto max-w-[1180px] px-5 py-10 md:px-8 md:py-12">
-          <Link
-            href="/clientes"
-            className="inline-flex items-center gap-2 text-xs font-semibold text-[#EDEDE3]/38 transition hover:text-[#E3A144]"
-          >
-            <span>←</span>
-            Clientes
-          </Link>
-
-          <div className="mt-7">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
-              Operação • Edição
+    <main className="min-h-screen min-w-0 bg-[var(--ern-fundo)] px-4 py-7 text-[var(--ern-texto)] sm:px-6 sm:py-10">
+      <div className="mx-auto max-w-5xl space-y-6">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
+              Clientes · Edição
             </p>
-
             <h1
-              className="mt-3 text-4xl tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
-              style={{
-                fontFamily:
-                  'var(--font-fraunces), serif',
-              }}
+              className="mt-2 text-4xl"
+              style={{ fontFamily: 'var(--font-fraunces), serif' }}
             >
               Editar cliente
             </h1>
-
-            <p className="mt-4 max-w-[620px] text-sm leading-7 text-[#EDEDE3]/40">
-              Atualize informações de
-              contato, situação e contexto
-              operacional do viajante.
+            <p className="mt-3 text-sm leading-6 text-[var(--ern-secundario)]">
+              Atualize os dados de contato e as informações para o atendimento.
             </p>
           </div>
-        </div>
-      </section>
+          {!salvando && (
+            <Link href="/clientes" className={botao}>
+              Voltar para clientes
+            </Link>
+          )}
+        </header>
 
-      <main className="mx-auto max-w-[1180px] px-5 py-8 md:px-8 md:py-10">
-        {mensagemSucesso && (
-          <div className="mb-6 rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.07] px-5 py-4 text-xs text-emerald-300">
-            {mensagemSucesso}
-          </div>
-        )}
+        {carregando ? (
+          <p role="status" className={painel}>Carregando cliente…</p>
+        ) : erroCarga ? (
+          <section role="alert" className={painel}>
+            <p className="text-[var(--ern-erro)]">{erroCarga}</p>
+            <button
+              type="button"
+              className={`${botao} mt-4`}
+              onClick={() => setTentativa((atual) => atual + 1)}
+            >
+              Tentar novamente
+            </button>
+          </section>
+        ) : (
+          <>
+            {erro && (
+              <div role="alert" className={painel}>
+                <p className="text-[var(--ern-erro)]">{erro}</p>
+                {resultadoIncerto && (
+                  <Link href="/clientes" className={`${botao} mt-4`}>
+                    Conferir cliente na listagem
+                  </Link>
+                )}
+              </div>
+            )}
 
-        {mensagemErro && (
-          <div className="mb-6 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-red-300">
-            {mensagemErro}
-          </div>
-        )}
+            {sucesso && (
+              <p role="status" className={`${painel} text-[var(--ern-sucesso)]`}>
+                Cliente atualizado. Abrindo a listagem…
+              </p>
+            )}
 
-        <form
-          onSubmit={handleSubmit}
-          className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]"
-        >
-          {/* DADOS */}
-
-          <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-7">
-            <div className="border-b border-white/[0.065] pb-5">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
-                Dados cadastrais
+            <form onSubmit={salvar} className={painel}>
+              <h2 className="text-xl font-semibold">Dados do viajante</h2>
+              <p className="mt-2 text-sm text-[var(--ern-secundario)]">
+                O nome é obrigatório. Os demais dados podem ser complementados.
               </p>
 
-              <h2
-                className="mt-2 text-2xl text-[#F0F0E8]"
-                style={{
-                  fontFamily:
-                    'var(--font-fraunces), serif',
-                }}
-              >
-                Informações do cliente
-              </h2>
-            </div>
+              <fieldset disabled={bloqueado} className="mt-6 min-w-0">
+                <legend className="sr-only">Informações do cliente</legend>
+                <div className="grid min-w-0 gap-5 sm:grid-cols-2">
+                  {campos.map((item) => (
+                    <div
+                      key={item.chave}
+                      className={`min-w-0 ${item.chave === 'nome' ? 'sm:col-span-2' : ''}`}
+                    >
+                      <label
+                        htmlFor={item.chave}
+                        className="mb-2 block text-sm"
+                      >
+                        {item.titulo}
+                      </label>
+                      <input
+                        id={item.chave}
+                        name={item.chave}
+                        type={item.tipo}
+                        autoComplete={item.autocomplete}
+                        required={item.chave === 'nome'}
+                        minLength={item.chave === 'nome' ? 3 : undefined}
+                        value={form[item.chave]}
+                        onChange={(event) =>
+                          alterar(item.chave, event.target.value)
+                        }
+                        className={campo}
+                      />
+                    </div>
+                  ))}
 
-            <div className="mt-6 space-y-5">
-              <div>
-                <label className={labelClass}>
-                  Nome completo *
-                </label>
+                  <div className="min-w-0">
+                    <label htmlFor="situacao" className="mb-2 block text-sm">
+                      Situação
+                    </label>
+                    <select
+                      id="situacao"
+                      value={form.situacao}
+                      onChange={(event) =>
+                        alterar('situacao', event.target.value)
+                      }
+                      className={campo}
+                    >
+                      {!['Ativo', 'Inativo'].includes(form.situacao) && (
+                        <option value={form.situacao}>
+                          {form.situacao} — selecione uma situação
+                        </option>
+                      )}
+                      <option value="Ativo">Ativo</option>
+                      <option value="Inativo">Inativo</option>
+                    </select>
+                    <p className="mt-2 text-xs leading-5 text-[var(--ern-secundario)]">
+                      Inativar preserva o cadastro e seus vínculos com reservas.
+                    </p>
+                  </div>
 
-                <input
-                  type="text"
-                  name="nome"
-                  required
-                  value={form.nome}
-                  onChange={handleChange}
-                  className={inputClass}
-                />
+                  <div className="min-w-0 sm:col-span-2">
+                    <label
+                      htmlFor="observacoes"
+                      className="mb-2 block text-sm"
+                    >
+                      Observações
+                    </label>
+                    <textarea
+                      id="observacoes"
+                      rows={6}
+                      value={form.observacoes}
+                      onChange={(event) =>
+                        alterar('observacoes', event.target.value)
+                      }
+                      className={`${campo} py-3 leading-6`}
+                    />
+                  </div>
+                </div>
+              </fieldset>
+
+              <div className="mt-6 flex flex-col gap-3 border-t border-[var(--ern-borda)] pt-5 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  disabled={salvando || sucesso}
+                  className={botao}
+                  onClick={() => router.push('/clientes')}
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={bloqueado}
+                  className={`${botao} bg-[var(--ern-botao)] text-[var(--ern-sobre-botao)]`}
+                >
+                  {salvando ? 'Salvando…' : 'Salvar alterações'}
+                </button>
               </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label
-                    className={
-                      labelClass
-                    }
-                  >
-                    Documento / CPF
-                  </label>
-
-                  <input
-                    type="text"
-                    name="documento"
-                    value={
-                      form.documento
-                    }
-                    onChange={
-                      handleChange
-                    }
-                    className={`${inputClass} font-mono`}
-                  />
-                </div>
-
-                <div>
-                  <label
-                    className={
-                      labelClass
-                    }
-                  >
-                    Telefone / WhatsApp
-                  </label>
-
-                  <input
-                    type="text"
-                    name="telefone"
-                    value={
-                      form.telefone
-                    }
-                    onChange={
-                      handleChange
-                    }
-                    className={
-                      inputClass
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label
-                    className={
-                      labelClass
-                    }
-                  >
-                    E-mail
-                  </label>
-
-                  <input
-                    type="email"
-                    name="email"
-                    value={form.email}
-                    onChange={
-                      handleChange
-                    }
-                    className={
-                      inputClass
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label
-                    className={
-                      labelClass
-                    }
-                  >
-                    Cidade
-                  </label>
-
-                  <input
-                    type="text"
-                    name="cidade"
-                    value={
-                      form.cidade
-                    }
-                    onChange={
-                      handleChange
-                    }
-                    className={
-                      inputClass
-                    }
-                  />
-                </div>
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label
-                    className={
-                      labelClass
-                    }
-                  >
-                    Nacionalidade
-                  </label>
-
-                  <input
-                    type="text"
-                    name="nacionalidade"
-                    value={
-                      form.nacionalidade
-                    }
-                    onChange={
-                      handleChange
-                    }
-                    className={
-                      inputClass
-                    }
-                  />
-                </div>
-
-                <div>
-                  <label
-                    className={
-                      labelClass
-                    }
-                  >
-                    Situação
-                  </label>
-
-                  <select
-                    name="situacao"
-                    value={
-                      form.situacao
-                    }
-                    onChange={
-                      handleChange
-                    }
-                    className={
-                      inputClass
-                    }
-                  >
-                    <option value="Ativo">
-                      Ativo
-                    </option>
-
-                    <option value="Inativo">
-                      Inativo
-                    </option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* OBSERVAÇÕES */}
-
-          <section className="rounded-[26px] border border-white/[0.075] bg-[#0A1713] p-5 md:p-6">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-              Contexto operacional
-            </p>
-
-            <h2
-              className="mt-2 text-2xl text-[#F0F0E8]"
-              style={{
-                fontFamily:
-                  'var(--font-fraunces), serif',
-              }}
-            >
-              Observações e histórico
-            </h2>
-
-            <p className="mt-4 text-xs leading-6 text-[#EDEDE3]/35">
-              Registre preferências,
-              restrições e outras
-              informações úteis para o
-              atendimento.
-            </p>
-
-            <textarea
-              name="observacoes"
-              rows={12}
-              value={
-                form.observacoes
-              }
-              onChange={
-                handleChange
-              }
-              placeholder="Informações adicionais..."
-              className={`${inputClass} mt-5 resize-none leading-6`}
-            />
-          </section>
-
-          {/* AÇÕES */}
-
-          <div className="lg:col-span-2">
-            <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-6 sm:flex-row sm:justify-end">
-              <Link
-                href="/clientes"
-                className="inline-flex min-h-[46px] items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.05]"
-              >
-                Cancelar
-              </Link>
-
-              <button
-                type="submit"
-                disabled={salvando}
-                className="inline-flex min-h-[46px] items-center justify-center rounded-xl bg-[#E3A144] px-6 text-xs font-bold text-[#07130F] transition hover:bg-[#F0B35C] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {salvando
-                  ? 'Salvando...'
-                  : 'Salvar alterações'}
-              </button>
-            </div>
-          </div>
-        </form>
-      </main>
-    </div>
+            </form>
+          </>
+        )}
+      </div>
+    </main>
   );
 }
