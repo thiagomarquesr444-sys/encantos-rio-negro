@@ -468,7 +468,8 @@ export default function LogoERN({
           </span>
         ) : (
           <Image
-            src="/logo.png"
+            unoptimized
+            src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22180%22%20height%3D%22180%22%20viewBox%3D%220%200%20180%20180%22%3E%3Ctext%20x%3D%2290%22%20y%3D%2296%22%20text-anchor%3D%22middle%22%20dominant-baseline%3D%22middle%22%20fill%3D%22%23F4C77E%22%20font-family%3D%22Georgia%2Cserif%22%20font-size%3D%2244%22%20font-weight%3D%22bold%22%3EERN%3C%2Ftext%3E%3C%2Fsvg%3E"
             alt=""
             fill
             sizes={`${tamanho}px`}

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, FormEvent } from 'react';
 import { supabase } from '@/lib/supabase';
+import SegurancaContaERN from '@/app/components/SegurancaContaERN';
 
 type Tema = 'verde' | 'azul' | 'amarelo' | 'branco';
 
@@ -113,19 +114,17 @@ function mensagemErro(falha: unknown, padrao: string) {
 export default function ConfiguracoesPage() {
   const [config, setConfig] = useState<Configuracao>(PADRAO);
   const [empresaId, setEmpresaId] = useState('');
+  const [administrador, setAdministrador] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [erroCarga, setErroCarga] = useState('');
   const [tentativa, setTentativa] = useState(0);
   const [salvando, setSalvando] = useState(false);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
-  const [novaSenha, setNovaSenha] = useState('');
-  const [confirmacao, setConfirmacao] = useState('');
-  const [alterandoSenha, setAlterandoSenha] = useState(false);
-  const [feedbackSenha, setFeedbackSenha] = useState<Feedback | null>(null);
+  
 
   const travaSalvar = useRef(false);
-  const travaSenha = useRef(false);
+  
   const aviso = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -155,10 +154,11 @@ export default function ConfiguracoesPage() {
         }
 
         if (perfil.role !== 'admin_empresa') {
-          throw new Error(
-            'As configurações da empresa estão disponíveis aos administradores.',
-          );
+          if (ativo) setAdministrador(false);
+          return;
         }
+
+        if (ativo) setAdministrador(true);
 
         const empresa = String(perfil.empresa_id);
 
@@ -389,54 +389,7 @@ export default function ConfiguracoesPage() {
     }
   }
 
-  async function atualizarSenha(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-
-    if (travaSenha.current) return;
-
-    if (novaSenha.length < 8) {
-      setFeedbackSenha({
-        tipo: 'erro',
-        texto: 'Use uma senha com pelo menos 8 caracteres.',
-      });
-      return;
-    }
-
-    if (novaSenha !== confirmacao) {
-      setFeedbackSenha({
-        tipo: 'erro',
-        texto: 'As senhas não coincidem.',
-      });
-      return;
-    }
-
-    travaSenha.current = true;
-    setAlterandoSenha(true);
-    setFeedbackSenha(null);
-
-    try {
-      const { error } = await supabase.auth.updateUser({
-        password: novaSenha,
-      });
-
-      if (error) throw error;
-
-      setNovaSenha('');
-      setConfirmacao('');
-      setFeedbackSenha({
-        tipo: 'sucesso',
-        texto: 'Senha atualizada com sucesso.',
-      });
-    } catch (falha) {
-      setFeedbackSenha({
-        tipo: 'erro',
-        texto: mensagemErro(falha, 'Não foi possível atualizar a senha.'),
-      });
-    } finally {
-      travaSenha.current = false;
-      setAlterandoSenha(false);
-    }
-  }
+  
 
   if (carregando || erroCarga) {
     return (
@@ -459,6 +412,23 @@ export default function ConfiguracoesPage() {
             </button>
           </div>
         )}
+      </main>
+    );
+  }
+
+  if (!administrador) {
+    return (
+      <main className="min-h-screen min-w-0 bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+        <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+          <header>
+            <h1 className="text-3xl font-semibold">Minha conta</h1>
+            <p className="mt-3 text-sm leading-6">
+              Gerencie a segurança do seu acesso pessoal.
+              As configurações da empresa são administradas pelo responsável.
+            </p>
+          </header>
+          <SegurancaContaERN />
+        </div>
       </main>
     );
   }
@@ -766,70 +736,7 @@ export default function ConfiguracoesPage() {
           </div>
         </form>
 
-        <section className={painel} aria-labelledby="titulo-seguranca">
-          <h2 id="titulo-seguranca" className="text-lg font-semibold">
-            Segurança da sua conta
-          </h2>
-          <p className="mt-2 text-sm leading-6 text-[var(--cfg-secundario)]">
-            A alteração de senha afeta apenas seu acesso pessoal.
-          </p>
-
-          <form onSubmit={atualizarSenha} className="mt-5 space-y-5">
-            <fieldset
-              disabled={alterandoSenha}
-              className="grid min-w-0 gap-5 sm:grid-cols-2"
-            >
-              <label className="min-w-0 text-sm">
-                Nova senha
-                <input name="nova_senha"
-                  required
-                  type="password"
-                  minLength={8}
-                  autoComplete="new-password"
-                  value={novaSenha}
-                  onChange={(event) => {
-                    setNovaSenha(event.target.value);
-                    setFeedbackSenha(null);
-                  }}
-                  className={campo}
-                />
-              </label>
-
-              <label className="min-w-0 text-sm">
-                Confirmar nova senha
-                <input name="confirmacao_senha"
-                  required
-                  type="password"
-                  minLength={8}
-                  autoComplete="new-password"
-                  value={confirmacao}
-                  onChange={(event) => {
-                    setConfirmacao(event.target.value);
-                    setFeedbackSenha(null);
-                  }}
-                  className={campo}
-                />
-              </label>
-            </fieldset>
-
-            {feedbackSenha && (
-              <p
-                role={feedbackSenha.tipo === 'erro' ? 'alert' : 'status'}
-                className="text-sm leading-6"
-              >
-                {feedbackSenha.texto}
-              </p>
-            )}
-
-            <button
-              type="submit"
-              disabled={alterandoSenha}
-              className={`${botao} w-full sm:w-auto`}
-            >
-              {alterandoSenha ? 'Atualizando…' : 'Atualizar minha senha'}
-            </button>
-          </form>
-        </section>
+        <SegurancaContaERN />
       </div>
     </main>
   );
