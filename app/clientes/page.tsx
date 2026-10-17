@@ -1,975 +1,660 @@
 'use client';
 
-import { confirmarERN } from '@/lib/confirmarERN';
-
-import React, {
-  useEffect,
-  useState,
-} from 'react';
-
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
 
-import {
-  supabase,
-  isSupabaseConfigured,
-} from '@/lib/supabase';
-
-interface Cliente {
-  id?: string | number;
+type Cliente = {
+  id: string;
+  empresa_id: string;
   nome: string;
-  documento?: string;
-  telefone?: string;
-  email?: string;
-  cidade?: string;
-  nacionalidade?: string;
-  situacao?: string;
-  situação?: string;
-  created_at?: string;
-  observacoes?: string;
+  documento: string | null;
+  telefone: string | null;
+  email: string | null;
+  cidade: string | null;
+  nacionalidade: string | null;
+  situacao: string | null;
+  observacoes: string | null;
+  created_at: string | null;
+};
+
+type Contexto = {
+  usuarioId: string;
+  empresaId: string;
+};
+
+const normalizar = (valor: string) =>
+  valor.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .trim().toLowerCase();
+
+const painel =
+  'min-w-0 rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-4 sm:p-6';
+
+const botao =
+  'inline-flex min-h-12 items-center justify-center rounded-xl border border-[var(--ern-borda)] px-4 text-sm font-semibold transition hover:bg-[var(--ern-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ern-destaque)] disabled:cursor-not-allowed disabled:opacity-50';
+
+const campo =
+  'min-h-12 w-full min-w-0 rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-3 text-base text-[var(--ern-texto)] outline-none focus:ring-2 focus:ring-[var(--ern-destaque)]';
+
+async function consultarContexto(): Promise<Contexto> {
+  const { data: auth, error: authError } =
+    await supabase.auth.getUser();
+
+  if (authError || !auth.user) {
+    throw new Error('Sua sessão expirou. Entre novamente.');
+  }
+
+  const { data: perfil, error: perfilError } = await supabase
+    .from('perfis')
+    .select('empresa_id')
+    .eq('id', auth.user.id)
+    .single();
+
+  if (perfilError || !perfil?.empresa_id) {
+    throw new Error('Não foi possível identificar sua empresa.');
+  }
+
+  return {
+    usuarioId: auth.user.id,
+    empresaId: String(perfil.empresa_id),
+  };
+}
+
+function situacaoCliente(cliente: Cliente) {
+  const valor = normalizar(cliente.situacao ?? '');
+  if (!valor || valor === 'ativo') return 'Ativo';
+  if (valor === 'inativo') return 'Inativo';
+  return cliente.situacao?.trim() || 'Não informada';
 }
 
 export default function ClientesPage() {
-  const router = useRouter();
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [contexto, setContexto] = useState<Contexto | null>(null);
+  const [carregando, setCarregando] = useState(true);
+  const [erro, setErro] = useState('');
+  const [feedback, setFeedback] = useState('');
+  const [tentativa, setTentativa] = useState(0);
+  const [busca, setBusca] = useState('');
+  const [situacao, setSituacao] = useState('');
+  const [selecionado, setSelecionado] = useState<Cliente | null>(null);
+  const [modo, setModo] = useState<'detalhes' | 'excluir'>('detalhes');
+  const [excluindo, setExcluindo] = useState(false);
+  const [erroExclusao, setErroExclusao] = useState('');
 
-  const [clientes, setClientes] =
-    useState<Cliente[]>([]);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [busca, setBusca] =
-    useState('');
-
-  const [
-    filtroSituacao,
-    setFiltroSituacao,
-  ] = useState('');
-
-  const [
-    modalVisualizarAberto,
-    setModalVisualizarAberto,
-  ] = useState(false);
-
-  const [
-    clienteSelecionado,
-    setClienteSelecionado,
-  ] = useState<Cliente | null>(null);
-
-  const [
-    modalExcluirAberto,
-    setModalExcluirAberto,
-  ] = useState(false);
-
-  const [
-    idParaExcluir,
-    setIdParaExcluir,
-  ] = useState<string | number | null>(
-    null
-  );
-
-  /*
-    ============================================================
-    CARREGAMENTO
-    ============================================================
-  */
-
-  const fetchClientes = async () => {
-    if (!isSupabaseConfigured) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const { data, error } =
-        await supabase
-          .from('clientes')
-          .select('*')
-          .order('created_at', {
-            ascending: false,
-          });
-
-      if (error) {
-        console.warn(
-          '[Clientes] Erro:',
-          error.message
-        );
-
-        return;
-      }
-
-      if (data) {
-        const clientesFormatados =
-          data.map((item: any) => ({
-            ...item,
-            situacao:
-              item.situacao ||
-              item.situação ||
-              'Ativo',
-          }));
-
-        setClientes(
-          clientesFormatados
-        );
-      }
-    } catch (err) {
-      console.warn(
-        '[Clientes] Falha de rede:',
-        err
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
+  const dialogo = useRef<HTMLDialogElement>(null);
+  const travaExclusao = useRef(false);
 
   useEffect(() => {
-    fetchClientes();
-  }, []);
+    let ativo = true;
 
-  /*
-    ============================================================
-    FILTROS
-    ============================================================
-  */
+    async function carregar() {
+      setCarregando(true);
+      setErro('');
+      setClientes([]);
+      setContexto(null);
 
-  const clientesFiltrados =
-    clientes.filter((cliente) => {
-      const termo =
-        busca.trim().toLowerCase();
+      try {
+        const atual = await consultarContexto();
+        const lista: Cliente[] = [];
+        let esperado: number | null = null;
 
-      const atendeBusca =
-        termo.length === 0 ||
-        cliente.nome
-          ?.toLowerCase()
-          .includes(termo) ||
-        cliente.documento
-          ?.toLowerCase()
-          .includes(termo) ||
-        cliente.email
-          ?.toLowerCase()
-          .includes(termo) ||
-        cliente.cidade
-          ?.toLowerCase()
-          .includes(termo);
+        for (let inicio = 0; inicio < 10000; inicio += 200) {
+          if (!ativo) return;
 
-      const situacaoAtual =
-        cliente.situacao || 'Ativo';
+          const { data, count, error } = await supabase
+            .from('clientes')
+            .select(
+              'id,empresa_id,nome,documento,telefone,email,cidade,nacionalidade,situacao,observacoes,created_at',
+              { count: 'exact' },
+            )
+            .eq('empresa_id', atual.empresaId)
+            .order('created_at', {
+              ascending: false,
+              nullsFirst: false,
+            })
+            .order('id', { ascending: true })
+            .range(inicio, inicio + 199);
 
-      const atendeSituacao =
-        filtroSituacao.length === 0 ||
-        situacaoAtual.toLowerCase() ===
-          filtroSituacao.toLowerCase();
+          if (error) {
+            throw new Error('Não foi possível consultar os clientes.');
+          }
 
-      return (
-        atendeBusca &&
-        atendeSituacao
-      );
+          if (count === null || count > 10000) {
+            throw new Error(
+              'Este volume exige busca no servidor. A consulta foi interrompida para evitar totais parciais.',
+            );
+          }
+
+          if (esperado !== null && esperado !== count) {
+            throw new Error(
+              'Os cadastros mudaram durante a consulta. Atualize os dados.',
+            );
+          }
+
+          esperado = count;
+          lista.push(...((data ?? []) as Cliente[]));
+
+          if (lista.length >= count) break;
+
+          if (!data?.length) {
+            throw new Error('A consulta ficou incompleta. Tente novamente.');
+          }
+        }
+
+        if (
+          lista.length !== esperado ||
+          lista.some((item) =>
+            !item.id || item.empresa_id !== atual.empresaId
+          ) ||
+          new Set(lista.map((item) => item.id)).size !== lista.length
+        ) {
+          throw new Error('Não foi possível obter uma listagem consistente.');
+        }
+
+        const confirmado = await consultarContexto();
+
+        if (
+          confirmado.usuarioId !== atual.usuarioId ||
+          confirmado.empresaId !== atual.empresaId
+        ) {
+          throw new Error('A sessão mudou. Atualize a página.');
+        }
+
+        if (ativo) {
+          setClientes(lista);
+          setContexto(atual);
+        }
+      } catch (falha) {
+        if (ativo) {
+          setErro(
+            falha instanceof Error
+              ? falha.message
+              : 'Não foi possível carregar os clientes.',
+          );
+        }
+      } finally {
+        if (ativo) setCarregando(false);
+      }
+    }
+
+    void carregar();
+    return () => { ativo = false; };
+  }, [tentativa]);
+
+  useEffect(() => {
+    if (selecionado && !dialogo.current?.open) {
+      dialogo.current?.showModal();
+    }
+  }, [selecionado]);
+
+  const filtrados = useMemo(() => {
+    const termo = normalizar(busca);
+
+    return clientes.filter((cliente) => {
+      if (situacao && situacaoCliente(cliente) !== situacao) {
+        return false;
+      }
+
+      return !termo || normalizar([
+        cliente.nome,
+        cliente.documento,
+        cliente.telefone,
+        cliente.email,
+        cliente.cidade,
+        cliente.nacionalidade,
+        situacaoCliente(cliente),
+      ].filter(Boolean).join(' ')).includes(termo);
     });
-
-  const totalClientes =
-    clientes.length;
+  }, [clientes, busca, situacao]);
 
   const ativos = clientes.filter(
-    (cliente) =>
-      (
-        cliente.situacao || 'Ativo'
-      ).toLowerCase() === 'ativo'
+    (item) => situacaoCliente(item) === 'Ativo',
   ).length;
 
   const inativos = clientes.filter(
-    (cliente) =>
-      (
-        cliente.situacao || ''
-      ).toLowerCase() === 'inativo'
+    (item) => situacaoCliente(item) === 'Inativo',
   ).length;
 
-  const alternarFiltro = (
-    situacao: string
-  ) => {
-    setFiltroSituacao((atual) =>
-      atual === situacao
-        ? ''
-        : situacao
-    );
-  };
+  function abrir(cliente: Cliente, proximoModo: typeof modo) {
+    setErroExclusao('');
+    setModo(proximoModo);
+    setSelecionado(cliente);
+  }
 
-  /*
-    ============================================================
-    VISUALIZAÇÃO
-    ============================================================
-  */
+  function fechar() {
+    if (travaExclusao.current) return;
+    dialogo.current?.close();
+    setSelecionado(null);
+    setErroExclusao('');
+  }
 
-  const abrirVisualizacao = (
-    cliente: Cliente
-  ) => {
-    setClienteSelecionado(cliente);
-    setModalVisualizarAberto(true);
-  };
+  async function excluir() {
+    if (!selecionado || !contexto || travaExclusao.current) return;
 
-  /*
-    ============================================================
-    EXCLUSÃO
-    ============================================================
-  */
+    travaExclusao.current = true;
+    setExcluindo(true);
+    setErroExclusao('');
 
-  const confirmarExclusao = (
-    id: string | number | undefined
-  ) => {
-    if (!id) return;
+    try {
+      const atual = await consultarContexto();
 
-    setIdParaExcluir(id);
-    setModalExcluirAberto(true);
-  };
+      if (
+        atual.usuarioId !== contexto.usuarioId ||
+        atual.empresaId !== contexto.empresaId ||
+        selecionado.empresa_id !== atual.empresaId
+      ) {
+        throw new Error('A sessão mudou. Feche esta janela e atualize a página.');
+      }
 
-  const executarExclusao =
-    async () => {
-      if (!idParaExcluir) return;
+      const { data, error } = await supabase
+        .from('clientes')
+        .delete()
+        .eq('id', selecionado.id)
+        .eq('empresa_id', atual.empresaId)
+        .select('id');
 
-      try {
-        const { error } =
-          await supabase
-            .from('clientes')
-            .delete()
-            .eq('id', idParaExcluir);
-
-        if (error) {
-          throw error;
+      if (error) {
+        if (error.code === '23503') {
+          throw new Error(
+            'Este cliente possui vínculos que impedem a exclusão. Considere inativar o cadastro.',
+          );
         }
 
-        setClientes((atuais) =>
-          atuais.filter(
-            (cliente) =>
-              cliente.id !==
-              idParaExcluir
-          )
-        );
-
-        setModalExcluirAberto(
-          false
-        );
-
-        setIdParaExcluir(null);
-      } catch (err) {
-        const mensagem =
-          err instanceof Error
-            ? err.message
-            : 'Erro desconhecido';
-
-        await confirmarERN(
-          'Não foi possível excluir o cliente. ' + mensagem,
-          {
-            titulo: 'Exclusão não concluída',
-            confirmar: 'Entendi',
-            destrutiva: false,
-            somenteInformacao: true,
-          },
+        throw new Error(
+          'A exclusão não foi confirmada. Feche esta janela e atualize a listagem antes de tentar novamente.',
         );
       }
-    };
 
-  const indicadores = [
-    {
-      titulo: 'Todos',
-      valor: totalClientes,
-      detalhe:
-        'clientes cadastrados',
-      filtro: '',
-    },
-    {
-      titulo: 'Ativos',
-      valor: ativos,
-      detalhe:
-        'cadastros regulares',
-      filtro: 'Ativo',
-    },
-    {
-      titulo: 'Inativos',
-      valor: inativos,
-      detalhe:
-        'requerem atenção',
-      filtro: 'Inativo',
-    },
-  ];
+      if (
+        data?.length !== 1 ||
+        data[0].id !== selecionado.id
+      ) {
+        throw new Error(
+          'Nenhum registro foi confirmado como excluído. Atualize a listagem para conferir suas permissões e o cadastro.',
+        );
+      }
+
+      setClientes((atuais) =>
+        atuais.filter((item) => item.id !== selecionado.id),
+      );
+      setFeedback('Cliente excluído. As reservas existentes foram preservadas.');
+      dialogo.current?.close();
+      setSelecionado(null);
+    } catch (falha) {
+      setErroExclusao(
+        falha instanceof Error
+          ? falha.message
+          : 'Não foi possível confirmar a exclusão. Atualize a listagem.',
+      );
+    } finally {
+      travaExclusao.current = false;
+      setExcluindo(false);
+    }
+  }
+
+  function acoes(cliente: Cliente) {
+    return (
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          className={botao}
+          aria-label={`Visualizar ${cliente.nome}`}
+          onClick={() => abrir(cliente, 'detalhes')}
+        >
+          Visualizar
+        </button>
+        <Link
+          href={`/clientes/editar/${cliente.id}`}
+          className={botao}
+          aria-label={`Editar ${cliente.nome}`}
+        >
+          Editar
+        </Link>
+        <button
+          type="button"
+          className={`${botao} text-[var(--ern-erro)]`}
+          aria-label={`Excluir ${cliente.nome}`}
+          onClick={() => abrir(cliente, 'excluir')}
+        >
+          Excluir
+        </button>
+      </div>
+    );
+  }
+
+  function detalhes(cliente: Cliente) {
+    return [
+      ['Documento', cliente.documento],
+      ['Telefone / WhatsApp', cliente.telefone],
+      ['E-mail', cliente.email],
+      ['Cidade', cliente.cidade],
+      ['Nacionalidade', cliente.nacionalidade],
+      ['Situação', situacaoCliente(cliente)],
+    ];
+  }
 
   return (
-    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
-      {/* =======================================================
-          CABEÇALHO
-      ======================================================== */}
-
-      <section className="border-b border-white/[0.07] bg-[#091510]">
-        <div className="mx-auto flex max-w-[1360px] flex-col gap-8 px-5 py-10 md:px-8 md:py-12 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <span className="h-px w-8 bg-[#E3A144]" />
-
-              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
-                Operação • Clientes
-              </span>
-            </div>
-
+    <div className="min-h-screen min-w-0 bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+      <main className="mx-auto max-w-[1360px] space-y-6 px-4 py-7 sm:px-6 sm:py-10">
+        <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
+              Operação · Clientes
+            </p>
             <h1
-              className="mt-4 text-4xl leading-none tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
-              style={{
-                fontFamily:
-                  'var(--font-fraunces), serif',
-              }}
+              className="mt-2 text-4xl sm:text-5xl"
+              style={{ fontFamily: 'var(--font-fraunces), serif' }}
             >
               Clientes
             </h1>
-
-            <p className="mt-4 max-w-[650px] text-sm leading-7 text-[#EDEDE3]/42">
-              Consulte, organize e
-              mantenha atualizadas as
-              informações dos viajantes
-              atendidos pela sua operação.
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--ern-secundario)]">
+              Organize os viajantes e mantenha os dados da sua operação atualizados.
             </p>
           </div>
-
-          <button
-            type="button"
-            onClick={() =>
-              router.push(
-                '/clientes/novo'
-              )
-            }
-            className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl bg-[#E3A144] px-6 text-sm font-bold text-[#07130F] transition hover:-translate-y-0.5 hover:bg-[#F0B35C]"
+          <Link
+            href="/clientes/novo"
+            className={`${botao} bg-[var(--ern-botao)] text-[var(--ern-sobre-botao)]`}
           >
-            <span className="text-lg">
-              +
-            </span>
-            Novo cliente
-          </button>
-        </div>
-      </section>
+            + Novo cliente
+          </Link>
+        </header>
 
-      <main className="mx-auto max-w-[1360px] px-5 py-8 md:px-8 md:py-10">
-        {/* =====================================================
-            INDICADORES
-        ====================================================== */}
-
-        <div className="grid gap-4 md:grid-cols-3">
-          {indicadores.map(
-            (indicador) => {
-              const ativo =
-                indicador.filtro !==
-                  '' &&
-                filtroSituacao ===
-                  indicador.filtro;
-
-              return (
-                <button
-                  key={
-                    indicador.titulo
-                  }
-                  type="button"
-                  onClick={() => {
-                    if (
-                      indicador.filtro
-                    ) {
-                      alternarFiltro(
-                        indicador.filtro
-                      );
-                    } else {
-                      setFiltroSituacao(
-                        ''
-                      );
-                    }
-                  }}
-                  className={`rounded-[22px] border p-5 text-left transition ${
-                    ativo
-                      ? 'border-[#E3A144]/35 bg-[#E3A144]/8'
-                      : 'border-white/[0.075] bg-[#0A1713] hover:border-white/[0.14] hover:bg-[#0C1B16]'
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
-                      {
-                        indicador.titulo
-                      }
-                    </span>
-
-                    {ativo && (
-                      <span className="rounded-full bg-[#E3A144]/10 px-2 py-1 text-[8px] font-bold uppercase tracking-[0.12em] text-[#E3A144]">
-                        Filtrando
-                      </span>
-                    )}
-                  </div>
-
-                  <strong
-                    className="mt-5 block text-4xl font-medium tracking-[-0.04em] text-[#F0F0E8]"
-                    style={{
-                      fontFamily:
-                        'var(--font-fraunces), serif',
-                    }}
-                  >
-                    {loading
-                      ? '—'
-                      : indicador.valor}
-                  </strong>
-
-                  <p className="mt-2 text-[11px] text-[#EDEDE3]/28">
-                    {
-                      indicador.detalhe
-                    }
-                  </p>
-                </button>
-              );
-            }
-          )}
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+          {[
+            { nome: 'Todos', valor: clientes.length, filtro: '' },
+            { nome: 'Ativos', valor: ativos, filtro: 'Ativo' },
+            { nome: 'Inativos', valor: inativos, filtro: 'Inativo' },
+          ].map((item) => (
+            <button
+              key={item.nome}
+              type="button"
+              disabled={carregando || Boolean(erro)}
+              aria-pressed={situacao === item.filtro}
+              onClick={() =>
+                setSituacao((atual) =>
+                  atual === item.filtro ? '' : item.filtro
+                )
+              }
+              className={`${painel} text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ern-destaque)] ${
+                situacao === item.filtro
+                  ? 'ring-2 ring-[var(--ern-destaque)]'
+                  : ''
+              }`}
+            >
+              <span className="text-xs sm:text-sm">{item.nome}</span>
+              <strong className="mt-2 block text-3xl">
+                {carregando || erro ? '—' : item.valor}
+              </strong>
+            </button>
+          ))}
         </div>
 
-        {/* =====================================================
-            BASE DE CLIENTES
-        ====================================================== */}
+        {feedback && (
+          <p role="status" className={`${painel} text-[var(--ern-sucesso)]`}>
+            {feedback}
+          </p>
+        )}
 
-        <section className="mt-6 overflow-hidden rounded-[26px] border border-white/[0.075] bg-[#0A1713]">
-          {/* CABEÇALHO */}
+        <section className={painel} aria-labelledby="carteira-clientes">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <h2 id="carteira-clientes" className="text-xl font-semibold">
+              Carteira de clientes
+            </h2>
+            <button
+              type="button"
+              disabled={carregando}
+              className={botao}
+              onClick={() => {
+                setFeedback('');
+                setTentativa((atual) => atual + 1);
+              }}
+            >
+              Atualizar clientes
+            </button>
+          </div>
 
-          <div className="border-b border-white/[0.065] p-5 md:p-6">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-              <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-                  Base operacional
-                </p>
+          <div className="mt-5 grid min-w-0 gap-4 md:grid-cols-[minmax(0,1fr)_240px]">
+            <label className="min-w-0 space-y-2 text-sm">
+              <span className="block">Buscar cliente</span>
+              <input
+                type="search"
+                value={busca}
+                onChange={(event) => setBusca(event.target.value)}
+                placeholder="Nome, documento, telefone, e-mail ou cidade"
+                className={campo}
+              />
+            </label>
+            <label className="min-w-0 space-y-2 text-sm">
+              <span className="block">Situação</span>
+              <select
+                value={situacao}
+                onChange={(event) => setSituacao(event.target.value)}
+                className={campo}
+              >
+                <option value="">Todas as situações</option>
+                <option value="Ativo">Ativos</option>
+                <option value="Inativo">Inativos</option>
+              </select>
+            </label>
+          </div>
 
-                <h2
-                  className="mt-2 text-2xl text-[#F0F0E8]"
-                  style={{
-                    fontFamily:
-                      'var(--font-fraunces), serif',
-                  }}
-                >
-                  Carteira de clientes
-                </h2>
-
-                <p className="mt-2 text-xs text-[#EDEDE3]/30">
-                  {
-                    clientesFiltrados.length
-                  }{' '}
-                  registro
-                  {clientesFiltrados.length !==
-                  1
-                    ? 's'
-                    : ''}{' '}
-                  encontrado
-                  {clientesFiltrados.length !==
-                  1
-                    ? 's'
-                    : ''}
-                  .
-                </p>
-              </div>
-
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <div className="relative">
-                  <svg
-                    className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EDEDE3]/25"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M21 21l-4.35-4.35m1.35-5.65a7 7 0 11-14 0 7 7 0 0114 0z"
-                    />
-                  </svg>
-
-                  <input
-                    type="text"
-                    value={busca}
-                    onChange={(event) =>
-                      setBusca(
-                        event.target.value
-                      )
-                    }
-                    placeholder="Buscar cliente..."
-                    className="h-[44px] w-full min-w-[260px] rounded-xl border border-white/[0.08] bg-[#07110E] pl-10 pr-4 text-xs text-[#EDEDE3] outline-none placeholder:text-[#EDEDE3]/22 focus:border-[#E3A144]/35 sm:w-[300px]"
-                  />
-                </div>
-
-                <select
-                  value={
-                    filtroSituacao
-                  }
-                  onChange={(event) =>
-                    setFiltroSituacao(
-                      event.target.value
-                    )
-                  }
-                  className="h-[44px] rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-xs text-[#EDEDE3]/70 outline-none focus:border-[#E3A144]/35"
-                >
-                  <option value="">
-                    Todas as situações
-                  </option>
-
-                  <option value="Ativo">
-                    Ativos
-                  </option>
-
-                  <option value="Inativo">
-                    Inativos
-                  </option>
-                </select>
-              </div>
+          {carregando ? (
+            <p role="status" className="py-10">
+              Carregando clientes…
+            </p>
+          ) : erro ? (
+            <div role="alert" className="mt-5 space-y-3">
+              <p className="text-[var(--ern-erro)]">{erro}</p>
+              <button
+                type="button"
+                className={botao}
+                onClick={() => setTentativa((atual) => atual + 1)}
+              >
+                Tentar novamente
+              </button>
             </div>
-          </div>
+          ) : (
+            <>
+              <p role="status" className="mt-4 text-sm text-[var(--ern-secundario)]">
+                {filtrados.length} de {clientes.length} cliente(s).
+              </p>
 
-          {/* TABELA */}
-
-          <div className="overflow-x-auto">
-            {loading ? (
-              <div className="flex min-h-[320px] items-center justify-center">
-                <div className="text-center">
-                  <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/[0.08] border-t-[#E3A144]" />
-
-                  <p className="mt-4 text-xs text-[#EDEDE3]/35">
-                    Carregando clientes...
+              {filtrados.length === 0 ? (
+                <div className="py-10 text-center">
+                  <h3 className="text-lg font-semibold">
+                    Nenhum cliente encontrado
+                  </h3>
+                  <p className="mt-2 text-sm text-[var(--ern-secundario)]">
+                    {clientes.length
+                      ? 'Ajuste a busca ou a situação selecionada.'
+                      : 'Cadastre o primeiro cliente da sua empresa.'}
                   </p>
+                  {(busca || situacao) && (
+                    <button
+                      type="button"
+                      className={`${botao} mt-4`}
+                      onClick={() => { setBusca(''); setSituacao(''); }}
+                    >
+                      Limpar filtros
+                    </button>
+                  )}
                 </div>
-              </div>
-            ) : clientesFiltrados.length ===
-              0 ? (
-              <div className="flex min-h-[320px] items-center justify-center px-5 text-center">
-                <div>
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-white/[0.07] bg-white/[0.025] text-[#E3A144]">
-                    ✦
+              ) : (
+                <>
+                  <div className="mt-5 grid gap-4 lg:hidden">
+                    {filtrados.map((cliente) => (
+                      <article key={cliente.id} className={painel}>
+                        <h3 className="break-words text-lg font-semibold">
+                          {cliente.nome}
+                        </h3>
+                        <dl className="mt-4 grid min-w-0 gap-3 sm:grid-cols-2">
+                          {detalhes(cliente).map(([nome, valor]) => (
+                            <div key={nome} className="min-w-0">
+                              <dt className="text-xs text-[var(--ern-secundario)]">
+                                {nome}
+                              </dt>
+                              <dd className="mt-1 text-sm [overflow-wrap:anywhere]">
+                                {valor || 'Não informado'}
+                              </dd>
+                            </div>
+                          ))}
+                        </dl>
+                        <div className="mt-5">{acoes(cliente)}</div>
+                      </article>
+                    ))}
                   </div>
 
-                  <h3
-                    className="mt-5 text-2xl text-[#F0F0E8]"
-                    style={{
-                      fontFamily:
-                        'var(--font-fraunces), serif',
-                    }}
-                  >
-                    Nenhum cliente
-                    encontrado.
-                  </h3>
-
-                  <p className="mt-2 text-xs text-[#EDEDE3]/30">
-                    Ajuste os filtros ou
-                    faça um novo cadastro.
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <table className="min-w-[1050px] w-full border-collapse text-left">
-                <thead>
-                  <tr className="border-b border-white/[0.06] bg-white/[0.012]">
-                    {[
-                      'Cliente',
-                      'Documento',
-                      'Telefone',
-                      'E-mail',
-                      'Cidade',
-                      'Situação',
-                      'Ações',
-                    ].map((item) => (
-                      <th
-                        key={item}
-                        className={`px-5 py-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28 ${
-                          item ===
-                          'Ações'
-                            ? 'text-center'
-                            : ''
-                        }`}
-                      >
-                        {item}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-
-                <tbody className="divide-y divide-white/[0.055]">
-                  {clientesFiltrados.map(
-                    (
-                      cliente,
-                      index
-                    ) => {
-                      const inativo =
-                        (
-                          cliente.situacao ||
-                          ''
-                        ).toLowerCase() ===
-                        'inativo';
-
-                      const iniciais =
-                        cliente.nome
-                          ?.split(' ')
-                          .filter(
-                            Boolean
-                          )
-                          .slice(0, 2)
-                          .map((parte) =>
-                            parte
-                              .charAt(0)
-                              .toUpperCase()
-                          )
-                          .join('') ||
-                        'CL';
-
-                      return (
-                        <tr
-                          key={
-                            cliente.id ||
-                            index
-                          }
-                          className="transition hover:bg-white/[0.018]"
-                        >
-                          <td className="px-5 py-4">
-                            <div className="flex items-center gap-3">
-                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#E3A144]/15 bg-[#E3A144]/7 text-[10px] font-bold text-[#E3A144]">
-                                {
-                                  iniciais
-                                }
-                              </div>
-
-                              <div>
-                                <p className="text-xs font-semibold text-[#EDEDE3]/82">
-                                  {
-                                    cliente.nome
-                                  }
-                                </p>
-
-                                {cliente.nacionalidade && (
-                                  <p className="mt-1 text-[9px] text-[#EDEDE3]/25">
-                                    {
-                                      cliente.nacionalidade
-                                    }
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-
-                          <td className="px-5 py-4 text-xs font-mono text-[#EDEDE3]/42">
-                            {cliente.documento ||
-                              '—'}
-                          </td>
-
-                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
-                            {cliente.telefone ||
-                              '—'}
-                          </td>
-
-                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
-                            {cliente.email ||
-                              '—'}
-                          </td>
-
-                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
-                            {cliente.cidade ||
-                              '—'}
-                          </td>
-
-                          <td className="px-5 py-4">
-                            <span
-                              className={`inline-flex items-center gap-2 rounded-full border px-2.5 py-1 text-[9px] font-semibold ${
-                                inativo
-                                  ? 'border-red-500/20 bg-red-500/[0.07] text-red-300'
-                                  : 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300'
-                              }`}
-                            >
-                              <span
-                                className={`h-1.5 w-1.5 rounded-full ${
-                                  inativo
-                                    ? 'bg-red-400'
-                                    : 'bg-emerald-400'
-                                }`}
-                              />
-
-                              {cliente.situacao ||
-                                'Ativo'}
-                            </span>
-                          </td>
-
-                          <td className="px-5 py-4">
-                            <div className="flex items-center justify-center gap-1.5">
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  abrirVisualizacao(
-                                    cliente
-                                  )
-                                }
-                                title="Visualizar"
-                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-[#E3A144]/20 hover:bg-[#E3A144]/7 hover:text-[#E3A144]"
-                              >
-                                <svg
-                                  className="h-4 w-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="1.8"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M2 12s3.5-6 10-6 10 6 10 6-3.5 6-10 6S2 12 2 12z"
-                                  />
-                                  <circle
-                                    cx="12"
-                                    cy="12"
-                                    r="3"
-                                  />
-                                </svg>
-                              </button>
-
-                              <Link
-                                href={`/clientes/editar/${cliente.id}`}
-                                title="Editar"
-                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-sky-400/20 hover:bg-sky-400/[0.06] hover:text-sky-300"
-                              >
-                                <svg
-                                  className="h-4 w-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="1.8"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M12 20h9M16.5 3.5a2.12 2.12 0 013 3L8 18l-4 1 1-4L16.5 3.5z"
-                                  />
-                                </svg>
-                              </Link>
-
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  confirmarExclusao(
-                                    cliente.id
-                                  )
-                                }
-                                title="Excluir"
-                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-red-400/20 hover:bg-red-400/[0.06] hover:text-red-300"
-                              >
-                                <svg
-                                  className="h-4 w-4"
-                                  fill="none"
-                                  stroke="currentColor"
-                                  strokeWidth="1.8"
-                                  viewBox="0 0 24 24"
-                                >
-                                  <path
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                    d="M3 6h18M8 6V4h8v2m-9 0 1 14h8l1-14M10 11v5m4-5v5"
-                                  />
-                                </svg>
-                              </button>
-                            </div>
-                          </td>
+                  <div className="mt-5 hidden overflow-x-auto lg:block">
+                    <table className="w-full min-w-[1050px] text-left text-sm">
+                      <caption className="sr-only">
+                        Clientes da empresa autenticada
+                      </caption>
+                      <thead>
+                        <tr className="border-b border-[var(--ern-borda)]">
+                          {[
+                            'Cliente', 'Documento', 'Telefone',
+                            'E-mail', 'Cidade', 'Situação', 'Ações',
+                          ].map((nome) => (
+                            <th key={nome} scope="col" className="px-3 py-4">
+                              {nome}
+                            </th>
+                          ))}
                         </tr>
-                      );
-                    }
-                  )}
-                </tbody>
-              </table>
-            )}
-          </div>
+                      </thead>
+                      <tbody>
+                        {filtrados.map((cliente) => (
+                          <tr
+                            key={cliente.id}
+                            className="border-b border-[var(--ern-borda)] align-top hover:bg-[var(--ern-hover)]"
+                          >
+                            <th scope="row" className="max-w-60 break-words px-3 py-4 font-semibold">
+                              {cliente.nome}
+                              {cliente.nacionalidade && (
+                                <span className="mt-1 block text-xs font-normal text-[var(--ern-secundario)]">
+                                  {cliente.nacionalidade}
+                                </span>
+                              )}
+                            </th>
+                            {[
+                              cliente.documento,
+                              cliente.telefone,
+                              cliente.email,
+                              cliente.cidade,
+                              situacaoCliente(cliente),
+                            ].map((valor, indice) => (
+                              <td
+                                key={indice}
+                                className="max-w-60 px-3 py-4 [overflow-wrap:anywhere]"
+                              >
+                                {valor || '—'}
+                              </td>
+                            ))}
+                            <td className="px-3 py-4">{acoes(cliente)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </>
+              )}
+            </>
+          )}
         </section>
       </main>
 
-      {/* =======================================================
-          MODAL DETALHES
-      ======================================================== */}
-
-      {modalVisualizarAberto &&
-        clienteSelecionado && (
-          <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-            <div className="w-full max-w-[640px] overflow-hidden rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.6)]">
-              <div className="flex items-center justify-between border-b border-white/[0.07] px-6 py-5">
-                <div>
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-                    Perfil do cliente
-                  </p>
-
-                  <h3
-                    className="mt-1 text-2xl text-[#F0F0E8]"
-                    style={{
-                      fontFamily:
-                        'var(--font-fraunces), serif',
-                    }}
-                  >
-                    {
-                      clienteSelecionado.nome
-                    }
-                  </h3>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setModalVisualizarAberto(
-                      false
-                    )
-                  }
-                  className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] text-[#EDEDE3]/45 transition hover:bg-white/[0.06] hover:text-white"
-                >
-                  ✕
-                </button>
-              </div>
-
-              <div className="grid gap-4 p-6 sm:grid-cols-2">
-                {[
-                  {
-                    label: 'Documento',
-                    valor:
-                      clienteSelecionado.documento,
-                  },
-                  {
-                    label:
-                      'Telefone / WhatsApp',
-                    valor:
-                      clienteSelecionado.telefone,
-                  },
-                  {
-                    label: 'E-mail',
-                    valor:
-                      clienteSelecionado.email,
-                  },
-                  {
-                    label: 'Cidade',
-                    valor:
-                      clienteSelecionado.cidade,
-                  },
-                  {
-                    label:
-                      'Nacionalidade',
-                    valor:
-                      clienteSelecionado.nacionalidade,
-                  },
-                  {
-                    label: 'Situação',
-                    valor:
-                      clienteSelecionado.situacao ||
-                      'Ativo',
-                  },
-                ].map((item) => (
-                  <div
-                    key={item.label}
-                    className="rounded-2xl border border-white/[0.065] bg-white/[0.018] p-4"
-                  >
-                    <p className="text-[8px] font-semibold uppercase tracking-[0.17em] text-[#EDEDE3]/28">
-                      {item.label}
-                    </p>
-
-                    <p className="mt-2 break-words text-xs font-medium text-[#EDEDE3]/75">
-                      {item.valor ||
-                        'Não informado'}
-                    </p>
-                  </div>
-                ))}
-
-                <div className="sm:col-span-2">
-                  <p className="mb-2 text-[8px] font-semibold uppercase tracking-[0.17em] text-[#EDEDE3]/28">
-                    Observações
-                  </p>
-
-                  <div className="min-h-[90px] rounded-2xl border border-white/[0.065] bg-[#07110E] p-4 text-xs leading-6 text-[#EDEDE3]/50">
-                    {clienteSelecionado.observacoes ||
-                      'Nenhuma observação registrada para este cliente.'}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end gap-2 border-t border-white/[0.07] px-6 py-4">
-                <Link
-                  href={`/clientes/editar/${clienteSelecionado.id}`}
-                  className="rounded-xl border border-white/[0.09] bg-white/[0.03] px-5 py-2.5 text-xs font-semibold text-[#EDEDE3]/65 transition hover:bg-white/[0.06]"
-                >
-                  Editar cliente
-                </Link>
-
-                <button
-                  type="button"
-                  onClick={() =>
-                    setModalVisualizarAberto(
-                      false
-                    )
-                  }
-                  className="rounded-xl bg-[#E3A144] px-5 py-2.5 text-xs font-bold text-[#07130F]"
-                >
-                  Fechar
-                </button>
-              </div>
+      <dialog
+        ref={dialogo}
+        aria-labelledby="titulo-cliente"
+        onCancel={(event) => {
+          if (travaExclusao.current) event.preventDefault();
+        }}
+        onClose={() => {
+          setSelecionado(null);
+          setErroExclusao('');
+        }}
+        className="fixed inset-0 m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 text-[var(--ern-texto)] shadow-2xl backdrop:bg-black/70 sm:p-6"
+      >
+        {selecionado && (
+          <>
+            <div className="flex items-start justify-between gap-3">
+              <h2 id="titulo-cliente" className="min-w-0 break-words text-2xl font-semibold">
+                {modo === 'excluir' ? 'Excluir cliente?' : selecionado.nome}
+              </h2>
+              <button
+                type="button"
+                className={botao}
+                disabled={excluindo}
+                aria-label="Fechar janela"
+                onClick={fechar}
+              >
+                ×
+              </button>
             </div>
-          </div>
+
+            {modo === 'detalhes' ? (
+              <>
+                <dl className="mt-5 grid gap-4 sm:grid-cols-2">
+                  {detalhes(selecionado).map(([nome, valor]) => (
+                    <div key={nome} className="min-w-0">
+                      <dt className="text-xs text-[var(--ern-secundario)]">{nome}</dt>
+                      <dd className="mt-1 text-sm [overflow-wrap:anywhere]">
+                        {valor || 'Não informado'}
+                      </dd>
+                    </div>
+                  ))}
+                </dl>
+                <h3 className="mt-5 font-semibold">Observações</h3>
+                <p className="mt-2 whitespace-pre-wrap text-sm leading-6 [overflow-wrap:anywhere]">
+                  {selecionado.observacoes || 'Nenhuma observação registrada.'}
+                </p>
+                <div className="mt-6 flex flex-wrap gap-3">
+                  <Link href={`/clientes/editar/${selecionado.id}`} className={botao}>
+                    Editar cliente
+                  </Link>
+                  <button type="button" className={botao} onClick={fechar}>
+                    Fechar
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p className="mt-4 break-words font-semibold">
+                  {selecionado.nome}
+                </p>
+                <p className="mt-3 text-sm leading-6 text-[var(--ern-secundario)]">
+                  O cadastro será removido permanentemente. As reservas existentes
+                  serão mantidas, mas perderão o vínculo com este cliente.
+                  Para preservar o cadastro e seus vínculos, você pode editar
+                  a situação para Inativo.
+                </p>
+                {erroExclusao && (
+                  <p role="alert" className="mt-4 text-sm text-[var(--ern-erro)]">
+                    {erroExclusao}
+                  </p>
+                )}
+                <div className="mt-6 grid gap-3 sm:grid-cols-2">
+                  <button
+                    type="button"
+                    className={botao}
+                    disabled={excluindo}
+                    onClick={fechar}
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="button"
+                    className={`${botao} text-[var(--ern-erro)]`}
+                    disabled={excluindo}
+                    onClick={() => void excluir()}
+                  >
+                    {excluindo ? 'Excluindo…' : 'Confirmar exclusão'}
+                  </button>
+                </div>
+              </>
+            )}
+          </>
         )}
-
-      {/* =======================================================
-          MODAL EXCLUSÃO
-      ======================================================== */}
-
-      {modalExcluirAberto && (
-        <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-[430px] rounded-[26px] border border-white/[0.09] bg-[#091510] p-6 text-center shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-red-500/20 bg-red-500/[0.08] text-red-300">
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 9v4m0 4h.01M10.3 4.3L2.8 17.3A2 2 0 004.5 20h15a2 2 0 001.7-2.7L13.7 4.3a2 2 0 00-3.4 0z"
-                />
-              </svg>
-            </div>
-
-            <h3
-              className="mt-5 text-2xl text-[#F0F0E8]"
-              style={{
-                fontFamily:
-                  'var(--font-fraunces), serif',
-              }}
-            >
-              Excluir cliente?
-            </h3>
-
-            <p className="mx-auto mt-3 max-w-[320px] text-xs leading-6 text-[#EDEDE3]/38">
-              Este registro será removido
-              da base. A ação não poderá
-              ser desfeita.
-            </p>
-
-            <div className="mt-6 grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={() => {
-                  setModalExcluirAberto(
-                    false
-                  );
-                  setIdParaExcluir(null);
-                }}
-                className="rounded-xl border border-white/[0.09] bg-white/[0.025] px-4 py-3 text-xs font-semibold text-[#EDEDE3]/60 transition hover:bg-white/[0.05]"
-              >
-                Cancelar
-              </button>
-
-              <button
-                type="button"
-                onClick={
-                  executarExclusao
-                }
-                className="rounded-xl border border-red-500/20 bg-red-500/[0.1] px-4 py-3 text-xs font-semibold text-red-300 transition hover:bg-red-500/[0.16]"
-              >
-                Excluir
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      </dialog>
     </div>
   );
 }
