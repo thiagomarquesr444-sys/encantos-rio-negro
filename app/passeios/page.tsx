@@ -150,10 +150,10 @@ function estiloSituacao(
   ) {
     return {
       bolinha:
-        'bg-[#EDEDE3]/35',
+        'bg-[var(--ern-suave)]',
 
       container:
-        'border-white/[0.08] bg-white/[0.025] text-[#EDEDE3]/45',
+        'border-[var(--ern-borda)] bg-[var(--ern-suave)] text-[var(--ern-secundario)]',
     };
   }
 
@@ -164,10 +164,10 @@ function estiloSituacao(
   ) {
     return {
       bolinha:
-        'bg-[#E3A144]',
+        'bg-[var(--ern-botao)]',
 
       container:
-        'border-[#E3A144]/20 bg-[#E3A144]/[0.07] text-[#F4C77E]',
+        'border-[var(--ern-borda)] bg-[var(--ern-suave)] text-[var(--ern-destaque)]',
     };
   }
 
@@ -176,11 +176,45 @@ function estiloSituacao(
       'bg-emerald-400',
 
     container:
-      'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300',
+      'border-emerald-500/20 bg-emerald-500/[0.07] text-[var(--ern-sucesso)]',
   };
 }
 
 export default function PasseiosPage() {
+  const contextoCatalogoERN = React.useRef<{
+    usuarioId: string;
+    empresaId: string;
+  } | null>(null);
+
+  async function validarEmpresaCatalogoERN(id: string) {
+    const esperado = contextoCatalogoERN.current;
+
+    if (!esperado || !passeios.some((item) => item.id === id)) {
+      throw new Error('Atualize o catalogo antes de continuar.');
+    }
+
+    const { data: auth, error: authError } =
+      await supabase.auth.getUser();
+
+    if (authError || !auth.user ||
+        auth.user.id !== esperado.usuarioId) {
+      throw new Error('A sessao mudou. Atualize a pagina.');
+    }
+
+    const { data: perfil, error: perfilError } = await supabase
+      .from('perfis')
+      .select('empresa_id')
+      .eq('id', auth.user.id)
+      .single();
+
+    if (perfilError || !perfil?.empresa_id ||
+        String(perfil.empresa_id) !== esperado.empresaId) {
+      throw new Error('Nao foi possivel confirmar sua empresa. Atualize a pagina.');
+    }
+
+    return esperado.empresaId;
+  }
+
   const router =
     useRouter();
 
@@ -322,6 +356,10 @@ export default function PasseiosPage() {
         throw new Error('Não foi possível obter um catálogo consistente.');
       }
 
+      contextoCatalogoERN.current = {
+        usuarioId: auth.user.id,
+        empresaId: String(perfil.empresa_id),
+      };
       setPasseios(registros);
     } catch (error) {
       console.error('Erro ao carregar passeios:', error);
@@ -431,21 +469,20 @@ export default function PasseiosPage() {
       ]
     );
 
+  const precosValidosERN = passeios
+    .map(obterValorPasseio)
+    .filter(valor => Number.isFinite(valor) && valor >= 0);
+
+  const somaCentavosERN = precosValidosERN.reduce(
+    (total, valor) => total + Math.round(valor * 100),
+    0,
+  );
+
   const precoMedio =
-    totalPasseios > 0
-      ? passeios.reduce(
-          (
-            total,
-            passeio
-          ) =>
-            total +
-            obterValorPasseio(
-              passeio
-            ),
-          0
-        ) /
-        totalPasseios
-      : 0;
+    precosValidosERN.length && Number.isSafeInteger(somaCentavosERN)
+      ? Math.round(somaCentavosERN / precosValidosERN.length) / 100
+      : Number.NaN;
+
 
   const ativos =
     passeios.filter(
@@ -707,7 +744,11 @@ export default function PasseiosPage() {
           .from(
             'passeios'
           )
-          .update(payload).eq('id', passeioSelecionado.id).select('id').single();
+          .update(payload)
+          .eq('id', passeioSelecionado.id)
+          .eq('empresa_id', await validarEmpresaCatalogoERN(passeioSelecionado.id))
+          .select('id')
+          .single();
 
       if (error) {
         throw error;
@@ -770,7 +811,11 @@ export default function PasseiosPage() {
           .from(
             'passeios'
           )
-          .delete().eq('id', idParaExcluir).select('id').single();
+          .delete()
+          .eq('id', idParaExcluir)
+          .eq('empresa_id', await validarEmpresaCatalogoERN(idParaExcluir))
+          .select('id')
+          .single();
 
       if (error) {
         throw error;
@@ -857,9 +902,9 @@ export default function PasseiosPage() {
       valor:
         loading
           ? '—'
-          : formatarMoeda(
-              precoMedio
-            ),
+          : (precosValidosERN.length
+    ? formatarMoeda(precoMedio)
+    : 'Sem valores'),
 
       detalhe:
         'média real do catálogo',
@@ -867,14 +912,14 @@ export default function PasseiosPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+    <div className="min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
       {/* =====================================================
           FEEDBACK
       ====================================================== */}
 
       {feedback?.tipo ===
         'sucesso' && (
-        <div className="fixed left-1/2 top-[100px] z-[90] -translate-x-1/2 rounded-2xl border border-emerald-500/20 bg-[#0B2119] px-5 py-3 text-xs font-semibold text-emerald-300 shadow-2xl">
+        <div className="fixed left-1/2 top-[100px] z-[90] -translate-x-1/2 rounded-2xl border border-emerald-500/20 bg-[#0B2119] px-5 py-3 text-xs font-semibold text-[var(--ern-sucesso)] shadow-2xl">
           {
             feedback.texto
           }
@@ -885,19 +930,19 @@ export default function PasseiosPage() {
           CABEÇALHO
       ====================================================== */}
 
-      <section className="border-b border-white/[0.07] bg-[#091510]">
+      <section className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
         <div className="mx-auto flex max-w-[1360px] flex-col gap-8 px-5 py-10 md:px-8 md:py-12 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="flex items-center gap-3">
-              <span className="h-px w-8 bg-[#E3A144]" />
+              <span className="h-px w-8 bg-[var(--ern-botao)]" />
 
-              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--ern-destaque)]">
                 Operação • Passeios
               </span>
             </div>
 
             <h1
-              className="mt-4 text-4xl leading-none tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
+              className="mt-4 text-4xl leading-none tracking-[-0.035em] text-[var(--ern-texto)] md:text-5xl"
               style={{
                 fontFamily:
                   'var(--font-fraunces), serif',
@@ -906,7 +951,7 @@ export default function PasseiosPage() {
               Passeios
             </h1>
 
-            <p className="mt-4 max-w-[700px] text-sm leading-7 text-[#EDEDE3]/42">
+            <p className="mt-4 max-w-[700px] text-sm leading-7 text-[var(--ern-secundario)]">
               Organize experiências, preços,
               capacidade e informações operacionais
               do catálogo da empresa.
@@ -922,7 +967,7 @@ export default function PasseiosPage() {
               disabled={
                 loading
               }
-              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.055] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] px-5 text-xs font-semibold text-[var(--ern-secundario)] transition hover:bg-[var(--ern-suave)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               ↻ Atualizar
             </button>
@@ -934,7 +979,7 @@ export default function PasseiosPage() {
                   '/passeios/novo'
                 )
               }
-              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl bg-[#E3A144] px-6 text-sm font-bold text-[#07130F] transition hover:-translate-y-0.5 hover:bg-[#F0B35C]"
+              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl bg-[var(--ern-botao)] px-6 text-sm font-bold text-[var(--ern-sobre-botao)] transition hover:-translate-y-0.5 hover:bg-[var(--ern-botao)]"
             >
               <span className="text-lg">
                 +
@@ -956,7 +1001,7 @@ export default function PasseiosPage() {
 
         {feedback?.tipo ===
           'erro' && (
-          <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-red-300">
+          <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-[var(--ern-erro)]">
             <span>
               {
                 feedback.texto
@@ -970,7 +1015,7 @@ export default function PasseiosPage() {
                   null
                 )
               }
-              className="text-red-300/60 transition hover:text-red-200"
+              className="text-[var(--ern-erro)] transition hover:text-[var(--ern-erro)]"
             >
               ✕
             </button>
@@ -990,16 +1035,16 @@ export default function PasseiosPage() {
                 key={
                   card.titulo
                 }
-                className="rounded-[22px] border border-white/[0.075] bg-[#0A1713] p-5"
+                className="rounded-[22px] border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5"
               >
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--ern-secundario)]">
                   {
                     card.titulo
                   }
                 </p>
 
                 <strong
-                  className={`mt-5 block font-medium tracking-[-0.04em] text-[#F0F0E8] ${
+                  className={`mt-5 block font-medium tracking-[-0.04em] text-[var(--ern-texto)] ${
                     card.titulo ===
                     'Preço médio'
                       ? 'text-2xl md:text-3xl'
@@ -1015,7 +1060,7 @@ export default function PasseiosPage() {
                   }
                 </strong>
 
-                <p className="mt-2 text-[11px] text-[#EDEDE3]/28">
+                <p className="mt-2 text-[11px] text-[var(--ern-secundario)]">
                   {
                     card.detalhe
                   }
@@ -1029,16 +1074,16 @@ export default function PasseiosPage() {
             CATÁLOGO
         ==================================================== */}
 
-        <section className="mt-6 overflow-hidden rounded-[26px] border border-white/[0.075] bg-[#0A1713]">
-          <div className="border-b border-white/[0.065] p-5 md:p-6">
+        <section className="mt-6 overflow-hidden rounded-[26px] border border-[var(--ern-borda)] bg-[var(--ern-painel)]">
+          <div className="border-b border-[var(--ern-borda)] p-5 md:p-6">
             <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
               <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--ern-destaque)]">
                   Catálogo operacional
                 </p>
 
                 <h2
-                  className="mt-2 text-2xl text-[#F0F0E8]"
+                  className="mt-2 text-2xl text-[var(--ern-texto)]"
                   style={{
                     fontFamily:
                       'var(--font-fraunces), serif',
@@ -1047,7 +1092,7 @@ export default function PasseiosPage() {
                   Experiências cadastradas
                 </h2>
 
-                <p className="mt-2 text-xs text-[#EDEDE3]/30">
+                <p className="mt-2 text-xs text-[var(--ern-secundario)]">
                   {
                     passeiosFiltrados.length
                   }{' '}
@@ -1066,7 +1111,7 @@ export default function PasseiosPage() {
               <div className="flex flex-col gap-3 sm:flex-row">
                 <div className="relative">
                   <svg
-                    className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[#EDEDE3]/25"
+                    className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[var(--ern-secundario)]"
                     fill="none"
                     stroke="currentColor"
                     strokeWidth="2"
@@ -1093,7 +1138,7 @@ export default function PasseiosPage() {
                           .value
                       )
                     }
-                    className="h-[44px] w-full min-w-0 sm:min-w-[260px] rounded-xl border border-white/[0.08] bg-[#07110E] pl-10 pr-4 text-xs text-[#EDEDE3] outline-none placeholder:text-[#EDEDE3]/22 focus:border-[#E3A144]/35"
+                    className="h-[44px] w-full min-w-0 sm:min-w-[260px] rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] pl-10 pr-4 text-xs text-[var(--ern-texto)] outline-none placeholder:text-[var(--ern-secundario)] focus:border-[var(--ern-borda)]"
                   />
                 </div>
 
@@ -1109,7 +1154,7 @@ export default function PasseiosPage() {
                         .value
                     )
                   }
-                  className="h-[44px] rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-xs text-[#EDEDE3]/70 outline-none focus:border-[#E3A144]/35"
+                  className="h-[44px] rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 text-xs text-[var(--ern-secundario)] outline-none focus:border-[var(--ern-borda)]"
                 >
                   <option value="">
                     Todas as categorias
@@ -1142,9 +1187,9 @@ export default function PasseiosPage() {
             {loading ? (
               <div className="flex min-h-[330px] items-center justify-center">
                 <div className="text-center">
-                  <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/[0.08] border-t-[#E3A144]" />
+                  <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[var(--ern-borda)] border-t-[var(--ern-destaque)]" />
 
-                  <p className="mt-4 text-xs text-[#EDEDE3]/35">
+                  <p className="mt-4 text-xs text-[var(--ern-secundario)]">
                     Carregando passeios...
                   </p>
                 </div>
@@ -1154,7 +1199,7 @@ export default function PasseiosPage() {
               <div className="flex min-h-[330px] items-center justify-center px-5 text-center">
                 <div>
                   <h3
-                    className="text-2xl text-[#F0F0E8]"
+                    className="text-2xl text-[var(--ern-texto)]"
                     style={{
                       fontFamily:
                         'var(--font-fraunces), serif',
@@ -1163,7 +1208,7 @@ export default function PasseiosPage() {
                     Nenhum passeio encontrado.
                   </h3>
 
-                  <p className="mt-2 text-xs text-[#EDEDE3]/30">
+                  <p className="mt-2 text-xs text-[var(--ern-secundario)]">
                     Ajuste os filtros ou cadastre uma nova experiência.
                   </p>
                 </div>
@@ -1175,47 +1220,47 @@ export default function PasseiosPage() {
     {passeiosFiltrados.map((passeio, indice) => (
       <article
         key={passeio.id ?? indice}
-        className="min-w-0 rounded-2xl border border-white/10 bg-[#07110E] p-3"
+        className="min-w-0 rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] p-3"
       >
         <div className="flex flex-wrap items-start justify-between gap-2">
           <h3 className="min-w-0 flex-1 break-words text-sm font-semibold">
             {passeio.nome}
           </h3>
-          <span className="rounded-full border border-white/15 px-2 py-1 text-[10px]">
+          <span className="rounded-full border border-[var(--ern-borda)] px-2 py-1 text-[10px]">
             {passeio.situacao || 'Não informada'}
           </span>
         </div>
 
-        <p className="mt-1 break-words text-xs text-[#EDEDE3]/70">
+        <p className="mt-1 break-words text-xs text-[var(--ern-secundario)]">
           {passeio.categoria || 'Sem categoria'}
         </p>
 
         <dl className="mt-3 grid grid-cols-2 gap-2 text-xs">
           <div>
-            <dt className="text-[#EDEDE3]/60">Preço cadastrado</dt>
-            <dd className="mt-1 font-semibold text-[#F4C77E]">
+            <dt className="text-[var(--ern-secundario)]">Preço cadastrado</dt>
+            <dd className="mt-1 font-semibold text-[var(--ern-destaque)]">
               {formatarMoeda(obterValorPasseio(passeio))}
             </dd>
           </div>
           <div>
-            <dt className="text-[#EDEDE3]/60">Vagas cadastradas</dt>
+            <dt className="text-[var(--ern-secundario)]">Vagas cadastradas</dt>
             <dd className="mt-1">{passeio.vagas ?? 'Não informadas'}</dd>
           </div>
           <div className="min-w-0">
-            <dt className="text-[#EDEDE3]/60">Cidade</dt>
+            <dt className="text-[var(--ern-secundario)]">Cidade</dt>
             <dd className="mt-1 break-words">{passeio.cidade || 'Não informada'}</dd>
           </div>
           <div className="min-w-0">
-            <dt className="text-[#EDEDE3]/60">Duração</dt>
+            <dt className="text-[var(--ern-secundario)]">Duração</dt>
             <dd className="mt-1 break-words">{passeio.duracao || 'Não informada'}</dd>
           </div>
         </dl>
 
-        <div className="mt-3 grid grid-cols-3 gap-2 border-t border-white/10 pt-2">
+        <div className="mt-3 grid grid-cols-3 gap-2 border-t border-[var(--ern-borda)] pt-2">
           <button
             type="button"
             onClick={() => abrirVisualizacao(passeio)}
-            className="min-h-11 rounded-xl border border-white/15 text-xs"
+            className="min-h-11 rounded-xl border border-[var(--ern-borda)] text-xs"
           >
             Detalhes
           </button>
@@ -1223,7 +1268,7 @@ export default function PasseiosPage() {
             type="button"
             disabled={!passeio.id}
             onClick={() => abrirEdicao(passeio)}
-            className="min-h-11 rounded-xl border border-sky-400/25 text-xs text-sky-200 disabled:opacity-50"
+            className="min-h-11 rounded-xl border border-sky-400/25 text-xs text-[var(--ern-destaque)] disabled:opacity-50"
           >
             Editar
           </button>
@@ -1234,7 +1279,7 @@ export default function PasseiosPage() {
               setFeedback(null);
               setIdParaExcluir(passeio.id ?? null);
             }}
-            className="min-h-11 rounded-xl border border-red-400/25 text-xs text-red-200 disabled:opacity-50"
+            className="min-h-11 rounded-xl border border-red-400/25 text-xs text-[var(--ern-erro)] disabled:opacity-50"
           >
             Excluir
           </button>
@@ -1245,7 +1290,7 @@ export default function PasseiosPage() {
 
 <table className="hidden lg:table w-full min-w-[1050px] border-collapse text-left">
                 <thead>
-                  <tr className="border-b border-white/[0.06] bg-white/[0.012]">
+                  <tr className="border-b border-[var(--ern-borda)] bg-[var(--ern-suave)]">
                     {[
                       'Passeio',
                       'Categoria',
@@ -1262,7 +1307,7 @@ export default function PasseiosPage() {
                           key={
                             titulo
                           }
-                          className={`px-5 py-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28 ${
+                          className={`px-5 py-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)] ${
                             titulo ===
                             'Ações'
                               ? 'text-center'
@@ -1278,7 +1323,7 @@ export default function PasseiosPage() {
                   </tr>
                 </thead>
 
-                <tbody className="divide-y divide-white/[0.055]">
+                <tbody className="divide-y divide-[var(--ern-borda)]">
                   {passeiosFiltrados.map(
                     (
                       passeio,
@@ -1295,12 +1340,12 @@ export default function PasseiosPage() {
                             passeio.id ||
                             index
                           }
-                          className="transition hover:bg-white/[0.018]"
+                          className="transition hover:bg-[var(--ern-suave)]"
                         >
                           <td className="px-5 py-4">
                             <div>
                               <div className="flex items-center gap-2">
-                                <p className="text-xs font-semibold text-[#EDEDE3]/82">
+                                <p className="text-xs font-semibold text-[var(--ern-secundario)]">
                                   {
                                     passeio.nome
                                   }
@@ -1309,7 +1354,7 @@ export default function PasseiosPage() {
                                 {passeio.destaque && (
                                   <span
                                     title="Destaque"
-                                    className="text-[10px] text-[#E3A144]"
+                                    className="text-[10px] text-[var(--ern-destaque)]"
                                   >
                                     ★
                                   </span>
@@ -1317,7 +1362,7 @@ export default function PasseiosPage() {
                               </div>
 
                               {passeio.cidade && (
-                                <p className="mt-1 text-[9px] text-[#EDEDE3]/25">
+                                <p className="mt-1 text-[9px] text-[var(--ern-secundario)]">
                                   {
                                     passeio.cidade
                                   }
@@ -1327,18 +1372,18 @@ export default function PasseiosPage() {
                           </td>
 
                           <td className="px-5 py-4">
-                            <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-2.5 py-1 text-[9px] text-[#EDEDE3]/50">
+                            <span className="rounded-full border border-[var(--ern-borda)] bg-[var(--ern-suave)] px-2.5 py-1 text-[9px] text-[var(--ern-secundario)]">
                               {passeio.categoria ||
                                 'Geral'}
                             </span>
                           </td>
 
-                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
+                          <td className="px-5 py-4 text-xs text-[var(--ern-secundario)]">
                             {passeio.duracao ||
                               '—'}
                           </td>
 
-                          <td className="px-5 py-4 text-xs font-semibold text-[#F4C77E]">
+                          <td className="px-5 py-4 text-xs font-semibold text-[var(--ern-destaque)]">
                             {formatarMoeda(
                               obterValorPasseio(
                                 passeio
@@ -1346,7 +1391,7 @@ export default function PasseiosPage() {
                             )}
                           </td>
 
-                          <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
+                          <td className="px-5 py-4 text-xs text-[var(--ern-secundario)]">
                             {Number(
                               passeio.vagas
                             ) || 0}
@@ -1375,7 +1420,7 @@ export default function PasseiosPage() {
                                     passeio
                                   )
                                 }
-                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-[#E3A144]/20 hover:text-[#E3A144]"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--ern-borda)] bg-[var(--ern-suave)] text-[var(--ern-secundario)] transition hover:border-[var(--ern-borda)] hover:text-[var(--ern-destaque)]"
                               >
                                 👁
                               </button>
@@ -1388,7 +1433,7 @@ export default function PasseiosPage() {
                                     passeio
                                   )
                                 }
-                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-sky-400/20 hover:text-sky-300"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--ern-borda)] bg-[var(--ern-suave)] text-[var(--ern-secundario)] transition hover:border-sky-400/20 hover:text-[var(--ern-destaque)]"
                               >
                                 ✎
                               </button>
@@ -1402,7 +1447,7 @@ export default function PasseiosPage() {
                                     passeio.id
                                   )
                                 }
-                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-red-400/20 hover:text-red-300"
+                                className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--ern-borda)] bg-[var(--ern-suave)] text-[var(--ern-secundario)] transition hover:border-red-400/20 hover:text-[var(--ern-erro)]"
                               >
                                 ×
                               </button>
@@ -1426,17 +1471,17 @@ export default function PasseiosPage() {
 
       {passeioSelecionado && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm">
-          <div className="max-h-[90vh] w-full max-w-[690px] overflow-y-auto rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
-            <div className="flex items-start justify-between gap-4 border-b border-white/[0.07] px-6 py-5">
+          <div className="max-h-[90vh] w-full max-w-[690px] overflow-y-auto rounded-[26px] border border-[var(--ern-borda)] bg-[var(--ern-painel)] shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
+            <div className="flex items-start justify-between gap-4 border-b border-[var(--ern-borda)] px-6 py-5">
               <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--ern-destaque)]">
                   {modoEdicao
                     ? 'Editar passeio'
                     : 'Detalhes do passeio'}
                 </p>
 
                 <h3
-                  className="mt-2 text-2xl text-[#F0F0E8]"
+                  className="mt-2 text-2xl text-[var(--ern-texto)]"
                   style={{
                     fontFamily:
                       'var(--font-fraunces), serif',
@@ -1459,13 +1504,23 @@ export default function PasseiosPage() {
                     false
                   );
                 }}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] text-[#EDEDE3]/45 transition hover:bg-white/[0.05]"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] text-[var(--ern-secundario)] transition hover:bg-[var(--ern-suave)]"
               >
                 ✕
               </button>
             </div>
 
-            {modoEdicao ? (
+            
+{feedback?.tipo === 'erro' && (
+  <div
+    role="alert"
+    className="m-4 rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] p-3 text-sm text-[var(--ern-erro)]"
+  >
+    {feedback.texto}
+  </div>
+)}
+
+{modoEdicao ? (
               <form
                 onSubmit={
                   handleSalvarEdicao
@@ -1560,7 +1615,7 @@ export default function PasseiosPage() {
                   />
 
                   <div>
-                    <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34">
+                    <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)]">
                       Situação
                     </label>
 
@@ -1583,7 +1638,7 @@ export default function PasseiosPage() {
                               .value,
                         })
                       }
-                      className="w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none focus:border-[#E3A144]/40 disabled:opacity-50"
+                      className="w-full rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 py-3 text-sm text-[var(--ern-texto)] outline-none focus:border-[var(--ern-borda)] disabled:opacity-50"
                     >
                       <option value="Ativo">
                         Ativo
@@ -1602,7 +1657,7 @@ export default function PasseiosPage() {
 
                 <div className="grid gap-4 sm:grid-cols-2">
                   <div>
-                    <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34">
+                    <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)]">
                       Valor (R$)
                     </label>
 
@@ -1628,16 +1683,16 @@ export default function PasseiosPage() {
                         })
                       }
                       placeholder="Ex.: 3.500,00"
-                      className="w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none focus:border-[#E3A144]/40 disabled:opacity-50"
+                      className="w-full rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 py-3 text-sm text-[var(--ern-texto)] outline-none focus:border-[var(--ern-borda)] disabled:opacity-50"
                     />
 
-                    <p className="mt-2 text-[9px] text-[#EDEDE3]/22">
+                    <p className="mt-2 text-[9px] text-[var(--ern-secundario)]">
                       Aceita 3500, 3.500 ou 3.500,00.
                     </p>
                   </div>
 
                   <div>
-                    <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34">
+                    <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)]">
                       Vagas
                     </label>
 
@@ -1663,7 +1718,7 @@ export default function PasseiosPage() {
                               .value,
                         })
                       }
-                      className="w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none focus:border-[#E3A144]/40 disabled:opacity-50"
+                      className="w-full rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 py-3 text-sm text-[var(--ern-texto)] outline-none focus:border-[var(--ern-borda)] disabled:opacity-50"
                     />
                   </div>
                 </div>
@@ -1694,16 +1749,16 @@ export default function PasseiosPage() {
                 <label
                   className={`flex cursor-pointer items-center justify-between rounded-xl border px-4 py-3 transition ${
                     passeioSelecionado.destaque
-                      ? 'border-[#E3A144]/25 bg-[#E3A144]/[0.05]'
-                      : 'border-white/[0.08] bg-[#07110E]'
+                      ? 'border-[var(--ern-borda)] bg-[var(--ern-suave)]'
+                      : 'border-[var(--ern-borda)] bg-[var(--ern-fundo)]'
                   }`}
                 >
                   <div>
-                    <p className="text-xs font-semibold text-[#EDEDE3]/65">
+                    <p className="text-xs font-semibold text-[var(--ern-secundario)]">
                       Destaque
                     </p>
 
-                    <p className="mt-1 text-[9px] text-[#EDEDE3]/24">
+                    <p className="mt-1 text-[9px] text-[var(--ern-secundario)]">
                       Marcar esta experiência como destaque.
                     </p>
                   </div>
@@ -1729,12 +1784,12 @@ export default function PasseiosPage() {
                     disabled={
                       salvando
                     }
-                    className="h-4 w-4 accent-[#E3A144]"
+                    className="h-4 w-4 accent-[var(--ern-destaque)]"
                   />
                 </label>
 
                 <div>
-                  <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34">
+                  <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)]">
                     Descrição
                   </label>
 
@@ -1758,11 +1813,11 @@ export default function PasseiosPage() {
                             .value,
                       })
                     }
-                    className="w-full resize-none rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm leading-6 text-[#EDEDE3] outline-none focus:border-[#E3A144]/40 disabled:opacity-50"
+                    className="w-full resize-none rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 py-3 text-sm leading-6 text-[var(--ern-texto)] outline-none focus:border-[var(--ern-borda)] disabled:opacity-50"
                   />
                 </div>
 
-                <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-5 sm:flex-row sm:justify-end">
+                <div className="flex flex-col-reverse gap-3 border-t border-[var(--ern-borda)] pt-5 sm:flex-row sm:justify-end">
                   <button
                     type="button"
                     disabled={
@@ -1777,7 +1832,7 @@ export default function PasseiosPage() {
                         false
                       );
                     }}
-                    className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/55 disabled:opacity-50"
+                    className="rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] px-5 py-3 text-xs font-semibold text-[var(--ern-secundario)] disabled:opacity-50"
                   >
                     Cancelar
                   </button>
@@ -1787,7 +1842,7 @@ export default function PasseiosPage() {
                     disabled={
                       salvando
                     }
-                    className="rounded-xl bg-[#E3A144] px-6 py-3 text-xs font-bold text-[#07130F] transition hover:bg-[#F0B35C] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-xl bg-[var(--ern-botao)] px-6 py-3 text-xs font-bold text-[var(--ern-sobre-botao)] transition hover:bg-[var(--ern-botao)] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {salvando
                       ? 'Salvando...'
@@ -1859,11 +1914,11 @@ export default function PasseiosPage() {
                 </div>
 
                 <div className="mt-4">
-                  <p className="mb-2 text-[8px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28">
+                  <p className="mb-2 text-[8px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)]">
                     Descrição
                   </p>
 
-                  <div className="min-h-[100px] rounded-2xl border border-white/[0.065] bg-[#07110E] p-4 text-xs leading-6 text-[#EDEDE3]/50">
+                  <div className="min-h-[100px] rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] p-4 text-xs leading-6 text-[var(--ern-secundario)]">
                     {passeioSelecionado.descricao ||
                       'Nenhuma descrição informada.'}
                   </div>
@@ -1877,7 +1932,7 @@ export default function PasseiosPage() {
                         passeioSelecionado
                       )
                     }
-                    className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.05]"
+                    className="rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] px-5 py-3 text-xs font-semibold text-[var(--ern-secundario)] transition hover:bg-[var(--ern-suave)]"
                   >
                     Editar
                   </button>
@@ -1889,7 +1944,7 @@ export default function PasseiosPage() {
                         null
                       )
                     }
-                    className="rounded-xl bg-[#E3A144] px-6 py-3 text-xs font-bold text-[#07130F] transition hover:bg-[#F0B35C]"
+                    className="rounded-xl bg-[var(--ern-botao)] px-6 py-3 text-xs font-bold text-[var(--ern-sobre-botao)] transition hover:bg-[var(--ern-botao)]"
                   >
                     Fechar
                   </button>
@@ -1906,13 +1961,13 @@ export default function PasseiosPage() {
 
       {idParaExcluir && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm">
-          <div className="w-full max-w-[430px] rounded-[26px] border border-white/[0.09] bg-[#091510] p-6 text-center">
-            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-red-500/20 bg-red-500/[0.08] text-lg text-red-300">
+          <div className="w-full max-w-[430px] rounded-[26px] border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-6 text-center">
+            <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full border border-red-500/20 bg-red-500/[0.08] text-lg text-[var(--ern-erro)]">
               !
             </div>
 
             <h3
-              className="mt-4 text-2xl text-[#F0F0E8]"
+              className="mt-4 text-2xl text-[var(--ern-texto)]"
               style={{
                 fontFamily:
                   'var(--font-fraunces), serif',
@@ -1921,12 +1976,22 @@ export default function PasseiosPage() {
               Excluir passeio?
             </h3>
 
-            <p className="mt-3 text-xs leading-6 text-[#EDEDE3]/38">
+            <p className="mt-3 text-xs leading-6 text-[var(--ern-secundario)]">
               O passeio será removido permanentemente do catálogo.
               Esta ação não pode ser desfeita.
             </p>
 
-            <div className="mt-6 grid grid-cols-2 gap-3">
+            
+{feedback?.tipo === 'erro' && (
+  <div
+    role="alert"
+    className="m-4 rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] p-3 text-sm text-[var(--ern-erro)]"
+  >
+    {feedback.texto}
+  </div>
+)}
+
+<div className="mt-6 grid grid-cols-2 gap-3">
               <button
                 type="button"
                 disabled={
@@ -1937,7 +2002,7 @@ export default function PasseiosPage() {
                     null
                   )
                 }
-                className="rounded-xl border border-white/[0.09] bg-white/[0.025] px-4 py-3 text-xs font-semibold text-[#EDEDE3]/60 disabled:opacity-50"
+                className="rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] px-4 py-3 text-xs font-semibold text-[var(--ern-secundario)] disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -1950,7 +2015,7 @@ export default function PasseiosPage() {
                 onClick={
                   executarExclusao
                 }
-                className="rounded-xl border border-red-500/20 bg-red-500/[0.1] px-4 py-3 text-xs font-semibold text-red-300 transition hover:bg-red-500/[0.15] disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl border border-red-500/20 bg-red-500/[0.1] px-4 py-3 text-xs font-semibold text-[var(--ern-erro)] transition hover:bg-red-500/[0.15] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {excluindo
                   ? 'Excluindo...'
@@ -1991,7 +2056,7 @@ function CampoTexto({
 }) {
   return (
     <div>
-      <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34">
+      <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)]">
         {label}
       </label>
 
@@ -2019,7 +2084,7 @@ function CampoTexto({
         placeholder={
           placeholder
         }
-        className="w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none focus:border-[#E3A144]/40 disabled:opacity-50"
+        className="w-full rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 py-3 text-sm text-[var(--ern-texto)] outline-none focus:border-[var(--ern-borda)] disabled:opacity-50"
       />
     </div>
   );
@@ -2033,12 +2098,12 @@ function Detalhe({
   valor: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/[0.065] bg-white/[0.018] p-4">
-      <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28">
+    <div className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] p-4">
+      <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)]">
         {label}
       </p>
 
-      <p className="mt-2 text-xs font-medium text-[#EDEDE3]/72">
+      <p className="mt-2 text-xs font-medium text-[var(--ern-secundario)]">
         {valor}
       </p>
     </div>
