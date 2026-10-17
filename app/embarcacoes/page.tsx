@@ -944,7 +944,7 @@ export default function EmbarcacoesPage() {
             INDICADORES
         ==================================================== */}
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
           {cards.map(
             (card) => {
               const ativo =
@@ -968,7 +968,7 @@ export default function EmbarcacoesPage() {
                       );
                     }
                   }}
-                  className={`rounded-[22px] border p-5 text-left transition ${
+                  className={`min-w-0 rounded-2xl border p-3 text-left transition md:rounded-[22px] md:p-5 ${
                     card.filtro
                       ? 'cursor-pointer'
                       : 'cursor-default'
@@ -991,7 +991,7 @@ export default function EmbarcacoesPage() {
                   </div>
 
                   <strong
-                    className="mt-5 block text-4xl font-medium tracking-[-0.04em] text-[var(--ern-texto)]"
+                    className="mt-3 block break-words text-2xl font-medium md:mt-5 md:text-4xl tracking-[-0.04em] text-[var(--ern-texto)]"
                     style={{
                       fontFamily:
                         'var(--font-fraunces), serif',
