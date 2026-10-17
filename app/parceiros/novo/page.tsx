@@ -31,23 +31,26 @@ const TIPOS_PARCEIRO = [
 ];
 
 function converterComissao(valor: string) {
-  const texto = valor.trim().replace(',', '.');
+        const texto = valor.trim().replace(',', '.');
+        if (!texto) return 0;
+        if (!/^\d+(?:\.\d{1,2})?$/.test(texto)) return null;
 
-  if (!texto) {
-    return 0;
-  }
+        const numero = Number(texto);
+        return Number.isFinite(numero) && numero >= 0 && numero <= 100
+          ? numero
+          : null;
+      }
 
-  const numero = Number(texto);
-
-  if (!Number.isFinite(numero)) {
-    return null;
-  }
-
-  return numero;
-}
 
 export default function NovoParceiroPage() {
   const router = useRouter();
+      const envioParceiroERN = React.useRef(false);
+      const gravadoParceiroERN = React.useRef(false);
+      const idParceiroERN = React.useRef<string | null>(null);
+      const contaParceiroERN = React.useRef<{
+        usuarioId: string;
+        empresaId: string;
+      } | null>(null);
 
   const [salvando, setSalvando] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -79,6 +82,7 @@ export default function NovoParceiroPage() {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
+      if (envioParceiroERN.current || gravadoParceiroERN.current) return;
 
     setErro(null);
 
@@ -101,7 +105,8 @@ export default function NovoParceiroPage() {
       return;
     }
 
-    setSalvando(true);
+    envioParceiroERN.current = true;
+      setSalvando(true);
 
     try {
       /*
@@ -117,9 +122,45 @@ export default function NovoParceiroPage() {
         para identificar a empresa real através de auth.uid().
       */
 
-      const { error } = await supabase.from('parceiros').insert([
-        {
-          nome,
+      const { data: auth, error: erroAuth } =
+        await supabase.auth.getUser();
+
+      if (erroAuth || !auth.user) {
+        throw new Error('Entre novamente para cadastrar o parceiro.');
+      }
+
+      const { data: perfil, error: erroPerfil } = await supabase
+        .from('perfis')
+        .select('empresa_id')
+        .eq('id', auth.user.id)
+        .single();
+
+      if (erroPerfil || !perfil?.empresa_id) {
+        throw new Error('Nao foi possivel identificar sua empresa.');
+      }
+
+      const empresa = String(perfil.empresa_id);
+      const anterior = contaParceiroERN.current;
+
+      if (
+        anterior &&
+        (anterior.usuarioId !== auth.user.id || anterior.empresaId !== empresa)
+      ) {
+        throw new Error('Sua conta mudou. Reabra o formulario.');
+      }
+
+      contaParceiroERN.current = {
+        usuarioId: auth.user.id,
+        empresaId: empresa,
+      };
+      idParceiroERN.current ??= crypto.randomUUID();
+
+      const { data: registro, error } = await supabase
+        .from('parceiros')
+        .insert([{
+        id: idParceiroERN.current,
+        empresa_id: empresa,
+        nome,
           tipo: form.tipo.trim() || null,
           tipo_pessoa: form.tipo_pessoa.trim() || null,
           documento: form.documento.trim() || null,
@@ -132,61 +173,66 @@ export default function NovoParceiroPage() {
           status: form.status || 'ativo',
           observacoes: form.observacoes.trim() || null,
         },
-      ]);
-
+      ]).select('id').single();
       if (error) {
         throw error;
       }
 
+      if (registro?.id !== idParceiroERN.current) {
+        throw new Error('Nao foi possivel confirmar o cadastro.');
+      }
+      gravadoParceiroERN.current = true;
       router.push('/parceiros');
       router.refresh();
     } catch (error) {
-      console.error('Erro ao cadastrar parceiro:', error);
+        console.error('Erro ao cadastrar parceiro:', error);
 
-      if (error instanceof Error) {
-        if (error.message.includes('ERN_USUARIO_SEM_EMPRESA')) {
-          setErro(
-            'Seu usuário não está vinculado a uma empresa. Verifique o perfil da conta.'
-          );
-          return;
+        let texto = 'Nao foi possivel confirmar o cadastro. Confira a listagem antes de tentar novamente.';
+
+        if (error && typeof error === 'object') {
+          if ('message' in error && typeof error.message === 'string') {
+            texto = error.message;
+          }
+          if ('code' in error && error.code === '23505') {
+            texto = 'Este envio pode ja ter sido registrado. Confira a listagem antes de cadastrar novamente.';
+          }
         }
 
-        setErro(error.message);
-        return;
+        setErro(texto);
+      } finally {
+        if (!gravadoParceiroERN.current) {
+          envioParceiroERN.current = false;
+          setSalvando(false);
+        }
       }
-
-      setErro('Não foi possível cadastrar o parceiro.');
-    } finally {
-      setSalvando(false);
-    }
   }
 
   return (
-    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+    <div className="min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
       {/* =====================================================
           CABEÇALHO
       ====================================================== */}
 
-      <header className="border-b border-white/[0.07] bg-[#091510]">
+      <header className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
         <div className="mx-auto max-w-[1100px] px-5 py-9 md:px-8">
           <Link
             href="/parceiros"
-            className="inline-flex items-center gap-2 text-[10px] font-semibold text-[#EDEDE3]/40 transition hover:text-[#F4C77E]"
+            className="inline-flex items-center gap-2 text-[10px] font-semibold text-[var(--ern-secundario)] transition hover:text-[var(--ern-destaque)]"
           >
             <span>←</span>
             Voltar para parceiros
           </Link>
 
           <div className="mt-7 flex items-center gap-3">
-            <span className="h-px w-8 bg-[#E3A144]" />
+            <span className="h-px w-8 bg-[var(--ern-botao)]" />
 
-            <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#E3A144]">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--ern-destaque)]">
               Rede Operacional ERN
             </span>
           </div>
 
           <h1
-            className="mt-4 text-4xl tracking-[-0.04em] text-[#F0F0E8] md:text-5xl"
+            className="mt-4 text-4xl tracking-[-0.04em] text-[var(--ern-texto)] md:text-5xl"
             style={{
               fontFamily: 'var(--font-fraunces), serif',
             }}
@@ -194,7 +240,7 @@ export default function NovoParceiroPage() {
             Novo parceiro
           </h1>
 
-          <p className="mt-4 max-w-2xl text-sm leading-7 text-[#EDEDE3]/40">
+          <p className="mt-4 max-w-2xl text-sm leading-7 text-[var(--ern-secundario)]">
             Cadastre empresas, fornecedores e prestadores que participam da
             operação da sua empresa.
           </p>
@@ -207,13 +253,13 @@ export default function NovoParceiroPage() {
 
       <main className="mx-auto max-w-[1100px] px-5 py-8 md:px-8">
         {erro && (
-          <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-red-300">
+          <div className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-[var(--ern-erro)]">
             <span>{erro}</span>
 
             <button
               type="button"
               onClick={() => setErro(null)}
-              className="text-red-300/60 transition hover:text-red-200"
+              className="text-[var(--ern-erro)] transition hover:text-[var(--ern-erro)]"
             >
               ✕
             </button>
@@ -409,17 +455,17 @@ export default function NovoParceiroPage() {
                   className={inputClass}
                 />
 
-                <p className="mt-2 text-[9px] leading-4 text-[#EDEDE3]/25">
+                <p className="mt-2 text-[9px] leading-4 text-[var(--ern-secundario)]">
                   Utilize valores entre 0 e 100.
                 </p>
               </FormField>
 
-              <div className="rounded-2xl border border-[#E3A144]/15 bg-[#E3A144]/[0.035] p-4">
-                <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#E3A144]">
+              <div className="rounded-2xl border border-[var(--ern-destaque)] bg-[var(--ern-suave)] p-4">
+                <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-destaque)]">
                   Evolução ERN
                 </p>
 
-                <p className="mt-2 text-[10px] leading-5 text-[#EDEDE3]/35">
+                <p className="mt-2 text-[10px] leading-5 text-[var(--ern-secundario)]">
                   Parceiros classificados como fornecedores poderão ser
                   conectados aos módulos de suprimentos, cotações e pedidos da
                   operação ERN.
@@ -444,10 +490,10 @@ export default function NovoParceiroPage() {
               AÇÕES
           ================================================== */}
 
-          <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-6 sm:flex-row sm:justify-end">
+          <div className="flex flex-col-reverse gap-3 border-t border-[var(--ern-borda)] pt-6 sm:flex-row sm:justify-end">
             <Link
               href="/parceiros"
-              className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.02] px-6 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.05]"
+              className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] px-6 text-xs font-semibold text-[var(--ern-secundario)] transition hover:bg-[var(--ern-suave)]"
             >
               Cancelar
             </Link>
@@ -455,7 +501,7 @@ export default function NovoParceiroPage() {
             <button
               type="submit"
               disabled={salvando}
-              className="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-[#E3A144] px-7 text-xs font-bold text-[#07130F] transition hover:bg-[#F0B35C] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-[48px] items-center justify-center rounded-xl bg-[var(--ern-botao)] px-7 text-xs font-bold text-[var(--ern-sobre-botao)] transition hover:bg-[var(--ern-botao)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               {salvando ? 'Salvando parceiro...' : 'Cadastrar parceiro'}
             </button>
@@ -467,7 +513,7 @@ export default function NovoParceiroPage() {
 }
 
 const inputClass =
-  'h-[46px] w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-xs text-[#EDEDE3] outline-none placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/35';
+  'h-[46px] w-full rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 text-xs text-[var(--ern-texto)] outline-none placeholder:text-[var(--ern-secundario)] focus:border-[var(--ern-destaque)]';
 
 function Section({
   eyebrow,
@@ -481,14 +527,14 @@ function Section({
   children: React.ReactNode;
 }) {
   return (
-    <section className="overflow-hidden rounded-[24px] border border-white/[0.075] bg-[#0A1713]">
-      <div className="border-b border-white/[0.06] px-5 py-5 md:px-6">
-        <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+    <section className="overflow-hidden rounded-[24px] border border-[var(--ern-borda)] bg-[var(--ern-painel)]">
+      <div className="border-b border-[var(--ern-borda)] px-5 py-5 md:px-6">
+        <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--ern-secundario)]">
           {eyebrow}
         </p>
 
         <h2
-          className="mt-2 text-xl text-[#F0F0E8]"
+          className="mt-2 text-xl text-[var(--ern-texto)]"
           style={{
             fontFamily: 'var(--font-fraunces), serif',
           }}
@@ -496,7 +542,7 @@ function Section({
           {titulo}
         </h2>
 
-        <p className="mt-2 max-w-2xl text-[10px] leading-5 text-[#EDEDE3]/28">
+        <p className="mt-2 max-w-2xl text-[10px] leading-5 text-[var(--ern-secundario)]">
           {descricao}
         </p>
       </div>
@@ -517,7 +563,7 @@ function FormField({
 }) {
   return (
     <label className={span ? 'md:col-span-2' : ''}>
-      <span className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.14em] text-[#7C9C87]">
+      <span className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.14em] text-[var(--ern-secundario)]">
         {label}
       </span>
 
