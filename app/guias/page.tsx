@@ -70,18 +70,18 @@ function formatarTelefone(valor?: string | null) {
 
 function statusClasses(status: StatusGuia) {
   if (status === 'Ativo') {
-    return 'border-emerald-500/20 bg-emerald-500/[0.07] text-emerald-300';
+    return 'border-emerald-500/20 bg-emerald-500/[0.07] text-[var(--ern-sucesso)]';
   }
 
   if (status === 'Em Tour') {
-    return 'border-sky-500/20 bg-sky-500/[0.07] text-sky-300';
+    return 'border-sky-500/20 bg-sky-500/[0.07] text-[var(--ern-destaque)]';
   }
 
   if (status === 'Férias') {
-    return 'border-amber-500/20 bg-amber-500/[0.07] text-amber-300';
+    return 'border-amber-500/20 bg-amber-500/[0.07] text-[var(--ern-destaque)]';
   }
 
-  return 'border-red-500/20 bg-red-500/[0.07] text-red-300';
+  return 'border-red-500/20 bg-red-500/[0.07] text-[var(--ern-erro)]';
 }
 
 function statusDot(status: StatusGuia) {
@@ -134,7 +134,11 @@ export default function GuiasPage() {
     }, 3000);
   }
 
+  
+  const consultaGuiasERN = React.useRef(0);
+
   async function fetchGuias() {
+    const consulta = ++consultaGuiasERN.current;
     setLoading(true);
     setError(null);
     setGuias([]);
@@ -142,46 +146,91 @@ export default function GuiasPage() {
 
     try {
       const atual = await obterContextoGuias();
+      const lista: Guia[] = [];
+      let esperado: number | null = null;
 
-      const { data, error: supabaseError } = await supabase
-        .from('guias')
-        .select(
-          'id,nome,cpf,telefone,idiomas,cadastur,status,created_at'
-        )
-        .eq('empresa_id', atual.empresa_id)
-        .order('created_at', { ascending: false });
+      for (let inicio = 0; inicio < 10000; inicio += 200) {
+        const { data, error, count } = await supabase
+          .from('guias')
+          .select(
+            'id,nome,cpf,telefone,idiomas,cadastur,status,created_at',
+            { count: 'exact' }
+          )
+          .eq('empresa_id', atual.empresa_id)
+          .order('created_at', {
+            ascending: false,
+            nullsFirst: false,
+          })
+          .order('id', { ascending: true })
+          .range(inicio, inicio + 199);
 
-      if (supabaseError) throw supabaseError;
+        if (error) throw error;
 
-      const normalizados: Guia[] = (data || []).map(
-        (item: Guia) => ({
-          id: item.id,
-          nome: item.nome || '',
-          cpf: item.cpf || '',
-          telefone: item.telefone || '',
-          idiomas: item.idiomas || '',
-          cadastur: item.cadastur || '',
-          status: normalizarStatus(item.status),
-          created_at: item.created_at,
-        })
-      );
+        if (count === null || count > 10000) {
+          throw new Error('O cadastro de guias exige filtros no servidor.');
+        }
 
-      setGuias(normalizados);
-      setContexto(atual);
-    } catch (err) {
-      console.error('Erro ao carregar guias:', err);
+        if (esperado !== null && esperado !== count) {
+          throw new Error('Os guias mudaram durante a consulta. Atualize.');
+        }
 
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Não foi possível carregar os guias da operadora.'
-      );
+        esperado = count;
+        lista.push(...((data ?? []) as Guia[]));
+
+        if (lista.length >= count) break;
+
+        if (!data?.length) {
+          throw new Error('A consulta dos guias ficou incompleta.');
+        }
+      }
+
+      if (
+        lista.length !== esperado ||
+        lista.some(item => !item.id) ||
+        new Set(lista.map(item => item.id)).size !== lista.length
+      ) {
+        throw new Error('Nao foi possivel carregar os guias de forma consistente.');
+      }
+
+      const confirmado = await obterContextoGuias();
+
+      if (
+        confirmado.usuario_id !== atual.usuario_id ||
+        confirmado.empresa_id !== atual.empresa_id
+      ) {
+        throw new Error('Sua conta mudou. Atualize a pagina.');
+      }
+
+      if (consulta !== consultaGuiasERN.current) return;
+
+      setGuias(lista.map(item => ({
+        ...item,
+        nome: item.nome || '',
+        cpf: item.cpf || '',
+        telefone: item.telefone || '',
+        idiomas: item.idiomas || '',
+        cadastur: item.cadastur || '',
+        status: normalizarStatus(item.status),
+      })));
+
+      setContexto(confirmado);
+    } catch (falha) {
+      if (consulta !== consultaGuiasERN.current) return;
 
       setGuias([]);
+      setContexto(null);
+      setError(
+        falha instanceof Error
+          ? falha.message
+          : 'Nao foi possivel carregar os guias.'
+      );
     } finally {
-      setLoading(false);
+      if (consulta === consultaGuiasERN.current) {
+        setLoading(false);
+      }
     }
   }
+
 
   useEffect(() => {
     void fetchGuias();
@@ -402,34 +451,34 @@ export default function GuiasPage() {
   ];
 
   const inputClass =
-    'w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/20 focus:border-[#E3A144]/40';
+    'w-full rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 py-3 text-sm text-[var(--ern-texto)] outline-none transition placeholder:text-[var(--ern-secundario)] focus:border-[var(--ern-destaque)]';
 
   const labelClass =
-    'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/34';
+    'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)]';
 
   return (
-    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+    <div className="min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
       {mensagemSucesso && (
         <div
           role="status"
-          className="fixed left-1/2 top-[100px] z-[80] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-2xl border border-emerald-500/20 bg-[#0B2119] px-5 py-3 text-center text-xs font-semibold text-emerald-300 shadow-2xl"
+          className="fixed left-1/2 top-[100px] z-[80] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-2xl border border-emerald-500/20 bg-[var(--ern-painel)] px-5 py-3 text-center text-xs font-semibold text-[var(--ern-sucesso)] shadow-2xl"
         >
           {mensagemSucesso}
         </div>
       )}
 
-      <section className="border-b border-white/[0.07] bg-[#091510]">
+      <section className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
         <div className="mx-auto flex max-w-[1360px] flex-col gap-8 px-5 py-10 md:px-8 md:py-12 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="flex items-center gap-3">
-              <span className="h-px w-8 bg-[#E3A144]" />
-              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
+              <span className="h-px w-8 bg-[var(--ern-botao)]" />
+              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--ern-destaque)]">
                 Estrutura • Guias
               </span>
             </div>
 
             <h1
-              className="mt-4 text-4xl leading-none tracking-[-0.035em] text-[#F0F0E8] md:text-5xl"
+              className="mt-4 text-4xl leading-none tracking-[-0.035em] text-[var(--ern-texto)] md:text-5xl"
               style={{
                 fontFamily: 'var(--font-fraunces), serif',
               }}
@@ -437,7 +486,7 @@ export default function GuiasPage() {
               Guias
             </h1>
 
-            <p className="mt-4 max-w-[720px] text-sm leading-7 text-[#EDEDE3]/42">
+            <p className="mt-4 max-w-[720px] text-sm leading-7 text-[var(--ern-secundario)]">
               Organize profissionais, contatos, idiomas,
               registros CADASTUR e disponibilidade da equipe
               da sua operadora.
@@ -449,7 +498,7 @@ export default function GuiasPage() {
               type="button"
               onClick={() => void fetchGuias()}
               disabled={loading}
-              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.025] px-5 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.055] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] px-5 text-xs font-semibold text-[var(--ern-secundario)] transition hover:bg-[var(--ern-suave)] disabled:cursor-not-allowed disabled:opacity-50"
             >
               ↻ Atualizar
             </button>
@@ -457,7 +506,7 @@ export default function GuiasPage() {
             {podeGerenciar && (
               <Link
                 href="/guias/novo"
-                className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl bg-[#E3A144] px-6 text-sm font-bold text-[#07130F] transition hover:-translate-y-0.5 hover:bg-[#F0B35C]"
+                className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl bg-[var(--ern-botao)] px-6 text-sm font-bold text-[var(--ern-sobre-botao)] transition hover:-translate-y-0.5 hover:bg-[var(--ern-botao)]"
               >
                 <span className="text-lg">+</span>
                 Novo guia
@@ -471,7 +520,7 @@ export default function GuiasPage() {
         {error && !itemEditar && !itemExcluir && (
           <div
             role="alert"
-            className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-red-300"
+            className="mb-6 flex items-start justify-between gap-4 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-xs text-[var(--ern-erro)]"
           >
             <span>{error}</span>
             <button
@@ -485,14 +534,14 @@ export default function GuiasPage() {
         )}
 
         {!loading && contexto && !podeGerenciar && (
-          <p className="mb-5 rounded-xl border border-white/[0.07] bg-white/[0.02] px-4 py-3 text-xs text-[#EDEDE3]/55">
+          <p className="mb-5 rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] px-4 py-3 text-xs text-[var(--ern-secundario)]">
             Seu perfil permite consultar os guias desta
             operadora. Alterações estão disponíveis para
             administradores e operadores.
           </p>
         )}
 
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
           {cards.map((card) => {
             const ativo =
               card.filtro !== null &&
@@ -509,26 +558,26 @@ export default function GuiasPage() {
                     setFiltroStatus('');
                   }
                 }}
-                className={`rounded-[22px] border p-5 text-left transition ${
+                className={`min-w-0 rounded-2xl border p-3 text-left transition md:rounded-[22px] md:p-5 ${
                   ativo
-                    ? 'border-[#E3A144]/35 bg-[#E3A144]/8'
-                    : 'border-white/[0.075] bg-[#0A1713] hover:border-white/[0.13]'
+                    ? 'border-[var(--ern-destaque)] bg-[var(--ern-suave)]'
+                    : 'border-[var(--ern-borda)] bg-[var(--ern-painel)] hover:border-[var(--ern-borda)]'
                 }`}
               >
                 <div className="flex items-start justify-between gap-3">
-                  <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+                  <span className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--ern-secundario)]">
                     {card.titulo}
                   </span>
 
                   {ativo && (
-                    <span className="rounded-full bg-[#E3A144]/10 px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-[#E3A144]">
+                    <span className="rounded-full bg-[var(--ern-suave)] px-2 py-1 text-[8px] font-semibold uppercase tracking-[0.12em] text-[var(--ern-destaque)]">
                       filtrando
                     </span>
                   )}
                 </div>
 
                 <strong
-                  className="mt-5 block text-4xl font-medium tracking-[-0.04em] text-[#F0F0E8]"
+                  className="mt-3 block break-words text-2xl font-medium md:mt-5 md:text-4xl tracking-[-0.04em] text-[var(--ern-texto)]"
                   style={{
                     fontFamily: 'var(--font-fraunces), serif',
                   }}
@@ -536,7 +585,7 @@ export default function GuiasPage() {
                   {card.valor}
                 </strong>
 
-                <p className="mt-2 text-[11px] text-[#EDEDE3]/28">
+                <p className="mt-2 text-[11px] text-[var(--ern-secundario)]">
                   {card.detalhe}
                 </p>
               </button>
@@ -551,8 +600,8 @@ export default function GuiasPage() {
               onClick={() => alternarStatus('Inativo')}
               className={`rounded-full border px-3 py-1.5 text-[9px] font-semibold transition ${
                 filtroStatus === 'Inativo'
-                  ? 'border-red-500/30 bg-red-500/[0.08] text-red-300'
-                  : 'border-white/[0.07] bg-white/[0.02] text-[#EDEDE3]/35'
+                  ? 'border-red-500/30 bg-red-500/[0.08] text-[var(--ern-erro)]'
+                  : 'border-[var(--ern-borda)] bg-[var(--ern-suave)] text-[var(--ern-secundario)]'
               }`}
             >
               {inativos} {inativos === 1 ? 'inativo' : 'inativos'}
@@ -560,16 +609,16 @@ export default function GuiasPage() {
           </div>
         )}
 
-        <section className="mt-6 overflow-hidden rounded-[26px] border border-white/[0.075] bg-[#0A1713]">
-          <div className="border-b border-white/[0.065] p-5 md:p-6">
+        <section className="mt-6 overflow-hidden rounded-[26px] border border-[var(--ern-borda)] bg-[var(--ern-painel)]">
+          <div className="border-b border-[var(--ern-borda)] p-5 md:p-6">
             <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
               <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--ern-destaque)]">
                   Equipe operacional
                 </p>
 
                 <h2
-                  className="mt-2 text-2xl text-[#F0F0E8]"
+                  className="mt-2 text-2xl text-[var(--ern-texto)]"
                   style={{
                     fontFamily: 'var(--font-fraunces), serif',
                   }}
@@ -577,7 +626,7 @@ export default function GuiasPage() {
                   Guias cadastrados
                 </h2>
 
-                <p className="mt-2 text-xs text-[#EDEDE3]/30">
+                <p className="mt-2 text-xs text-[var(--ern-secundario)]">
                   {loading
                     ? 'Carregando...'
                     : `${guiasFiltrados.length} de ${guias.length} ${
@@ -624,15 +673,15 @@ export default function GuiasPage() {
             {loading ? (
               <div className="flex min-h-[330px] items-center justify-center">
                 <div className="text-center">
-                  <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-white/[0.08] border-t-[#E3A144]" />
-                  <p className="mt-4 text-xs text-[#EDEDE3]/35">
+                  <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[var(--ern-borda)] border-t-[var(--ern-destaque)]" />
+                  <p className="mt-4 text-xs text-[var(--ern-secundario)]">
                     Carregando guias...
                   </p>
                 </div>
               </div>
             ) : !contexto ? (
               <div className="flex min-h-[250px] items-center justify-center px-5 text-center">
-                <p className="text-sm text-[#EDEDE3]/50">
+                <p className="text-sm text-[var(--ern-secundario)]">
                   Não foi possível carregar o cadastro da
                   operadora. Confira a mensagem acima e tente
                   atualizar.
@@ -642,7 +691,7 @@ export default function GuiasPage() {
               <div className="flex min-h-[330px] items-center justify-center px-5 text-center">
                 <div>
                   <h3
-                    className="text-2xl text-[#F0F0E8]"
+                    className="text-2xl text-[var(--ern-texto)]"
                     style={{
                       fontFamily:
                         'var(--font-fraunces), serif',
@@ -650,7 +699,7 @@ export default function GuiasPage() {
                   >
                     Nenhum guia encontrado.
                   </h3>
-                  <p className="mt-2 text-xs text-[#EDEDE3]/30">
+                  <p className="mt-2 text-xs text-[var(--ern-secundario)]">
                     {podeGerenciar
                       ? 'Ajuste a busca ou cadastre um novo profissional.'
                       : 'Ajuste a busca ou consulte o responsável pela operadora.'}
@@ -658,9 +707,89 @@ export default function GuiasPage() {
                 </div>
               </div>
             ) : (
-              <table className="w-full min-w-[1160px] border-collapse text-left">
+              
+<>
+  <div className="grid min-w-0 gap-3 p-3 md:grid-cols-2 xl:hidden">
+    {guiasFiltrados.map((guia) => {
+      const status = normalizarStatus(guia.status);
+
+      return (
+        <article
+          key={guia.id}
+          className="min-w-0 rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-4"
+        >
+          <h3 className="break-words text-base font-semibold text-[var(--ern-texto)]">
+            {guia.nome || 'Guia'}
+          </h3>
+
+          <span
+            className={`mt-2 inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusClasses(status)}`}
+          >
+            {status}
+          </span>
+
+          <dl className="mt-4 grid min-w-0 grid-cols-2 gap-3 text-sm">
+            {[
+              ['CPF', formatarCPF(guia.cpf) || 'Nao informado'],
+              ['Telefone', formatarTelefone(guia.telefone) || 'Nao informado'],
+              ['Idiomas', guia.idiomas || 'Nao informados'],
+              ['CADASTUR', guia.cadastur || 'Nao informado'],
+            ].map(([rotulo, valor]) => (
+              <div key={rotulo} className="min-w-0">
+                <dt className="text-xs text-[var(--ern-secundario)]">
+                  {rotulo}
+                </dt>
+                <dd className="mt-1 break-words text-[var(--ern-texto)]">
+                  {valor}
+                </dd>
+              </div>
+            ))}
+          </dl>
+
+          <div
+            className={podeGerenciar
+              ? 'mt-4 grid grid-cols-3 gap-2'
+              : 'mt-4 grid grid-cols-1 gap-2'}
+          >
+            <button
+              type="button"
+              onClick={() => setItemVisualizar(guia)}
+              className="min-h-11 rounded-xl border border-[var(--ern-borda)] px-2 text-xs text-[var(--ern-texto)]"
+            >
+              Detalhes
+            </button>
+
+            {podeGerenciar && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => abrirEdicao(guia)}
+                  className="min-h-11 rounded-xl border border-[var(--ern-borda)] px-2 text-xs text-[var(--ern-destaque)]"
+                >
+                  Editar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setError(null);
+                    setItemExcluir(guia);
+                  }}
+                  className="min-h-11 rounded-xl border border-[var(--ern-borda)] px-2 text-xs text-[var(--ern-erro)]"
+                >
+                  Excluir
+                </button>
+              </>
+            )}
+          </div>
+        </article>
+      );
+    })}
+  </div>
+
+  <table className="hidden w-full min-w-[1160px] border-collapse text-left xl:table">
+
                 <thead>
-                  <tr className="border-b border-white/[0.06] bg-white/[0.012]">
+                  <tr className="border-b border-[var(--ern-borda)] bg-[var(--ern-suave)]">
                     {[
                       'Guia',
                       'CPF',
@@ -672,7 +801,7 @@ export default function GuiasPage() {
                     ].map((titulo) => (
                       <th
                         key={titulo}
-                        className={`px-5 py-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28 ${
+                        className={`px-5 py-4 text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)] ${
                           titulo === 'Ações'
                             ? 'text-center'
                             : ''
@@ -693,28 +822,28 @@ export default function GuiasPage() {
                     return (
                       <tr
                         key={guia.id || index}
-                        className="transition hover:bg-white/[0.018]"
+                        className="transition hover:bg-[var(--ern-suave)]"
                       >
                         <td className="px-5 py-4">
-                          <p className="text-xs font-semibold text-[#EDEDE3]/82">
+                          <p className="text-xs font-semibold text-[var(--ern-secundario)]">
                             {guia.nome || '—'}
                           </p>
                         </td>
 
-                        <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
+                        <td className="px-5 py-4 text-xs text-[var(--ern-secundario)]">
                           {formatarCPF(guia.cpf) || '—'}
                         </td>
 
-                        <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
+                        <td className="px-5 py-4 text-xs text-[var(--ern-secundario)]">
                           {formatarTelefone(guia.telefone) ||
                             '—'}
                         </td>
 
-                        <td className="px-5 py-4 text-xs text-[#EDEDE3]/42">
+                        <td className="px-5 py-4 text-xs text-[var(--ern-secundario)]">
                           {guia.idiomas || '—'}
                         </td>
 
-                        <td className="px-5 py-4 text-xs font-semibold text-[#F4C77E]">
+                        <td className="px-5 py-4 text-xs font-semibold text-[var(--ern-destaque)]">
                           {guia.cadastur || '—'}
                         </td>
 
@@ -744,7 +873,7 @@ export default function GuiasPage() {
                               onClick={() =>
                                 setItemVisualizar(guia)
                               }
-                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-[#E3A144]/20 hover:text-[#E3A144]"
+                              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--ern-borda)] bg-[var(--ern-suave)] text-[var(--ern-secundario)] transition hover:border-[var(--ern-destaque)] hover:text-[var(--ern-destaque)]"
                             >
                               <svg
                                 className="h-4 w-4"
@@ -778,7 +907,7 @@ export default function GuiasPage() {
                                   onClick={() =>
                                     abrirEdicao(guia)
                                   }
-                                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-sky-400/20 hover:text-sky-300"
+                                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--ern-borda)] bg-[var(--ern-suave)] text-[var(--ern-secundario)] transition hover:border-sky-400/20 hover:text-[var(--ern-destaque)]"
                                 >
                                   <svg
                                     className="h-4 w-4"
@@ -806,7 +935,7 @@ export default function GuiasPage() {
                                     setError(null);
                                     setItemExcluir(guia);
                                   }}
-                                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/[0.07] bg-white/[0.025] text-[#EDEDE3]/38 transition hover:border-red-400/20 hover:text-red-300"
+                                  className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--ern-borda)] bg-[var(--ern-suave)] text-[var(--ern-secundario)] transition hover:border-red-400/20 hover:text-[var(--ern-erro)]"
                                 >
                                   <svg
                                     className="h-4 w-4"
@@ -832,6 +961,7 @@ export default function GuiasPage() {
                   })}
                 </tbody>
               </table>
+</>
             )}
           </div>
         </section>
@@ -844,15 +974,15 @@ export default function GuiasPage() {
           aria-labelledby="titulo-visualizar-guia"
           className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
         >
-          <div className="max-h-[92vh] w-full max-w-[680px] overflow-y-auto rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
-            <div className="flex items-start justify-between gap-5 border-b border-white/[0.07] px-6 py-5">
+          <div className="max-h-[92vh] w-full max-w-[680px] overflow-y-auto rounded-[26px] border border-[var(--ern-borda)] bg-[var(--ern-painel)] shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
+            <div className="flex items-start justify-between gap-5 border-b border-[var(--ern-borda)] px-6 py-5">
               <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--ern-destaque)]">
                   Dados profissionais
                 </p>
                 <h3
                   id="titulo-visualizar-guia"
-                  className="mt-2 text-2xl text-[#F0F0E8]"
+                  className="mt-2 text-2xl text-[var(--ern-texto)]"
                   style={{
                     fontFamily: 'var(--font-fraunces), serif',
                   }}
@@ -865,7 +995,7 @@ export default function GuiasPage() {
                 type="button"
                 aria-label="Fechar visualização"
                 onClick={() => setItemVisualizar(null)}
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] text-[#EDEDE3]/45"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] text-[var(--ern-secundario)]"
               >
                 ✕
               </button>
@@ -907,23 +1037,23 @@ export default function GuiasPage() {
               ].map((item) => (
                 <div
                   key={item.label}
-                  className="rounded-2xl border border-white/[0.065] bg-white/[0.018] p-4"
+                  className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] p-4"
                 >
-                  <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[#EDEDE3]/28">
+                  <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)]">
                     {item.label}
                   </p>
-                  <p className="mt-2 break-words text-xs font-medium text-[#EDEDE3]/72">
+                  <p className="mt-2 break-words text-xs font-medium text-[var(--ern-secundario)]">
                     {item.valor}
                   </p>
                 </div>
               ))}
             </div>
 
-            <div className="flex justify-end border-t border-white/[0.07] px-6 py-4">
+            <div className="flex justify-end border-t border-[var(--ern-borda)] px-6 py-4">
               <button
                 type="button"
                 onClick={() => setItemVisualizar(null)}
-                className="rounded-xl bg-[#E3A144] px-5 py-2.5 text-xs font-bold text-[#07130F]"
+                className="rounded-xl bg-[var(--ern-botao)] px-5 py-2.5 text-xs font-bold text-[var(--ern-sobre-botao)]"
               >
                 Fechar
               </button>
@@ -939,15 +1069,15 @@ export default function GuiasPage() {
           aria-labelledby="titulo-editar-guia"
           className="fixed inset-0 z-[70] flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm"
         >
-          <div className="max-h-[92vh] w-full max-w-[720px] overflow-y-auto rounded-[26px] border border-white/[0.09] bg-[#091510] shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
-            <div className="flex items-start justify-between gap-5 border-b border-white/[0.07] px-6 py-5">
+          <div className="max-h-[92vh] w-full max-w-[720px] overflow-y-auto rounded-[26px] border border-[var(--ern-borda)] bg-[var(--ern-painel)] shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
+            <div className="flex items-start justify-between gap-5 border-b border-[var(--ern-borda)] px-6 py-5">
               <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[var(--ern-destaque)]">
                   Estrutura • Edição
                 </p>
                 <h3
                   id="titulo-editar-guia"
-                  className="mt-2 text-2xl text-[#F0F0E8]"
+                  className="mt-2 text-2xl text-[var(--ern-texto)]"
                   style={{
                     fontFamily: 'var(--font-fraunces), serif',
                   }}
@@ -964,7 +1094,7 @@ export default function GuiasPage() {
                   setItemEditar(null);
                   setError(null);
                 }}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.025] text-[#EDEDE3]/45 disabled:opacity-50"
+                className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] text-[var(--ern-secundario)] disabled:opacity-50"
               >
                 ✕
               </button>
@@ -977,7 +1107,7 @@ export default function GuiasPage() {
               {error && (
                 <div
                   role="alert"
-                  className="rounded-xl border border-red-500/20 bg-red-500/[0.07] p-4 text-xs text-red-300"
+                  className="rounded-xl border border-red-500/20 bg-red-500/[0.07] p-4 text-xs text-[var(--ern-erro)]"
                 >
                   {error}
                 </div>
@@ -1126,7 +1256,7 @@ export default function GuiasPage() {
                 </select>
               </div>
 
-              <div className="flex flex-col-reverse gap-3 border-t border-white/[0.07] pt-5 sm:flex-row sm:justify-end">
+              <div className="flex flex-col-reverse gap-3 border-t border-[var(--ern-borda)] pt-5 sm:flex-row sm:justify-end">
                 <button
                   type="button"
                   disabled={salvandoEdicao}
@@ -1134,7 +1264,7 @@ export default function GuiasPage() {
                     setItemEditar(null);
                     setError(null);
                   }}
-                  className="rounded-xl border border-white/[0.08] bg-white/[0.025] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/55 disabled:opacity-50"
+                  className="rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] px-5 py-3 text-xs font-semibold text-[var(--ern-secundario)] disabled:opacity-50"
                 >
                   Cancelar
                 </button>
@@ -1142,7 +1272,7 @@ export default function GuiasPage() {
                 <button
                   type="submit"
                   disabled={salvandoEdicao || !podeGerenciar}
-                  className="rounded-xl bg-[#E3A144] px-6 py-3 text-xs font-bold text-[#07130F] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="rounded-xl bg-[var(--ern-botao)] px-6 py-3 text-xs font-bold text-[var(--ern-sobre-botao)] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {salvandoEdicao
                     ? 'Salvando...'
@@ -1161,14 +1291,14 @@ export default function GuiasPage() {
           aria-labelledby="titulo-excluir-guia"
           className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-4 backdrop-blur-sm"
         >
-          <div className="max-h-[92vh] w-full max-w-[430px] overflow-y-auto rounded-[26px] border border-white/[0.09] bg-[#091510] p-6 text-center shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-red-500/20 bg-red-500/[0.08] text-red-300">
+          <div className="max-h-[92vh] w-full max-w-[430px] overflow-y-auto rounded-[26px] border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-6 text-center shadow-[0_35px_100px_rgba(0,0,0,0.65)]">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-red-500/20 bg-red-500/[0.08] text-[var(--ern-erro)]">
               !
             </div>
 
             <h3
               id="titulo-excluir-guia"
-              className="mt-5 text-2xl text-[#F0F0E8]"
+              className="mt-5 text-2xl text-[var(--ern-texto)]"
               style={{
                 fontFamily: 'var(--font-fraunces), serif',
               }}
@@ -1176,9 +1306,9 @@ export default function GuiasPage() {
               Excluir guia?
             </h3>
 
-            <p className="mt-3 text-xs leading-6 text-[#EDEDE3]/38">
+            <p className="mt-3 text-xs leading-6 text-[var(--ern-secundario)]">
               O profissional{' '}
-              <strong className="text-[#EDEDE3]/70">
+              <strong className="text-[var(--ern-secundario)]">
                 {itemExcluir.nome || 'selecionado'}
               </strong>{' '}
               será removido permanentemente do cadastro desta
@@ -1189,7 +1319,7 @@ export default function GuiasPage() {
             {error && (
               <div
                 role="alert"
-                className="mt-4 rounded-xl border border-red-500/20 bg-red-500/[0.07] p-4 text-left text-xs text-red-300"
+                className="mt-4 rounded-xl border border-red-500/20 bg-red-500/[0.07] p-4 text-left text-xs text-[var(--ern-erro)]"
               >
                 {error}
               </div>
@@ -1203,7 +1333,7 @@ export default function GuiasPage() {
                   setItemExcluir(null);
                   setError(null);
                 }}
-                className="rounded-xl border border-white/[0.09] bg-white/[0.025] px-4 py-3 text-xs font-semibold text-[#EDEDE3]/60 disabled:opacity-50"
+                className="rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] px-4 py-3 text-xs font-semibold text-[var(--ern-secundario)] disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -1212,7 +1342,7 @@ export default function GuiasPage() {
                 type="button"
                 disabled={excluindo || !podeGerenciar}
                 onClick={() => void confirmarExclusao()}
-                className="rounded-xl border border-red-500/20 bg-red-500/[0.1] px-4 py-3 text-xs font-semibold text-red-300 disabled:cursor-not-allowed disabled:opacity-50"
+                className="rounded-xl border border-red-500/20 bg-red-500/[0.1] px-4 py-3 text-xs font-semibold text-[var(--ern-erro)] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {excluindo ? 'Excluindo...' : 'Excluir'}
               </button>
