@@ -128,6 +128,11 @@ const GRUPOS: NavGroup[] = [
 ];
 
 const CONTA: NavItem[] = [
+  {
+    label: 'Publica\u00e7\u00f5es na Rede',
+    href: '/configuracoes/publicacoes',
+    descricao: 'Criar, revisar e publicar experi\u00eancias da operadora',
+  },
   { label: 'Perfil p\u00fablico', href: '/configuracoes/perfil-publico', descricao: 'Apresenta\u00e7\u00e3o, imagens e contatos na Rede ERN' },
   { label: 'Configurações', href: '/configuracoes' },
   { label: 'Planos', href: '/planos' },
