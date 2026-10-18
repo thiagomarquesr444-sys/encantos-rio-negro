@@ -151,7 +151,7 @@ export default function DestinosPage() {
           HERO
       ========================================================== */}
 
-      <section className="relative min-h-[88vh] overflow-hidden border-b border-white/[0.07] bg-[#07130F]">
+      <section className="ern-publico-hero relative min-h-[88vh] overflow-hidden border-b border-white/[0.07] bg-[#07130F]">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
@@ -339,7 +339,7 @@ export default function DestinosPage() {
             {destinosFiltrados.map((destino) => (
               <article
                 key={destino.id}
-                className={`group relative overflow-hidden rounded-[26px] border border-white/[0.09] bg-[#07110E] ${
+                className={`ern-publico-foto group relative overflow-hidden rounded-[26px] border border-white/[0.09] bg-[#07110E] ${
                   destino.grande
                     ? 'min-h-[540px] md:col-span-2 xl:col-span-2'
                     : 'min-h-[430px]'
@@ -504,7 +504,7 @@ export default function DestinosPage() {
 
             {/* BARCELOS */}
 
-            <article className="relative min-h-[480px] overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#0A1713]">
+            <article className="ern-publico-foto relative min-h-[480px] overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#0A1713]">
               <div
                 className="absolute inset-0 bg-cover bg-center"
                 style={{
@@ -552,7 +552,7 @@ export default function DestinosPage() {
 
             {/* NOVO AIRÃO */}
 
-            <article className="relative min-h-[480px] overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#0A1713]">
+            <article className="ern-publico-foto relative min-h-[480px] overflow-hidden rounded-[28px] border border-white/[0.08] bg-[#0A1713]">
               <div
                 className="absolute inset-0 bg-cover bg-center"
                 style={{

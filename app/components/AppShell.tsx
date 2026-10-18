@@ -199,7 +199,13 @@ export default function AppShell({
   }
 
   return (
-    <div className="min-h-screen w-full bg-[#0B1512]">
+    <div
+      className={
+        pathname === '/' || ['/rede', '/experiencias', '/destinos'].some(rota => pathname === rota || pathname?.startsWith(rota + '/'))
+          ? 'ern-publico min-h-screen w-full'
+          : 'min-h-screen w-full bg-[#0B1512]'
+      }
+    >
       {children}
     </div>
   );

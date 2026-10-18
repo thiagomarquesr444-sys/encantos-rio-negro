@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
+import AcoesPublicacaoERN from '@/app/components/AcoesPublicacaoERN';
 import MidiasPublicacaoERN from '@/app/components/MidiasPublicacaoERN';
+import PreviaPublicacaoERN from '@/app/components/PreviaPublicacaoERN';
 import {
   contextoPerfilPublicoERN,
   type ContextoPerfilPublicoERN,
@@ -59,6 +61,7 @@ export default function PublicacoesOperadoraPage() {
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [enviandoMidia, setEnviandoMidia] = useState(false);
+  const [alterandoStatus, setAlterandoStatus] = useState(false);
   const [alterado, setAlterado] = useState(false);
   const [erro, setErro] = useState('');
   const [aviso, setAviso] = useState('');
@@ -209,7 +212,7 @@ export default function PublicacoesOperadoraPage() {
     }
   }
 
-  const bloqueado = carregando || salvando || enviandoMidia || !contexto;
+  const bloqueado = carregando || salvando || enviandoMidia || alterandoStatus || !contexto;
 
   return (
     <main className="min-h-screen bg-[var(--ern-fundo)] px-4 py-6 text-[var(--ern-texto)] sm:px-8 sm:py-10">
@@ -397,11 +400,20 @@ export default function PublicacoesOperadoraPage() {
 
             {contexto && editando && (
               <MidiasPublicacaoERN
-                key={editando}
+                key={'midias-' + editando}
                 contexto={contexto}
                 publicacaoId={editando}
                 bloqueado={carregando || salvando || alterado}
                 onOcupado={setEnviandoMidia}
+              />
+            )}
+
+            {contexto && editando && (
+              <PreviaPublicacaoERN
+                key={'previa-' + editando}
+                contexto={contexto}
+                publicacaoId={editando}
+                bloqueado={bloqueado || alterado}
               />
             )}
           </section>
@@ -437,6 +449,22 @@ export default function PublicacoesOperadoraPage() {
                       <p className="mt-2 line-clamp-3 break-words text-sm leading-6 text-[var(--ern-secundario)]">
                         {item.resumo}
                       </p>
+                    )}
+                    {contexto && (
+                      <AcoesPublicacaoERN
+                        contexto={contexto}
+                        item={item}
+                        bloqueado={bloqueado || alterado}
+                        onOcupado={setAlterandoStatus}
+                        onAtualizar={() => {
+                          if (editando === item.id) {
+                            setEditando(null);
+                            identificador.current = '';
+                            setFormulario({ ...INICIAL });
+                          }
+                          setTentativa(atual => atual + 1);
+                        }}
+                      />
                     )}
                     {item.status === 'rascunho' && (
                       <button

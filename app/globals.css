@@ -274,3 +274,255 @@ body {
 .ern-gestao[data-ern-tema="branco"] [class~="[color-scheme:dark]"] {
   color-scheme: light;
 }
+
+/* ERN_REDE_AMARELA */
+.ern-publico {
+  --ern-fundo: #fff7db;
+  --ern-painel: #fffcf0;
+  --ern-elevado: #f5e8b8;
+  --ern-texto: #30260d;
+  --ern-secundario: #695727;
+  --ern-borda: #cdba7a;
+  --ern-destaque: #805600;
+  --ern-botao: #805600;
+  --ern-sobre-botao: #ffffff;
+  --ern-suave: rgb(128 86 0 / 6%);
+  --ern-hover: #684500;
+  --ern-sucesso: #145c38;
+  --ern-alerta: #744700;
+  --ern-erro: #a51d2d;
+
+  background: var(--ern-fundo);
+  color: var(--ern-texto);
+  color-scheme: light;
+}
+
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#F6F5F0]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#0B1512]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#07110E]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#07100D]"] {
+  background-color: var(--ern-fundo);
+}
+
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#FFFFFF]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-white"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#ffffff]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#0A1713]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#FAF9F5]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#F8F8F3]"] {
+  background-color: var(--ern-painel);
+}
+
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#ECEFE7]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#E9EEE8]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#E9EEE8]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#101D17]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#EDF1E8]"] {
+  background-color: var(--ern-elevado);
+}
+
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="text-[#18352C]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="text-[#EDEDE3]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="text-[#F0F0E8]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="text-[#17352B]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="text-[#14271E]"] {
+  color: var(--ern-texto);
+}
+
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="text-[#52665D]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="text-[#586B61]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="text-[#5B6B62]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="text-[#617267]"] {
+  color: var(--ern-secundario);
+}
+
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="text-[#805116]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="text-[#F4C77E]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="text-[#E3A144]"] {
+  color: var(--ern-destaque);
+}
+
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#E3A144]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#F4C77E]"] {
+  background-color: var(--ern-botao);
+}
+
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="border-white/10"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="border-white/15"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="border-white/20"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="border-[#18352C]/15"] {
+  border-color: var(--ern-borda);
+}
+
+.ern-publico :is(
+  [class*="text-[#EDEDE3]/"],
+  [class*="text-[#F0F0E8]/"]
+):not(.ern-publico-hero, .ern-publico-hero *) {
+  color: var(--ern-secundario);
+}
+
+.ern-publico :is(
+  [class~="bg-[#E3A144]"],
+  [class~="bg-[#F4C77E]"]
+):not(.ern-publico-hero, .ern-publico-hero *) {
+  color: var(--ern-sobre-botao);
+}
+
+.ern-publico .ern-navegacao-ilustrada {
+  background-color: var(--ern-fundo);
+  color: var(--ern-texto);
+  border-color: var(--ern-borda);
+}
+
+.ern-publico dialog.menu-publico {
+  background: var(--ern-painel);
+  color: var(--ern-texto);
+  border-left-color: var(--ern-borda);
+}
+
+.ern-publico :is(
+  [class~="bg-[#E3A144]"],
+  [class~="bg-[#F4C77E]"]
+):not(.ern-publico-hero, .ern-publico-hero *):hover {
+  background-color: var(--ern-hover);
+}
+
+.ern-publico [class~="hover:text-white"]:hover {
+  color: var(--ern-texto);
+}
+
+.ern-publico input::placeholder {
+  color: var(--ern-secundario);
+  opacity: 0.8;
+}
+
+/* ERN_PORTAL_AMARELO */
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#08110E]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#08130F]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#091510]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#0D1814]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#0E1A15]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#0E1B16]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#101C17]"] {
+  background-color: var(--ern-fundo);
+}
+
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#0D1B16]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#111F19]"],
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="bg-[#0A1713]/95"] {
+  background-color: var(--ern-painel);
+}
+
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="text-[#7C9C87]"] {
+  color: var(--ern-destaque);
+}
+
+
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class*="border-white/"] {
+  border-color: var(--ern-borda);
+}
+
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class*="bg-white/"] {
+  background-color: var(--ern-suave);
+}
+
+.ern-publico :not(.ern-publico-hero, .ern-publico-hero *)[class~="hover:bg-white/5"]:hover {
+  background-color: var(--ern-elevado);
+}
+
+/* ERN_CARDS_PUBLICOS_CLAROS */
+
+.ern-publico .ern-publico-foto {
+  background-color: var(--ern-painel);
+  color: var(--ern-texto);
+  border-color: var(--ern-borda);
+}
+
+/* Clareia as camadas decorativas sem remover as fotografias. */
+.ern-publico .ern-publico-foto > [class*="bg-gradient-"] {
+  background-image: linear-gradient(
+    to top,
+    #fffcf0 0%,
+    rgb(255 252 240 / 97%) 32%,
+    rgb(255 247 219 / 65%) 65%,
+    rgb(255 247 219 / 15%) 100%
+  );
+}
+
+.ern-publico .ern-publico-foto :is(
+  [class~="text-[#F0F0E8]"],
+  [class~="text-[#EDEDE3]"]
+) {
+  color: var(--ern-texto);
+}
+
+.ern-publico .ern-publico-foto [class*="text-[#EDEDE3]/"] {
+  color: var(--ern-secundario);
+}
+
+.ern-publico .ern-publico-foto :is(
+  [class~="text-[#E3A144]"],
+  [class~="text-[#F4C77E]"]
+) {
+  color: var(--ern-destaque);
+}
+
+.ern-publico .ern-publico-foto [class*="bg-[#07110E]/"] {
+  background-color: var(--ern-painel);
+  border-color: var(--ern-borda);
+}
+
+/* Painel de planejamento dentro da abertura com video. */
+.ern-publico #concierge {
+  color-scheme: light;
+}
+
+.ern-publico #concierge [class~="bg-[#0A1713]/82"] {
+  background-color: var(--ern-painel);
+  border-color: var(--ern-borda);
+}
+
+.ern-publico #concierge [class~="bg-[#07110E]/75"] {
+  background-color: var(--ern-fundo);
+  color: var(--ern-texto);
+}
+
+.ern-publico #concierge :is(
+  [class~="text-[#F0F0E8]"],
+  [class~="text-[#EDEDE3]"]
+) {
+  color: var(--ern-texto);
+}
+
+.ern-publico #concierge [class*="text-[#EDEDE3]/"] {
+  color: var(--ern-secundario);
+}
+
+.ern-publico #concierge :is(
+  [class~="text-[#E3A144]"],
+  [class~="text-[#F4C77E]"]
+) {
+  color: var(--ern-destaque);
+}
+
+.ern-publico #concierge [class*="border-white/"] {
+  border-color: var(--ern-borda);
+}
+
+.ern-publico #concierge [class*="bg-white/"] {
+  background-color: var(--ern-suave);
+}
+
+.ern-publico #concierge [class~="bg-[#E3A144]"] {
+  background-color: var(--ern-botao);
+  color: var(--ern-sobre-botao);
+}
+
+.ern-publico #concierge [class~="bg-[#E3A144]"]:hover {
+  background-color: var(--ern-hover);
+}
+
+.ern-publico #concierge textarea::placeholder {
+  color: var(--ern-secundario);
+  opacity: 0.8;
+}

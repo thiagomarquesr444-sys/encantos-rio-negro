@@ -33,7 +33,7 @@ export default function Home() {
           HERO
       ========================================================== */}
 
-      <section className="relative min-h-screen overflow-hidden bg-[#07130F]">
+      <section className="ern-publico-hero relative min-h-screen overflow-hidden bg-[#07130F]">
         <video
           autoPlay
           muted
@@ -345,7 +345,7 @@ export default function Home() {
               (territorio) => (
                 <article
                   key={territorio.id}
-                  className="group relative min-h-[430px] overflow-hidden rounded-[24px] border border-white/10 bg-[#0A1713]"
+                  className="ern-publico-foto group relative min-h-[430px] overflow-hidden rounded-[24px] border border-white/10 bg-[#0A1713]"
                 >
                   <div
                     className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"

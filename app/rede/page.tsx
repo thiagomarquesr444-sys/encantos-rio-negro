@@ -638,7 +638,7 @@ export default function RedePage() {
                   .logo_url
               }
               alt=""
-              className={`shrink-0 rounded-full border border-white/10 object-cover ${
+              className={`shrink-0 rounded-full border border-[#18352C]/15 object-cover ${
                 compacto
                   ? 'h-10 w-10'
                   : 'h-12 w-12'
@@ -646,7 +646,7 @@ export default function RedePage() {
             />
           ) : (
             <div
-              className={`flex shrink-0 items-center justify-center rounded-full border border-[#E3A144]/20 bg-[#E3A144]/10 font-semibold text-[#E3A144] ${
+              className={`flex shrink-0 items-center justify-center rounded-full border border-[#E3A144]/20 bg-[#E3A144]/10 font-semibold text-[#805116] ${
                 compacto
                   ? 'h-10 w-10 text-xs'
                   : 'h-12 w-12 text-sm'
@@ -661,7 +661,7 @@ export default function RedePage() {
 
           <div className="min-w-0">
             <div className="flex min-w-0 items-center gap-2">
-              <p className="truncate text-sm font-semibold text-[#F0F0E8]">
+              <p className="truncate text-sm font-semibold text-[#18352C]">
                 {
                   publicacao.autor
                     .nome_publico
@@ -686,7 +686,7 @@ export default function RedePage() {
               )}
             </div>
 
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-[#EDEDE3]/42">
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-[11px] text-[#52665D]">
               <span>
                 {publicacao.autor
                   .categoria ===
@@ -725,8 +725,8 @@ export default function RedePage() {
             }
             className={`shrink-0 rounded-full border px-4 py-2 text-xs font-semibold transition ${
               seguindo
-                ? 'border-white/10 bg-white/[0.04] text-[#EDEDE3]/60'
-                : 'border-[#E3A144]/30 bg-[#E3A144]/10 text-[#F4C77E] hover:bg-[#E3A144]/15'
+                ? 'border-[#18352C]/15 bg-[#18352C]/[0.04] text-[#52665D]'
+                : 'border-[#E3A144]/30 bg-[#E3A144]/10 text-[#805116] hover:bg-[#E3A144]/15'
             }`}
           >
             {seguindo
@@ -761,7 +761,7 @@ export default function RedePage() {
           };
 
     return (
-      <div className="flex flex-wrap items-center gap-2 border-t border-white/[0.07] pt-4">
+      <div className="flex flex-wrap items-center gap-2 border-t border-[#18352C]/15 pt-4">
         <button
           type="button"
           disabled={
@@ -775,8 +775,8 @@ export default function RedePage() {
           }
           className={`rounded-full border px-3.5 py-2 text-xs font-semibold transition ${
             interacoes.curtida
-              ? 'border-[#E3A144]/35 bg-[#E3A144]/12 text-[#F4C77E]'
-              : 'border-white/10 bg-white/[0.025] text-[#EDEDE3]/55 hover:bg-white/[0.05]'
+              ? 'border-[#E3A144]/35 bg-[#E3A144]/12 text-[#805116]'
+              : 'border-[#18352C]/15 bg-[#18352C]/[0.04] text-[#52665D] hover:bg-[#18352C]/[0.04]'
           }`}
         >
           ♡ {t.feed.like}
@@ -795,8 +795,8 @@ export default function RedePage() {
           }
           className={`rounded-full border px-3.5 py-2 text-xs font-semibold transition ${
             interacoes.salvo
-              ? 'border-[#7C9C87]/40 bg-[#7C9C87]/10 text-[#AFCBB8]'
-              : 'border-white/10 bg-white/[0.025] text-[#EDEDE3]/55 hover:bg-white/[0.05]'
+              ? 'border-[#7C9C87]/40 bg-[#7C9C87]/10 text-[#805116]'
+              : 'border-[#18352C]/15 bg-[#18352C]/[0.04] text-[#52665D] hover:bg-[#18352C]/[0.04]'
           }`}
         >
           ▢ {t.feed.save}
@@ -815,8 +815,8 @@ export default function RedePage() {
           }
           className={`rounded-full border px-3.5 py-2 text-xs font-semibold transition ${
             interacoes.quero_ir
-              ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-200'
-              : 'border-white/10 bg-white/[0.025] text-[#EDEDE3]/55 hover:bg-white/[0.05]'
+              ? 'border-emerald-400/30 bg-emerald-400/10 text-emerald-800'
+              : 'border-[#18352C]/15 bg-[#18352C]/[0.04] text-[#52665D] hover:bg-[#18352C]/[0.04]'
           }`}
         >
           ✦ {t.feed.wantGo}
@@ -829,7 +829,7 @@ export default function RedePage() {
               publicacao,
             )
           }
-          className="ml-auto rounded-full border border-white/10 bg-white/[0.025] px-3.5 py-2 text-xs font-semibold text-[#EDEDE3]/55 transition hover:bg-white/[0.05]"
+          className="ml-auto rounded-full border border-[#18352C]/15 bg-[#18352C]/[0.04] px-3.5 py-2 text-xs font-semibold text-[#52665D] transition hover:bg-[#18352C]/[0.04]"
         >
           ↗{' '}
           {compartilhadoId ===
@@ -843,7 +843,7 @@ export default function RedePage() {
 
   return (
     <div
-      className="min-h-screen overflow-x-hidden bg-[#0B1512] text-[#EDEDE3]"
+      className="min-h-screen overflow-x-hidden bg-[#F6F5F0] text-[#18352C]"
       style={{
         fontFamily:
           'var(--font-work-sans), sans-serif',
@@ -852,7 +852,7 @@ export default function RedePage() {
       <PublicHeader />
 
       {/* HERO */}
-      <section className="relative min-h-[78vh] overflow-hidden border-b border-white/[0.07] bg-[#07130F]">
+      <section className="ern-publico-hero relative min-h-[78vh] overflow-hidden border-b border-white/[0.07] bg-[#07130F]">
         <div className="absolute inset-0 bg-gradient-to-br from-[#14271F] via-[#091711] to-[#06100D]" />
 
         <div
@@ -938,16 +938,16 @@ export default function RedePage() {
       {/* FEED */}
       <section
         id="feed"
-        className="scroll-mt-24 bg-[#0B1512] px-5 py-20 md:px-8 md:py-28"
+        className="scroll-mt-24 bg-[#F6F5F0] px-5 py-20 md:px-8 md:py-28"
       >
         <div className="mx-auto max-w-[1180px]">
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
+          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#805116]">
             {t.feed.eyebrow}
           </span>
 
           <div className="mt-5 grid gap-7 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
             <h2
-              className="max-w-[600px] text-4xl leading-[1.05] text-[#F0F0E8] md:text-5xl"
+              className="max-w-[600px] text-4xl leading-[1.05] text-[#18352C] md:text-5xl"
               style={{
                 fontFamily:
                   'var(--font-fraunces), serif',
@@ -956,13 +956,13 @@ export default function RedePage() {
               {t.feed.title}
             </h2>
 
-            <p className="max-w-[650px] text-sm leading-7 text-[#EDEDE3]/52 md:text-base">
+            <p className="max-w-[650px] text-sm leading-7 text-[#52665D] md:text-base">
               {t.feed.description}
             </p>
           </div>
 
           {/* FILTROS */}
-          <div className="mt-10 rounded-[22px] border border-white/[0.08] bg-[#0A1713] p-4 md:p-5">
+          <div className="mt-10 border-y border-[#18352C]/15 py-5">
             <form
               onSubmit={
                 aplicarBusca
@@ -987,7 +987,7 @@ export default function RedePage() {
                   t.feed
                     .searchPlaceholder
                 }
-                className="min-h-[50px] w-full rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-sm text-[#EDEDE3] outline-none placeholder:text-[#EDEDE3]/25 focus:border-[#E3A144]/35"
+                className="min-h-[50px] w-full rounded-xl border border-[#18352C]/15 bg-[#FFFFFF] px-4 text-sm text-[#18352C] outline-none placeholder:text-[#52665D] focus:border-[#E3A144]/35"
               />
 
               <select
@@ -1002,7 +1002,7 @@ export default function RedePage() {
                       .value,
                   )
                 }
-                className="min-h-[50px] rounded-xl border border-white/[0.08] bg-[#07110E] px-4 text-sm text-[#EDEDE3] outline-none focus:border-[#E3A144]/35"
+                className="min-h-[50px] rounded-xl border border-[#18352C]/15 bg-[#FFFFFF] px-4 text-sm text-[#18352C] outline-none focus:border-[#E3A144]/35"
               >
                 <option value="">
                   {
@@ -1052,8 +1052,8 @@ export default function RedePage() {
                 className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
                   categoriaAtiva ===
                   ''
-                    ? 'border-[#E3A144]/45 bg-[#E3A144]/12 text-[#F4C77E]'
-                    : 'border-white/10 bg-white/[0.025] text-[#EDEDE3]/50 hover:bg-white/[0.05]'
+                    ? 'border-[#E3A144]/45 bg-[#E3A144]/12 text-[#805116]'
+                    : 'border-[#18352C]/15 bg-[#18352C]/[0.04] text-[#52665D] hover:bg-[#18352C]/[0.04]'
                 }`}
               >
                 {
@@ -1081,8 +1081,8 @@ export default function RedePage() {
                       className={`rounded-full border px-4 py-2 text-xs font-semibold transition ${
                         categoriaAtiva ===
                         categoria.id
-                          ? 'border-[#E3A144]/45 bg-[#E3A144]/12 text-[#F4C77E]'
-                          : 'border-white/10 bg-white/[0.025] text-[#EDEDE3]/50 hover:bg-white/[0.05]'
+                          ? 'border-[#E3A144]/45 bg-[#E3A144]/12 text-[#805116]'
+                          : 'border-[#18352C]/15 bg-[#18352C]/[0.04] text-[#52665D] hover:bg-[#18352C]/[0.04]'
                       }`}
                     >
                       {nomeCategoria(
@@ -1101,7 +1101,7 @@ export default function RedePage() {
                 onClick={
                   limparFiltros
                 }
-                className="mt-4 text-xs font-semibold text-[#E3A144] hover:underline"
+                className="mt-4 text-xs font-semibold text-[#805116] hover:underline"
               >
                 {
                   t.feed.clear
@@ -1113,7 +1113,7 @@ export default function RedePage() {
           {avisoSocial && (
             <div
               role="status"
-              className="mt-5 flex flex-col gap-3 rounded-xl border border-[#E3A144]/20 bg-[#E3A144]/[0.05] px-4 py-3 text-sm text-[#F4C77E] sm:flex-row sm:items-center sm:justify-between"
+              className="mt-5 flex flex-col gap-3 rounded-xl border border-[#E3A144]/20 bg-[#E3A144]/[0.05] px-4 py-3 text-sm text-[#805116] sm:flex-row sm:items-center sm:justify-between"
             >
               <span>
                 {avisoSocial}
@@ -1144,18 +1144,18 @@ export default function RedePage() {
                     key={
                       indice
                     }
-                    className="overflow-hidden rounded-[26px] border border-white/[0.08] bg-[#0A1713] motion-safe:animate-pulse"
+                    className="overflow-hidden rounded-[26px] border border-[#18352C]/15 bg-[#FFFFFF] motion-safe:animate-pulse"
                   >
-                    <div className="aspect-[16/10] bg-white/[0.05]" />
+                    <div className="aspect-[16/10] bg-[#18352C]/[0.04]" />
 
                     <div className="p-6">
-                      <div className="h-4 w-32 rounded bg-white/[0.07]" />
+                      <div className="h-4 w-32 rounded bg-[#18352C]/[0.04]" />
 
-                      <div className="mt-5 h-7 w-4/5 rounded bg-white/[0.07]" />
+                      <div className="mt-5 h-7 w-4/5 rounded bg-[#18352C]/[0.04]" />
 
-                      <div className="mt-3 h-4 w-full rounded bg-white/[0.04]" />
+                      <div className="mt-3 h-4 w-full rounded bg-[#18352C]/[0.04]" />
 
-                      <div className="mt-2 h-4 w-3/4 rounded bg-white/[0.04]" />
+                      <div className="mt-2 h-4 w-3/4 rounded bg-[#18352C]/[0.04]" />
                     </div>
                   </div>
                 ),
@@ -1166,9 +1166,9 @@ export default function RedePage() {
           {/* ERRO */}
           {estado.tipo ===
             'erro' && (
-            <div className="mt-10 rounded-[24px] border border-rose-400/20 bg-[#0A1713] p-7">
+            <div className="mt-10 rounded-[24px] border border-rose-400/20 bg-[#FFFFFF] p-7">
               <h3
-                className="text-2xl text-[#F0F0E8]"
+                className="text-2xl text-[#18352C]"
                 style={{
                   fontFamily:
                     'var(--font-fraunces), serif',
@@ -1180,7 +1180,7 @@ export default function RedePage() {
                 }
               </h3>
 
-              <p className="mt-3 text-sm leading-6 text-[#EDEDE3]/48">
+              <p className="mt-3 text-sm leading-6 text-[#52665D]">
                 {estado.mensagem}
               </p>
 
@@ -1194,7 +1194,7 @@ export default function RedePage() {
                       valor + 1,
                   )
                 }
-                className="mt-6 rounded-xl border border-white/10 bg-white/[0.03] px-5 py-3 text-xs font-semibold text-[#EDEDE3]/70"
+                className="mt-6 rounded-xl border border-[#18352C]/15 bg-[#18352C]/[0.04] px-5 py-3 text-xs font-semibold text-[#52665D]"
               >
                 {
                   t.feed.retry
@@ -1208,10 +1208,10 @@ export default function RedePage() {
             'pronto' &&
             estado.publicacoes
               .length === 0 && (
-              <div className="mt-10 overflow-hidden rounded-[28px] border border-[#E3A144]/18 bg-[#0A1713]">
+              <div className="mt-10 overflow-hidden rounded-[28px] border border-[#E3A144]/18 bg-[#FFFFFF]">
                 <div className="grid lg:grid-cols-[1fr_0.7fr]">
                   <div className="p-7 md:p-10">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#805116]">
                       {
                         t.feed
                           .editorial
@@ -1219,7 +1219,7 @@ export default function RedePage() {
                     </span>
 
                     <h3
-                      className="mt-4 max-w-[620px] text-3xl leading-[1.1] text-[#F0F0E8] md:text-4xl"
+                      className="mt-4 max-w-[620px] text-3xl leading-[1.1] text-[#18352C] md:text-4xl"
                       style={{
                         fontFamily:
                           'var(--font-fraunces), serif',
@@ -1231,7 +1231,7 @@ export default function RedePage() {
                       }
                     </h3>
 
-                    <p className="mt-5 max-w-[620px] text-sm leading-7 text-[#EDEDE3]/50">
+                    <p className="mt-5 max-w-[620px] text-sm leading-7 text-[#52665D]">
                       {
                         t.feed
                           .noPostsDescription
@@ -1239,18 +1239,18 @@ export default function RedePage() {
                     </p>
                   </div>
 
-                  <div className="flex min-h-[240px] items-center justify-center border-t border-white/[0.07] bg-gradient-to-br from-[#173025] to-[#08130F] p-8 lg:border-l lg:border-t-0">
+                  <div className="flex min-h-[240px] items-center justify-center border-t border-[#18352C]/15 bg-gradient-to-br from-[#E9EEE8] to-[#F6F5F0] p-8 lg:border-l lg:border-t-0">
                     <div className="text-center">
-                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-[#E3A144]/25 bg-[#E3A144]/10 text-2xl text-[#E3A144]">
+                      <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-[#E3A144]/25 bg-[#E3A144]/10 text-2xl text-[#805116]">
                         ✦
                       </div>
 
-                      <p className="mt-4 text-sm font-semibold text-[#F0F0E8]">
+                      <p className="mt-4 text-sm font-semibold text-[#18352C]">
                         Encantos Rio
                         Negro
                       </p>
 
-                      <p className="mt-1 text-xs text-[#EDEDE3]/35">
+                      <p className="mt-1 text-xs text-[#52665D]">
                         Perfil editorial
                         verificado
                       </p>
@@ -1268,10 +1268,10 @@ export default function RedePage() {
                 id={
                   destaque.slug
                 }
-                className="mt-10 scroll-mt-28 overflow-hidden border-y border-white/10 bg-transparent"
+                className="mt-10 scroll-mt-28 overflow-hidden border-y border-[#18352C]/15 bg-transparent"
               >
                 <div className="grid lg:grid-cols-[1.08fr_0.92fr]">
-                  <div className="relative min-h-[360px] overflow-hidden bg-gradient-to-br from-[#173025] via-[#0D1B16] to-[#07110E] lg:min-h-[620px]">
+                  <div className="relative aspect-[4/3] overflow-hidden bg-[#E9EEE8]">
                     {imagemPrincipal(
                       destaque,
                     ) && (
@@ -1288,29 +1288,31 @@ export default function RedePage() {
                             ?.alt_text ??
                           ''
                         }
-                        className="absolute inset-0 h-full w-full object-cover"
+                        className="absolute inset-0 h-full w-full object-contain"
                       />
                     )}
 
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#07110E]/80 via-transparent to-transparent" />
+                    
 
-                    <div className="absolute left-5 top-5 rounded-full border border-[#E3A144]/25 bg-[#07110E]/75 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#F4C77E] backdrop-blur">
+                    {destaque.destaque && (
+<div className="absolute left-5 top-5 rounded-full border border-[#E3A144]/25 bg-[#FFFFFF]/75 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#805116] backdrop-blur">
                       {
                         t.feed
                           .featured
                       }
                     </div>
+)}
 
                     {!imagemPrincipal(
                       destaque,
                     ) && (
                       <div className="absolute inset-0 flex items-center justify-center">
                         <div className="text-center">
-                          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-[#E3A144]/20 bg-[#E3A144]/10 text-3xl text-[#E3A144]">
+                          <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full border border-[#E3A144]/20 bg-[#E3A144]/10 text-3xl text-[#805116]">
                             ✦
                           </div>
 
-                          <p className="mt-4 text-sm text-[#EDEDE3]/35">
+                          <p className="mt-4 text-sm text-[#52665D]">
                             Rio Negro
                           </p>
                         </div>
@@ -1325,7 +1327,7 @@ export default function RedePage() {
 
                     <div className="mt-8 flex flex-wrap items-center gap-2">
                       {destaque.categoria && (
-                        <span className="rounded-full border border-[#E3A144]/20 bg-[#E3A144]/8 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#F4C77E]">
+                        <span className="rounded-full border border-[#E3A144]/20 bg-[#E3A144]/8 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#805116]">
                           {nomeCategoria(
                             destaque.categoria,
                           )}
@@ -1333,7 +1335,7 @@ export default function RedePage() {
                       )}
 
                       {destaque.territorio && (
-                        <span className="rounded-full border border-white/10 px-3 py-1.5 text-[10px] uppercase tracking-[0.12em] text-[#EDEDE3]/40">
+                        <span className="rounded-full border border-[#18352C]/15 px-3 py-1.5 text-[10px] uppercase tracking-[0.12em] text-[#52665D]">
                           {
                             destaque
                               .territorio
@@ -1344,7 +1346,7 @@ export default function RedePage() {
                     </div>
 
                     <h2
-                      className="mt-6 text-4xl leading-[1.06] text-[#F0F0E8]"
+                      className="mt-6 text-4xl leading-[1.06] text-[#18352C]"
                       style={{
                         fontFamily:
                           'var(--font-fraunces), serif',
@@ -1356,7 +1358,7 @@ export default function RedePage() {
                     </h2>
 
                     {destaque.resumo && (
-                      <p className="mt-5 text-sm leading-7 text-[#EDEDE3]/55">
+                      <p className="mt-5 text-sm leading-7 text-[#52665D]">
                         {
                           destaque.resumo
                         }
@@ -1364,7 +1366,7 @@ export default function RedePage() {
                     )}
 
                     {destaque.conteudo && (
-                      <p className="mt-5 line-clamp-5 text-sm leading-7 text-[#EDEDE3]/42">
+                      <p className="mt-5 line-clamp-5 text-sm leading-7 text-[#52665D]">
                         {
                           destaque.conteudo
                         }
@@ -1388,7 +1390,7 @@ export default function RedePage() {
               .length > 0 && (
               <div className="mt-16">
                 <h3
-                  className="text-3xl text-[#F0F0E8]"
+                  className="text-3xl text-[#18352C]"
                   style={{
                     fontFamily:
                       'var(--font-fraunces), serif',
@@ -1415,10 +1417,10 @@ export default function RedePage() {
                           id={
                             publicacao.slug
                           }
-                          className="scroll-mt-28 overflow-hidden border-b border-white/10 bg-transparent"
+                          className="scroll-mt-28 overflow-hidden border-b border-[#18352C]/15 bg-transparent"
                         >
                           {imagem && (
-                            <div className="relative aspect-[16/10] overflow-hidden bg-[#07110E]">
+                            <div className="relative aspect-[16/10] overflow-hidden bg-[#FFFFFF]">
                               <img
                                 src={
                                   imagem
@@ -1429,10 +1431,10 @@ export default function RedePage() {
                                     ?.alt_text ??
                                   ''
                                 }
-                                className="h-full w-full object-cover transition duration-700 hover:scale-[1.025]"
+                                className="h-full w-full object-contain"
                               />
 
-                              <div className="absolute inset-0 bg-gradient-to-t from-[#07110E]/65 via-transparent to-transparent" />
+                              
                             </div>
                           )}
 
@@ -1444,7 +1446,7 @@ export default function RedePage() {
 
                             <div className="mt-5 flex flex-wrap gap-2">
                               {publicacao.categoria && (
-                                <span className="rounded-full border border-[#E3A144]/15 bg-[#E3A144]/[0.06] px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#E3A144]">
+                                <span className="rounded-full border border-[#E3A144]/15 bg-[#E3A144]/[0.06] px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#805116]">
                                   {nomeCategoria(
                                     publicacao.categoria,
                                   )}
@@ -1452,7 +1454,7 @@ export default function RedePage() {
                               )}
 
                               {publicacao.territorio && (
-                                <span className="rounded-full border border-white/[0.07] px-3 py-1 text-[9px] uppercase tracking-[0.12em] text-[#EDEDE3]/35">
+                                <span className="rounded-full border border-[#18352C]/15 px-3 py-1 text-[9px] uppercase tracking-[0.12em] text-[#52665D]">
                                   {
                                     publicacao
                                       .territorio
@@ -1463,7 +1465,7 @@ export default function RedePage() {
                             </div>
 
                             <h3
-                              className="mt-5 text-2xl leading-tight text-[#F0F0E8]"
+                              className="mt-5 text-2xl leading-tight text-[#18352C]"
                               style={{
                                 fontFamily:
                                   'var(--font-fraunces), serif',
@@ -1475,7 +1477,7 @@ export default function RedePage() {
                             </h3>
 
                             {publicacao.resumo && (
-                              <p className="mt-3 line-clamp-3 text-sm leading-7 text-[#EDEDE3]/50">
+                              <p className="mt-3 line-clamp-3 text-sm leading-7 text-[#52665D]">
                                 {
                                   publicacao.resumo
                                 }
@@ -1499,15 +1501,15 @@ export default function RedePage() {
       </section>
 
       {/* ENTRAR NA REDE */}
-      <section className="border-y border-white/[0.07] bg-[#101D17] px-5 py-20 md:px-8 md:py-28">
+      <section className="border-y border-[#18352C]/15 bg-[#ECEFE7] px-5 py-20 md:px-8 md:py-28">
         <div className="mx-auto grid max-w-[1180px] gap-10 lg:grid-cols-[0.82fr_1.18fr] lg:gap-20">
           <div>
-            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
+            <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#805116]">
               {t.join.eyebrow}
             </span>
 
             <h2
-              className="mt-5 max-w-[540px] text-4xl leading-[1.05] text-[#F0F0E8] md:text-5xl"
+              className="mt-5 max-w-[540px] text-4xl leading-[1.05] text-[#18352C] md:text-5xl"
               style={{
                 fontFamily:
                   'var(--font-fraunces), serif',
@@ -1516,7 +1518,7 @@ export default function RedePage() {
               {t.join.title}
             </h2>
 
-            <p className="mt-6 max-w-[540px] text-sm leading-7 text-[#EDEDE3]/50">
+            <p className="mt-6 max-w-[540px] text-sm leading-7 text-[#52665D]">
               {t.join.description}
             </p>
           </div>
@@ -1524,14 +1526,14 @@ export default function RedePage() {
           <div className="grid gap-4 md:grid-cols-3">
             <Link
               href="/acesso?acesso=operadora"
-              className="group border-t border-white/15 px-2 py-6 transition-colors hover:border-[#E3A144]/60"
+              className="group border-t border-[#18352C]/15 px-2 py-6 transition-colors hover:border-[#E3A144]/60"
             >
-              <span className="text-xl text-[#E3A144]">
+              <span className="text-xl text-[#805116]">
                 ◇
               </span>
 
               <h3
-                className="mt-7 text-2xl text-[#F0F0E8]"
+                className="mt-7 text-2xl text-[#18352C]"
                 style={{
                   fontFamily:
                     'var(--font-fraunces), serif',
@@ -1543,21 +1545,21 @@ export default function RedePage() {
                 }
               </h3>
 
-              <span className="mt-7 inline-flex text-sm font-semibold text-[#E3A144] transition group-hover:translate-x-1">
+              <span className="mt-7 inline-flex text-sm font-semibold text-[#805116] transition group-hover:translate-x-1">
                 →
               </span>
             </Link>
 
             <Link
               href="/acesso?acesso=guia"
-              className="group border-t border-white/15 px-2 py-6 transition-colors hover:border-[#E3A144]/60"
+              className="group border-t border-[#18352C]/15 px-2 py-6 transition-colors hover:border-[#E3A144]/60"
             >
-              <span className="text-xl text-[#E3A144]">
+              <span className="text-xl text-[#805116]">
                 ◇
               </span>
 
               <h3
-                className="mt-7 text-2xl text-[#F0F0E8]"
+                className="mt-7 text-2xl text-[#18352C]"
                 style={{
                   fontFamily:
                     'var(--font-fraunces), serif',
@@ -1568,21 +1570,21 @@ export default function RedePage() {
                 }
               </h3>
 
-              <span className="mt-7 inline-flex text-sm font-semibold text-[#E3A144] transition group-hover:translate-x-1">
+              <span className="mt-7 inline-flex text-sm font-semibold text-[#805116] transition group-hover:translate-x-1">
                 →
               </span>
             </Link>
 
             <Link
               href="/acesso?acesso=fornecedor"
-              className="group border-t border-white/15 px-2 py-6 transition-colors hover:border-[#E3A144]/60"
+              className="group border-t border-[#18352C]/15 px-2 py-6 transition-colors hover:border-[#E3A144]/60"
             >
-              <span className="text-xl text-[#E3A144]">
+              <span className="text-xl text-[#805116]">
                 ◇
               </span>
 
               <h3
-                className="mt-7 text-2xl text-[#F0F0E8]"
+                className="mt-7 text-2xl text-[#18352C]"
                 style={{
                   fontFamily:
                     'var(--font-fraunces), serif',
@@ -1594,7 +1596,7 @@ export default function RedePage() {
                 }
               </h3>
 
-              <span className="mt-7 inline-flex text-sm font-semibold text-[#E3A144] transition group-hover:translate-x-1">
+              <span className="mt-7 inline-flex text-sm font-semibold text-[#805116] transition group-hover:translate-x-1">
                 →
               </span>
             </Link>
@@ -1602,8 +1604,8 @@ export default function RedePage() {
         </div>
       </section>
 
-      <footer className="border-t border-white/[0.07] bg-[#07100D] px-5 py-10 md:px-8">
-        <div className="mx-auto flex max-w-[1180px] flex-col gap-3 text-xs text-[#EDEDE3]/35 sm:flex-row sm:items-center sm:justify-between">
+      <footer className="border-t border-[#18352C]/15 bg-[#F6F5F0] px-5 py-10 md:px-8">
+        <div className="mx-auto flex max-w-[1180px] flex-col gap-3 text-xs text-[#52665D] sm:flex-row sm:items-center sm:justify-between">
           <span>
             {t.footer.left}
           </span>

@@ -163,7 +163,7 @@ export default function ExperienciasPage() {
           HERO
       ========================================================== */}
 
-      <section className="relative min-h-[86vh] overflow-hidden border-b border-white/[0.07] bg-[#07130F]">
+      <section className="ern-publico-hero relative min-h-[86vh] overflow-hidden border-b border-white/[0.07] bg-[#07130F]">
         <div
           className="absolute inset-0 bg-cover bg-center"
           style={{
@@ -329,7 +329,7 @@ export default function ExperienciasPage() {
             {filtradas.map((experiencia) => (
               <article
                 key={experiencia.id}
-                className={`group relative overflow-hidden rounded-[26px] border border-white/[0.09] bg-[#07110E] ${
+                className={`ern-publico-foto group relative overflow-hidden rounded-[26px] border border-white/[0.09] bg-[#07110E] ${
                   experiencia.grande
                     ? 'min-h-[540px] md:col-span-2 xl:col-span-2'
                     : 'min-h-[430px]'
