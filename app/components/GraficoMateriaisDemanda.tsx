@@ -73,11 +73,11 @@ export default function GraficoMateriaisDemanda({ itens, previa }: Props) {
   return (
     <section
       aria-label="Análise do orçamento de materiais"
-      className="mt-5 rounded-2xl border border-white/10 bg-white/[0.02] p-4 sm:p-5"
+      className="mt-5 rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] p-4 sm:p-5"
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="text-base font-semibold">Composição do orçamento</h3>
-        <span className="rounded-full border border-white/15 px-2 py-1 text-[10px] text-[#B4C8BB]">
+        <span className="rounded-full border border-[var(--ern-borda)] px-2 py-1 text-[10px] text-[var(--ern-secundario)]">
           {previa ? 'Prévia · alterações não salvas' : 'Lista salva'}
         </span>
       </div>
@@ -90,9 +90,9 @@ export default function GraficoMateriaisDemanda({ itens, previa }: Props) {
             className="relative mx-auto h-40 w-40 shrink-0 rounded-full sm:h-44 sm:w-44"
             style={{ background: `conic-gradient(${fatias.join(',')})` }}
           >
-            <div className="absolute inset-5 flex flex-col items-center justify-center rounded-full bg-[#0A1713] text-center">
+            <div className="absolute inset-5 flex flex-col items-center justify-center rounded-full bg-[var(--ern-painel)] text-center">
               <span className="text-2xl font-semibold">{positivos.length}</span>
-              <span className="mt-1 text-[10px] text-[#B4C8BB]">
+              <span className="mt-1 text-[10px] text-[var(--ern-secundario)]">
                 categorias com custo
               </span>
             </div>
@@ -116,7 +116,7 @@ export default function GraficoMateriaisDemanda({ itens, previa }: Props) {
                   </span>
                   <span className="shrink-0 text-right">
                     <strong className="block font-semibold">{moeda(grupo.valor)}</strong>
-                    <span className="text-[#B4C8BB]">
+                    <span className="text-[var(--ern-secundario)]">
                       {percentual.toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%
                     </span>
                   </span>
@@ -126,15 +126,15 @@ export default function GraficoMateriaisDemanda({ itens, previa }: Props) {
           </ul>
         </div>
       ) : (
-        <p className="mt-4 text-sm leading-6 text-[#B4C8BB]">
+        <p className="mt-4 text-sm leading-6 text-[var(--ern-secundario)]">
           O gráfico aparecerá quando houver materiais com quantidade válida
           e preço maior que zero.
         </p>
       )}
 
-      <div className="mt-5 rounded-xl border border-[#E3A144]/20 bg-[#E3A144]/5 p-3">
-        <p className="text-xs font-semibold text-[#F4C77E]">Leitura da operação</p>
-        <p className="mt-2 text-xs leading-6 text-[#EDEDE3]/80">
+      <div className="mt-5 rounded-xl border border-[var(--ern-destaque)] bg-[var(--ern-suave)] p-3">
+        <p className="text-xs font-semibold text-[var(--ern-destaque)]">Leitura da operação</p>
+        <p className="mt-2 text-xs leading-6 text-[var(--ern-secundario)]">
           A lista contém {itens.length} item(ns), com {atendidos} atendido(s).
           {maior && (
             <>

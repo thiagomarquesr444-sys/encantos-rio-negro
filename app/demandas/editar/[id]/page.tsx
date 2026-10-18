@@ -83,16 +83,16 @@ type Estado =
     };
 
 const CAMPO =
-  'min-h-12 w-full rounded-xl border border-white/10 bg-[#07110E] ' +
-  'px-4 text-sm text-[#F0F0E8] outline-none transition-colors ' +
-  'placeholder:text-white/30 focus:border-[#E3A144] ' +
-  'focus:ring-2 focus:ring-[#E3A144]/20 disabled:cursor-not-allowed ' +
+  'min-h-12 w-full rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] ' +
+  'px-4 text-sm text-[var(--ern-texto)] outline-none transition-colors ' +
+  'placeholder:text-[var(--ern-secundario)] focus:border-[var(--ern-destaque)] ' +
+  'focus:ring-2 focus:ring-[var(--ern-destaque)] disabled:cursor-not-allowed ' +
   'disabled:opacity-50';
 
 const BOTAO =
   'inline-flex min-h-12 items-center justify-center rounded-xl ' +
-  'border border-white/15 px-5 text-sm font-semibold text-[#EDEDE3] ' +
-  'transition-colors hover:bg-white/5 disabled:cursor-not-allowed ' +
+  'border border-[var(--ern-borda)] px-5 text-sm font-semibold text-[var(--ern-texto)] ' +
+  'transition-colors hover:bg-[var(--ern-suave)] disabled:cursor-not-allowed ' +
   'disabled:opacity-40';
 
 function numeroTexto(
@@ -453,14 +453,14 @@ export default function EditarDemandaPage() {
       estado.tipo === 'erro'
     ) {
       return (
-        <main className="min-h-screen bg-[#07110E] p-5 text-[#EDEDE3] md:p-8">
-          <div className="mx-auto max-w-3xl rounded-2xl border border-rose-400/20 bg-[#0A1713] p-6 md:p-7">
-            <p className="text-xs font-semibold uppercase tracking-widest text-rose-300">
+        <main className="min-h-screen bg-[var(--ern-fundo)] p-5 text-[var(--ern-texto)] md:p-8">
+          <div className="mx-auto max-w-3xl rounded-2xl border border-rose-400/20 bg-[var(--ern-painel)] p-6 md:p-7">
+            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-erro)]">
               Demanda indisponível
             </p>
 
             <h1
-              className="mt-2 text-2xl text-[#F0F0E8]"
+              className="mt-2 text-2xl text-[var(--ern-texto)]"
               style={{
                 fontFamily:
                   'var(--font-fraunces), serif',
@@ -470,7 +470,7 @@ export default function EditarDemandaPage() {
               a demanda
             </h1>
 
-            <p className="mt-3 text-sm leading-6 text-[#B4C8BB]">
+            <p className="mt-3 text-sm leading-6 text-[var(--ern-secundario)]">
               {estado.mensagem}
             </p>
 
@@ -486,9 +486,9 @@ export default function EditarDemandaPage() {
     }
 
     return (
-      <main className="min-h-screen bg-[#07110E] p-5 text-[#EDEDE3] md:p-8">
-        <div className="mx-auto max-w-3xl rounded-2xl border border-white/10 bg-[#0A1713] p-6">
-          <p className="text-sm text-[#B4C8BB]">
+      <main className="min-h-screen bg-[var(--ern-fundo)] p-5 text-[var(--ern-texto)] md:p-8">
+        <div className="mx-auto max-w-3xl rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-6">
+          <p className="text-sm text-[var(--ern-secundario)]">
             Carregando demanda...
           </p>
         </div>
@@ -859,17 +859,17 @@ export default function EditarDemandaPage() {
       'cancelada';
 
   return (
-    <main className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
-      <header className="border-b border-white/10 bg-[#091510]">
+    <main className="min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+      <header className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
         <div className="mx-auto max-w-5xl px-4 py-8 md:px-8">
           <Link
             href="/demandas"
-            className="text-sm text-[#B4C8BB] transition hover:text-white"
+            className="text-sm text-[var(--ern-secundario)] transition hover:text-[var(--ern-texto)]"
           >
             ← Demandas
           </Link>
 
-          <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-[#E3A144]">
+          <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
             Gerenciamento operacional
           </p>
 
@@ -884,7 +884,7 @@ export default function EditarDemandaPage() {
           </h1>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
-            <span className="rounded-full border border-white/10 px-3 py-1 text-xs">
+            <span className="rounded-full border border-[var(--ern-borda)] px-3 py-1 text-xs">
               {
                 STATUS_DEMANDA[
                   statusAtual
@@ -892,7 +892,7 @@ export default function EditarDemandaPage() {
               }
             </span>
 
-            <span className="text-xs text-[#B4C8BB]">
+            <span className="text-xs text-[var(--ern-secundario)]">
               {
                 CATEGORIAS_DEMANDA[
                   formularioAtual
@@ -916,13 +916,13 @@ export default function EditarDemandaPage() {
         onSubmit={salvar}
         className="mx-auto max-w-5xl space-y-6 px-4 py-7 md:px-8"
       >
-        <section className="rounded-2xl border border-white/10 bg-[#0A1713] p-5 md:p-7">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#E3A144]">
+        <section className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
             Identificação
           </p>
 
           <h2
-            className="mt-2 text-2xl text-[#F0F0E8]"
+            className="mt-2 text-2xl text-[var(--ern-texto)]"
             style={{
               fontFamily:
                 'var(--font-fraunces), serif',
@@ -1051,13 +1051,13 @@ export default function EditarDemandaPage() {
           </div>
         </section>
 
-        <section className="rounded-2xl border border-white/10 bg-[#0A1713] p-5 md:p-7">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#7C9C87]">
+        <section className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-secundario)]">
             Viagem
           </p>
 
           <h2
-            className="mt-2 text-2xl text-[#F0F0E8]"
+            className="mt-2 text-2xl text-[var(--ern-texto)]"
             style={{
               fontFamily:
                 'var(--font-fraunces), serif',
@@ -1118,7 +1118,7 @@ export default function EditarDemandaPage() {
             </div>
           </div>
 
-          <p className="mt-4 text-xs leading-5 text-[#B4C8BB]">
+          <p className="mt-4 text-xs leading-5 text-[var(--ern-secundario)]">
             Para demandas com cálculo
             automático, o sistema usa o
             período para atualizar a quantidade
@@ -1128,13 +1128,13 @@ export default function EditarDemandaPage() {
 
         {metodoEstimativa ===
           'pessoa_dia' && (
-          <section className="rounded-2xl border border-[#E3A144]/20 bg-[#0A1713] p-5 md:p-7">
-            <p className="text-xs font-semibold uppercase tracking-widest text-[#E3A144]">
+          <section className="rounded-2xl border border-[var(--ern-destaque)] bg-[var(--ern-painel)] p-5 md:p-7">
+            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
               Previsão automática
             </p>
 
             <h2
-              className="mt-2 text-2xl text-[#F0F0E8]"
+              className="mt-2 text-2xl text-[var(--ern-texto)]"
               style={{
                 fontFamily:
                   'var(--font-fraunces), serif',
@@ -1301,14 +1301,14 @@ export default function EditarDemandaPage() {
 
         {metodoEstimativa ===
           'combustivel_hora' && (
-          <section className="rounded-2xl border border-[#E3A144]/20 bg-[#0A1713] p-5 md:p-7">
-            <p className="text-xs font-semibold uppercase tracking-widest text-[#E3A144]">
+          <section className="rounded-2xl border border-[var(--ern-destaque)] bg-[var(--ern-painel)] p-5 md:p-7">
+            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
               Planejamento de
               combustível
             </p>
 
             <h2
-              className="mt-2 text-2xl text-[#F0F0E8]"
+              className="mt-2 text-2xl text-[var(--ern-texto)]"
               style={{
                 fontFamily:
                   'var(--font-fraunces), serif',
@@ -1467,8 +1467,8 @@ export default function EditarDemandaPage() {
               </div>
             </div>
 
-            <div className="mt-5 rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
-              <p className="text-xs leading-5 text-[#B4C8BB]">
+            <div className="mt-5 rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] p-4">
+              <p className="text-xs leading-5 text-[var(--ern-secundario)]">
                 A previsão considera horas
                 efetivas de funcionamento do
                 motor. A margem de segurança é
@@ -1482,13 +1482,13 @@ export default function EditarDemandaPage() {
 
         {metodoEstimativa ===
           'manual' && (
-          <section className="rounded-2xl border border-white/10 bg-[#0A1713] p-5 md:p-7">
-            <p className="text-xs font-semibold uppercase tracking-widest text-[#7C9C87]">
+          <section className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7">
+            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-secundario)]">
               Dimensionamento
             </p>
 
             <h2
-              className="mt-2 text-2xl text-[#F0F0E8]"
+              className="mt-2 text-2xl text-[var(--ern-texto)]"
               style={{
                 fontFamily:
                   'var(--font-fraunces), serif',
@@ -1553,13 +1553,13 @@ export default function EditarDemandaPage() {
           </section>
         )}
 
-        <section className="rounded-2xl border border-[#E3A144]/20 bg-[#0A1713] p-5 md:p-7">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#E3A144]">
+        <section className="rounded-2xl border border-[var(--ern-destaque)] bg-[var(--ern-painel)] p-5 md:p-7">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
             Planejamento
           </p>
 
           <h2
-            className="mt-2 text-2xl text-[#F0F0E8]"
+            className="mt-2 text-2xl text-[var(--ern-texto)]"
             style={{
               fontFamily:
                 'var(--font-fraunces), serif',
@@ -1569,7 +1569,7 @@ export default function EditarDemandaPage() {
           </h2>
 
           <strong
-            className="mt-4 block text-4xl text-[#F0F0E8]"
+            className="mt-4 block text-4xl text-[var(--ern-texto)]"
             style={{
               fontFamily:
                 'var(--font-fraunces), serif',
@@ -1589,7 +1589,7 @@ export default function EditarDemandaPage() {
           {metodoEstimativa ===
             'combustivel_hora' &&
             previsao !== null && (
-              <p className="mt-3 text-sm text-[#B4C8BB]">
+              <p className="mt-3 text-sm text-[var(--ern-secundario)]">
                 Previsão total já incluindo a
                 margem operacional informada.
               </p>
@@ -1601,24 +1601,24 @@ export default function EditarDemandaPage() {
             role="alert"
             className="rounded-2xl border border-rose-400/20 bg-rose-400/[0.05] p-5"
           >
-            <p className="font-semibold text-rose-200">
+            <p className="font-semibold text-[var(--ern-erro)]">
               Não foi possível concluir a
               operação.
             </p>
 
-            <p className="mt-2 text-sm leading-6 text-rose-100/70">
+            <p className="mt-2 text-sm leading-6 text-[var(--ern-erro)]">
               {erroFormulario}
             </p>
           </div>
         )}
 
-        <section className="rounded-2xl border border-white/10 bg-[#0A1713] p-5 md:p-7">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[#7C9C87]">
+        <section className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-secundario)]">
             Ciclo da demanda
           </p>
 
           <h2
-            className="mt-2 text-2xl text-[#F0F0E8]"
+            className="mt-2 text-2xl text-[var(--ern-texto)]"
             style={{
               fontFamily:
                 'var(--font-fraunces), serif',
@@ -1632,7 +1632,7 @@ export default function EditarDemandaPage() {
               <button
                 type="submit"
                 disabled={salvando}
-                className={`${BOTAO} border-[#E3A144]/30 bg-[#E3A144]/10 text-[#F4C77E]`}
+                className={`${BOTAO} border-[var(--ern-destaque)] bg-[var(--ern-suave)] text-[var(--ern-destaque)]`}
               >
                 {salvando
                   ? 'Salvando...'
@@ -1650,7 +1650,7 @@ export default function EditarDemandaPage() {
                     'aberta',
                   )
                 }
-                className={`${BOTAO} border-emerald-400/30 bg-emerald-400/10 text-emerald-200`}
+                className={`${BOTAO} border-emerald-400/30 bg-emerald-400/10 text-[var(--ern-sucesso)]`}
               >
                 Abrir demanda
               </button>
@@ -1673,7 +1673,7 @@ export default function EditarDemandaPage() {
                       );
                     }
                   }}
-                  className={`${BOTAO} border-cyan-400/30 bg-cyan-400/10 text-cyan-200`}
+                  className={`${BOTAO} border-cyan-400/30 bg-cyan-400/10 text-[var(--ern-destaque)]`}
                 >
                   Encerrar demanda
                 </button>
@@ -1692,7 +1692,7 @@ export default function EditarDemandaPage() {
                       );
                     }
                   }}
-                  className={`${BOTAO} border-rose-400/30 bg-rose-400/10 text-rose-200`}
+                  className={`${BOTAO} border-rose-400/30 bg-rose-400/10 text-[var(--ern-erro)]`}
                 >
                   Cancelar demanda
                 </button>
@@ -1715,7 +1715,7 @@ export default function EditarDemandaPage() {
                     );
                   }
                 }}
-                className={`${BOTAO} border-rose-400/20 text-rose-200`}
+                className={`${BOTAO} border-rose-400/20 text-[var(--ern-erro)]`}
               >
                 Cancelar rascunho
               </button>
@@ -1731,7 +1731,7 @@ export default function EditarDemandaPage() {
                 onClick={() =>
                   void excluir()
                 }
-                className={`${BOTAO} border-rose-500/30 text-rose-300`}
+                className={`${BOTAO} border-rose-500/30 text-[var(--ern-erro)]`}
               >
                 {excluindo
                   ? 'Excluindo...'
@@ -1741,10 +1741,10 @@ export default function EditarDemandaPage() {
           </div>
 
           {terminal && (
-            <div className="mt-5 rounded-xl border border-white/[0.07] bg-white/[0.02] p-4">
-              <p className="text-sm leading-6 text-[#B4C8BB]">
+            <div className="mt-5 rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] p-4">
+              <p className="text-sm leading-6 text-[var(--ern-secundario)]">
                 Esta demanda está{' '}
-                <strong className="text-[#EDEDE3]">
+                <strong className="text-[var(--ern-texto)]">
                   {STATUS_DEMANDA[
                     statusAtual
                   ].toLowerCase()}

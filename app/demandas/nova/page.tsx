@@ -107,16 +107,16 @@ const FORMULARIO_INICIAL: Formulario = {
 };
 
 const CAMPO =
-  'min-h-12 w-full rounded-xl border border-white/10 bg-[#07110E] ' +
-  'px-4 text-sm text-[#F0F0E8] outline-none transition-colors ' +
-  'placeholder:text-white/30 focus:border-[#E3A144] ' +
-  'focus:ring-2 focus:ring-[#E3A144]/20 disabled:cursor-not-allowed ' +
+  'min-h-12 w-full rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] ' +
+  'px-4 text-sm text-[var(--ern-texto)] outline-none transition-colors ' +
+  'placeholder:text-[var(--ern-secundario)] focus:border-[var(--ern-destaque)] ' +
+  'focus:ring-2 focus:ring-[var(--ern-destaque)] disabled:cursor-not-allowed ' +
   'disabled:opacity-50';
 
 const BOTAO =
   'inline-flex min-h-12 items-center justify-center rounded-xl ' +
-  'border border-white/15 px-5 text-sm font-semibold text-[#EDEDE3] ' +
-  'transition-colors hover:bg-white/5 disabled:cursor-not-allowed ' +
+  'border border-[var(--ern-borda)] px-5 text-sm font-semibold text-[var(--ern-texto)] ' +
+  'transition-colors hover:bg-[var(--ern-suave)] disabled:cursor-not-allowed ' +
   'disabled:opacity-40';
 
 function numeroFormulario(
@@ -605,17 +605,17 @@ export default function NovaDemandaPage() {
       'pronto';
 
   return (
-    <main className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
-      <header className="border-b border-white/10 bg-[#091510]">
+    <main className="min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+      <header className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
         <div className="mx-auto max-w-5xl px-4 py-8 md:px-8">
           <Link
             href="/demandas"
-            className="text-sm text-[#B4C8BB] hover:text-white"
+            className="text-sm text-[var(--ern-secundario)] hover:text-[var(--ern-texto)]"
           >
             ← Voltar para demandas
           </Link>
 
-          <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-[#E3A144]">
+          <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
             Planejamento operacional
           </p>
 
@@ -629,7 +629,7 @@ export default function NovaDemandaPage() {
             Nova demanda
           </h1>
 
-          <p className="mt-3 max-w-2xl text-sm leading-6 text-[#B4C8BB]">
+          <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--ern-secundario)]">
             Calcule previamente
             alimentação, bebidas,
             combustível ou registre
@@ -642,14 +642,14 @@ export default function NovaDemandaPage() {
       <div className="mx-auto max-w-5xl px-4 py-7 md:px-8">
         {estadoContexto.tipo ===
           'erro' && (
-          <div className="rounded-2xl border border-rose-400/20 bg-[#0A1713] p-6">
+          <div className="rounded-2xl border border-rose-400/20 bg-[var(--ern-painel)] p-6">
             {estadoContexto.mensagem}
           </div>
         )}
 
         {estadoContexto.tipo ===
           'carregando' && (
-          <div className="rounded-2xl border border-white/10 bg-[#0A1713] p-6">
+          <div className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-6">
             Carregando...
           </div>
         )}
@@ -664,7 +664,7 @@ export default function NovaDemandaPage() {
               bloqueado={bloqueado}
               onItensChange={setItensMateriais}
             />
-            <section className="rounded-2xl border border-white/10 bg-[#0A1713] p-5 md:p-7">
+            <section className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7">
               <h2 className="text-2xl">
                 Identificação
               </h2>
@@ -781,7 +781,7 @@ export default function NovaDemandaPage() {
               </div>
             </section>
 
-            <section className="rounded-2xl border border-white/10 bg-[#0A1713] p-5 md:p-7">
+            <section className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7">
               <h2 className="text-2xl">
                 Período da viagem
               </h2>
@@ -837,8 +837,8 @@ export default function NovaDemandaPage() {
 
             {metodoEstimativa ===
               'pessoa_dia' && (
-              <section className="rounded-2xl border border-[#E3A144]/20 bg-[#0A1713] p-5 md:p-7">
-                <p className="text-xs font-semibold uppercase tracking-widest text-[#E3A144]">
+              <section className="rounded-2xl border border-[var(--ern-destaque)] bg-[var(--ern-painel)] p-5 md:p-7">
+                <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
                   Previsão automática
                 </p>
 
@@ -1003,8 +1003,8 @@ export default function NovaDemandaPage() {
 
             {metodoEstimativa ===
               'combustivel_hora' && (
-              <section className="rounded-2xl border border-[#E3A144]/20 bg-[#0A1713] p-5 md:p-7">
-                <p className="text-xs font-semibold uppercase tracking-widest text-[#E3A144]">
+              <section className="rounded-2xl border border-[var(--ern-destaque)] bg-[var(--ern-painel)] p-5 md:p-7">
+                <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
                   Previsão de
                   combustível
                 </p>
@@ -1167,7 +1167,7 @@ export default function NovaDemandaPage() {
 
             {metodoEstimativa ===
               'manual' && (
-              <section className="rounded-2xl border border-white/10 bg-[#0A1713] p-5 md:p-7">
+              <section className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7">
                 <h2 className="text-2xl">
                   Quantidade necessária
                 </h2>
@@ -1213,12 +1213,12 @@ export default function NovaDemandaPage() {
               </section>
             )}
 
-            <section className="rounded-2xl border border-[#E3A144]/20 bg-[#0A1713] p-5 md:p-7">
-              <p className="text-xs font-semibold uppercase tracking-widest text-[#E3A144]">
+            <section className="rounded-2xl border border-[var(--ern-destaque)] bg-[var(--ern-painel)] p-5 md:p-7">
+              <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
                 Quantidade prevista
               </p>
 
-              <strong className="mt-3 block text-4xl text-[#F0F0E8]">
+              <strong className="mt-3 block text-4xl text-[var(--ern-texto)]">
                 {previsao !== null
                   ? `${previsao.toLocaleString(
                       'pt-BR',
@@ -1230,7 +1230,7 @@ export default function NovaDemandaPage() {
               </strong>
             </section>
 
-            <section className="rounded-2xl border border-white/10 bg-[#0A1713] p-5 md:p-7">
+            <section className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7">
               <h2 className="text-2xl">
                 Situação
               </h2>
@@ -1255,7 +1255,7 @@ export default function NovaDemandaPage() {
                       key={
                         opcao.valor
                       }
-                      className="cursor-pointer rounded-xl border border-white/10 p-4"
+                      className="cursor-pointer rounded-xl border border-[var(--ern-borda)] p-4"
                     >
                       <input
                         type="radio"
@@ -1280,7 +1280,7 @@ export default function NovaDemandaPage() {
             </section>
 
             {erroFormulario && (
-              <div className="rounded-2xl border border-rose-400/20 bg-rose-400/[0.05] p-5 text-rose-200">
+              <div className="rounded-2xl border border-rose-400/20 bg-rose-400/[0.05] p-5 text-[var(--ern-erro)]">
                 {erroFormulario}
               </div>
             )}
@@ -1296,7 +1296,7 @@ export default function NovaDemandaPage() {
               <button
                 type="submit"
                 disabled={bloqueado}
-                className={`${BOTAO} border-[#E3A144] bg-[#E3A144] text-[#07130F]`}
+                className={`${BOTAO} border-[var(--ern-destaque)] bg-[var(--ern-botao)] text-[var(--ern-sobre-botao)]`}
               >
                 {salvando
                   ? 'Salvando...'

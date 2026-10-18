@@ -62,30 +62,30 @@ const ESTILOS_STATUS: Record<
   string
 > = {
   rascunho:
-    'border-slate-400/20 bg-slate-400/10 text-slate-300',
+    'border-slate-400/20 bg-slate-400/10 text-[var(--ern-secundario)]',
 
   aberta:
-    'border-emerald-400/20 bg-emerald-400/10 text-emerald-300',
+    'border-emerald-400/20 bg-emerald-400/10 text-[var(--ern-sucesso)]',
 
   encerrada:
-    'border-cyan-400/20 bg-cyan-400/10 text-cyan-300',
+    'border-cyan-400/20 bg-cyan-400/10 text-[var(--ern-destaque)]',
 
   cancelada:
-    'border-rose-400/20 bg-rose-400/10 text-rose-300',
+    'border-rose-400/20 bg-rose-400/10 text-[var(--ern-erro)]',
 };
 
 const CAMPO =
-  'min-h-12 w-full rounded-xl border border-white/10 bg-[#07110E] ' +
-  'px-4 text-sm text-[#F0F0E8] outline-none transition-colors ' +
-  'placeholder:text-white/30 focus:border-[#E3A144] ' +
-  'focus:ring-2 focus:ring-[#E3A144]/20 motion-reduce:transition-none';
+  'min-h-12 w-full rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] ' +
+  'px-4 text-sm text-[var(--ern-texto)] outline-none transition-colors ' +
+  'placeholder:text-[var(--ern-secundario)] focus:border-[var(--ern-destaque)] ' +
+  'focus:ring-2 focus:ring-[var(--ern-destaque)] motion-reduce:transition-none';
 
 const BOTAO =
   'inline-flex min-h-12 items-center justify-center rounded-xl ' +
-  'border border-white/15 px-5 text-sm font-semibold text-[#EDEDE3] ' +
-  'transition-colors hover:bg-white/5 focus-visible:outline ' +
+  'border border-[var(--ern-borda)] px-5 text-sm font-semibold text-[var(--ern-texto)] ' +
+  'transition-colors hover:bg-[var(--ern-suave)] [&:focus-visible]:[outline-style:solid] ' +
   'focus-visible:outline-2 focus-visible:outline-offset-4 ' +
-  'focus-visible:outline-[#E3A144] disabled:cursor-not-allowed ' +
+  'focus-visible:outline-[var(--ern-destaque)] disabled:cursor-not-allowed ' +
   'disabled:opacity-40 motion-reduce:transition-none';
 
 const formatadorQuantidade =
@@ -180,14 +180,14 @@ function SkeletonDemandas() {
           (_, indice) => (
             <div
               key={indice}
-              className="rounded-2xl border border-white/10 bg-[#0A1713] p-6 motion-safe:animate-pulse"
+              className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-6 motion-safe:animate-pulse"
             >
-              <div className="h-5 w-24 rounded bg-white/10" />
-              <div className="mt-6 h-6 w-3/4 rounded bg-white/10" />
-              <div className="mt-3 h-4 w-1/2 rounded bg-white/5" />
-              <div className="mt-6 h-4 w-full rounded bg-white/5" />
-              <div className="mt-3 h-4 w-4/5 rounded bg-white/5" />
-              <div className="mt-6 h-12 rounded-xl bg-white/5" />
+              <div className="h-5 w-24 rounded bg-[var(--ern-suave)]" />
+              <div className="mt-6 h-6 w-3/4 rounded bg-[var(--ern-suave)]" />
+              <div className="mt-3 h-4 w-1/2 rounded bg-[var(--ern-suave)]" />
+              <div className="mt-6 h-4 w-full rounded bg-[var(--ern-suave)]" />
+              <div className="mt-3 h-4 w-4/5 rounded bg-[var(--ern-suave)]" />
+              <div className="mt-6 h-12 rounded-xl bg-[var(--ern-suave)]" />
             </div>
           ),
         )}
@@ -475,19 +475,19 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
     Boolean(consulta.data_inicio_de || consulta.data_inicio_ate);
 
   return (
-    <main className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
-      <header className="border-b border-white/10 bg-[#091510]">
+    <main className="min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+      <header className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
         <div className="mx-auto max-w-7xl px-4 py-7 sm:px-5 md:px-8 md:py-10">
           <Link
             href="/dashboard"
-            className="text-sm text-[#B4C8BB] transition-colors hover:text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#E3A144]"
+            className="text-sm text-[var(--ern-secundario)] transition-colors hover:text-[var(--ern-texto)] [&:focus-visible]:[outline-style:solid] focus-visible:outline-2 focus-visible:outline-[var(--ern-destaque)]"
           >
             ← Dashboard
           </Link>
 
           <div className="mt-6 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-[#E3A144]">
+              <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
                 Oferta e demanda
               </p>
 
@@ -501,7 +501,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
                 Demandas
               </h1>
 
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-[#B4C8BB]">
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--ern-secundario)]">
                 Planeje alimentação,
                 bebidas, combustível e
                 os demais recursos
@@ -525,7 +525,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
               {podeGerenciar && (
                 <Link
                   href="/demandas/nova"
-                  className={`${BOTAO} border-[#E3A144] bg-[#E3A144] text-[#07130F] hover:bg-[#F0B35C]`}
+                  className={`${BOTAO} border-[var(--ern-destaque)] bg-[var(--ern-botao)] text-[var(--ern-sobre-botao)] hover:bg-[var(--ern-botao)]`}
                 >
                   <span
                     aria-hidden="true"
@@ -543,8 +543,8 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
 
       <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-5 md:px-8 md:py-8">
         {(consulta.data_inicio_de || consulta.data_inicio_ate) && (
-          <div className="flex flex-col gap-3 rounded-2xl border border-[#E3A144]/25 bg-[#E3A144]/5 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm leading-6 text-[#EDEDE3]">
+          <div className="flex flex-col gap-3 rounded-2xl border border-[var(--ern-destaque)] bg-[var(--ern-suave)] p-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm leading-6 text-[var(--ern-texto)]">
               Filtro do dashboard — início da demanda:
               {' '}{formatarData(consulta.data_inicio_de ?? null)}
               {' até '}
@@ -568,13 +568,13 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
         <form
           onSubmit={buscar}
           aria-label="Filtrar demandas"
-          className="rounded-2xl border border-white/10 bg-[#0A1713] p-4 sm:p-5"
+          className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-4 sm:p-5"
         >
           <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-[2fr_1fr_1fr_auto]">
             <div>
               <label
                 htmlFor="busca-demanda"
-                className="mb-2 block text-sm text-[#B4C8BB]"
+                className="mb-2 block text-sm text-[var(--ern-secundario)]"
               >
                 Buscar por título
               </label>
@@ -600,7 +600,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
             <div>
               <label
                 htmlFor="categoria-demanda"
-                className="mb-2 block text-sm text-[#B4C8BB]"
+                className="mb-2 block text-sm text-[var(--ern-secundario)]"
               >
                 Categoria
               </label>
@@ -655,7 +655,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
             <div>
               <label
                 htmlFor="status-demanda"
-                className="mb-2 block text-sm text-[#B4C8BB]"
+                className="mb-2 block text-sm text-[var(--ern-secundario)]"
               >
                 Status
               </label>
@@ -707,7 +707,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
 
             <button
               type="submit"
-              className={`${BOTAO} border-[#E3A144]/40 bg-[#E3A144]/10 text-[#F4C77E] hover:bg-[#E3A144]/20`}
+              className={`${BOTAO} border-[var(--ern-destaque)] bg-[var(--ern-suave)] text-[var(--ern-destaque)] hover:bg-[var(--ern-suave)]`}
             >
               Buscar
             </button>
@@ -715,7 +715,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
 
           {temFiltros && (
             <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-[#B4C8BB]">
+              <p className="text-sm text-[var(--ern-secundario)]">
                 {consulta.busca
                   ? `Busca aplicada: “${consulta.busca}”`
                   : 'Filtros aplicados à consulta.'}
@@ -724,7 +724,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
               <button
                 type="button"
                 onClick={limparFiltros}
-                className="rounded px-2 py-2 text-sm font-semibold text-[#F4C77E] hover:underline"
+                className="rounded px-2 py-2 text-sm font-semibold text-[var(--ern-destaque)] hover:underline"
               >
                 Limpar filtros
               </button>
@@ -742,13 +742,13 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
 
           {estado.tipo ===
             'erro' && (
-            <div className="rounded-2xl border border-rose-400/20 bg-[#0A1713] p-6 md:p-8">
-              <h2 className="text-xl font-semibold text-rose-200">
+            <div className="rounded-2xl border border-rose-400/20 bg-[var(--ern-painel)] p-6 md:p-8">
+              <h2 className="text-xl font-semibold text-[var(--ern-erro)]">
                 Não foi possível
                 carregar as demandas
               </h2>
 
-              <p className="mt-3 text-sm leading-6 text-[#B4C8BB]">
+              <p className="mt-3 text-sm leading-6 text-[var(--ern-secundario)]">
                 {estado.mensagem}
               </p>
 
@@ -767,8 +767,8 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
             resultado && (
               <div>
                 <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-sm text-[#B4C8BB]">
-                    <strong className="text-[#F0F0E8]">
+                  <p className="text-sm text-[var(--ern-secundario)]">
+                    <strong className="text-[var(--ern-texto)]">
                       {resultado.total}
                     </strong>{' '}
                     {resultado.total ===
@@ -779,7 +779,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
 
                   {!estado.contexto
                     .pode_gerenciar && (
-                    <span className="rounded-full border border-white/10 px-3 py-1 text-xs text-[#B4C8BB]">
+                    <span className="rounded-full border border-[var(--ern-borda)] px-3 py-1 text-xs text-[var(--ern-secundario)]">
                       Seu perfil permite
                       apenas consulta
                     </span>
@@ -788,9 +788,9 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
 
                 {resultado.registros
                   .length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-white/15 bg-[#0A1713] px-6 py-14 text-center">
+                  <div className="rounded-2xl border border-dashed border-[var(--ern-borda)] bg-[var(--ern-painel)] px-6 py-14 text-center">
                     <h2
-                      className="text-2xl text-[#F0F0E8]"
+                      className="text-2xl text-[var(--ern-texto)]"
                       style={{
                         fontFamily:
                           'var(--font-fraunces), serif',
@@ -800,7 +800,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
                       encontrada
                     </h2>
 
-                    <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-[#B4C8BB]">
+                    <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-[var(--ern-secundario)]">
                       Registre as
                       necessidades da
                       próxima operação
@@ -825,9 +825,9 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
                             }
                             className="min-w-0"
                           >
-                            <article className="flex h-full flex-col rounded-2xl border border-white/10 bg-[#0A1713] p-5 transition-colors hover:border-[#E3A144]/30 sm:p-6">
+                            <article className="flex h-full flex-col rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 transition-colors hover:border-[var(--ern-destaque)] sm:p-6">
                               <div className="flex flex-wrap items-center justify-between gap-3">
-                                <span className="text-xs font-semibold text-[#E3A144]">
+                                <span className="text-xs font-semibold text-[var(--ern-destaque)]">
                                   {
                                     CATEGORIAS_DEMANDA[
                                       demanda
@@ -853,31 +853,31 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
                                 </span>
                               </div>
 
-                              <h2 className="mt-5 break-words text-xl font-semibold text-[#F0F0E8]">
+                              <h2 className="mt-5 break-words text-xl font-semibold text-[var(--ern-texto)]">
                                 {
                                   demanda.titulo
                                 }
                               </h2>
 
-                              <p className="mt-2 text-sm text-[#B4C8BB]">
+                              <p className="mt-2 text-sm text-[var(--ern-secundario)]">
                                 {
                                   demanda.localidade
                                 }
                               </p>
 
-                              <p className="mt-5 line-clamp-3 text-sm leading-6 text-[#B4C8BB]">
+                              <p className="mt-5 line-clamp-3 text-sm leading-6 text-[var(--ern-secundario)]">
                                 {demanda.descricao ||
                                   'Sem descrição adicional.'}
                               </p>
 
                               {detalhe && (
-                                <div className="mt-5 rounded-xl border border-[#E3A144]/10 bg-[#E3A144]/[0.035] p-3">
-                                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#E3A144]">
+                                <div className="mt-5 rounded-xl border border-[var(--ern-destaque)] bg-[var(--ern-suave)] p-3">
+                                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--ern-destaque)]">
                                     Previsão
                                     calculada
                                   </p>
 
-                                  <p className="mt-2 text-xs leading-5 text-[#B4C8BB]">
+                                  <p className="mt-2 text-xs leading-5 text-[var(--ern-secundario)]">
                                     {
                                       detalhe
                                     }
@@ -886,8 +886,8 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
                               )}
 
                               <dl className="mt-auto space-y-3 pt-6">
-                                <div className="rounded-xl bg-white/[0.03] px-4 py-3">
-                                  <dt className="text-xs text-[#B4C8BB]">
+                                <div className="rounded-xl bg-[var(--ern-suave)] px-4 py-3">
+                                  <dt className="text-xs text-[var(--ern-secundario)]">
                                     Quantidade
                                     prevista
                                   </dt>
@@ -902,8 +902,8 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
                                   </dd>
                                 </div>
 
-                                <div className="rounded-xl bg-white/[0.03] px-4 py-3">
-                                  <dt className="text-xs text-[#B4C8BB]">
+                                <div className="rounded-xl bg-[var(--ern-suave)] px-4 py-3">
+                                  <dt className="text-xs text-[var(--ern-secundario)]">
                                     Período
                                   </dt>
 
@@ -924,7 +924,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
                                 .pode_gerenciar && (
                                 <Link
                                   href={`/demandas/editar/${demanda.id}`}
-                                  className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl border border-[#E3A144]/25 bg-[#E3A144]/[0.06] px-4 text-sm font-semibold text-[#F4C77E] transition hover:bg-[#E3A144]/10"
+                                  className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl border border-[var(--ern-destaque)] bg-[var(--ern-suave)] px-4 text-sm font-semibold text-[var(--ern-destaque)] transition hover:bg-[var(--ern-suave)]"
                                 >
                                   Gerenciar
                                   demanda →
@@ -941,7 +941,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
                 {resultado.total >
                   0 && (
                   <nav className="mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
-                    <p className="text-sm text-[#B4C8BB]">
+                    <p className="text-sm text-[var(--ern-secundario)]">
                       Página{' '}
                       {resultado.pagina +
                         1}{' '}

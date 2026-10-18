@@ -27,7 +27,7 @@ type Props = {
 };
 
 const campo =
-  'min-h-12 w-full min-w-0 rounded-xl border border-white/15 bg-[#07110E] px-3 text-base text-[#EDEDE3] outline-none focus:ring-2 focus:ring-[#F4C77E] disabled:opacity-50 sm:text-sm';
+  'min-h-12 w-full min-w-0 rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-3 text-base text-[var(--ern-texto)] outline-none focus:ring-2 focus:ring-[var(--ern-destaque)] disabled:opacity-50 sm:text-sm';
 
 const categorias = Object.entries(CATEGORIAS_ITEM).map(([value, label]) => ({
   value, label,
@@ -174,24 +174,24 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
     <section
       aria-label="Lista interna de suprimentos"
       aria-busy={carregando || salvando}
-      className="rounded-2xl border border-[#E3A144]/25 bg-[#0A1713] p-4 sm:p-6"
+      className="rounded-2xl border border-[var(--ern-destaque)] bg-[var(--ern-painel)] p-4 sm:p-6"
     >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F4C77E]">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[var(--ern-destaque)]">
             Planejamento da empresa
           </p>
           <h2 className="mt-2 text-2xl" style={{ fontFamily: 'var(--font-fraunces), serif' }}>
             Materiais da operação
           </h2>
-          <p className="mt-2 max-w-xl text-xs leading-5 text-[#B4C8BB]">
+          <p className="mt-2 max-w-xl text-xs leading-5 text-[var(--ern-secundario)]">
             Organize alimentação, limpeza, gelo, combustível e equipamentos.
             {demandaId
               ? ' Salve esta lista antes de mudar de página ou encerrar a demanda.'
               : ' Os materiais serão salvos junto com a nova demanda no botão final do formulário.'}
           </p>
         </div>
-        <span className="self-start rounded-full border border-white/15 px-3 py-1 text-xs">
+        <span className="self-start rounded-full border border-[var(--ern-borda)] px-3 py-1 text-xs">
           {!demandaId ? 'Nova lista · ainda não salva' : alterado ? 'Alterações não salvas' : 'Lista interna'}
         </span>
       </div>
@@ -201,20 +201,20 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
       ) : versao !== null && (
         <>
           <div className="mt-5 grid grid-cols-2 gap-3">
-            <div className="rounded-xl border border-white/10 bg-white/[0.03] p-3">
-              <p className="text-xs text-[#B4C8BB]">Itens atendidos</p>
+            <div className="rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] p-3">
+              <p className="text-xs text-[var(--ern-secundario)]">Itens atendidos</p>
               <p className="mt-1 text-lg font-semibold">{atendidos} de {itens.length}</p>
             </div>
-            <div className="min-w-0 rounded-xl border border-[#E3A144]/20 bg-[#E3A144]/5 p-3">
-              <p className="text-xs text-[#B4C8BB]">Estimativa dos itens com preço</p>
-              <p className="mt-1 break-words text-lg font-semibold text-[#F4C77E]">
+            <div className="min-w-0 rounded-xl border border-[var(--ern-destaque)] bg-[var(--ern-suave)] p-3">
+              <p className="text-xs text-[var(--ern-secundario)]">Estimativa dos itens com preço</p>
+              <p className="mt-1 break-words text-lg font-semibold text-[var(--ern-destaque)]">
                 {itens.length > semEstimativa ? moeda(total) : 'Não informada'}
               </p>
             </div>
           </div>
 
           {semEstimativa > 0 && (
-            <p className="mt-2 text-xs leading-5 text-amber-200">
+            <p className="mt-2 text-xs leading-5 text-[var(--ern-destaque)]">
               {semEstimativa} item(ns) sem estimativa válida. O valor acima é parcial.
             </p>
           )}
@@ -228,9 +228,9 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
             {itens.map((item, indice) => {
               const valor = subtotal(item);
               return (
-                <article key={item.chave} className="rounded-2xl border border-white/10 bg-[#07110E]/40 p-3 sm:p-4">
+                <article key={item.chave} className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] p-3 sm:p-4">
                   <div className="mb-3 flex items-center justify-between gap-3">
-                    <h3 className="text-sm font-semibold text-[#F4C77E]">Item {indice + 1}</h3>
+                    <h3 className="text-sm font-semibold text-[var(--ern-destaque)]">Item {indice + 1}</h3>
                     <button
                       type="button"
                       disabled={desabilitado}
@@ -242,7 +242,7 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
                         setAlterado(true);
                         setAviso('');
                       }}
-                      className="min-h-11 rounded-xl px-3 text-xs text-rose-200 hover:bg-rose-400/10 disabled:opacity-50"
+                      className="min-h-11 rounded-xl px-3 text-xs text-[var(--ern-erro)] hover:bg-rose-400/10 disabled:opacity-50"
                     >
                       Remover
                     </button>
@@ -329,7 +329,7 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
                   </div>
 
                   <p className="mt-3 text-right text-sm">
-                    Total estimado: <strong className="text-[#F4C77E]">
+                    Total estimado: <strong className="text-[var(--ern-destaque)]">
                       {valor === null ? 'Não informado ou inválido' : moeda(valor)}
                     </strong>
                   </p>
@@ -339,7 +339,7 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
           </div>
 
           {!itens.length && (
-            <p className="mt-5 rounded-xl border border-dashed border-white/15 p-4 text-sm text-[#B4C8BB]">
+            <p className="mt-5 rounded-xl border border-dashed border-[var(--ern-borda)] p-4 text-sm text-[var(--ern-secundario)]">
               Esta demanda ainda não possui materiais na lista.
             </p>
           )}
@@ -357,7 +357,7 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
                 setAlterado(true);
                 setAviso('');
               }}
-              className="min-h-12 rounded-xl border border-[#E3A144]/40 px-4 text-sm font-semibold text-[#F4C77E] disabled:opacity-50"
+              className="min-h-12 rounded-xl border border-[var(--ern-destaque)] px-4 text-sm font-semibold text-[var(--ern-destaque)] disabled:opacity-50"
             >
               + Adicionar material
             </button>
@@ -366,7 +366,7 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
               type="button"
               disabled={desabilitado || !alterado}
               onClick={() => void salvar()}
-              className="min-h-12 rounded-xl bg-[#E3A144] px-5 text-sm font-semibold text-[#07110E] disabled:opacity-50"
+              className="min-h-12 rounded-xl bg-[var(--ern-botao)] px-5 text-sm font-semibold text-[var(--ern-sobre-botao)] disabled:opacity-50"
             >
               {salvando ? 'Salvando lista…' : 'Salvar lista'}
             </button>
@@ -375,22 +375,22 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
       )}
 
       {erro && (
-        <div role="alert" className="mt-4 rounded-xl border border-rose-400/30 bg-rose-400/5 p-3 text-sm text-rose-200">
+        <div role="alert" className="mt-4 rounded-xl border border-rose-400/30 bg-rose-400/5 p-3 text-sm text-[var(--ern-erro)]">
           {erro}
         </div>
       )}
 
       {demandaId && versao !== null && (
-        <div className="mt-4 border-t border-white/10 pt-4">
+        <div className="mt-4 border-t border-[var(--ern-borda)] pt-4">
           <button
             type="button"
             disabled={desabilitado || alterado}
             onClick={() => void exportar()}
-            className="min-h-12 w-full rounded-xl border border-[#E3A144]/40 px-4 text-sm font-semibold text-[#F4C77E] disabled:opacity-50 sm:w-auto"
+            className="min-h-12 w-full rounded-xl border border-[var(--ern-destaque)] px-4 text-sm font-semibold text-[var(--ern-destaque)] disabled:opacity-50 sm:w-auto"
           >
             {exportando ? 'Gerando arquivo…' : 'Exportar materiais · CSV'}
           </button>
-          <p className="mt-2 text-xs leading-5 text-[#B4C8BB]">
+          <p className="mt-2 text-xs leading-5 text-[var(--ern-secundario)]">
             {alterado
               ? 'Salve as alterações da lista antes de exportar.'
               : 'Exporta a versão salva, com quantidades, preços e situação de cada item.'}
@@ -409,16 +409,16 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
             setAviso('');
             setTentativa((atual) => atual + 1);
           }}
-          className="mt-3 min-h-11 rounded-xl border border-white/15 px-3 text-xs disabled:opacity-50"
+          className="mt-3 min-h-11 rounded-xl border border-[var(--ern-borda)] px-3 text-xs disabled:opacity-50"
         >
           Recarregar lista salva
         </button>
       )}
 
-      {aviso && <p role="status" className="mt-3 text-sm text-emerald-200">{aviso}</p>}
+      {aviso && <p role="status" className="mt-3 text-sm text-[var(--ern-sucesso)]">{aviso}</p>}
 
       {bloqueado && (
-        <p className="mt-3 text-xs leading-5 text-[#B4C8BB]">
+        <p className="mt-3 text-xs leading-5 text-[var(--ern-secundario)]">
           A edição da lista está bloqueada enquanto outra operação está em andamento
           ou quando a demanda está encerrada ou cancelada.
         </p>
