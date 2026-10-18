@@ -1,5 +1,7 @@
 'use client';
 
+import FaunaCabecalhoERN from '@/app/components/FaunaCabecalhoERN';
+
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -367,7 +369,7 @@ export default function Sidebar() {
     <>
       <header
         ref={headerRef}
-        className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#07110E]/95 text-[#EDEDE3] backdrop-blur-xl"
+        className="ern-navegacao-ilustrada fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#07110E]/95 text-[#EDEDE3] backdrop-blur-xl"
         onBlur={(evento) => {
           const destino = evento.relatedTarget;
 
@@ -379,6 +381,7 @@ export default function Sidebar() {
           }
         }}
       >
+        <FaunaCabecalhoERN altura={76} oncaNaConta />
         <div className="mx-auto flex h-[82px] max-w-[1600px] items-center justify-between gap-3 px-4 md:px-6">
           <Link
             href="/dashboard"
@@ -685,6 +688,38 @@ export default function Sidebar() {
       </dialog>
 
       <style jsx>{`
+        /* ERN: identidade amazonica */
+        .ern-navegacao-ilustrada,
+        .menu-mobile {
+          isolation: isolate;
+        }
+
+        .ern-navegacao-ilustrada::before,
+        .menu-mobile::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          z-index: -1;
+          pointer-events: none;
+          background-image: url('/images/regiao/ern-amazonia.jpg');
+          background-repeat: no-repeat;
+          opacity: 0.16;
+        }
+
+        .ern-navegacao-ilustrada::before {
+          background-image: url('/images/regiao/ern-amazonia-paisagem.png');
+          background-size: cover;
+          background-position: center top;
+          background-repeat: no-repeat;
+        }
+
+        .menu-mobile::before {
+          background-size: contain;
+          background-position: center;
+          background-repeat: no-repeat;
+        }
+
+
         .menu-mobile {
           position: fixed;
           inset: 0 0 0 auto;

@@ -1,5 +1,7 @@
 'use client';
 
+import FaunaCabecalhoERN from '@/app/components/FaunaCabecalhoERN';
+
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -218,12 +220,13 @@ export default function PublicHeader() {
   return (
     <>
       <header
-        className={`fixed inset-x-0 top-0 z-[100] border-b text-[#EDEDE3] transition-colors duration-300 motion-reduce:transition-none ${
+        className={`ern-navegacao-ilustrada fixed inset-x-0 top-0 z-[100] border-b text-[#EDEDE3] transition-colors duration-300 motion-reduce:transition-none ${
           rolouPagina
             ? 'border-white/15 bg-[#08130F]/95 shadow-lg backdrop-blur-xl'
             : 'border-white/10 bg-[#08130F]/85 backdrop-blur-xl'
         }`}
       >
+        <FaunaCabecalhoERN altura={70} />
         <div className="mx-auto flex h-[76px] max-w-[1320px] items-center justify-between gap-3 px-4 sm:px-6 xl:px-8">
           <Link
             href="/"
@@ -488,6 +491,38 @@ export default function PublicHeader() {
       </dialog>
 
       <style jsx>{`
+        /* ERN: identidade amazonica */
+        .ern-navegacao-ilustrada,
+        .menu-publico {
+          isolation: isolate;
+        }
+
+        .ern-navegacao-ilustrada::before,
+        .menu-publico::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          z-index: -1;
+          pointer-events: none;
+          background-image: url('/images/regiao/ern-amazonia.jpg');
+          background-repeat: no-repeat;
+          opacity: 0.16;
+        }
+
+        .ern-navegacao-ilustrada::before {
+          background-image: url('/images/regiao/ern-amazonia-paisagem.png');
+          background-size: cover;
+          background-position: center top;
+          background-repeat: no-repeat;
+        }
+
+        .menu-publico::before {
+          background-size: contain;
+          background-position: center;
+          background-repeat: no-repeat;
+        }
+
+
         .menu-publico {
           position: fixed;
           inset: 0 0 0 auto;

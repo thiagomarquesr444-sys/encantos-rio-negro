@@ -618,7 +618,31 @@ export default function PerfilPublicoPage() {
                 </section>
 
                 <div className={PAINEL}>
-                  <p className="text-sm font-semibold">
+                  <label className="flex min-h-12 cursor-pointer items-start gap-3">
+                    <input
+                      type="checkbox"
+                      checked={formulario.publicado}
+                      onChange={e => atualizar('publicado', e.target.checked)}
+                      aria-describedby="ajuda-publicacao"
+                      className="mt-1 h-5 w-5 shrink-0 accent-[var(--ern-destaque)]"
+                    />
+                    <span>
+                      <span className="block text-sm font-semibold">
+                        Disponibilizar perfil ao publico
+                      </span>
+                      <span
+                        id="ajuda-publicacao"
+                        className="mt-2 block text-xs leading-6 text-[var(--ern-secundario)]"
+                      >
+                        Marque para publicar ou desmarque para retirar o perfil
+                        do publico. A mudanca so sera aplicada ao salvar.
+                        Para publicar, informe um WhatsApp comercial valido
+                        com DDI e DDD.
+                      </span>
+                    </span>
+                  </label>
+
+                  <p className="mt-4 text-sm font-semibold">
                     {formulario.publicado ? 'Perfil publicado' : 'Perfil em rascunho'}
                   </p>
                   <p className="mt-2 text-xs leading-5 text-[var(--ern-secundario)]">
