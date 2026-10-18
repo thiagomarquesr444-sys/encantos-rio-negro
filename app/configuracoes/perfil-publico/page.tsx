@@ -657,6 +657,21 @@ export default function PerfilPublicoPage() {
                   >
                     {salvando ? 'Salvando…' : 'Salvar perfil'}
                   </button>
+
+                  {existente.current && formulario.publicado && !alterado && !ocupado && (
+                    <Link
+                      href={'/rede/perfil/' + encodeURIComponent(formulario.slug)}
+                      className="mt-3 inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-[var(--ern-borda)] px-4 text-sm font-semibold text-[var(--ern-destaque)]"
+                    >
+                      Ver perfil na Rede ?
+                    </Link>
+                  )}
+
+                  {alterado && (
+                    <p className="mt-3 text-xs leading-5 text-[var(--ern-secundario)]">
+                      Salve as altera??es para abrir o perfil atualizado.
+                    </p>
+                  )}
                 </div>
               </div>
             </fieldset>

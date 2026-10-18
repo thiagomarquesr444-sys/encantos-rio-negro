@@ -128,6 +128,7 @@ const GRUPOS: NavGroup[] = [
 ];
 
 const CONTA: NavItem[] = [
+  { label: 'Perfil p\u00fablico', href: '/configuracoes/perfil-publico', descricao: 'Apresenta\u00e7\u00e3o, imagens e contatos na Rede ERN' },
   { label: 'Configurações', href: '/configuracoes' },
   { label: 'Planos', href: '/planos' },
   { label: 'Ver portal público', href: '/' },

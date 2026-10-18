@@ -1268,7 +1268,7 @@ export default function RedePage() {
                 id={
                   destaque.slug
                 }
-                className="mt-10 scroll-mt-28 overflow-hidden rounded-[30px] border border-[#E3A144]/18 bg-[#0A1713]"
+                className="mt-10 scroll-mt-28 overflow-hidden border-y border-white/10 bg-transparent"
               >
                 <div className="grid lg:grid-cols-[1.08fr_0.92fr]">
                   <div className="relative min-h-[360px] overflow-hidden bg-gradient-to-br from-[#173025] via-[#0D1B16] to-[#07110E] lg:min-h-[620px]">
@@ -1415,7 +1415,7 @@ export default function RedePage() {
                           id={
                             publicacao.slug
                           }
-                          className="scroll-mt-28 overflow-hidden rounded-[26px] border border-white/[0.08] bg-[#0A1713]"
+                          className="scroll-mt-28 overflow-hidden border-b border-white/10 bg-transparent"
                         >
                           {imagem && (
                             <div className="relative aspect-[16/10] overflow-hidden bg-[#07110E]">
@@ -1524,7 +1524,7 @@ export default function RedePage() {
           <div className="grid gap-4 md:grid-cols-3">
             <Link
               href="/acesso?acesso=operadora"
-              className="group rounded-[22px] border border-white/[0.08] bg-[#0A1713] p-6 transition hover:border-[#E3A144]/25"
+              className="group border-t border-white/15 px-2 py-6 transition-colors hover:border-[#E3A144]/60"
             >
               <span className="text-xl text-[#E3A144]">
                 ◇
@@ -1550,7 +1550,7 @@ export default function RedePage() {
 
             <Link
               href="/acesso?acesso=guia"
-              className="group rounded-[22px] border border-white/[0.08] bg-[#0A1713] p-6 transition hover:border-[#E3A144]/25"
+              className="group border-t border-white/15 px-2 py-6 transition-colors hover:border-[#E3A144]/60"
             >
               <span className="text-xl text-[#E3A144]">
                 ◇
@@ -1575,7 +1575,7 @@ export default function RedePage() {
 
             <Link
               href="/acesso?acesso=fornecedor"
-              className="group rounded-[22px] border border-white/[0.08] bg-[#0A1713] p-6 transition hover:border-[#E3A144]/25"
+              className="group border-t border-white/15 px-2 py-6 transition-colors hover:border-[#E3A144]/60"
             >
               <span className="text-xl text-[#E3A144]">
                 ◇
