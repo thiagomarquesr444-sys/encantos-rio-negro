@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
 import PublicHeader from '@/app/components/PublicHeader';
+import LogoERN from '@/app/components/LogoERN';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import { supabase } from '@/lib/supabase';
 
@@ -113,6 +114,51 @@ const textos = {
   },
 };
 
+const TEXTOS_EDITORIAL = {
+  "PT": {
+    "profile": "Editorial oficial ERN",
+    "about": "Sobre",
+    "specialties": "Temas do editorial",
+    "languages": "Idiomas do portal",
+    "contact": "Converse com a equipe ERN",
+    "contactText": "Fale sobre a plataforma, participação na rede, parcerias ou sugestões de conteúdo.",
+    "whatsapp": "Falar com a ERN",
+    "website": "Explorar o portal",
+    "direct": "Para consultar passeios, valores e reservas, fale diretamente com a operadora responsável na Rede ERN.",
+    "join": "Sua operadora merece ser descoberta no Rio Negro.",
+    "joinLink": "Conhecer a plataforma",
+    "message": "Olá! Encontrei o perfil editorial da ERN e gostaria de falar com a equipe sobre a plataforma."
+  },
+  "EN": {
+    "profile": "Official ERN editorial",
+    "about": "About",
+    "specialties": "Editorial topics",
+    "languages": "Portal languages",
+    "contact": "Contact the ERN team",
+    "contactText": "Talk to us about the platform, joining the network, partnerships or content suggestions.",
+    "whatsapp": "Contact ERN",
+    "website": "Explore the portal",
+    "direct": "For tours, prices and bookings, contact the responsible tour operator directly on the ERN Network.",
+    "join": "Help travelers discover your Rio Negro tour company.",
+    "joinLink": "Discover the platform",
+    "message": "Hello! I found the ERN editorial profile and would like to contact the team about the platform."
+  },
+  "ES": {
+    "profile": "Editorial oficial ERN",
+    "about": "Sobre",
+    "specialties": "Temas del editorial",
+    "languages": "Idiomas del portal",
+    "contact": "Habla con el equipo ERN",
+    "contactText": "Consulta sobre la plataforma, la participación en la red, alianzas o sugerencias de contenido.",
+    "whatsapp": "Contactar con ERN",
+    "website": "Explorar el portal",
+    "direct": "Para excursiones, precios y reservas, contacta directamente con la operadora responsable en la Red ERN.",
+    "join": "Tu operadora merece ser descubierta en Rio Negro.",
+    "joinLink": "Conocer la plataforma",
+    "message": "¡Hola! Encontré el perfil editorial de ERN y quisiera hablar con el equipo sobre la plataforma."
+  }
+};
+
 const FOCO =
   'focus-visible:outline-none focus-visible:ring-2 ' +
   'focus-visible:ring-[#987027] focus-visible:ring-offset-2';
@@ -167,7 +213,7 @@ export default function PerfilRedePage() {
   const params = useParams<{ slug: string }>();
   const slug = params.slug;
   const { idioma } = useLanguage();
-  const t = textos[idioma];
+
 
   const [estado, setEstado] = useState<Estado>({
     tipo: 'carregando',
@@ -223,6 +269,14 @@ export default function PerfilRedePage() {
   }, [slug, tentativa]);
 
   const perfil = estado.tipo === 'pronto' ? estado.perfil : null;
+  const editorialOficial =
+    perfil?.id === '6d2be2c2-31f7-4f5a-b62b-db262177bdd3' &&
+    perfil.categoria === 'ern_editorial';
+
+  const t = editorialOficial
+    ? { ...textos[idioma], ...TEXTOS_EDITORIAL[idioma] }
+    : textos[idioma];
+
   const capa = urlSegura(perfil?.capa_url ?? null);
   const logo = urlSegura(perfil?.logo_url ?? null);
   const site = urlSegura(perfil?.site ?? null);
@@ -294,17 +348,31 @@ export default function PerfilRedePage() {
               </div>
 
               <div className="relative px-2 sm:px-7">
-                <div className="-mt-10 flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border-4 border-[#F6F5F0] bg-white shadow-lg sm:-mt-14 sm:h-32 sm:w-32">
-                  <span aria-hidden="true" className="text-3xl font-semibold text-[#18352C]">
-                    {estado.perfil.nome_publico.trim().slice(0, 1)}
-                  </span>
-                  {logo && (
-                    <ImagemPerfil
-                      key={logo}
-                      url={logo}
-                      alt=""
-                      className="absolute h-[88px] w-[88px] rounded-[20px] bg-white object-contain sm:h-[120px] sm:w-[120px]"
-                    />
+                <div
+                  className={`relative -mt-10 flex h-24 w-24 items-center justify-center overflow-hidden border-4 border-[#F6F5F0] bg-white shadow-lg sm:-mt-14 sm:h-32 sm:w-32 ${
+                    editorialOficial ? 'rounded-full' : 'rounded-3xl'
+                  }`}
+                >
+                  {editorialOficial ? (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="flex shrink-0 scale-[0.733333] sm:scale-100">
+                        <LogoERN tamanho={120} />
+                      </span>
+                    </div>
+                  ) : (
+                    <>
+                      <span aria-hidden="true" className="text-3xl font-semibold text-[#18352C]">
+                        {estado.perfil.nome_publico.trim().slice(0, 1)}
+                      </span>
+                      {logo && (
+                        <ImagemPerfil
+                          key={logo}
+                          url={logo}
+                          alt=""
+                          className="absolute h-[88px] w-[88px] rounded-[20px] bg-white object-contain sm:h-[120px] sm:w-[120px]"
+                        />
+                      )}
+                    </>
                   )}
                 </div>
 

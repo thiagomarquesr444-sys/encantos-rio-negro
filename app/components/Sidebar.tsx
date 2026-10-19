@@ -221,6 +221,7 @@ export default function Sidebar() {
   const pathname = usePathname();
   const { config } = useAppConfig();
 
+  const [acessoEditorial, setAcessoEditorial] = useState(false);
   const [mobileAberto, setMobileAberto] = useState(false);
   const [dropdown, setDropdown] = useState<string | null>(null);
   const [saindo, setSaindo] = useState(false);
@@ -232,6 +233,76 @@ export default function Sidebar() {
   const saidaEmAndamento = useRef(false);
 
   const nomeSistema = config.nome_sistema || 'Encantos Rio Negro';
+
+  useEffect(() => {
+    let ativo = true;
+    let versao = 0;
+    let agendamento: ReturnType<typeof setTimeout> | undefined;
+
+    async function verificar(operacao: number) {
+      try {
+        const { data, error } = await supabase.auth.getUser();
+
+        if (!ativo || operacao !== versao) return;
+
+        if (error || !data.user || data.user.is_anonymous) {
+          setAcessoEditorial(false);
+          return;
+        }
+
+        const { data: permitido, error: falha } =
+          await supabase.rpc('tem_acesso_editorial_ern');
+
+        if (ativo && operacao === versao) {
+          setAcessoEditorial(!falha && permitido === true);
+        }
+      } catch {
+        if (ativo && operacao === versao) {
+          setAcessoEditorial(false);
+        }
+      }
+    }
+
+    function atualizar() {
+      const operacao = ++versao;
+      setAcessoEditorial(false);
+      clearTimeout(agendamento);
+      agendamento = setTimeout(() => {
+        void verificar(operacao);
+      }, 0);
+    }
+
+    function aoVoltar() {
+      if (!document.hidden) atualizar();
+    }
+
+    const { data: assinatura } =
+      supabase.auth.onAuthStateChange(() => {
+        atualizar();
+      });
+
+    atualizar();
+    document.addEventListener('visibilitychange', aoVoltar);
+
+    return () => {
+      ativo = false;
+      versao += 1;
+      clearTimeout(agendamento);
+      assinatura.subscription.unsubscribe();
+      document.removeEventListener('visibilitychange', aoVoltar);
+    };
+  }, [pathname]);
+
+  const itensConta: NavItem[] = acessoEditorial
+    ? [
+        {
+          label: 'Comando ERN',
+          href: '/comando',
+          descricao: 'Perfil oficial e publica\u00e7\u00f5es editoriais da plataforma',
+        },
+        ...CONTA,
+      ]
+    : CONTA;
 
   function fecharMenus(): void {
     setDropdown(null);
@@ -503,7 +574,7 @@ export default function Sidebar() {
                   Minha conta
                 </p>
 
-                {CONTA.map((item) => (
+                {itensConta.map((item) => (
                   <LinkNavegacao
                     key={item.href}
                     item={item}
@@ -669,7 +740,7 @@ export default function Sidebar() {
                 Minha conta
               </h3>
 
-              {CONTA.map((item) => (
+              {itensConta.map((item) => (
                 <LinkNavegacao
                   key={item.href}
                   item={item}

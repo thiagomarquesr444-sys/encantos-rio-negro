@@ -629,7 +629,10 @@ export default function RedePage() {
 
     return (
       <div className="flex min-w-0 items-center justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-3">
+        <Link
+          href={`/rede/perfil/${encodeURIComponent(publicacao.autor.slug)}`}
+          className="group flex min-w-0 items-center gap-3 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#805600] focus-visible:ring-offset-2"
+        >
           {publicacao.autor
             .logo_url ? (
             <img
@@ -661,7 +664,7 @@ export default function RedePage() {
 
           <div className="min-w-0">
             <div className="flex min-w-0 items-center gap-2">
-              <p className="truncate text-sm font-semibold text-[#18352C]">
+              <p className="truncate text-sm font-semibold text-[#18352C] group-hover:underline group-hover:underline-offset-4">
                 {
                   publicacao.autor
                     .nome_publico
@@ -710,7 +713,7 @@ export default function RedePage() {
               </span>
             </div>
           </div>
-        </div>
+        </Link>
 
         {publicacao.autor
           .categoria !==

@@ -97,12 +97,15 @@ export async function proxy(request: NextRequest) {
     '/auth/nova-senha',
   );
 
+  const rotaComando = pertenceARota(pathname, '/comando');
+
   const exigeVerificacao =
     rotaEmpresa ||
     rotaGuia ||
     rotaFornecedor ||
     rotaAcesso ||
-    rotaNovaSenha;
+    rotaNovaSenha ||
+    rotaComando;
 
   // Portal e login continuam públicos.
   // As APIs devem validar suas próprias permissões.
@@ -258,6 +261,32 @@ export async function proxy(request: NextRequest) {
     // Ela consulta os vínculos e apresenta a orientação.
     // Liberar essa página não libera nenhum painel.
     if (rotaAcesso) {
+      return response;
+    }
+
+    if (rotaComando) {
+      const { data: autorizado, error: erroEditorial } =
+        await supabase.rpc('tem_acesso_editorial_ern');
+
+      if (erroEditorial) {
+        return indisponivel();
+      }
+
+      if (autorizado !== true) {
+        return transferirCookies(
+          new NextResponse(
+            'Acesso restrito a administracao editorial da ERN.',
+            {
+              status: 403,
+              headers: {
+                'Content-Type': 'text/plain; charset=utf-8',
+                'X-Content-Type-Options': 'nosniff',
+              },
+            },
+          ),
+        );
+      }
+
       return response;
     }
 
