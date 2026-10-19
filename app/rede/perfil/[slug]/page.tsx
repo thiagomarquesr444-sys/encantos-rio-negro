@@ -290,7 +290,7 @@ export default function PerfilRedePage() {
     : null;
 
   return (
-    <div className="min-h-screen bg-[#F6F5F0] text-[#18352C]">
+    <div className="ern-perfil-publico min-h-screen bg-[#F6F5F0] text-[#18352C]">
       <PublicHeader />
 
       <main className="pb-12 pt-[76px]">
@@ -335,7 +335,7 @@ export default function PerfilRedePage() {
         ) : (
           <>
             <section className="mx-auto max-w-6xl px-4 sm:px-6">
-              <div className="relative h-52 overflow-hidden rounded-3xl bg-gradient-to-br from-[#163E37] via-[#326B66] to-[#B99A58] sm:h-72 lg:h-96">
+              <div className="relative h-60 overflow-hidden rounded-[10px] bg-gradient-to-br from-[#163E37] via-[#326B66] to-[#B99A58] sm:h-80 lg:h-[440px]">
                 {capa && (
                   <ImagemPerfil
                     key={capa}
@@ -376,7 +376,7 @@ export default function PerfilRedePage() {
                   )}
                 </div>
 
-                <div className="mt-5 flex flex-col justify-between gap-5 sm:flex-row sm:items-start">
+                <div className="ern-perfil-apresentacao mt-6 flex flex-col justify-between gap-6 sm:flex-row sm:items-start">
                   <div className="min-w-0">
                     <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#76602D]">
                       {estado.perfil.categoria === 'operadora'
@@ -384,7 +384,7 @@ export default function PerfilRedePage() {
                         : t.profile}
                     </p>
                     <h1
-                      className="mt-2 break-words text-3xl leading-tight sm:text-5xl"
+                      className="mt-3 max-w-3xl break-words text-4xl leading-[1.08] tracking-[-0.035em] sm:text-5xl lg:text-6xl"
                       style={{ fontFamily: 'var(--font-fraunces), serif' }}
                     >
                       {estado.perfil.nome_publico}
@@ -416,8 +416,8 @@ export default function PerfilRedePage() {
               </div>
             </section>
 
-            <div className="mx-auto mt-8 grid max-w-6xl gap-5 px-4 sm:px-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-              <section className="min-w-0 rounded-3xl border border-[#18352C]/10 bg-white p-5 sm:p-8">
+            <div className="mx-auto mt-12 grid max-w-6xl gap-10 px-4 sm:px-6 lg:mt-16 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-16">
+              <section className="min-w-0 border-t border-[#18352C]/15 py-7 sm:py-9">
                 <h2
                   className="text-2xl"
                   style={{ fontFamily: 'var(--font-fraunces), serif' }}
@@ -440,7 +440,7 @@ export default function PerfilRedePage() {
                       {estado.perfil.especialidades.map((item, indice) => (
                         <li
                           key={`${item}-${indice}`}
-                          className="max-w-full break-words rounded-xl bg-[#EDF3EF] px-3 py-2 text-sm text-[#285343]"
+                          className="max-w-full break-words border-b border-[#987027]/35 px-1 py-2 text-sm text-[#285343]"
                         >
                           {item}
                         </li>
@@ -459,7 +459,7 @@ export default function PerfilRedePage() {
                 )}
               </section>
 
-              <aside className="min-w-0 self-start rounded-3xl border border-[#18352C]/10 bg-[#EAF0E9] p-5 sm:p-7">
+              <aside className="min-w-0 self-start border-t border-[#18352C]/15 py-7 sm:py-9 lg:border-l lg:border-t-0 lg:pl-8">
                 <h2 className="text-xl font-semibold leading-8">
                   {t.contact}
                 </h2>
@@ -508,8 +508,8 @@ export default function PerfilRedePage() {
               </aside>
             </div>
 
-            <section className="mx-auto mt-8 max-w-6xl px-4 sm:px-6">
-              <div className="flex flex-col justify-between gap-4 rounded-3xl bg-[#18352C] p-6 text-white sm:flex-row sm:items-center sm:p-8">
+            <section className="mx-auto mt-12 max-w-6xl px-4 sm:px-6">
+              <div className="flex flex-col justify-between gap-6 border-y border-[#987027]/30 py-8 text-[#18352C] sm:flex-row sm:items-center sm:py-10">
                 <p className="max-w-xl text-lg leading-8">{t.join}</p>
                 <Link
                   href="/operadores"
@@ -522,6 +522,56 @@ export default function PerfilRedePage() {
           </>
         )}
       </main>
+
+      <style jsx global>{`
+        .ern-perfil-publico .ern-perfil-apresentacao {
+          animation: ernPerfilApresentacao 550ms ease-out both;
+        }
+
+        .ern-perfil-publico .ern-perfil-apresentacao > a {
+          animation: ernPerfilAcao 600ms 100ms ease-out both;
+        }
+
+        .ern-perfil-publico aside a {
+          animation: ernPerfilAcao 500ms ease-out both;
+          transition: transform 180ms ease, box-shadow 180ms ease;
+        }
+
+        .ern-perfil-publico aside a:nth-child(2) {
+          animation-delay: 80ms;
+        }
+
+        .ern-perfil-publico aside a:nth-child(3) {
+          animation-delay: 160ms;
+        }
+
+        @media (hover: hover) and (prefers-reduced-motion: no-preference) {
+          .ern-perfil-publico aside a:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgb(24 53 44 / 10%);
+          }
+        }
+
+        @keyframes ernPerfilApresentacao {
+          from { opacity: 0; transform: translateY(12px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes ernPerfilAcao {
+          from { opacity: 0; transform: translateY(-10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .ern-perfil-publico .ern-perfil-apresentacao,
+          .ern-perfil-publico .ern-perfil-apresentacao > a,
+          .ern-perfil-publico aside a {
+            animation: none;
+            transition: none;
+            transform: none;
+          }
+        }
+      `}</style>
     </div>
   );
 }

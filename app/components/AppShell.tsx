@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 
@@ -37,6 +37,64 @@ function normalizarTema(valor: unknown): Tema {
     valor === 'branco'
     ? valor
     : 'verde';
+}
+
+
+function ApresentacaoPaginaERN({
+  children,
+}: {
+  children: ReactNode;
+}) {
+  const pathname = usePathname();
+  const recipiente = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const elemento = recipiente.current;
+
+    // O perfil publico ja possui sua propria composicao animada.
+    if (
+      !elemento ||
+      pathname?.startsWith('/rede/perfil/') ||
+      typeof elemento.animate !== 'function'
+    ) {
+      return;
+    }
+
+    const preferencia = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    );
+
+    if (preferencia.matches) return;
+
+    const animacao = elemento.animate(
+      [
+        { opacity: 0.35 },
+        { opacity: 1 },
+      ],
+      {
+        duration: 360,
+        easing: 'ease-out',
+        iterations: 1,
+      },
+    );
+
+    function reduzirMovimento() {
+      if (preferencia.matches) animacao.cancel();
+    }
+
+    preferencia.addEventListener('change', reduzirMovimento);
+
+    return () => {
+      animacao.cancel();
+      preferencia.removeEventListener('change', reduzirMovimento);
+    };
+  }, [pathname]);
+
+  return (
+    <div ref={recipiente} className="min-w-0">
+      {children}
+    </div>
+  );
 }
 
 export default function AppShell({
@@ -168,7 +226,7 @@ export default function AppShell({
         <Sidebar />
 
         <div className="min-h-screen w-full min-w-0 pt-[82px]">
-          {children}
+          <ApresentacaoPaginaERN>{children}</ApresentacaoPaginaERN>
         </div>
       </div>
     );
@@ -180,7 +238,7 @@ export default function AppShell({
         <SidebarProfissional tipo="guia" />
 
         <div className="min-h-screen w-full pt-[82px]">
-          {children}
+          <ApresentacaoPaginaERN>{children}</ApresentacaoPaginaERN>
         </div>
       </div>
     );
@@ -192,7 +250,7 @@ export default function AppShell({
         <SidebarProfissional tipo="fornecedor" />
 
         <div className="min-h-screen w-full pt-[82px]">
-          {children}
+          <ApresentacaoPaginaERN>{children}</ApresentacaoPaginaERN>
         </div>
       </div>
     );
@@ -206,7 +264,7 @@ export default function AppShell({
           : 'min-h-screen w-full bg-[#0B1512]'
       }
     >
-      {children}
+      <ApresentacaoPaginaERN>{children}</ApresentacaoPaginaERN>
     </div>
   );
 }
