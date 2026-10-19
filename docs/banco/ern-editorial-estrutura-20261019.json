@@ -1,0 +1,379 @@
+{
+  "registro": "ERN editorial - levantamento de estrutura em 2026-10-19",
+  "finalidade": "Referencia do estado existente. Nao e migracao executavel nem backup completo do banco.",
+  "limites": [
+    "Nao inclui dados de usuarios, publicacoes ou arquivos do Storage.",
+    "Nao inclui DDL completo das tabelas preexistentes, privilegios por coluna, ownership ou todas as dependencias.",
+    "Nenhuma regra foi alterada por este levantamento.",
+    "Permissoes capturadas sao o estado observado, nao recomendacoes de seguranca."
+  ],
+  "estrutura": {
+    "funcoes": [
+      "CREATE OR REPLACE FUNCTION public.alterar_status_publicacao_ern(publicacao_id uuid, acao text, versao_esperada timestamp with time zone)\\n RETURNS uuid\\n LANGUAGE plpgsql\\n SET search_path TO ''\\nAS $function$\\r\\nDECLARE\\r\\n  registro public.publicacoes%ROWTYPE;\\r\\n  perfil_ativo boolean;\\r\\n  novo_status text;\\r\\nBEGIN\\r\\n  IF auth.uid() IS NULL\\r\\n    OR auth.role() IS DISTINCT FROM 'authenticated'\\r\\n  THEN\\r\\n    RAISE EXCEPTION 'Entre novamente para administrar publicacoes.'\\r\\n      USING ERRCODE = '42501';\\r\\n  END IF;\\r\\n\\r\\n  IF acao IS NULL\\r\\n    OR acao NOT IN ('publicar', 'arquivar', 'rascunho')\\r\\n  THEN\\r\\n    RAISE EXCEPTION 'Acao invalida.';\\r\\n  END IF;\\r\\n\\r\\n  SELECT p.*\\r\\n  INTO registro\\r\\n  FROM public.publicacoes p\\r\\n  WHERE p.id = publicacao_id\\r\\n    AND public.ern_administra_perfil_publico(p.autor_perfil_id)\\r\\n  FOR UPDATE;\\r\\n\\r\\n  IF NOT FOUND THEN\\r\\n    RAISE EXCEPTION 'Publicacao nao encontrada ou acesso nao permitido.'\\r\\n      USING ERRCODE = '42501';\\r\\n  END IF;\\r\\n\\r\\n  IF registro.status NOT IN ('rascunho', 'publicado', 'arquivado') THEN\\r\\n    RAISE EXCEPTION 'Esta publicacao esta sob controle de moderacao.'\\r\\n      USING ERRCODE = '42501';\\r\\n  END IF;\\r\\n\\r\\n  IF versao_esperada IS NULL\\r\\n    OR registro.updated_at IS DISTINCT FROM versao_esperada\\r\\n  THEN\\r\\n    RAISE EXCEPTION\\r\\n      'A publicacao mudou. Atualize a listagem antes de continuar.';\\r\\n  END IF;\\r\\n\\r\\n  IF acao = 'publicar' THEN\\r\\n    IF registro.status <> 'rascunho' THEN\\r\\n      RAISE EXCEPTION 'Abra um rascunho para publicar.';\\r\\n    END IF;\\r\\n\\r\\n    SELECT pp.publicado\\r\\n    INTO perfil_ativo\\r\\n    FROM public.perfis_publicos pp\\r\\n    WHERE pp.id = registro.autor_perfil_id;\\r\\n\\r\\n    IF perfil_ativo IS DISTINCT FROM true THEN\\r\\n      RAISE EXCEPTION 'Publique primeiro o perfil publico da operadora.';\\r\\n    END IF;\\r\\n\\r\\n    IF btrim(coalesce(registro.resumo, '')) = ''\\r\\n      AND btrim(coalesce(registro.conteudo, '')) = ''\\r\\n    THEN\\r\\n      RAISE EXCEPTION 'Preencha o resumo ou o texto antes de publicar.';\\r\\n    END IF;\\r\\n\\r\\n    IF NOT EXISTS (\\r\\n      SELECT 1\\r\\n      FROM public.publicacao_midias m\\r\\n      WHERE m.publicacao_id = registro.id\\r\\n        AND m.tipo = 'imagem'\\r\\n        AND m.consentimento_confirmado = true\\r\\n        AND btrim(coalesce(m.alt_text, '')) <> ''\\r\\n    ) THEN\\r\\n      RAISE EXCEPTION\\r\\n        'Adicione uma imagem autorizada e com descricao.';\\r\\n    END IF;\\r\\n\\r\\n    IF EXISTS (\\r\\n      SELECT 1\\r\\n      FROM public.publicacao_midias m\\r\\n      WHERE m.publicacao_id = registro.id\\r\\n        AND (\\r\\n          m.consentimento_confirmado = false\\r\\n          OR btrim(coalesce(m.alt_text, '')) = ''\\r\\n        )\\r\\n    ) THEN\\r\\n      RAISE EXCEPTION\\r\\n        'Revise a autorizacao e a descricao de todas as midias.';\\r\\n    END IF;\\r\\n\\r\\n    novo_status := 'publicado';\\r\\n\\r\\n  ELSIF acao = 'arquivar' THEN\\r\\n    IF registro.status = 'arquivado' THEN\\r\\n      RAISE EXCEPTION 'Esta publicacao ja esta arquivada.';\\r\\n    END IF;\\r\\n\\r\\n    novo_status := 'arquivado';\\r\\n\\r\\n  ELSE\\r\\n    IF registro.status = 'rascunho' THEN\\r\\n      RAISE EXCEPTION 'Esta publicacao ja e um rascunho.';\\r\\n    END IF;\\r\\n\\r\\n    novo_status := 'rascunho';\\r\\n  END IF;\\r\\n\\r\\n  UPDATE public.publicacoes\\r\\n  SET status = novo_status\\r\\n  WHERE id = registro.id;\\r\\n\\r\\n  RETURN registro.id;\\r\\nEND;\\r\\n$function$\\n",
+      "CREATE OR REPLACE FUNCTION public.ern_administra_perfil_publico(perfil_id uuid)\\n RETURNS boolean\\n LANGUAGE sql\\n STABLE\\n SET search_path TO ''\\nAS $function$\\r\\n  SELECT\\r\\n    EXISTS (\\r\\n      SELECT 1\\r\\n      FROM public.perfis_publicos pp\\r\\n      JOIN public.perfis p\\r\\n        ON p.empresa_id = pp.empresa_id\\r\\n       AND p.empresa_id = pp.empresa_gestora_id\\r\\n      WHERE pp.id = perfil_id\\r\\n        AND pp.origem_tipo = 'empresa'\\r\\n        AND pp.categoria = 'operadora'\\r\\n        AND p.id = auth.uid()\\r\\n        AND p.role = 'admin_empresa'\\r\\n    )\\r\\n    OR\\r\\n    EXISTS (\\r\\n      SELECT 1\\r\\n      FROM public.perfis_publicos pp\\r\\n      WHERE pp.id = perfil_id\\r\\n        AND pp.id = '6d2be2c2-31f7-4f5a-b62b-db262177bdd3'\\r\\n        AND pp.origem_tipo = 'editorial'\\r\\n        AND pp.categoria = 'ern_editorial'\\r\\n        AND public.tem_acesso_editorial_ern()\\r\\n    );\\r\\n$function$\\n",
+      "CREATE OR REPLACE FUNCTION public.proteger_perfil_publico_operadora_ern()\\n RETURNS trigger\\n LANGUAGE plpgsql\\n SET search_path TO ''\\nAS $function$\\r\\nDECLARE\\r\\n  v_empresa uuid;\\r\\n  v_papel text;\\r\\nBEGIN\\r\\n  IF auth.role() IS DISTINCT FROM 'authenticated' THEN\\r\\n    RETURN NEW;\\r\\n  END IF;\\r\\n\\r\\n  -- Exceção limitada ao perfil editorial oficial existente.\\r\\n  IF TG_OP = 'UPDATE' THEN\\r\\n    IF OLD.id = '6d2be2c2-31f7-4f5a-b62b-db262177bdd3'::uuid\\r\\n      AND OLD.origem_tipo = 'editorial'\\r\\n      AND OLD.categoria = 'ern_editorial'\\r\\n    THEN\\r\\n      IF NOT public.tem_acesso_editorial_ern() THEN\\r\\n        RAISE EXCEPTION 'Acesso editorial nao autorizado.'\\r\\n          USING ERRCODE = '42501';\\r\\n      END IF;\\r\\n\\r\\n      -- Apenas apresentação, contatos e visibilidade podem mudar.\\r\\n      -- Todos os outros campos ficam protegidos.\\r\\n      IF (\\r\\n        to_jsonb(NEW) - ARRAY[\\r\\n          'nome_publico',\\r\\n          'cidade',\\r\\n          'uf',\\r\\n          'descricao_curta',\\r\\n          'descricao_completa',\\r\\n          'logo_url',\\r\\n          'capa_url',\\r\\n          'whatsapp',\\r\\n          'instagram',\\r\\n          'site',\\r\\n          'idiomas',\\r\\n          'especialidades',\\r\\n          'territorio_id',\\r\\n          'publicado',\\r\\n          'updated_at'\\r\\n        ]::text[]\\r\\n      ) IS DISTINCT FROM (\\r\\n        to_jsonb(OLD) - ARRAY[\\r\\n          'nome_publico',\\r\\n          'cidade',\\r\\n          'uf',\\r\\n          'descricao_curta',\\r\\n          'descricao_completa',\\r\\n          'logo_url',\\r\\n          'capa_url',\\r\\n          'whatsapp',\\r\\n          'instagram',\\r\\n          'site',\\r\\n          'idiomas',\\r\\n          'especialidades',\\r\\n          'territorio_id',\\r\\n          'publicado',\\r\\n          'updated_at'\\r\\n        ]::text[]\\r\\n      ) THEN\\r\\n        RAISE EXCEPTION\\r\\n          'A identidade e os campos reservados do editorial nao podem mudar.'\\r\\n          USING ERRCODE = '42501';\\r\\n      END IF;\\r\\n\\r\\n      NEW.updated_at := now();\\r\\n      RETURN NEW;\\r\\n    END IF;\\r\\n  END IF;\\r\\n\\r\\n  -- Gestão dos perfis das operadoras.\\r\\n  SELECT p.empresa_id, p.role\\r\\n  INTO v_empresa, v_papel\\r\\n  FROM public.perfis p\\r\\n  WHERE p.id = auth.uid();\\r\\n\\r\\n  IF v_empresa IS NULL\\r\\n    OR v_papel IS DISTINCT FROM 'admin_empresa'\\r\\n  THEN\\r\\n    RAISE EXCEPTION\\r\\n      'Somente administradores da operadora podem gerenciar este perfil.'\\r\\n      USING ERRCODE = '42501';\\r\\n  END IF;\\r\\n\\r\\n  IF TG_OP = 'INSERT' THEN\\r\\n    IF NEW.origem_tipo IS DISTINCT FROM 'empresa'\\r\\n      OR NEW.categoria IS DISTINCT FROM 'operadora'\\r\\n      OR NEW.empresa_id IS DISTINCT FROM v_empresa\\r\\n      OR NEW.empresa_gestora_id IS DISTINCT FROM v_empresa\\r\\n      OR NEW.usuario_id IS NOT NULL\\r\\n      OR NEW.parceiro_id IS NOT NULL\\r\\n    THEN\\r\\n      RAISE EXCEPTION\\r\\n        'O perfil publico deve representar a propria operadora.'\\r\\n        USING ERRCODE = '42501';\\r\\n    END IF;\\r\\n\\r\\n    IF NEW.verificado IS DISTINCT FROM false\\r\\n      OR NEW.destaque IS DISTINCT FROM false\\r\\n      OR NEW.ordem_destaque IS DISTINCT FROM 0\\r\\n    THEN\\r\\n      RAISE EXCEPTION\\r\\n        'Verificacao e destaque sao administrados pela plataforma.'\\r\\n        USING ERRCODE = '42501';\\r\\n    END IF;\\r\\n\\r\\n  ELSIF TG_OP = 'UPDATE' THEN\\r\\n    IF OLD.origem_tipo IS DISTINCT FROM 'empresa'\\r\\n      OR OLD.categoria IS DISTINCT FROM 'operadora'\\r\\n      OR OLD.empresa_id IS DISTINCT FROM v_empresa\\r\\n      OR OLD.empresa_gestora_id IS DISTINCT FROM v_empresa\\r\\n    THEN\\r\\n      RAISE EXCEPTION 'Este perfil nao pertence a sua operadora.'\\r\\n        USING ERRCODE = '42501';\\r\\n    END IF;\\r\\n\\r\\n    IF NEW.id IS DISTINCT FROM OLD.id\\r\\n      OR NEW.created_at IS DISTINCT FROM OLD.created_at\\r\\n      OR NEW.origem_tipo IS DISTINCT FROM OLD.origem_tipo\\r\\n      OR NEW.categoria IS DISTINCT FROM OLD.categoria\\r\\n      OR NEW.empresa_id IS DISTINCT FROM OLD.empresa_id\\r\\n      OR NEW.empresa_gestora_id IS DISTINCT FROM OLD.empresa_gestora_id\\r\\n      OR NEW.usuario_id IS DISTINCT FROM OLD.usuario_id\\r\\n      OR NEW.parceiro_id IS DISTINCT FROM OLD.parceiro_id\\r\\n    THEN\\r\\n      RAISE EXCEPTION\\r\\n        'A identidade e os vinculos do perfil nao podem ser alterados.'\\r\\n        USING ERRCODE = '42501';\\r\\n    END IF;\\r\\n\\r\\n    IF NEW.verificado IS DISTINCT FROM OLD.verificado\\r\\n      OR NEW.destaque IS DISTINCT FROM OLD.destaque\\r\\n      OR NEW.ordem_destaque IS DISTINCT FROM OLD.ordem_destaque\\r\\n    THEN\\r\\n      RAISE EXCEPTION\\r\\n        'Verificacao e destaque sao administrados pela plataforma.'\\r\\n        USING ERRCODE = '42501';\\r\\n    END IF;\\r\\n  END IF;\\r\\n\\r\\n  NEW.updated_at := now();\\r\\n  RETURN NEW;\\r\\nEND;\\r\\n$function$\\n",
+      "CREATE OR REPLACE FUNCTION public.proteger_publicacao_operadora_ern()\\n RETURNS trigger\\n LANGUAGE plpgsql\\n SET search_path TO ''\\nAS $function$\\r\\nBEGIN\\r\\n  IF auth.role() IS DISTINCT FROM 'authenticated' THEN\\r\\n    RETURN NEW;\\r\\n  END IF;\\r\\n\\r\\n  IF TG_TABLE_NAME = 'publicacoes' THEN\\r\\n    IF TG_OP = 'UPDATE' THEN\\r\\n      IF NEW.id IS DISTINCT FROM OLD.id\\r\\n        OR NEW.autor_perfil_id IS DISTINCT FROM OLD.autor_perfil_id\\r\\n        OR NEW.created_at IS DISTINCT FROM OLD.created_at\\r\\n        OR NEW.destaque IS DISTINCT FROM OLD.destaque\\r\\n      THEN\\r\\n        RAISE EXCEPTION 'Autoria e campos reservados nao podem ser alterados.'\\r\\n          USING ERRCODE = '42501';\\r\\n      END IF;\\r\\n\\r\\n      IF OLD.status NOT IN ('rascunho', 'publicado', 'arquivado') THEN\\r\\n        RAISE EXCEPTION 'Publicacao sob controle de moderacao.'\\r\\n          USING ERRCODE = '42501';\\r\\n      END IF;\\r\\n    ELSE\\r\\n      NEW.destaque := false;\\r\\n      NEW.created_at := now();\\r\\n    END IF;\\r\\n\\r\\n    IF NEW.status NOT IN ('rascunho', 'publicado', 'arquivado') THEN\\r\\n      RAISE EXCEPTION 'Situacao nao permitida para a operadora.'\\r\\n        USING ERRCODE = '42501';\\r\\n    END IF;\\r\\n\\r\\n    IF NEW.status = 'publicado' THEN\\r\\n      IF TG_OP = 'INSERT' THEN\\r\\n        NEW.publicado_em := now();\\r\\n      ELSIF OLD.status IS DISTINCT FROM 'publicado' THEN\\r\\n        NEW.publicado_em := now();\\r\\n      ELSE\\r\\n        NEW.publicado_em := OLD.publicado_em;\\r\\n      END IF;\\r\\n    ELSE\\r\\n      NEW.publicado_em := NULL;\\r\\n    END IF;\\r\\n\\r\\n    NEW.updated_at := now();\\r\\n\\r\\n  ELSIF TG_TABLE_NAME = 'publicacao_midias' THEN\\r\\n    IF TG_OP = 'UPDATE' THEN\\r\\n      IF NEW.id IS DISTINCT FROM OLD.id\\r\\n        OR NEW.publicacao_id IS DISTINCT FROM OLD.publicacao_id\\r\\n        OR NEW.created_at IS DISTINCT FROM OLD.created_at\\r\\n      THEN\\r\\n        RAISE EXCEPTION 'A imagem nao pode ser transferida para outra publicacao.'\\r\\n          USING ERRCODE = '42501';\\r\\n      END IF;\\r\\n    ELSE\\r\\n      NEW.created_at := now();\\r\\n    END IF;\\r\\n  END IF;\\r\\n\\r\\n  RETURN NEW;\\r\\nEND;\\r\\n$function$\\n",
+      "CREATE OR REPLACE FUNCTION public.tem_acesso_editorial_ern()\\n RETURNS boolean\\n LANGUAGE sql\\n STABLE SECURITY DEFINER\\n SET search_path TO ''\\nAS $function$\\r\\n  SELECT EXISTS (\\r\\n    SELECT 1\\r\\n    FROM public.administradores_editoriais_ern a\\r\\n    WHERE a.usuario_id = auth.uid()\\r\\n      AND a.ativo = true\\r\\n  );\\r\\n$function$\\n"
+    ],
+    "gatilhos": [
+      "CREATE TRIGGER proteger_perfil_publico_operadora_ern BEFORE INSERT OR UPDATE ON public.perfis_publicos FOR EACH ROW EXECUTE FUNCTION proteger_perfil_publico_operadora_ern()",
+      "CREATE TRIGGER proteger_midia_operadora_ern BEFORE INSERT OR UPDATE ON public.publicacao_midias FOR EACH ROW EXECUTE FUNCTION proteger_publicacao_operadora_ern()",
+      "CREATE TRIGGER proteger_publicacao_operadora_ern BEFORE INSERT OR UPDATE ON public.publicacoes FOR EACH ROW EXECUTE FUNCTION proteger_publicacao_operadora_ern()"
+    ],
+    "politicas": [
+      {
+        "cmd": "SELECT",
+        "qual": "ern_administra_perfil_publico(autor_perfil_id)",
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "publicacoes",
+        "permissive": "PERMISSIVE",
+        "policyname": "publicacoes_operadora_select",
+        "schemaname": "public",
+        "with_check": null
+      },
+      {
+        "cmd": "INSERT",
+        "qual": null,
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "publicacoes",
+        "permissive": "PERMISSIVE",
+        "policyname": "publicacoes_operadora_insert",
+        "schemaname": "public",
+        "with_check": "(ern_administra_perfil_publico(autor_perfil_id) AND (destaque = false) AND (status = ANY (ARRAY['rascunho'::text, 'publicado'::text, 'arquivado'::text])))"
+      },
+      {
+        "cmd": "UPDATE",
+        "qual": "(ern_administra_perfil_publico(autor_perfil_id) AND (status = ANY (ARRAY['rascunho'::text, 'publicado'::text, 'arquivado'::text])))",
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "publicacoes",
+        "permissive": "PERMISSIVE",
+        "policyname": "publicacoes_operadora_update",
+        "schemaname": "public",
+        "with_check": "(ern_administra_perfil_publico(autor_perfil_id) AND (status = ANY (ARRAY['rascunho'::text, 'publicado'::text, 'arquivado'::text])))"
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "(EXISTS ( SELECT 1\\n   FROM publicacoes p\\n  WHERE ((p.id = publicacao_midias.publicacao_id) AND ern_administra_perfil_publico(p.autor_perfil_id))))",
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "publicacao_midias",
+        "permissive": "PERMISSIVE",
+        "policyname": "publicacao_midias_operadora_select",
+        "schemaname": "public",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "(publicado = true)",
+        "roles": [
+          "anon"
+        ],
+        "tablename": "perfis_publicos",
+        "permissive": "PERMISSIVE",
+        "policyname": "perfis_publicos_select_publicado",
+        "schemaname": "public",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "(empresa_gestora_id = ( SELECT p.empresa_id\\n   FROM perfis p\\n  WHERE (p.id = auth.uid())))",
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "perfis_publicos",
+        "permissive": "PERMISSIVE",
+        "policyname": "perfis_publicos_select_empresa",
+        "schemaname": "public",
+        "with_check": null
+      },
+      {
+        "cmd": "INSERT",
+        "qual": null,
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "publicacao_midias",
+        "permissive": "PERMISSIVE",
+        "policyname": "publicacao_midias_operadora_insert",
+        "schemaname": "public",
+        "with_check": "(EXISTS ( SELECT 1\\n   FROM publicacoes p\\n  WHERE ((p.id = publicacao_midias.publicacao_id) AND (p.status = ANY (ARRAY['rascunho'::text, 'publicado'::text, 'arquivado'::text])) AND ern_administra_perfil_publico(p.autor_perfil_id))))"
+      },
+      {
+        "cmd": "UPDATE",
+        "qual": "(EXISTS ( SELECT 1\\n   FROM publicacoes p\\n  WHERE ((p.id = publicacao_midias.publicacao_id) AND (p.status = ANY (ARRAY['rascunho'::text, 'publicado'::text, 'arquivado'::text])) AND ern_administra_perfil_publico(p.autor_perfil_id))))",
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "publicacao_midias",
+        "permissive": "PERMISSIVE",
+        "policyname": "publicacao_midias_operadora_update",
+        "schemaname": "public",
+        "with_check": "(EXISTS ( SELECT 1\\n   FROM publicacoes p\\n  WHERE ((p.id = publicacao_midias.publicacao_id) AND (p.status = ANY (ARRAY['rascunho'::text, 'publicado'::text, 'arquivado'::text])) AND ern_administra_perfil_publico(p.autor_perfil_id))))"
+      },
+      {
+        "cmd": "DELETE",
+        "qual": "(EXISTS ( SELECT 1\\n   FROM publicacoes p\\n  WHERE ((p.id = publicacao_midias.publicacao_id) AND (p.status = ANY (ARRAY['rascunho'::text, 'publicado'::text, 'arquivado'::text])) AND ern_administra_perfil_publico(p.autor_perfil_id))))",
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "publicacao_midias",
+        "permissive": "PERMISSIVE",
+        "policyname": "publicacao_midias_operadora_delete",
+        "schemaname": "public",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "(usuario_id = ( SELECT auth.uid() AS uid))",
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "administradores_editoriais_ern",
+        "permissive": "PERMISSIVE",
+        "policyname": "editorial_consultar_proprio_acesso",
+        "schemaname": "public",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "((id = '6d2be2c2-31f7-4f5a-b62b-db262177bdd3'::uuid) AND (origem_tipo = 'editorial'::text) AND (categoria = 'ern_editorial'::text) AND ( SELECT tem_acesso_editorial_ern() AS tem_acesso_editorial_ern))",
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "perfis_publicos",
+        "permissive": "PERMISSIVE",
+        "policyname": "perfil_editorial_select_administrador",
+        "schemaname": "public",
+        "with_check": null
+      },
+      {
+        "cmd": "UPDATE",
+        "qual": "((id = '6d2be2c2-31f7-4f5a-b62b-db262177bdd3'::uuid) AND (origem_tipo = 'editorial'::text) AND (categoria = 'ern_editorial'::text) AND ( SELECT tem_acesso_editorial_ern() AS tem_acesso_editorial_ern))",
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "perfis_publicos",
+        "permissive": "PERMISSIVE",
+        "policyname": "perfil_editorial_update_administrador",
+        "schemaname": "public",
+        "with_check": "((id = '6d2be2c2-31f7-4f5a-b62b-db262177bdd3'::uuid) AND (origem_tipo = 'editorial'::text) AND (categoria = 'ern_editorial'::text) AND ( SELECT tem_acesso_editorial_ern() AS tem_acesso_editorial_ern))"
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "(publicado = true)",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "tablename": "perfis_publicos",
+        "permissive": "PERMISSIVE",
+        "policyname": "perfis_publicos_rede_select",
+        "schemaname": "public",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "((status = 'publicado'::text) AND (publicado_em IS NOT NULL) AND (publicado_em <= now()) AND (EXISTS ( SELECT 1\\n   FROM perfis_publicos perfil\\n  WHERE ((perfil.id = publicacoes.autor_perfil_id) AND (perfil.publicado = true)))))",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "tablename": "publicacoes",
+        "permissive": "PERMISSIVE",
+        "policyname": "publicacoes_public_select",
+        "schemaname": "public",
+        "with_check": null
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "(EXISTS ( SELECT 1\\n   FROM publicacoes p\\n  WHERE ((p.id = publicacao_midias.publicacao_id) AND (p.status = 'publicado'::text) AND (p.publicado_em IS NOT NULL) AND (p.publicado_em <= now()))))",
+        "roles": [
+          "anon",
+          "authenticated"
+        ],
+        "tablename": "publicacao_midias",
+        "permissive": "PERMISSIVE",
+        "policyname": "publicacao_midias_public_select",
+        "schemaname": "public",
+        "with_check": null
+      },
+      {
+        "cmd": "INSERT",
+        "qual": null,
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "perfis_publicos",
+        "permissive": "PERMISSIVE",
+        "policyname": "perfis_publicos_insert_empresa",
+        "schemaname": "public",
+        "with_check": "((origem_tipo = 'empresa'::text) AND (categoria = 'operadora'::text) AND (usuario_id IS NULL) AND (parceiro_id IS NULL) AND (EXISTS ( SELECT 1\\n   FROM perfis p\\n  WHERE ((p.id = auth.uid()) AND (p.role = 'admin_empresa'::text) AND (p.empresa_id = perfis_publicos.empresa_id) AND (p.empresa_id = perfis_publicos.empresa_gestora_id)))))"
+      },
+      {
+        "cmd": "UPDATE",
+        "qual": "((origem_tipo = 'empresa'::text) AND (categoria = 'operadora'::text) AND (EXISTS ( SELECT 1\\n   FROM perfis p\\n  WHERE ((p.id = auth.uid()) AND (p.role = 'admin_empresa'::text) AND (p.empresa_id = perfis_publicos.empresa_id) AND (p.empresa_id = perfis_publicos.empresa_gestora_id)))))",
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "perfis_publicos",
+        "permissive": "PERMISSIVE",
+        "policyname": "perfis_publicos_update_empresa",
+        "schemaname": "public",
+        "with_check": "((origem_tipo = 'empresa'::text) AND (categoria = 'operadora'::text) AND (EXISTS ( SELECT 1\\n   FROM perfis p\\n  WHERE ((p.id = auth.uid()) AND (p.role = 'admin_empresa'::text) AND (p.empresa_id = perfis_publicos.empresa_id) AND (p.empresa_id = perfis_publicos.empresa_gestora_id)))))"
+      },
+      {
+        "cmd": "SELECT",
+        "qual": "((bucket_id = 'rede-publica'::text) AND ((storage.foldername(name))[1] = 'editorial'::text) AND ((storage.foldername(name))[2] = '6d2be2c2-31f7-4f5a-b62b-db262177bdd3'::text) AND ( SELECT tem_acesso_editorial_ern() AS tem_acesso_editorial_ern))",
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "objects",
+        "permissive": "PERMISSIVE",
+        "policyname": "editorial_imagens_select_ern",
+        "schemaname": "storage",
+        "with_check": null
+      },
+      {
+        "cmd": "INSERT",
+        "qual": null,
+        "roles": [
+          "authenticated"
+        ],
+        "tablename": "objects",
+        "permissive": "PERMISSIVE",
+        "policyname": "editorial_imagens_insert_ern",
+        "schemaname": "storage",
+        "with_check": "((bucket_id = 'rede-publica'::text) AND ((storage.foldername(name))[1] = 'editorial'::text) AND ((storage.foldername(name))[2] = '6d2be2c2-31f7-4f5a-b62b-db262177bdd3'::text) AND (lower(storage.extension(name)) = ANY (ARRAY['jpg'::text, 'jpeg'::text, 'png'::text, 'webp'::text])) AND ( SELECT tem_acesso_editorial_ern() AS tem_acesso_editorial_ern))"
+      }
+    ]
+  },
+  "complemento": {
+    "tabelas": [
+      {
+        "tabela": "administradores_editoriais_ern",
+        "esquema": "public",
+        "rls_ativa": true,
+        "permissoes": [
+          "postgres=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres",
+          "authenticated=r/postgres"
+        ],
+        "rls_forcada": false
+      },
+      {
+        "tabela": "perfis_publicos",
+        "esquema": "public",
+        "rls_ativa": true,
+        "permissoes": [
+          "postgres=arwdDxtm/postgres",
+          "authenticated=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres",
+          "anon=r/postgres"
+        ],
+        "rls_forcada": false
+      },
+      {
+        "tabela": "publicacao_midias",
+        "esquema": "public",
+        "rls_ativa": true,
+        "permissoes": [
+          "postgres=arwdDxtm/postgres",
+          "anon=arwdDxtm/postgres",
+          "authenticated=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "rls_forcada": false
+      },
+      {
+        "tabela": "publicacoes",
+        "esquema": "public",
+        "rls_ativa": true,
+        "permissoes": [
+          "postgres=arwdDxtm/postgres",
+          "anon=arwdDxtm/postgres",
+          "authenticated=arwdDxtm/postgres",
+          "service_role=arwdDxtm/postgres"
+        ],
+        "rls_forcada": false
+      }
+    ],
+    "permissoes_funcoes": [
+      {
+        "funcao": "alterar_status_publicacao_ern(uuid,text,timestamp with time zone)",
+        "permissoes": [
+          "postgres=X/postgres",
+          "anon=X/postgres",
+          "authenticated=X/postgres",
+          "service_role=X/postgres"
+        ]
+      },
+      {
+        "funcao": "ern_administra_perfil_publico(uuid)",
+        "permissoes": [
+          "postgres=X/postgres",
+          "authenticated=X/postgres",
+          "service_role=X/postgres"
+        ]
+      },
+      {
+        "funcao": "proteger_perfil_publico_operadora_ern()",
+        "permissoes": [
+          "=X/postgres",
+          "postgres=X/postgres",
+          "anon=X/postgres",
+          "authenticated=X/postgres",
+          "service_role=X/postgres"
+        ]
+      },
+      {
+        "funcao": "proteger_publicacao_operadora_ern()",
+        "permissoes": [
+          "=X/postgres",
+          "postgres=X/postgres",
+          "anon=X/postgres",
+          "authenticated=X/postgres",
+          "service_role=X/postgres"
+        ]
+      },
+      {
+        "funcao": "tem_acesso_editorial_ern()",
+        "permissoes": [
+          "postgres=X/postgres",
+          "service_role=X/postgres",
+          "authenticated=X/postgres"
+        ]
+      }
+    ],
+    "colunas_administradores": [
+      {
+        "data_type": "uuid",
+        "column_name": "usuario_id",
+        "is_nullable": "NO",
+        "column_default": null
+      },
+      {
+        "data_type": "boolean",
+        "column_name": "ativo",
+        "is_nullable": "NO",
+        "column_default": "true"
+      },
+      {
+        "data_type": "timestamp with time zone",
+        "column_name": "criado_em",
+        "is_nullable": "NO",
+        "column_default": "now()"
+      }
+    ],
+    "restricoes_administradores": [
+      "PRIMARY KEY (usuario_id)",
+      "FOREIGN KEY (usuario_id) REFERENCES auth.users(id) ON DELETE CASCADE"
+    ]
+  }
+}
