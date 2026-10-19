@@ -116,6 +116,7 @@ export type PublicacaoPublica = {
 };
 
 export type FiltrosFeedPublico = {
+  slug?: string;
   busca?: string;
 
   categoriaId?: string;
@@ -624,6 +625,17 @@ export async function listarFeedPublico(
         },
       )
       .limit(limite);
+
+  if (filtros.slug !== undefined) {
+    if (
+      filtros.slug.length > 180 ||
+      !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(filtros.slug)
+    ) {
+      return [];
+    }
+
+    consulta = consulta.eq('slug', filtros.slug);
+  }
 
   if (
     filtros.categoriaId

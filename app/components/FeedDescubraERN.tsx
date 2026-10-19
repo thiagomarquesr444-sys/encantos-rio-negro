@@ -129,7 +129,7 @@ export default function FeedDescubraERN() {
               const midia = item.midias.find(m => m.tipo === 'imagem')
                 ?? item.midias.find(m => m.tipo === 'video' && m.thumbnail_url);
               const imagem = midia?.tipo === 'imagem' ? midia.url : midia?.thumbnail_url;
-              const href = `/rede#${encodeURIComponent(item.slug)}`;
+              const href = `/rede/publicacao/${encodeURIComponent(item.slug)}`;
 
               return (
                 <article

@@ -576,7 +576,7 @@ export default function RedePage() {
     publicacao: PublicacaoPublica,
   ): Promise<void> {
     const url =
-      `${window.location.origin}/rede#${publicacao.slug}`;
+      `${window.location.origin}/rede/publicacao/${encodeURIComponent(publicacao.slug)}`;
 
     try {
       if (
@@ -1355,9 +1355,7 @@ export default function RedePage() {
                           'var(--font-fraunces), serif',
                       }}
                     >
-                      {
-                        destaque.titulo
-                      }
+                      <Link href={`/rede/publicacao/${encodeURIComponent(destaque.slug)}`} className="rounded-sm hover:underline hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#805600]">{destaque.titulo}</Link>
                     </h2>
 
                     {destaque.resumo && (
@@ -1474,9 +1472,7 @@ export default function RedePage() {
                                   'var(--font-fraunces), serif',
                               }}
                             >
-                              {
-                                publicacao.titulo
-                              }
+                              <Link href={`/rede/publicacao/${encodeURIComponent(publicacao.slug)}`} className="rounded-sm hover:underline hover:underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#805600]">{publicacao.titulo}</Link>
                             </h3>
 
                             {publicacao.resumo && (
