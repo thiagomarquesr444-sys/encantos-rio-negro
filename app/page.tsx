@@ -3,6 +3,7 @@
 import { useState } from 'react';
 
 import PublicHeader from '@/app/components/PublicHeader';
+import FeedDescubraERN from '@/app/components/FeedDescubraERN';
 import { useLanguage } from '@/app/components/LanguageProvider';
 
 import {
@@ -278,6 +279,8 @@ export default function Home() {
           DESCOBRINDO O TERRITÓRIO
       ========================================================== */}
 
+      <FeedDescubraERN />
+
       <section
         id="descubra"
         className="scroll-mt-20 border-t border-white/[0.07] bg-[#0B1512] px-5 py-24 md:px-8 md:py-32"
@@ -449,30 +452,7 @@ export default function Home() {
           REDE
       ========================================================== */}
 
-      <section
-        id="rede"
-        className="scroll-mt-20 border-t border-white/[0.07] bg-[#0B1512] px-5 py-20 md:px-8"
-      >
-        <div className="mx-auto max-w-[1180px]">
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7C9C87]">
-            {t.network.eyebrow}
-          </p>
 
-          <h2
-            className="mt-4 text-3xl text-[#EDEDE3] md:text-4xl"
-            style={{
-              fontFamily:
-                'var(--font-fraunces), serif',
-            }}
-          >
-            {t.network.title}
-          </h2>
-
-          <p className="mt-4 max-w-[620px] text-sm leading-7 text-[#EDEDE3]/55">
-            {t.network.description}
-          </p>
-        </div>
-      </section>
 
       {/* =========================================================
           ERN GESTÃO
