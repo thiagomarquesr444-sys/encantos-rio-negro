@@ -116,6 +116,8 @@ export type PublicacaoPublica = {
 };
 
 export type FiltrosFeedPublico = {
+  autorPerfilId?: string;
+  deslocamento?: number;
   slug?: string;
   busca?: string;
 
@@ -624,7 +626,18 @@ export async function listarFeedPublico(
           ascending: false,
         },
       )
-      .limit(limite);
+      .order('id', { ascending: false })
+      .range(
+        Math.max(0, Math.trunc(filtros.deslocamento ?? 0)),
+        Math.max(0, Math.trunc(filtros.deslocamento ?? 0)) + limite - 1,
+      );
+
+  if (filtros.autorPerfilId !== undefined) {
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(filtros.autorPerfilId)) {
+      return [];
+    }
+    consulta = consulta.eq('autor_perfil_id', filtros.autorPerfilId);
+  }
 
   if (filtros.slug !== undefined) {
     if (

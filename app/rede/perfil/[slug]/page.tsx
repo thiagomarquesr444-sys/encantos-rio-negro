@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 
 import PublicHeader from '@/app/components/PublicHeader';
 import LogoERN from '@/app/components/LogoERN';
+import PublicacoesPerfilERN from '@/app/components/PublicacoesPerfilERN';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import { supabase } from '@/lib/supabase';
 
@@ -507,6 +508,11 @@ export default function PerfilRedePage() {
                 </p>
               </aside>
             </div>
+
+            <PublicacoesPerfilERN
+              key={estado.perfil.id + '-' + idioma}
+              perfilId={estado.perfil.id}
+            />
 
             <section className="mx-auto mt-12 max-w-6xl px-4 sm:px-6">
               <div className="flex flex-col justify-between gap-6 border-y border-[#987027]/30 py-8 text-[#18352C] sm:flex-row sm:items-center sm:py-10">
