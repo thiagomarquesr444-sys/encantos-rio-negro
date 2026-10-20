@@ -1,9 +1,9 @@
 'use client';
 
 import {
-  useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type FormEvent,
 } from 'react';
@@ -47,6 +47,9 @@ type EstadoFeed =
   | {
       tipo: 'pronto';
       publicacoes: PublicacaoPublica[];
+      chaveConsulta: string;
+      deslocamento: number;
+      temMais: boolean;
       categorias: CategoriaPublicacao[];
       territorios: TerritorioPublico[];
       social: EstadoSocialRede;
@@ -243,92 +246,158 @@ export default function RedePage() {
     string | null
   >(null);
 
-  const carregar =
-    useCallback(
-      async () => {
-        setEstado({
-          tipo: 'carregando',
-        });
+  const geracaoERN = useRef(0);
+  const travaMaisERN = useRef<number | null>(null);
+  const [carregandoMaisERN, setCarregandoMaisERN] = useState(false);
+  const [erroMaisERN, setErroMaisERN] = useState('');
 
-        setAvisoSocial(null);
+  const chaveConsultaERN = JSON.stringify([
+    idioma, buscaAplicada, categoriaAtiva, territorioAtivo, revisao,
+  ]);
 
-        try {
-          const [
-            categorias,
-            territorios,
-            publicacoes,
-          ] =
-            await Promise.all([
-              listarCategoriasPublicas(),
-
-              listarTerritoriosPublicos(),
-
-              listarFeedPublico(
-                idioma,
-                {
-                  busca:
-                    buscaAplicada,
-
-                  categoriaId:
-                    categoriaAtiva ||
-                    undefined,
-
-                  territorioId:
-                    territorioAtivo ||
-                    undefined,
-
-                  limite: 40,
-                },
-              ),
-            ]);
-
-          const social =
-            publicacoes.length >
-            0
-              ? await obterEstadoSocialRede(
-                  publicacoes.map(
-                    (item) =>
-                      item.id,
-                  ),
-                )
-              : SOCIAL_VAZIO;
-
-          setEstado({
-            tipo: 'pronto',
-
-            publicacoes,
-
-            categorias,
-
-            territorios,
-
-            social,
-          });
-        } catch (
-          erro: unknown
-        ) {
-          setEstado({
-            tipo: 'erro',
-
-            mensagem:
-              mensagemErroRedePublica(
-                erro,
-              ),
-          });
-        }
-      },
-      [
-        idioma,
-        buscaAplicada,
-        categoriaAtiva,
-        territorioAtivo,
-        revisao,
-      ],
-    );
+  const textoMaisERN = idioma === 'EN'
+    ? { more: 'Load more', loading: 'Loading...', retry: 'Try again' }
+    : idioma === 'ES'
+      ? { more: 'Cargar m\u00e1s', loading: 'Cargando...', retry: 'Intentar de nuevo' }
+      : { more: 'Carregar mais', loading: 'Carregando...', retry: 'Tentar novamente' };
 
   useEffect(() => {
-    void carregar();
-  }, [carregar]);
+    let ativo = true;
+    const geracao = ++geracaoERN.current;
+    travaMaisERN.current = null;
+    setCarregandoMaisERN(false);
+    setErroMaisERN('');
+    setAvisoSocial(null);
+    setEstado({ tipo: 'carregando' });
+
+    async function iniciar() {
+      try {
+        const [categorias, territorios, resultado] = await Promise.all([
+          listarCategoriasPublicas(),
+          listarTerritoriosPublicos(),
+          listarFeedPublico(idioma, {
+            busca: buscaAplicada,
+            categoriaId: categoriaAtiva || undefined,
+            territorioId: territorioAtivo || undefined,
+            limite: 21,
+            deslocamento: 0,
+          }),
+        ]);
+
+        if (!ativo || geracao !== geracaoERN.current) return;
+
+        const publicacoes = resultado.slice(0, 20);
+        const social = publicacoes.length
+          ? await obterEstadoSocialRede(publicacoes.map(item => item.id))
+          : SOCIAL_VAZIO;
+
+        if (!ativo || geracao !== geracaoERN.current) return;
+
+        setEstado({
+          tipo: 'pronto',
+          publicacoes,
+          categorias,
+          territorios,
+          social,
+          chaveConsulta: chaveConsultaERN,
+          deslocamento: 20,
+          temMais: resultado.length > 20,
+        });
+      } catch (erro) {
+        if (!ativo || geracao !== geracaoERN.current) return;
+        setEstado({
+          tipo: 'erro',
+          mensagem: mensagemErroRedePublica(erro),
+        });
+      }
+    }
+
+    void iniciar();
+
+    return () => {
+      ativo = false;
+      geracaoERN.current += 1;
+    };
+  }, [
+    idioma, buscaAplicada, categoriaAtiva, territorioAtivo,
+    revisao, chaveConsultaERN,
+  ]);
+
+  async function carregarMaisERN() {
+    if (
+      estado.tipo !== 'pronto' ||
+      !estado.temMais ||
+      estado.chaveConsulta !== chaveConsultaERN ||
+      travaMaisERN.current !== null
+    ) return;
+
+    const geracao = geracaoERN.current;
+    const deslocamento = estado.deslocamento;
+    travaMaisERN.current = geracao;
+    setCarregandoMaisERN(true);
+    setErroMaisERN('');
+
+    try {
+      const resultado = await listarFeedPublico(idioma, {
+        busca: buscaAplicada,
+        categoriaId: categoriaAtiva || undefined,
+        territorioId: territorioAtivo || undefined,
+        deslocamento,
+        limite: 21,
+      });
+
+      if (geracao !== geracaoERN.current) return;
+
+      const novos = resultado.slice(0, 20);
+      const social = novos.length
+        ? await obterEstadoSocialRede(novos.map(item => item.id))
+        : null;
+
+      if (geracao !== geracaoERN.current) return;
+
+      setEstado(anterior => {
+        if (
+          anterior.tipo !== 'pronto' ||
+          anterior.chaveConsulta !== chaveConsultaERN
+        ) return anterior;
+
+        const mapa = new Map(
+          anterior.publicacoes.map(item => [item.id, item]),
+        );
+        novos.forEach(item => mapa.set(item.id, item));
+
+        const perfisSeguidos = new Set(anterior.social.perfisSeguidos);
+        social?.perfisSeguidos.forEach(id => perfisSeguidos.add(id));
+
+        return {
+          ...anterior,
+          publicacoes: [...mapa.values()],
+          deslocamento: deslocamento + 20,
+          temMais: resultado.length > 20,
+          social: social ? {
+            ...anterior.social,
+            autenticado: social.autenticado,
+            perfisSeguidos,
+            interacoes: {
+              ...social.interacoes,
+              ...anterior.social.interacoes,
+            },
+          } : anterior.social,
+        };
+      });
+    } catch (erro) {
+      if (geracao === geracaoERN.current) {
+        setErroMaisERN(mensagemErroRedePublica(erro));
+      }
+    } finally {
+      if (travaMaisERN.current === geracao) {
+        travaMaisERN.current = null;
+      }
+      if (geracao === geracaoERN.current) {
+        setCarregandoMaisERN(false);
+      }
+    }
+  }
 
   const publicacoes =
     estado.tipo ===
@@ -1496,6 +1565,31 @@ export default function RedePage() {
                 </div>
               </div>
             )}
+          {estado.tipo === 'pronto' && estado.temMais && (
+            <div className="mt-10 border-t border-[#18352C]/15 pt-7">
+              {erroMaisERN && (
+                <p role="alert" className="mb-4 text-sm text-[#a51d2d]">
+                  {erroMaisERN}
+                </p>
+              )}
+              {carregandoMaisERN && (
+                <p role="status" className="mb-4 text-sm text-[#52665D]">
+                  {textoMaisERN.loading}
+                </p>
+              )}
+              <button
+                type="button"
+                onClick={() => void carregarMaisERN()}
+                disabled={
+                  carregandoMaisERN ||
+                  estado.chaveConsulta !== chaveConsultaERN
+                }
+                className="min-h-12 rounded-xl border border-[#805600]/40 px-6 text-sm font-semibold text-[#805600] disabled:opacity-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#805600] focus-visible:ring-offset-4"
+              >
+                {erroMaisERN ? textoMaisERN.retry : textoMaisERN.more}
+              </button>
+            </div>
+          )}
         </div>
       </section>
 

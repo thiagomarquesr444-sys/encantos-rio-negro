@@ -4,6 +4,7 @@ import { useState } from 'react';
 
 import PublicHeader from '@/app/components/PublicHeader';
 import FeedDescubraERN from '@/app/components/FeedDescubraERN';
+import CulturaAmazonicaERN from '@/app/components/CulturaAmazonicaERN';
 import { useLanguage } from '@/app/components/LanguageProvider';
 
 import {
@@ -278,6 +279,8 @@ export default function Home() {
       {/* =========================================================
           DESCOBRINDO O TERRITÓRIO
       ========================================================== */}
+
+      <CulturaAmazonicaERN />
 
       <FeedDescubraERN />
 
