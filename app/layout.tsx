@@ -32,11 +32,16 @@ export default function RootLayout({
   children: ReactNode;
 }) {
   return (
-    <html lang="pt-BR">
+    <html lang="pt-BR" suppressHydrationWarning>
       <body
         style={fontes}
         className="bg-slate-950 text-slate-100 antialiased"
       >
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('ern-tema-visual-v1');var c={verde:['#07110e','#edede3'],azul:['#081525','#f0f6fc'],amarelo:['#fff7db','#30260d'],branco:['#f4f6f5','#14271e']};if(c[t]){document.documentElement.style.setProperty('--ern-fundo-inicial',c[t][0]);document.documentElement.style.setProperty('--ern-texto-inicial',c[t][1]);}}catch(e){}})();`,
+          }}
+        />
         <LanguageProvider>
           <AppProvider>
             <AppShell>{children}</AppShell>

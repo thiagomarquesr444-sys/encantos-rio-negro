@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 
@@ -103,7 +103,8 @@ export default function AppShell({
   children: ReactNode;
 }) {
   const pathname = usePathname();
-  const [tema, setTema] = useState<Tema>('verde');
+  const [tema, setTema] = useState<Tema | null>(null);
+  const [erroTema, setErroTema] = useState(false);
 
   const rotaGestao =
     pathname !== null &&
@@ -115,19 +116,29 @@ export default function AppShell({
   const rotaFornecedor =
     pathname !== null && pertenceARota(pathname, '/fornecedor');
 
+
+  useLayoutEffect(() => {
+    if (!rotaGestao) return;
+
+    try {
+      const salvo = localStorage.getItem('ern-tema-visual-v1');
+      if (['verde', 'azul', 'amarelo', 'branco'].includes(salvo ?? '')) {
+        setTema(normalizarTema(salvo));
+      }
+    } catch {
+      // O tema continua sendo consultado no banco.
+    }
+  }, [rotaGestao]);
+
   useEffect(() => {
     if (!rotaGestao) return;
 
     let ativo = true;
     let versao = 0;
-    let tarefaAutenticacao: ReturnType<typeof setTimeout> | undefined;
+    let tarefa: ReturnType<typeof setTimeout> | undefined;
 
-    async function carregarTema(redefinir = false) {
+    async function carregarTema() {
       const requisicao = ++versao;
-
-      if (redefinir && ativo) {
-        setTema('verde');
-      }
 
       try {
         const { data: sessao, error: erroSessao } =
@@ -136,89 +147,113 @@ export default function AppShell({
         if (!ativo || requisicao !== versao) return;
 
         if (erroSessao || !sessao.session) {
-          setTema('verde');
+          setTema(null);
+          setErroTema(true);
           return;
         }
 
-        const { data, error } =
-          await supabase.rpc('get_meu_tema_ern');
+        const { data, error } = await supabase.rpc('get_meu_tema_ern');
 
         if (!ativo || requisicao !== versao) return;
+        if (error) throw error;
 
-        if (error) {
-          console.error('Não foi possível carregar o tema da empresa.');
-          return;
+        const escolhido = normalizarTema(data);
+        setTema(escolhido);
+        setErroTema(false);
+
+        try {
+          localStorage.setItem('ern-tema-visual-v1', escolhido);
+          const cores = {
+            verde: '#07110e',
+            azul: '#081525',
+            amarelo: '#fff7db',
+            branco: '#f4f6f5',
+          };
+          document.documentElement.style.setProperty(
+            '--ern-fundo-inicial',
+            cores[escolhido],
+          );
+        } catch {
+          // Falha no armazenamento local nao impede o uso.
         }
-
-        setTema(normalizarTema(data));
       } catch {
-        if (ativo && requisicao === versao) {
-          console.error('Não foi possível carregar o tema da empresa.');
-        }
+        if (ativo && requisicao === versao) setErroTema(true);
       }
     }
 
     function atualizarTema() {
-      // Reconsulta o banco em vez de confiar nos dados do evento.
       void carregarTema();
     }
 
-    function aoRetornarParaPagina() {
-      if (document.visibilityState === 'visible') {
-        void carregarTema();
-      }
+    function aoRetornar() {
+      if (!document.hidden) void carregarTema();
     }
 
-    void carregarTema(true);
+    void carregarTema();
 
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((evento) => {
-      if (!ativo) return;
+    const { data: { subscription } } =
+      supabase.auth.onAuthStateChange(evento => {
+        if (!ativo) return;
 
-      if (evento === 'SIGNED_OUT') {
-        versao += 1;
-        setTema('verde');
-        return;
-      }
-
-      if (evento === 'SIGNED_IN' || evento === 'USER_UPDATED') {
-        versao += 1;
-        setTema('verde');
-
-        // Executa a consulta fora do callback de autenticação.
-        if (tarefaAutenticacao !== undefined) {
-          clearTimeout(tarefaAutenticacao);
+        if (evento === 'SIGNED_OUT') {
+          versao += 1;
+          clearTimeout(tarefa);
+          setTema(null);
+          setErroTema(false);
+          try {
+            localStorage.removeItem('ern-tema-visual-v1');
+          } catch {}
+          return;
         }
 
-        tarefaAutenticacao = setTimeout(() => {
-          if (ativo) void carregarTema();
-        }, 0);
-      }
-    });
+        if (evento === 'SIGNED_IN' || evento === 'USER_UPDATED') {
+          versao += 1;
+          clearTimeout(tarefa);
+          tarefa = setTimeout(() => {
+            if (ativo) void carregarTema();
+          }, 0);
+        }
+      });
 
     window.addEventListener('ern:tema-salvo', atualizarTema);
-    document.addEventListener(
-      'visibilitychange',
-      aoRetornarParaPagina,
-    );
+    document.addEventListener('visibilitychange', aoRetornar);
 
     return () => {
       ativo = false;
       versao += 1;
-
-      if (tarefaAutenticacao !== undefined) {
-        clearTimeout(tarefaAutenticacao);
-      }
-
+      clearTimeout(tarefa);
       subscription.unsubscribe();
       window.removeEventListener('ern:tema-salvo', atualizarTema);
-      document.removeEventListener(
-        'visibilitychange',
-        aoRetornarParaPagina,
-      );
+      document.removeEventListener('visibilitychange', aoRetornar);
     };
   }, [rotaGestao]);
+
+  if (rotaGestao && tema === null) {
+    return (
+      <main
+        className="flex min-h-screen items-center justify-center px-6"
+        style={{
+          background: 'var(--ern-fundo-inicial, #fff7db)',
+          color: 'var(--ern-texto-inicial, #30260d)',
+        }}
+      >
+        {erroTema ? (
+          <div role="alert" className="max-w-md text-center">
+            <p>Não foi possível carregar sua preferência visual.</p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="mt-4 min-h-12 rounded-xl border border-current px-5 font-semibold"
+            >
+              Tentar novamente
+            </button>
+          </div>
+        ) : (
+          <p role="status" className="text-sm">Carregando seu painel…</p>
+        )}
+      </main>
+    );
+  }
 
   if (rotaGestao) {
     return (

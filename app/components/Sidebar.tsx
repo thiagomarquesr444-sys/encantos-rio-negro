@@ -235,6 +235,49 @@ export default function Sidebar() {
   const nomeSistema = config.nome_sistema || 'Encantos Rio Negro';
 
   useEffect(() => {
+    const cabecalho = headerRef.current;
+    if (!cabecalho) return;
+
+    const marca = cabecalho.querySelector('a[href="/dashboard"]');
+    const menu = cabecalho.querySelector('nav');
+    if (!marca || !menu) return;
+
+    let ativo = true;
+
+    function posicionar() {
+      if (!ativo || !cabecalho || !marca || !menu) return;
+
+      const origem = cabecalho.getBoundingClientRect();
+      const marcaRect = marca.getBoundingClientRect();
+      const menuRect = menu.getBoundingClientRect();
+      const intervalo = menuRect.left - marcaRect.right;
+      const cabe = menuRect.width > 0 && intervalo >= 90;
+
+      cabecalho.style.setProperty('--ern-arara-opacidade', cabe ? '1' : '0');
+
+      if (cabe) {
+        const centro = (marcaRect.right + menuRect.left) / 2;
+        cabecalho.style.setProperty(
+          '--ern-arara-x',
+          (centro - origem.left - 35.34) + 'px',
+        );
+      }
+    }
+
+    const observador = new ResizeObserver(posicionar);
+    observador.observe(cabecalho);
+    observador.observe(marca);
+    observador.observe(menu);
+    posicionar();
+    void document.fonts.ready.then(posicionar);
+
+    return () => {
+      ativo = false;
+      observador.disconnect();
+    };
+  }, [nomeSistema]);
+
+  useEffect(() => {
     let ativo = true;
     let versao = 0;
     let agendamento: ReturnType<typeof setTimeout> | undefined;
@@ -458,7 +501,7 @@ export default function Sidebar() {
           }
         }}
       >
-        <FaunaCabecalhoERN altura={76} oncaNaConta />
+        <FaunaCabecalhoERN altura={76} oncaNaConta araraEntreMarcaEMenu />
         <div className="mx-auto flex h-[82px] max-w-[1600px] items-center justify-between gap-3 px-4 md:px-6">
           <Link
             href="/dashboard"
