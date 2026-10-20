@@ -5,6 +5,7 @@ import { useState } from 'react';
 import PublicHeader from '@/app/components/PublicHeader';
 import FeedDescubraERN from '@/app/components/FeedDescubraERN';
 import CulturaAmazonicaERN from '@/app/components/CulturaAmazonicaERN';
+import VitrineGestaoERN from '@/app/components/VitrineGestaoERN';
 import { useLanguage } from '@/app/components/LanguageProvider';
 
 import {
@@ -122,7 +123,7 @@ export default function Home() {
                 </a>
 
                 <a
-                  href="#territorio"
+                  href="/destinos"
                   className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-7 text-sm font-medium text-[#EDEDE3] backdrop-blur transition hover:bg-white/[0.08]"
                 >
                   {t.hero.explore}
@@ -317,110 +318,7 @@ export default function Home() {
           TERRITÓRIO
       ========================================================== */}
 
-      <section
-        id="territorio"
-        className="scroll-mt-20 border-t border-white/[0.07] bg-[#0D1814] px-5 py-24 md:px-8 md:py-32"
-      >
-        <div className="mx-auto max-w-[1180px]">
-          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
-            <div>
-              <span className="text-xs font-semibold uppercase tracking-[0.22em] text-[#E3A144]">
-                {t.territory.eyebrow}
-              </span>
-
-              <h2
-                className="mt-5 max-w-[560px] text-4xl leading-[1.05] text-[#F0F0E8] md:text-5xl"
-                style={{
-                  fontFamily:
-                    'var(--font-fraunces), serif',
-                }}
-              >
-                {t.territory.title}
-              </h2>
-            </div>
-
-            <div>
-              <p className="max-w-[620px] text-base leading-8 text-[#EDEDE3]/60 md:text-lg">
-                {t.territory.description}
-              </p>
-            </div>
-          </div>
-
-          <div className="mt-14 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-            {t.territories.map(
-              (territorio) => (
-                <article
-                  key={territorio.id}
-                  className="ern-publico-foto group relative min-h-[430px] overflow-hidden rounded-[24px] border border-white/10 bg-[#0A1713]"
-                >
-                  <div
-                    className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                    style={{
-                      backgroundImage: `url('${territorio.imagem}')`,
-                    }}
-                  />
-
-                  <div className="absolute inset-0 bg-gradient-to-br from-[#173025]/65 via-transparent to-[#08110E]/45" />
-
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#07110E] via-[#07110E]/45 to-[#07110E]/5" />
-
-                  <div className="absolute inset-x-0 bottom-0 p-6">
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
-                      {territorio.local}
-                    </span>
-
-                    <h3
-                      className="mt-2 text-2xl leading-tight text-[#F0F0E8]"
-                      style={{
-                        fontFamily:
-                          'var(--font-fraunces), serif',
-                      }}
-                    >
-                      {territorio.titulo}
-                    </h3>
-
-                    <p className="mt-3 text-sm leading-6 text-[#EDEDE3]/65">
-                      {territorio.descricao}
-                    </p>
-
-                    <span className="mt-5 inline-flex items-center gap-2 text-sm font-medium text-[#E3A144] transition group-hover:gap-3">
-                      {territorio.acao}
-                      <span aria-hidden="true">
-                        →
-                      </span>
-                    </span>
-                  </div>
-                </article>
-              )
-            )}
-          </div>
-
-          <div className="mt-14 flex flex-col gap-5 rounded-[24px] border border-[#E3A144]/20 bg-[#111F19] px-6 py-7 md:flex-row md:items-center md:justify-between md:px-8">
-            <div>
-              <p
-                className="text-2xl text-[#F0F0E8]"
-                style={{
-                  fontFamily:
-                    'var(--font-fraunces), serif',
-                }}
-              >
-                {t.territory.unsure}
-              </p>
-
-              <p className="mt-2 max-w-[680px] text-sm leading-6 text-[#EDEDE3]/55">
-                {t.territory.unsureDescription}
-              </p>
-            </div>
-
-            <a
-              href="#concierge"
-              className="inline-flex min-h-[48px] shrink-0 items-center justify-center rounded-xl bg-[#E3A144] px-6 text-sm font-semibold text-[#0B1512] transition hover:bg-[#F0B35C]"
-            >
-              {t.territory.conciergeButton}
-            </a>
-          </div>
-        </div>
-      </section>
+      <VitrineGestaoERN />
 
       {/* =========================================================
           EXPERIÊNCIAS
