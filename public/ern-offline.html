@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#07110e">
+  <meta name="robots" content="noindex">
+  <title>Conexão indisponível · ERN</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;min-height:100dvh;display:grid;place-items:center;background:#fff7db;color:#30260d;font-family:Arial,sans-serif;padding:28px}
+    main{width:100%;max-width:560px}
+    svg{width:80px;height:80px}
+    .marca{margin-top:24px;font-size:11px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;color:#805600}
+    h1{font-family:Georgia,serif;font-weight:400;font-size:clamp(34px,7vw,52px);line-height:1.1;margin:20px 0}
+    p{font-size:16px;line-height:1.8;color:#695727}
+    button{min-height:48px;margin-top:16px;padding:14px 24px;border:0;border-radius:12px;background:#805600;color:white;font-size:15px;font-weight:700;cursor:pointer}
+    button:focus-visible{outline:3px solid #30260d;outline-offset:4px}
+    .nota{margin-top:32px;padding-top:20px;border-top:1px solid #cdba7a;font-size:13px}
+  </style>
+</head>
+<body>
+  <main>
+    <svg aria-hidden="true" viewBox="0 0 100 100">
+      <rect width="100" height="100" rx="22" fill="#07110e"/>
+      <circle cx="50" cy="36" r="19" fill="#f4c77e"/>
+      <path d="M18 54C32 40 42 69 59 55S79 49 84 51" fill="none" stroke="#e3a144" stroke-width="6"/>
+      <path d="M18 70C32 56 46 83 62 70S79 64 84 66" fill="none" stroke="#38bdf8" stroke-width="5"/>
+    </svg>
+    <div class="marca">Encantos Rio Negro</div>
+    <h1>Não foi possível conectar.</h1>
+    <p>Confira sua conexão com a internet e tente abrir a página novamente.</p>
+    <button type="button" onclick="window.location.reload()">Tentar novamente</button>
+    <p class="nota">A consulta de viagens offline ainda não está disponível. Esta tela não confirma o envio nem o salvamento de operações anteriores. Ao reconectar, confira os registros antes de repetir uma ação.</p>
+  </main>
+</body>
+</html>

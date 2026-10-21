@@ -11,6 +11,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
 import LogoERN from '@/app/components/LogoERN';
+import AvisoPrivacidadeAcessoERN from '@/app/components/AvisoPrivacidadeAcessoERN';
 import { supabase } from '@/lib/supabase';
 import {
   interpretarTipoAcesso,
@@ -1207,6 +1208,11 @@ function FormularioLogin() {
               </button>
             )}
           </div>
+
+          <AvisoPrivacidadeAcessoERN
+            modo={modo}
+            googleDisponivel={googleDisponivel}
+          />
 
           <footer className="mt-5 border-t border-white/10 pt-3 text-center">
             <Link

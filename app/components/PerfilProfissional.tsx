@@ -288,7 +288,7 @@ function FormularioPerfilProfissional({ tipo }: Props) {
       }
 
       setSucesso(
-        'Perfil salvo com sucesso. Seus dados continuam privados nesta etapa.',
+        'Perfil salvo com sucesso. Confira separadamente as informações exibidas no portal público.',
       );
     } catch (error) {
       setErro(
@@ -566,9 +566,7 @@ function FormularioPerfilProfissional({ tipo }: Props) {
 
               <div className="rounded-2xl border border-[#E3A144]/15 bg-[#E3A144]/[0.04] p-4">
                 <p className="text-sm leading-7 text-[#EDEDE3]/70">
-                  Salvar este perfil não publica automaticamente seus
-                  dados no portal público ou no feed da Rede ERN. A
-                  publicação será controlada por módulos próprios.
+                  Preencha apenas informações profissionais necessárias. Antes de publicar um perfil ou conteúdo, confira os campos exibidos aos visitantes e utilize contatos destinados ao atendimento profissional.
                 </p>
               </div>
 
@@ -599,10 +597,19 @@ function FormularioPerfilProfissional({ tipo }: Props) {
             Privacidade
           </p>
           <p className="mt-2 text-sm leading-7 text-[#EDEDE3]/65">
-            O perfil profissional continua separado da publicação
-            pública. Quando o módulo de feed for ativado, você terá
-            controle sobre o conteúdo que será exibido aos visitantes
-            da Encantos Rio Negro.
+            Consulte a Política de Privacidade e confira as informações
+            efetivamente exibidas no seu perfil público e nas publicações.
+            Evite inserir documentos pessoais, endereço residencial ou
+            dados de clientes na descrição profissional.
+            <Link
+              href="/privacidade"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex min-h-12 items-center rounded-lg px-2 font-semibold text-[#F4C77E] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#F4C77E]"
+            >
+              Política de Privacidade
+              <span className="sr-only"> (abre em nova aba)</span>
+            </Link>
           </p>
         </section>
       </div>

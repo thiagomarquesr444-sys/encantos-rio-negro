@@ -11,6 +11,7 @@ import { AppProvider } from '@/app/context/AppContext';
 import AppShell from '@/app/components/AppShell';
 import { LanguageProvider } from '@/app/components/LanguageProvider';
 import InstalarERN from '@/app/components/InstalarERN';
+import OfflineBaseERN from '@/app/components/OfflineBaseERN';
 
 const fontes = {
   '--font-inter': '"Inter Variable"',
@@ -62,6 +63,7 @@ export default function RootLayout({
             __html: `(function(){try{var t=localStorage.getItem('ern-tema-visual-v1');var c={verde:['#07110e','#edede3'],azul:['#081525','#f0f6fc'],amarelo:['#fff7db','#30260d'],branco:['#f4f6f5','#14271e']};if(c[t]){document.documentElement.style.setProperty('--ern-fundo-inicial',c[t][0]);document.documentElement.style.setProperty('--ern-texto-inicial',c[t][1]);}}catch(e){}})();`,
           }}
         />
+        <OfflineBaseERN />
         <InstalarERN />
         <LanguageProvider>
           <AppProvider>

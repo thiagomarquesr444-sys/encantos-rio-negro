@@ -393,6 +393,33 @@ export default function EditarClientePage() {
 
             <form onSubmit={salvar} className={painel}>
               <h2 className="text-xl font-semibold">Dados do viajante</h2>
+
+          <aside
+            aria-label="Orientações sobre dados pessoais"
+            className="mt-4 rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] p-4 text-sm leading-6 text-[var(--ern-secundario)]"
+          >
+            <p>
+              Informe ao viajante como seus dados serão utilizados.
+              Solicite documento, contato, cidade ou nacionalidade
+              somente quando houver uma finalidade necessária
+              para a operação.
+            </p>
+            <p className="mt-2">
+              Nas observações, registre apenas informações operacionais
+              indispensáveis. Evite dados de saúde, origem étnica,
+              documentos completos de terceiros ou outras informações
+              sensíveis neste campo.
+            </p>
+            <Link
+              href="/privacidade"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex min-h-12 items-center rounded-lg px-2 font-semibold text-[var(--ern-destaque)] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ern-destaque)]"
+            >
+              Política de Privacidade
+              <span className="sr-only"> (abre em nova aba)</span>
+            </Link>
+          </aside>
               <p className="mt-2 text-sm text-[var(--ern-secundario)]">
                 O nome é obrigatório. Os demais dados podem ser complementados.
               </p>

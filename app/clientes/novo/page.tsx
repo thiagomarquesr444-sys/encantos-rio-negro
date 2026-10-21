@@ -237,18 +237,15 @@ export default function NovoClientePage() {
 
     setErro('');
 
-    if (
-      form.nome.trim().length < 3 ||
-      !form.documento.trim() ||
-      !form.telefone.trim() ||
-      !form.email.trim() ||
-      !form.cidade.trim()
-    ) {
-      setErro('Preencha os campos obrigatórios. O nome precisa ter pelo menos 3 caracteres.');
+    if (form.nome.trim().length < 3) {
+      setErro('Informe um nome com pelo menos 3 caracteres.');
       return;
     }
 
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())) {
+    if (
+      form.email.trim() &&
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email.trim())
+    ) {
       setErro('Informe um e-mail válido.');
       return;
     }
@@ -256,7 +253,7 @@ export default function NovoClientePage() {
     const digitos = form.telefone.replace(/\D/g, '');
     const minimo = form.telefone.startsWith('+') ? 7 : 10;
 
-    if (digitos.length < minimo || digitos.length > 15) {
+    if (form.telefone.trim() && (digitos.length < minimo || digitos.length > 15)) {
       setErro('Confira o telefone. Para números internacionais, utilize + e o código do país.');
       return;
     }
@@ -302,10 +299,10 @@ export default function NovoClientePage() {
         id: idCadastro.current,
         empresa_id: atual.empresaId,
         nome: form.nome.trim(),
-        documento: form.documento.trim(),
-        telefone: form.telefone.trim(),
-        email: form.email.trim().toLowerCase(),
-        cidade: form.cidade.trim(),
+        documento: form.documento.trim() || null,
+        telefone: form.telefone.trim() || null,
+        email: form.email.trim().toLowerCase() || null,
+        cidade: form.cidade.trim() || null,
         nacionalidade: form.nacionalidade.trim() || null,
         situacao: form.situacao,
         observacoes: form.observacoes.trim() || null,
@@ -381,19 +378,19 @@ export default function NovoClientePage() {
     },
     {
       chave: 'documento', titulo: 'CPF / Documento', tipo: 'text',
-      obrigatorio: true, maximo: 30,
+      obrigatorio: false, maximo: 30,
     },
     {
       chave: 'telefone', titulo: 'Telefone / WhatsApp', tipo: 'tel',
-      obrigatorio: true, maximo: 25, autocomplete: 'tel',
+      obrigatorio: false, maximo: 25, autocomplete: 'tel',
     },
     {
       chave: 'email', titulo: 'E-mail', tipo: 'email',
-      obrigatorio: true, maximo: 254, autocomplete: 'email',
+      obrigatorio: false, maximo: 254, autocomplete: 'email',
     },
     {
       chave: 'cidade', titulo: 'Cidade / UF', tipo: 'text',
-      obrigatorio: true, maximo: 120, autocomplete: 'address-level2',
+      obrigatorio: false, maximo: 120, autocomplete: 'address-level2',
     },
     {
       chave: 'nacionalidade', titulo: 'Nacionalidade', tipo: 'text',
@@ -494,8 +491,35 @@ export default function NovoClientePage() {
 
         <form onSubmit={salvar} className={painel}>
           <h2 className="text-xl font-semibold">Dados do viajante</h2>
+
+          <aside
+            aria-label="Orientações sobre dados pessoais"
+            className="mt-4 rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] p-4 text-sm leading-6 text-[var(--ern-secundario)]"
+          >
+            <p>
+              Informe ao viajante como seus dados serão utilizados.
+              Solicite documento, contato, cidade ou nacionalidade
+              somente quando houver uma finalidade necessária
+              para a operação.
+            </p>
+            <p className="mt-2">
+              Nas observações, registre apenas informações operacionais
+              indispensáveis. Evite dados de saúde, origem étnica,
+              documentos completos de terceiros ou outras informações
+              sensíveis neste campo.
+            </p>
+            <Link
+              href="/privacidade"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-3 inline-flex min-h-12 items-center rounded-lg px-2 font-semibold text-[var(--ern-destaque)] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[var(--ern-destaque)]"
+            >
+              Política de Privacidade
+              <span className="sr-only"> (abre em nova aba)</span>
+            </Link>
+          </aside>
           <p className="mt-2 text-sm text-[var(--ern-secundario)]">
-            Os campos marcados com * são obrigatórios.
+            Somente o nome é obrigatório. Preencha os demais dados apenas quando necessários ao atendimento ou à contratação.
           </p>
 
           <fieldset disabled={bloqueado} className="mt-6 min-w-0">

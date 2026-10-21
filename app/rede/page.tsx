@@ -156,6 +156,22 @@ function imagemPrincipal(
   );
 }
 
+function textoAlternativoPrincipalERN(
+  publicacao: PublicacaoPublica,
+): string {
+  const imagem = publicacao.midias.find(
+    (midia) => midia.tipo === 'imagem',
+  );
+
+  const midia = imagem ?? publicacao.midias.find(
+    (item) =>
+      item.tipo === 'video' &&
+      Boolean(item.thumbnail_url),
+  );
+
+  return midia?.alt_text?.trim() ?? '';
+}
+
 function localPublicacao(
   publicacao: PublicacaoPublica,
 ): string {
@@ -1323,8 +1339,7 @@ export default function RedePage() {
                       </p>
 
                       <p className="mt-1 text-xs text-[#52665D]">
-                        Perfil editorial
-                        verificado
+                        Conteúdo editorial da ERN
                       </p>
                     </div>
                   </div>
@@ -1354,12 +1369,7 @@ export default function RedePage() {
                           ) ??
                           ''
                         }
-                        alt={
-                          destaque
-                            .midias[0]
-                            ?.alt_text ??
-                          ''
-                        }
+                        alt={textoAlternativoPrincipalERN(destaque)}
                         className="absolute inset-0 h-full w-full object-contain"
                       />
                     )}
@@ -1495,12 +1505,7 @@ export default function RedePage() {
                                 src={
                                   imagem
                                 }
-                                alt={
-                                  publicacao
-                                    .midias[0]
-                                    ?.alt_text ??
-                                  ''
-                                }
+                                alt={textoAlternativoPrincipalERN(publicacao)}
                                 className="h-full w-full object-contain"
                               />
 
