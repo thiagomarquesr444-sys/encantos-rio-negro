@@ -1,641 +1,199 @@
 'use client';
 
+import DemonstracaoOperadoresERN from '@/app/components/DemonstracaoOperadoresERN';
 import Link from 'next/link';
 import PublicHeader from '@/app/components/PublicHeader';
 import AcessosProfissionais from '@/app/components/AcessosProfissionais';
-import {
-  useLanguage,
-  type Idioma,
-} from '@/app/components/LanguageProvider';
+import VitrineGestaoERN from '@/app/components/VitrineGestaoERN';
+import { useLanguage } from '@/app/components/LanguageProvider';
 
 const textos = {
   PT: {
-    hero: {
-      eyebrow: 'ERN Gestão',
-      title:
-        'Você cuida da experiência. A ERN ajuda a organizar a operação.',
-      description:
-        'Uma plataforma criada para aproximar operadores, agências, pousadas, guias, fornecedores e embarcações de uma operação mais organizada — conectada à experiência do turista no Rio Negro.',
-      description2:
-        'A ERN une um portal público para o visitante com acessos profissionais conforme a atuação de quem faz o turismo acontecer.',
-      login: 'Escolher meu acesso',
-      how: 'Entender como funciona',
-      tags: [
-        'Clientes',
-        'Reservas',
-        'Passeios',
-        'Hospedagens',
-        'Financeiro',
-        'Parceiros',
-      ],
-    },
-    preview: {
-      eyebrow: 'Plataforma ERN',
-      title: 'Gestão em um só ambiente.',
-      previewTitle: 'ERN Gestão',
-      previewDescription:
-        'Uma visão da gestão de clientes, reservas e atividades da sua operadora.',
-      tabs: ['Dashboard', 'Reservas', 'Financeiro', 'Operação'],
-    },
-    positioning: {
-      eyebrow: 'Mais que um portal turístico',
-      title:
-        'O diferencial está na conexão entre quem visita e quem opera.',
-      paragraph1:
-        'A ERN foi pensada para criar uma jornada contínua. O visitante pode descobrir destinos e experiências e encontrar os profissionais que fazem o turismo acontecer no Rio Negro.',
-      paragraph2:
-        'A operadora organiza sua gestão empresarial. O guia possui uma identidade profissional própria. O fornecedor participa conforme sua atividade. O turista continua explorando o portal público.',
-    },
-    flowSection: {
-      eyebrow: 'Da descoberta à operação',
-      title: 'Uma jornada pensada para os dois lados do turismo.',
-    },
-    flow: [
-      {
-        etapa: 'Descoberta',
-        texto:
-          'O visitante conhece destinos, cultura, experiências e serviços da região.',
-      },
-      {
-        etapa: 'Interesse',
-        texto:
-          'Preferências, período e necessidades ajudam a entender a experiência que o visitante procura.',
-      },
-      {
-        etapa: 'Conexão',
-        texto:
-          'A proposta da rede é aproximar esse interesse de operadores, guias e fornecedores da região.',
-      },
-      {
-        etapa: 'Gestão',
-        texto:
-          'A empresa organiza cliente, reserva, operação e movimentações dentro da ERN.',
-      },
+    skip: 'Ir para o conteúdo',
+    eyebrow: 'ERN Gestão · turismo no Rio Negro',
+    title: 'Sua operação organizada. Sua experiência conectada ao mundo.',
+    intro: 'Clientes, reservas, logística e financeiro em um ambiente de gestão. Uma página pública para apresentar sua operadora e compartilhar experiências na Rede ERN.',
+    access: 'Acessar a ERN',
+    screens: 'Ver a plataforma por dentro',
+    caption: 'Tela da ERN Gestão. Os recursos disponíveis dependem do plano e do tipo de acesso.',
+    image: 'Dashboard da ERN Gestão com indicadores e informações da operação',
+    pillars: ['Gestão da operadora', 'Presença pública', 'Conexões no território'],
+    workEyebrow: 'Da rotina à divulgação',
+    workTitle: 'Organize por dentro. Apresente por fora.',
+    workIntro: 'A ERN reúne duas frentes que se complementam: o trabalho da sua equipe e a apresentação pública da sua operação.',
+    managementTitle: 'Um lugar para acompanhar a operação',
+    managementText: 'Organize os registros da empresa e acompanhe as etapas de cada atendimento.',
+    managementItems: [
+      'Clientes e informações necessárias ao atendimento',
+      'Reservas, passeios e vínculos com a operação',
+      'Hospedagens, embarcações, guias e parceiros',
+      'Receitas, despesas, vouchers e relatórios conforme o plano',
     ],
-    modulesSection: {
-      eyebrow: 'Gestão das operadoras',
-      title: 'Uma estrutura para organizar a operação turística.',
-      description:
-        'Estes módulos compõem a gestão das operadoras. O acesso individual do guia e o acesso do fornecedor terão funcionalidades relacionadas à sua própria atividade.',
-    },
-    modules: [
-      {
-        titulo: 'Clientes',
-        descricao:
-          'Centralize contatos, histórico, observações e informações essenciais dos viajantes.',
-      },
-      {
-        titulo: 'Reservas',
-        descricao:
-          'Acompanhe solicitações, confirmações, status, valores e detalhes operacionais.',
-      },
-      {
-        titulo: 'Passeios',
-        descricao:
-          'Organize roteiros, experiências, categorias, valores e disponibilidade.',
-      },
-      {
-        titulo: 'Hospedagens',
-        descricao:
-          'Gerencie hotéis, pousadas e opções vinculadas à operação turística.',
-      },
-      {
-        titulo: 'Embarcações',
-        descricao:
-          'Cadastre barcos, capacidade, situação operacional e uso em reservas.',
-      },
-      {
-        titulo: 'Guias da operadora',
-        descricao:
-          'Organize os profissionais utilizados pela empresa, seus contatos, idiomas e disponibilidade.',
-      },
-      {
-        titulo: 'Financeiro',
-        descricao:
-          'Tenha uma visão organizada de receitas, despesas e movimentações.',
-      },
-      {
-        titulo: 'Vouchers',
-        descricao:
-          'Gere documentos e comprovantes ligados às reservas e experiências.',
-      },
-      {
-        titulo: 'Parceiros',
-        descricao:
-          'Estruture relações com pousadas, guias, fornecedores e operadores locais.',
-      },
+    publicTitle: 'Uma presença para ser descoberta',
+    publicText: 'Apresente sua identidade profissional e publique conteúdos para quem explora o Rio Negro.',
+    publicItems: [
+      'Perfil público com apresentação e canais de contato',
+      'Publicações com imagens, roteiros e experiências',
+      'Conteúdo acessível aos visitantes da Rede ERN',
+      'Contato com o prestador pelos canais que ele disponibilizar',
     ],
-    screensSection: {
-      eyebrow: 'Por dentro da plataforma',
-      title: 'Conheça as áreas da ERN Gestão.',
-      description:
-        'Uma estrutura para acompanhar as informações e as atividades da sua operadora.',
-      futureImage: 'Área da plataforma',
-    },
-    screens: [
-      {
-        id: 'dashboard',
-        titulo: 'Visão geral da operação',
-        descricao:
-          'Dashboard com indicadores e acompanhamento da operação.',
-      },
-      {
-        id: 'reservas',
-        titulo: 'Reservas organizadas',
-        descricao:
-          'Acompanhamento de reservas, status e informações do atendimento.',
-      },
-      {
-        id: 'financeiro',
-        titulo: 'Controle financeiro',
-        descricao:
-          'Receitas, despesas e visão financeira da operação.',
-      },
-      {
-        id: 'operacao',
-        titulo: 'Operação integrada',
-        descricao:
-          'Clientes, hospedagens, embarcações, guias e demais módulos da gestão.',
-      },
+    network: 'Conhecer a Rede pública',
+    networkEyebrow: 'Uma rede, diferentes atuações',
+    networkTitle: 'Quem faz o turismo acontecer também precisa se encontrar.',
+    networkIntro: 'Operadoras, guias e fornecedores têm papéis diferentes. A ERN oferece caminhos de acesso próprios e uma vitrine pública para aproximar o visitante do território.',
+    roles: [
+      ['Operadoras', 'Gestão da empresa e apresentação de experiências para o público.'],
+      ['Guias', 'Cadastro profissional próprio, com identidade independente das operadoras.'],
+      ['Fornecedores', 'Participação conforme seus produtos, serviços e sua atividade.'],
     ],
-    differencesSection: {
-      eyebrow: 'O que torna a ERN diferente',
-      title:
-        'Tecnologia pensada a partir da realidade de quem trabalha no território.',
-    },
-    differences: [
-      {
-        numero: '01',
-        titulo: 'Gestão conectada à experiência do turista',
-        descricao:
-          'A ERN aproxima a descoberta pública da operação real. O visitante conhece o território e encontra caminhos para planejar sua experiência.',
-      },
-      {
-        numero: '02',
-        titulo: 'Plataforma pensada para turismo local',
-        descricao:
-          'A estrutura nasce da realidade de agências, pousadas, guias, fornecedores, embarcações e operadores que atuam diretamente no Rio Negro.',
-      },
-      {
-        numero: '03',
-        titulo: 'Cada profissional com seu espaço',
-        descricao:
-          'A gestão empresarial, o cadastro individual do guia e a atuação do fornecedor têm necessidades diferentes e acessos próprios.',
-      },
-      {
-        numero: '04',
-        titulo: 'Operação centralizada',
-        descricao:
-          'Clientes, reservas, passeios, hospedagens, financeiro e parceiros podem ser organizados em um mesmo ambiente.',
-      },
+    networkNote: 'A presença na Rede não garante vendas, reservas ou disponibilidade. As condições de cada experiência devem ser confirmadas com o prestador.',
+    journeyEyebrow: 'Um caminho claro',
+    journeyTitle: 'Da organização à presença pública.',
+    steps: [
+      ['Escolha seu acesso', 'Entre pelo caminho correspondente à sua atuação no turismo.'],
+      ['Prepare sua operação', 'Organize seus registros e preencha as informações do perfil público.'],
+      ['Revise e publique', 'Confira o texto e as imagens antes de disponibilizar o conteúdo na Rede.'],
     ],
-    concierge: {
-      eyebrow: 'Evolução da ERN',
-      title: 'Atendimento antes da reserva. Contexto antes da venda.',
-      description:
-        'O Concierge faz parte da evolução planejada da ERN: ajudar a identificar interesse, período, perfil da viagem e necessidades iniciais. A confirmação final depende da operação real e da disponibilidade de cada prestador.',
-      items: [
-        'Entender o interesse do visitante',
-        'Organizar informações iniciais da viagem',
-        'Reduzir atendimento repetitivo',
-        'Encaminhar oportunidades para a operação',
-        'Atender em diferentes idiomas',
-      ],
-    },
-    finalCta: {
-      eyebrow: 'Encantos Rio Negro',
-      title:
-        'O turismo acontece no território. A gestão não precisa ficar espalhada.',
-      description:
-        'Escolha o acesso relacionado à sua atuação ou continue explorando o Rio Negro pelo portal público.',
-      login: 'Escolher meu acesso',
-      tourist: 'Explorar o portal público',
-    },
-    footer: {
-      left: 'ERN Gestão — Encantos Rio Negro.',
-      right: 'Barcelos • Amazonas',
-    },
+    futureEyebrow: 'Próximos passos do produto',
+    futureTitle: 'Uma base que continua evoluindo.',
+    futureText: 'Concierge e agentes de atendimento fazem parte da evolução planejada da ERN. Não são apresentados aqui como recursos disponíveis para uso imediato.',
+    futureNote: 'A confirmação de uma viagem depende das condições, da disponibilidade e do atendimento de cada prestador.',
+    finalEyebrow: 'Comece pela sua atuação',
+    finalTitle: 'Conheça a estrutura. Escolha seu acesso.',
+    finalText: 'Explore as telas e entre pelo perfil adequado. A disponibilidade de módulos e benefícios deve ser conferida nas condições do plano.',
+    contact: 'Falar com a ERN',
+    legal: 'Informações e atendimento',
+    footer: [
+      ['Contato', '/contato'],
+      ['Privacidade', '/privacidade'],
+      ['Termos de serviço', '/termos'],
+      ['Reembolso', '/reembolso'],
+    ],
   },
-
   EN: {
-    hero: {
-      eyebrow: 'ERN Management',
-      title:
-        'You take care of the experience. ERN helps organize the operation.',
-      description:
-        'A platform designed to bring operators, agencies, inns, guides, suppliers and boats into a more organized operation — connected to the visitor experience on the Rio Negro.',
-      description2:
-        'ERN combines a public portal for visitors with professional access tailored to the people who make tourism happen.',
-      login: 'Choose your access',
-      how: 'See how it works',
-      tags: [
-        'Clients',
-        'Reservations',
-        'Tours',
-        'Accommodation',
-        'Finance',
-        'Partners',
-      ],
-    },
-    preview: {
-      eyebrow: 'ERN Platform',
-      title: 'Management in one environment.',
-      previewTitle: 'ERN Management',
-      previewDescription:
-        'An overview of client, reservation and activity management for your operation.',
-      tabs: ['Dashboard', 'Reservations', 'Finance', 'Operation'],
-    },
-    positioning: {
-      eyebrow: 'More than a tourism portal',
-      title:
-        'The difference lies in connecting visitors with the people who operate.',
-      paragraph1:
-        'ERN was designed to create a continuous journey. Visitors can discover destinations and experiences and find the professionals who make tourism happen on the Rio Negro.',
-      paragraph2:
-        'Operators manage their businesses. Guides have their own professional identities. Suppliers participate according to their activities. Visitors continue exploring the public portal.',
-    },
-    flowSection: {
-      eyebrow: 'From discovery to operation',
-      title: 'A journey designed for both sides of tourism.',
-    },
-    flow: [
-      {
-        etapa: 'Discovery',
-        texto:
-          'Visitors discover destinations, culture, experiences and services in the region.',
-      },
-      {
-        etapa: 'Interest',
-        texto:
-          'Preferences, travel dates and needs help clarify the experience each visitor is looking for.',
-      },
-      {
-        etapa: 'Connection',
-        texto:
-          'The network aims to connect that interest with operators, guides and suppliers in the region.',
-      },
-      {
-        etapa: 'Management',
-        texto:
-          'The company organizes clients, reservations, operations and transactions within ERN.',
-      },
+    skip: 'Skip to content',
+    eyebrow: 'ERN Management · Rio Negro tourism',
+    title: 'Organize your operation. Connect your experiences with the world.',
+    intro: 'Clients, reservations, logistics and finance in a management environment. A public page to introduce your business and share experiences on Rede ERN.',
+    access: 'Access ERN',
+    screens: 'Explore the platform',
+    caption: 'ERN Management screen. Available features depend on the plan and access type.',
+    image: 'ERN Management dashboard showing indicators and operational information',
+    pillars: ['Operator management', 'Public presence', 'Regional connections'],
+    workEyebrow: 'From daily work to public presence',
+    workTitle: 'Organize your business. Present your experiences.',
+    workIntro: 'ERN brings together two complementary areas: your team’s work and the public presentation of your business.',
+    managementTitle: 'A place to follow your operation',
+    managementText: 'Organize company records and follow the stages of each service.',
+    managementItems: [
+      'Clients and information needed to provide the service',
+      'Reservations, tours and operational links',
+      'Accommodation, boats, guides and partners',
+      'Income, expenses, vouchers and reports according to the plan',
     ],
-    modulesSection: {
-      eyebrow: 'Operator management',
-      title: 'A structure designed to organize tourism operations.',
-      description:
-        'These modules support tour operator management. Individual guide and supplier access will provide features related to their own activities.',
-    },
-    modules: [
-      {
-        titulo: 'Clients',
-        descricao:
-          'Centralize contacts, history, notes and essential traveler information.',
-      },
-      {
-        titulo: 'Reservations',
-        descricao:
-          'Track requests, confirmations, status, values and operational details.',
-      },
-      {
-        titulo: 'Tours',
-        descricao:
-          'Organize itineraries, experiences, categories, prices and availability.',
-      },
-      {
-        titulo: 'Accommodation',
-        descricao:
-          'Manage hotels, inns and accommodation options connected to tourism operations.',
-      },
-      {
-        titulo: 'Boats',
-        descricao:
-          'Register boats, capacity, operational status and their use in reservations.',
-      },
-      {
-        titulo: 'Operator guides',
-        descricao:
-          'Organize the professionals used by your company, their contacts, languages and availability.',
-      },
-      {
-        titulo: 'Finance',
-        descricao:
-          'Keep an organized view of revenue, expenses and financial activity.',
-      },
-      {
-        titulo: 'Vouchers',
-        descricao:
-          'Generate documents and confirmations linked to reservations and experiences.',
-      },
-      {
-        titulo: 'Partners',
-        descricao:
-          'Structure relationships with inns, guides, suppliers and local operators.',
-      },
+    publicTitle: 'A presence visitors can discover',
+    publicText: 'Present your professional identity and publish content for people exploring the Rio Negro.',
+    publicItems: [
+      'Public profile with an introduction and contact channels',
+      'Posts featuring images, itineraries and experiences',
+      'Content available to visitors on Rede ERN',
+      'Direct contact through the channels provided by each business',
     ],
-    screensSection: {
-      eyebrow: 'Inside the platform',
-      title: 'Explore the areas of ERN Management.',
-      description:
-        'A structure for tracking your operation’s information and activities.',
-      futureImage: 'Platform area',
-    },
-    screens: [
-      {
-        id: 'dashboard',
-        titulo: 'Operation overview',
-        descricao:
-          'Dashboard with indicators and operational monitoring.',
-      },
-      {
-        id: 'reservas',
-        titulo: 'Organized reservations',
-        descricao:
-          'Track reservations, status and service information.',
-      },
-      {
-        id: 'financeiro',
-        titulo: 'Financial control',
-        descricao:
-          'Revenue, expenses and financial overview of the operation.',
-      },
-      {
-        id: 'operacao',
-        titulo: 'Integrated operation',
-        descricao:
-          'Clients, accommodation, boats, guides and other management modules.',
-      },
+    network: 'Explore the public network',
+    networkEyebrow: 'One network, different roles',
+    networkTitle: 'The people behind tourism need ways to connect.',
+    networkIntro: 'Operators, guides and suppliers have different roles. ERN provides dedicated access paths and a public showcase that brings visitors closer to the region.',
+    roles: [
+      ['Operators', 'Business management and public presentation of experiences.'],
+      ['Guides', 'An individual professional profile, independent of tour operators.'],
+      ['Suppliers', 'Participation according to their products, services and activities.'],
     ],
-    differencesSection: {
-      eyebrow: 'What makes ERN different',
-      title:
-        'Technology designed around the reality of the people who work in the territory.',
-    },
-    differences: [
-      {
-        numero: '01',
-        titulo: 'Management connected to the visitor experience',
-        descricao:
-          'ERN brings public discovery closer to real operations. Visitors discover the territory and find ways to plan their experience.',
-      },
-      {
-        numero: '02',
-        titulo: 'A platform designed for local tourism',
-        descricao:
-          'The structure is based on the reality of agencies, inns, guides, suppliers, boats and operators working directly on the Rio Negro.',
-      },
-      {
-        numero: '03',
-        titulo: 'A place for each professional',
-        descricao:
-          'Business management, individual guide profiles and supplier activities have different needs and their own access paths.',
-      },
-      {
-        numero: '04',
-        titulo: 'Centralized operation',
-        descricao:
-          'Clients, reservations, tours, accommodation, finance and partners can be organized in one environment.',
-      },
+    networkNote: 'A presence on the network does not guarantee sales, reservations or availability. Confirm the terms of each experience with the provider.',
+    journeyEyebrow: 'A clear path',
+    journeyTitle: 'From organization to public presence.',
+    steps: [
+      ['Choose your access', 'Use the access path that matches your role in tourism.'],
+      ['Prepare your operation', 'Organize your records and complete your public profile information.'],
+      ['Review and publish', 'Check the text and images before making content available on the network.'],
     ],
-    concierge: {
-      eyebrow: 'ERN development',
-      title: 'Service before reservation. Context before the sale.',
-      description:
-        'The Concierge is part of ERN’s planned development: helping identify interests, travel dates, traveler profiles and initial needs. Final confirmation depends on real operations and each provider’s availability.',
-      items: [
-        'Understand visitor interests',
-        'Organize initial travel information',
-        'Reduce repetitive service',
-        'Route opportunities to operations',
-        'Serve visitors in different languages',
-      ],
-    },
-    finalCta: {
-      eyebrow: 'Encantos Rio Negro',
-      title:
-        'Tourism happens in the territory. Management does not need to be scattered.',
-      description:
-        'Choose the access related to your activity or continue exploring the Rio Negro through the public portal.',
-      login: 'Choose your access',
-      tourist: 'Explore the public portal',
-    },
-    footer: {
-      left: 'ERN Management — Encantos Rio Negro.',
-      right: 'Barcelos • Amazonas',
-    },
+    futureEyebrow: 'Product development',
+    futureTitle: 'A foundation that keeps evolving.',
+    futureText: 'Concierge and service agents are part of ERN’s planned development. They are not presented here as features available for immediate use.',
+    futureNote: 'Trip confirmation depends on each provider’s terms, availability and service.',
+    finalEyebrow: 'Start with your role',
+    finalTitle: 'Explore the platform. Choose your access.',
+    finalText: 'Explore the screens and select the right profile. Check the plan terms for module and benefit availability.',
+    contact: 'Contact ERN',
+    legal: 'Information and support',
+    footer: [
+      ['Contact', '/contato'],
+      ['Privacy', '/privacidade'],
+      ['Terms of service', '/termos'],
+      ['Refunds', '/reembolso'],
+    ],
   },
-
   ES: {
-    hero: {
-      eyebrow: 'ERN Gestión',
-      title:
-        'Tú cuidas la experiencia. ERN ayuda a organizar la operación.',
-      description:
-        'Una plataforma creada para acercar operadores, agencias, posadas, guías, proveedores y embarcaciones a una operación más organizada, conectada con la experiencia del visitante en el Río Negro.',
-      description2:
-        'ERN combina un portal público para el visitante con accesos profesionales según la actividad de quienes hacen que el turismo suceda.',
-      login: 'Elegir mi acceso',
-      how: 'Entender cómo funciona',
-      tags: [
-        'Clientes',
-        'Reservas',
-        'Paseos',
-        'Hospedajes',
-        'Finanzas',
-        'Socios',
-      ],
-    },
-    preview: {
-      eyebrow: 'Plataforma ERN',
-      title: 'Gestión en un solo entorno.',
-      previewTitle: 'ERN Gestión',
-      previewDescription:
-        'Una visión de la gestión de clientes, reservas y actividades de tu operación.',
-      tabs: ['Dashboard', 'Reservas', 'Finanzas', 'Operación'],
-    },
-    positioning: {
-      eyebrow: 'Más que un portal turístico',
-      title:
-        'La diferencia está en la conexión entre quien visita y quien opera.',
-      paragraph1:
-        'ERN fue pensada para crear un recorrido continuo. El visitante puede descubrir destinos y experiencias y encontrar a los profesionales que hacen que el turismo suceda en el Río Negro.',
-      paragraph2:
-        'El operador organiza su gestión empresarial. El guía tiene su propia identidad profesional. El proveedor participa según su actividad. El visitante continúa explorando el portal público.',
-    },
-    flowSection: {
-      eyebrow: 'Del descubrimiento a la operación',
-      title: 'Un recorrido pensado para ambos lados del turismo.',
-    },
-    flow: [
-      {
-        etapa: 'Descubrimiento',
-        texto:
-          'El visitante conoce destinos, cultura, experiencias y servicios de la región.',
-      },
-      {
-        etapa: 'Interés',
-        texto:
-          'Las preferencias, las fechas y las necesidades ayudan a comprender la experiencia que busca el visitante.',
-      },
-      {
-        etapa: 'Conexión',
-        texto:
-          'La propuesta de la red es acercar ese interés a operadores, guías y proveedores de la región.',
-      },
-      {
-        etapa: 'Gestión',
-        texto:
-          'La empresa organiza cliente, reserva, operación y movimientos dentro de ERN.',
-      },
+    skip: 'Ir al contenido',
+    eyebrow: 'ERN Gestión · turismo en el Río Negro',
+    title: 'Su operación organizada. Sus experiencias conectadas con el mundo.',
+    intro: 'Clientes, reservas, logística y finanzas en un entorno de gestión. Una página pública para presentar su empresa y compartir experiencias en Rede ERN.',
+    access: 'Acceder a ERN',
+    screens: 'Explorar la plataforma',
+    caption: 'Pantalla de ERN Gestión. Las funciones disponibles dependen del plan y del tipo de acceso.',
+    image: 'Panel de ERN Gestión con indicadores e información de la operación',
+    pillars: ['Gestión del operador', 'Presencia pública', 'Conexiones regionales'],
+    workEyebrow: 'De la rutina a la divulgación',
+    workTitle: 'Organice su empresa. Presente sus experiencias.',
+    workIntro: 'ERN reúne dos áreas complementarias: el trabajo de su equipo y la presentación pública de su empresa.',
+    managementTitle: 'Un lugar para seguir su operación',
+    managementText: 'Organice los registros de la empresa y acompañe las etapas de cada atención.',
+    managementItems: [
+      'Clientes e información necesaria para la atención',
+      'Reservas, paseos y vínculos con la operación',
+      'Hospedajes, embarcaciones, guías y socios',
+      'Ingresos, gastos, vouchers e informes según el plan',
     ],
-    modulesSection: {
-      eyebrow: 'Gestión de operadores',
-      title: 'Una estructura para organizar la operación turística.',
-      description:
-        'Estos módulos forman parte de la gestión de operadores. El acceso individual del guía y el acceso del proveedor tendrán funciones relacionadas con su propia actividad.',
-    },
-    modules: [
-      {
-        titulo: 'Clientes',
-        descricao:
-          'Centraliza contactos, historial, observaciones e información esencial de los viajeros.',
-      },
-      {
-        titulo: 'Reservas',
-        descricao:
-          'Acompaña solicitudes, confirmaciones, estados, valores y detalles operativos.',
-      },
-      {
-        titulo: 'Paseos',
-        descricao:
-          'Organiza itinerarios, experiencias, categorías, valores y disponibilidad.',
-      },
-      {
-        titulo: 'Hospedajes',
-        descricao:
-          'Gestiona hoteles, posadas y opciones vinculadas a la operación turística.',
-      },
-      {
-        titulo: 'Embarcaciones',
-        descricao:
-          'Registra barcos, capacidad, situación operativa y uso en reservas.',
-      },
-      {
-        titulo: 'Guías del operador',
-        descricao:
-          'Organiza los profesionales utilizados por la empresa, sus contactos, idiomas y disponibilidad.',
-      },
-      {
-        titulo: 'Finanzas',
-        descricao:
-          'Mantén una visión organizada de ingresos, gastos y movimientos.',
-      },
-      {
-        titulo: 'Vouchers',
-        descricao:
-          'Genera documentos y comprobantes vinculados a reservas y experiencias.',
-      },
-      {
-        titulo: 'Socios',
-        descricao:
-          'Estructura relaciones con posadas, guías, proveedores y operadores locales.',
-      },
+    publicTitle: 'Una presencia para ser descubierta',
+    publicText: 'Presente su identidad profesional y publique contenido para quienes exploran el Río Negro.',
+    publicItems: [
+      'Perfil público con presentación y canales de contacto',
+      'Publicaciones con imágenes, itinerarios y experiencias',
+      'Contenido disponible para los visitantes de Rede ERN',
+      'Contacto a través de los canales que cada prestador ofrece',
     ],
-    screensSection: {
-      eyebrow: 'Dentro de la plataforma',
-      title: 'Conoce las áreas de ERN Gestión.',
-      description:
-        'Una estructura para seguir la información y las actividades de tu operación.',
-      futureImage: 'Área de la plataforma',
-    },
-    screens: [
-      {
-        id: 'dashboard',
-        titulo: 'Visión general de la operación',
-        descricao:
-          'Dashboard con indicadores y seguimiento de la operación.',
-      },
-      {
-        id: 'reservas',
-        titulo: 'Reservas organizadas',
-        descricao:
-          'Seguimiento de reservas, estados e información de atención.',
-      },
-      {
-        id: 'financeiro',
-        titulo: 'Control financiero',
-        descricao:
-          'Ingresos, gastos y visión financiera de la operación.',
-      },
-      {
-        id: 'operacao',
-        titulo: 'Operación integrada',
-        descricao:
-          'Clientes, hospedajes, embarcaciones, guías y demás módulos de gestión.',
-      },
+    network: 'Conocer la red pública',
+    networkEyebrow: 'Una red, diferentes actividades',
+    networkTitle: 'Quienes hacen posible el turismo necesitan encontrarse.',
+    networkIntro: 'Operadores, guías y proveedores tienen funciones diferentes. ERN ofrece accesos propios y una vitrina pública para acercar al visitante al territorio.',
+    roles: [
+      ['Operadores', 'Gestión de la empresa y presentación pública de experiencias.'],
+      ['Guías', 'Registro profesional propio, independiente de los operadores.'],
+      ['Proveedores', 'Participación según sus productos, servicios y actividades.'],
     ],
-    differencesSection: {
-      eyebrow: 'Lo que hace diferente a ERN',
-      title:
-        'Tecnología pensada a partir de la realidad de quienes trabajan en el territorio.',
-    },
-    differences: [
-      {
-        numero: '01',
-        titulo: 'Gestión conectada a la experiencia del visitante',
-        descricao:
-          'ERN acerca el descubrimiento público a la operación real. El visitante conoce el territorio y encuentra formas de planear su experiencia.',
-      },
-      {
-        numero: '02',
-        titulo: 'Plataforma pensada para turismo local',
-        descricao:
-          'La estructura nace de la realidad de agencias, posadas, guías, proveedores, embarcaciones y operadores que trabajan directamente en el Río Negro.',
-      },
-      {
-        numero: '03',
-        titulo: 'Un espacio para cada profesional',
-        descricao:
-          'La gestión empresarial, el perfil individual del guía y la actividad del proveedor tienen necesidades diferentes y accesos propios.',
-      },
-      {
-        numero: '04',
-        titulo: 'Operación centralizada',
-        descricao:
-          'Clientes, reservas, paseos, hospedajes, finanzas y socios pueden organizarse en un mismo entorno.',
-      },
+    networkNote: 'La presencia en la red no garantiza ventas, reservas ni disponibilidad. Confirme las condiciones de cada experiencia con el prestador.',
+    journeyEyebrow: 'Un camino claro',
+    journeyTitle: 'De la organización a la presencia pública.',
+    steps: [
+      ['Elija su acceso', 'Entre por el acceso correspondiente a su actividad turística.'],
+      ['Prepare su operación', 'Organice sus registros y complete la información del perfil público.'],
+      ['Revise y publique', 'Revise el texto y las imágenes antes de publicar el contenido en la red.'],
     ],
-    concierge: {
-      eyebrow: 'Evolución de ERN',
-      title: 'Atención antes de la reserva. Contexto antes de la venta.',
-      description:
-        'El Concierge forma parte de la evolución prevista de ERN: ayudar a identificar intereses, fechas, perfil del viaje y necesidades iniciales. La confirmación final depende de la operación real y de la disponibilidad de cada prestador.',
-      items: [
-        'Comprender el interés del visitante',
-        'Organizar información inicial del viaje',
-        'Reducir atención repetitiva',
-        'Dirigir oportunidades hacia la operación',
-        'Atender en diferentes idiomas',
-      ],
-    },
-    finalCta: {
-      eyebrow: 'Encantos Rio Negro',
-      title:
-        'El turismo sucede en el territorio. La gestión no necesita estar dispersa.',
-      description:
-        'Elige el acceso relacionado con tu actividad o continúa explorando el Río Negro desde el portal público.',
-      login: 'Elegir mi acceso',
-      tourist: 'Explorar el portal público',
-    },
-    footer: {
-      left: 'ERN Gestión — Encantos Rio Negro.',
-      right: 'Barcelos • Amazonas',
-    },
+    futureEyebrow: 'Evolución del producto',
+    futureTitle: 'Una base que sigue evolucionando.',
+    futureText: 'El Concierge y los agentes de atención forman parte de la evolución prevista de ERN. No se presentan aquí como funciones disponibles para uso inmediato.',
+    futureNote: 'La confirmación de un viaje depende de las condiciones, disponibilidad y atención de cada prestador.',
+    finalEyebrow: 'Empiece por su actividad',
+    finalTitle: 'Conozca la estructura. Elija su acceso.',
+    finalText: 'Explore las pantallas y seleccione el perfil adecuado. Consulte las condiciones del plan para conocer los módulos y beneficios disponibles.',
+    contact: 'Contactar con ERN',
+    legal: 'Información y atención',
+    footer: [
+      ['Contacto', '/contato'],
+      ['Privacidad', '/privacidade'],
+      ['Términos del servicio', '/termos'],
+      ['Reembolsos', '/reembolso'],
+    ],
   },
-} satisfies Record<Idioma, unknown>;
-
-const fonteTitulo = {
-  fontFamily: 'var(--font-fraunces), serif',
 };
 
 export default function OperadoresPage() {
@@ -643,446 +201,225 @@ export default function OperadoresPage() {
   const t = textos[idioma];
 
   return (
-    <div
-      className="min-h-screen overflow-x-hidden bg-[#0B1512] text-[#EDEDE3]"
-      style={{
-        fontFamily: 'var(--font-work-sans), sans-serif',
-      }}
-    >
+    <div className="comercial-ern">
+      <a className="pular" href="#conteudo-operadores">{t.skip}</a>
       <PublicHeader />
 
-      <main>
-        {/* Apresentação */}
-        <section className="relative overflow-hidden border-b border-white/[0.07] bg-[#091510] px-5 pb-16 pt-32 md:px-8 md:pb-24 md:pt-44">
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,rgba(227,161,68,0.10),transparent_30%),radial-gradient(circle_at_20%_75%,rgba(124,156,135,0.10),transparent_32%)]"
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-40 top-20 h-[520px] w-[520px] rounded-full border border-[#E3A144]/10"
-          />
-          <div
-            aria-hidden="true"
-            className="pointer-events-none absolute -right-24 top-36 h-[390px] w-[390px] rounded-full border border-[#E3A144]/10"
-          />
-
-          <div className="relative mx-auto grid max-w-[1180px] gap-10 lg:grid-cols-[1.02fr_0.98fr] lg:items-center lg:gap-14">
-            <div className="min-w-0">
-              <div className="flex items-center gap-3">
-                <span className="h-px w-9 bg-[#E3A144]" />
-                <span className="text-xs font-semibold uppercase tracking-[0.22em] text-[#E3A144]">
-                  {t.hero.eyebrow}
-                </span>
+      <main id="conteudo-operadores" tabIndex={-1}>
+        <section className="abertura">
+          <div className="limite abertura-grid">
+            <div className="abertura-texto">
+              <p className="chamada">{t.eyebrow}</p>
+              <h1>{t.title}</h1>
+              <p className="introducao">{t.intro}</p>
+              <div className="acoes">
+                <a href="#acessos-profissionais" className="principal">{t.access}</a>
+                <a href="#vitrine-gestao" className="secundario">{t.screens}</a>
               </div>
-
-              <h1
-                className="mt-6 max-w-[760px] text-[clamp(2.3rem,6vw,5.8rem)] font-medium leading-[1.02] tracking-[-0.04em] text-[#F0F0E8]"
-                style={fonteTitulo}
-              >
-                {t.hero.title}
-              </h1>
-
-              <p className="mt-6 max-w-[680px] text-sm leading-7 text-[#EDEDE3]/65 md:text-lg md:leading-8">
-                {t.hero.description}
-              </p>
-
-              <p className="mt-4 max-w-[660px] text-sm leading-7 text-[#EDEDE3]/45">
-                {t.hero.description2}
-              </p>
-
-              <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-                <a
-                  href="#acessos-profissionais"
-                  className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-[#E3A144] px-7 text-sm font-bold text-[#07130F] transition hover:-translate-y-0.5 hover:bg-[#F0B35C] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#F4C77E] focus-visible:ring-offset-2 focus-visible:ring-offset-[#091510]"
-                >
-                  {t.hero.login}
-                </a>
-
-                <a
-                  href="#como-funciona"
-                  className="inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border border-white/12 bg-white/[0.03] px-7 text-sm font-semibold text-[#EDEDE3]/78 transition hover:bg-white/[0.06]"
-                >
-                  {t.hero.how}
-                  <span aria-hidden="true">→</span>
-                </a>
-              </div>
-
-              <div className="mt-8 flex flex-wrap gap-x-5 gap-y-3 text-xs text-[#EDEDE3]/45">
-                {t.hero.tags.map((item) => (
-                  <span key={item}>{item}</span>
-                ))}
-              </div>
+              <ul className="pilares">
+                {t.pillars.map(item => <li key={item}>{item}</li>)}
+              </ul>
             </div>
 
-            <div className="relative mx-auto w-full min-w-0 max-w-[560px] lg:ml-auto">
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute -inset-10 rounded-full bg-[#E3A144]/5 blur-3xl"
-              />
+            <DemonstracaoOperadoresERN />
+          </div>
+        </section>
 
-              <div className="relative overflow-hidden rounded-[28px] border border-white/10 bg-[#0D1B16] shadow-2xl">
-                <div className="border-b border-white/[0.07] px-5 py-4">
-                  <div className="flex items-center justify-between gap-3">
-                    <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-                        {t.preview.eyebrow}
-                      </p>
-                      <p
-                        className="mt-1.5 text-xl text-[#F0F0E8]"
-                        style={fonteTitulo}
-                      >
-                        {t.preview.title}
-                      </p>
-                    </div>
-                    <span className="shrink-0 rounded-full border border-emerald-500/20 bg-emerald-400/10 px-3 py-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-emerald-300">
-                      ERN
-                    </span>
-                  </div>
-                </div>
+        <section className="bloco">
+          <div className="limite">
+            <header className="cabecalho">
+              <p className="chamada">{t.workEyebrow}</p>
+              <h2>{t.workTitle}</h2>
+              <p>{t.workIntro}</p>
+            </header>
 
-                <div className="flex min-h-[230px] items-center justify-center bg-gradient-to-br from-[#14261E] via-[#0D1B16] to-[#07110E] px-6 py-8 md:min-h-[300px]">
-                  <div className="max-w-[340px] text-center">
-                    <div
-                      aria-hidden="true"
-                      className="mx-auto flex h-12 w-12 items-center justify-center rounded-full border border-[#E3A144]/25 bg-[#E3A144]/10 text-[#E3A144]"
-                    >
-                      ✦
-                    </div>
-
-                    <p
-                      className="mt-5 text-2xl text-[#F0F0E8]"
-                      style={fonteTitulo}
-                    >
-                      {t.preview.previewTitle}
-                    </p>
-
-                    <p className="mt-3 text-sm leading-6 text-[#EDEDE3]/45">
-                      {t.preview.previewDescription}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-px border-t border-white/[0.07] bg-white/[0.07] sm:grid-cols-4">
-                  {t.preview.tabs.map((item) => (
-                    <div
-                      key={item}
-                      className="min-w-0 bg-[#0D1B16] px-2 py-3 text-center text-[9px] font-semibold uppercase tracking-[0.08em] text-[#EDEDE3]/40"
-                    >
-                      {item}
-                    </div>
-                  ))}
-                </div>
-              </div>
+            <div className="dupla">
+              <article className="frente">
+                <h3>{t.managementTitle}</h3>
+                <p>{t.managementText}</p>
+                <ul className="lista">
+                  {t.managementItems.map(item => <li key={item}>{item}</li>)}
+                </ul>
+              </article>
+              <article className="frente">
+                <h3>{t.publicTitle}</h3>
+                <p>{t.publicText}</p>
+                <ul className="lista">
+                  {t.publicItems.map(item => <li key={item}>{item}</li>)}
+                </ul>
+                <Link href="/rede" className="texto-link">
+                  {t.network} <span aria-hidden="true">→</span>
+                </Link>
+              </article>
             </div>
           </div>
         </section>
 
-        {/* Entradas profissionais */}
-        <AcessosProfissionais />
+        <VitrineGestaoERN
+          destino="#acessos-profissionais"
+          textoBotao={t.access}
+        />
 
-        {/* Posicionamento */}
-        <section className="border-b border-white/[0.07] bg-[#0B1512] px-5 py-16 md:px-8 md:py-24">
-          <div className="mx-auto grid max-w-[1180px] gap-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-24">
+        <section className="bloco rede">
+          <div className="limite">
+            <header className="cabecalho">
+              <p className="chamada">{t.networkEyebrow}</p>
+              <h2>{t.networkTitle}</h2>
+              <p>{t.networkIntro}</p>
+            </header>
+
+            <div className="tres">
+              {t.roles.map(([titulo, descricao]) => (
+                <article className="papel" key={titulo}>
+                  <h3>{titulo}</h3>
+                  <p>{descricao}</p>
+                </article>
+              ))}
+            </div>
+            <p className="nota">{t.networkNote}</p>
+          </div>
+        </section>
+
+        <section className="bloco">
+          <div className="limite">
+            <header className="cabecalho">
+              <p className="chamada">{t.journeyEyebrow}</p>
+              <h2>{t.journeyTitle}</h2>
+            </header>
+            <ol className="tres etapas">
+              {t.steps.map(([titulo, descricao], indice) => (
+                <li key={titulo}>
+                  <span className="numero" aria-hidden="true">{indice + 1}</span>
+                  <h3>{titulo}</h3>
+                  <p>{descricao}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        <section className="evolucao">
+          <div className="limite evolucao-grid">
             <div>
-              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7C9C87]">
-                {t.positioning.eyebrow}
-              </span>
-              <h2
-                className="mt-5 max-w-[480px] text-3xl leading-[1.08] text-[#F0F0E8] md:text-5xl"
-                style={fonteTitulo}
-              >
-                {t.positioning.title}
-              </h2>
+              <p className="chamada">{t.futureEyebrow}</p>
+              <h2>{t.futureTitle}</h2>
             </div>
-
-            <div className="flex items-end">
-              <div className="max-w-[650px]">
-                <p className="text-base leading-8 text-[#EDEDE3]/60 md:text-lg">
-                  {t.positioning.paragraph1}
-                </p>
-                <p className="mt-5 text-base leading-8 text-[#EDEDE3]/45">
-                  {t.positioning.paragraph2}
-                </p>
-              </div>
+            <div>
+              <p>{t.futureText}</p>
+              <p className="nota">{t.futureNote}</p>
             </div>
           </div>
         </section>
 
-        {/* Como funciona */}
-        <section
-          id="como-funciona"
-          className="scroll-mt-24 border-b border-white/[0.07] bg-[#0E1A15] px-5 py-16 md:px-8 md:py-24"
-        >
-          <div className="mx-auto max-w-[1180px]">
-            <div className="max-w-[720px]">
-              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
-                {t.flowSection.eyebrow}
-              </span>
-              <h2
-                className="mt-5 text-3xl leading-[1.08] text-[#F0F0E8] md:text-5xl"
-                style={fonteTitulo}
-              >
-                {t.flowSection.title}
-              </h2>
-            </div>
-
-            <div className="mt-9 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
-              {t.flow.map((item, index) => (
-                <article
-                  key={item.etapa}
-                  className="relative overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#0A1713] p-6"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="absolute right-5 top-4 text-5xl font-semibold text-white/[0.025]"
-                  >
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full border border-[#E3A144]/20 bg-[#E3A144]/8 text-xs font-semibold text-[#E3A144]">
-                    {String(index + 1).padStart(2, '0')}
-                  </div>
-
-                  <h3
-                    className="mt-6 text-2xl text-[#F0F0E8]"
-                    style={fonteTitulo}
-                  >
-                    {item.etapa}
-                  </h3>
-                  <p className="mt-3 text-sm leading-7 text-[#EDEDE3]/55">
-                    {item.texto}
-                  </p>
-                </article>
-              ))}
-            </div>
+        <section className="bloco escolha">
+          <div className="limite">
+            <p className="chamada">{t.finalEyebrow}</p>
+            <h2>{t.finalTitle}</h2>
+            <p>{t.finalText}</p>
+            <Link href="/contato" className="texto-link">
+              {t.contact} <span aria-hidden="true">→</span>
+            </Link>
           </div>
         </section>
 
-        {/* Módulos das operadoras */}
-        <section className="border-b border-white/[0.07] bg-[#0B1512] px-5 py-16 md:px-8 md:py-24">
-          <div className="mx-auto max-w-[1180px]">
-            <div className="grid gap-10 lg:grid-cols-[0.8fr_1.2fr]">
-              <div>
-                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#7C9C87]">
-                  {t.modulesSection.eyebrow}
-                </span>
-                <h2
-                  className="mt-5 max-w-[480px] text-3xl leading-[1.08] text-[#F0F0E8] md:text-5xl"
-                  style={fonteTitulo}
-                >
-                  {t.modulesSection.title}
-                </h2>
-                <p className="mt-6 max-w-[500px] text-sm leading-7 text-[#EDEDE3]/50">
-                  {t.modulesSection.description}
-                </p>
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                {t.modules.map((modulo) => (
-                  <article
-                    key={modulo.titulo}
-                    className="rounded-[22px] border border-white/[0.08] bg-[#0D1B16] p-5 transition hover:-translate-y-0.5 hover:border-[#E3A144]/20"
-                  >
-                    <div className="flex items-center gap-3">
-                      <span
-                        aria-hidden="true"
-                        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#E3A144]/20 bg-[#E3A144]/8 text-[10px] text-[#E3A144]"
-                      >
-                        ✦
-                      </span>
-                      <h3 className="text-sm font-semibold text-[#F0F0E8]">
-                        {modulo.titulo}
-                      </h3>
-                    </div>
-                    <p className="mt-4 text-sm leading-6 text-[#EDEDE3]/48">
-                      {modulo.descricao}
-                    </p>
-                  </article>
-                ))}
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Áreas da plataforma */}
-        <section className="border-b border-white/[0.07] bg-[#0E1A15] px-5 py-16 md:px-8 md:py-24">
-          <div className="mx-auto max-w-[1180px]">
-            <div className="max-w-[760px]">
-              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
-                {t.screensSection.eyebrow}
-              </span>
-              <h2
-                className="mt-5 text-3xl leading-[1.08] text-[#F0F0E8] md:text-5xl"
-                style={fonteTitulo}
-              >
-                {t.screensSection.title}
-              </h2>
-              <p className="mt-6 max-w-[680px] text-base leading-8 text-[#EDEDE3]/55">
-                {t.screensSection.description}
-              </p>
-            </div>
-
-            <div className="mt-9 grid gap-5 md:grid-cols-2">
-              {t.screens.map((item) => (
-                <article
-                  key={item.id}
-                  className="overflow-hidden rounded-[24px] border border-white/[0.08] bg-[#0A1713]"
-                >
-                  <div className="flex min-h-[130px] items-center justify-center bg-gradient-to-br from-[#14261E] via-[#0D1B16] to-[#07110E] px-6 py-6">
-                    <div className="text-center">
-                      <div
-                        aria-hidden="true"
-                        className="mx-auto flex h-10 w-10 items-center justify-center rounded-full border border-[#E3A144]/20 bg-[#E3A144]/10 text-[#E3A144]"
-                      >
-                        ✦
-                      </div>
-                      <p className="mt-4 text-xs uppercase tracking-[0.16em] text-[#EDEDE3]/30">
-                        {t.screensSection.futureImage}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="p-5">
-                    <h3
-                      className="text-2xl text-[#F0F0E8]"
-                      style={fonteTitulo}
-                    >
-                      {item.titulo}
-                    </h3>
-                    <p className="mt-3 text-sm leading-6 text-[#EDEDE3]/50">
-                      {item.descricao}
-                    </p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Diferenciais */}
-        <section className="border-b border-white/[0.07] bg-[#101D17] px-5 py-16 md:px-8 md:py-24">
-          <div className="mx-auto max-w-[1180px]">
-            <div className="max-w-[720px]">
-              <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
-                {t.differencesSection.eyebrow}
-              </span>
-              <h2
-                className="mt-5 text-3xl leading-[1.08] text-[#F0F0E8] md:text-5xl"
-                style={fonteTitulo}
-              >
-                {t.differencesSection.title}
-              </h2>
-            </div>
-
-            <div className="mt-9 divide-y divide-white/[0.08] border-y border-white/[0.08]">
-              {t.differences.map((item) => (
-                <article
-                  key={item.numero}
-                  className="grid gap-4 py-7 md:grid-cols-[80px_0.8fr_1.2fr] md:items-start md:gap-8"
-                >
-                  <span className="text-xs font-semibold text-[#E3A144]">
-                    {item.numero}
-                  </span>
-                  <h3
-                    className="text-2xl leading-tight text-[#F0F0E8]"
-                    style={fonteTitulo}
-                  >
-                    {item.titulo}
-                  </h3>
-                  <p className="text-sm leading-7 text-[#EDEDE3]/52">
-                    {item.descricao}
-                  </p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Concierge */}
-        <section className="border-b border-white/[0.07] bg-[#0B1512] px-5 py-16 md:px-8 md:py-24">
-          <div className="mx-auto max-w-[1180px] overflow-hidden rounded-[30px] border border-[#E3A144]/18 bg-[#0E1B16]">
-            <div className="grid lg:grid-cols-[1.05fr_0.95fr]">
-              <div className="p-6 md:p-10 lg:p-12">
-                <span className="text-xs font-semibold uppercase tracking-[0.2em] text-[#E3A144]">
-                  {t.concierge.eyebrow}
-                </span>
-                <h2
-                  className="mt-5 max-w-[580px] text-3xl leading-[1.08] text-[#F0F0E8] md:text-5xl"
-                  style={fonteTitulo}
-                >
-                  {t.concierge.title}
-                </h2>
-                <p className="mt-6 max-w-[590px] text-base leading-8 text-[#EDEDE3]/58">
-                  {t.concierge.description}
-                </p>
-              </div>
-
-              <div className="border-t border-white/[0.07] bg-[#08130F] p-6 md:p-10 lg:border-l lg:border-t-0">
-                <div className="space-y-3">
-                  {t.concierge.items.map((item) => (
-                    <div
-                      key={item}
-                      className="flex items-center gap-3 rounded-xl border border-white/[0.07] bg-white/[0.025] px-4 py-3.5"
-                    >
-                      <span
-                        aria-hidden="true"
-                        className="text-[#E3A144]"
-                      >
-                        ✦
-                      </span>
-                      <span className="text-sm text-[#EDEDE3]/65">
-                        {item}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Acesso final */}
-        <section className="bg-[#091510] px-5 py-16 md:px-8 md:py-24">
-          <div className="mx-auto max-w-[900px] text-center">
-            <span className="text-xs font-semibold uppercase tracking-[0.22em] text-[#E3A144]">
-              {t.finalCta.eyebrow}
-            </span>
-            <h2
-              className="mt-6 text-3xl leading-[1.06] text-[#F0F0E8] md:text-6xl"
-              style={fonteTitulo}
-            >
-              {t.finalCta.title}
-            </h2>
-            <p className="mx-auto mt-7 max-w-[650px] text-base leading-8 text-[#EDEDE3]/55">
-              {t.finalCta.description}
-            </p>
-
-            <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
-              <a
-                href="#acessos-profissionais"
-                className="inline-flex min-h-[52px] items-center justify-center rounded-xl bg-[#E3A144] px-8 text-sm font-bold text-[#07130F] transition hover:-translate-y-0.5 hover:bg-[#F0B35C]"
-              >
-                {t.finalCta.login}
-              </a>
-
-              <Link
-                href="/"
-                className="inline-flex min-h-[52px] items-center justify-center rounded-xl border border-white/10 bg-white/[0.025] px-8 text-sm font-semibold text-[#EDEDE3]/70 transition hover:bg-white/[0.05]"
-              >
-                {t.finalCta.tourist}
-              </Link>
-            </div>
-          </div>
-        </section>
+        <AcessosProfissionais />
       </main>
 
-      <footer className="border-t border-white/[0.07] bg-[#07100D] px-5 py-10 md:px-8">
-        <div className="mx-auto flex max-w-[1180px] flex-col gap-3 text-xs text-[#EDEDE3]/35 sm:flex-row sm:items-center sm:justify-between">
-          <span>{t.footer.left}</span>
-          <span>{t.footer.right}</span>
+      <footer className="rodape">
+        <div className="limite rodape-interior">
+          <p>Encantos Rio Negro · Barcelos, Amazonas</p>
+          <nav aria-label={t.legal}>
+            {t.footer.map(([rotulo, href]) => (
+              <Link href={href} key={href}>{rotulo}</Link>
+            ))}
+          </nav>
         </div>
       </footer>
+
+      <style jsx>{`
+        .comercial-ern {
+          background:#fff7db;
+          color:#30260d;
+          font-family:var(--font-work-sans),sans-serif;
+        }
+        .limite { width:100%; max-width:1240px; margin:0 auto; min-width:0; }
+        .abertura { padding:144px 24px 72px; border-bottom:1px solid #cdba7a; }
+        .abertura-grid { display:grid; grid-template-columns:.95fr 1.05fr; gap:48px; align-items:center; }
+        .abertura-texto { min-width:0; }
+        .chamada { color:#805600; font-size:11px; line-height:1.7; font-weight:700; text-transform:uppercase; letter-spacing:.16em; }
+        h1,h2,h3 { font-family:var(--font-fraunces),serif; overflow-wrap:anywhere; }
+        h1 { font-size:clamp(36px,4.5vw,66px); line-height:1.06; letter-spacing:-.04em; margin:20px 0 0; }
+        h2 { font-size:clamp(30px,3.8vw,48px); line-height:1.12; letter-spacing:-.025em; margin:16px 0 0; }
+        h3 { font-size:26px; line-height:1.2; }
+        p { overflow-wrap:anywhere; }
+        .introducao { margin-top:24px; font-size:17px; line-height:1.9; color:#695727; }
+        .acoes { display:flex; flex-wrap:wrap; gap:12px; margin-top:28px; }
+        .acoes a { display:inline-flex; align-items:center; justify-content:center; min-height:52px; padding:12px 20px; border-radius:12px; font-size:14px; font-weight:700; text-align:center; text-decoration:none; }
+        .principal { background:#805600; color:#fff; border:1px solid #805600; }
+        .principal:hover { background:#644300; }
+        .secundario { border:1px solid #a58b48; color:#30260d; }
+        .secundario:hover { background:#f0e4bb; }
+        .pilares { display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:26px; padding:0; list-style:none; color:#695727; font-size:12px; line-height:1.8; }
+        .pilares li { border-bottom:1px solid #cdba7a; padding-bottom:4px; }
+        .hero-captura { min-width:0; margin:0; padding:12px; background:#fffcf0; border:1px solid #cdba7a; border-radius:18px; box-shadow:0 18px 45px #30260d12; }
+        .hero-captura :global(a) { display:block; border-radius:8px; }
+        .hero-captura :global(.captura) { display:block; width:100%; height:auto; border-radius:8px; }
+        figcaption { padding:12px 4px 2px; color:#695727; font-size:12px; line-height:1.7; }
+        .bloco { padding:80px 24px; }
+        .cabecalho { max-width:800px; }
+        .cabecalho>p:last-child:not(.chamada) { margin-top:22px; color:#695727; font-size:16px; line-height:1.9; }
+        .dupla { display:grid; grid-template-columns:1fr 1fr; gap:48px; margin-top:40px; }
+        .frente { min-width:0; border-top:2px solid #805600; padding-top:24px; }
+        .frente>p { margin-top:16px; color:#695727; line-height:1.8; }
+        .lista { padding-left:20px; margin-top:20px; list-style:disc; }
+        .lista li { padding:6px 0; color:#695727; line-height:1.75; font-size:14px; overflow-wrap:anywhere; }
+        :global(.comercial-ern .texto-link) { display:inline-flex; align-items:center; gap:16px; min-height:48px; margin-top:20px; color:#805600; font-weight:700; text-decoration:underline; text-underline-offset:5px; }
+        .rede { background:#fffcf0; border-top:1px solid #cdba7a; border-bottom:1px solid #cdba7a; }
+        .tres { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:32px; margin-top:36px; }
+        .papel { border-top:1px solid #cdba7a; padding-top:22px; }
+        .papel p,.etapas p { margin-top:14px; color:#695727; font-size:15px; line-height:1.85; }
+        .nota { max-width:860px; margin-top:28px; color:#695727; font-size:13px; line-height:1.85; }
+        .etapas { list-style:none; padding:0; }
+        .etapas li { min-width:0; }
+        .numero { display:flex; align-items:center; justify-content:center; width:40px; height:40px; border:1px solid #a58b48; border-radius:50%; color:#805600; font-size:14px; font-weight:700; margin-bottom:20px; }
+        .evolucao { padding:48px 24px; background:#f0e4bb; border-block:1px solid #cdba7a; }
+        .evolucao-grid { display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:start; }
+        .evolucao-grid>div>p:not(.chamada) { color:#695727; line-height:1.9; }
+        .evolucao h2 { font-size:clamp(28px,3vw,38px); }
+        .escolha { padding-bottom:28px; }
+        .escolha .limite { max-width:840px; text-align:center; }
+        .escolha .limite>p:not(.chamada) { margin-top:22px; color:#695727; line-height:1.9; }
+        .rodape { padding:30px 24px; border-top:1px solid #cdba7a; }
+        .rodape-interior { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:20px; }
+        .rodape p { color:#695727; font-size:12px; line-height:1.8; }
+        .rodape nav { display:flex; flex-wrap:wrap; gap:4px 20px; }
+        .rodape nav :global(a) { display:inline-flex; align-items:center; min-height:44px; color:#695727; font-size:12px; text-decoration:underline; text-underline-offset:4px; }
+        .pular { position:fixed; left:16px; top:12px; z-index:1000; transform:translateY(-200%); padding:14px 20px; background:#fff7db; color:#30260d; border:2px solid #805600; border-radius:8px; }
+        .pular:focus { transform:translateY(0); }
+        .acoes a:focus-visible,.pular:focus-visible,
+        .hero-captura :global(a:focus-visible),
+        :global(.comercial-ern .texto-link:focus-visible),
+        .rodape nav :global(a:focus-visible) { outline:3px solid #805600; outline-offset:4px; }
+        @media(max-width:1023px) {
+          .abertura-grid { grid-template-columns:1fr; gap:32px; }
+          .abertura-texto { max-width:780px; }
+          .hero-captura { width:100%; max-width:900px; }
+          h1 { max-width:800px; font-size:clamp(36px,6vw,60px); }
+        }
+        @media(max-width:639px) {
+          .abertura { padding:112px 16px 48px; }
+          .bloco { padding:52px 16px; }
+          .dupla,.tres,.evolucao-grid { grid-template-columns:1fr; gap:28px; }
+          .dupla { margin-top:28px; }
+          .introducao { font-size:16px; line-height:1.8; }
+          .acoes { flex-direction:column; }
+          .acoes a { width:100%; }
+          .hero-captura { padding:7px; border-radius:12px; }
+          .evolucao { padding:36px 16px; }
+          .escolha { padding-bottom:12px; }
+          .rodape { padding:24px 16px; }
+        }
+      `}</style>
     </div>
   );
 }

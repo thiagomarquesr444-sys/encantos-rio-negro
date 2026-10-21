@@ -526,3 +526,150 @@ body {
   color: var(--ern-secundario);
   opacity: 0.8;
 }
+
+
+/* ERN_ABERTURAS_PUBLICAS_REFINADAS */
+
+.ern-descubra-abertura .ern-descubra-contraste {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      90deg,
+      rgb(4 17 19 / 80%) 0%,
+      rgb(4 17 19 / 64%) 26%,
+      rgb(4 17 19 / 28%) 48%,
+      rgb(4 17 19 / 4%) 75%,
+      transparent 100%
+    ),
+    linear-gradient(
+      to top,
+      rgb(4 17 19 / 65%) 0%,
+      transparent 28%
+    );
+}
+
+.ern-descubra-abertura a.ern-portal-cta,
+.hero-experiencias-ern .botoes a.ern-portal-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 52px;
+  padding: 13px 25px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-family: var(--font-work-sans), sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+  text-align: center;
+  text-decoration: none;
+  box-shadow: none;
+  transition:
+    background-color 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.ern-descubra-abertura a.ern-portal-cta.ern-portal-cta--principal,
+.hero-experiencias-ern .botoes a.ern-portal-cta.ern-portal-cta--principal {
+  background: #f3d5a0;
+  border-color: #f3d5a0;
+  color: #30260d;
+  box-shadow: 0 5px 18px rgb(0 0 0 / 10%);
+}
+
+.ern-descubra-abertura a.ern-portal-cta.ern-portal-cta--principal:hover,
+.hero-experiencias-ern .botoes a.ern-portal-cta.ern-portal-cta--principal:hover {
+  background: #ffe6bd;
+  border-color: #ffe6bd;
+  color: #30260d;
+  box-shadow: 0 7px 22px rgb(0 0 0 / 16%);
+}
+
+.ern-descubra-abertura a.ern-portal-cta.ern-portal-cta--secundario,
+.hero-experiencias-ern .botoes a.ern-portal-cta.ern-portal-cta--secundario {
+  background: rgb(7 25 27 / 62%);
+  border-color: #dfd8c5;
+  color: #fffaf0;
+  backdrop-filter: blur(5px);
+}
+
+.ern-descubra-abertura a.ern-portal-cta.ern-portal-cta--secundario:hover,
+.hero-experiencias-ern .botoes a.ern-portal-cta.ern-portal-cta--secundario:hover {
+  background: #19383a;
+  border-color: #fffaf0;
+  color: #fffaf0;
+}
+
+.ern-descubra-abertura a.ern-portal-cta:focus-visible,
+.hero-experiencias-ern .botoes a.ern-portal-cta:focus-visible {
+  outline: 3px solid #ffdc93;
+  outline-offset: 4px;
+  box-shadow: 0 0 0 2px #102a2c;
+}
+
+@media (max-width: 1023px) {
+  .ern-descubra-abertura .ern-descubra-contraste {
+    background:
+      linear-gradient(
+        90deg,
+        rgb(4 17 19 / 77%) 0%,
+        rgb(4 17 19 / 56%) 55%,
+        rgb(4 17 19 / 14%) 100%
+      ),
+      linear-gradient(
+        to top,
+        rgb(4 17 19 / 60%) 0%,
+        transparent 30%
+      );
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ern-descubra-abertura a.ern-portal-cta,
+  .hero-experiencias-ern .botoes a.ern-portal-cta {
+    transition: none;
+  }
+}
+
+/* ERN_LETREIRO_DESCUBRA_SUAVE */
+
+.ern-descubra-abertura h1 {
+  color: #fffaf0;
+  text-shadow: 0 2px 14px rgb(0 0 0 / 25%);
+}
+
+.ern-descubra-abertura h1 + p,
+.ern-descubra-abertura h1 + p + p {
+  color: #fffaf0;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 25%);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ern-descubra-abertura h1 {
+    animation: ern-descubra-letreiro 800ms ease-out 100ms both;
+  }
+
+  .ern-descubra-abertura h1 + p {
+    animation: ern-descubra-letreiro 800ms ease-out 200ms both;
+  }
+
+  .ern-descubra-abertura h1 + p + p {
+    animation: ern-descubra-letreiro 800ms ease-out 300ms both;
+  }
+}
+
+@keyframes ern-descubra-letreiro {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

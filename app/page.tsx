@@ -272,12 +272,12 @@ export default function Home() {
     >
       <PublicHeader />
 
-      <section className="ern-publico-hero relative min-h-screen overflow-hidden bg-[#07130F]">
+      <section className="ern-publico-hero ern-descubra-abertura relative min-h-screen overflow-hidden bg-[#07130F]">
         <VideoHeroERN />
 
-        <div className="absolute inset-0 bg-[#07130F]/35" />
-        <div className="absolute inset-0 bg-gradient-to-r from-[#08130F]/95 via-[#08130F]/70 to-[#08130F]/35" />
-        <div className="absolute inset-0 bg-gradient-to-t from-[#0B1512] via-transparent to-[#0B1512]/25" />
+        <div className="ern-descubra-contraste" aria-hidden="true" />
+
+
 
         <svg
           aria-hidden="true"
@@ -337,14 +337,14 @@ export default function Home() {
               <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
                 <a
                   href="#concierge"
-                  className={`inline-flex min-h-[52px] items-center justify-center rounded-xl bg-[#E3A144] px-7 text-sm font-semibold text-[#0B1512] transition hover:bg-[#F0B35C] ${FOCO}`}
+                  className={`ern-portal-cta ern-portal-cta--principal ${FOCO}`}
                 >
                   {t.hero.plan}
                 </a>
 
                 <a
                   href="/destinos"
-                  className={`inline-flex min-h-[52px] items-center justify-center gap-2 rounded-xl border border-white/15 bg-white/[0.04] px-7 text-sm font-medium text-[#EDEDE3] backdrop-blur transition hover:bg-white/[0.08] ${FOCO}`}
+                  className={`ern-portal-cta ern-portal-cta--secundario ${FOCO}`}
                 >
                   {t.hero.explore}
                   <span aria-hidden="true">→</span>

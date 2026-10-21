@@ -115,7 +115,13 @@ function endereco(captura: Captura) {
   return `/images/vitrine/${encodeURIComponent(captura.arquivo)}`;
 }
 
-export default function VitrineGestaoERN() {
+export default function VitrineGestaoERN({
+  destino = '/operadores',
+  textoBotao,
+}: {
+  destino?: string;
+  textoBotao?: string;
+} = {}) {
   const { idioma } = useLanguage();
   const idiomaBase = String(idioma).toLowerCase().split(/[-_]/)[0];
   const t = textos[idiomaBase === 'en' ? 'en' : idiomaBase === 'es' ? 'es' : 'pt'];
@@ -155,8 +161,8 @@ export default function VitrineGestaoERN() {
           </div>
           <div>
             <p className="vitrine-descricao">{t.descricao}</p>
-            <Link href="/operadores" className="vitrine-link">
-              {t.botao} <span aria-hidden="true">↗</span>
+            <Link href={destino} className="vitrine-link">
+              {textoBotao ?? t.botao} <span aria-hidden="true">↗</span>
             </Link>
           </div>
         </header>
@@ -196,7 +202,7 @@ export default function VitrineGestaoERN() {
                   width={atual.largura}
                   height={atual.altura}
                   sizes={vertical ? '(max-width: 640px) 76vw, 320px' : '(max-width: 1280px) 94vw, 1240px'}
-                  quality={85}
+                  quality={75}
                   className="vitrine-imagem"
                 />
               </button>
