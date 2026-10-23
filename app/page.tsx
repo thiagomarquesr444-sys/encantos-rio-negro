@@ -273,9 +273,9 @@ export default function Home() {
       <PublicHeader />
 
       <section className="ern-publico-hero ern-descubra-abertura relative overflow-hidden bg-[#07130F]">
-        <VideoHeroERN />
+        <div className="ern-descubra-midia"><VideoHeroERN />
 
-        <div className="ern-descubra-contraste" aria-hidden="true" />
+        <div className="ern-descubra-contraste" aria-hidden="true" /></div>
 
 
 
@@ -306,7 +306,7 @@ export default function Home() {
 
         <div className="relative z-10 mx-auto flex min-h-0 max-w-[1280px] items-center px-5 pb-12 pt-28 md:px-8 md:pb-16 md:pt-32 lg:min-h-[clamp(560px,76svh,760px)]">
           <div className="grid w-full min-w-0 items-center gap-8 lg:grid-cols-[1.16fr_0.84fr] lg:gap-12">
-            <div className="max-w-[680px]">
+            <div className="ern-descubra-painel max-w-[680px]">
               <div className="mb-7 flex items-center gap-3">
                 <span
                   aria-hidden="true"
@@ -506,6 +506,125 @@ export default function Home() {
           <span className="h-8 w-px bg-gradient-to-b from-white/60 to-transparent" />
         </div>
       </section>
+
+            {/* ERN_MOBILE_PAINEIS_V1 */}
+      <style jsx global>{`
+        .ern-descubra-abertura .ern-descubra-midia {
+          position: absolute;
+          inset: 0;
+          overflow: hidden;
+        }
+
+        @media (max-width: 1023px) {
+          .ern-descubra-abertura .ern-descubra-midia {
+            position: relative;
+            inset: auto;
+            width: 100%;
+            height: clamp(180px, 48vw, 300px);
+            background: #07130f;
+          }
+
+          .ern-descubra-abertura .ern-descubra-midia video {
+            object-fit: cover;
+            object-position: center;
+          }
+
+          .ern-descubra-abertura .ern-descubra-contraste {
+            background: linear-gradient(
+              to top,
+              rgb(7 19 15 / 28%),
+              transparent 60%
+            );
+          }
+
+          .ern-descubra-abertura > div.relative.z-10 {
+            min-height: 0;
+            padding: 16px 16px 28px;
+          }
+
+          .ern-descubra-abertura > div.relative.z-10 > div.grid {
+            gap: 16px;
+          }
+
+          .ern-descubra-abertura .ern-descubra-painel {
+            box-sizing: border-box;
+            width: 100%;
+            max-width: 680px;
+            margin-inline: auto;
+            padding: 22px;
+            border: 1px solid rgb(244 199 126 / 22%);
+            border-radius: 20px;
+            background: #10241e;
+            box-shadow: 0 8px 24px rgb(0 0 0 / 12%);
+          }
+
+          .ern-descubra-abertura .ern-descubra-painel > div:first-child {
+            margin-bottom: 14px;
+            gap: 10px;
+          }
+
+          .ern-descubra-abertura .ern-descubra-painel > div:first-child > span:last-child {
+            font-size: 10px;
+            line-height: 1.6;
+            letter-spacing: 0.12em;
+          }
+
+          .ern-descubra-abertura .ern-descubra-painel h1 {
+            font-size: clamp(28px, 6.6vw, 38px);
+            line-height: 1.12;
+            letter-spacing: -0.025em;
+          }
+
+          .ern-descubra-abertura .ern-descubra-painel > p {
+            margin-top: 16px;
+            font-size: 14px;
+            line-height: 1.7;
+          }
+
+          .ern-descubra-abertura .ern-descubra-painel > p + p {
+            margin-top: 12px;
+            font-size: 13px;
+            line-height: 1.65;
+          }
+
+          .ern-descubra-abertura .ern-descubra-painel > div.mt-9 {
+            display: flex;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
+          }
+
+          .ern-descubra-abertura .ern-descubra-painel a.ern-portal-cta {
+            flex: 1 1 180px;
+            min-height: 46px;
+            padding: 11px 14px;
+            font-size: 13px;
+            line-height: 1.5;
+          }
+
+          .ern-descubra-abertura .ern-descubra-painel > div:last-child {
+            margin-top: 18px;
+            column-gap: 16px;
+            row-gap: 8px;
+            font-size: 11px;
+            line-height: 1.6;
+          }
+
+          .ern-descubra-abertura #concierge {
+            max-width: 680px;
+            margin: 0 auto;
+          }
+
+          .ern-descubra-abertura #concierge > div:first-child {
+            display: none;
+          }
+
+          .ern-descubra-abertura > svg {
+            display: none;
+          }
+        }
+      `}</style>
 
       <CulturaAmazonicaERN />
       <FeedDescubraERN />

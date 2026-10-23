@@ -180,14 +180,23 @@ export default function HeroExperienciasERN({
         }
 
         @media (max-width: 767px) {
+          .hero-experiencias-ern {
+            margin: 16px;
+            border: 1px solid #cdba7a;
+            border-radius: 20px;
+            background: #173033;
+            box-shadow: 0 8px 24px rgb(0 0 0 / 10%);
+          }
+
           .midia-abertura {
             position: relative;
             inset: auto;
             width: 100%;
-            aspect-ratio: 16 / 10;
+            aspect-ratio: 16 / 9;
           }
 
           .midia-abertura :global(.imagem-abertura) {
+            object-fit: cover;
             object-position: 70% center;
           }
 
@@ -197,7 +206,7 @@ export default function HeroExperienciasERN({
 
           .conteudo-abertura {
             min-height: 0;
-            padding: 28px 20px 36px;
+            padding: 22px;
             background: #173033;
           }
 
@@ -206,26 +215,40 @@ export default function HeroExperienciasERN({
             max-width: 600px;
           }
 
+          .chamada {
+            font-size: 10px;
+            line-height: 1.6;
+            letter-spacing: 0.12em;
+          }
+
           h1 {
-            margin-top: 16px;
-            font-size: clamp(34px, 8.5vw, 46px);
+            margin-top: 14px;
+            font-size: clamp(28px, 6.6vw, 38px);
+            line-height: 1.12;
+            letter-spacing: -0.025em;
           }
 
           .introducao {
-            margin-top: 18px;
-            font-size: 15px;
-            line-height: 1.75;
+            margin-top: 16px;
+            font-size: 14px;
+            line-height: 1.7;
           }
 
           .botoes {
-            margin-top: 24px;
+            flex-direction: row;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 20px;
           }
 
-          .botoes :global(a) {
-            flex: 1 1 220px;
+          .botoes :global(a.ern-portal-cta) {
+            flex: 1 1 180px;
+            min-height: 46px;
+            padding: 11px 14px;
+            font-size: 13px;
+            line-height: 1.5;
           }
         }
-
         @media (max-width: 399px) {
           .conteudo-abertura {
             padding-inline: 16px;
