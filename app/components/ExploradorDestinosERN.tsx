@@ -90,7 +90,7 @@ const copy = {
 };
 
 type DestinationId = keyof typeof destinosTranslations.PT.destinations;
-type Interest = 'all' | 'waters' | 'nature' | 'culture';
+type Interest = 'all' | 'waters' | 'nature' | 'culture' | 'fishing';
 type CityId = 'manaus' | 'novo-airao' | 'barcelos' | 'santa-isabel' | 'sao-gabriel';
 type Scene = {
   id: DestinationId; city: CityId; image: string; context?: boolean;
@@ -107,9 +107,9 @@ const cities: { id: CityId; name: string; coords: [number, number]; image?: stri
   { id: 'sao-gabriel', name: 'São Gabriel da Cachoeira', coords: [-0.13, -67.089] },
 ];
 const scenes: Scene[] = [
-  { id: 'barcelos', city: 'barcelos', image: '/images/regiao/barceloscapital.jpg.jpeg', interests: ['waters', 'nature', 'culture'], source: municipalSource },
+  { id: 'barcelos', city: 'barcelos', image: '/images/regiao/barceloscapital.jpg.jpeg', interests: ['waters', 'nature', 'culture', 'fishing'], source: municipalSource },
   { id: 'praia-grande', city: 'barcelos', image: '/images/regiao/barcelospraia.png.jpeg', context: true, interests: ['waters'], source: `${barcelosSource}praia-grande/`, coords: [-0.96058, -62.92789] },
-  { id: 'mariua', city: 'barcelos', image: '/images/regiao/ilha.png.jpeg', context: true, interests: ['waters', 'nature'], source: `${barcelosSource}arquipelago-de-mariua/` },
+  { id: 'mariua', city: 'barcelos', image: '/images/regiao/ilha.png.jpeg', context: true, interests: ['waters', 'nature', 'fishing'], source: `${barcelosSource}arquipelago-de-mariua/` },
   { id: 'serra-do-araca', city: 'barcelos', image: '/images/cultura/serra-araca-hero.jpg', interests: ['nature'], source: `${barcelosSource}serra-do-araca/` },
   { id: 'festival-peixe-ornamental', city: 'barcelos', image: '/images/cultura/barcelosfestival.jpg', interests: ['culture'], source: municipalSource },
   { id: 'novo-airao', city: 'novo-airao', image: '/images/cultura/festivaldopeixeboi.jpg', context: true, interests: ['waters', 'nature', 'culture'], source: municipalSource },
@@ -117,7 +117,45 @@ const scenes: Scene[] = [
   { id: 'jau', city: 'novo-airao', image: '/images/regiao/ern-amazonia.jpg', context: true, interests: ['nature'], source: `${icmbio}parna-do-jau/informacoes-sobre-visitacao-2013-parna-do-jau` },
   { id: 'festival-peixe-boi', city: 'novo-airao', image: '/images/cultura/festivaldopeixeboi.jpg', interests: ['culture'], source: municipalSource },
 ];
-const interests: Interest[] = ['all', 'waters', 'nature', 'culture'];
+// ERN_PESCA_MAPA_V1
+const fishingCopy = {
+  PT: {
+    filter: 'Pesca esportiva',
+    title: 'Barcelos · pesca esportiva',
+    legend: 'Tucunaré · referência regional de pesca esportiva',
+    description: 'Descubra possibilidades de pesca esportiva no Rio Negro, seus afluentes e no território de Mariuá.',
+    note: 'O marcador está na base regional de Barcelos. Não indica um pesqueiro exato, autorização de acesso ou garantia de captura.',
+    care: 'Confirme condições das águas, regras, autorizações e práticas de captura e soltura com os profissionais responsáveis.',
+    button: 'Conhecer a pesca esportiva',
+    source: 'Turismo de Barcelos',
+  },
+  EN: {
+    filter: 'Sport fishing',
+    title: 'Barcelos · sport fishing',
+    legend: 'Peacock bass · regional sport fishing reference',
+    description: 'Discover sport fishing possibilities in the Rio Negro, its tributaries and the Mariuá region.',
+    note: 'The marker shows the regional base of Barcelos. It is not an exact fishing spot, access permission or a catch guarantee.',
+    care: 'Confirm river conditions, rules, permissions and catch-and-release practices with the professionals responsible.',
+    button: 'Discover sport fishing',
+    source: 'Barcelos Tourism',
+  },
+  ES: {
+    filter: 'Pesca deportiva',
+    title: 'Barcelos · pesca deportiva',
+    legend: 'Tucunaré · referencia regional de pesca deportiva',
+    description: 'Descubra posibilidades de pesca deportiva en el Río Negro, sus afluentes y el territorio de Mariuá.',
+    note: 'El marcador está en la base regional de Barcelos. No indica un punto exacto de pesca, permiso de acceso ni garantía de captura.',
+    care: 'Confirme condiciones del río, reglas, permisos y prácticas de captura y suelta con los profesionales responsables.',
+    button: 'Conocer la pesca deportiva',
+    source: 'Turismo de Barcelos',
+  },
+};
+
+const fishingSource = 'https://turismo.barcelos.am.gov.br/atrativo/pesca-esportiva/';
+
+const fishingSvg = `<span class="ern-tucunare-nado" aria-hidden="true"></span>`;
+
+const interests: Interest[] = ['all', 'waters', 'nature', 'culture', 'fishing'];
 const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
 function SceneImage({ src, alt, eager = false }: { src: string; alt: string; eager?: boolean }) {
@@ -133,6 +171,7 @@ export default function ExploradorDestinosERN() {
   const { idioma } = useLanguage();
   const lang = idioma === 'EN' || idioma === 'ES' ? idioma : 'PT';
   const u = copy[lang];
+  const fishing = fishingCopy[lang];
   const t = destinosTranslations[lang];
   const [query, setQuery] = useState('');
   const [region, setRegion] = useState<CityId | 'all'>('all');
@@ -273,7 +312,30 @@ export default function ExploradorDestinosERN() {
     const L = Lref.current;
     if (status !== 'ready' || !L || !pins.current) return;
     pins.current.clearLayers();
-    cities.filter(c => region === 'all' || c.id === region).forEach(c => {
+    cities.filter(c => (region === 'all' || c.id === region) && (interest !== 'fishing' || c.id === 'barcelos')).forEach(c => {
+      if (c.id === 'barcelos' && (interest === 'all' || interest === 'fishing')) {
+        const marker = L.marker(c.coords, {
+          title: fishing.legend,
+          alt: fishing.legend,
+          keyboard: true,
+          zIndexOffset: 300,
+          icon: L.divIcon({
+            className: 'ern-v-fishing-marker',
+            iconSize: [64, 48],
+            iconAnchor: [32, 42],
+            html: `<div style="display:grid;place-items:center;width:64px;height:42px;padding:2px;box-sizing:border-box;border:0;background:transparent">${fishingSvg}</div>`,
+          }),
+        });
+        const label = document.createElement('span');
+        label.textContent = fishing.legend;
+        marker.bindTooltip(label, { direction: 'top', offset: [0, -38] });
+        marker.on('click', () => {
+          choose(scenes.find(scene => scene.id === 'barcelos')!);
+          setInterest('fishing');
+        });
+        marker.addTo(pins.current!);
+        return;
+      }
       const face = c.image ? `<img src="${c.image}" alt="" style="width:100%;height:100%;object-fit:cover"/>` : `<span>${c.name.slice(0, 1)}</span>`;
       const el = L.divIcon({ className: 'ern-v-pin', iconSize: [56, 66], iconAnchor: [28, 60],
         html: `<div class="ern-v-pin-face ${c.id === city.id && drawer === 'place' ? 'ern-v-pin-active' : ''}">${face}</div>` });
@@ -291,7 +353,7 @@ export default function ExploradorDestinosERN() {
     }
     // Callbacks usam apenas setters e referências estáveis do mapa.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [status, region, filtered, city.id, drawer, t, u.regional, zoom]);
+  }, [status, region, filtered, city.id, drawer, t, u.regional, zoom, interest, fishing]);
 
   useEffect(() => {
     const L = Lref.current;
@@ -322,7 +384,20 @@ export default function ExploradorDestinosERN() {
       <div className="ern-v-intro">
         <p className="ern-v-kicker">{u.eyebrow}</p><h1 id="ern-v-title">{u.title}</h1><p>{u.intro}</p>
         <label className="ern-v-search"><span aria-hidden="true">⌕</span><input type="search" aria-label={u.search} placeholder={u.search} value={query} onChange={e => setQuery(e.target.value)} /></label>
-        <div className="ern-v-interests" aria-label={t.discovery.title}>{interests.map((value, i) => <button type="button" key={value} aria-pressed={interest === value} onClick={() => setInterest(value)}>{u.interests[i]}</button>)}</div>
+        <div className="ern-v-interests" aria-label={t.discovery.title}>{interests.map((value, i) => <button type="button" key={value} aria-pressed={interest === value} onClick={() => {
+          setInterest(value);
+          if (value === 'fishing') {
+            setRegion('all');
+            setQuery('');
+            setActiveId(null);
+            setDrawer(null);
+            map.current?.setView(
+              cities.find(item => item.id === 'barcelos')!.coords,
+              8,
+              { animate: false }
+            );
+          }
+        }}>{value === 'fishing' ? fishing.filter : u.interests[i]}</button>)}</div>
       </div>
       <div className="ern-v-tools">
         <button type="button" onClick={overview}>{u.overview}</button>
@@ -335,7 +410,33 @@ export default function ExploradorDestinosERN() {
         <button type="button" className="ern-v-close" onClick={closeDrawer} aria-label={u.close}>×</button>
         {drawer === 'saved' ? <div className="ern-v-detail-copy"><h2 ref={heading} tabIndex={-1} id="ern-v-detail-title">{u.selection}</h2><p>{u.selectionNote}</p>{saved.length ? saved.map(id => sceneCard(scenes.find(scene => scene.id === id)!, true)) : <p>{u.selectionEmpty}</p>}<Link className="ern-v-button" href="/#concierge">{u.plan} ↗</Link></div> : <>
           {active && <div className="ern-v-detail-photo"><SceneImage src={active.image} alt={`${content!.titulo} · ${active.context ? u.context : u.collection}`} eager /><span className="ern-v-photo-tag">{active.context ? u.context : u.collection}</span></div>}
-          <div className="ern-v-detail-copy"><p className="ern-v-kicker">{active ? content!.local : u.regional}</p><h2 ref={heading} tabIndex={-1} id="ern-v-detail-title">{content?.titulo ?? city.name}</h2><p>{content?.descricao ?? u.regionalIntro}</p>
+          <div className="ern-v-detail-copy"><p className="ern-v-kicker">{active ? content!.local : u.regional}</p><h2 ref={heading} tabIndex={-1} id="ern-v-detail-title">{interest === 'fishing' && active?.id === 'barcelos' ? fishing.title : content?.titulo ?? city.name}</h2><p>{content?.descricao ?? u.regionalIntro}</p>
+            {interest === 'fishing' && active?.interests.includes('fishing') && (
+              <section
+                aria-label={fishing.filter}
+                style={{
+                  margin: '18px 0',
+                  padding: '16px',
+                  border: '1px solid #d5bf81',
+                  borderRadius: '14px',
+                  background: '#fff3cf',
+                  color: '#30260d',
+                }}
+              >
+                <p><strong>{fishing.legend}</strong></p>
+                <p>{fishing.description}</p>
+                <p>{fishing.note}</p>
+                <p>{fishing.care}</p>
+                <Link className="ern-v-button" href="/pesca-esportiva">
+                  {fishing.button} ↗
+                </Link>
+                <div className="ern-v-detail-actions">
+                  <a href={fishingSource} target="_blank" rel="noopener noreferrer">
+                    {fishing.source} ↗
+                  </a>
+                </div>
+              </section>
+            )}
             {active ? <><p className="ern-v-detail-note">{active.coords ? u.exactNote : u.baseNote}</p><button type="button" className="ern-v-button ern-v-button-soft" aria-pressed={saved.includes(active.id)} onClick={() => toggleSaved(active.id)}>{saved.includes(active.id) ? '♥' : '♡'} {saved.includes(active.id) ? u.saved : u.save}</button><div className="ern-v-detail-actions"><button type="button" onClick={() => void share()}>{u.share} ↗</button><a href={active.source} target="_blank" rel="noopener noreferrer">{u.source} ↗</a></div>{active.coords && <a className="ern-v-coordinate-source" href="https://www.geonames.org/12965878/ilha-da-praia-grande.html" target="_blank" rel="noopener noreferrer">GeoNames · CC BY 4.0 ↗</a>}</> : <div className="ern-v-regional-links">{scenes.filter(scene => scene.city === city.id).map(scene => <button type="button" key={scene.id} onClick={() => choose(scene)}>{t.destinations[scene.id].titulo} ↗</button>)}<a href={municipalSource} target="_blank" rel="noopener noreferrer">Amazonastur ↗</a></div>}
             {shareUrl && <label className="ern-v-share-field">{u.copyLink}<input readOnly value={shareUrl} onFocus={event => event.currentTarget.select()} /></label>}<p role="status" className="ern-v-copy-status">{message}</p>
             <Link className="ern-v-button" href="/#concierge">{u.plan} ↗</Link><Link className="ern-v-network-link" href={`/rede?local=${encodeURIComponent(city.name)}`}>{u.network} ↗</Link>
@@ -344,8 +445,17 @@ export default function ExploradorDestinosERN() {
       </aside>}
       <div className="ern-v-film"><div className="ern-v-film-title"><span>{u.related}</span><a href="#ern-v-galeria">{u.clear} ↓</a></div><div className="ern-v-film-scroll">{filtered.length ? filtered.map(scene => sceneCard(scene, true)) : <div className="ern-v-empty"><p>{u.noResults}</p><button type="button" onClick={overview}>{u.clear}</button></div>}</div></div>
     </section>
-    <div className="ern-v-map-caption"><p>{u.mapNote}</p><nav aria-label={u.overview}><button type="button" aria-pressed={region === 'all'} onClick={overview}>{u.all}</button>{cities.map(c => <button type="button" key={c.id} aria-pressed={region === c.id} onClick={() => { chooseCity(c.id); }}>{c.name}</button>)}</nav></div>
-    <section id="ern-v-galeria" className="ern-v-gallery" aria-labelledby="ern-v-gallery-title"><p className="ern-v-kicker">{t.discovery.title}</p><h2 id="ern-v-gallery-title">{u.galleryTitle}</h2><p className="ern-v-section-intro">{u.galleryIntro}</p><div className="ern-v-gallery-grid">{filtered.length ? filtered.map(scene => sceneCard(scene, false)) : <div className="ern-v-empty"><p>{u.noResults}</p><button type="button" className="ern-v-button" onClick={overview}>{u.clear}</button></div>}</div></section>
+    <div className="ern-v-map-caption">
+      <p style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <span
+          aria-hidden="true"
+          style={{ display: 'inline-flex', flexShrink: 0, width: '36px', height: '24px' }}
+          dangerouslySetInnerHTML={{ __html: fishingSvg }}
+        />
+        <span>{fishing.legend}</span>
+      </p>
+      <p>{u.mapNote}</p><nav aria-label={u.overview}><button type="button" aria-pressed={region === 'all'} onClick={overview}>{u.all}</button>{cities.map(c => <button type="button" key={c.id} aria-pressed={region === c.id} onClick={() => { chooseCity(c.id); }}>{c.name}</button>)}</nav></div>
+    <section id="ern-v-galeria" className="ern-v-gallery" aria-labelledby="ern-v-gallery-title"><p className="ern-v-kicker">{t.discovery.title}</p><h2 id="ern-v-gallery-title">{interest === 'fishing' ? fishing.filter : u.galleryTitle}</h2><p className="ern-v-section-intro">{u.galleryIntro}</p><div className="ern-v-gallery-grid">{filtered.length ? filtered.map(scene => sceneCard(scene, false)) : <div className="ern-v-empty"><p>{u.noResults}</p><button type="button" className="ern-v-button" onClick={overview}>{u.clear}</button></div>}</div></section>
     <section className="ern-v-waters" aria-labelledby="ern-v-waters-title"><div className="ern-v-waters-image"><SceneImage src="/images/regiao/viagembarco.png.jpeg" alt={`${t.waters.eyebrow} · ${u.context}`} /><span className="ern-v-photo-tag">{u.context}</span></div><div className="ern-v-waters-copy"><p className="ern-v-kicker">{t.waters.eyebrow}</p><h2 id="ern-v-waters-title">{t.waters.title}</h2><p>{t.waters.description}</p><div><h3>{t.waters.highLabel}</h3><p>{t.waters.highDescription}</p><h3>{t.waters.lowLabel}</h3><p>{t.waters.lowDescription}</p></div><p className="ern-v-detail-note">{u.waterNote}</p></div></section>
     <section className="ern-v-plan"><p className="ern-v-kicker">ERN CONCIERGE</p><h2>{t.planning.title}</h2><p>{t.planning.description}</p><Link className="ern-v-button" href="/#concierge">{u.plan} ↗</Link><Link className="ern-v-network-link" href="/rede">{u.network} ↗</Link></section>
     <footer className="ern-v-footer"><span>Encantos Rio Negro</span><Link href="/privacidade">{u.privacy}</Link><Link href="/termos">{u.terms}</Link></footer>
