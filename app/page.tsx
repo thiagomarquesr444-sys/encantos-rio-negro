@@ -272,7 +272,7 @@ export default function Home() {
     >
       <PublicHeader />
 
-      <section className="ern-publico-hero ern-descubra-abertura relative min-h-screen overflow-hidden bg-[#07130F]">
+      <section className="ern-publico-hero ern-descubra-abertura relative overflow-hidden bg-[#07130F]">
         <VideoHeroERN />
 
         <div className="ern-descubra-contraste" aria-hidden="true" />
@@ -304,8 +304,8 @@ export default function Home() {
           />
         </svg>
 
-        <div className="relative z-10 mx-auto flex min-h-screen max-w-[1280px] items-center px-5 pb-20 pt-32 md:px-8 md:pt-36">
-          <div className="grid w-full items-center gap-12 lg:grid-cols-[1.16fr_0.84fr] lg:gap-16">
+        <div className="relative z-10 mx-auto flex min-h-0 max-w-[1280px] items-center px-5 pb-12 pt-28 md:px-8 md:pb-16 md:pt-32 lg:min-h-[clamp(560px,76svh,760px)]">
+          <div className="grid w-full min-w-0 items-center gap-8 lg:grid-cols-[1.16fr_0.84fr] lg:gap-12">
             <div className="max-w-[680px]">
               <div className="mb-7 flex items-center gap-3">
                 <span
@@ -318,7 +318,7 @@ export default function Home() {
               </div>
 
               <h1
-                className="max-w-[680px] text-[clamp(3rem,6vw,5.8rem)] font-medium leading-[0.98] tracking-[-0.035em] text-[#F0F0E8]"
+                className="max-w-[680px] text-[clamp(2.125rem,4.5vw,4rem)] font-medium leading-[1.08] tracking-[-0.035em] text-[#F0F0E8]"
                 style={{
                   fontFamily: 'var(--font-fraunces), serif',
                 }}
@@ -370,7 +370,7 @@ export default function Home() {
 
             <div
               id="concierge"
-              className="relative mx-auto mt-8 w-full max-w-[380px] scroll-mt-28 lg:mx-0 lg:ml-auto lg:mt-8"
+              className="relative mx-auto w-full min-w-0 max-w-[420px] scroll-mt-28 lg:mx-0 lg:ml-auto"
             >
               <div
                 aria-hidden="true"
@@ -500,7 +500,7 @@ export default function Home() {
 
         <div
           aria-hidden="true"
-          className="absolute bottom-7 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 text-xs uppercase tracking-[0.2em] text-[#EDEDE3] md:flex"
+          className="absolute bottom-4 left-1/2 z-10 hidden -translate-x-1/2 flex-col items-center gap-2 text-xs uppercase tracking-[0.2em] text-[#EDEDE3] lg:flex"
         >
           <span>{t.hero.discover}</span>
           <span className="h-8 w-px bg-gradient-to-b from-white/60 to-transparent" />
