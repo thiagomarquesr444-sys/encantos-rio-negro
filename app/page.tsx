@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 import PublicHeader from '@/app/components/PublicHeader';
+import ConciergePublicoERN from '@/app/components/ConciergePublicoERN';
 import FeedDescubraERN from '@/app/components/FeedDescubraERN';
 import CulturaAmazonicaERN from '@/app/components/CulturaAmazonicaERN';
 import VitrineGestaoERN from '@/app/components/VitrineGestaoERN';
@@ -16,36 +17,6 @@ import {
 const FOCO =
   'focus-visible:outline-2 focus-visible:outline-offset-4 ' +
   'focus-visible:outline-[#F4C77E]';
-
-const avisosConcierge = {
-  PT: {
-    status: 'Em preparação',
-    descricao:
-      'Prévia do futuro concierge. O planejamento de viagens ainda não está disponível.',
-    campo: 'Como você imagina sua viagem?',
-    botao: 'Planejamento em breve',
-    aviso:
-      'Esta prévia não envia nem salva suas informações.',
-  },
-  EN: {
-    status: 'Coming soon',
-    descricao:
-      'Preview of the future concierge. Trip planning is not available yet.',
-    campo: 'How do you imagine your trip?',
-    botao: 'Trip planning coming soon',
-    aviso:
-      'This preview does not send or save your information.',
-  },
-  ES: {
-    status: 'En preparación',
-    descricao:
-      'Vista previa del futuro concierge. La planificación de viajes aún no está disponible.',
-    campo: '¿Cómo imaginas tu viaje?',
-    botao: 'Planificación próximamente',
-    aviso:
-      'Esta vista previa no envía ni guarda tu información.',
-  },
-};
 
 function VideoHeroERN() {
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -257,11 +228,8 @@ function VideoHeroERN() {
 export default function Home() {
   const { idioma } = useLanguage();
 
-  const [interesseSelecionado, setInteresseSelecionado] =
-    useState<string>('');
+const t = homeTranslations[idioma] as HomeTranslation;
 
-  const t = homeTranslations[idioma] as HomeTranslation;
-  const aviso = avisosConcierge[idioma];
 
   return (
     <div
@@ -376,124 +344,7 @@ export default function Home() {
                 aria-hidden="true"
                 className="pointer-events-none absolute -inset-6 rounded-[36px] bg-[#E3A144]/10 blur-3xl"
               />
-
-              <div className="relative overflow-hidden rounded-[22px] border border-white/15 bg-[#0A1713]/82 shadow-2xl backdrop-blur-2xl">
-                <div className="flex items-center justify-between border-b border-white/10 px-5 py-4">
-                  <div className="flex items-center gap-3">
-                    <div
-                      aria-hidden="true"
-                      className="flex h-9 w-9 items-center justify-center rounded-full border border-[#E3A144]/30 bg-[#E3A144]/10 text-base text-[#E3A144]"
-                    >
-                      ✦
-                    </div>
-
-                    <div>
-                      <p
-                        className="text-[15px] font-medium text-[#F0F0E8]"
-                        style={{
-                          fontFamily: 'var(--font-fraunces), serif',
-                        }}
-                      >
-                        {t.concierge.title}
-                      </p>
-
-                      <p className="mt-0.5 text-xs text-[#F4C77E]">
-                        {aviso.status}
-                      </p>
-                    </div>
-                  </div>
-
-                  <span className="rounded-full border border-white/10 bg-white/[0.04] px-2 py-1 text-xs font-semibold uppercase tracking-wider text-[#EDEDE3]">
-                    ERN
-                  </span>
-                </div>
-
-                <div className="p-5">
-                  <h2
-                    className="text-[21px] leading-[1.2] text-[#F0F0E8]"
-                    style={{
-                      fontFamily: 'var(--font-fraunces), serif',
-                    }}
-                  >
-                    {t.concierge.question}
-                  </h2>
-
-                  <p
-                    id="concierge-disponibilidade"
-                    className="mt-2.5 text-xs leading-5 text-[#EDEDE3]/75"
-                  >
-                    {aviso.descricao}
-                  </p>
-
-                  <div
-                    role="group"
-                    aria-label={t.concierge.question}
-                    className="mt-5 grid gap-2 sm:grid-cols-2"
-                  >
-                    {t.interests.map((interesse) => {
-                      const ativo =
-                        interesseSelecionado === interesse.id;
-
-                      return (
-                        <button
-                          key={interesse.id}
-                          type="button"
-                          aria-pressed={ativo}
-                          onClick={() =>
-                            setInteresseSelecionado(
-                              ativo ? '' : interesse.id,
-                            )
-                          }
-                          className={`flex min-h-[44px] items-center gap-2.5 rounded-xl border px-3 text-left text-xs transition ${FOCO} ${
-                            ativo
-                              ? 'border-[#E3A144] bg-[#E3A144]/10 text-[#F4C77E]'
-                              : 'border-white/20 bg-white/[0.035] text-[#EDEDE3] hover:border-white/40 hover:bg-white/[0.06]'
-                          }`}
-                        >
-                          <span aria-hidden="true" className="text-sm">
-                            {interesse.emoji}
-                          </span>
-                          <span>{interesse.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  <div className="mt-4">
-                    <label
-                      htmlFor="concierge-previa"
-                      className="mb-2 block text-xs font-medium text-[#EDEDE3]"
-                    >
-                      {aviso.campo}
-                    </label>
-
-                    <textarea
-                      id="concierge-previa"
-                      rows={2}
-                      disabled
-                      aria-describedby="concierge-disponibilidade concierge-privacidade"
-                      placeholder={t.concierge.placeholder}
-                      className="w-full resize-none rounded-xl border border-white/20 bg-[#07110E]/75 px-3.5 py-3 text-xs leading-5 text-[#EDEDE3] placeholder:text-[#B8C7BE] disabled:cursor-not-allowed disabled:opacity-100"
-                    />
-                  </div>
-
-                  <button
-                    type="button"
-                    disabled
-                    aria-describedby="concierge-disponibilidade"
-                    className="mt-3 flex min-h-[46px] w-full cursor-not-allowed items-center justify-center gap-2 rounded-xl bg-[#E3A144] px-5 text-xs font-semibold text-[#0B1512]"
-                  >
-                    {aviso.botao}
-                  </button>
-
-                  <p
-                    id="concierge-privacidade"
-                    className="mt-3 text-center text-xs leading-5 text-[#EDEDE3]/75"
-                  >
-                    {aviso.aviso}
-                  </p>
-                </div>
-              </div>
+              <ConciergePublicoERN />
             </div>
           </div>
         </div>
