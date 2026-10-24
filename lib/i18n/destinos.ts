@@ -131,6 +131,23 @@ export const destinosTranslations = {
     },
 
     destinations: {
+      'cachoeira-eldorado': {
+        titulo: 'Cachoeira do Eldorado',
+        local: 'Serra do Aracá · Barcelos',
+        descricao:
+          'Uma queda monumental entre paredões e floresta. Descubra uma paisagem que transforma a curiosidade pela Amazônia em vontade de expedição.',
+        destaque: 'Cachoeira • Floresta • Expedição',
+        etiqueta: 'AVENTURA',
+        historiaTitulo: 'Há paisagens que fazem a viagem começar antes da partida.',
+        historia:
+          'No Parque Estadual Serra do Aracá, em Barcelos, Eldorado revela uma Amazônia de paredões e floresta. A água desce pela face rochosa enquanto o verde acompanha o alto da serra. É um convite para olhar além dos rios e descobrir outra dimensão do território.',
+        preparacao:
+          'A aventura começa no planejamento. Converse com profissionais que conhecem a região e confirme percurso, duração, exigência física, condições de acesso, autorizações e estrutura de apoio antes de organizar a expedição.',
+        imagemNota:
+          'Versão ilustrativa restaurada com IA a partir de captura de vídeo. Detalhes podem diferir do registro original.',
+      },
+
+
       barcelos: {
         titulo: 'Barcelos',
         local: 'Médio Rio Negro',
@@ -357,6 +374,23 @@ export const destinosTranslations = {
     },
 
     destinations: {
+      'cachoeira-eldorado': {
+        titulo: 'Eldorado Waterfall',
+        local: 'Serra do Aracá · Barcelos',
+        descricao:
+          'A monumental waterfall between cliffs and forest. Discover a landscape that turns curiosity about the Amazon into the desire for an expedition.',
+        destaque: 'Waterfall • Forest • Expedition',
+        etiqueta: 'ADVENTURE',
+        historiaTitulo: 'Some landscapes start the journey before you leave.',
+        historia:
+          'In Serra do Aracá State Park, in Barcelos, Eldorado reveals an Amazon of cliffs and forest. Water descends the rock face beneath the green canopy of the plateau. It invites you to look beyond the rivers and discover another dimension of the region.',
+        preparacao:
+          'The adventure begins with planning. Speak with professionals who know the region and confirm the route, duration, physical demands, access conditions, permissions and support arrangements before organizing an expedition.',
+        imagemNota:
+          'Illustrative version restored with AI from a video screenshot. Details may differ from the original footage.',
+      },
+
+
       barcelos: {
         titulo: 'Barcelos',
         local: 'Middle Rio Negro',
@@ -583,6 +617,23 @@ export const destinosTranslations = {
     },
 
     destinations: {
+      'cachoeira-eldorado': {
+        titulo: 'Cascada del Eldorado',
+        local: 'Serra do Aracá · Barcelos',
+        descricao:
+          'Una caída monumental entre paredones y bosque. Descubra un paisaje que transforma la curiosidad por la Amazonía en ganas de expedición.',
+        destaque: 'Cascada • Bosque • Expedición',
+        etiqueta: 'AVENTURA',
+        historiaTitulo: 'Hay paisajes que hacen comenzar el viaje antes de partir.',
+        historia:
+          'En el Parque Estatal Serra do Aracá, en Barcelos, Eldorado revela una Amazonía de paredones y bosque. El agua desciende por la roca mientras el verde acompaña la parte alta de la sierra. Una invitación a mirar más allá de los ríos y descubrir otra dimensión del territorio.',
+        preparacao:
+          'La aventura comienza con la planificación. Consulte a profesionales que conocen la región y confirme recorrido, duración, exigencia física, acceso, permisos y estructura de apoyo antes de organizar la expedición.',
+        imagemNota:
+          'Versión ilustrativa restaurada con IA a partir de una captura de video. Los detalles pueden diferir del registro original.',
+      },
+
+
       barcelos: {
         titulo: 'Barcelos',
         local: 'Medio Río Negro',
