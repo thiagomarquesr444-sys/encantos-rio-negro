@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import VideoDestinoERN from './VideoDestinoERN';
+import BarcelosDestinoERN from './BarcelosDestinoERN';
 import type { Map as LeafletMap, LayerGroup } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useLanguage } from './LanguageProvider';
@@ -107,10 +109,11 @@ const cities: { id: CityId; name: string; coords: [number, number]; image?: stri
   { id: 'sao-gabriel', name: 'São Gabriel da Cachoeira', coords: [-0.13, -67.089] },
 ];
 const scenes: Scene[] = [
-  { id: 'barcelos', city: 'barcelos', image: '/images/regiao/barceloscapital.jpg.jpeg', interests: ['waters', 'nature', 'culture', 'fishing'], source: municipalSource },
+  { id: 'cachoeira-eldorado', city: 'barcelos', image: '/images/destinos/eldorado-card.png', interests: ['nature'], source: `${barcelosSource}serra-do-araca/` },
+  { id: 'barcelos', city: 'barcelos', image: '/images/regiao/matriz.png.jpeg', interests: ['waters', 'nature', 'culture', 'fishing'], source: municipalSource },
   { id: 'praia-grande', city: 'barcelos', image: '/images/regiao/barcelospraia.png.jpeg', context: true, interests: ['waters'], source: `${barcelosSource}praia-grande/`, coords: [-0.96058, -62.92789] },
-  { id: 'mariua', city: 'barcelos', image: '/images/regiao/ilha.png.jpeg', context: true, interests: ['waters', 'nature', 'fishing'], source: `${barcelosSource}arquipelago-de-mariua/` },
-  { id: 'serra-do-araca', city: 'barcelos', image: '/images/cultura/serra-araca-hero.jpg', interests: ['nature'], source: `${barcelosSource}serra-do-araca/` },
+  { id: 'mariua', city: 'barcelos', image: '/images/destinos/mariua-capa.jpg', interests: ['waters', 'nature', 'fishing'], source: `${barcelosSource}arquipelago-de-mariua/` },
+  { id: 'serra-do-araca', city: 'barcelos', image: '/images/destinos/serra-araca-card.jpeg', interests: ['nature'], source: `${barcelosSource}serra-do-araca/` },
   { id: 'festival-peixe-ornamental', city: 'barcelos', image: '/images/cultura/barcelosfestival.jpg', interests: ['culture'], source: municipalSource },
   { id: 'novo-airao', city: 'novo-airao', image: '/images/cultura/festivaldopeixeboi.jpg', context: true, interests: ['waters', 'nature', 'culture'], source: municipalSource },
   { id: 'anavilhanas', city: 'novo-airao', image: '/images/regiao/ern-amazonia-paisagem.png', context: true, interests: ['waters', 'nature'], source: `${icmbio}parna-de-anavilhanas/parna-de-anavilhanas` },
@@ -173,6 +176,11 @@ export default function ExploradorDestinosERN() {
   const u = copy[lang];
   const fishing = fishingCopy[lang];
   const t = destinosTranslations[lang];
+  const eldoradoImagemLabel = lang === 'EN'
+    ? 'Illustration restored with AI'
+    : lang === 'ES'
+      ? 'Ilustración restaurada con IA'
+      : 'Ilustração restaurada com IA';
   const [query, setQuery] = useState('');
   const [region, setRegion] = useState<CityId | 'all'>('all');
   const [interest, setInterest] = useState<Interest>('all');
@@ -369,10 +377,24 @@ export default function ExploradorDestinosERN() {
     const d = t.destinations[scene.id];
     return <article key={scene.id} className={`ern-v-card ${compact ? 'ern-v-card-compact' : ''}`}>
       <button type="button" className="ern-v-card-open" onClick={() => choose(scene)} aria-label={`${u.discover}: ${d.titulo}`}>
-        <div className="ern-v-card-photo"><SceneImage src={scene.image} alt={`${d.titulo} · ${scene.context ? u.context : u.collection}`} />
-          {scene.context && <span className="ern-v-photo-tag">{u.context}</span>}
+        <div className="ern-v-card-photo"><SceneImage src={scene.image} alt={`${d.titulo} · ${scene.id === 'cachoeira-eldorado' ? eldoradoImagemLabel : scene.context ? u.context : u.collection}`} />
+          {(scene.context || scene.id === 'cachoeira-eldorado') && <span className="ern-v-photo-tag">{scene.id === 'cachoeira-eldorado' ? eldoradoImagemLabel : u.context}</span>}
         </div>
-        <div className="ern-v-card-copy"><span className="ern-v-kicker">{d.local}</span><h3>{d.titulo}</h3>{!compact && <p>{d.descricao}</p>}<span className="ern-v-card-link">{u.discover} <span aria-hidden="true">↗</span></span></div>
+        <div className="ern-v-card-copy"><span className="ern-v-kicker">{d.local}</span><h3>{d.titulo}</h3>
+          {(scene.id === 'barcelos' || scene.id === 'cachoeira-eldorado' || scene.id === 'serra-do-araca' || scene.id === 'praia-grande' || scene.id === 'mariua' || scene.id === 'festival-peixe-ornamental') && (
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '5px',
+              marginTop: '8px',
+              color: '#805600',
+              fontSize: '11px',
+              fontWeight: 600,
+            }}>
+              <span aria-hidden="true">▶</span>
+              {lang === 'EN' ? 'Watch the adventure' : lang === 'ES' ? 'Ver la aventura' : 'Ver a aventura'}
+            </span>
+          )}{!compact && <p>{d.descricao}</p>}<span className="ern-v-card-link">{u.discover} <span aria-hidden="true">↗</span></span></div>
       </button>
       <button type="button" className="ern-v-heart" aria-pressed={saved.includes(scene.id)} aria-label={`${saved.includes(scene.id) ? u.saved : u.save}: ${d.titulo}`} onClick={() => toggleSaved(scene.id)}>{saved.includes(scene.id) ? '♥' : '♡'}</button>
     </article>;
@@ -409,8 +431,289 @@ export default function ExploradorDestinosERN() {
       {drawer && <aside className="ern-v-drawer" aria-labelledby="ern-v-detail-title">
         <button type="button" className="ern-v-close" onClick={closeDrawer} aria-label={u.close}>×</button>
         {drawer === 'saved' ? <div className="ern-v-detail-copy"><h2 ref={heading} tabIndex={-1} id="ern-v-detail-title">{u.selection}</h2><p>{u.selectionNote}</p>{saved.length ? saved.map(id => sceneCard(scenes.find(scene => scene.id === id)!, true)) : <p>{u.selectionEmpty}</p>}<Link className="ern-v-button" href="/#concierge">{u.plan} ↗</Link></div> : <>
-          {active && <div className="ern-v-detail-photo"><SceneImage src={active.image} alt={`${content!.titulo} · ${active.context ? u.context : u.collection}`} eager /><span className="ern-v-photo-tag">{active.context ? u.context : u.collection}</span></div>}
+          {active && <div className="ern-v-detail-photo"><SceneImage src={active.id === 'cachoeira-eldorado' ? '/images/destinos/eldorado-detalhe.png' : active.image} alt={`${content!.titulo} · ${active.id === 'cachoeira-eldorado' ? eldoradoImagemLabel : active.context ? u.context : u.collection}`} eager /><span className="ern-v-photo-tag">{active.id === 'cachoeira-eldorado' ? eldoradoImagemLabel : active.context ? u.context : u.collection}</span></div>}
           <div className="ern-v-detail-copy"><p className="ern-v-kicker">{active ? content!.local : u.regional}</p><h2 ref={heading} tabIndex={-1} id="ern-v-detail-title">{interest === 'fishing' && active?.id === 'barcelos' ? fishing.title : content?.titulo ?? city.name}</h2><p>{content?.descricao ?? u.regionalIntro}</p>
+            {/* ERN_BARCELOS_VIDEO_V1 */}
+            {active?.id === 'barcelos' && <BarcelosDestinoERN />}
+            {/* ERN_PRAIA_GRANDE_VIDEO_V1 */}
+            {active?.id === 'praia-grande' && (
+              <VideoDestinoERN
+                key={active.id}
+                title={content!.titulo}
+                poster={active.image}
+                videos={['/videos%20destinos/praiagrande.MP4']}
+              />
+            )}
+            {/* ERN_MARIUA_VIDEO_V1 */}
+            {active?.id === 'mariua' && (
+              <section
+                aria-label={
+                  lang === 'EN'
+                    ? 'Discover the Mariuá Archipelago'
+                    : lang === 'ES'
+                    ? 'Descubre el archipiélago de Mariuá'
+                    : 'Conheça o Arquipélago de Mariuá'
+                }
+              >
+                <VideoDestinoERN
+                  key={active.id}
+                  title={content!.titulo}
+                  poster={active.image}
+                  videos={['/videos%20destinos/arquipelagodemariua.MP4']}
+                />
+
+                <h3 style={{
+                  margin: '24px 0 12px',
+                  color: '#183e35',
+                  fontFamily: 'var(--font-fraunces), Georgia, serif',
+                  fontSize: '24px',
+                  lineHeight: 1.3,
+                }}>
+                  {lang === 'EN'
+                    ? 'A new horizon around every island'
+                    : lang === 'ES'
+                    ? 'Un nuevo horizonte detrás de cada isla'
+                    : 'Um novo horizonte a cada ilha'}
+                </h3>
+
+                <p>
+                  {lang === 'EN'
+                    ? 'Imagine travelling along the dark waters of the Rio Negro, with forested islands opening new passages ahead. In the Barcelos region, the Mariuá Archipelago brings together more than 1,400 islands: an invitation to slow down, take in the scenery and discover the Amazon from the river.'
+                    : lang === 'ES'
+                    ? 'Imagina navegar por las aguas oscuras del río Negro mientras las islas cubiertas de bosque abren nuevos caminos. En la región de Barcelos, el archipiélago de Mariuá reúne más de 1.400 islas: una invitación a bajar el ritmo, contemplar el paisaje y descubrir la Amazonía desde el río.'
+                    : 'Imagine navegar pelas águas escuras do Rio Negro enquanto ilhas cobertas de floresta abrem novos caminhos à sua frente. Na região de Barcelos, o Arquipélago de Mariuá reúne mais de 1.400 ilhas: um convite para diminuir o ritmo, contemplar a paisagem e conhecer a Amazônia a partir do rio.'}
+                </p>
+
+                <h3 style={{
+                  margin: '24px 0 12px',
+                  color: '#183e35',
+                  fontFamily: 'var(--font-fraunces), Georgia, serif',
+                  fontSize: '22px',
+                  lineHeight: 1.3,
+                }}>
+                  {lang === 'EN'
+                    ? 'Your next adventure begins on the water'
+                    : lang === 'ES'
+                    ? 'Tu próxima aventura comienza en el agua'
+                    : 'Sua próxima aventura começa na água'}
+                </h3>
+
+                <p>
+                  {lang === 'EN'
+                    ? 'Mariuá is also part of the sport fishing landscape around Barcelos. Whether your interest is fishing, photography or exploring by boat, plan the route with a local professional who can explain the conditions and possibilities for your visit.'
+                    : lang === 'ES'
+                    ? 'Mariuá también forma parte de los escenarios de pesca deportiva de Barcelos. Si buscas pescar, fotografiar o explorar en barco, organiza la ruta con un profesional local que pueda explicar las condiciones y posibilidades de tu visita.'
+                    : 'Mariuá também faz parte dos cenários de pesca esportiva de Barcelos. Seja para pescar, fotografar ou explorar de barco, planeje o percurso com um profissional local que possa orientar sobre as condições e possibilidades da sua visita.'}
+                </p>
+
+                <p style={{
+                  padding: '14px 16px',
+                  background: '#f5eddd',
+                  borderLeft: '3px solid #b98a3e',
+                  borderRadius: '0 12px 12px 0',
+                  fontSize: '13px',
+                  lineHeight: 1.8,
+                }}>
+                  {lang === 'EN'
+                    ? 'Before travelling, confirm river levels, navigation conditions, access permissions and the rules for your chosen activity. Fishing results and wildlife sightings cannot be guaranteed.'
+                    : lang === 'ES'
+                    ? 'Antes de viajar, confirma el nivel del río, las condiciones de navegación, los permisos de acceso y las reglas de la actividad elegida. Las capturas y los avistamientos de fauna no están garantizados.'
+                    : 'Antes de viajar, confirme o nível do rio, as condições de navegação, as autorizações de acesso e as regras da atividade escolhida. Capturas e avistamentos de animais não são garantidos.'}
+                </p>
+
+                <a
+                  href="https://turismo.barcelos.am.gov.br/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: 'inline-block',
+                    padding: '12px 0',
+                    color: '#275541',
+                    fontSize: '12px',
+                    textUnderlineOffset: '3px',
+                  }}
+                >
+                  {lang === 'EN'
+                    ? 'Learn more at Barcelos Tourism'
+                    : lang === 'ES'
+                    ? 'Más información en Turismo de Barcelos'
+                    : 'Saiba mais no Turismo de Barcelos'} ↗
+                </a>
+              </section>
+            )}
+            {/* ERN_FESTIVAL_VIDEOS_V1 */}
+            {active?.id === 'festival-peixe-ornamental' && (
+              <section
+                aria-label={
+                  lang === 'EN'
+                    ? 'Discover the Ornamental Fish Festival'
+                    : lang === 'ES'
+                    ? 'Descubre el Festival del Pez Ornamental'
+                    : 'Conheça o Festival do Peixe Ornamental'
+                }
+              >
+                <h3 style={{
+                  margin: '24px 0 12px',
+                  color: '#183e35',
+                  fontFamily: 'var(--font-fraunces), Georgia, serif',
+                  fontSize: '24px',
+                  lineHeight: 1.3,
+                }}>
+                  {lang === 'EN'
+                    ? 'Cardinal and Acará-Disco: feel the spirit of Barcelos'
+                    : lang === 'ES'
+                    ? 'Cardinal y Acará-Disco: siente el alma de Barcelos'
+                    : 'Cardinal e Acará-Disco: sinta a alma de Barcelos'}
+                </h3>
+
+                <p>
+                  {lang === 'EN'
+                    ? 'Imagine arriving in Barcelos and finding the town celebrating its river, its people and its ornamental fish. At the festival, Cardinal and Acará-Disco bring together music, performances and passionate supporters. Which side will win your heart?'
+                    : lang === 'ES'
+                    ? 'Imagina llegar a Barcelos y encontrar una ciudad celebrando su río, su gente y sus peces ornamentales. En el festival, Cardinal y Acará-Disco reúnen música, presentaciones y una afición apasionada. ¿Cuál conquistará tu corazón?'
+                    : 'Imagine chegar a Barcelos e encontrar uma cidade celebrando seu rio, sua gente e seus peixes ornamentais. No festival, Cardinal e Acará-Disco reúnem música, apresentações e torcidas apaixonadas. Qual deles vai conquistar você?'}
+                </p>
+
+                <VideoDestinoERN
+                  key={active.id}
+                  title={content!.titulo}
+                  poster={active.image}
+                  videos={[
+                    '/videos%20destinos/festivaldopeixeornamental.MP4',
+                    '/videos%20destinos/festivaldopeixeornamental1.1.MP4',
+                  ]}
+                />
+
+                <div style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 210px), 1fr))',
+                  gap: '12px',
+                  margin: '24px 0',
+                }}>
+                  <div style={{
+                    padding: '18px',
+                    border: '1px solid #c7d8df',
+                    borderRadius: '14px',
+                    background: '#edf4f6',
+                  }}>
+                    <h4 style={{
+                      margin: '0 0 10px',
+                      color: '#173e54',
+                      fontSize: '18px',
+                    }}>
+                      Cardinal
+                    </h4>
+                    <p style={{ margin: 0, lineHeight: 1.8 }}>
+                      {lang === 'EN'
+                        ? 'Follow the performances and feel the energy of the Cardinal supporters. Discover one of the two great expressions of the festival.'
+                        : lang === 'ES'
+                        ? 'Sigue las presentaciones y siente la energía de la afición del Cardinal. Descubre una de las dos grandes expresiones del festival.'
+                        : 'Acompanhe as apresentações e sinta a energia da torcida do Cardinal. Conheça uma das duas grandes expressões do festival.'}
+                    </p>
+                  </div>
+
+                  <div style={{
+                    padding: '18px',
+                    border: '1px solid #dccba9',
+                    borderRadius: '14px',
+                    background: '#f7f0e3',
+                  }}>
+                    <h4 style={{
+                      margin: '0 0 10px',
+                      color: '#624417',
+                      fontSize: '18px',
+                    }}>
+                      Acará-Disco
+                    </h4>
+                    <p style={{ margin: 0, lineHeight: 1.8 }}>
+                      {lang === 'EN'
+                        ? 'Discover the performances and enthusiasm of the Acará-Disco supporters. Another invitation to experience the creativity and pride of Barcelos.'
+                        : lang === 'ES'
+                        ? 'Descubre las presentaciones y el entusiasmo de la afición del Acará-Disco. Otra invitación a vivir la creatividad y el orgullo de Barcelos.'
+                        : 'Descubra as apresentações e o entusiasmo da torcida do Acará-Disco. Outro convite para viver a criatividade e o orgulho de Barcelos.'}
+                    </p>
+                  </div>
+                </div>
+
+                <h3 style={{
+                  margin: '24px 0 12px',
+                  color: '#183e35',
+                  fontFamily: 'var(--font-fraunces), Georgia, serif',
+                  fontSize: '22px',
+                  lineHeight: 1.3,
+                }}>
+                  {lang === 'EN'
+                    ? 'Behind the celebration, the story of the piabeiros'
+                    : lang === 'ES'
+                    ? 'Detrás de la fiesta, la historia de los piabeiros'
+                    : 'Por trás da festa, a história dos piabeiros'}
+                </h3>
+
+                <p>
+                  {lang === 'EN'
+                    ? 'The festival honours the piabeiros, whose work collecting ornamental fish is part of Barcelos’s history. Experiencing the celebration is also a chance to understand the connection between the river, local livelihoods and cultural identity.'
+                    : lang === 'ES'
+                    ? 'El festival homenajea a los piabeiros, cuyo trabajo en la recolección de peces ornamentales forma parte de la historia de Barcelos. Vivir esta celebración también permite conocer la relación entre el río, el trabajo local y la identidad cultural.'
+                    : 'O festival homenageia os piabeiros, cujo trabalho na coleta de peixes ornamentais faz parte da história de Barcelos. Viver essa celebração também é conhecer a relação entre o rio, o trabalho das famílias e a identidade cultural da cidade.'}
+                </p>
+
+                <p style={{
+                  padding: '14px 16px',
+                  background: '#f5eddd',
+                  borderLeft: '3px solid #b98a3e',
+                  borderRadius: '0 12px 12px 0',
+                  fontSize: '13px',
+                  lineHeight: 1.8,
+                }}>
+                  {lang === 'EN'
+                    ? 'Planning to experience the festival? Confirm the official dates and programme before booking transport and accommodation.'
+                    : lang === 'ES'
+                    ? '¿Quieres vivir el festival? Confirma las fechas y la programación oficial antes de reservar transporte y alojamiento.'
+                    : 'Quer viver o festival? Confirme as datas e a programação oficial antes de reservar transporte e hospedagem.'}
+                </p>
+              </section>
+            )}
+            {/* ERN_SERRA_VIDEO_V1 */}
+            {active?.id === 'serra-do-araca' && (
+              <VideoDestinoERN
+                key={active.id}
+                title={content!.titulo}
+                poster="/images/destinos/serra-araca-card.jpeg"
+                videos={['/videos%20destinos/serradoaraca.MP4']}
+              />
+            )}
+            {active?.id === 'cachoeira-eldorado' && (
+              <section aria-label={t.destinations['cachoeira-eldorado'].titulo}>
+                <VideoDestinoERN
+                  key={active.id}
+                  title={t.destinations['cachoeira-eldorado'].titulo}
+                  poster="/images/destinos/eldorado-card.png"
+                  videos={['/videos%20destinos/serradoaraca1.1.MP4']}
+                />
+                <details style={{ marginTop: '12px', fontSize: '11px', lineHeight: 1.6 }}>
+                  <summary style={{ cursor: 'pointer', padding: '8px 0' }}>
+                    {lang === 'EN' ? 'Image credits' : lang === 'ES' ? 'Créditos de la imagen' : 'Créditos da imagem'}
+                  </summary>
+                  <p className="ern-v-detail-note">
+                    {t.destinations['cachoeira-eldorado'].imagemNota}
+                  </p>
+                </details>
+                <h3
+                  style={{
+                    marginTop: '22px',
+                    fontFamily: 'var(--font-fraunces), serif',
+                    fontSize: '24px',
+                    lineHeight: 1.25,
+                  }}
+                >
+                  {t.destinations['cachoeira-eldorado'].historiaTitulo}
+                </h3>
+                <p>{t.destinations['cachoeira-eldorado'].historia}</p>
+                <p className="ern-v-detail-note">
+                  {t.destinations['cachoeira-eldorado'].preparacao}
+                </p>
+              </section>
+            )}
             {interest === 'fishing' && active?.interests.includes('fishing') && (
               <section
                 aria-label={fishing.filter}
