@@ -329,6 +329,24 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
     </button>
   );
 
+  // ERN_DIGITANDO_V1
+  const [digitandoERN, setDigitandoERN] = useState(false);
+  const enviandoERN = useRef(false);
+  const respostaTimerERN = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const textoDigitandoERN = idioma === 'EN'
+    ? 'Preparing a response'
+    : idioma === 'ES'
+      ? 'Preparando respuesta'
+      : 'Preparando resposta';
+
+  useEffect(() => {
+    return () => {
+      if (respostaTimerERN.current !== null) {
+        clearTimeout(respostaTimerERN.current);
+      }
+    };
+  }, []);
+
   const limite = mensagens.length >= 61;
   const resumo = preferencias
     .map((valor, indice) => `${c.details[indice]}: ${valor}`)
@@ -355,7 +373,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   useEffect(() => {
     const lista = listaRef.current;
     if (lista && aberto) lista.scrollTop = lista.scrollHeight;
-  }, [mensagens, aberto]);
+  }, [mensagens, aberto, digitandoERN]);
 
   function fechar() {
     setAberto(false);
@@ -364,6 +382,13 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
 
   function reiniciar() {
     if (!window.confirm(c.clear)) return;
+
+    if (respostaTimerERN.current !== null) {
+      clearTimeout(respostaTimerERN.current);
+      respostaTimerERN.current = null;
+    }
+    enviandoERN.current = false;
+    setDigitandoERN(false);
     setEtapa(0);
     setPreferencias([]);
     setEntrada('');
@@ -372,7 +397,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
 
   function enviar(valor: string) {
     const texto = valor.trim().slice(0, 300);
-    if (!texto || limite) return;
+    if (!texto || limite || enviandoERN.current) return;
 
     const normalizado = texto.normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -409,12 +434,24 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
       resposta = c.fallback;
     }
 
+    enviandoERN.current = true;
+    setDigitandoERN(true);
+
     setMensagens((atuais) => [
       ...atuais,
       { autor: 'visitante', texto },
-      { autor: 'ern', texto: resposta },
     ]);
     setEntrada('');
+
+    respostaTimerERN.current = setTimeout(() => {
+      setMensagens((atuais) => [
+        ...atuais,
+        { autor: 'ern', texto: resposta },
+      ]);
+      setDigitandoERN(false);
+      enviandoERN.current = false;
+      respostaTimerERN.current = null;
+    }, 800);
   }
 
   return (
@@ -514,10 +551,21 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
                 </div>
               </div>
             ))}
+            {digitandoERN && (
+              <div className="linha assistente">
+                <div className="balao ern-digitando" role="status">
+                  <span className="autor">{t.title}</span>
+                  <span className="sr-only">{textoDigitandoERN}</span>
+                  <span className="ern-pontos" aria-hidden="true">
+                    <i /><i /><i />
+                  </span>
+                </div>
+              </div>
+            )}
             {limite && <p className="limite" role="status">{c.limit}</p>}
           </div>
 
-          {etapa === 0 && !limite && (
+          {etapa === 0 && !limite && !digitandoERN && (
             <div className="sugestoes" aria-label={t.questions[0]}>
               {t.interests.map((interesse) => (
                 <button
@@ -529,7 +577,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
             </div>
           )}
 
-          {etapa === 4 && (
+          {etapa === 4 && !digitandoERN && (
             <nav className="atalhos" aria-label={t.explore}>
               <Link href="/destinos">{t.explore} ↗</Link>
               <Link href="/rede">{t.network} ↗</Link>
@@ -551,13 +599,13 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
               maxLength={300}
               autoComplete="off"
               placeholder={c.placeholder}
-              disabled={limite}
+              disabled={limite || digitandoERN}
               onChange={(evento) => setEntrada(evento.target.value)}
             />
             <button
               type="submit"
               className="principal"
-              disabled={!entrada.trim() || limite}
+              disabled={!entrada.trim() || limite || digitandoERN}
             >{c.send}</button>
           </form>
 
@@ -689,6 +737,39 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
           font-size: 11px; text-decoration: underline;
         }
         .limite { font-size: 12px; line-height: 1.6; }
+
+        .ern-digitando {
+          min-width: 100px;
+        }
+
+        .ern-pontos {
+          display: inline-flex;
+          align-items: center;
+          gap: 5px;
+          height: 22px;
+          padding: 3px 0;
+        }
+
+        .ern-pontos i {
+          display: block;
+          width: 7px;
+          height: 7px;
+          border-radius: 50%;
+          background: #287b72;
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+          .ern-pontos i {
+            animation: ern-ponto-digitando .75s ease-in-out infinite;
+          }
+          .ern-pontos i:nth-child(2) { animation-delay: .12s; }
+          .ern-pontos i:nth-child(3) { animation-delay: .24s; }
+        }
+
+        @keyframes ern-ponto-digitando {
+          0%, 100% { transform: translateY(0); opacity: .55; }
+          50% { transform: translateY(-3px); opacity: 1; }
+        }
         .sr-only {
           position: absolute; width: 1px; height: 1px;
           padding: 0; margin: -1px; overflow: hidden;
