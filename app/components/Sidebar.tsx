@@ -9,6 +9,10 @@ import { usePathname } from 'next/navigation';
 import { useAppConfig } from '@/app/context/AppContext';
 import { supabase } from '@/lib/supabase';
 import LogoERN from '@/app/components/LogoERN';
+import {
+  useModulosEquipeERN,
+  permiteLinkEquipeERN,
+} from '@/app/components/ModulosEquipeERN';
 
 type NavItem = {
   label: string;
@@ -27,6 +31,11 @@ const PRINCIPAIS: NavItem[] = [
     label: 'Painel',
     href: '/dashboard',
     descricao: 'Visão geral da sua empresa',
+  },
+  {
+    label: 'Mapa ERN',
+    href: '/dashboard#mapa-ern',
+    descricao: 'Território, localidades e referências do Rio Negro',
   },
   {
     label: 'Demandas',
@@ -240,6 +249,40 @@ function nomeIdentidadeERN(valor: unknown): string {
 export default function Sidebar() {
   const pathname = usePathname();
   const { config } = useAppConfig();
+  const {
+    modulos: modulosEquipeERN,
+    carregando: carregandoModulosERN,
+    erro: erroModulosERN,
+  } = useModulosEquipeERN();
+
+  const linkPermitidoERN = (item: NavItem) =>
+    permiteLinkEquipeERN(item.href, modulosEquipeERN);
+
+  const principaisVisiveisERN = PRINCIPAIS.filter(linkPermitidoERN);
+
+  const gruposVisiveisERN = GRUPOS
+    .map((grupo) => ({
+      ...grupo,
+      itens: grupo.itens.filter(linkPermitidoERN),
+    }))
+    .filter((grupo) => grupo.itens.length > 0);
+
+  const avisoModulosERN = carregandoModulosERN ? (
+    <span role="status" className="px-4 py-2 text-xs text-[#B4C8BB]">
+      Consultando acessos…
+    </span>
+  ) : erroModulosERN ? (
+    <div role="alert" className="px-4 py-2 text-xs text-[#F4C77E]">
+      <p>Não foi possível carregar seus acessos.</p>
+      <button
+        type="button"
+        onClick={() => window.location.reload()}
+        className="mt-2 min-h-11 rounded-lg border border-current px-3 focus-visible:outline-2 focus-visible:outline-offset-4"
+      >
+        Tentar novamente
+      </button>
+    </div>
+  ) : null;
 
   const [acessoEditorial, setAcessoEditorial] = useState(false);
   const [nomeContaERN, setNomeContaERN] = useState('');
@@ -575,7 +618,8 @@ export default function Sidebar() {
             aria-label="Navegação principal"
             className="hidden shrink-0 items-center gap-1 xl:flex"
           >
-            {PRINCIPAIS.map((item) => {
+            {avisoModulosERN}
+            {principaisVisiveisERN.map((item) => {
               const ativo = rotaAtiva(pathname, item.href);
 
               return (
@@ -595,7 +639,7 @@ export default function Sidebar() {
               );
             })}
 
-            {GRUPOS.map((grupo) => {
+            {gruposVisiveisERN.map((grupo) => {
               const aberto = dropdown === grupo.id;
               const ativo = grupoAtivo(grupo);
               const painelId = `nav-desktop-${grupo.id}`;
@@ -662,7 +706,7 @@ export default function Sidebar() {
                   {nomeContaERN || 'Minha conta'}
                 </p>
 
-                {itensConta.map((item) => (
+                {itensConta.filter(linkPermitidoERN).map((item) => (
                   <LinkNavegacao
                     key={item.href}
                     item={item}
@@ -781,7 +825,8 @@ export default function Sidebar() {
             }}
           >
             <div className="space-y-1">
-              {PRINCIPAIS.map((item) => (
+              {avisoModulosERN}
+            {principaisVisiveisERN.map((item) => (
                 <LinkNavegacao
                   key={item.href}
                   item={item}
@@ -791,7 +836,7 @@ export default function Sidebar() {
               ))}
             </div>
 
-            {GRUPOS.map((grupo) => (
+            {gruposVisiveisERN.map((grupo) => (
               <section
                 key={grupo.id}
                 aria-labelledby={`titulo-mobile-${grupo.id}`}
@@ -828,7 +873,7 @@ export default function Sidebar() {
                 {nomeContaERN || 'Minha conta'}
               </h3>
 
-              {itensConta.map((item) => (
+              {itensConta.filter(linkPermitidoERN).map((item) => (
                 <LinkNavegacao
                   key={item.href}
                   item={item}

@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { consultarReservasAnaliseFinanceiroERN } from '@/lib/reservasFinanceiroERN';
 import { analisarGraficosFinanceirosERN, dataGraficoValida, hojeGraficoManaus, periodoGraficoValido } from '@/lib/financeiroGraficosERN';
 import type { RegistroFinanceiroERN } from '@/lib/financeiroConsultaERN';
 
@@ -28,7 +29,7 @@ export async function empresaRelatoriosERN(): Promise<string> {
   if (falha || !perfil?.empresa_id) throw new Error('Não foi possível identificar sua empresa.');
   return String(perfil.empresa_id);
 }
-async function listarERN<T extends { id: string; empresa_id?: string | null }>(tabela: 'relatorios' | 'reservas' | 'financeiro', empresa: string, colunas: string): Promise<T[]> {
+async function listarERN<T extends { id: string; empresa_id?: string | null }>(tabela: 'relatorios' | 'financeiro', empresa: string, colunas: string): Promise<T[]> {
   const lista: T[] = []; let esperado: number | null = null;
   for (let inicio = 0; inicio < 10000; inicio += 200) {
     const { data, error, count } = await supabase.from(tabela).select(colunas, { count: 'exact' }).eq('empresa_id', empresa).order('id', { ascending: true }).range(inicio, inicio + 199);
@@ -106,7 +107,7 @@ export async function gerarRelatorioERN(id: string) {
   const criterios = criteriosRelatorioERN(data.filtros);
   if (!criterios) throw new Error('Este cadastro não possui critérios de análise integrada válidos.');
   const [reservas, financeiro] = await Promise.all([
-    listarERN<ReservaRelatorioERN>('reservas', empresa, 'id,empresa_id,data_reserva,data,valor_total,valor,quantidade_pessoas,status'),
+    consultarReservasAnaliseFinanceiroERN(empresa),
     listarERN<RegistroFinanceiroERN & { id: string }>('financeiro', empresa, 'id,empresa_id,tipo,valor,categoria,status,data_vencimento,data_liquidacao,reserva_id'),
   ]);
   return { criterios, atualizadoEm: new Date().toISOString(), reservas: analisarReservasRelatorioERN(reservas, criterios.inicio, criterios.fim), financeiro: analisarGraficosFinanceirosERN(financeiro, criterios, hojeGraficoManaus()) };

@@ -26,6 +26,7 @@ const PAPEIS_EMPRESA = [
   'operador_empresa',
   'financeiro',
   'guia',
+  'piloteiro',
   'admin_plataforma',
 ] as const;
 
@@ -62,6 +63,45 @@ function impedirCache(response: NextResponse): void {
   );
   response.headers.set('Pragma', 'no-cache');
   response.headers.set('Expires', '0');
+}
+
+// ERN_ROTAS_POR_FUNCAO_V1
+function moduloRotaEmpresaERN(pathname: string): string | null {
+  const caminho = pathname.replace(/\/+$/, '') || '/';
+
+  // O Painel não libera automaticamente todas as suas subrotas.
+  if (caminho === '/dashboard') {
+    return 'painel';
+  }
+
+  // Rotas específicas precisam vir antes das rotas gerais.
+  const rotas: ReadonlyArray<readonly [string, string]> = [
+    ['/dashboard/pesca-esportiva', 'passeios'],
+    ['/configuracoes/equipe', 'equipe'],
+    ['/configuracoes/publicacoes', 'publicacoes'],
+    ['/configuracoes/perfil-publico', 'perfil_publico'],
+    ['/configuracoes', 'configuracoes'],
+    ['/financeiro', 'financeiro'],
+    ['/clientes', 'clientes'],
+    ['/reservas', 'reservas'],
+    ['/hospedagens', 'hospedagens'],
+    ['/passeios', 'passeios'],
+    ['/embarcacoes', 'embarcacoes'],
+    ['/guias', 'guias'],
+    ['/parceiros', 'parceiros'],
+    ['/relatorios', 'relatorios'],
+    ['/vouchers', 'vouchers'],
+    ['/planos', 'planos'],
+    ['/demandas', 'demandas'],
+  ];
+
+  for (const [rota, modulo] of rotas) {
+    if (pertenceARota(caminho, rota)) {
+      return modulo;
+    }
+  }
+
+  return null;
 }
 
 export async function proxy(request: NextRequest) {
@@ -313,7 +353,37 @@ export async function proxy(request: NextRequest) {
       // Usuário empresarial só pode entrar nas rotas
       // da operadora e com papel empresarial permitido.
       if (rotaEmpresa && papelEmpresaPermitido) {
-        return response;
+        const moduloERN = moduloRotaEmpresaERN(pathname);
+
+        if (moduloERN) {
+          const {
+            data: permitidoERN,
+            error: erroPermissaoERN,
+          } = await supabase.rpc('ern_pode_acessar_modulo', {
+            p_modulo: moduloERN,
+          });
+
+          if (erroPermissaoERN) {
+            return indisponivel();
+          }
+
+          if (permitidoERN === true) {
+            return response;
+          }
+        }
+
+        return transferirCookies(
+          new NextResponse(
+            'Seu perfil não possui permissão para acessar este módulo. Volte ao Painel da operadora.',
+            {
+              status: 403,
+              headers: {
+                'Content-Type': 'text/plain; charset=utf-8',
+                'X-Content-Type-Options': 'nosniff',
+              },
+            },
+          ),
+        );
       }
 
       // Mantém a intenção original: guia, fornecedor

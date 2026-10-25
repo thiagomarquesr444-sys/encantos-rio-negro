@@ -6,6 +6,7 @@ import GraficosOperadora from '@/app/components/GraficosOperadora';
 import MapaTerritorioERN from '@/app/components/MapaTerritorioERN';
 
 import { supabase } from '@/lib/supabase';
+import PainelPorFuncaoERN from '@/app/components/PainelPorFuncaoERN';
 
 
 import {
@@ -411,6 +412,14 @@ async function carregarDemandasDashboard(): Promise<{
 }
 
 export default function DashboardPage() {
+  return (
+    <PainelPorFuncaoERN>
+      <DashboardAdministrativoERN />
+    </PainelPorFuncaoERN>
+  );
+}
+
+function DashboardAdministrativoERN() {
   const [stats, setStats] = useState<Stats>({
     clientes: 0,
     reservas: 0,

@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { useModulosEquipeERN } from '@/app/components/ModulosEquipeERN';
 import {
   consultarFinanceiroERN,
   filtrarFinanceiroERN,
@@ -301,6 +302,8 @@ function Modal({
 }
 
 export default function FinanceiroPage() {
+  const { modulos: modulosFinanceiroERN } = useModulosEquipeERN();
+  const podeAbrirReservaERN = modulosFinanceiroERN.has('reservas');
   const [lancamentos, setLancamentos] = useState<LancamentoFinanceiro[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erroConsulta, setErroConsulta] = useState<string | null>(null);
@@ -643,12 +646,14 @@ export default function FinanceiroPage() {
           >
             Filtrar esta reserva
           </button>
-          <Link
-            className="inline-flex min-h-11 items-center underline underline-offset-4"
-            href={`/reservas/editar/${encodeURIComponent(item.reserva_id)}`}
-          >
-            Abrir reserva
-          </Link>
+          {podeAbrirReservaERN && (
+            <Link
+              className="inline-flex min-h-11 items-center underline underline-offset-4"
+              href={`/reservas/editar/${encodeURIComponent(item.reserva_id)}`}
+            >
+              Abrir reserva
+            </Link>
+          )}
         </div>
       </div>
     );

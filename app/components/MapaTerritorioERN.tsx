@@ -23,7 +23,11 @@ type DemandaMapa = {
   localidade: string;
   status: string;
 };
-type Props = { demandas?: DemandaMapa[]; carregando?: boolean };
+type Props = {
+  demandas?: DemandaMapa[];
+  carregando?: boolean;
+  mostrarDemandas?: boolean;
+};
 type Coordenadas = [number, number];
 type Categoria = "praias" | "natureza" | "cultura";
 type Localidade = {
@@ -280,6 +284,7 @@ function metrica(metros: number) {
 export default function MapaTerritorioERN({
   demandas = VAZIAS,
   carregando = false,
+  mostrarDemandas = true,
 }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapa = useRef<LeafletMap | null>(null);
@@ -305,7 +310,8 @@ export default function MapaTerritorioERN({
   const [atrativoId, setAtrativoId] = useState<string | null>(
     "praia-grande-barcelos",
   );
-  const [modo, setModo] = useState<Modo>("turismo");
+  const [modoSelecionado, setModo] = useState<Modo>("turismo");
+  const modo: Modo = mostrarDemandas ? modoSelecionado : "turismo";
   const [categoria, setCategoria] = useState<Categoria | "todas">("todas");
   const [busca, setBusca] = useState("");
   const [estado, setEstado] = useState<"carregando" | "pronto" | "erro">(
@@ -327,13 +333,13 @@ export default function MapaTerritorioERN({
       LOCALIDADES.map((local) => [local.id, []]),
     );
     let semLocalizacao = 0;
-    for (const demanda of demandas) {
+    for (const demanda of (mostrarDemandas ? demandas : VAZIAS)) {
       const local = localizar(demanda.localidade);
       if (local) porCidade[local.id].push(demanda);
       else semLocalizacao += 1;
     }
     return { porCidade, semLocalizacao };
-  }, [demandas]);
+  }, [demandas, mostrarDemandas]);
   const itens = resumo.porCidade[cidadeId];
   const cidadesVisiveis = useMemo(
     () =>
@@ -876,7 +882,7 @@ export default function MapaTerritorioERN({
           </span>
         </div>
         <div className="mt-4 flex flex-wrap gap-2" aria-label="Visão do mapa">
-          {(["turismo", "demandas"] as const).map((item) => (
+          {(["turismo", "demandas"] as const).filter((item) => mostrarDemandas || item === "turismo").map((item) => (
             <button
               key={item}
               type="button"
@@ -1187,6 +1193,7 @@ export default function MapaTerritorioERN({
               parceiros ou demandas.
             </p>
           )}
+          {mostrarDemandas && (
           <div className="mt-5 rounded-xl border border-white/10 p-3">
             <h4 className="text-sm">Demandas em {cidade.nome}</h4>
             <p className="mt-2 text-xs text-[color:var(--ern-secundario,#EDEDE3)]">
@@ -1213,7 +1220,8 @@ export default function MapaTerritorioERN({
               Gerenciar demandas →
             </Link>
           </div>
-          {!carregando && resumo.semLocalizacao > 0 && (
+          )}
+          {mostrarDemandas && !carregando && resumo.semLocalizacao > 0 && (
             <p className="mt-3 text-[11px] leading-5 text-[color:var(--ern-destaque,#F4C77E)]">
               {resumo.semLocalizacao} demanda(s) sem município reconhecido.
               Continuam disponíveis na lista completa.

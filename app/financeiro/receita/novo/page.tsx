@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { consultarReferenciasReservasFinanceiroERN } from '@/lib/reservasFinanceiroERN';
 type ReservaReceita = { id: string; cliente: string | null; pacote: string | null; data_reserva: string; status: string | null; valor_total: number | string | null };
 
 type StatusReceita = 'Recebido' | 'Pendente';
@@ -116,18 +117,8 @@ export default function NovaReceitaPage() {
         const { data: perfil, error: erroPerfil } = await supabase.from('perfis').select('empresa_id').eq('id', auth.user.id).single();
         if (erroPerfil || !perfil?.empresa_id) throw new Error('Não foi possível identificar sua empresa.');
         const empresa = String(perfil.empresa_id);
-        const lista: ReservaReceita[] = [];
-        let total: number | null = null;
-        for (let inicio = 0; inicio < 10000; inicio += 200) {
-          const {data, error, count} = await supabase.from('reservas').select('id,cliente,pacote,data_reserva,status,valor_total', {count:'exact'}).eq('empresa_id',empresa).order('id').range(inicio,inicio+199);
-          if (error) throw error;
-          if (count === null || count > 10000) throw new Error('O volume de reservas exige busca no servidor. A lista não foi carregada parcialmente.');
-          if (total !== null && total !== count) throw new Error('As reservas mudaram durante a consulta. Tente novamente.');
-          total = count; lista.push(...((data ?? []) as ReservaReceita[]));
-          if (lista.length >= count) break;
-          if (!data?.length) throw new Error('A consulta ficou incompleta. Tente novamente.');
-        }
-        if (lista.length !== total || new Set(lista.map(r=>r.id)).size !== lista.length) throw new Error('Não foi possível obter uma lista consistente de reservas.');
+        const lista: ReservaReceita[] =
+          await consultarReferenciasReservasFinanceiroERN(empresa);
         if (!ativo) return;
         setReservas(lista);setEmpresaConsulta(empresa);
         const pedido = new URLSearchParams(window.location.search).get('reserva_id');
@@ -215,8 +206,15 @@ export default function NovaReceitaPage() {
       }
       if (reservaId) {
         if (String(perfil.empresa_id) !== empresaConsulta) throw new Error('O vínculo da sua conta mudou. Recarregue a página.');
-        const {data: reservaAtual, error: erroReserva} = await supabase.from('reservas').select('id').eq('empresa_id',perfil.empresa_id).eq('id',reservaId).single();
-        if (erroReserva || !reservaAtual?.id) throw new Error('A reserva selecionada não está mais disponível. Recarregue a página.');
+        const referenciasAtuaisERN =
+          await consultarReferenciasReservasFinanceiroERN(
+            String(perfil.empresa_id),
+            reservaId,
+          );
+
+        if (!referenciasAtuaisERN.some(item => item.id === reservaId)) {
+          throw new Error('A reserva selecionada não está mais disponível. Recarregue a página.');
+        }
       }
       const { data: registro, error: erroCadastro } = await supabase
         .from('financeiro')

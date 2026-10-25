@@ -22,6 +22,7 @@ const PAPEIS_EMPRESA = [
   'operador_empresa',
   'financeiro',
   'guia',
+  'piloteiro',
   'admin_plataforma',
 ] as const;
 
