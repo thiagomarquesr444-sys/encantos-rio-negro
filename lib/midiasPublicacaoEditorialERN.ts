@@ -1,3 +1,4 @@
+import { resolverMidiasPrivadasERN } from '@/lib/midiasPrivadasERN';
 import { supabase } from '@/lib/supabase';
 import {
   carregarPerfilPublicoEditorialERN,
@@ -40,7 +41,7 @@ async function validarPublicacao(
   if (error) throw error;
 
   if (!data || (exigirRascunho && data.status !== 'rascunho')) {
-    throw new Error('Selecione um rascunho salvo para adicionar imagens.');
+    throw new Error('Selecione um rascunho salvo para adicionar fotos ou vídeos.');
   }
 
   return data;
@@ -68,7 +69,7 @@ export async function listarMidiasPublicacaoEditorialERN(
 
   await validarPublicacao(contexto, publicacaoId, false);
 
-  return (data ?? []) as MidiaPublicacaoERN[];
+  return resolverMidiasPrivadasERN((data ?? []) as MidiaPublicacaoERN[]);
 }
 
 export async function enviarImagemPublicacaoERN(
@@ -83,18 +84,22 @@ export async function enviarImagemPublicacaoERN(
     'image/jpeg': 'jpg',
     'image/png': 'png',
     'image/webp': 'webp',
+    'video/mp4': 'mp4',
+    'video/webm': 'webm',
   };
 
   const extensao = formatos[arquivo.type];
+  const ehVideo = arquivo.type.startsWith('video/');
+  const limite = (ehVideo ? 50 : 5) * 1024 * 1024;
   const alt = descricao.trim();
   const autoria = credito.trim();
 
-  if (!extensao || arquivo.size <= 0 || arquivo.size > 5 * 1024 * 1024) {
-    throw new Error('Escolha uma imagem JPEG, PNG ou WebP de até 5 MB.');
+  if (!extensao || arquivo.size <= 0 || arquivo.size > limite) {
+    throw new Error('Escolha uma foto JPEG, PNG ou WebP de até 5 MB, ou vídeo MP4/WebM de até 50 MB.');
   }
 
   if (!alt || alt.length > 500) {
-    throw new Error('Descreva a imagem em até 500 caracteres.');
+    throw new Error('Descreva a foto ou o vídeo em até 500 caracteres.');
   }
 
   if (autoria.length > 300) {
@@ -102,17 +107,16 @@ export async function enviarImagemPublicacaoERN(
   }
 
   if (!consentimento) {
-    throw new Error('Confirme que possui autorização para divulgar a imagem.');
+    throw new Error('Confirme que possui autorização para divulgar esta mídia.');
   }
 
   await validarPublicacao(contexto, publicacaoId, true);
 
   const id = crypto.randomUUID();
-  const caminho =
-    `${contexto.pastaMidias}/publicacoes/${publicacaoId}/${id}.${extensao}`;
+  const caminho = `publicacoes/${publicacaoId}/${id}.${extensao}`;
 
   const { error: erroUpload } = await supabase.storage
-    .from('rede-publica')
+    .from('vivencias-ern')
     .upload(caminho, arquivo, {
       upsert: false,
       contentType: arquivo.type,
@@ -124,17 +128,15 @@ export async function enviarImagemPublicacaoERN(
   try {
     await validarPublicacao(contexto, publicacaoId, true);
 
-    const { data: endereco } = supabase.storage
-      .from('rede-publica')
-      .getPublicUrl(caminho);
+    const enderecoSalvo = 'vivencias-ern/' + caminho;
 
     const { data, error } = await supabase
       .from('publicacao_midias')
       .insert({
         id,
         publicacao_id: publicacaoId,
-        tipo: 'imagem',
-        url: endereco.publicUrl,
+        tipo: ehVideo ? 'video' : 'imagem',
+        url: enderecoSalvo,
         alt_text: alt,
         credito: autoria || null,
         consentimento_confirmado: true,
@@ -151,7 +153,7 @@ export async function enviarImagemPublicacaoERN(
 
     await validarPublicacao(contexto, publicacaoId, true);
 
-    return data as MidiaPublicacaoERN;
+    return (await resolverMidiasPrivadasERN([data as MidiaPublicacaoERN]))[0];
   } catch {
     // Uma falha na resposta não comprova que a inserção falhou.
     // Preserva o arquivo para não quebrar uma imagem já registrada.

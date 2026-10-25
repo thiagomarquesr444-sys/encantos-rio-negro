@@ -125,9 +125,26 @@ export default function PreviaPublicacaoERN({
                   className="max-h-[65dvh] w-full object-contain"
                 />
               )}
+              {midia.tipo === 'video' && (
+                <video
+                  src={midia.url}
+                  poster={midia.thumbnail_url || undefined}
+                  controls
+                  playsInline
+                  preload="none"
+                  aria-label={midia.alt_text || 'Vídeo da publicação'}
+                  className="max-h-[65dvh] w-full bg-black object-contain"
+                  onPlay={e => {
+                    const atual = e.currentTarget;
+                    document.querySelectorAll('video').forEach(video => {
+                      if (video !== atual) video.pause();
+                    });
+                  }}
+                />
+              )}
               {midia.credito && (
                 <figcaption className="px-5 pt-2 text-xs">
-                  Foto: {midia.credito}
+                  Créditos: {midia.credito}
                 </figcaption>
               )}
             </figure>

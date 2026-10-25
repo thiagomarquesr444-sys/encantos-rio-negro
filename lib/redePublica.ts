@@ -1,3 +1,4 @@
+import { resolverMidiasPrivadasERN } from '@/lib/midiasPrivadasERN';
 import { supabase } from '@/lib/supabase';
 
 export type IdiomaRedePublica =
@@ -94,6 +95,7 @@ export type PublicacaoPublica = {
     | 'en'
     | 'es';
 
+  destino_slug: string | null;
   localidade_texto: string | null;
 
   data_evento_inicio: string | null;
@@ -116,6 +118,8 @@ export type PublicacaoPublica = {
 };
 
 export type FiltrosFeedPublico = {
+  destinoSlug?: string;
+  somenteVideos?: boolean;
   autorPerfilId?: string;
   deslocamento?: number;
   slug?: string;
@@ -169,6 +173,7 @@ type PublicacaoBanco = {
     | 'en'
     | 'es';
 
+  destino_slug: string | null;
   localidade_texto: string | null;
 
   data_evento_inicio: string | null;
@@ -475,6 +480,7 @@ async function carregarMidias(
     .select(
       'id,publicacao_id,tipo,url,thumbnail_url,alt_text,credito,ordem',
     )
+    .eq('consentimento_confirmado', true)
     .in(
       'publicacao_id',
       idsPublicacoes,
@@ -496,8 +502,7 @@ async function carregarMidias(
       MidiaPublicacao[]
     >();
 
-  const registros =
-    (data ?? []) as MidiaPublicacao[];
+  const registros = await resolverMidiasPrivadasERN((data ?? []) as MidiaPublicacao[]);
 
   for (
     const midia of registros
@@ -580,177 +585,179 @@ async function carregarTraducoes(
   return mapa;
 }
 
+function lerPublicacaoFeedERN(valor: unknown): PublicacaoBanco {
+  if (typeof valor !== 'object' || valor === null || Array.isArray(valor)) {
+    throw new Error('Resposta inválida ao carregar publicações.');
+  }
+
+  const item = valor as Record<string, unknown>;
+
+  function texto(campo: string): string {
+    const resultado = item[campo];
+    if (typeof resultado !== 'string') {
+      throw new Error(`Campo inválido na publicação: ${campo}.`);
+    }
+    return resultado;
+  }
+
+  function opcional(campo: string): string | null {
+    if (item[campo] === null) return null;
+    return texto(campo);
+  }
+
+  function booleano(campo: string): boolean {
+    const resultado = item[campo];
+    if (typeof resultado !== 'boolean') {
+      throw new Error(`Campo inválido na publicação: ${campo}.`);
+    }
+    return resultado;
+  }
+
+  const idioma = texto('idioma_original');
+
+  if (idioma !== 'pt' && idioma !== 'en' && idioma !== 'es') {
+    throw new Error('Idioma inválido na publicação.');
+  }
+
+  return {
+    id: texto('id'),
+    autor_perfil_id: texto('autor_perfil_id'),
+    territorio_id: opcional('territorio_id'),
+    categoria_id: opcional('categoria_id'),
+    slug: texto('slug'),
+    tipo: texto('tipo'),
+    titulo: texto('titulo'),
+    resumo: opcional('resumo'),
+    conteudo: opcional('conteudo'),
+    idioma_original: idioma,
+    destino_slug: opcional('destino_slug'),
+    localidade_texto: opcional('localidade_texto'),
+    data_evento_inicio: opcional('data_evento_inicio'),
+    data_evento_fim: opcional('data_evento_fim'),
+    destaque: booleano('destaque'),
+    permitir_interacoes: booleano('permitir_interacoes'),
+    publicado_em: texto('publicado_em'),
+  };
+}
+
 export async function listarFeedPublico(
   idioma: IdiomaRedePublica,
   filtros: FiltrosFeedPublico = {},
 ): Promise<PublicacaoPublica[]> {
-  const limite =
-    Math.min(
-      Math.max(
-        filtros.limite ?? 30,
-        1,
-      ),
-      60,
-    );
+  const solicitado = filtros.limite ?? 30;
+  const deslocamento = filtros.deslocamento ?? 0;
 
-  let consulta =
-    supabase
-      .from(
-        'publicacoes',
-      )
-      .select(
-        'id,autor_perfil_id,territorio_id,categoria_id,slug,tipo,titulo,resumo,conteudo,idioma_original,localidade_texto,data_evento_inicio,data_evento_fim,destaque,permitir_interacoes,publicado_em',
-      )
-      .eq(
-        'status',
-        'publicado',
-      )
-      .not(
-        'publicado_em',
-        'is',
-        null,
-      )
-      .lte(
-        'publicado_em',
-        new Date().toISOString(),
-      )
-      .order(
-        'destaque',
-        {
-          ascending: false,
-        },
-      )
-      .order(
-        'publicado_em',
-        {
-          ascending: false,
-        },
-      )
-      .order('id', { ascending: false })
-      .range(
-        Math.max(0, Math.trunc(filtros.deslocamento ?? 0)),
-        Math.max(0, Math.trunc(filtros.deslocamento ?? 0)) + limite - 1,
-      );
+  if (
+    !Number.isSafeInteger(solicitado) ||
+    solicitado < 1 ||
+    !Number.isSafeInteger(deslocamento) ||
+    deslocamento < 0
+  ) {
+    throw new Error('Paginação inválida.');
+  }
 
-  if (filtros.autorPerfilId !== undefined) {
-    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(filtros.autorPerfilId)) {
+  const limite = Math.min(solicitado, 60);
+  const uuid = /^[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}$/i;
+  const slugValido = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+  for (const id of [
+    filtros.autorPerfilId,
+    filtros.categoriaId,
+    filtros.territorioId,
+  ]) {
+    if (id !== undefined && id !== '' && !uuid.test(id)) {
       return [];
     }
-    consulta = consulta.eq('autor_perfil_id', filtros.autorPerfilId);
-  }
-
-  if (filtros.slug !== undefined) {
-    if (
-      filtros.slug.length > 180 ||
-      !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(filtros.slug)
-    ) {
-      return [];
-    }
-
-    consulta = consulta.eq('slug', filtros.slug);
   }
 
   if (
-    filtros.categoriaId
-  ) {
-    consulta =
-      consulta.eq(
-        'categoria_id',
-        filtros.categoriaId,
-      );
-  }
-
-  if (
-    filtros.territorioId
-  ) {
-    consulta =
-      consulta.eq(
-        'territorio_id',
-        filtros.territorioId,
-      );
-  }
-
-  const busca =
-    filtros.busca
-      ? limparBusca(
-          filtros.busca,
-        )
-      : '';
-
-  if (busca) {
-    consulta =
-      consulta.ilike(
-        'titulo',
-        `%${busca}%`,
-      );
-  }
-
-  const {
-    data,
-    error,
-  } = await consulta;
-
-  if (error) {
-    throw error;
-  }
-
-  const publicacoes =
-    (data ?? []) as PublicacaoBanco[];
-
-  if (
-    publicacoes.length === 0
+    filtros.slug !== undefined &&
+    (filtros.slug.length > 180 || !slugValido.test(filtros.slug))
   ) {
     return [];
   }
 
-  const autoresIds =
-    Array.from(
-      new Set(
-        publicacoes.map(
-          (item) =>
-            item.autor_perfil_id,
-        ),
-      ),
-    );
+  if (
+    filtros.destinoSlug !== undefined &&
+    (
+      filtros.destinoSlug.length > 100 ||
+      !slugValido.test(filtros.destinoSlug)
+    )
+  ) {
+    return [];
+  }
 
-  const categoriasIds =
-    Array.from(
-      new Set(
-        publicacoes
-          .map(
-            (item) =>
-              item.categoria_id,
-          )
-          .filter(
-            (
-              valor,
-            ): valor is string =>
-              Boolean(valor),
-          ),
-      ),
-    );
+  let consulta = supabase
+    .from('rede_publicacoes_consulta_ern')
+    .select('*');
 
-  const territoriosIds =
-    Array.from(
-      new Set(
-        publicacoes
-          .map(
-            (item) =>
-              item.territorio_id,
-          )
-          .filter(
-            (
-              valor,
-            ): valor is string =>
-              Boolean(valor),
-          ),
-      ),
-    );
+  if (filtros.autorPerfilId) {
+    consulta = consulta.eq('autor_perfil_id', filtros.autorPerfilId);
+  }
 
-  const publicacoesIds =
-    publicacoes.map(
-      (item) => item.id,
-    );
+  if (filtros.slug) {
+    consulta = consulta.eq('slug', filtros.slug);
+  }
+
+  if (filtros.categoriaId) {
+    consulta = consulta.eq('categoria_id', filtros.categoriaId);
+  }
+
+  if (filtros.territorioId) {
+    consulta = consulta.eq('territorio_id', filtros.territorioId);
+  }
+
+  if (filtros.destinoSlug) {
+    consulta = consulta.eq('destino_slug', filtros.destinoSlug);
+  }
+
+  if (filtros.somenteVideos) {
+    consulta = consulta.eq('tem_video', true);
+  }
+
+  const busca = filtros.busca ? limparBusca(filtros.busca) : '';
+
+  if (busca) {
+    consulta = consulta.ilike('titulo', `%${busca}%`);
+  }
+
+  const { data, error } = await consulta
+    .order('destaque', { ascending: false })
+    .order('publicado_em', { ascending: false })
+    .order('id', { ascending: false })
+    .range(deslocamento, deslocamento + limite - 1);
+
+  if (error) throw error;
+
+  if (!Array.isArray(data)) {
+    throw new Error('Resposta inválida do feed.');
+  }
+
+  const publicacoes = data.map(lerPublicacaoFeedERN);
+
+  if (!publicacoes.length) return [];
+
+  const autoresIds = [
+    ...new Set(publicacoes.map(item => item.autor_perfil_id)),
+  ];
+
+  const categoriasIds = [
+    ...new Set(
+      publicacoes
+        .map(item => item.categoria_id)
+        .filter((id): id is string => id !== null),
+    ),
+  ];
+
+  const territoriosIds = [
+    ...new Set(
+      publicacoes
+        .map(item => item.territorio_id)
+        .filter((id): id is string => id !== null),
+    ),
+  ];
+
+  const ids = publicacoes.map(item => item.id);
 
   const [
     perfis,
@@ -759,117 +766,45 @@ export async function listarFeedPublico(
     midias,
     traducoes,
   ] = await Promise.all([
-    carregarPerfis(
-      autoresIds,
-    ),
-
-    carregarCategorias(
-      categoriasIds,
-    ),
-
-    carregarTerritorios(
-      territoriosIds,
-    ),
-
-    carregarMidias(
-      publicacoesIds,
-    ),
-
-    carregarTraducoes(
-      publicacoesIds,
-      idioma,
-    ),
+    carregarPerfis(autoresIds),
+    carregarCategorias(categoriasIds),
+    carregarTerritorios(territoriosIds),
+    carregarMidias(ids),
+    carregarTraducoes(ids, idioma),
   ]);
 
-  const resultado:
-    PublicacaoPublica[] = [];
+  const resultado: PublicacaoPublica[] = [];
 
-  for (
-    const item of publicacoes
-  ) {
-    if (
-      !item.publicado_em
-    ) {
-      continue;
-    }
+  for (const item of publicacoes) {
+    const autor = perfis.get(item.autor_perfil_id);
 
-    const autor =
-      perfis.get(
-        item.autor_perfil_id,
-      );
+    if (!autor || !item.publicado_em) continue;
 
-    if (!autor) {
-      continue;
-    }
-
-    const traducao =
-      traducoes.get(
-        item.id,
-      );
+    const traducao = traducoes.get(item.id);
 
     resultado.push({
-      id:
-        item.id,
-
-      slug:
-        item.slug,
-
-      tipo:
-        item.tipo,
-
-      titulo:
-        traducao?.titulo ??
-        item.titulo,
-
-      resumo:
-        traducao?.resumo ??
-        item.resumo,
-
-      conteudo:
-        traducao?.conteudo ??
-        item.conteudo,
-
-      idioma_original:
-        item.idioma_original,
-
-      localidade_texto:
-        item.localidade_texto,
-
-      data_evento_inicio:
-        item.data_evento_inicio,
-
-      data_evento_fim:
-        item.data_evento_fim,
-
-      destaque:
-        item.destaque,
-
-      permitir_interacoes:
-        item.permitir_interacoes,
-
-      publicado_em:
-        item.publicado_em,
-
+      id: item.id,
+      slug: item.slug,
+      tipo: item.tipo,
+      titulo: traducao?.titulo ?? item.titulo,
+      resumo: traducao?.resumo ?? item.resumo,
+      conteudo: traducao?.conteudo ?? item.conteudo,
+      idioma_original: item.idioma_original,
+      destino_slug: item.destino_slug,
+      localidade_texto: item.localidade_texto,
+      data_evento_inicio: item.data_evento_inicio,
+      data_evento_fim: item.data_evento_fim,
+      destaque: item.destaque,
+      permitir_interacoes: item.permitir_interacoes,
+      publicado_em: item.publicado_em,
       autor,
-
-      categoria:
-        item.categoria_id
-          ? categorias.get(
-              item.categoria_id,
-            ) ?? null
-          : null,
-
-      territorio:
-        item.territorio_id
-          ? territorios.get(
-              item.territorio_id,
-            ) ?? null
-          : null,
-
-      midias:
-        midias.get(
-          item.id,
-        ) ?? [],
+      categoria: item.categoria_id
+        ? categorias.get(item.categoria_id) ?? null
+        : null,
+      territorio: item.territorio_id
+        ? territorios.get(item.territorio_id) ?? null
+        : null,
+      midias: midias.get(item.id) ?? [],
     });
   }
 

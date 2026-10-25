@@ -12,6 +12,7 @@ import AppShell from '@/app/components/AppShell';
 import { LanguageProvider } from '@/app/components/LanguageProvider';
 import InstalarERN from '@/app/components/InstalarERN';
 import OfflineBaseERN from '@/app/components/OfflineBaseERN';
+import LibrasERN from '@/app/components/LibrasERN';
 
 const fontes = {
   '--font-inter': '"Inter Variable"',
@@ -65,6 +66,7 @@ export default function RootLayout({
         />
         <OfflineBaseERN />
         <InstalarERN />
+        <LibrasERN />
         <LanguageProvider>
           <AppProvider>
             <AppShell>{children}</AppShell>

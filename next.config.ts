@@ -5,4 +5,7 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: ["192.168.100.11", "localhost:3000", "127.0.0.1:3000"],
 };
 
+// ERN_OCULTAR_INDICADOR_DEV_V1
+nextConfig.devIndicators = false;
+
 export default nextConfig;

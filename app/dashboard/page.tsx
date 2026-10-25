@@ -1003,7 +1003,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen min-w-0 w-full break-words bg-[#07110E] text-[#EDEDE3]">
-      <section className="relative overflow-hidden border-b border-white/[0.07] bg-[#091510] lg:aspect-[1280/720] lg:flex lg:items-center">
+      <section className="ern-painel-banner relative overflow-hidden border-b border-white/[0.07] bg-[#091510] lg:aspect-[1280/720] lg:flex lg:items-center">
         <div
           className="relative h-48 w-full bg-cover bg-[position:50%_55%] sm:h-60 lg:absolute lg:inset-0 lg:h-full lg:bg-center lg:bg-contain lg:bg-no-repeat"
           style={{
@@ -1019,7 +1019,7 @@ export default function DashboardPage() {
         />
 
         <div className="pointer-events-none relative mx-auto w-full max-w-[1360px] px-4 pb-7 pt-3 sm:px-5 sm:pb-9 md:px-8 lg:flex lg:min-h-[300px] lg:items-center lg:py-10">
-          <div className="pointer-events-auto flex w-full min-w-0 flex-col gap-5 lg:max-w-[57%]">
+          <div className="ern-painel-letreiro pointer-events-auto flex w-full min-w-0 flex-col gap-5 lg:max-w-[57%]">
             <div>
               <div className="flex items-center gap-3">
                 <span className="h-px w-8 bg-[#E3A144]" />

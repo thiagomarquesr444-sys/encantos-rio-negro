@@ -145,3 +145,50 @@
     animation: none;
   }
 }
+
+/* ERN_BOTO_NOVO_AIRAO_V1 */
+.ern-v-boto-marker {
+  background: transparent;
+  border: 0;
+}
+
+.ern-v-boto-visual {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 42px;
+  padding: 2px;
+  box-sizing: border-box;
+}
+
+.ern-v-boto-visual img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 32%));
+}
+
+.ern-v-boto-marker:focus-visible {
+  outline: 3px solid #805600;
+  outline-offset: 4px;
+  border-radius: 10px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ern-v-boto-visual img {
+    transform-origin: 50% 60%;
+    animation: ern-boto-movimento 1.6s ease-in-out 3;
+  }
+}
+
+@keyframes ern-boto-movimento {
+  0%, 100% {
+    transform: translateY(0) rotate(-2deg);
+  }
+  50% {
+    transform: translateY(-2px) rotate(2deg);
+  }
+}

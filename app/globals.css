@@ -673,3 +673,58 @@ body {
     transform: translateY(0);
   }
 }
+
+/* ERN_REFINAMENTO_OPERADORA_V1 */
+.ern-gestao .ern-navegacao-ilustrada,
+.ern-gestao .menu-mobile {
+  font-family: var(--font-work-sans), sans-serif;
+}
+
+.ern-gestao .ern-navegacao-ilustrada nav a,
+.ern-gestao .ern-navegacao-ilustrada nav button,
+.ern-gestao .ern-navegacao-ilustrada button,
+.ern-gestao .menu-mobile nav a,
+.ern-gestao .menu-mobile nav button {
+  font-family: var(--font-work-sans), sans-serif;
+  font-weight: 600;
+  letter-spacing: .005em;
+}
+
+.ern-gestao .ern-conta-nome {
+  display: block;
+  max-width: clamp(90px, 10vw, 160px);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  text-transform: none;
+}
+
+.ern-gestao #nav-conta > p,
+.ern-gestao #titulo-mobile-conta {
+  overflow-wrap: anywhere;
+  text-transform: none;
+  letter-spacing: normal;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.ern-gestao .ern-painel-letreiro { color: var(--ern-texto); }
+
+.ern-gestao .ern-painel-letreiro h1 {
+  color: var(--ern-texto);
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-weight: 500;
+  text-wrap: balance;
+}
+
+.ern-gestao .ern-painel-letreiro p {
+  color: var(--ern-secundario);
+}
+
+.ern-gestao .ern-painel-letreiro a {
+  font-family: var(--font-work-sans), sans-serif;
+}
+
+@media (max-width: 639px) {
+.ern-gestao .ern-painel-letreiro { color: var(--ern-texto); }
+}

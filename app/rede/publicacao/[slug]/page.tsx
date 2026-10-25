@@ -1,4 +1,5 @@
 'use client';
+import { MidiaVivenciaERN, CompartilharVivenciaERN } from '@/app/components/VivenciasERN';
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -93,7 +94,7 @@ export default function PublicacaoRedePage() {
 
   const item = estado.tipo === 'pronto' ? estado.item : null;
   const data = item ? new Date(item.publicado_em) : null;
-  const imagens = item?.midias.filter(m => m.tipo === 'imagem') ?? [];
+  const imagens = item?.midias ?? [];
 
   return (
     <div className="min-h-screen bg-[#fff7db] text-[#30260d]">
@@ -170,14 +171,7 @@ export default function PublicacaoRedePage() {
               <section aria-label={t.gallery} className="mt-8 space-y-8">
                 {imagens.map((midia, indice) => (
                   <figure key={midia.id}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={midia.url}
-                      alt={midia.alt_text ?? ''}
-                      loading={indice === 0 ? 'eager' : 'lazy'}
-                      decoding="async"
-                      className="mx-auto max-h-[80vh] w-full rounded-lg bg-[#fffcf0] object-contain"
-                    />
+                    <MidiaVivenciaERN midia={midia} />
                     {midia.credito && (
                       <figcaption className="mt-3 text-xs leading-6 text-[#695727]">
                         {t.credit}: {midia.credito}
@@ -188,6 +182,15 @@ export default function PublicacaoRedePage() {
               </section>
             )}
 
+            <CompartilharVivenciaERN post={item} />
+            {item.destino_slug && (
+              <Link
+                className="inline-flex min-h-12 items-center rounded-xl border border-[#cdba7a] px-4 py-3"
+                href={`/destinos?lugar=${encodeURIComponent(item.destino_slug)}&publicacao=${encodeURIComponent(item.slug)}`}
+              >
+                {idioma === 'EN' ? 'View on map' : idioma === 'ES' ? 'Ver en el mapa' : 'Ver no mapa'} ↗
+              </Link>
+            )}
             {item.conteudo && (
               <div className="mx-auto mt-10 max-w-3xl whitespace-pre-wrap break-words text-base leading-8 text-[#30260d] sm:text-lg sm:leading-9">
                 {item.conteudo}

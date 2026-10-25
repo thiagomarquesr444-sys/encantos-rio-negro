@@ -1,4 +1,5 @@
 'use client';
+import { CompartilharVivenciaERN, ListaVivenciasERN } from './VivenciasERN';
 
 // ERN_REDE_VISITANTE_V1
 
@@ -102,6 +103,7 @@ const postHref = (p: PublicacaoPublica) => `/rede/publicacao/${encodeURIComponen
 const profileHref = (p: PublicacaoPublica['autor']) => `/rede/perfil/${encodeURIComponent(p.slug)}`;
 function placeName(p: PublicacaoPublica) { return p.localidade_texto || p.territorio?.nome || [p.autor.cidade, p.autor.uf].filter(Boolean).join(' · ') || 'Rio Negro'; }
 function mapHref(p: PublicacaoPublica) {
+  if (p.destino_slug) return '/destinos?lugar=' + encodeURIComponent(p.destino_slug) + '&publicacao=' + encodeURIComponent(p.slug);
   const local = normalize([p.localidade_texto, p.territorio?.nome, p.autor.cidade].filter(Boolean).join(' '));
   const scene = local.includes('novo airao') ? 'novo-airao' : local.includes('barcelos') ? 'barcelos' : null;
   return scene ? `/destinos?lugar=${scene}` : '/destinos';
@@ -150,7 +152,7 @@ function MediaGallery({ post, ui, eager }: { post: PublicacaoPublica; ui: Ui; ea
       if (node.clientWidth) setIndex(Math.round(node.scrollLeft / node.clientWidth));
     }}>
       {post.midias.map((media, i) => <figure key={media.id} className="ern-r-media-frame">
-        {media.tipo === 'video' ? videoErrors.has(media.id) ? <div role="status" className="ern-r-photo-fallback">{ui.mediaError}</div> : <video controls playsInline preload="none" poster={media.thumbnail_url || undefined} aria-label={media.alt_text?.trim() || post.titulo} onError={() => setVideoErrors(previous => new Set([...previous, media.id]))}><source src={media.url} /></video> : <Photo src={media.url} alt={media.alt_text?.trim() || `${post.titulo} · ${i + 1}`} eager={eager && i === 0} errorText={ui.mediaError} />}
+        {media.tipo === 'video' ? videoErrors.has(media.id) ? <div role="status" className="ern-r-photo-fallback">{ui.mediaError}</div> : <video onPlay={e => { const atual = e.currentTarget; document.querySelectorAll('video').forEach(video => { if (video !== atual) video.pause(); }); }} controls playsInline preload="none" poster={media.thumbnail_url || undefined} aria-label={media.alt_text?.trim() || post.titulo} onError={() => setVideoErrors(previous => new Set([...previous, media.id]))}><source src={media.url} /></video> : <Photo src={media.url} alt={media.alt_text?.trim() || `${post.titulo} · ${i + 1}`} eager={eager && i === 0} errorText={ui.mediaError} />}
         {media.credito && <figcaption>{ui.credit}: {media.credito}</figcaption>}
       </figure>)}
     </div>
@@ -183,9 +185,10 @@ function PostCard({ post, order, total, state, busy, ui, tr, lang, onFollow, onI
       {caption && <><p id={`ern-r-caption-${post.id}`} className={expanded ? 'ern-r-caption' : 'ern-r-caption ern-r-clamp'}>{caption}</p>{caption.length > 220 && <button type="button" className="ern-r-read-more" aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>{expanded ? ui.collapse : ui.expand}</button>}</>}
       <Link className="ern-r-read-post" href={postHref(post)}>{ui.read} <Icon name="arrow" /></Link>
     </div>
+    <CompartilharVivenciaERN post={post} />
     <footer className="ern-r-post-actions">
       {([{ type: 'curtida', icon: 'heart', label: tr.feed.like }, { type: 'quero_ir', icon: 'go', label: tr.feed.wantGo }, { type: 'salvo', icon: 'save', label: tr.feed.save }] as const).map(action => <button type="button" key={action.type} aria-pressed={interaction[action.type]} disabled={!post.permitir_interacoes || !known || busy.has(`post:${post.id}:${action.type}`)} onClick={() => void onInteract(post.id, action.type)}><Icon name={action.icon} filled={interaction[action.type] && action.type !== 'quero_ir'} /><span>{action.label}</span></button>)}
-      <button type="button" className="ern-r-share" onClick={() => void onShare(post)}><Icon name="share" /><span>{shared?.id === post.id && shared.copied ? tr.feed.shared : tr.feed.share}</span></button>
+
     </footer>
     {shared?.id === post.id && <label className="ern-r-share-field">{ui.shareLink}<input readOnly value={shared.url} onFocus={event => event.currentTarget.select()} /></label>}
   </article>;
@@ -195,6 +198,41 @@ export default function FeedRedeVisitanteERN() {
   const { idioma } = useLanguage();
   const ui = copy[idioma];
   const tr = redeTranslations[idioma] as RedeTranslation;
+  const [abaERN, setAbaERN] = useState<'rede' | 'vivencias'>('rede');
+
+  useEffect(() => {
+    function sincronizarAba() {
+      document.querySelectorAll('video').forEach(video => video.pause());
+
+      const parametro = new URL(window.location.href)
+        .searchParams.get('aba');
+
+      setAbaERN(parametro === 'vivencias' ? 'vivencias' : 'rede');
+    }
+
+    sincronizarAba();
+    window.addEventListener('popstate', sincronizarAba);
+
+    return () => {
+      window.removeEventListener('popstate', sincronizarAba);
+    };
+  }, []);
+
+  function selecionarAbaERN(aba: 'rede' | 'vivencias') {
+    document.querySelectorAll('video').forEach(video => video.pause());
+    setAbaERN(aba);
+
+    const url = new URL(window.location.href);
+
+    if (aba === 'vivencias') {
+      url.searchParams.set('aba', 'vivencias');
+    } else {
+      url.searchParams.delete('aba');
+    }
+
+    window.history.pushState(null, '', url);
+  }
+
   const [state, setState] = useState<FeedState>({ kind: 'loading' });
   const [categories, setCategories] = useState<CategoriaPublicacao[]>([]);
   const [territories, setTerritories] = useState<TerritorioPublico[]>([]);
@@ -411,9 +449,55 @@ export default function FeedRedeVisitanteERN() {
   return <div className="ern-r-root">
     <a className="ern-r-skip" href="#ern-r-feed-title">{ui.feed}</a>
     <div className="ern-r-layout">
-      <aside className="ern-r-left" aria-label="ERN"><div className="ern-r-sticky"><Link className="ern-r-brand" href="/rede"><span className="ern-r-brand-mark"><Icon name="compass" /></span><span>Rede ERN<small>Encantos Rio Negro</small></span></Link><nav className="ern-r-nav"><button type="button" aria-current={!filtered ? 'page' : undefined} onClick={() => { clear(); beforeFeed.current?.focus(); }}><Icon name="compass" />{ui.feed}</button><Link href="/destinos"><Icon name="map" />{ui.map}</Link><Link href="/experiencias"><Icon name="go" />{ui.experiences}</Link></nav><div className="ern-r-left-note"><p>{ui.joinText}</p><Link href="/acesso?acesso=operadora">{ui.operator} ↗</Link><Link href="/acesso?acesso=guia">{ui.guide} ↗</Link><Link href="/acesso?acesso=fornecedor">{ui.supplier} ↗</Link></div><div className="ern-r-legal"><Link href="/privacidade">{ui.privacy}</Link><Link href="/termos">{ui.terms}</Link></div></div></aside>
+      <aside className="ern-r-left" aria-label="ERN"><div className="ern-r-sticky"><Link className="ern-r-brand" href="/rede"><span className="ern-r-brand-mark"><Icon name="compass" /></span><span>Rede ERN<small>Encantos Rio Negro</small></span></Link><nav className="ern-r-nav"><button type="button" aria-current={abaERN === 'rede' && !filtered ? 'page' : undefined} onClick={() => { selecionarAbaERN('rede'); clear(); beforeFeed.current?.focus(); }}><Icon name="compass" />{ui.feed}</button><button type="button" aria-current={abaERN === 'vivencias' ? 'page' : undefined} onClick={() => selecionarAbaERN('vivencias')}><span aria-hidden="true">▶</span>Vivências ERN</button><Link href="/destinos"><Icon name="map" />{ui.map}</Link><Link href="/experiencias"><Icon name="go" />{ui.experiences}</Link></nav><div className="ern-r-left-note"><p>{ui.joinText}</p><Link href="/acesso?acesso=operadora">{ui.operator} ↗</Link><Link href="/acesso?acesso=guia">{ui.guide} ↗</Link><Link href="/acesso?acesso=fornecedor">{ui.supplier} ↗</Link></div><div className="ern-r-legal"><Link href="/privacidade">{ui.privacy}</Link><Link href="/termos">{ui.terms}</Link></div></div></aside>
       <div className="ern-r-main">
         <header className="ern-r-intro"><p>REDE ERN</p><h1 ref={beforeFeed} tabIndex={-1} id="ern-r-feed-title">{ui.title}</h1><span>{ui.sub}</span><nav className="ern-r-mobile-nav"><Link href="/destinos"><Icon name="map" />{ui.map}</Link><Link href="/experiencias">{ui.experiences} ↗</Link></nav></header>
+        <div
+          role="group"
+          aria-label={idioma === 'EN' ? 'Explore the network' : idioma === 'ES' ? 'Explorar la red' : 'Explorar a rede'}
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 8,
+            margin: '20px 0',
+          }}
+        >
+          <button
+            type="button"
+            className="ern-r-button"
+            aria-pressed={abaERN === 'rede'}
+            onClick={() => selecionarAbaERN('rede')}
+            style={{
+              background: abaERN === 'rede' ? '#805600' : 'transparent',
+              color: abaERN === 'rede' ? '#fffaf0' : '#805600',
+            }}
+          >
+            {ui.feed}
+          </button>
+
+          <button
+            type="button"
+            className="ern-r-button"
+            aria-pressed={abaERN === 'vivencias'}
+            onClick={() => selecionarAbaERN('vivencias')}
+            style={{
+              background: abaERN === 'vivencias' ? '#805600' : 'transparent',
+              color: abaERN === 'vivencias' ? '#fffaf0' : '#805600',
+            }}
+          >
+            <span aria-hidden="true">▶ </span>
+            Vivências ERN
+          </button>
+
+          <Link className="ern-r-button" href="/destinos">
+            {ui.map} ↗
+          </Link>
+        </div>
+
+        <div
+          hidden={abaERN !== 'rede'}
+          style={{ display: abaERN === 'rede' ? undefined : 'none' }}
+        >
         <div className="ern-r-controls"><form className="ern-r-search" onSubmit={submit}><Icon name="search" /><input type="search" maxLength={120} value={query} onChange={event => setQuery(event.target.value)} placeholder={ui.search} aria-label={ui.search} /><button type="submit" aria-label={ui.searchButton}><Icon name="arrow" /></button></form><button type="button" className="ern-r-filter-button" aria-expanded={showFilters} aria-controls="ern-r-filter-panel" onClick={() => setShowFilters(value => !value)}><Icon name="filter" /><span>{ui.filters}</span>{filtered && <span className="ern-r-filter-dot" aria-label={ui.filterActive} />}</button></div>
         <div id="ern-r-filter-panel" className="ern-r-filter-panel" hidden={!showFilters}><label>{ui.territory}<select value={territory} onChange={event => setTerritory(event.target.value)}><option value="">{ui.allTerritories}</option>{territories.map(item => <option key={item.id} value={item.id}>{item.nome}</option>)}</select></label><label className="ern-r-auto"><input type="checkbox" checked={automatic} onChange={event => setAutomatic(event.target.checked)} />{ui.auto}</label><button type="button" onClick={() => setRevision(value => value + 1)}>{ui.refresh} ↻</button></div>
         <div className="ern-r-category-strip" aria-label={tr.feed.allCategories}><button type="button" aria-pressed={!category} onClick={() => setCategory('')}>{tr.feed.allCategories}</button>{categories.map(item => <button type="button" key={item.id} aria-pressed={category === item.id} onClick={() => setCategory(item.id)}>{(tr.categories as Record<string, string>)[item.slug] ?? item.nome}</button>)}</div>
@@ -436,6 +520,11 @@ export default function FeedRedeVisitanteERN() {
           {state.kind === 'ready' && state.posts.length > 0 && !state.hasMore && <p>{ui.end}</p>}
           <label className="ern-r-auto"><input type="checkbox" checked={automatic} onChange={event => setAutomatic(event.target.checked)} />{ui.auto}</label><details><summary>{ui.keyboard}</summary><p>{ui.keyboardHelp}</p></details><button type="button" className="ern-r-back-top" onClick={() => beforeFeed.current?.focus()}>{ui.scrollTop} ↑</button>
         </div>
+        </div>
+
+        {abaERN === 'vivencias' && (
+          <ListaVivenciasERN />
+        )}
       </div>
       <aside className="ern-r-right"><div className="ern-r-sticky"><Link className="ern-r-map-card" href="/destinos"><div><Photo src="/images/regiao/barceloscapital.jpg.jpeg" alt="Barcelos · acervo ERN" /></div><span className="ern-r-kicker">ENCANTOS RIO NEGRO</span><h2>{ui.mapTitle}</h2><p>{ui.mapText}</p><strong>{ui.map} <Icon name="arrow" /></strong></Link><section className="ern-r-plan-card"><Icon name="compass" /><h2>ERN Concierge</h2><p>{ui.sub}</p><Link href="/#concierge">{ui.plan} ↗</Link></section><p className="ern-r-right-footer">{ui.footer}</p></div></aside>
     </div>

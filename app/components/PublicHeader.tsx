@@ -115,6 +115,7 @@ export default function PublicHeader() {
     { href: '/experiencias', titulo: t.experiences },
     { href: '/destinos', titulo: t.destinations },
     { href: '/rede', titulo: t.network },
+
   ];
 
   const paginaOperadores = rotaAtiva(

@@ -24,7 +24,7 @@ type NavGroup = {
 
 const PRINCIPAIS: NavItem[] = [
   {
-    label: 'Dashboard',
+    label: 'Painel',
     href: '/dashboard',
     descricao: 'Visão geral da sua empresa',
   },
@@ -217,11 +217,32 @@ function LinkNavegacao({
   );
 }
 
+// ERN_CONTA_IDENTIFICADA_V1
+function textoIdentidadeERN(valor: unknown): string {
+  return typeof valor === 'string'
+    ? valor.replace(/\s+/g, ' ').trim().slice(0, 160)
+    : '';
+}
+
+function nomeIdentidadeERN(valor: unknown): string {
+  if (!valor || typeof valor !== 'object' || Array.isArray(valor)) return '';
+
+  const registro = valor as Record<string, unknown>;
+
+  for (const campo of ['nome_completo', 'nome', 'full_name', 'name']) {
+    const nome = textoIdentidadeERN(registro[campo]);
+    if (nome) return nome;
+  }
+
+  return '';
+}
+
 export default function Sidebar() {
   const pathname = usePathname();
   const { config } = useAppConfig();
 
   const [acessoEditorial, setAcessoEditorial] = useState(false);
+  const [nomeContaERN, setNomeContaERN] = useState('');
   const [mobileAberto, setMobileAberto] = useState(false);
   const [dropdown, setDropdown] = useState<string | null>(null);
   const [saindo, setSaindo] = useState(false);
@@ -290,7 +311,31 @@ export default function Sidebar() {
 
         if (error || !data.user || data.user.is_anonymous) {
           setAcessoEditorial(false);
+          setNomeContaERN('');
           return;
+        }
+
+        const usuarioERN = data.user;
+        const alternativaERN =
+          nomeIdentidadeERN(usuarioERN.user_metadata) ||
+          textoIdentidadeERN(usuarioERN.email);
+
+        setNomeContaERN(alternativaERN);
+
+        try {
+          const { data: perfilERN, error: erroPerfilERN } = await supabase
+            .from('perfis')
+            .select('*')
+            .eq('id', usuarioERN.id)
+            .maybeSingle();
+
+          if (!ativo || operacao !== versao) return;
+
+          if (!erroPerfilERN) {
+            setNomeContaERN(nomeIdentidadeERN(perfilERN) || alternativaERN);
+          }
+        } catch {
+          if (!ativo || operacao !== versao) return;
         }
 
         const { data: permitido, error: falha } =
@@ -604,7 +649,7 @@ export default function Sidebar() {
                 }
                 className={`${BOTAO_TOPO} border border-white/10 text-[#EDEDE3] hover:bg-white/5`}
               >
-                Conta
+                <span className="ern-conta-nome" title={nomeContaERN || undefined}>{nomeContaERN || 'Minha conta'}</span>
                 <Seta aberta={dropdown === 'conta'} />
               </button>
 
@@ -614,7 +659,7 @@ export default function Sidebar() {
                 className="absolute right-0 top-[calc(100%+12px)] w-72 rounded-2xl border border-white/10 bg-[#0A1713] p-2 shadow-2xl"
               >
                 <p className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-[#E3A144]">
-                  Minha conta
+                  {nomeContaERN || 'Minha conta'}
                 </p>
 
                 {itensConta.map((item) => (
@@ -780,7 +825,7 @@ export default function Sidebar() {
                 id="titulo-mobile-conta"
                 className="px-4 pb-2 text-xs font-semibold uppercase tracking-widest text-[#E3A144]"
               >
-                Minha conta
+                {nomeContaERN || 'Minha conta'}
               </h3>
 
               {itensConta.map((item) => (

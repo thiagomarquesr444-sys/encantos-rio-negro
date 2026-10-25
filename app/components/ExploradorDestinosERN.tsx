@@ -1,8 +1,11 @@
 'use client';
+import { ListaVivenciasERN } from './VivenciasERN';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import VideoDestinoERN from './VideoDestinoERN';
+import AnavilhanasDestinoERN from './AnavilhanasDestinoERN';
+import NovoAiraoDestinoERN from './NovoAiraoDestinoERN';
 import BarcelosDestinoERN from './BarcelosDestinoERN';
 import type { Map as LeafletMap, LayerGroup } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -115,8 +118,8 @@ const scenes: Scene[] = [
   { id: 'mariua', city: 'barcelos', image: '/images/destinos/mariua-capa.jpg', interests: ['waters', 'nature', 'fishing'], source: `${barcelosSource}arquipelago-de-mariua/` },
   { id: 'serra-do-araca', city: 'barcelos', image: '/images/destinos/serra-araca-card.jpeg', interests: ['nature'], source: `${barcelosSource}serra-do-araca/` },
   { id: 'festival-peixe-ornamental', city: 'barcelos', image: '/images/cultura/barcelosfestival.jpg', interests: ['culture'], source: municipalSource },
-  { id: 'novo-airao', city: 'novo-airao', image: '/images/cultura/festivaldopeixeboi.jpg', context: true, interests: ['waters', 'nature', 'culture'], source: municipalSource },
-  { id: 'anavilhanas', city: 'novo-airao', image: '/images/regiao/ern-amazonia-paisagem.png', context: true, interests: ['waters', 'nature'], source: `${icmbio}parna-de-anavilhanas/parna-de-anavilhanas` },
+  { id: 'novo-airao', city: 'novo-airao', image: '/images/destinos/novo-airao/capa.jpg', interests: ['waters', 'nature', 'culture'], source: municipalSource },
+  { id: 'anavilhanas', city: 'novo-airao', image: '/images/destinos/anavilhanas/capa.jpg', interests: ['waters', 'nature'], source: `${icmbio}parna-de-anavilhanas/parna-de-anavilhanas` },
   { id: 'jau', city: 'novo-airao', image: '/images/regiao/ern-amazonia.jpg', context: true, interests: ['nature'], source: `${icmbio}parna-do-jau/informacoes-sobre-visitacao-2013-parna-do-jau` },
   { id: 'festival-peixe-boi', city: 'novo-airao', image: '/images/cultura/festivaldopeixeboi.jpg', interests: ['culture'], source: municipalSource },
 ];
@@ -344,6 +347,47 @@ export default function ExploradorDestinosERN() {
         marker.addTo(pins.current!);
         return;
       }
+      // ERN_BOTO_NOVO_AIRAO_V1
+      if (c.id === 'novo-airao') {
+        const descricaoBoto = lang === 'EN'
+          ? 'Novo Airão · pink river dolphin · regional reference'
+          : lang === 'ES'
+          ? 'Novo Airão · delfín rosado · referencia regional'
+          : 'Novo Airão · boto-cor-de-rosa · referência regional';
+
+        const marker = L.marker(c.coords, {
+          title: descricaoBoto,
+          alt: descricaoBoto,
+          keyboard: true,
+          zIndexOffset: 300,
+          icon: L.divIcon({
+            className: 'ern-v-boto-marker',
+            iconSize: [64, 48],
+            iconAnchor: [32, 42],
+            html: '<span class="ern-v-boto-visual" style="display:grid!important;place-items:center!important;width:64px!important;height:42px!important;max-width:64px!important;max-height:42px!important;padding:2px!important;box-sizing:border-box!important;overflow:hidden!important"><img src="/images/fauna/boto-ern.png" alt="" width="60" height="38" draggable="false" style="display:block!important;width:60px!important;height:38px!important;min-width:0!important;min-height:0!important;max-width:60px!important;max-height:38px!important;object-fit:contain!important;position:static!important;pointer-events:none!important" /></span>',
+          }),
+        });
+
+        const label = document.createElement('span');
+        label.textContent = descricaoBoto;
+
+        marker.bindTooltip(label, {
+          direction: 'top',
+          offset: [0, -38],
+        });
+
+        marker.on('click', () => {
+          const destinoNovoAirao = scenes.find(
+            scene => scene.id === 'novo-airao',
+          );
+
+          if (destinoNovoAirao) choose(destinoNovoAirao);
+        });
+
+        marker.addTo(pins.current!);
+        return;
+      }
+
       const face = c.image ? `<img src="${c.image}" alt="" style="width:100%;height:100%;object-fit:cover"/>` : `<span>${c.name.slice(0, 1)}</span>`;
       const el = L.divIcon({ className: 'ern-v-pin', iconSize: [56, 66], iconAnchor: [28, 60],
         html: `<div class="ern-v-pin-face ${c.id === city.id && drawer === 'place' ? 'ern-v-pin-active' : ''}">${face}</div>` });
@@ -381,7 +425,7 @@ export default function ExploradorDestinosERN() {
           {(scene.context || scene.id === 'cachoeira-eldorado') && <span className="ern-v-photo-tag">{scene.id === 'cachoeira-eldorado' ? eldoradoImagemLabel : u.context}</span>}
         </div>
         <div className="ern-v-card-copy"><span className="ern-v-kicker">{d.local}</span><h3>{d.titulo}</h3>
-          {(scene.id === 'barcelos' || scene.id === 'cachoeira-eldorado' || scene.id === 'serra-do-araca' || scene.id === 'praia-grande' || scene.id === 'mariua' || scene.id === 'festival-peixe-ornamental') && (
+          {(scene.id === 'barcelos' || scene.id === 'cachoeira-eldorado' || scene.id === 'serra-do-araca' || scene.id === 'praia-grande' || scene.id === 'mariua' || scene.id === 'festival-peixe-ornamental' || scene.id === 'novo-airao' || scene.id === 'anavilhanas') && (
             <span style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -673,7 +717,22 @@ export default function ExploradorDestinosERN() {
                 </p>
               </section>
             )}
-            {/* ERN_SERRA_VIDEO_V1 */}
+            {/* ERN_NOVO_AIRAO_CARD_V1 */}
+            {active?.id === 'novo-airao' && (
+              <NovoAiraoDestinoERN
+                onExplorar={id => {
+                  const destinoRelacionado = scenes.find(
+                    scene => scene.id === id,
+                  );
+                  if (destinoRelacionado) choose(destinoRelacionado);
+                }}
+              />
+            )}
+            {/* ERN_ANAVILHANAS_CARD_V1 */}
+{active?.id === 'anavilhanas' && (
+  <AnavilhanasDestinoERN />
+)}
+{/* ERN_SERRA_VIDEO_V1 */}
             {active?.id === 'serra-do-araca' && (
               <VideoDestinoERN
                 key={active.id}
@@ -739,6 +798,13 @@ export default function ExploradorDestinosERN() {
                   </a>
                 </div>
               </section>
+            )}
+            {active && (
+              <ListaVivenciasERN
+                key={'vivencias-' + active.id}
+                destino={active.id}
+                somenteVideos={false}
+              />
             )}
             {active ? <><p className="ern-v-detail-note">{active.coords ? u.exactNote : u.baseNote}</p><button type="button" className="ern-v-button ern-v-button-soft" aria-pressed={saved.includes(active.id)} onClick={() => toggleSaved(active.id)}>{saved.includes(active.id) ? '♥' : '♡'} {saved.includes(active.id) ? u.saved : u.save}</button><div className="ern-v-detail-actions"><button type="button" onClick={() => void share()}>{u.share} ↗</button><a href={active.source} target="_blank" rel="noopener noreferrer">{u.source} ↗</a></div>{active.coords && <a className="ern-v-coordinate-source" href="https://www.geonames.org/12965878/ilha-da-praia-grande.html" target="_blank" rel="noopener noreferrer">GeoNames · CC BY 4.0 ↗</a>}</> : <div className="ern-v-regional-links">{scenes.filter(scene => scene.city === city.id).map(scene => <button type="button" key={scene.id} onClick={() => choose(scene)}>{t.destinations[scene.id].titulo} ↗</button>)}<a href={municipalSource} target="_blank" rel="noopener noreferrer">Amazonastur ↗</a></div>}
             {shareUrl && <label className="ern-v-share-field">{u.copyLink}<input readOnly value={shareUrl} onFocus={event => event.currentTarget.select()} /></label>}<p role="status" className="ern-v-copy-status">{message}</p>

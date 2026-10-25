@@ -1,4 +1,5 @@
 'use client';
+import { ConfigurarVivenciaERN } from './VivenciasERN';
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { ContextoPerfilPublicoERN } from '@/lib/perfilPublicoOperadoraERN';
@@ -71,7 +72,7 @@ export default function MidiasPublicacaoERN({
     if (trava.current || bloqueado || carregando) return;
 
     if (!arquivo) {
-      setErro('Selecione uma imagem.');
+      setErro('Selecione uma foto ou vídeo.');
       return;
     }
 
@@ -98,7 +99,7 @@ export default function MidiasPublicacaoERN({
       setCredito('');
       setConsentimento(false);
       if (entrada.current) entrada.current.value = '';
-      setAviso('Imagem adicionada ao rascunho.');
+      setAviso('Mídia adicionada ao rascunho.');
     } catch (falha) {
       if (montado.current) setErro(erroPublicacaoERN(falha));
     } finally {
@@ -114,13 +115,23 @@ export default function MidiasPublicacaoERN({
 
   return (
     <section
-      aria-label="Imagens do rascunho"
+      aria-label="Fotos e vídeos do rascunho"
       className="mt-8 border-t border-[var(--ern-borda)] pt-6"
     >
+      <ConfigurarVivenciaERN
+        key={'config-' + publicacaoId}
+        publicacaoId={publicacaoId}
+        bloqueado={bloqueado || enviando || carregando}
+        midias={midias}
+        onOcupado={valor => {
+          setEnviando(valor);
+          onOcupado(valor);
+        }}
+        onAtualizar={() => setTentativa(atual => atual + 1)}
+      />
       <h3 className="text-xl font-semibold">Imagens da experiência</h3>
       <p className="mt-2 text-sm leading-6 text-[var(--ern-secundario)]">
-        Use fotos destinadas à divulgação. Os arquivos possuem endereço
-        público desde o envio, mesmo enquanto a publicação está em rascunho.
+        Novos arquivos ficam em armazenamento privado. Na publicação, serão exibidos ao público. Fotos antigas mantêm o armazenamento anterior.
       </p>
 
       {erro && <p role="alert" className="mt-4 text-sm">{erro}</p>}
@@ -142,18 +153,32 @@ export default function MidiasPublicacaoERN({
                     className="aspect-[4/3] w-full rounded-xl bg-[var(--ern-painel)] object-contain"
                   />
                 ) : (
-                  <p className="text-sm">Vídeo já vinculado à publicação.</p>
+                  <video
+                    src={midia.url}
+                    poster={midia.thumbnail_url || undefined}
+                    controls
+                    playsInline
+                    preload="none"
+                    aria-label={midia.alt_text || 'Vídeo da publicação'}
+                    className="max-h-[60dvh] w-full rounded-xl bg-black object-contain"
+                    onPlay={e => {
+                      const atual = e.currentTarget;
+                      document.querySelectorAll('video').forEach(video => {
+                        if (video !== atual) video.pause();
+                      });
+                    }}
+                  />
                 )}
                 <figcaption className="mt-2 break-words text-xs leading-5 text-[var(--ern-secundario)]">
                   {midia.alt_text}
-                  {midia.credito && <span className="block">Foto: {midia.credito}</span>}
+                  {midia.credito && <span className="block">Créditos: {midia.credito}</span>}
                 </figcaption>
               </figure>
             ))}
           </div>
           {!midias.length && (
             <p className="mt-4 text-sm text-[var(--ern-secundario)]">
-              Este rascunho ainda não possui imagens.
+              Este rascunho ainda não possui fotos ou vídeos.
             </p>
           )}
         </>
@@ -173,14 +198,14 @@ export default function MidiasPublicacaoERN({
           disabled={bloqueado || enviando || carregando}
           className="min-w-0 space-y-4"
         >
-          <legend className="sr-only">Adicionar imagem</legend>
+          <legend className="sr-only">Adicionar foto ou vídeo</legend>
 
           <label className="block text-sm">
-            Foto · JPEG, PNG ou WebP · até 5 MB
+            Foto até 5 MB · Vídeo MP4 ou WebM até 50 MB
             <input
               ref={entrada}
               type="file"
-              accept="image/jpeg,image/png,image/webp"
+              accept="image/jpeg,image/png,image/webp,video/mp4,video/webm"
               required
               onChange={e => setArquivo(e.target.files?.[0] ?? null)}
               className={campo}
@@ -188,7 +213,7 @@ export default function MidiasPublicacaoERN({
           </label>
 
           <label className="block text-sm">
-            Descrição da imagem
+            Descrição da foto ou vídeo
             <input
               required
               maxLength={500}
@@ -200,7 +225,7 @@ export default function MidiasPublicacaoERN({
           </label>
 
           <label className="block text-sm">
-            Créditos da fotografia
+            Créditos da mídia
             <input
               maxLength={300}
               value={credito}
@@ -217,7 +242,7 @@ export default function MidiasPublicacaoERN({
               onChange={e => setConsentimento(e.target.checked)}
               className="mt-1 h-5 w-5 shrink-0"
             />
-            Possuo autorização para divulgar esta imagem e as pessoas
+            Possuo autorização para divulgar esta mídia e as pessoas
             identificáveis nela.
           </label>
 
@@ -225,7 +250,7 @@ export default function MidiasPublicacaoERN({
             type="submit"
             className="min-h-12 rounded-xl bg-[var(--ern-botao)] px-5 text-sm font-semibold text-[var(--ern-sobre-botao)] disabled:opacity-50"
           >
-            {enviando ? 'Enviando imagem…' : 'Adicionar imagem'}
+            {enviando ? 'Enviando mídia…' : 'Adicionar foto ou vídeo'}
           </button>
         </fieldset>
       </form>
