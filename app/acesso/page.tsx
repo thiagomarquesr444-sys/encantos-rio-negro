@@ -10,6 +10,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
 import LogoERN from '@/app/components/LogoERN';
+import CadastroOperadoraERN from '@/app/components/CadastroOperadoraERN';
 import { supabase } from '@/lib/supabase';
 import {
   carregarAcessosConta,
@@ -627,6 +628,8 @@ function ConteudoAcesso() {
                       : 'Continuar meu cadastro'}
               </button>
             </>
+          ) : solicitado === 'operadora' && !empresarial && !modalidade ? (
+            <CadastroOperadoraERN usuarioId={conta.usuario_id} />
           ) : empresarial || solicitado === 'operadora' ? (
             <p className="mt-6 text-sm leading-7 text-[#EDEDE3]/75">
               {empresarial
