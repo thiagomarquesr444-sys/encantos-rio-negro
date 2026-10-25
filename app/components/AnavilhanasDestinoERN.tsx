@@ -79,7 +79,6 @@ const fotos = [
 ];
 
 const videos = [
-  '/videos destinos/anavilhanas.MP4',
   '/videos destinos/anavilhanas1.1.MP4',
 ].map(path => encodeURI(path));
 

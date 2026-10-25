@@ -991,3 +991,43 @@ body {
     animation: none !important;
   }
 }
+
+/* ERN_CONCIERGE_FLUTUANTE_V5 */
+@property --ern-lancador-angulo {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+/* A conversa permanece no componente; a entrada usa um portal flutuante. */
+.ern-descubra-abertura #concierge {
+  position: static !important;
+  top: auto !important;
+  width: 0 !important;
+  height: 0 !important;
+  max-width: none !important;
+  margin: 0 !important;
+  transform: none !important;
+}
+
+.ern-descubra-abertura #concierge > div[aria-hidden='true'] {
+  display: none !important;
+}
+
+.ern-chat-compacto.ern-chat-compacto {
+  width: 0;
+  height: 0;
+  margin: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none !important;
+}
+
+.ern-chat-compacto.ern-chat-compacto::before {
+  display: none;
+}
+
+.ern-chat-compacto.ern-chat-compacto > .cartao-topo,
+.ern-chat-compacto.ern-chat-compacto > .cartao-corpo {
+  display: none;
+}

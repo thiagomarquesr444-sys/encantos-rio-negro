@@ -623,7 +623,6 @@ export default function ExploradorDestinosERN() {
                   title={content!.titulo}
                   poster={active.image}
                   videos={[
-                    '/videos%20destinos/festivaldopeixeornamental.MP4',
                     '/videos%20destinos/festivaldopeixeornamental1.1.MP4',
                   ]}
                 />

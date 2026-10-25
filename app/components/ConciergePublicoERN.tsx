@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import ConciergeLancadorERN from './ConciergeLancadorERN';
 import { useLanguage } from '@/app/components/LanguageProvider';
 
 const textos = {
@@ -260,10 +261,9 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   const mobileRef = useRef<HTMLButtonElement>(null);
 
   function devolverFocoERN() {
-    const botao = window.matchMedia('(max-width: 1023px)').matches
-      ? mobileRef.current
-      : abrirRef.current;
-    botao?.focus({ preventScroll: true });
+    document.getElementById('ern-abrir-concierge')?.focus({
+      preventScroll: true,
+    });
   }
 
   useEffect(() => {
@@ -457,19 +457,13 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   return (
     <section className="ern-chat-compacto" aria-label={t.title} data-ern-vida-pausada={vidaPausadaERN}>
       {/* ERN_CONCIERGE_VISUAL_V2 */}
-      <button
-        ref={mobileRef}
-        type="button"
-        className="ern-concierge-mobile"
-        aria-label={`${t.title}: ${c.open}`}
-        aria-haspopup="dialog"
-        aria-controls="ern-conversa"
-        aria-expanded={aberto}
-        onClick={() => setAberto(true)}
-      >
-        <span className="ern-concierge-orbe" aria-hidden="true">✦</span>
-        <span>{t.title}</span>
-      </button>
+      <ConciergeLancadorERN
+        idioma={idioma}
+        aberto={aberto}
+        pausado={vidaPausadaERN}
+        aoAbrir={() => setAberto(true)}
+        aoPausar={() => setVidaPausadaERN(valor => !valor)}
+      />
       <header className="cartao-topo">
         <span className="avatar" aria-hidden="true">✦</span>
         <div>

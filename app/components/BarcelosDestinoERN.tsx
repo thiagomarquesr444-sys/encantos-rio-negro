@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+
 
 import { useLanguage } from './LanguageProvider';
 import VideoDestinoERN from './VideoDestinoERN';
@@ -10,16 +10,6 @@ const media = [
     id: 'cidade',
     src: '/videos%20destinos/barceloscidade.MP4',
     poster: '/images/regiao/matriz.png.jpeg',
-  },
-  {
-    id: 'festival',
-    src: '/videos/barcelosfestival.MP4',
-    poster: '/images/cultura/barcelosfestival.jpg',
-  },
-  {
-    id: 'historia',
-    src: '/videos/historiadofestivaldebarcelos-web.mp4',
-    poster: '/images/cultura/historiadofestivaldebarcelos-web.jpg',
   },
 ] as const;
 
@@ -107,8 +97,7 @@ const translations = {
 export default function BarcelosDestinoERN() {
   const { idioma } = useLanguage();
   const t = translations[idioma];
-  const [selected, setSelected] = useState(0);
-  const current = media[selected];
+  const current = media[0];
 
   return (
     <section className="barcelos-ern" aria-label={t.title}>
@@ -118,22 +107,11 @@ export default function BarcelosDestinoERN() {
         <p>{t.intro}</p>
       </header>
 
-      <div className="choices" role="group" aria-label={t.mediaLabel}>
-        {media.map((item, index) => (
-          <button
-            key={item.id}
-            type="button"
-            aria-pressed={selected === index}
-            onClick={() => setSelected(index)}
-          >
-            {t.options[index]}
-          </button>
-        ))}
-      </div>
+
 
       <VideoDestinoERN
         key={current.id}
-        title={t.videoTitles[selected]}
+        title={t.videoTitles[0]}
         poster={current.poster}
         videos={[current.src]}
       />

@@ -20,9 +20,7 @@ const photos = [
 ];
 
 const videos = [
-  '/videos destinos/novoairão.MP4',
   '/videos destinos/novoairão1.1.MP4',
-  '/videos destinos/novoairão1.2.MP4',
 ].map(path => encodeURI(path));
 
 const copy = {
