@@ -728,3 +728,266 @@ body {
 @media (max-width: 639px) {
 .ern-gestao .ern-painel-letreiro { color: var(--ern-texto); }
 }
+
+/* ERN_CONCIERGE_POSICAO_V2 */
+@media (min-width: 1024px) {
+  .ern-descubra-abertura #concierge {
+    align-self: start;
+    margin-top: 0;
+    max-width: 360px;
+  }
+
+  .ern-descubra-abertura #concierge .ern-chat-compacto {
+    box-shadow:
+      -8px 0 24px rgb(227 161 68 / 9%),
+      8px 0 24px rgb(227 161 68 / 9%),
+      0 10px 28px rgb(0 0 0 / 12%);
+  }
+}
+
+@media (max-width: 1023px) {
+  .ern-descubra-abertura #concierge {
+    width: 0;
+    height: 0;
+    max-width: none;
+    margin: 0;
+  }
+
+  .ern-descubra-abertura #concierge > div[aria-hidden='true'] {
+    display: none;
+  }
+
+  .ern-descubra-abertura .grid:has(> #concierge) {
+    row-gap: 0;
+  }
+}
+
+/* ERN_CONCIERGE_BORDA_V3 */
+@property --ern-concierge-angulo {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+@keyframes ern-concierge-borda-viva {
+  to { --ern-concierge-angulo: 360deg; }
+}
+
+.ern-chat-compacto::before,
+.ern-chat-compacto dialog::before,
+.ern-chat-compacto .ern-concierge-mobile::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  padding: 3px;
+  border-radius: inherit;
+  pointer-events: none;
+  background: conic-gradient(
+    from var(--ern-concierge-angulo),
+    #e3a144 0deg,
+    #35d4c4 70deg,
+    #4b8fff 140deg,
+    #35d4c4 210deg,
+    #f4c77e 285deg,
+    #e3a144 360deg
+  );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+
+.ern-chat-compacto .cartao-topo::after {
+  display: none;
+}
+
+.ern-chat-compacto .ern-vida-pausa {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+  border: 1px solid #b89c56;
+  border-radius: 50%;
+  background: #fffcf0;
+  color: #805600;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.ern-chat-compacto .cartao-topo > div {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ern-chat-compacto::before,
+  .ern-chat-compacto dialog::before,
+  .ern-chat-compacto .ern-concierge-mobile::before {
+    animation: ern-concierge-borda-viva 5s linear infinite;
+  }
+}
+
+.ern-chat-compacto[data-ern-vida-pausada='true']::before,
+.ern-chat-compacto[data-ern-vida-pausada='true'] dialog::before,
+.ern-chat-compacto[data-ern-vida-pausada='true'] .ern-concierge-mobile::before {
+  animation-play-state: paused;
+}
+
+@media (min-width: 1024px) {
+  .ern-descubra-abertura #concierge {
+    position: relative;
+    top: -24px;
+    max-width: 320px;
+    transform: translateX(max(0px, calc((100vw - 1320px) / 2 + 12px)));
+  }
+
+  .ern-descubra-abertura #concierge .ern-chat-compacto {
+    max-width: 320px;
+    box-shadow:
+      0 0 18px rgb(53 212 196 / 16%),
+      0 10px 28px rgb(0 0 0 / 18%);
+  }
+}
+
+@media (max-width: 1023px) {
+  .ern-chat-compacto::before {
+    display: none;
+  }
+
+  .ern-chat-compacto .ern-concierge-mobile::before {
+    display: block;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ern-chat-compacto::before,
+  .ern-chat-compacto dialog::before,
+  .ern-chat-compacto .ern-concierge-mobile::before {
+    animation: none;
+  }
+
+  .ern-chat-compacto .ern-vida-pausa {
+    display: none;
+  }
+}
+
+/* ERN_CONCIERGE_PRESENCA_V4 */
+.ern-chat-compacto .avatar,
+.ern-chat-compacto .ern-concierge-orbe {
+  position: relative;
+  isolation: isolate;
+  width: 38px;
+  height: 38px;
+  box-sizing: border-box;
+  border: 1px solid rgb(244 199 126 / 75%);
+  background: radial-gradient(
+    circle at 30% 25%,
+    #287b72 0%,
+    #173f42 45%,
+    #102b35 100%
+  );
+  color: #fff3cf;
+  font-size: 23px;
+  line-height: 1;
+  box-shadow:
+    0 0 0 3px rgb(53 212 196 / 10%),
+    0 3px 10px rgb(16 43 53 / 20%);
+  transform-origin: center;
+  animation: none !important;
+}
+
+.ern-chat-compacto .avatar::after,
+.ern-chat-compacto .ern-concierge-orbe::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border: 1px solid rgb(37 130 119 / 45%);
+  border-radius: 50%;
+  pointer-events: none;
+  animation: none;
+}
+
+.ern-chat-compacto .cartao-topo,
+.ern-chat-compacto .chat-topo {
+  background: linear-gradient(
+    110deg,
+    #fff3cf 0%,
+    #fff8e5 65%,
+    #edf5ed 100%
+  );
+}
+
+.ern-chat-compacto .marca {
+  letter-spacing: .015em;
+}
+
+.ern-chat-compacto .cartao-corpo .principal {
+  box-shadow: 0 3px 10px rgb(128 86 0 / 15%);
+}
+
+@keyframes ern-simbolo-pulsar-v4 {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow:
+      0 0 0 3px rgb(53 212 196 / 10%),
+      0 3px 10px rgb(16 43 53 / 20%);
+  }
+  50% {
+    transform: scale(1.09);
+    box-shadow:
+      0 0 0 6px rgb(53 212 196 / 16%),
+      0 0 16px rgb(37 130 119 / 30%);
+  }
+}
+
+@keyframes ern-halo-pulsar-v4 {
+  0%, 100% {
+    transform: scale(1);
+    opacity: .55;
+  }
+  50% {
+    transform: scale(1.15);
+    opacity: .9;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ern-chat-compacto .avatar,
+  .ern-chat-compacto .ern-concierge-orbe {
+    animation: ern-simbolo-pulsar-v4 2.8s ease-in-out infinite !important;
+  }
+
+  .ern-chat-compacto .avatar::after,
+  .ern-chat-compacto .ern-concierge-orbe::after {
+    animation: ern-halo-pulsar-v4 2.8s ease-in-out infinite;
+  }
+}
+
+.ern-chat-compacto[data-ern-vida-pausada='true'] .avatar,
+.ern-chat-compacto[data-ern-vida-pausada='true'] .ern-concierge-orbe {
+  animation-play-state: paused !important;
+}
+
+.ern-chat-compacto[data-ern-vida-pausada='true'] .avatar::after,
+.ern-chat-compacto[data-ern-vida-pausada='true'] .ern-concierge-orbe::after {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ern-chat-compacto .avatar,
+  .ern-chat-compacto .ern-concierge-orbe,
+  .ern-chat-compacto .avatar::after,
+  .ern-chat-compacto .ern-concierge-orbe::after {
+    animation: none !important;
+  }
+}

@@ -257,7 +257,77 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   ]);
   const dialogRef = useRef<HTMLDialogElement>(null);
   const abrirRef = useRef<HTMLButtonElement>(null);
+  const mobileRef = useRef<HTMLButtonElement>(null);
+
+  function devolverFocoERN() {
+    const botao = window.matchMedia('(max-width: 1023px)').matches
+      ? mobileRef.current
+      : abrirRef.current;
+    botao?.focus({ preventScroll: true });
+  }
+
+  useEffect(() => {
+    function abrirPeloLinkERN() {
+      if (window.location.hash === '#concierge') setAberto(true);
+    }
+
+    function aoClicarERN(evento: MouseEvent) {
+      if (
+        evento.defaultPrevented ||
+        evento.button !== 0 ||
+        evento.ctrlKey ||
+        evento.metaKey ||
+        evento.shiftKey ||
+        evento.altKey
+      ) return;
+
+      const alvo = evento.target;
+      if (!(alvo instanceof Element)) return;
+
+      const link = alvo.closest('a[href]');
+      if (!(link instanceof HTMLAnchorElement)) return;
+      if (link.target && link.target !== '_self') return;
+
+      const destino = new URL(link.href, window.location.href);
+      if (
+        destino.origin === window.location.origin &&
+        destino.pathname === window.location.pathname &&
+        destino.hash === '#concierge'
+      ) {
+        evento.preventDefault();
+        setAberto(true);
+      }
+    }
+
+    abrirPeloLinkERN();
+    window.addEventListener('hashchange', abrirPeloLinkERN);
+    document.addEventListener('click', aoClicarERN);
+
+    return () => {
+      window.removeEventListener('hashchange', abrirPeloLinkERN);
+      document.removeEventListener('click', aoClicarERN);
+    };
+  }, []);
   const listaRef = useRef<HTMLDivElement>(null);
+
+  const [vidaPausadaERN, setVidaPausadaERN] = useState(false);
+  const legendaVidaERN = idioma === 'EN'
+    ? (vidaPausadaERN ? 'Resume visual effect' : 'Pause visual effect')
+    : idioma === 'ES'
+      ? (vidaPausadaERN ? 'Reanudar efecto visual' : 'Pausar efecto visual')
+      : (vidaPausadaERN ? 'Retomar efeito visual' : 'Pausar efeito visual');
+
+  const controleVidaERN = (
+    <button
+      type="button"
+      className="ern-vida-pausa"
+      onClick={() => setVidaPausadaERN(valor => !valor)}
+      aria-label={legendaVidaERN}
+      title={legendaVidaERN}
+    >
+      <span aria-hidden="true">{vidaPausadaERN ? '▷' : 'Ⅱ'}</span>
+    </button>
+  );
 
   const limite = mensagens.length >= 61;
   const resumo = preferencias
@@ -289,7 +359,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
 
   function fechar() {
     setAberto(false);
-    abrirRef.current?.focus({ preventScroll: true });
+    devolverFocoERN();
   }
 
   function reiniciar() {
@@ -348,13 +418,28 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   }
 
   return (
-    <section className="ern-chat-compacto" aria-label={t.title}>
+    <section className="ern-chat-compacto" aria-label={t.title} data-ern-vida-pausada={vidaPausadaERN}>
+      {/* ERN_CONCIERGE_VISUAL_V2 */}
+      <button
+        ref={mobileRef}
+        type="button"
+        className="ern-concierge-mobile"
+        aria-label={`${t.title}: ${c.open}`}
+        aria-haspopup="dialog"
+        aria-controls="ern-conversa"
+        aria-expanded={aberto}
+        onClick={() => setAberto(true)}
+      >
+        <span className="ern-concierge-orbe" aria-hidden="true">✦</span>
+        <span>{t.title}</span>
+      </button>
       <header className="cartao-topo">
         <span className="avatar" aria-hidden="true">✦</span>
         <div>
           <p className="marca">{t.title}</p>
           <p className="legenda">{c.badge}</p>
         </div>
+        {controleVidaERN}
       </header>
 
       <div className="cartao-corpo">
@@ -383,7 +468,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
         }}
         onClose={() => {
           setAberto(false);
-          abrirRef.current?.focus({ preventScroll: true });
+          devolverFocoERN();
         }}
       >
         <div className="janela">
@@ -393,6 +478,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
               <h2 id="ern-chat-titulo">{t.title}</h2>
               <p>{c.badge}</p>
             </div>
+            {controleVidaERN}
             <button
               type="button"
               className="fechar"
@@ -623,6 +709,97 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
           }
           .chat-topo { border-radius: 16px 16px 0 0; }
         }
+        /* ERN_CONCIERGE_VISUAL_V2 */
+        .ern-concierge-mobile {
+          display: none;
+        }
+
+        .cartao-topo {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .cartao-topo::after {
+          content: '';
+          position: absolute;
+          right: 0;
+          top: 18px;
+          bottom: 18px;
+          width: 3px;
+          border-radius: 3px;
+          background: #b58b38;
+          pointer-events: none;
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+          .cartao-topo::after {
+            animation: ern-concierge-luz 2.4s ease-in-out 2;
+          }
+          .cartao-topo .avatar,
+          .ern-concierge-orbe {
+            animation: ern-concierge-orbe 2.4s ease-in-out 2;
+          }
+        }
+
+        @keyframes ern-concierge-luz {
+          0%, 100% { opacity: .5; box-shadow: 0 0 0 transparent; }
+          50% { opacity: 1; box-shadow: 0 0 12px #d6ab56; }
+        }
+
+        @keyframes ern-concierge-orbe {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.07); }
+        }
+
+        @media (max-width: 1023px) {
+          .ern-chat-compacto {
+            width: 0;
+            height: 0;
+            margin: 0;
+            border: 0;
+            background: transparent;
+            box-shadow: none;
+          }
+
+          .cartao-topo,
+          .cartao-corpo {
+            display: none;
+          }
+
+          .ern-concierge-mobile {
+            position: fixed;
+            right: max(16px, env(safe-area-inset-right));
+            bottom: calc(104px + env(safe-area-inset-bottom));
+            z-index: 90;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 9px;
+            min-height: 48px;
+            max-width: calc(100vw - 32px);
+            padding: 8px 14px 8px 8px;
+            border: 1px solid #d5bf81;
+            border-radius: 999px;
+            background: #fffcf0;
+            color: #30260d;
+            box-shadow: 0 5px 20px rgb(0 0 0 / 20%);
+            font-size: 12px;
+            font-weight: 700;
+          }
+
+          .ern-concierge-orbe {
+            display: grid;
+            place-items: center;
+            flex-shrink: 0;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: #805600;
+            color: #fff;
+            font-size: 20px;
+          }
+        }
+
         @media (max-height: 500px) {
           .informacoes, .chat-rodape p { display: none; }
           .sugestoes { max-height: 72px; overflow-y: auto; }

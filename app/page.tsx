@@ -272,7 +272,7 @@ const t = homeTranslations[idioma] as HomeTranslation;
           />
         </svg>
 
-        <div className="relative z-10 mx-auto flex min-h-0 max-w-[1280px] items-center px-5 pb-12 pt-28 md:px-8 md:pb-16 md:pt-32 lg:min-h-[clamp(560px,76svh,760px)]">
+        <div className="relative z-10 mx-auto flex min-h-0 max-w-[1320px] items-center px-5 pb-12 pt-28 md:px-8 md:pb-16 md:pt-32 lg:min-h-[clamp(560px,76svh,760px)]">
           <div className="grid w-full min-w-0 items-center gap-8 lg:grid-cols-[1.16fr_0.84fr] lg:gap-12">
             <div className="ern-descubra-painel max-w-[680px]">
               <div className="mb-7 flex items-center gap-3">

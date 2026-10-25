@@ -7,7 +7,7 @@ const animais = [
   { nome: 'onca', esquerda: '88%', deslocamento: '-84.5%', recorte: 'inset(0 0 0 69%)' },
 ];
 
-export default function FaunaCabecalhoERN({ altura, oncaNaConta = false, araraEntreMarcaEMenu = false }: { altura: number; oncaNaConta?: boolean; araraEntreMarcaEMenu?: boolean }) {
+export default function FaunaCabecalhoERN({ altura, oncaNaConta = false, araraEntreMarcaEMenu = false, deslocamentoArara = 0 }: { altura: number; oncaNaConta?: boolean; araraEntreMarcaEMenu?: boolean; deslocamentoArara?: number }) {
   return (
     <span
       aria-hidden="true"
@@ -27,7 +27,7 @@ export default function FaunaCabecalhoERN({ altura, oncaNaConta = false, araraEn
             position: 'absolute',
             top: '50%',
             opacity: animal.nome === 'arara-vermelha' && araraEntreMarcaEMenu ? 'var(--ern-arara-opacidade, 0)' : 1,
-            left: animal.nome === 'arara-vermelha' && araraEntreMarcaEMenu ? 'var(--ern-arara-x, 0px)' : animal.nome === 'onca' && oncaNaConta ? 'calc(100% - max(78px, calc((100vw - 1600px) / 2 + 78px)))' : animal.esquerda,
+            left: animal.nome === 'arara-vermelha' && araraEntreMarcaEMenu ? 'var(--ern-arara-x, 0px)' : animal.nome === 'onca' && oncaNaConta ? 'calc(100% - max(78px, calc((100vw - 1600px) / 2 + 78px)))' : animal.nome === 'arara-vermelha' ? 'calc(' + animal.esquerda + ' - ' + deslocamentoArara + 'px)' : animal.esquerda,
             width: altura * 3,
             height: altura,
             transform: 'translate(' + animal.deslocamento + ', -50%)',

@@ -227,7 +227,7 @@ export default function PublicHeader() {
             : 'border-white/10 bg-[#08130F]/85 backdrop-blur-xl'
         }`}
       >
-        <FaunaCabecalhoERN altura={70} />
+        <FaunaCabecalhoERN altura={70} deslocamentoArara={60} />
         <div className="mx-auto flex h-[76px] max-w-[1320px] items-center justify-between gap-3 px-4 sm:px-6 xl:px-8">
           <Link
             href="/"
