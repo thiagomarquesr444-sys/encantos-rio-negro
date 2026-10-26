@@ -221,6 +221,13 @@ export default function PublicHeader() {
   return (
     <>
       <header
+        style={{
+          /* ERN_MENU_TEMA_DIRETO_V1 */
+          backgroundColor: 'var(--ern-fundo, #101214)',
+          color: 'var(--ern-texto, #f0f1f2)',
+          borderColor: 'var(--ern-borda, #454b53)',
+          transitionProperty: 'box-shadow',
+        }}
         className={`ern-navegacao-ilustrada fixed inset-x-0 top-0 z-[100] border-b text-[#EDEDE3] transition-colors duration-300 motion-reduce:transition-none ${
           rolouPagina
             ? 'border-white/15 bg-[#08130F]/95 shadow-lg backdrop-blur-xl'
@@ -334,6 +341,11 @@ export default function PublicHeader() {
       <dialog
         ref={dialogRef}
         id="menu-publico-ern"
+        style={{
+          backgroundColor: 'var(--ern-painel, #1a1d21)',
+          color: 'var(--ern-texto, #f0f1f2)',
+          borderColor: 'var(--ern-borda, #454b53)',
+        }}
         aria-labelledby="titulo-menu-publico"
         className="menu-publico"
         onCancel={(event) => {

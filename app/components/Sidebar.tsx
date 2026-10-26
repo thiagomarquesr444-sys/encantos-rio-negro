@@ -576,6 +576,13 @@ export default function Sidebar() {
   return (
     <>
       <header
+        style={{
+          /* ERN_MENU_TEMA_DIRETO_V1 */
+          backgroundColor: 'var(--ern-fundo, #101214)',
+          color: 'var(--ern-texto, #f0f1f2)',
+          borderColor: 'var(--ern-borda, #454b53)',
+          transitionProperty: 'box-shadow',
+        }}
         ref={headerRef}
         className="ern-navegacao-ilustrada fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#07110E]/95 text-[#EDEDE3] backdrop-blur-xl"
         onBlur={(evento) => {
@@ -759,6 +766,11 @@ export default function Sidebar() {
       <dialog
         ref={dialogRef}
         id="menu-mobile-ern"
+        style={{
+          backgroundColor: 'var(--ern-painel, #1a1d21)',
+          color: 'var(--ern-texto, #f0f1f2)',
+          borderColor: 'var(--ern-borda, #454b53)',
+        }}
         aria-labelledby="titulo-menu-mobile"
         className="menu-mobile"
         onCancel={(evento) => {
