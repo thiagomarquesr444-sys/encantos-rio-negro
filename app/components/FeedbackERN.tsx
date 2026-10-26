@@ -88,9 +88,10 @@ export default function FeedbackERN() {
   }, [pathname]);
 
   function abrir() {
-    const escopo = document.querySelector(
-      '.ern-tema-portal, .ern-gestao, .ern-publico'
-    );
+    const escopo =
+      document.querySelector('.ern-tema-portal') ??
+      document.querySelector('.ern-gestao') ??
+      document.querySelector('.ern-publico');
 
     if (escopo) {
       const estilo = getComputedStyle(escopo);

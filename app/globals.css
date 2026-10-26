@@ -1109,3 +1109,31 @@ body {
   background:var(--ern-painel);color:var(--ern-texto);
   border:1px solid var(--ern-borda);
 }
+
+/* ERN_FUNDO_TEMA_V3 */
+html {
+  background-color: var(--ern-fundo-inicial, #101214);
+}
+
+body {
+  background-color: var(--ern-fundo-inicial, #101214);
+  color: var(--ern-texto-inicial, #f0f1f2);
+}
+
+html[data-ern-portal="escuro"] .ern-publico {
+  --ern-fundo: #101214;
+  --ern-painel: #1a1d21;
+  --ern-elevado: #25292e;
+  --ern-texto: #f0f1f2;
+  --ern-secundario: #bfc5cb;
+  --ern-borda: #454b53;
+  --ern-destaque: #c5b595;
+  --ern-botao: #30363e;
+  --ern-sobre-botao: #f0f1f2;
+  --ern-suave: #25292e;
+  --ern-hover: #343b44;
+  --ern-sucesso: #a7f3d0;
+  --ern-alerta: #fde68a;
+  --ern-erro: #fecaca;
+  color-scheme: dark;
+}

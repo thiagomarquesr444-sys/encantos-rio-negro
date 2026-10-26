@@ -33,11 +33,13 @@ function pertenceARota(pathname: string, rota: string): boolean {
 }
 
 function normalizarTema(valor: unknown): Tema {
-  return valor === 'grafite' || valor === 'azul' ||
+  return valor === 'verde' ||
+    valor === 'azul' ||
     valor === 'amarelo' ||
-    valor === 'branco'
+    valor === 'branco' ||
+    valor === 'grafite'
     ? valor
-    : 'verde';
+    : 'grafite';
 }
 
 
@@ -55,7 +57,7 @@ function ApresentacaoPaginaERN({
     // O perfil publico ja possui sua propria composicao animada.
     if (
       !elemento ||
-      pathname?.startsWith('/rede/perfil/') ||
+      pathname === '/destinos' || pathname?.startsWith('/destinos/') || pathname === '/rede' || pathname?.startsWith('/rede/') ||
       typeof elemento.animate !== 'function'
     ) {
       return;
@@ -118,12 +120,55 @@ export default function AppShell({
     pathname !== null && pertenceARota(pathname, '/fornecedor');
 
 
+  // ERN_FUNDO_TEMA_V3: acompanha mudanças de rota e tema.
+  useLayoutEffect(() => {
+    const raiz = document.documentElement;
+    const portal = /^\/(destinos|rede)(\/|$)/.test(pathname ?? '');
+
+    const paletas: Record<Tema, readonly [string, string]> = {
+      verde: ['#07110e', '#edede3'],
+      azul: ['#081525', '#f0f6fc'],
+      amarelo: ['#fff7db', '#30260d'],
+      branco: ['#f4f6f5', '#14271e'],
+      grafite: ['#101214', '#f0f1f2'],
+    };
+
+    let cores = paletas.grafite;
+
+    if (portal) {
+      let escuro = true;
+      try {
+        escuro = localStorage.getItem('ern.portal.tema.v1') !== 'claro';
+      } catch {}
+
+      raiz.setAttribute('data-ern-portal', escuro ? 'escuro' : 'claro');
+      cores = escuro ? paletas.grafite : paletas.amarelo;
+    } else {
+      raiz.removeAttribute('data-ern-portal');
+
+      if (rotaGestao) {
+        let escolhido = tema;
+        if (!escolhido) {
+          try {
+            escolhido = normalizarTema(
+              localStorage.getItem('ern-tema-visual-v1')
+            );
+          } catch {}
+        }
+        cores = paletas[escolhido ?? 'grafite'];
+      }
+    }
+
+    raiz.style.setProperty('--ern-fundo-inicial', cores[0]);
+    raiz.style.setProperty('--ern-texto-inicial', cores[1]);
+  }, [pathname, rotaGestao, tema]);
+
   useLayoutEffect(() => {
     if (!rotaGestao) return;
 
     try {
       const salvo = localStorage.getItem('ern-tema-visual-v1');
-      if (['verde', 'azul', 'amarelo', 'branco'].includes(salvo ?? '')) {
+      if (['verde', 'azul', 'amarelo', 'branco', 'grafite'].includes(salvo ?? '')) {
         setTema(normalizarTema(salvo));
       }
     } catch {
@@ -235,8 +280,8 @@ export default function AppShell({
       <main
         className="flex min-h-screen items-center justify-center px-6"
         style={{
-          background: 'var(--ern-fundo-inicial, #fff7db)',
-          color: 'var(--ern-texto-inicial, #30260d)',
+          background: 'var(--ern-fundo-inicial, #101214)',
+          color: 'var(--ern-texto-inicial, #f0f1f2)',
         }}
       >
         {erroTema ? (

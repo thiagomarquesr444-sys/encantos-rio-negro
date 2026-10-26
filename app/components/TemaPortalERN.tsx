@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type ReactNode } from 'react';
+import { useLayoutEffect, useState, type ReactNode } from 'react';
 import { useLanguage } from '@/app/components/LanguageProvider';
 
 const CHAVE = 'ern.portal.tema.v1';
@@ -13,12 +13,12 @@ const textos = {
 export default function TemaPortalERN({ children }: { children: ReactNode }) {
   const { idioma } = useLanguage();
   const t = textos[idioma];
-  const [noturno, setNoturno] = useState(false);
+  const [noturno, setNoturno] = useState(true);
   const [pronto, setPronto] = useState(false);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     try {
-      setNoturno(localStorage.getItem(CHAVE) === 'escuro');
+      setNoturno(localStorage.getItem(CHAVE) !== 'claro');
     } catch {
       // A preferência funciona mesmo com armazenamento indisponível.
     }
@@ -26,12 +26,27 @@ export default function TemaPortalERN({ children }: { children: ReactNode }) {
 
     function sincronizar(event: StorageEvent) {
       if (event.key === CHAVE) {
-        setNoturno(event.newValue === 'escuro');
+        setNoturno(event.newValue !== 'claro');
       }
     }
     window.addEventListener('storage', sincronizar);
     return () => window.removeEventListener('storage', sincronizar);
   }, []);
+
+  useLayoutEffect(() => {
+    if (!pronto) return;
+
+    const raiz = document.documentElement;
+    raiz.setAttribute('data-ern-portal', noturno ? 'escuro' : 'claro');
+    raiz.style.setProperty(
+      '--ern-fundo-inicial',
+      noturno ? '#101214' : '#fff7db'
+    );
+    raiz.style.setProperty(
+      '--ern-texto-inicial',
+      noturno ? '#f0f1f2' : '#30260d'
+    );
+  }, [noturno, pronto]);
 
   function alternar() {
     const proximo = !noturno;
@@ -45,6 +60,9 @@ export default function TemaPortalERN({ children }: { children: ReactNode }) {
 
   return (
     <div className="ern-tema-portal"
+      id="ern-tema-portal"
+      style={{ visibility: pronto ? 'visible' : 'hidden' }}
+      aria-busy={!pronto}
       data-portal-tema={noturno ? 'escuro' : 'claro'}>
       {children}
       <button type="button" className="ern-tema-portal-controle"
@@ -274,6 +292,63 @@ export default function TemaPortalERN({ children }: { children: ReactNode }) {
           .ern-navegacao-ilustrada {
           --ern-botao:#30363e;
           --ern-sobre-botao:#f0f1f2;
+        }
+        /* ERN_REDE_DETALHES_TEMA_V1 */
+        .ern-tema-portal[data-portal-tema="escuro"] .ern-rede-detalhe {
+          background:var(--ern-fundo);
+          color:var(--ern-texto);
+          color-scheme:dark;
+        }
+        .ern-tema-portal[data-portal-tema="escuro"] .ern-rede-detalhe :is(
+          [class~="text-[#18352C]"],
+          [class~="text-[#30260d]"],
+          [class~="text-[#285343]"]
+        ) { color:var(--ern-texto); }
+
+        .ern-tema-portal[data-portal-tema="escuro"] .ern-rede-detalhe :is(
+          [class~="text-[#53685F]"],
+          [class~="text-[#695727]"]
+        ) { color:var(--ern-secundario); }
+
+        .ern-tema-portal[data-portal-tema="escuro"] .ern-rede-detalhe :is(
+          [class~="text-[#76602D]"],
+          [class~="text-[#805600]"]
+        ) { color:var(--ern-destaque); }
+
+        .ern-tema-portal[data-portal-tema="escuro"] .ern-rede-detalhe :is(
+          [class~="bg-white"],
+          [class~="bg-[#fffcf0]"]
+        ):not(img) { background-color:var(--ern-painel); }
+
+        .ern-tema-portal[data-portal-tema="escuro"]
+          .ern-rede-detalhe [class*="border-[#"] {
+          border-color:var(--ern-borda);
+        }
+
+        .ern-tema-portal[data-portal-tema="escuro"] .ern-rede-detalhe :is(
+          [class~="bg-[#185943]"],
+          [class~="bg-[#18352C]"],
+          [class~="bg-[#805600]"],
+          [class~="bg-[#E3B567]"]
+        ) {
+          background-color:var(--ern-botao);
+          color:var(--ern-sobre-botao);
+          border-color:var(--ern-borda);
+        }
+
+        .ern-tema-portal[data-portal-tema="escuro"] .ern-rede-detalhe :is(
+          [class~="bg-[#185943]"],
+          [class~="bg-[#18352C]"],
+          [class~="bg-[#805600]"],
+          [class~="bg-[#E3B567]"]
+        ):hover { background-color:var(--ern-hover); }
+
+        .ern-tema-portal[data-portal-tema="escuro"]
+          .ern-rede-detalhe :is(a,button,input,select):focus-visible {
+          outline:3px solid var(--ern-destaque);
+          outline-offset:4px;
+          --tw-ring-color:var(--ern-destaque);
+          --tw-ring-offset-color:var(--ern-fundo);
         }
       `}</style>
     </div>

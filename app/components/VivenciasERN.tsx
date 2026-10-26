@@ -14,18 +14,18 @@ import { useLanguage } from './LanguageProvider';
 const button: CSSProperties = {
   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
   minHeight: 44, padding: '10px 16px', borderRadius: 12,
-  border: '1px solid #b7a276', background: '#fff8e8',
-  color: '#244c3c', fontSize: 14, fontWeight: 600,
+  border: '1px solid var(--ern-borda, #b7a276)', background: 'var(--ern-painel, #fff8e8)',
+  color: 'var(--ern-texto, #244c3c)', fontSize: 14, fontWeight: 600,
   textDecoration: 'none', cursor: 'pointer',
 };
 const panel: CSSProperties = {
-  padding: 18, border: '1px solid #d5c6a4',
+  padding: 18, border: '1px solid var(--ern-borda, #d5c6a4)',
   borderRadius: 16, marginTop: 20, minWidth: 0,
 };
 const input: CSSProperties = {
   display: 'block', width: '100%', minHeight: 44, padding: 10,
-  marginTop: 8, borderRadius: 10, border: '1px solid #b7a276',
-  background: '#fffaf0', color: '#263e34', fontSize: 16,
+  marginTop: 8, borderRadius: 10, border: '1px solid var(--ern-borda, #b7a276)',
+  background: 'var(--ern-painel, #fffaf0)', color: 'var(--ern-texto, #263e34)', fontSize: 16,
 };
 
 function pauseOthers(current: HTMLVideoElement) {
@@ -83,7 +83,7 @@ export function MidiaVivenciaERN({ midia }: { midia: MidiaPublicacao }) {
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img src={midia.url} alt={midia.alt_text || 'Fotografia da publicação'} loading="lazy"
-      style={{ display: 'block', width: '100%', maxHeight: '66svh', objectFit: 'contain', borderRadius: 14, background: '#f3ecdd' }} />
+      style={{ display: 'block', width: '100%', maxHeight: '66svh', objectFit: 'contain', borderRadius: 14, background: 'var(--ern-painel, #f3ecdd)' }} />
   );
 }
 
@@ -491,8 +491,8 @@ export function ListaVivenciasERN({
         <p>{tr('As primeiras vivências deste espaço ainda estão por vir.', 'The first experiences here are still to come.', 'Las primeras vivencias de este espacio están por llegar.')}</p>
       )}
       {itens.map(post => (
-        <article key={post.id} style={{ ...panel, marginBottom: 24, background: '#fffaf0' }}>
-          <Link href={`/rede/perfil/${encodeURIComponent(post.autor.slug)}`} style={{ color: '#24523e', fontWeight: 700 }}>
+        <article key={post.id} style={{ ...panel, marginBottom: 24, background: 'var(--ern-painel, #fffaf0)' }}>
+          <Link href={`/rede/perfil/${encodeURIComponent(post.autor.slug)}`} style={{ color: 'var(--ern-texto, #24523e)', fontWeight: 700 }}>
             {post.autor.nome_publico}
           </Link>
           <h3 style={{ fontSize: 22, lineHeight: 1.4 }}>{post.titulo}</h3>

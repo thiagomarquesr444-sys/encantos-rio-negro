@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
 import PublicHeader from '@/app/components/PublicHeader';
+import TemaPortalERN from '@/app/components/TemaPortalERN';
 import LogoERN from '@/app/components/LogoERN';
 import PublicacoesPerfilERN from '@/app/components/PublicacoesPerfilERN';
 import { useLanguage } from '@/app/components/LanguageProvider';
@@ -291,7 +292,8 @@ export default function PerfilRedePage() {
     : null;
 
   return (
-    <div className="ern-perfil-publico min-h-screen bg-[#F6F5F0] text-[#18352C]">
+    <TemaPortalERN>
+    <div className="ern-perfil-publico ern-rede-detalhe min-h-screen bg-[#F6F5F0] text-[#18352C]">
       <PublicHeader />
 
       <main className="pb-12 pt-[76px]">
@@ -579,5 +581,6 @@ export default function PerfilRedePage() {
         }
       `}</style>
     </div>
+    </TemaPortalERN>
   );
 }

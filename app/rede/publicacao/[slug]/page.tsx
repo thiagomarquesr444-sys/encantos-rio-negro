@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import PublicHeader from '@/app/components/PublicHeader';
+import TemaPortalERN from '@/app/components/TemaPortalERN';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import {
   listarFeedPublico,
@@ -97,7 +98,8 @@ export default function PublicacaoRedePage() {
   const imagens = item?.midias ?? [];
 
   return (
-    <div className="min-h-screen bg-[#fff7db] text-[#30260d]">
+    <TemaPortalERN>
+    <div className="ern-rede-detalhe min-h-screen bg-[#fff7db] text-[#30260d]">
       <PublicHeader />
 
       <main className="mx-auto max-w-5xl px-5 pb-16 pt-28 sm:px-8">
@@ -210,5 +212,6 @@ export default function PublicacaoRedePage() {
         )}
       </main>
     </div>
+    </TemaPortalERN>
   );
 }

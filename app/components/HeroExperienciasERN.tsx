@@ -165,6 +165,60 @@ export default function HeroExperienciasERN({
           outline-offset: 4px;
         }
 
+        /* ERN_ENTRADA_EXPERIENCIAS_V1 */
+        @keyframes ern-experiencias-entrada {
+          from {
+            opacity: 0;
+            transform: translateY(16px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+
+        @media (prefers-reduced-motion: no-preference) {
+          .letreiro > .chamada,
+          .letreiro > h1,
+          .letreiro > .introducao,
+          .letreiro > .botoes {
+            animation-name: ern-experiencias-entrada;
+            animation-duration: 750ms;
+            animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+            animation-iteration-count: 1;
+            animation-fill-mode: backwards;
+          }
+
+          .letreiro > .chamada {
+            animation-delay: 80ms;
+          }
+
+          .letreiro > h1 {
+            animation-delay: 180ms;
+          }
+
+          .letreiro > .introducao {
+            animation-delay: 280ms;
+          }
+
+          .letreiro > .botoes {
+            animation-delay: 380ms;
+          }
+
+          .letreiro > .botoes:focus-within {
+            animation: none;
+          }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .letreiro > .chamada,
+          .letreiro > h1,
+          .letreiro > .introducao,
+          .letreiro > .botoes {
+            animation: none;
+          }
+        }
+
         @media (min-width: 768px) and (max-width: 1023px) {
           .conteudo-abertura {
             padding-inline: 24px;
