@@ -2,12 +2,13 @@
 
 import PublicHeader from '@/app/components/PublicHeader';
 import ExploradorDestinosERN from '@/app/components/ExploradorDestinosERN';
+import TemaPortalERN from '@/app/components/TemaPortalERN';
 
 export default function DestinosPage() {
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--ern-fundo, #fff7db)', color: 'var(--ern-texto, #30260d)' }}>
+    <TemaPortalERN>
       <PublicHeader />
       <main><ExploradorDestinosERN /></main>
-    </div>
+    </TemaPortalERN>
   );
 }
