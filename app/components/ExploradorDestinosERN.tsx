@@ -260,16 +260,6 @@ export default function ExploradorDestinosERN() {
     return () => window.clearTimeout(tarefa);
   }, [query, status]);
 
-  function deslocarMapaPublicoERN(horizontal: number, vertical: number) {
-    const instancia = map.current;
-    if (!instancia) return;
-    const tamanho = instancia.getSize();
-    instancia.panBy(
-      [horizontal * tamanho.x * .25, vertical * tamanho.y * .25],
-      { animate: false }
-    );
-  }
-
   function overview() {
     setRegion('all'); setQuery(''); setInterest('all'); setActiveId(null); setDrawer(null);
     const L = Lref.current;
@@ -478,24 +468,6 @@ export default function ExploradorDestinosERN() {
   return <div className="ern-v-root">
     <section id="ern-v-explorar" className="ern-v-stage" aria-labelledby="ern-v-title">
       <div className="ern-v-map" ref={container} aria-label={u.overview} />
-      <nav className="ern-v-direcoes" aria-label={
-        lang === 'EN' ? 'Move map' : lang === 'ES' ? 'Mover mapa' : 'Mover o mapa'
-      }>
-        <button style={{gridArea:'1 / 2'}} aria-label={
-          lang === 'EN' ? 'North' : lang === 'ES' ? 'Norte' : 'Mover para o norte'
-        } onClick={() => deslocarMapaPublicoERN(0,-1)}>↑</button>
-        <button style={{gridArea:'2 / 1'}} aria-label={
-          lang === 'EN' ? 'West' : lang === 'ES' ? 'Oeste' : 'Mover para o oeste'
-        } onClick={() => deslocarMapaPublicoERN(-1,0)}>←</button>
-        <button style={{gridArea:'2 / 2'}} aria-label={u.overview}
-          onClick={overview}>◎</button>
-        <button style={{gridArea:'2 / 3'}} aria-label={
-          lang === 'EN' ? 'East' : lang === 'ES' ? 'Este' : 'Mover para o leste'
-        } onClick={() => deslocarMapaPublicoERN(1,0)}>→</button>
-        <button style={{gridArea:'3 / 2'}} aria-label={
-          lang === 'EN' ? 'South' : lang === 'ES' ? 'Sur' : 'Mover para o sul'
-        } onClick={() => deslocarMapaPublicoERN(0,1)}>↓</button>
-      </nav>
       <div className="ern-v-intro">
         <p className="ern-v-kicker">{u.eyebrow}</p><h1 id="ern-v-title">{u.title}</h1><p>{u.intro}</p>
         <label className="ern-v-search"><span aria-hidden="true">⌕</span><input type="search" aria-label={u.search} placeholder={u.search} value={query} onChange={e => setQuery(e.target.value)} /></label>

@@ -348,18 +348,6 @@ function MapaOperacional() {
     return () => window.clearTimeout(tarefa);
   }, [busca, pronto]);
 
-  function deslocarMapaERN(horizontal: number, vertical: number) {
-    const instancia = mapa.current;
-    if (!instancia) return;
-    setSeguir(false);
-    seguindo.current = false;
-    const tamanho = instancia.getSize();
-    instancia.panBy(
-      [horizontal * tamanho.x * .25, vertical * tamanho.y * .25],
-      { animate: false }
-    );
-  }
-
   function verDestino() {
     if (!destino || !mapa.current) return;
     setSeguir(false);
@@ -381,18 +369,6 @@ function MapaOperacional() {
     <main ref={recipiente} className={`ern-mapa-operacional ${noturno ? "ern-mapa-noturno" : ""}`}
       style={{ top: topo }} aria-label="Mapa operacional ERN">
       <div ref={canvas} className="ern-cartografia" aria-label="Mapa interativo de localidades" />
-      <nav className="ern-direcoes-mapa" aria-label="Mover o mapa operacional">
-        <button style={{gridArea:'1 / 2'}} aria-label="Mover mapa para o norte"
-          onClick={() => deslocarMapaERN(0,-1)}>↑</button>
-        <button style={{gridArea:'2 / 1'}} aria-label="Mover mapa para o oeste"
-          onClick={() => deslocarMapaERN(-1,0)}>←</button>
-        <button style={{gridArea:'2 / 2'}} aria-label="Voltar ao destino"
-          disabled={!destino} onClick={verDestino}>◎</button>
-        <button style={{gridArea:'2 / 3'}} aria-label="Mover mapa para o leste"
-          onClick={() => deslocarMapaERN(1,0)}>→</button>
-        <button style={{gridArea:'3 / 2'}} aria-label="Mover mapa para o sul"
-          onClick={() => deslocarMapaERN(0,1)}>↓</button>
-      </nav>
       <div className="ern-barra-mapa">
         <div><strong>Mapa ERN</strong><small>Território · destino · acompanhamento</small></div>
         <button onClick={() => setPainel(!painel)} aria-expanded={painel}
@@ -655,24 +631,6 @@ function MapaOperacional() {
           }
           .ern-resultados-destino{max-height:140px}
           .ern-painel-mapa h1{font-size:23px}
-        }
-        .ern-direcoes-mapa{
-          position:absolute;right:14px;top:125px;z-index:1001;
-          display:grid;grid-template:repeat(3,40px)/repeat(3,40px);
-          gap:3px;padding:6px;border-radius:15px;
-          background:#09262de8;border:1px solid #c8b47766;
-          box-shadow:0 6px 24px #0005;
-        }
-        .ern-direcoes-mapa button{
-          padding:0;min-height:40px;font-size:22px;border-radius:9px;
-          background:#173b43;color:#fff4d2;
-        }
-        @media(max-width:767px){
-          .ern-direcoes-mapa{
-            right:10px;top:150px;
-            grid-template:repeat(3,36px)/repeat(3,36px);
-          }
-          .ern-direcoes-mapa button{min-height:36px;font-size:20px}
         }
       `}</style>
     </main>

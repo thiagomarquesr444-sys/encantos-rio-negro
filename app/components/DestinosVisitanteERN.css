@@ -192,26 +192,3 @@
     transform: translateY(-2px) rotate(2deg);
   }
 }
-/* ERN_NAVEGACAO_BUSCA_V3 */
-.ern-v-root .ern-v-direcoes{
-  position:absolute;right:14px;top:22px;z-index:501;
-  display:grid;grid-template:repeat(3,40px)/repeat(3,40px);
-  gap:3px;padding:6px;border-radius:15px;
-  border:1px solid #b9a272;background:#fffaf0f5;
-  box-shadow:0 6px 24px #0002;
-}
-.ern-v-root .ern-v-direcoes button{
-  min-height:40px;padding:0;border:1px solid #bba77c77;
-  border-radius:9px;background:#fffaf0;color:#173c32;
-  font-size:22px;cursor:pointer;
-}
-.ern-v-root .ern-v-direcoes button:focus-visible{
-  outline:3px solid #866015;outline-offset:2px;
-}
-@media(max-width:700px){
-  .ern-v-root .ern-v-direcoes{
-    top:305px;right:12px;
-    grid-template:repeat(3,36px)/repeat(3,36px);
-  }
-  .ern-v-root .ern-v-direcoes button{min-height:36px;font-size:20px}
-}
