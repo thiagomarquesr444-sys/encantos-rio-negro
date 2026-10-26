@@ -1031,3 +1031,81 @@ body {
 .ern-chat-compacto.ern-chat-compacto > .cartao-corpo {
   display: none;
 }
+/* ERN_GRAFITE_OPERADORA_V1 */
+.ern-gestao[data-ern-tema="grafite"] {
+  --ern-fundo:#101214;
+  --ern-painel:#1a1d21;
+  --ern-elevado:#25292e;
+  --ern-texto:#f0f1f2;
+  --ern-secundario:#bfc5cb;
+  --ern-borda:#454b53;
+  --ern-destaque:#c5b595;
+  --ern-botao:#30363e;
+  --ern-sobre-botao:#f0f1f2;
+  --ern-suave:#25292e;
+  --ern-hover:#424b56;
+  --ern-sucesso:#a7f3d0;
+  --ern-alerta:#fde68a;
+  --ern-erro:#fecaca;
+  color-scheme:dark;
+}
+
+.ern-gestao .ern-tema-seletor {
+  position:relative;
+  display:inline-block;
+  max-width:100%;
+}
+.ern-gestao .ern-tema-seletor>summary {
+  display:flex;align-items:center;gap:9px;
+  min-height:44px;padding:10px 16px;
+  border:1px solid var(--ern-borda);
+  border-radius:24px;list-style:none;cursor:pointer;
+  background:var(--ern-painel);color:var(--ern-texto);
+  font-size:12px;font-weight:600;
+}
+.ern-tema-seletor>summary::-webkit-details-marker { display:none; }
+.ern-tema-amostra {
+  width:17px;height:17px;border-radius:50%;
+  border:1px solid #89939f;flex-shrink:0;
+}
+.ern-gestao .ern-tema-opcoes {
+  position:absolute;top:calc(100% + 9px);left:0;
+  z-index:1100;width:245px;max-width:calc(100vw - 32px);
+  display:grid;gap:5px;padding:10px;
+  border:1px solid var(--ern-borda);
+  border-radius:16px;background:var(--ern-painel);
+  box-shadow:0 12px 35px #0004;
+}
+.ern-gestao .ern-tema-opcoes button {
+  display:flex;align-items:center;gap:10px;
+  width:100%;min-height:44px;padding:10px;
+  text-align:left;border:1px solid transparent;
+  border-radius:10px;background:transparent;
+  color:var(--ern-texto);font-size:12px;cursor:pointer;
+}
+.ern-gestao .ern-tema-opcoes button[aria-pressed="true"] {
+  background:var(--ern-suave);border-color:var(--ern-borda);
+}
+.ern-gestao .ern-tema-opcoes button:hover {
+  background:var(--ern-elevado);
+}
+.ern-gestao .ern-tema-opcoes button:disabled {
+  opacity:.6;cursor:wait;
+}
+.ern-gestao .ern-tema-seletor :is(summary,button):focus-visible {
+  outline:3px solid var(--ern-destaque);outline-offset:3px;
+}
+.ern-gestao .ern-tema-rapido {
+  position:fixed;left:max(14px,env(safe-area-inset-left));
+  bottom:max(18px,env(safe-area-inset-bottom));
+  z-index:1100;
+}
+.ern-gestao .ern-tema-rapido .ern-tema-opcoes {
+  top:auto;bottom:calc(100% + 9px);
+}
+.ern-gestao .ern-tema-rapido-status {
+  max-width:245px;font-size:12px;line-height:1.6;
+  padding:10px;margin-bottom:8px;border-radius:10px;
+  background:var(--ern-painel);color:var(--ern-texto);
+  border:1px solid var(--ern-borda);
+}

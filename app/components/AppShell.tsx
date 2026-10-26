@@ -6,9 +6,10 @@ import { usePathname } from 'next/navigation';
 
 import { supabase } from '@/lib/supabase';
 import Sidebar from '@/app/components/Sidebar';
+import TemaRapidoOperadoraERN from '@/app/components/TemaRapidoOperadoraERN';
 import SidebarProfissional from '@/app/components/SidebarProfissional';
 
-type Tema = 'verde' | 'azul' | 'amarelo' | 'branco';
+type Tema = 'verde' | 'azul' | 'amarelo' | 'branco' | 'grafite';
 
 const ROTAS_GESTAO = [
   '/dashboard',
@@ -32,7 +33,7 @@ function pertenceARota(pathname: string, rota: string): boolean {
 }
 
 function normalizarTema(valor: unknown): Tema {
-  return valor === 'azul' ||
+  return valor === 'grafite' || valor === 'azul' ||
     valor === 'amarelo' ||
     valor === 'branco'
     ? valor
@@ -163,11 +164,12 @@ export default function AppShell({
 
         try {
           localStorage.setItem('ern-tema-visual-v1', escolhido);
-          const cores = {
+          const cores: Record<Tema, string> = {
             verde: '#07110e',
             azul: '#081525',
             amarelo: '#fff7db',
             branco: '#f4f6f5',
+            grafite: '#101214',
           };
           document.documentElement.style.setProperty(
             '--ern-fundo-inicial',
@@ -258,6 +260,7 @@ export default function AppShell({
   if (rotaGestao) {
     return (
       <div className="ern-gestao" data-ern-tema={tema}>
+        <TemaRapidoOperadoraERN />
         <Sidebar />
 
         <div className="min-h-screen w-full min-w-0 pt-[82px]">

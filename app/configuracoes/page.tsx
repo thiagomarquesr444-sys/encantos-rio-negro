@@ -5,8 +5,9 @@ import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, FormEvent } from 'react';
 import { supabase } from '@/lib/supabase';
 import SegurancaContaERN from '@/app/components/SegurancaContaERN';
+import SeletorTemaERN from '@/app/components/SeletorTemaERN';
 
-type Tema = 'verde' | 'azul' | 'amarelo' | 'branco';
+type Tema = 'verde' | 'azul' | 'amarelo' | 'branco' | 'grafite';
 
 type Configuracao = {
   id?: string;
@@ -41,6 +42,17 @@ const TEMAS: Record<
     sobreDestaque: string;
   }
 > = {
+  grafite: {
+    nome: 'Grafite',
+    descricao: 'Escuro neutro com detalhes discretos.',
+    fundo: '#101214',
+    painel: '#1A1D21',
+    texto: '#F0F1F2',
+    secundario: '#BFC5CB',
+    borda: '#454B53',
+    destaque: '#C5B595',
+    sobreDestaque: '#101214',
+  },
   verde: {
     nome: 'Verde Rio Negro',
     descricao: 'Identidade atual da plataforma.',
@@ -471,62 +483,12 @@ export default function ConfiguracoesPage() {
                 Salve para registrar a preferência da empresa.
               </p>
 
-              <div
-                role="group"
-                aria-label="Tema da empresa"
-                className="mt-5 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4"
-              >
-                {(Object.keys(TEMAS) as Tema[]).map((chave) => {
-                  const tema = TEMAS[chave];
-                  const selecionado = config.tema === chave;
-
-                  return (
-                    <button
-                      key={chave}
-                      type="button"
-                      aria-pressed={selecionado}
-                      onClick={() => alterar('tema', chave)}
-                      className="min-w-0 rounded-xl border-2 p-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--cfg-destaque)]"
-                      style={{
-                        backgroundColor: tema.painel,
-                        color: tema.texto,
-                        borderColor: selecionado
-                          ? paleta.destaque
-                          : paleta.borda,
-                      }}
-                    >
-                      <span
-                        aria-hidden="true"
-                        className="flex h-20 items-end gap-2 rounded-lg p-3"
-                        style={{ backgroundColor: tema.fundo }}
-                      >
-                        <span
-                          className="h-7 w-1/3 rounded"
-                          style={{ backgroundColor: tema.destaque }}
-                        />
-                        <span
-                          className="h-11 flex-1 rounded border"
-                          style={{
-                            backgroundColor: tema.painel,
-                            borderColor: tema.borda,
-                          }}
-                        />
-                      </span>
-                      <span className="mt-3 block text-sm font-semibold">
-                        {tema.nome}
-                      </span>
-                      <span
-                        className="mt-1 block text-xs leading-5"
-                        style={{ color: tema.secundario }}
-                      >
-                        {tema.descricao}
-                      </span>
-                      <span className="mt-2 block text-xs font-semibold">
-                        {selecionado ? 'Selecionado' : 'Visualizar'}
-                      </span>
-                    </button>
-                  );
-                })}
+              <div className="mt-5">
+                <SeletorTemaERN
+                  valor={config.tema}
+                  onEscolher={(tema) => alterar('tema', tema)}
+                  bloqueado={salvando}
+                />
               </div>
             </section>
 
