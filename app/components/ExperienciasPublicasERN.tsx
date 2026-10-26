@@ -3,6 +3,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import PublicHeader from '@/app/components/PublicHeader';
+import BotaoCopaPescaERN from '@/app/components/BotaoCopaPescaERN';
+import ConciergePublicoERN from '@/app/components/ConciergePublicoERN';
 import HeroExperienciasERN from '@/app/components/HeroExperienciasERN';
 import FeedDescubraERN from '@/app/components/FeedDescubraERN';
 import { useLanguage } from '@/app/components/LanguageProvider';
@@ -239,6 +241,11 @@ export default function ExperienciasPublicasERN() {
       <a className="pular" href="#conteudo-experiencias">{t.skip}</a>
       <PublicHeader />
 
+      {/* ERN_EXPERIENCIAS_CONCIERGE_COPA_V1 */}
+      <div className="ern-concierge-experiencias">
+        <ConciergePublicoERN />
+      </div>
+
       <main id="conteudo-experiencias" tabIndex={-1}>
         <HeroExperienciasERN
           eyebrow={t.eyebrow}
@@ -274,6 +281,10 @@ export default function ExperienciasPublicasERN() {
                   <Link href={item.href} className="texto-link">
                     {item.link}<span aria-hidden="true">→</span>
                   </Link>
+
+                  {item.id === 'pesca' && (
+                    <BotaoCopaPescaERN idioma={idioma} />
+                  )}
                 </article>
               ))}
             </div>
@@ -380,6 +391,20 @@ export default function ExperienciasPublicasERN() {
       </footer>
 
       <style jsx>{`
+        .ern-concierge-experiencias {
+          display: contents;
+        }
+
+        .ern-concierge-experiencias :global(.ern-chat-compacto) {
+          display: contents;
+        }
+
+        .ern-concierge-experiencias :global(.ern-chat-compacto::before),
+        .ern-concierge-experiencias :global(.ern-chat-compacto::after),
+        .ern-concierge-experiencias :global(.cartao-topo),
+        .ern-concierge-experiencias :global(.cartao-corpo) {
+          display: none;
+        }
         .experiencias-ern{background:#fff7db;color:#30260d;font-family:var(--font-work-sans),sans-serif}
         .limite{width:100%;max-width:1180px;margin:0 auto;min-width:0}
         h1,h2,h3{font-family:var(--font-fraunces),serif;overflow-wrap:anywhere}

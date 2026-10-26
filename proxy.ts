@@ -76,6 +76,7 @@ function moduloRotaEmpresaERN(pathname: string): string | null {
 
   // Rotas específicas precisam vir antes das rotas gerais.
   const rotas: ReadonlyArray<readonly [string, string]> = [
+    ['/dashboard/mapa', 'mapa'],
     ['/dashboard/pesca-esportiva', 'passeios'],
     ['/configuracoes/equipe', 'equipe'],
     ['/configuracoes/publicacoes', 'publicacoes'],

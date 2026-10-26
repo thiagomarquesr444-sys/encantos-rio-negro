@@ -183,7 +183,7 @@ export default function PainelPorFuncaoERN({
 
           {modulos.has('mapa') && (
             <a
-              href="#mapa-ern"
+              href="/dashboard/mapa"
               className={`mt-5 inline-flex min-h-11 items-center justify-center rounded-xl border px-5 text-sm font-semibold ${FOCO}`}
               style={{
                 color: 'var(--ern-destaque, #F4C77E)',

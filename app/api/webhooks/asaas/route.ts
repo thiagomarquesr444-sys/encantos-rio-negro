@@ -372,42 +372,30 @@ async function cancelarAssinaturaAsaas(
 }
 
 async function marcarEventoProcessado(
-  admin: ReturnType<
-    typeof criarAdminClient
-  >,
-  eventoId: string
+  admin: ReturnType<typeof criarAdminClient>,
+  eventoId: string,
+  tentativaId: string | null,
+  concluirCheckout = false
 ) {
-  const {
-    error,
-  } = await admin
-    .from(
-      'webhook_eventos'
-    )
-    .update({
-      status:
-        'processado',
-
-      updated_at:
-        new Date()
-          .toISOString(),
-    })
-    .eq(
-      'provedor',
-      'asaas'
-    )
-    .eq(
-      'evento_id',
-      eventoId
-    );
-
-  if (error) {
-    console.error(
-      '[ASAAS WEBHOOK] Falha ao marcar evento como processado:',
-      error
-    );
+  // ERN_WEBHOOK_RESERVA_V1
+  if (
+    typeof tentativaId !== 'string' ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(tentativaId)
+  ) {
+    throw new Error('Tentativa de processamento ausente ou inválida.');
+  }
+  const { data, error } = await admin.rpc(
+    'ern_concluir_evento_asaas_v1',
+    {
+      p_evento_id: eventoId,
+      p_tentativa_id: tentativaId,
+      p_concluir_checkout: concluirCheckout,
+    }
+  );
+  if (error || data?.ok !== true) {
+    throw new Error('Não foi possível confirmar a conclusão do evento.');
   }
 }
-
 async function buscarAssinaturaPorCampo(
   admin: ReturnType<
     typeof criarAdminClient
@@ -794,6 +782,8 @@ export async function POST(
     | null =
     null;
 
+  let tentativaEventoERN: string | null = null;
+
   let eventoId:
     | string
     | null =
@@ -900,45 +890,36 @@ export async function POST(
       );
     }
 
-    const {
-      error:
-        reservarError,
-    } = await admin
-      .from(
-        'webhook_eventos'
-      )
-      .insert({
-        provedor:
-          'asaas',
-
-        evento_id:
-          eventoId,
-
-        tipo_evento:
-          evento,
-
-        status:
-          'processando',
-
-        updated_at:
-          new Date()
-            .toISOString(),
+    const { data: reservaEventoERN, error: erroReservaEventoERN } =
+      await admin.rpc('ern_reservar_evento_asaas_v1', {
+        p_evento_id: eventoId,
+        p_tipo_evento: evento,
+        p_pagamento_id: payment.id,
       });
 
-    if (reservarError) {
-      if (
-        reservarError.code ===
-        '23505'
-      ) {
-        return resposta({
-          ok: true,
-          duplicado: true,
-        });
-      }
-
-      throw reservarError;
+    if (erroReservaEventoERN || !reservaEventoERN) {
+      throw new Error('Não foi possível reservar o processamento do evento.');
     }
-
+    if (reservaEventoERN.resultado === 'processado') {
+      return resposta({ ok: true, duplicado: true });
+    }
+    if (reservaEventoERN.resultado === 'ocupado') {
+      return resposta(
+        {
+          ok: false,
+          codigo: 'ERN_EVENTO_EM_PROCESSAMENTO',
+          erro: 'Evento em processamento ou aguardando conferência.',
+        },
+        503
+      );
+    }
+    if (
+      reservaEventoERN.resultado !== 'processar' ||
+      typeof reservaEventoERN.tentativa_id !== 'string'
+    ) {
+      throw new Error('Resposta de reserva do evento inválida.');
+    }
+    tentativaEventoERN = reservaEventoERN.tentativa_id;
     const cobranca =
       await localizarOuCriarCobranca(
         admin,
@@ -947,10 +928,105 @@ export async function POST(
       );
 
     if (!cobranca) {
-      await marcarEventoProcessado(
-        admin,
-        eventoId
-      );
+      // ERN_REFERENCIA_OPERACAO_V1
+      // Uma cobrança pode chegar antes de o checkout salvar seu vínculo.
+      let referenciaExternaERN = payment.externalReference ?? null;
+
+      if (payment.subscription) {
+        if (!ASAAS_API_KEY) {
+          throw new Error('Consulta de conciliação não configurada.');
+        }
+
+        const consultaERN = await fetch(
+          `${ASAAS_API_URL}/subscriptions/${encodeURIComponent(payment.subscription)}`,
+          {
+            method: 'GET',
+            headers: {
+              Accept: 'application/json',
+              'User-Agent': 'EncantosRioNegro/1.0',
+              access_token: ASAAS_API_KEY,
+            },
+            cache: 'no-store',
+            signal: AbortSignal.timeout(10000),
+          }
+        );
+
+        if (!consultaERN.ok) {
+          throw new Error(
+            'Não foi possível conferir a assinatura da cobrança desconhecida.'
+          );
+        }
+
+        const assinaturaConsultadaERN: unknown = await consultaERN.json();
+
+        if (
+          !assinaturaConsultadaERN ||
+          typeof assinaturaConsultadaERN !== 'object' ||
+          !('id' in assinaturaConsultadaERN) ||
+          assinaturaConsultadaERN.id !== payment.subscription
+        ) {
+          throw new Error('Resposta de assinatura inválida na conciliação.');
+        }
+
+        if (
+          payment.customer &&
+          (
+            !('customer' in assinaturaConsultadaERN) ||
+            assinaturaConsultadaERN.customer !== payment.customer
+          )
+        ) {
+          throw new Error('Cliente da cobrança diverge da assinatura.');
+        }
+
+        if (
+          'externalReference' in assinaturaConsultadaERN &&
+          typeof assinaturaConsultadaERN.externalReference === 'string'
+        ) {
+          referenciaExternaERN = assinaturaConsultadaERN.externalReference;
+        }
+      }
+
+      if (referenciaExternaERN && ehUuid(referenciaExternaERN)) {
+        const {
+          data: operacaoReferenciaERN,
+          error: erroOperacaoReferenciaERN,
+        } = await admin
+          .from('ern_operacoes_assinatura_v1')
+          .select('id')
+          .eq('id', referenciaExternaERN)
+          .maybeSingle();
+
+        if (erroOperacaoReferenciaERN) {
+          throw new Error('Não foi possível conferir a operação do pagamento.');
+        }
+
+        if (operacaoReferenciaERN) {
+          throw new Error(
+            'Pagamento de uma operação ERN recebido antes da conclusão do vínculo local.'
+          );
+        }
+
+        // Compatibilidade com assinaturas criadas pelo fluxo anterior.
+        const {
+          data: referenciaLegadaERN,
+          error: erroReferenciaLegadaERN,
+        } = await admin
+          .from('assinaturas_empresas')
+          .select('id')
+          .eq('id', referenciaExternaERN)
+          .maybeSingle();
+
+        if (erroReferenciaLegadaERN) {
+          throw new Error('Não foi possível conferir a referência anterior.');
+        }
+
+        if (referenciaLegadaERN) {
+          throw new Error(
+            'Pagamento ERN recebido antes da conclusão do vínculo local.'
+          );
+        }
+      }
+      await marcarEventoProcessado(admin, eventoId, tentativaEventoERN, false);
 
       return resposta({
         ok: true,
@@ -971,6 +1047,105 @@ export async function POST(
       throw new Error(
         'Assinatura Asaas da cobrança não corresponde ao registro ERN.'
       );
+    }
+
+    // ERN_VALIDAR_PAGAMENTO_ATUAL_V1
+    if (eventoAtivaPlano(evento)) {
+      if (!ASAAS_API_KEY || !payment.id) {
+        throw new Error('Consulta de confirmação do pagamento indisponível.');
+      }
+
+      const consultaPagamentoERN = await fetch(
+        `${ASAAS_API_URL}/payments/${encodeURIComponent(payment.id)}`,
+        {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'EncantosRioNegro/1.0',
+            access_token: ASAAS_API_KEY,
+          },
+          cache: 'no-store',
+          signal: AbortSignal.timeout(10000),
+        }
+      );
+
+      if (!consultaPagamentoERN.ok) {
+        throw new Error('Não foi possível confirmar o pagamento no provedor.');
+      }
+
+      const pagamentoAtualERN = await consultaPagamentoERN.json();
+
+      if (
+        !pagamentoAtualERN ||
+        typeof pagamentoAtualERN !== 'object' ||
+        pagamentoAtualERN.id !== payment.id ||
+        !['CONFIRMED', 'RECEIVED'].includes(pagamentoAtualERN.status) ||
+        pagamentoAtualERN.deleted !== false ||
+        typeof pagamentoAtualERN.value !== 'number' ||
+        !Number.isFinite(pagamentoAtualERN.value) ||
+        pagamentoAtualERN.value <= 0 ||
+        pagamentoAtualERN.value !== Number(cobranca.valor) ||
+        !cobranca.provedor_assinatura_id ||
+        pagamentoAtualERN.subscription !== cobranca.provedor_assinatura_id ||
+        typeof pagamentoAtualERN.customer !== 'string'
+      ) {
+        throw new Error(
+          'O pagamento atual não permite confirmar a contratação.'
+        );
+      }
+
+      const {
+        data: titularPagamentoERN,
+        error: erroTitularPagamentoERN,
+      } = await admin
+        .from('assinaturas_empresas')
+        .select('id, empresa_id, provedor_cliente_id')
+        .eq('id', cobranca.assinatura_id)
+        .maybeSingle();
+
+      if (
+        erroTitularPagamentoERN ||
+        !titularPagamentoERN ||
+        titularPagamentoERN.empresa_id !== cobranca.empresa_id ||
+        titularPagamentoERN.provedor_cliente_id !== pagamentoAtualERN.customer
+      ) {
+        throw new Error('O cliente do pagamento diverge da assinatura ERN.');
+      }
+
+      const {
+        data: operacaoPagamentoERN,
+        error: erroOperacaoPagamentoERN,
+      } = await admin
+        .from('ern_operacoes_assinatura_v1')
+        .select('empresa_id, plano_id, ciclo, valor, moeda')
+        .eq('tipo', 'checkout')
+        .eq('provedor', 'asaas')
+        .eq('assinatura_id', cobranca.assinatura_id)
+        .eq('provedor_assinatura_id', pagamentoAtualERN.subscription)
+        .maybeSingle();
+
+      if (erroOperacaoPagamentoERN) {
+        throw new Error('Não foi possível conferir a operação contratada.');
+      }
+
+      if (
+        operacaoPagamentoERN &&
+        (
+          operacaoPagamentoERN.empresa_id !== cobranca.empresa_id ||
+          operacaoPagamentoERN.plano_id !== cobranca.plano_id ||
+          operacaoPagamentoERN.ciclo !== cobranca.ciclo_cobranca ||
+          Number(operacaoPagamentoERN.valor) !== pagamentoAtualERN.value ||
+          operacaoPagamentoERN.moeda !== cobranca.moeda
+        )
+      ) {
+        throw new Error('O pagamento diverge das condições da contratação.');
+      }
+
+      // Usar o estado confirmado na consulta, em vez do estado antigo recebido.
+      payment.status = pagamentoAtualERN.status;
+      payment.value = pagamentoAtualERN.value;
+      payment.customer = pagamentoAtualERN.customer;
+      payment.subscription = pagamentoAtualERN.subscription;
     }
 
     const statusFinanceiro =
@@ -1058,10 +1233,7 @@ export async function POST(
         );
       }
 
-      await marcarEventoProcessado(
-        admin,
-        eventoId
-      );
+      await marcarEventoProcessado(admin, eventoId, tentativaEventoERN, false);
 
       return resposta({
         ok: true,
@@ -1109,7 +1281,10 @@ export async function POST(
           provedor_assinatura_pendente_id,
           plano_pendente_id,
           ciclo_pendente,
-          renovacao_automatica
+          renovacao_automatica,
+          cancelamento_solicitado_em,
+          cancelamento_efetivo_em,
+          plano_pos_cancelamento_id
         `
       )
       .eq(
@@ -1303,10 +1478,7 @@ export async function POST(
         throw ativarPlanoError;
       }
 
-      await marcarEventoProcessado(
-        admin,
-        eventoId
-      );
+      await marcarEventoProcessado(admin, eventoId, tentativaEventoERN, true);
 
       return resposta({
         ok: true,
@@ -1371,10 +1543,7 @@ export async function POST(
         assinatura
           .provedor_assinatura_id
     ) {
-      await marcarEventoProcessado(
-        admin,
-        eventoId
-      );
+      await marcarEventoProcessado(admin, eventoId, tentativaEventoERN, false);
 
       return resposta({
         ok: true,
@@ -1408,11 +1577,13 @@ export async function POST(
     */
 
     if (
-      assinatura.status !==
-        'ativo' ||
-      assinatura
-        .renovacao_automatica !==
-        true
+      !assinatura.cancelamento_solicitado_em &&
+      !assinatura.cancelamento_efetivo_em &&
+      !assinatura.plano_pos_cancelamento_id &&
+      (
+        assinatura.status !== 'ativo' ||
+        assinatura.renovacao_automatica !== true
+      )
     ) {
       const {
         error:
@@ -1444,10 +1615,7 @@ export async function POST(
       }
     }
 
-    await marcarEventoProcessado(
-      admin,
-      eventoId
-    );
+    await marcarEventoProcessado(admin, eventoId, tentativaEventoERN, true);
 
     return resposta({
       ok: true,
@@ -1481,19 +1649,20 @@ export async function POST(
       eventoId
     ) {
       try {
-        await admin
-          .from(
-            'webhook_eventos'
-          )
-          .delete()
-          .eq(
-            'provedor',
-            'asaas'
-          )
-          .eq(
-            'evento_id',
-            eventoId
+        if (tentativaEventoERN) {
+          const { error: erroFalhaERN } = await admin.rpc(
+            'ern_falhar_evento_asaas_v1',
+            {
+              p_evento_id: eventoId,
+              p_tentativa_id: tentativaEventoERN,
+            }
           );
+          if (erroFalhaERN) {
+            console.error(
+              '[ASAAS WEBHOOK] Não foi possível registrar a falha do evento.'
+            );
+          }
+        }
       } catch (
         cleanupError
       ) {
@@ -1509,8 +1678,7 @@ export async function POST(
         ok: false,
 
         erro:
-          error?.message ??
-          'Erro interno ao processar webhook.',
+          'Não foi possível concluir o evento. O processamento precisa ser retomado ou conferido.',
       },
       500
     );

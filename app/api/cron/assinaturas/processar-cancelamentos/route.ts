@@ -1,3 +1,5 @@
+import { POST as retomarWebhookAsaasERN } from '@/app/api/webhooks/asaas/route';
+
 import {
   NextRequest,
   NextResponse,
@@ -685,6 +687,36 @@ async function limparCheckoutsAbandonados(
     of pendentes
   ) {
     try {
+      // ERN_CRON_PROTEGE_OPERACOES_V1
+      // A limpeza legada não deve remover recorrências do fluxo novo.
+      // Inclui operações concluídas: o snapshot do cron pode ser anterior
+      // à ativação pelo webhook.
+      const {
+        data: operacoesRegistradasERN,
+        error: erroOperacoesERN,
+      } = await admin
+        .from('ern_operacoes_assinatura_v1')
+        .select('id')
+        .eq('assinatura_id', checkout.id)
+        .limit(1);
+
+      if (erroOperacoesERN || !Array.isArray(operacoesRegistradasERN)) {
+        throw new Error(
+          'Não foi possível conferir as operações. Limpeza desta assinatura suspensa.'
+        );
+      }
+
+      if (operacoesRegistradasERN.length > 0) {
+        protegidos.push({
+          assinatura_id: checkout.id,
+          empresa_id: checkout.empresa_id,
+          motivo:
+            'Assinatura acompanhada pelo novo registro de operações; exige conciliação específica.',
+          statuses: [],
+        });
+        continue;
+      }
+
       const assinaturaPendenteId =
         checkout
           .provedor_assinatura_pendente_id;
@@ -1370,6 +1402,529 @@ async function processarCancelamentos(
   ============================================================
 */
 
+async function recuperarCancelamentosERN(
+  admin: ReturnType<typeof criarAdminClient>
+) {
+  // ERN_RECUPERAR_CANCELAMENTOS_V1
+  const prazoERN = Date.now() + 10000;
+  const limiteAntigoERN = new Date(Date.now() - 15 * 60000).toISOString();
+
+  const { data: operacoesERN, error: erroBuscaERN } = await admin
+    .from('ern_operacoes_assinatura_v1')
+    .select(
+      'id, estado, atualizado_em, provedor_cliente_id, provedor_assinatura_id'
+    )
+    .eq('tipo', 'cancelamento')
+    .eq('provedor', 'asaas')
+    .in('estado', ['em_envio', 'reconciliar'])
+    .not('cancelamento_efetivo_em', 'is', null)
+    .lte('atualizado_em', limiteAntigoERN)
+    .order('atualizado_em', { ascending: true })
+    .limit(4);
+
+  if (erroBuscaERN || !Array.isArray(operacoesERN)) {
+    throw new Error('Não foi possível consultar cancelamentos para recuperação.');
+  }
+
+  let recuperadosERN = 0;
+  let pendentesERN = 0;
+  let falhasERN = 0;
+
+  const itensERN: Array<{
+    operacao_id: string;
+    resultado: string;
+  }> = [];
+
+  for (const operacaoERN of operacoesERN.slice(0, 3)) {
+    if (Date.now() >= prazoERN) break;
+
+    try {
+      if (
+        !ASAAS_API_KEY ||
+        !operacaoERN.provedor_cliente_id ||
+        !operacaoERN.provedor_assinatura_id
+      ) {
+        throw new Error('Configuração ou identificação incompleta.');
+      }
+
+      let confirmouRemocaoERN = false;
+
+      // Consulta limitada a três páginas, sem remover ou criar assinaturas.
+      for (let paginaERN = 0; paginaERN < 3; paginaERN++) {
+        const restanteERN = prazoERN - Date.now();
+        if (restanteERN <= 0) break;
+
+        const parametrosERN = new URLSearchParams({
+          customer: operacaoERN.provedor_cliente_id,
+          deletedOnly: 'true',
+          limit: '100',
+          offset: String(paginaERN * 100),
+        });
+
+        const respostaERN = await fetch(
+          `${ASAAS_API_URL}/subscriptions?${parametrosERN}`,
+          {
+            method: 'GET',
+            headers: {
+              Accept: 'application/json',
+              'User-Agent': 'EncantosRioNegro/1.0',
+              access_token: ASAAS_API_KEY,
+            },
+            cache: 'no-store',
+            signal: AbortSignal.timeout(Math.min(4000, restanteERN)),
+          }
+        );
+
+        if (!respostaERN.ok) {
+          throw new Error('Consulta ao provedor indisponível.');
+        }
+
+        const paginaDadosERN = await respostaERN.json();
+
+        if (
+          !paginaDadosERN ||
+          !Array.isArray(paginaDadosERN.data) ||
+          paginaDadosERN.data.length > 100 ||
+          typeof paginaDadosERN.hasMore !== 'boolean'
+        ) {
+          throw new Error('Resposta de listagem inválida.');
+        }
+
+        const removidaERN = paginaDadosERN.data.find(
+          (itemERN: unknown) =>
+            itemERN !== null &&
+            typeof itemERN === 'object' &&
+            'id' in itemERN &&
+            itemERN.id === operacaoERN.provedor_assinatura_id
+        );
+
+        if (removidaERN) {
+          if (
+            removidaERN.customer !== operacaoERN.provedor_cliente_id ||
+            removidaERN.deleted !== true
+          ) {
+            throw new Error('Dados da assinatura removida divergentes.');
+          }
+          confirmouRemocaoERN = true;
+          break;
+        }
+
+        if (!paginaDadosERN.hasMore) break;
+
+        if (paginaDadosERN.data.length === 0) {
+          throw new Error('Paginação inconsistente.');
+        }
+      }
+
+      if (confirmouRemocaoERN) {
+        const { data: confirmacaoERN, error: erroConfirmacaoERN } =
+          await admin.rpc('ern_confirmar_cancelamento_v1', {
+            p_operacao_id: operacaoERN.id,
+          });
+
+        if (erroConfirmacaoERN || confirmacaoERN?.ok !== true) {
+          throw new Error('Confirmação local não concluída.');
+        }
+
+        recuperadosERN += 1;
+        itensERN.push({
+          operacao_id: operacaoERN.id,
+          resultado: 'cancelamento_recuperado',
+        });
+      } else {
+        pendentesERN += 1;
+        itensERN.push({
+          operacao_id: operacaoERN.id,
+          resultado: 'remocao_nao_confirmada',
+        });
+      }
+    } catch {
+      falhasERN += 1;
+      itensERN.push({
+        operacao_id: operacaoERN.id,
+        resultado: 'exige_nova_consulta_ou_conferencia',
+      });
+    }
+
+    // Rotacionar tentativas ainda abertas, sem liberar a reserva.
+    const { error: erroRotacaoERN } = await admin
+      .from('ern_operacoes_assinatura_v1')
+      .update({ atualizado_em: new Date().toISOString() })
+      .eq('id', operacaoERN.id)
+      .eq('estado', operacaoERN.estado)
+      .eq('atualizado_em', operacaoERN.atualizado_em);
+
+    if (erroRotacaoERN) {
+      throw new Error('Não foi possível registrar a passagem do conciliador.');
+    }
+  }
+
+  return {
+    encontrados: operacoesERN.length,
+    examinados: itensERN.length,
+    recuperados: recuperadosERN,
+    pendentes: pendentesERN,
+    falhas: falhasERN,
+    lote_incompleto: operacoesERN.length > itensERN.length,
+    itens: itensERN,
+  };
+}
+
+async function recuperarVinculosCheckoutERN(
+  admin: ReturnType<typeof criarAdminClient>
+) {
+  // ERN_RECUPERAR_CHECKOUTS_V1
+  const prazoERN = Date.now() + 10000;
+  const limiteERN = new Date(Date.now() - 15 * 60000).toISOString();
+
+  const { data: operacoesERN, error: erroBuscaERN } = await admin
+    .from('ern_operacoes_assinatura_v1')
+    .select(
+      'id, estado, atualizado_em, provedor_cliente_id, provedor_assinatura_id, valor, ciclo, moeda'
+    )
+    .eq('tipo', 'checkout')
+    .eq('provedor', 'asaas')
+    .in('estado', ['em_envio', 'reconciliar'])
+    .lte('atualizado_em', limiteERN)
+    .order('atualizado_em', { ascending: true })
+    .limit(4);
+
+  if (erroBuscaERN || !Array.isArray(operacoesERN)) {
+    throw new Error('Não foi possível consultar checkouts para recuperação.');
+  }
+
+  let recuperadosERN = 0;
+  let pendentesERN = 0;
+  let falhasERN = 0;
+
+  const itensERN: Array<{
+    operacao_id: string;
+    resultado: string;
+  }> = [];
+
+  for (const operacaoERN of operacoesERN.slice(0, 3)) {
+    const restanteERN = prazoERN - Date.now();
+    if (restanteERN <= 0) break;
+
+    try {
+      if (!ASAAS_API_KEY || !operacaoERN.provedor_cliente_id) {
+        throw new Error('Configuração ou cliente da operação ausente.');
+      }
+
+      // Não filtrar por cliente aqui: a referência deve ser única
+      // inclusive se existir uma assinatura divergente no provedor.
+      const parametrosERN = new URLSearchParams({
+        externalReference: operacaoERN.id,
+        includeDeleted: 'true',
+        limit: '2',
+        offset: '0',
+      });
+
+      const respostaERN = await fetch(
+        `${ASAAS_API_URL}/subscriptions?${parametrosERN}`,
+        {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'EncantosRioNegro/1.0',
+            access_token: ASAAS_API_KEY,
+          },
+          cache: 'no-store',
+          signal: AbortSignal.timeout(Math.min(4000, restanteERN)),
+        }
+      );
+
+      if (!respostaERN.ok) {
+        throw new Error('Consulta ao provedor indisponível.');
+      }
+
+      const listagemERN = await respostaERN.json();
+
+      if (
+        !listagemERN ||
+        !Array.isArray(listagemERN.data) ||
+        listagemERN.data.length > 2 ||
+        typeof listagemERN.hasMore !== 'boolean'
+      ) {
+        throw new Error('Listagem de assinaturas inválida.');
+      }
+
+      if (listagemERN.hasMore || listagemERN.data.length > 1) {
+        throw new Error('Mais de uma assinatura associada à operação.');
+      }
+
+      if (listagemERN.data.length === 0) {
+        pendentesERN += 1;
+        itensERN.push({
+          operacao_id: operacaoERN.id,
+          resultado: 'assinatura_nao_localizada_reserva_preservada',
+        });
+      } else {
+        const assinaturaERN = listagemERN.data[0];
+
+        const ciclosERN: Record<string, string> = {
+          mensal: 'MONTHLY',
+          trimestral: 'QUARTERLY',
+          anual: 'YEARLY',
+        };
+
+        if (
+          !assinaturaERN ||
+          typeof assinaturaERN !== 'object' ||
+          typeof assinaturaERN.id !== 'string' ||
+          !assinaturaERN.id.startsWith('sub_') ||
+          assinaturaERN.externalReference !== operacaoERN.id ||
+          assinaturaERN.customer !== operacaoERN.provedor_cliente_id ||
+          assinaturaERN.deleted !== false ||
+          assinaturaERN.status !== 'ACTIVE' ||
+          typeof assinaturaERN.value !== 'number' ||
+          !Number.isFinite(assinaturaERN.value) ||
+          assinaturaERN.value <= 0 ||
+          assinaturaERN.value !== Number(operacaoERN.valor) ||
+          operacaoERN.moeda !== 'BRL' ||
+          assinaturaERN.cycle !== ciclosERN[String(operacaoERN.ciclo)] ||
+          (
+            operacaoERN.provedor_assinatura_id &&
+            operacaoERN.provedor_assinatura_id !== assinaturaERN.id
+          )
+        ) {
+          throw new Error('A assinatura encontrada não corresponde à operação.');
+        }
+
+        const { data: recuperacaoERN, error: erroRecuperacaoERN } =
+          await admin.rpc('ern_recuperar_vinculo_checkout_v1', {
+            p_operacao_id: operacaoERN.id,
+            p_assinatura_asaas_id: assinaturaERN.id,
+            p_cliente_asaas_id: assinaturaERN.customer,
+            p_referencia_externa: assinaturaERN.externalReference,
+            p_valor: assinaturaERN.value,
+            p_ciclo_asaas: assinaturaERN.cycle,
+          });
+
+        if (erroRecuperacaoERN || recuperacaoERN?.ok !== true) {
+          throw new Error('O vínculo local não pôde ser confirmado.');
+        }
+
+        if (recuperacaoERN.vinculo_recuperado === true) {
+          recuperadosERN += 1;
+          itensERN.push({
+            operacao_id: operacaoERN.id,
+            resultado: 'vinculo_recuperado_aguardando_confirmacao_pagamento',
+          });
+        } else {
+          pendentesERN += 1;
+          itensERN.push({
+            operacao_id: operacaoERN.id,
+            resultado: 'vinculo_ja_existente',
+          });
+        }
+      }
+    } catch {
+      falhasERN += 1;
+      itensERN.push({
+        operacao_id: operacaoERN.id,
+        resultado: 'exige_nova_consulta_ou_conferencia',
+      });
+    }
+
+    // Rotacionar a consulta sem liberar nem sobrescrever outro estado.
+    const { error: erroRotacaoERN } = await admin
+      .from('ern_operacoes_assinatura_v1')
+      .update({ atualizado_em: new Date().toISOString() })
+      .eq('id', operacaoERN.id)
+      .eq('estado', operacaoERN.estado)
+      .eq('atualizado_em', operacaoERN.atualizado_em);
+
+    if (erroRotacaoERN) {
+      throw new Error('Não foi possível registrar a passagem da recuperação.');
+    }
+  }
+
+  return {
+    encontrados: operacoesERN.length,
+    examinados: itensERN.length,
+    recuperados: recuperadosERN,
+    pendentes: pendentesERN,
+    falhas: falhasERN,
+    lote_incompleto: operacoesERN.length > itensERN.length,
+    itens: itensERN,
+  };
+}
+
+async function retomarEventosPagamentoERN(
+  admin: ReturnType<typeof criarAdminClient>
+) {
+  // ERN_RETOMAR_EVENTOS_V1
+  const prazoERN = Date.now() + 10000;
+  const limiteERN = new Date(Date.now() - 15 * 60000).toISOString();
+
+  const { data: eventosERN, error: erroBuscaERN } = await admin
+    .from('webhook_eventos')
+    .select('evento_id, tipo_evento, pagamento_id, created_at, updated_at')
+    .eq('provedor', 'asaas')
+    .eq('status', 'falhou')
+    .in('tipo_evento', ['PAYMENT_CONFIRMED', 'PAYMENT_RECEIVED'])
+    .not('pagamento_id', 'is', null)
+    .lte('updated_at', limiteERN)
+    .order('updated_at', { ascending: true })
+    .limit(3);
+
+  if (erroBuscaERN || !Array.isArray(eventosERN)) {
+    throw new Error('Não foi possível consultar eventos para retomada.');
+  }
+
+  let concluidosERN = 0;
+  let pendentesERN = 0;
+  let falhasERN = 0;
+
+  const itensERN: Array<{
+    evento_id: string;
+    resultado: string;
+  }> = [];
+
+  for (const eventoERN of eventosERN.slice(0, 2)) {
+    const restanteERN = prazoERN - Date.now();
+    if (restanteERN <= 0) break;
+
+    try {
+      const tokenWebhookERN = process.env.ASAAS_WEBHOOK_TOKEN;
+
+      if (!ASAAS_API_KEY || !tokenWebhookERN || !eventoERN.pagamento_id) {
+        throw new Error('Configuração da retomada incompleta.');
+      }
+
+      const consultaERN = await fetch(
+        `${ASAAS_API_URL}/payments/${encodeURIComponent(eventoERN.pagamento_id)}`,
+        {
+          method: 'GET',
+          headers: {
+            Accept: 'application/json',
+            'User-Agent': 'EncantosRioNegro/1.0',
+            access_token: ASAAS_API_KEY,
+          },
+          cache: 'no-store',
+          signal: AbortSignal.timeout(Math.min(4000, restanteERN)),
+        }
+      );
+
+      if (!consultaERN.ok) {
+        throw new Error('Consulta atual do pagamento indisponível.');
+      }
+
+      const pagamentoERN = await consultaERN.json();
+
+      if (
+        !pagamentoERN ||
+        typeof pagamentoERN !== 'object' ||
+        pagamentoERN.id !== eventoERN.pagamento_id
+      ) {
+        throw new Error('Resposta de pagamento inválida.');
+      }
+
+      if (
+        !['CONFIRMED', 'RECEIVED'].includes(pagamentoERN.status) ||
+        pagamentoERN.deleted !== false
+      ) {
+        pendentesERN += 1;
+        itensERN.push({
+          evento_id: eventoERN.evento_id,
+          resultado: 'estado_atual_nao_permite_ativacao',
+        });
+      } else {
+        if (
+          typeof pagamentoERN.customer !== 'string' ||
+          typeof pagamentoERN.subscription !== 'string' ||
+          typeof pagamentoERN.value !== 'number' ||
+          !Number.isFinite(pagamentoERN.value) ||
+          pagamentoERN.value <= 0
+        ) {
+          throw new Error('Identificação do pagamento incompleta.');
+        }
+
+        // Chamada direta ao handler: não faz uma requisição HTTP à ERN.
+        // Mantém o identificador original e envia apenas os campos necessários.
+        const requisicaoERN = new NextRequest(
+          'http://ern.internal/api/webhooks/asaas',
+          {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'asaas-access-token': tokenWebhookERN,
+            },
+            body: JSON.stringify({
+              id: eventoERN.evento_id,
+              event: eventoERN.tipo_evento,
+              dateCreated: eventoERN.created_at,
+              payment: {
+                id: pagamentoERN.id,
+                status: pagamentoERN.status,
+                value: pagamentoERN.value,
+                customer: pagamentoERN.customer,
+                subscription: pagamentoERN.subscription,
+                externalReference: pagamentoERN.externalReference,
+                dueDate: pagamentoERN.dueDate,
+                paymentDate: pagamentoERN.paymentDate,
+                clientPaymentDate: pagamentoERN.clientPaymentDate,
+                deleted: pagamentoERN.deleted,
+              },
+            }),
+          }
+        );
+
+        const respostaERN = await retomarWebhookAsaasERN(requisicaoERN);
+        const resultadoERN = await respostaERN.json().catch(() => null);
+
+        if (!respostaERN.ok || resultadoERN?.ok !== true) {
+          throw new Error('O webhook não concluiu a retomada.');
+        }
+
+        if (resultadoERN.ignorado === true) {
+          pendentesERN += 1;
+          itensERN.push({
+            evento_id: eventoERN.evento_id,
+            resultado: 'evento_ignorado_pelo_handler',
+          });
+        } else {
+          concluidosERN += 1;
+          itensERN.push({
+            evento_id: eventoERN.evento_id,
+            resultado: 'evento_concluido',
+          });
+        }
+      }
+    } catch {
+      falhasERN += 1;
+      itensERN.push({
+        evento_id: eventoERN.evento_id,
+        resultado: 'retomada_nao_concluida',
+      });
+    }
+
+    // Não modificar um evento assumido ou concluído por outra execução.
+    const { error: erroRotacaoERN } = await admin
+      .from('webhook_eventos')
+      .update({ updated_at: new Date().toISOString() })
+      .eq('provedor', 'asaas')
+      .eq('evento_id', eventoERN.evento_id)
+      .eq('status', 'falhou')
+      .eq('updated_at', eventoERN.updated_at);
+
+    if (erroRotacaoERN) {
+      throw new Error('Não foi possível registrar a passagem da retomada.');
+    }
+  }
+
+  return {
+    encontrados: eventosERN.length,
+    examinados: itensERN.length,
+    concluidos: concluidosERN,
+    pendentes: pendentesERN,
+    falhas: falhasERN,
+    lote_incompleto: eventosERN.length > itensERN.length,
+    itens: itensERN,
+  };
+}
+
 async function processar(
   request: NextRequest
 ) {
@@ -1405,6 +1960,12 @@ async function processar(
       ========================================================
     */
 
+    const recuperacaoCancelamentosERN = await recuperarCancelamentosERN(admin);
+
+    const recuperacaoCheckoutsERN = await recuperarVinculosCheckoutERN(admin);
+
+    const retomadaEventosERN = await retomarEventosPagamentoERN(admin);
+
     const checkouts =
       await limparCheckoutsAbandonados(
         admin,
@@ -1430,10 +1991,9 @@ async function processar(
     */
 
     const totalFalhas =
-      checkouts.falhas +
-      cancelamentos.falhas;
+      checkouts.falhas + cancelamentos.falhas + recuperacaoCancelamentosERN.falhas + recuperacaoCheckoutsERN.falhas + retomadaEventosERN.falhas;
 
-    const houveTrabalho =
+    const houveTrabalho = retomadaEventosERN.encontrados > 0 || recuperacaoCheckoutsERN.encontrados > 0 || recuperacaoCancelamentosERN.encontrados > 0 ||
       checkouts.encontrados >
         0 ||
       cancelamentos.encontrados >
@@ -1473,8 +2033,10 @@ async function processar(
         checkouts_abandonados:
           checkouts,
 
-        cancelamentos:
-          cancelamentos,
+        cancelamentos: cancelamentos,
+        recuperacao_cancelamentos: recuperacaoCancelamentosERN,
+        recuperacao_checkouts: recuperacaoCheckoutsERN,
+        retomada_eventos: retomadaEventosERN,
 
         resumo: {
           checkouts_encontrados:

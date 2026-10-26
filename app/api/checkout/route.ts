@@ -477,8 +477,14 @@ async function buscarPrimeiraCobranca(
   return null;
 }
 
-export async function POST(
-  request: NextRequest
+type ContextoReservaCheckoutERN = {
+  operacaoId: string | null;
+  enviouAoProvedor: boolean;
+};
+
+async function executarCheckoutERN(
+  request: NextRequest,
+  contextoERN: ContextoReservaCheckoutERN
 ) {
   try {
     /*
@@ -815,6 +821,101 @@ export async function POST(
       ========================================================
     */
 
+    // ERN_CHECKOUT_RESERVA_V1
+    // Requisitos locais conferidos antes de qualquer envio ao provedor.
+    if (!assinatura.provedor_cliente_id && (!empresa.nome || !empresa.cnpj)) {
+      return respostaErro(
+        'Cadastre o nome e o CPF/CNPJ da empresa antes de contratar.',
+        400,
+        'ERN_CADASTRO_INCOMPLETO'
+      );
+    }
+
+    const { data: reservaERN, error: erroReservaERN } = await admin.rpc(
+      'ern_reservar_checkout_v1',
+      {
+        p_usuario_id: usuario.id,
+        p_plano_codigo: planoCodigo,
+        p_ciclo: ciclo,
+      }
+    );
+
+    if (erroReservaERN || !reservaERN || typeof reservaERN !== 'object') {
+      return respostaErro(
+        'Não foi possível confirmar a reserva da contratação. Tente novamente mais tarde.',
+        503,
+        'ERN_RESERVA_INDISPONIVEL'
+      );
+    }
+
+    if (reservaERN.ok !== true) {
+      const codigoERN = String(reservaERN.codigo ?? 'ERN_RESERVA_RECUSADA');
+
+      const mensagensERN: Record<string, string> = {
+        ERN_OPERACAO_EM_ANDAMENTO:
+          'Existe uma contratação em andamento ou aguardando conferência. Não será criada outra assinatura.',
+        ERN_CHECKOUT_PENDENTE:
+          'Existe uma contratação aguardando conclusão.',
+        ERN_CANCELAMENTO_EM_ANDAMENTO:
+          'Existe um cancelamento em andamento para esta assinatura.',
+        ERN_PLANO_JA_ATIVO:
+          'Este já é o plano e ciclo atuais da empresa.',
+        ERN_SEM_PERMISSAO:
+          'Somente o administrador da empresa pode contratar.',
+      };
+
+      return respostaErro(
+        mensagensERN[codigoERN] ??
+          'A contratação não pôde ser reservada. Confira o plano e o cadastro.',
+        codigoERN === 'ERN_SEM_PERMISSAO' ? 403 : 409,
+        codigoERN
+      );
+    }
+
+    if (
+      typeof reservaERN.operacao_id !== 'string' ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        reservaERN.operacao_id
+      )
+    ) {
+      throw new Error('Resposta de reserva inválida.');
+    }
+
+    contextoERN.operacaoId = reservaERN.operacao_id;
+
+    if (
+      reservaERN.empresa_id !== empresa.id ||
+      reservaERN.assinatura_id !== assinatura.id ||
+      reservaERN.plano_id !== plano.id ||
+      reservaERN.ciclo !== ciclo ||
+      reservaERN.moeda !== 'BRL' ||
+      Number(reservaERN.valor) !== valor ||
+      reservaERN.estado !== 'reservado' ||
+      (reservaERN.provedor_cliente_id ?? null) !==
+        (assinatura.provedor_cliente_id ?? null) ||
+      (reservaERN.assinatura_anterior_id ?? null) !==
+        (assinatura.provedor_assinatura_id ?? null)
+    ) {
+      throw new Error(
+        'Os dados da contratação mudaram. Recarregue a página antes de tentar novamente.'
+      );
+    }
+
+    const { data: envioERN, error: erroEnvioERN } = await admin
+      .from('ern_operacoes_assinatura_v1')
+      .update({
+        estado: 'em_envio',
+        atualizado_em: new Date().toISOString(),
+      })
+      .eq('id', contextoERN.operacaoId)
+      .eq('estado', 'reservado')
+      .select('id')
+      .single();
+
+    if (erroEnvioERN || !envioERN) {
+      throw new Error('Não foi possível preparar a contratação para envio.');
+    }
+
     let asaasCustomerId =
       assinatura
         .provedor_cliente_id;
@@ -841,6 +942,8 @@ export async function POST(
           'ERN_EMPRESA_SEM_DOCUMENTO'
         );
       }
+
+      contextoERN.enviouAoProvedor = true;
 
       const customer =
         await chamarAsaas(
@@ -929,6 +1032,26 @@ export async function POST(
       ========================================================
     */
 
+    const {
+      data: clienteOperacaoERN,
+      error: erroClienteOperacaoERN,
+    } = await admin
+      .from('ern_operacoes_assinatura_v1')
+      .update({
+        provedor_cliente_id: asaasCustomerId,
+        atualizado_em: new Date().toISOString(),
+      })
+      .eq('id', contextoERN.operacaoId)
+      .eq('estado', 'em_envio')
+      .select('id')
+      .single();
+
+    if (erroClienteOperacaoERN || !clienteOperacaoERN) {
+      throw new Error('Não foi possível registrar o cliente da contratação.');
+    }
+
+    contextoERN.enviouAoProvedor = true;
+
     const assinaturaAsaas =
       await chamarAsaas(
         '/subscriptions',
@@ -958,8 +1081,7 @@ export async function POST(
               description:
                 `ERN Gestão - ${plano.nome}`,
 
-              externalReference:
-                assinatura.id,
+              externalReference: contextoERN.operacaoId,
             }),
         }
       );
@@ -976,6 +1098,26 @@ export async function POST(
       String(
         assinaturaAsaas.id
       );
+
+    const {
+      data: identificadaERN,
+      error: erroIdentificadaERN,
+    } = await admin
+      .from('ern_operacoes_assinatura_v1')
+      .update({
+        provedor_assinatura_id: novaAssinaturaAsaasId,
+        atualizado_em: new Date().toISOString(),
+      })
+      .eq('id', contextoERN.operacaoId)
+      .eq('estado', 'em_envio')
+      .select('id')
+      .single();
+
+    if (erroIdentificadaERN || !identificadaERN) {
+      throw new Error(
+        'A assinatura precisa ser conferida antes de outra contratação.'
+      );
+    }
 
     /*
       ========================================================
@@ -1226,8 +1368,7 @@ export async function POST(
           onConflict:
             'provedor,provedor_cobranca_id',
 
-          ignoreDuplicates:
-            false,
+          ignoreDuplicates: true,
         }
       );
 
@@ -1356,4 +1497,91 @@ export async function POST(
       'ERN_CHECKOUT_ERRO'
     );
   }
+}
+
+export async function POST(request: NextRequest) {
+  const contextoERN: ContextoReservaCheckoutERN = {
+    operacaoId: null,
+    enviouAoProvedor: false,
+  };
+
+  let resultadoERN: NextResponse;
+
+  try {
+    resultadoERN = await executarCheckoutERN(request, contextoERN);
+  } catch {
+    resultadoERN = respostaErro(
+      'Não foi possível concluir a contratação.',
+      500,
+      'ERN_CHECKOUT_ERRO'
+    );
+  }
+
+  if (contextoERN.operacaoId) {
+    const estadoERN = resultadoERN.ok
+      ? 'aguardando_pagamento'
+      : contextoERN.enviouAoProvedor
+        ? 'reconciliar'
+        : 'falhou_confirmado';
+
+    try {
+      const {
+        data: gravadaERN,
+        error: erroGravacaoERN,
+      } = await criarAdminClient()
+        .from('ern_operacoes_assinatura_v1')
+        .update({
+          estado: estadoERN,
+          atualizado_em: new Date().toISOString(),
+        })
+        .eq('id', contextoERN.operacaoId)
+        .in('estado', ['reservado', 'em_envio'])
+        .select('id')
+        .single();
+
+      if (erroGravacaoERN || !gravadaERN) {
+        if (resultadoERN.ok) {
+          const {
+            data: operacaoAtualERN,
+            error: erroConsultaERN,
+          } = await criarAdminClient()
+            .from('ern_operacoes_assinatura_v1')
+            .select('estado')
+            .eq('id', contextoERN.operacaoId)
+            .single();
+
+          if (!erroConsultaERN && operacaoAtualERN?.estado === 'concluido') {
+            resultadoERN.headers.set('Cache-Control', 'no-store');
+            return resultadoERN;
+          }
+        }
+        return respostaErro(
+          'A contratação precisa ser conferida. Uma nova assinatura não será criada automaticamente.',
+          503,
+          'ERN_CONTRATACAO_EM_CONFERENCIA'
+        );
+      }
+    } catch {
+      return respostaErro(
+        'Não foi possível confirmar a conclusão. A contratação permanece reservada para conferência.',
+        503,
+        'ERN_CONTRATACAO_EM_CONFERENCIA'
+      );
+    }
+  }
+
+  if (resultadoERN.status >= 500) {
+    return respostaErro(
+      contextoERN.enviouAoProvedor
+        ? 'Não foi possível confirmar o resultado no provedor. A contratação será conferida antes de uma nova tentativa.'
+        : 'Não foi possível iniciar a contratação. Recarregue a página e tente novamente mais tarde.',
+      resultadoERN.status,
+      contextoERN.enviouAoProvedor
+        ? 'ERN_CONTRATACAO_EM_CONFERENCIA'
+        : 'ERN_CHECKOUT_ERRO'
+    );
+  }
+
+  resultadoERN.headers.set('Cache-Control', 'no-store');
+  return resultadoERN;
 }

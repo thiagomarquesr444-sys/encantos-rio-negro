@@ -34,7 +34,7 @@ const PRINCIPAIS: NavItem[] = [
   },
   {
     label: 'Mapa ERN',
-    href: '/dashboard#mapa-ern',
+    href: '/dashboard/mapa',
     descricao: 'Território, localidades e referências do Rio Negro',
   },
   {

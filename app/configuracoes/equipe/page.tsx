@@ -14,7 +14,8 @@ type Role =
   | 'admin_empresa'
   | 'operador_empresa'
   | 'financeiro'
-  | 'guia';
+  | 'guia'
+  | 'piloteiro';
 
 type Membro = {
   id: string;
@@ -45,6 +46,20 @@ const PERFIS: Record<Role, string> = {
   operador_empresa: 'Operador',
   financeiro: 'Financeiro',
   guia: 'Guia da empresa',
+  piloteiro: 'Piloteiro',
+};
+
+const DESCRICOES_PERFIS_ERN: Record<Role, string> = {
+  admin_empresa:
+    'Administra a própria empresa, incluindo equipe e configurações. Os recursos continuam sujeitos ao plano contratado.',
+  operador_empresa:
+    'Acessa clientes, reservas, passeios, vouchers, demandas e estrutura operacional. Não acessa os lançamentos financeiros.',
+  financeiro:
+    'Acessa financeiro e relatórios conforme o plano. Consulta referências de reservas para os lançamentos, sem editar a operação.',
+  guia:
+    'Acessa o Painel e o mapa ERN. Este vínculo pertence à equipe da operadora e é diferente do cadastro independente de Guia ERN.',
+  piloteiro:
+    'Acessa o Painel e o mapa ERN. Não acessa clientes, reservas, financeiro ou gestão da equipe.',
 };
 
 function objeto(valor: unknown): valor is Record<string, unknown> {
@@ -567,11 +582,7 @@ export default function EquipePage() {
                   </fieldset>
 
                   <p className="text-xs leading-6 text-[var(--ern-secundario)]">
-                    {role === 'admin_empresa'
-                      ? 'Administrador pode gerenciar configurações e equipe. Conceda esse perfil apenas a uma pessoa de confiança.'
-                      : role === 'guia'
-                        ? 'Este perfil pertence à equipe da operadora. É diferente do cadastro independente de Guia ERN.'
-                        : 'Selecione o perfil correspondente à função da pessoa na empresa.'}
+                    {DESCRICOES_PERFIS_ERN[role]}
                   </p>
 
                   <button

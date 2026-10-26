@@ -8,6 +8,7 @@ const ROLES_PERMITIDOS = [
   'operador_empresa',
   'financeiro',
   'guia',
+  'piloteiro',
 ] as const;
 
 type RolePermitido = (typeof ROLES_PERMITIDOS)[number];
@@ -327,6 +328,87 @@ export async function GET(request: NextRequest) {
   }
 }
 
+async function lerConviteEquipeERN(request: NextRequest): Promise<unknown> {
+  const limite = 4096;
+  const tipo = request.headers.get('content-type')?.split(';')[0].trim().toLowerCase();
+
+  if (tipo !== 'application/json') {
+    throw new FalhaEquipe('Envie os dados no formato JSON.', 415, 'ERN_FORMATO_INVALIDO');
+  }
+
+  const tamanhoInformado = request.headers.get('content-length');
+  if (tamanhoInformado !== null && Number(tamanhoInformado) > limite) {
+    throw new FalhaEquipe('Os dados do convite excedem o tamanho permitido.', 413, 'ERN_CORPO_MUITO_GRANDE');
+  }
+
+  const leitor = request.body?.getReader();
+  if (!leitor) {
+    throw new FalhaEquipe('Os dados enviados não são válidos.', 400, 'ERN_CORPO_INVALIDO');
+  }
+
+  const partes: Uint8Array[] = [];
+  let total = 0;
+
+  try {
+    while (true) {
+      const { done, value } = await leitor.read();
+      if (done) break;
+      total += value.byteLength;
+
+      if (total > limite) {
+        await leitor.cancel().catch(() => undefined);
+        throw new FalhaEquipe('Os dados do convite excedem o tamanho permitido.', 413, 'ERN_CORPO_MUITO_GRANDE');
+      }
+
+      partes.push(value);
+    }
+  } catch (falha) {
+    if (falha instanceof FalhaEquipe) throw falha;
+
+    throw new FalhaEquipe(
+      'A leitura do convite foi interrompida. Tente novamente.',
+      400,
+      'ERN_CORPO_INVALIDO',
+    );
+  } finally {
+    leitor.releaseLock();
+  }
+
+  const bytes = new Uint8Array(total);
+  let posicao = 0;
+
+  for (const parte of partes) {
+    bytes.set(parte, posicao);
+    posicao += parte.byteLength;
+  }
+
+  let dados: unknown;
+
+  try {
+    const texto = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
+    dados = JSON.parse(texto);
+  } catch {
+    throw new FalhaEquipe('Os dados enviados não são válidos.', 400, 'ERN_CORPO_INVALIDO');
+  }
+
+  if (
+    dados !== null &&
+    typeof dados === 'object' &&
+    !Array.isArray(dados) &&
+    Object.keys(dados).some(
+      campo => !['nome', 'email', 'role'].includes(campo),
+    )
+  ) {
+    throw new FalhaEquipe(
+      'Envie somente nome, e-mail e função do integrante.',
+      400,
+      'ERN_CAMPO_NAO_PERMITIDO',
+    );
+  }
+
+  return dados;
+}
+
 export async function POST(request: NextRequest) {
   let conviteIniciado = false;
   let usuarioId: string | null = null;
@@ -335,17 +417,7 @@ export async function POST(request: NextRequest) {
     const { admin, empresaId } =
       await autenticarAdministrador(request);
 
-    let body: unknown;
-
-    try {
-      body = await request.json();
-    } catch {
-      return respostaErro(
-        'Os dados enviados não são válidos.',
-        400,
-        'ERN_CORPO_INVALIDO',
-      );
-    }
+    const body: unknown = await lerConviteEquipeERN(request);
 
     if (
       !body ||

@@ -388,8 +388,15 @@ function transformarDataManausEmIso(
   ============================================================
 */
 
-export async function POST(
-  request: NextRequest
+type ContextoCancelamentoERN = {
+  operacaoId: string | null;
+  enviouCancelamento: boolean;
+  concluiuLocal: boolean;
+};
+
+async function executarCancelamentoERN(
+  request: NextRequest,
+  contextoERN: ContextoCancelamentoERN
 ) {
   try {
     /*
@@ -679,6 +686,50 @@ export async function POST(
       =========================================================
     */
 
+    // ERN_CANCELAMENTO_RESERVA_V1
+    const { data: reservaERN, error: erroReservaERN } = await admin.rpc(
+      'ern_reservar_cancelamento_v1',
+      { p_usuario_id: usuario.id }
+    );
+
+    if (erroReservaERN || !reservaERN || typeof reservaERN !== 'object') {
+      return respostaErro(
+        'Não foi possível confirmar a reserva do cancelamento.',
+        503,
+        'ERN_RESERVA_INDISPONIVEL'
+      );
+    }
+
+    if (reservaERN.ok !== true) {
+      return respostaErro(
+        'O cancelamento não pôde ser iniciado. Existe uma operação em andamento ou a assinatura precisa ser conferida.',
+        409,
+        String(reservaERN.codigo ?? 'ERN_CANCELAMENTO_NAO_RESERVADO')
+      );
+    }
+
+    if (
+      typeof reservaERN.operacao_id !== 'string' ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        reservaERN.operacao_id
+      )
+    ) {
+      throw new Error('Resposta da reserva de cancelamento inválida.');
+    }
+
+    contextoERN.operacaoId = reservaERN.operacao_id;
+
+    if (
+      reservaERN.empresa_id !== perfil.empresa_id ||
+      reservaERN.assinatura_id !== assinaturaERN.id ||
+      reservaERN.plano_atual_id !== assinaturaERN.plano_id ||
+      reservaERN.plano_destino_id !== planoFree.id ||
+      reservaERN.provedor_assinatura_id !== assinaturaAsaasId ||
+      reservaERN.provedor_cliente_id !== assinaturaERN.provedor_cliente_id
+    ) {
+      throw new Error('A assinatura mudou durante a solicitação de cancelamento.');
+    }
+
     const assinaturaAsaas =
       await chamarAsaas(
         `/subscriptions/${encodeURIComponent(
@@ -742,15 +793,42 @@ export async function POST(
       );
     }
 
-    const agora =
-      new Date()
-        .toISOString();
+    if (
+      assinaturaAsaas.customer !== reservaERN.provedor_cliente_id ||
+      assinaturaAsaas.id !== reservaERN.provedor_assinatura_id
+    ) {
+      throw new Error('A recorrência retornada não corresponde ao cliente da assinatura.');
+    }
+
+    const agora = new Date().toISOString();
+
+    const {
+      data: intencaoERN,
+      error: erroIntencaoERN,
+    } = await admin
+      .from('ern_operacoes_assinatura_v1')
+      .update({
+        estado: 'em_envio',
+        cancelamento_efetivo_em: cancelamentoEfetivoEm,
+        atualizado_em: agora,
+      })
+      .eq('id', contextoERN.operacaoId)
+      .eq('tipo', 'cancelamento')
+      .eq('estado', 'reservado')
+      .select('id')
+      .single();
+
+    if (erroIntencaoERN || !intencaoERN) {
+      throw new Error('Não foi possível registrar a intenção e a data do cancelamento.');
+    }
 
     /*
       =========================================================
       11. CANCELA RECORRÊNCIA ASAAS
       =========================================================
     */
+
+    contextoERN.enviouCancelamento = true;
 
     await chamarAsaas(
       `/subscriptions/${encodeURIComponent(
@@ -768,73 +846,57 @@ export async function POST(
       =========================================================
     */
 
+    // ERN_CANCELAMENTO_ATOMICO_V1
+    // O envio ao Asaas já retornou sucesso.
+    // Agendamento e conclusão passam a ocorrer na mesma transação.
     const {
-      data:
-        assinaturaAtualizada,
-
-      error:
-        atualizarError,
-    } = await admin
-      .from(
-        'assinaturas_empresas'
-      )
-      .update({
-        renovacao_automatica:
-          false,
-
-        cancelamento_solicitado_em:
-          agora,
-
-        cancelamento_efetivo_em:
-          cancelamentoEfetivoEm,
-
-        plano_pos_cancelamento_id:
-          planoFree.id,
-
-        fim_em:
-          cancelamentoEfetivoEm,
-
-        updated_at:
-          agora,
-      })
-      .eq(
-        'id',
-        assinaturaERN.id
-      )
-      .eq(
-        'empresa_id',
-        perfil.empresa_id
-      )
-      .select(
-        `
-          id,
-          plano_id,
-          status,
-          ciclo_cobranca,
-          renovacao_automatica,
-          provedor_assinatura_id,
-          cancelamento_solicitado_em,
-          cancelamento_efetivo_em,
-          plano_pos_cancelamento_id,
-          fim_em
-        `
-      )
-      .single();
+      data: confirmacaoLocalERN,
+      error: erroConfirmacaoLocalERN,
+    } = await admin.rpc(
+      'ern_confirmar_cancelamento_v1',
+      { p_operacao_id: contextoERN.operacaoId }
+    );
 
     if (
-      atualizarError ||
-      !assinaturaAtualizada
+      erroConfirmacaoLocalERN ||
+      confirmacaoLocalERN?.ok !== true
     ) {
-      console.error(
-        '[ERN CANCELAMENTO] Recorrência removida no Asaas, mas falhou atualização local:',
-        atualizarError
-      );
-
       throw new Error(
-        'A recorrência foi cancelada no provedor, mas o ERN não conseguiu registrar o agendamento.'
+        'A recorrência foi removida no provedor, mas a confirmação local precisa ser recuperada.'
       );
     }
 
+    // Uma falha posterior de leitura não deve alterar a operação concluída.
+    contextoERN.concluiuLocal = true;
+
+    const {
+      data: assinaturaAtualizada,
+      error: erroLeituraConfirmacaoERN,
+    } = await admin
+      .from('assinaturas_empresas')
+      .select(`
+        id,
+        plano_id,
+        status,
+        ciclo_cobranca,
+        renovacao_automatica,
+        provedor_assinatura_id,
+        cancelamento_solicitado_em,
+        cancelamento_efetivo_em,
+        plano_pos_cancelamento_id,
+        fim_em
+      `)
+      .eq('id', assinaturaERN.id)
+      .eq('empresa_id', perfil.empresa_id)
+      .single();
+
+    if (erroLeituraConfirmacaoERN || !assinaturaAtualizada) {
+      return respostaErro(
+        'O cancelamento foi registrado, mas não foi possível atualizar sua exibição. Recarregue a página de planos.',
+        503,
+        'ERN_CANCELAMENTO_REGISTRADO'
+      );
+    }
     /*
       =========================================================
       13. SUCESSO
@@ -912,4 +974,76 @@ export async function POST(
       'ERN_CANCELAMENTO_ERRO'
     );
   }
+}
+
+export async function POST(request: NextRequest) {
+  const contextoERN: ContextoCancelamentoERN = {
+    operacaoId: null,
+    enviouCancelamento: false,
+    concluiuLocal: false,
+  };
+
+  let resultadoERN: NextResponse;
+
+  try {
+    resultadoERN = await executarCancelamentoERN(request, contextoERN);
+  } catch {
+    resultadoERN = respostaErro(
+      'Não foi possível concluir o cancelamento.',
+      500,
+      'ERN_CANCELAMENTO_ERRO'
+    );
+  }
+
+  if (contextoERN.operacaoId && !contextoERN.concluiuLocal) {
+    const estadoERN = resultadoERN.ok
+      ? 'concluido'
+      : contextoERN.enviouCancelamento
+        ? 'reconciliar'
+        : 'falhou_confirmado';
+
+    try {
+      const { data: gravadaERN, error: erroGravacaoERN } =
+        await criarAdminClient()
+          .from('ern_operacoes_assinatura_v1')
+          .update({
+            estado: estadoERN,
+            atualizado_em: new Date().toISOString(),
+          })
+          .eq('id', contextoERN.operacaoId)
+          .eq('tipo', 'cancelamento')
+          .in('estado', ['reservado', 'em_envio'])
+          .select('id')
+          .single();
+
+      if (erroGravacaoERN || !gravadaERN) {
+        return respostaErro(
+          'Não foi possível confirmar todos os registros. O cancelamento permanece reservado para conferência.',
+          503,
+          'ERN_CANCELAMENTO_EM_CONFERENCIA'
+        );
+      }
+    } catch {
+      return respostaErro(
+        'O cancelamento precisa ser conferido antes de outra operação.',
+        503,
+        'ERN_CANCELAMENTO_EM_CONFERENCIA'
+      );
+    }
+  }
+
+  if (resultadoERN.status >= 500 && !contextoERN.concluiuLocal) {
+    return respostaErro(
+      contextoERN.enviouCancelamento
+        ? 'A solicitação foi enviada, mas não foi possível confirmar todo o resultado. O cancelamento será conferido antes de uma nova operação.'
+        : 'Não foi possível concluir a solicitação. O cancelamento não foi enviado ao provedor nesta tentativa.',
+      resultadoERN.status,
+      contextoERN.enviouCancelamento
+        ? 'ERN_CANCELAMENTO_EM_CONFERENCIA'
+        : 'ERN_CANCELAMENTO_ERRO'
+    );
+  }
+
+  resultadoERN.headers.set('Cache-Control', 'no-store');
+  return resultadoERN;
 }

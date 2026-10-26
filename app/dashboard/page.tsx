@@ -6,6 +6,7 @@ import GraficosOperadora from '@/app/components/GraficosOperadora';
 import MapaTerritorioERN from '@/app/components/MapaTerritorioERN';
 
 import { supabase } from '@/lib/supabase';
+import BotaoCopaPescaERN from '@/app/components/BotaoCopaPescaERN';
 import PainelPorFuncaoERN from '@/app/components/PainelPorFuncaoERN';
 
 
@@ -1810,36 +1811,9 @@ function DashboardAdministrativoERN() {
             </div>
           </section>
 
-          <section className="relative overflow-hidden rounded-2xl border border-[#E3A144]/18 bg-[#0A1713] p-5 sm:rounded-[26px] sm:p-6">
-            <div className="pointer-events-none absolute -right-16 -top-16 h-52 w-52 rounded-full border border-[#E3A144]/10" />
-
-            <div className="relative">
-              <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-                Pesca esportiva
-              </p>
-
-              <h2
-                className="mt-3 max-w-sm text-2xl text-[#F0F0E8]"
-                style={{
-                  fontFamily:
-                    'var(--font-fraunces), serif',
-                }}
-              >
-                Copa Brasil de Pesca Esportiva
-              </h2>
-
-              <p className="mt-3 max-w-md text-xs leading-6 text-[#EDEDE3]/48">
-                Consulte a programação, as inscrições
-                e os regulamentos diretamente no
-                site oficial da Copa Brasil de
-                Pesca Esportiva.
-              </p>
-
-              <a href="https://copabrasildepescaesportiva.com.br/" target="_blank" rel="noopener noreferrer" className="mt-5 inline-flex min-h-11 items-center gap-3 rounded-xl border border-[#E3A144]/30 bg-[#E3A144]/10 px-4 text-xs font-semibold text-[#F4C77E] transition hover:bg-[#E3A144]/20 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F4C77E]">
-                Acessar site oficial <span aria-hidden="true">↗</span><span className="sr-only"> · abre em nova aba</span>
-              </a>
-            </div>
-          </section>
+          <div className="min-w-0 self-start">
+            <BotaoCopaPescaERN />
+          </div>
         </div>
 
         <section className="mt-7 min-w-0 overflow-hidden rounded-2xl border border-[#E3A144]/15 bg-[#0A1713] sm:rounded-[26px]">
