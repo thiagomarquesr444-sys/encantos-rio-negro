@@ -1,3 +1,4 @@
+import FeedbackERN from '@/app/components/FeedbackERN';
 import type { Metadata, Viewport } from 'next';
 import type { CSSProperties, ReactNode } from 'react';
 
@@ -70,6 +71,7 @@ export default function RootLayout({
         <LanguageProvider>
           <AppProvider>
             <AppShell>{children}</AppShell>
+            <FeedbackERN />
           </AppProvider>
         </LanguageProvider>
       </body>
