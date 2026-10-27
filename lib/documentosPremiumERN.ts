@@ -215,10 +215,9 @@ export function criarDocumentoPremiumERN(dados: DocumentoPremiumERN): jsPDF {
     const grupos: string[][][] = [];
     for (let i = 0; i < notas.length; i += 2) grupos.push(notas.slice(i, i + 2));
     const alturaGrupo = (grupo: string[][]) => Math.max(...grupo.map(linhas => linhas.length * 4.2 + 3));
-    const alturaTotal = 11 + grupos.reduce((soma, grupo) => soma + alturaGrupo(grupo), 0);
-
-    // Se couber por inteiro numa nova página, nunca dividir a seção.
-    if (y + alturaTotal > limite && alturaTotal <= limite - TOPO) novaPagina();
+    // Aproveita o espaço restante da página atual sempre que
+    // houver espaço para o título e o primeiro grupo de notas.
+    // Os grupos seguintes continuam protegidos individualmente.
     if (y + 11 + alturaGrupo(grupos[0]) > limite) novaPagina();
 
     function tituloNotas(): void {
