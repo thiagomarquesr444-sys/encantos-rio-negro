@@ -24,6 +24,7 @@ const ROTAS_GESTAO = [
   '/parceiros',
   '/relatorios',
   '/vouchers',
+  '/documentos',
   '/planos',
   '/demandas',
 ] as const;

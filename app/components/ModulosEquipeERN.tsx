@@ -42,6 +42,12 @@ export function permiteLinkEquipeERN(
     return true;
   }
 
+  if (caminho === '/documentos') {
+    return ['vouchers', 'relatorios', 'financeiro'].some(
+      modulo => modulos.has(modulo)
+    );
+  }
+
   if (caminho === '/dashboard') {
     return modulos.has(fragmento === 'mapa-ern' ? 'mapa' : 'painel');
   }

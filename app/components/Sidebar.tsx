@@ -69,6 +69,11 @@ const GRUPOS: NavGroup[] = [
         href: '/vouchers',
         descricao: 'Documentos vinculados às reservas',
       },
+      {
+        label: 'Central de Documentos',
+        href: '/documentos',
+        descricao: 'PDFs, vouchers e demonstrativos da operadora',
+      },
     ],
   },
   {

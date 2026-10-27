@@ -17,6 +17,7 @@ const ROTAS_EMPRESA = [
   '/parceiros',
   '/relatorios',
   '/vouchers',
+  '/documentos',
   '/planos',
   '/demandas',
 ] as const;
@@ -92,6 +93,7 @@ function moduloRotaEmpresaERN(pathname: string): string | null {
     ['/parceiros', 'parceiros'],
     ['/relatorios', 'relatorios'],
     ['/vouchers', 'vouchers'],
+    ['/documentos', 'documentos'],
     ['/planos', 'planos'],
     ['/demandas', 'demandas'],
   ];
@@ -356,7 +358,25 @@ export async function proxy(request: NextRequest) {
       if (rotaEmpresa && papelEmpresaPermitido) {
         const moduloERN = moduloRotaEmpresaERN(pathname);
 
-        if (moduloERN) {
+        if (moduloERN === 'documentos') {
+          // A Central exige ao menos um modulo documental.
+          // Nao concede acesso automatico aos demais modulos.
+          for (const modulo of [
+            'vouchers',
+            'relatorios',
+            'financeiro',
+          ]) {
+            const { data: autorizado, error: falha } =
+              await supabase.rpc('ern_pode_acessar_modulo', {
+                p_modulo: modulo,
+              });
+
+            if (falha) return indisponivel();
+            if (autorizado === true) return response;
+          }
+        }
+
+        if (moduloERN && moduloERN !== 'documentos') {
           const {
             data: permitidoERN,
             error: erroPermissaoERN,
