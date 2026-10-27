@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import Link from 'next/link';
+import { baixarDocumentoPremiumERN } from '@/lib/documentosPremiumERN';
+import { consultarIdentificacaoEmpresaERN } from '@/lib/identificacaoEmpresaERN';
 import { consultarRelatoriosERN, criteriosRelatorioERN, statusRelatorioERN, erroRelatorioERN, gerarRelatorioERN, salvarRelatorioERN, excluirRelatorioERN, baixarCsvRelatorioERN, STATUS_RELATORIO_ERN, type RelatorioERN, type FormRelatorioERN, type AnaliseRelatorioERN } from '@/lib/relatoriosERN';
 const caixa = 'min-w-0 rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-4 sm:p-5';
 const botao = 'inline-flex min-h-11 items-center justify-center rounded-xl border border-[var(--ern-borda)] px-3 text-xs font-semibold text-[var(--ern-destaque)] disabled:opacity-40';
@@ -13,11 +15,122 @@ function Dialogo({ titulo, fechar, bloqueado = false, children }: { titulo: stri
   useEffect(() => { const d = ref.current; if (d && !d.open) d.showModal(); return () => { if (d?.open) d.close(); }; }, []);
   return <dialog ref={ref} aria-labelledby={tituloId} onCancel={e => { e.preventDefault(); if (!bloqueado) fechar(); }} className="fixed inset-0 m-auto max-h-[90dvh] w-[calc(100%_-_2rem)] max-w-3xl overflow-y-auto rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-4 text-[var(--ern-texto)] backdrop:bg-black/70 sm:p-6"><div className="mb-5 flex items-start justify-between gap-4"><h2 id={tituloId} className="break-words text-xl font-semibold">{titulo}</h2><button type="button" disabled={bloqueado} aria-label="Fechar" onClick={fechar} className={botao}>×</button></div>{children}</dialog>;
 }
-function Resumo({ analise, titulo }: { analise: AnaliseRelatorioERN; titulo: string }) {
+function Resumo({
+  analise,
+  titulo,
+  relatorioId,
+}: {
+  analise: AnaliseRelatorioERN;
+  titulo: string;
+  relatorioId: string;
+}) {
+  const [exportandoPDF, setExportandoPDF] = useState(false);
+  const [erroPDF, setErroPDF] = useState('');
+  const exportacaoEmAndamento = useRef(false);
   const r = analise.reservas, f = analise.financeiro; const t = f.totais;
   const avisos = r.semData + r.semValor + r.semPessoas + r.semStatus + f.semLiquidacao + f.semVencimento + f.inconsistentes;
   const atualizado = new Intl.DateTimeFormat('pt-BR', { dateStyle: 'short', timeStyle: 'short', timeZone: 'America/Manaus' }).format(new Date(analise.atualizadoEm));
   const indicadores: [string, string][] = [['Reservas não canceladas', String(r.ativas)], ['Reservas canceladas', String(r.canceladas)], ['Pessoas nas reservas', String(r.pessoas)], ['Valor comercial das reservas', moeda(r.comercial)], ['Recebido', moeda(t.recebido)], ['Pago', moeda(t.pago)], ['A receber', moeda(t.receber)], ['A pagar', moeda(t.pagar)], ['Movimento líquido', moeda(t.recebido - t.pago)]];
+  async function exportarPDF(): Promise<void> {
+    if (exportacaoEmAndamento.current) return;
+
+    exportacaoEmAndamento.current = true;
+    setExportandoPDF(true);
+    setErroPDF('');
+
+    try {
+      // Revalida a sessão e o acesso ao relatório.
+      // Recalcula as fontes com as regras existentes.
+      const empresa = await consultarIdentificacaoEmpresaERN();
+      const resultado = await gerarRelatorioERN(relatorioId);
+
+      const reservas = resultado.reservas;
+      const financeiro = resultado.financeiro;
+      const totais = financeiro.totais;
+
+      const ocorrencias =
+        reservas.semData +
+        reservas.semValor +
+        reservas.semPessoas +
+        reservas.semStatus +
+        financeiro.semLiquidacao +
+        financeiro.semVencimento +
+        financeiro.inconsistentes;
+
+      const calculadoEm = new Intl.DateTimeFormat('pt-BR', {
+        dateStyle: 'short',
+        timeStyle: 'short',
+        timeZone: 'America/Manaus',
+      }).format(new Date(resultado.atualizadoEm));
+
+      baixarDocumentoPremiumERN({
+        titulo: titulo || 'Relatório Gerencial',
+        subtitulo: 'Análise gerencial integrada | Encantos Rio Negro',
+        identificador: relatorioId,
+        empresa: empresa.nome,
+        status: 'Análise recalculada',
+        nomeArquivo: `ERN-relatorio-gerencial-${relatorioId}.pdf`,
+        dados: [
+          { campo: 'Operadora responsável', valor: empresa.nome },
+          { campo: 'CNPJ informado', valor: empresa.cnpj ?? 'Não cadastrado' },
+          { campo: 'Município', valor: empresa.cidade ?? 'Não cadastrado' },
+          { campo: 'Início do período', valor: data(resultado.criterios.inicio) },
+          { campo: 'Fim do período', valor: data(resultado.criterios.fim) },
+          { campo: 'Análise calculada em', valor: `${calculadoEm} (Manaus)` },
+          { campo: 'Reservas não canceladas', valor: reservas.ativas },
+          { campo: 'Reservas canceladas', valor: reservas.canceladas },
+          { campo: 'Pessoas nas reservas', valor: reservas.pessoas },
+          { campo: 'Valor comercial das reservas', valor: moeda(reservas.comercial) },
+          { campo: 'Recebido', valor: moeda(totais.recebido) },
+          { campo: 'Pago', valor: moeda(totais.pago) },
+          { campo: 'A receber', valor: moeda(totais.receber) },
+          { campo: 'A pagar', valor: moeda(totais.pagar) },
+          {
+            campo: 'Movimento líquido',
+            valor: moeda(totais.recebido - totais.pago),
+          },
+          { campo: 'Ocorrências de qualidade', valor: ocorrencias },
+        ],
+        tabela: {
+          titulo: 'Evolução financeira mensal',
+          colunas: [
+            'Mês',
+            'Recebido',
+            'Pago',
+            'A receber',
+            'A pagar',
+          ],
+          linhas: financeiro.meses.map((mes) => [
+            mes.nome,
+            moeda(mes.recebido),
+            moeda(mes.pago),
+            moeda(mes.receber),
+            moeda(mes.pagar),
+          ]),
+        },
+        observacoes: [
+          'Análise gerencial recalculada no momento deste download. Os valores podem mudar se as fontes forem alteradas.',
+          'As fontes de reservas e financeiro são consultadas separadamente; alterações simultâneas podem afetar a consistência temporal.',
+          'Reservas utilizam a data do passeio ou reserva. Canceladas e status desconhecidos não integram o valor comercial nem a quantidade de pessoas.',
+          'Pessoas representa a soma das quantidades cadastradas e não necessariamente turistas únicos.',
+          'O valor comercial das reservas não representa dinheiro efetivamente recebido.',
+          'Movimentações financeiras realizadas utilizam a data de liquidação. Pendentes utilizam a data de vencimento.',
+          'Lançamentos financeiros sem vínculo com reserva também podem integrar os indicadores do período.',
+          'Movimento líquido significa recebido menos pago. Não representa saldo bancário nem lucro.',
+          `Qualidade dos dados: ${reservas.semData} reservas sem data válida; ${reservas.semStatus} com status desconhecido; ${reservas.semValor} sem valor válido; ${reservas.semPessoas} sem quantidade válida.`,
+          `Financeiro: ${financeiro.semLiquidacao} sem liquidação válida; ${financeiro.semVencimento} sem vencimento válido; ${financeiro.inconsistentes} inconsistentes.`,
+          'Algumas ocorrências de qualidade abrangem o histórico consultado, não exclusivamente o período selecionado.',
+          'Os dados empresariais refletem o cadastro atual e não constituem validação fiscal.',
+          'Este relatório não é nota fiscal, comprovante de pagamento ou demonstração contábil auditada.',
+        ],
+      });
+    } catch (erro) {
+      setErroPDF(erroRelatorioERN(erro));
+    } finally {
+      exportacaoEmAndamento.current = false;
+      setExportandoPDF(false);
+    }
+  }
   function exportar() {
     baixarCsvRelatorioERN('analise-gerencial-ern.csv', [['Relatório', titulo], ['Período inicial', analise.criterios.inicio], ['Período final', analise.criterios.fim], ['Calculado em (UTC)', analise.atualizadoEm], ['Escopo', 'Registros acessíveis à conta; valores recalculados; não é retrato histórico imutável'], ['Indicador', 'Valor'], ...indicadores, ['Avisos de qualidade (ocorrências)', avisos], ['Reservas sem data válida', r.semData], ['Reservas sem valor válido', r.semValor], ['Reservas sem quantidade válida', r.semPessoas], ['Reservas com status desconhecido', r.semStatus], ['Financeiro sem liquidação válida', f.semLiquidacao], ['Financeiro sem vencimento válido', f.semVencimento], ['Financeiro inconsistente', f.inconsistentes], ['Regra de reservas', 'Data da reserva/passeio; canceladas e status desconhecidos fora do comercial e das pessoas'], ['Regra financeira', 'Realizados pela liquidação; pendentes pelo vencimento; independente das reservas selecionadas'], ['Movimento líquido', 'Recebido menos pago; não é saldo bancário nem lucro'], [], ['Mês', 'Recebido (R$)', 'Pago (R$)', 'A receber (R$)', 'A pagar (R$)'], ...f.meses.map(m => [m.nome, (m.recebido / 100).toFixed(2), (m.pago / 100).toFixed(2), (m.receber / 100).toFixed(2), (m.pagar / 100).toFixed(2)])]);
   }
@@ -25,7 +138,31 @@ function Resumo({ analise, titulo }: { analise: AnaliseRelatorioERN; titulo: str
     {avisos > 0 && <div role="status" className="rounded-xl border border-amber-400/20 p-3 text-xs leading-6 text-amber-200"><p>Existem dados incompletos. Os totais abaixo consideram somente os campos válidos.</p><p>Reservas: {r.semData} sem data; {r.semStatus} com status desconhecido; {r.semValor} sem valor; {r.semPessoas} sem quantidade. Financeiro: {f.semLiquidacao} sem liquidação; {f.semVencimento} sem vencimento; {f.inconsistentes} inconsistentes. Avisos de datas financeiras e de reservas sem data abrangem todo o histórico consultado.</p></div>}
     <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">{indicadores.map(([nome, valor]) => <div key={nome} className="min-w-0 rounded-xl border border-[var(--ern-borda)] p-3"><p className="text-[11px] text-[var(--ern-secundario)]">{nome}</p><p className="mt-2 break-words text-base font-semibold text-[var(--ern-destaque)]">{valor}</p></div>)}</div>
     <p className="text-xs leading-6 text-[var(--ern-secundario)]">Reservas usam a data do passeio/reserva. Pessoas representam a soma das quantidades cadastradas, não turistas únicos. Canceladas e status desconhecidos ficam fora do valor comercial e das pessoas. O comercial não é dinheiro recebido.</p><p className="text-xs leading-6 text-[var(--ern-secundario)]">O financeiro considera todos os lançamentos acessíveis no período, inclusive os sem vínculo com reserva. Realizados usam a liquidação; pendentes usam o vencimento. Movimento líquido é recebido menos pago, não saldo bancário nem lucro. Não se subtrai o recebido do comercial para estimar dívida.</p>
-    <details className="text-xs"><summary className="min-h-11 cursor-pointer py-3 text-[var(--ern-destaque)]">Consultar valores mensais do financeiro</summary><div className="overflow-x-auto"><table className="w-full text-left"><thead><tr>{['Mês', 'Recebido', 'Pago', 'A receber', 'A pagar'].map(h => <th key={h} className="p-2">{h}</th>)}</tr></thead><tbody>{f.meses.map(m => <tr key={m.chave} className="border-t border-[var(--ern-borda)]"><td className="p-2">{m.nome}</td>{[m.recebido, m.pago, m.receber, m.pagar].map((v, i) => <td key={i} className="whitespace-nowrap p-2">{moeda(v)}</td>)}</tr>)}</tbody></table></div></details><button type="button" className={botao} onClick={exportar}>Exportar esta análise em CSV</button>
+    <details className="text-xs"><summary className="min-h-11 cursor-pointer py-3 text-[var(--ern-destaque)]">Consultar valores mensais do financeiro</summary><div className="overflow-x-auto"><table className="w-full text-left"><thead><tr>{['Mês', 'Recebido', 'Pago', 'A receber', 'A pagar'].map(h => <th key={h} className="p-2">{h}</th>)}</tr></thead><tbody>{f.meses.map(m => <tr key={m.chave} className="border-t border-[var(--ern-borda)]"><td className="p-2">{m.nome}</td>{[m.recebido, m.pago, m.receber, m.pagar].map((v, i) => <td key={i} className="whitespace-nowrap p-2">{moeda(v)}</td>)}</tr>)}</tbody></table></div></details><div className="flex flex-wrap gap-2">
+      <button
+        type="button"
+        className={botao}
+        onClick={exportar}
+      >
+        Exportar esta análise em CSV
+      </button>
+      <button
+        type="button"
+        className={botao}
+        disabled={exportandoPDF}
+        onClick={() => void exportarPDF()}
+      >
+        {exportandoPDF ? 'Gerando PDF Premium...' : 'Baixar PDF Premium'}
+      </button>
+    </div>
+    {erroPDF && (
+      <p
+        role="alert"
+        className="rounded-xl border border-red-400/30 p-3 text-sm text-red-300"
+      >
+        {erroPDF}
+      </p>
+    )}
   </section>;
 }
 export default function RelatoriosPage() {
@@ -48,7 +185,7 @@ export default function RelatoriosPage() {
     <section className={caixa}><div className="flex flex-wrap items-end gap-4"><label className="min-w-0 flex-1 text-xs">Buscar<input aria-label="Buscar relatórios" value={busca} onChange={e => { setBusca(e.target.value); setPagina(0); }} className={campo} placeholder="Título, tipo ou responsável" /></label><label className="text-xs">Situação<select aria-label="Filtrar situação" value={status} onChange={e => { setStatus(e.target.value); setPagina(0); }} className={campo}><option value="">Todas</option>{[...STATUS_RELATORIO_ERN, 'Não informado'].map(s => <option key={s}>{s}</option>)}</select></label><button type="button" className={botao} disabled={carregando} onClick={() => { setFeedback(''); void carregar(); }}>Atualizar</button><button type="button" className={botao} disabled={carregando || falhaConsulta || !filtrados.length} onClick={exportarLista}>Exportar cadastros CSV</button></div><p className="mt-4 text-xs text-[var(--ern-secundario)]">{carregando ? 'Consultando…' : falhaConsulta ? 'Consulta indisponível.' : `${filtrados.length} de ${registros.length} cadastros acessíveis à sua conta. A exportação inclui todos os resultados dos filtros.`}</p></section>
     {carregando ? <p role="status" className={caixa}>Carregando relatórios…</p> : falhaConsulta ? <p className={caixa}>Não foi possível carregar. Use Atualizar para tentar novamente.</p> : !filtrados.length ? <p className={caixa}>Nenhum relatório acessível com estes filtros. Se esperava encontrar registros, confira a empresa e o recurso de relatórios do plano.</p> : <section aria-label="Relatórios cadastrados" className="grid min-w-0 gap-3 md:grid-cols-2">{filtrados.slice(atual * 12, atual * 12 + 12).map(r => <article key={r.id} className={caixa}><p className="text-xs text-[var(--ern-destaque)]">{statusRelatorioERN(r.status)} · {criteriosRelatorioERN(r.filtros) ? 'Análise integrada' : 'Cadastro'}</p><h2 className="mt-2 break-words text-lg font-semibold">{r.titulo}</h2><p className="mt-2 break-words text-xs leading-6 text-[var(--ern-secundario)]">{r.tipo || 'Sem tipo'} · {data(r.data_geracao)} · {r.gerado_por || 'Responsável não informado'}</p><div className="mt-4 flex flex-wrap gap-2"><button type="button" className={botao} onClick={() => void analisar(r)}>Visualizar / analisar</button><button type="button" className={botao} onClick={() => abrirEdicao(r)}>Editar</button><button type="button" className={botao} onClick={() => { setErroModal(''); setExcluir(r); }}>Excluir</button></div></article>)}</section>}
     {!carregando && !falhaConsulta && filtrados.length > 12 && <nav aria-label="Páginas dos relatórios" className="flex items-center justify-between gap-3"><button type="button" className={botao} disabled={atual === 0} onClick={() => setPagina(atual - 1)}>Anterior</button><span className="text-xs">{atual + 1} de {paginas}</span><button type="button" className={botao} disabled={atual === paginas - 1} onClick={() => setPagina(atual + 1)}>Próxima</button></nav>}
-    {visualizar && <Dialogo titulo={visualizar.titulo} fechar={fecharVisualizacao}><p className="text-xs leading-6 text-[var(--ern-secundario)]">{visualizar.tipo || 'Sem tipo'} · Registro: {data(visualizar.data_geracao)} · {statusRelatorioERN(visualizar.status)} · {visualizar.gerado_por || 'Responsável não informado'}</p>{criteriosRelatorioERN(visualizar.filtros) ? <><p className="mt-3 text-xs leading-6 text-[var(--ern-secundario)]">Critérios salvos; valores recalculados. Alterações nas fontes mudam esta análise.</p><button type="button" disabled={analisando} className={botao + ' mt-3'} onClick={() => void analisar(visualizar)}>Recalcular análise</button>{analisando && <p role="status" className="mt-4 text-sm">Consultando reservas e financeiro…</p>}{erroAnalise && <p role="alert" className="mt-4 text-sm text-red-300">{erroAnalise}</p>}{analise && <Resumo analise={analise} titulo={visualizar.titulo} />}</> : <p className="mt-5 text-sm leading-6 text-[var(--ern-secundario)]">Este cadastro não possui critérios de análise integrada válidos. Seus dados foram preservados. Para analisar reservas e financeiro, crie um novo relatório nessa modalidade.</p>}</Dialogo>}
+    {visualizar && <Dialogo titulo={visualizar.titulo} fechar={fecharVisualizacao}><p className="text-xs leading-6 text-[var(--ern-secundario)]">{visualizar.tipo || 'Sem tipo'} · Registro: {data(visualizar.data_geracao)} · {statusRelatorioERN(visualizar.status)} · {visualizar.gerado_por || 'Responsável não informado'}</p>{criteriosRelatorioERN(visualizar.filtros) ? <><p className="mt-3 text-xs leading-6 text-[var(--ern-secundario)]">Critérios salvos; valores recalculados. Alterações nas fontes mudam esta análise.</p><button type="button" disabled={analisando} className={botao + ' mt-3'} onClick={() => void analisar(visualizar)}>Recalcular análise</button>{analisando && <p role="status" className="mt-4 text-sm">Consultando reservas e financeiro…</p>}{erroAnalise && <p role="alert" className="mt-4 text-sm text-red-300">{erroAnalise}</p>}{analise && <Resumo analise={analise} titulo={visualizar.titulo} relatorioId={visualizar.id} />}</> : <p className="mt-5 text-sm leading-6 text-[var(--ern-secundario)]">Este cadastro não possui critérios de análise integrada válidos. Seus dados foram preservados. Para analisar reservas e financeiro, crie um novo relatório nessa modalidade.</p>}</Dialogo>}
     {editar && form && <Dialogo titulo="Editar identificação e acompanhamento" bloqueado={salvando} fechar={() => { setEditar(null); setForm(null); }}><form onSubmit={salvar}><fieldset disabled={salvando} className="space-y-4"><label className="block text-xs">Título<input required maxLength={200} value={form.titulo} onChange={e => setForm({ ...form, titulo: e.target.value })} className={campo} /></label><label className="block text-xs">Tipo<input maxLength={120} value={form.tipo} onChange={e => setForm({ ...form, tipo: e.target.value })} className={campo} /></label><label className="block text-xs">Responsável<input maxLength={200} value={form.gerado_por} onChange={e => setForm({ ...form, gerado_por: e.target.value })} className={campo} /></label><label className="block text-xs">Data do registro<input type="date" value={form.data_geracao} onChange={e => setForm({ ...form, data_geracao: e.target.value })} className={campo} /></label><label className="block text-xs">Situação<select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })} className={campo}>{form.status === 'Não informado' && <option value="Não informado" disabled>Escolha uma situação válida</option>}{STATUS_RELATORIO_ERN.map(s => <option key={s}>{s}</option>)}</select></label><p className="text-xs leading-6 text-[var(--ern-secundario)]">Os critérios existentes serão preservados. Para comparar outro período, crie um novo relatório.</p></fieldset>{erroModal && <p role="alert" className="mt-3 text-sm text-red-300">{erroModal}</p>}<button type="submit" className={botao + ' mt-5'} disabled={salvando}>{salvando ? 'Salvando…' : 'Salvar alterações'}</button></form></Dialogo>}
     {excluir && <Dialogo titulo="Excluir cadastro de relatório?" bloqueado={salvando} fechar={() => setExcluir(null)}><p className="break-words text-sm leading-6">{excluir.titulo}</p><p className="mt-3 text-xs leading-6 text-[var(--ern-secundario)]">Esta ação exclui apenas o cadastro e seus critérios. Não exclui reservas nem lançamentos financeiros.</p>{erroModal && <p role="alert" className="mt-3 text-sm text-red-300">{erroModal}</p>}<button type="button" className={botao + ' mt-5'} disabled={salvando} onClick={() => void remover()}>{salvando ? 'Excluindo…' : 'Confirmar exclusão'}</button></Dialogo>}
   </div></main>;
