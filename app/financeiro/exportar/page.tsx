@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { baixarDocumentoPremiumERN } from "@/lib/documentosPremiumERN";
 import { consultarFinanceiroERN, filtrarFinanceiroERN, periodoFinanceiroERN, statusFinanceiroERN, type RegistroFinanceiroERN, type FiltroPeriodoFinanceiroERN } from "@/lib/financeiroConsultaERN";
 const PERIODOS: {valor:FiltroPeriodoFinanceiroERN;nome:string}[]=[{valor:"todos",nome:"Histórico"},{valor:"mes_atual",nome:"Mês atual — vencimentos"},{valor:"receitas",nome:"Receitas"},{valor:"despesas",nome:"Despesas"},{valor:"pendentes",nome:"Pendentes"},{valor:"com_reserva",nome:"Com reserva"}];
 function protegerCSV(entrada: unknown): string {
@@ -34,6 +35,57 @@ export default function ExportarRelatorioPage(){
   },[tentativa]);
   const filtrados=useMemo(()=>filtrarFinanceiroERN(dados,periodo,busca,reserva.trim()),[dados,periodo,busca,reserva]);
   const totais=useMemo(()=>filtrados.reduce((s,item)=>{const tipo=(item.tipo??"").toLowerCase().trim();if(tipo==="receita")s.receitas+=valorRegistro(item);if(tipo==="despesa")s.despesas+=valorRegistro(item);return s;},{receitas:0,despesas:0}),[filtrados]);
+  function baixarPDF() {
+    if (carregando || erro || !filtrados.length) return;
+
+    const hoje = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Manaus",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(new Date());
+
+    baixarDocumentoPremiumERN({
+      titulo: "Demonstrativo Financeiro",
+      subtitulo: "Encantos Rio Negro | Relatório operacional",
+      nomeArquivo: `ERN-financeiro-premium-${hoje}.pdf`,
+      status: "Demonstrativo gerado",
+      dados: [
+        { campo: "Filtro aplicado", valor: PERIODOS.find(p => p.valor === periodo)?.nome ?? periodo },
+        { campo: "Busca aplicada", valor: busca.trim() || "Todas" },
+        { campo: "Reserva selecionada", valor: reserva.trim() || "Todas" },
+        { campo: "Lançamentos", valor: filtrados.length },
+        { campo: "Receitas lançadas", valor: moeda(totais.receitas) },
+        { campo: "Despesas lançadas", valor: moeda(totais.despesas) },
+      ],
+      tabela: {
+        titulo: "Lançamentos financeiros",
+        colunas: [
+          "Vencimento",
+          "Liquidação",
+          "Tipo",
+          "Descrição",
+          "Valor",
+          "Status",
+        ],
+        linhas: filtrados.map(item => [
+          data(item.data_vencimento) || "Não informado",
+          data(item.data_liquidacao) || "Não informado",
+          item.tipo ?? "Não informado",
+          item.descricao || item.descrição || "Não informado",
+          moeda(valorRegistro(item)),
+          statusFinanceiroERN(item),
+        ]),
+      },
+      observacoes: [
+        "Documento gerencial gerado a partir dos registros acessíveis à conta no momento da exportação.",
+        "Receitas e despesas lançadas podem incluir valores pendentes. Os totais não representam necessariamente pagamentos ou recebimentos efetivos.",
+        "Este demonstrativo não constitui nota fiscal, comprovante de pagamento, saldo bancário ou apuração de lucro.",
+        "O arquivo CSV permanece disponível para conferência detalhada de identificadores e vínculos das reservas.",
+      ],
+    });
+  }
+
   function baixarCSV(){
     if(carregando||erro||!filtrados.length)return;
     const cabecalho=["ID","Reserva ID","Data de vencimento","Data efetiva de recebimento/pagamento","Tipo","Descrição","Categoria","Valor (R$)","Status"];
@@ -57,7 +109,7 @@ export default function ExportarRelatorioPage(){
       </section>
       {erro&&<div role="alert" className="mt-5 rounded-xl border border-red-400/30 p-4 text-sm text-red-200"><p>{erro}</p><button type="button" className={botao+" mt-3"} onClick={()=>setTentativa(t=>t+1)}>Tentar carregar novamente</button></div>}
       <div className="mt-5 grid gap-3 sm:grid-cols-3">{[{nome:"Lançamentos filtrados",valor:String(filtrados.length)},{nome:"Receitas lançadas",valor:moeda(totais.receitas)},{nome:"Despesas lançadas",valor:moeda(totais.despesas)}].map(c=><div key={c.nome} className="rounded-2xl border border-white/10 p-5"><p className="text-xs text-[#B4C8BB]">{c.nome}</p><p className="mt-3 text-2xl text-[#F4C77E]">{carregando||erro?"—":c.valor}</p></div>)}</div>
-      <section className="mt-5 overflow-hidden rounded-2xl border border-white/10"><div className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-6"><div><h2 className="text-xl">Pré-visualização</h2><p role="status" className="mt-2 text-xs text-[#B4C8BB]">{carregando?"Carregando lançamentos…":`${filtrados.length} de ${dados.length} registros acessíveis. A pré-visualização mostra até 100; o CSV inclui todos os filtrados.`}</p></div><button type="button" onClick={baixarCSV} disabled={carregando||!!erro||filtrados.length===0} className={botao+" bg-[#E3A144] font-semibold text-[#07110E]"}>Exportar CSV</button></div>
+      <section className="mt-5 overflow-hidden rounded-2xl border border-white/10"><div className="flex flex-wrap items-center justify-between gap-4 p-4 sm:p-6"><div><h2 className="text-xl">Pré-visualização</h2><p role="status" className="mt-2 text-xs text-[#B4C8BB]">{carregando?"Carregando lançamentos…":`${filtrados.length} de ${dados.length} registros acessíveis. A pré-visualização mostra até 100; o CSV inclui todos os filtrados.`}</p></div><button type="button" onClick={baixarCSV} disabled={carregando||!!erro||filtrados.length===0} className={botao+" bg-[#E3A144] font-semibold text-[#07110E]"}>Exportar CSV</button><button type="button" onClick={baixarPDF} disabled={carregando||!!erro||filtrados.length===0} className={botao+" border-[#E3A144] bg-[#E3A144]/10 font-semibold text-[#F4C77E]"}>Exportar PDF Premium</button></div>
         {!carregando&&!erro&&!filtrados.length&&<p className="p-6 text-sm">Nenhum lançamento corresponde aos filtros.</p>}
         {!carregando&&!erro&&!!filtrados.length&&<div className="overflow-x-auto"><table className="w-full min-w-[1100px] text-left text-xs"><thead className="border-y border-white/10 text-[#B4C8BB]"><tr>{["Vencimento","Liquidação","Tipo","Descrição","Reserva","Valor","Status"].map(c=><th key={c} className="p-4">{c}</th>)}</tr></thead><tbody>{filtrados.slice(0,100).map(item=><tr key={item.id} className="border-b border-white/10"><td className="p-4">{data(item.data_vencimento)||"—"}</td><td className="p-4">{data(item.data_liquidacao)||"—"}</td><td className="p-4">{item.tipo}</td><td className="p-4">{item.descricao||item.descrição||"—"}</td><td className="p-4 font-mono">{item.reserva_id||"Avulso"}</td><td className="p-4">{moeda(valorRegistro(item))}</td><td className="p-4">{statusFinanceiroERN(item)}</td></tr>)}</tbody></table></div>}
       </section>
