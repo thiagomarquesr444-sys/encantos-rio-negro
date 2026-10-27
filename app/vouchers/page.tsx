@@ -8,6 +8,7 @@ import React, {
   useState,
 } from 'react';
 import Link from 'next/link';
+import { baixarDocumentoPremiumERN } from '@/lib/documentosPremiumERN';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { reservaOperacionalERN } from '@/lib/reservasStatusERN';
 
@@ -751,6 +752,71 @@ export default function VouchersPage() {
     }
   }
 
+  function baixarPDFVoucher(item: Voucher) {
+    const status = obterStatus(item.status);
+    const estaExpirado = expirado(item, hoje);
+
+    const situacao = estaExpirado
+      ? 'Expirado'
+      : status === 'Ativo'
+        ? 'Ativo - verificar condições de utilização'
+        : status;
+
+    baixarDocumentoPremiumERN({
+      titulo: 'Voucher Turístico',
+      subtitulo: 'Encantos Rio Negro | Documento operacional',
+      identificador: item.codigo,
+      nomeArquivo: `ERN-voucher-${item.id}.pdf`,
+      status: situacao,
+      dados: [
+        { campo: 'Cliente na emissão', valor: nomeCliente(item) },
+        { campo: 'Passeio na emissão', valor: nomePasseio(item) },
+        {
+          campo: 'Reserva vinculada',
+          valor: item.reserva_id ?? 'Voucher avulso',
+        },
+        {
+          campo: 'Participantes',
+          valor: item.quantidade_pessoas ?? 'Não informado',
+        },
+        {
+          campo: 'Data do passeio na emissão',
+          valor: formatarData(item.data_passeio),
+        },
+        {
+          campo: 'Horário na emissão',
+          valor: item.horario_passeio?.slice(0, 5) || 'Não informado',
+        },
+        {
+          campo: 'Valor registrado',
+          valor: moeda(valorDoBanco(item.valor)),
+        },
+        {
+          campo: 'Validade',
+          valor: formatarData(item.validade),
+        },
+        {
+          campo: 'Status administrativo',
+          valor: status,
+        },
+        {
+          campo: 'Situação da validade',
+          valor: estaExpirado ? 'Expirada' : 'Não identificada como expirada',
+        },
+        {
+          campo: 'Data de emissão',
+          valor: formatarEmissao(item.data_emissao),
+        },
+      ],
+      observacoes: [
+        'Documento gerado a partir dos dados históricos registrados no voucher.',
+        'O status administrativo Ativo não comprova, por si só, que o voucher esteja apto para utilização.',
+        'Confirme as condições de utilização e a situação atual da reserva antes do atendimento.',
+        'Este voucher não constitui nota fiscal nem comprovante de pagamento.',
+      ],
+    });
+  }
+
   function etiqueta(item: Voucher) {
     const status = obterStatus(item.status);
     const classe =
@@ -779,6 +845,14 @@ export default function VouchersPage() {
       <div className="flex flex-wrap gap-2">
         <button type="button" disabled={ocupado} onClick={() => abrir('ver', item)} className={buttonClass}>
           Ver
+        </button>
+        <button
+          type="button"
+          disabled={ocupado}
+          onClick={() => baixarPDFVoucher(item)}
+          className={buttonClass}
+        >
+          Baixar PDF Premium
         </button>
         <button
           type="button"
