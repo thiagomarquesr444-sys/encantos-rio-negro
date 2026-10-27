@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 import Link from 'next/link';
 import { baixarDocumentoPremiumERN } from '@/lib/documentosPremiumERN';
+import { consultarIdentificacaoEmpresaERN } from '@/lib/identificacaoEmpresaERN';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { reservaOperacionalERN } from '@/lib/reservasStatusERN';
 
@@ -398,6 +399,8 @@ export default function VouchersPage() {
   const [erroAuxiliares, setErroAuxiliares] = useState<string | null>(null);
   const [erroModal, setErroModal] = useState<string | null>(null);
   const [sucesso, setSucesso] = useState<string | null>(null);
+  const [erroPDF, setErroPDF] = useState<string | null>(null);
+  const [gerandoPDFId, setGerandoPDFId] = useState<string | null>(null);
 
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState<FiltroStatus>('');
@@ -409,6 +412,7 @@ export default function VouchersPage() {
   const [ocupado, setOcupado] = useState(false);
 
   const mutacao = useRef(false);
+  const pdfEmAndamento = useRef(false);
   const versaoConsulta = useRef(0);
 
   const carregar = useCallback(async () => {
@@ -752,71 +756,103 @@ export default function VouchersPage() {
     }
   }
 
-  function baixarPDFVoucher(item: Voucher) {
-    const status = obterStatus(item.status);
-    const estaExpirado = expirado(item, hoje);
+  async function baixarPDFVoucher(item: Voucher): Promise<void> {
+    if (pdfEmAndamento.current || mutacao.current) return;
 
-    const situacao = estaExpirado
-      ? 'Expirado'
-      : status === 'Ativo'
-        ? 'Ativo - verificar condições de utilização'
-        : status;
+    pdfEmAndamento.current = true;
+    setGerandoPDFId(item.id);
+    setErroPDF(null);
 
-    baixarDocumentoPremiumERN({
-      titulo: 'Voucher Turístico',
-      subtitulo: 'Encantos Rio Negro | Documento operacional',
-      identificador: item.codigo,
-      nomeArquivo: `ERN-voucher-${item.id}.pdf`,
-      status: situacao,
-      dados: [
-        { campo: 'Cliente na emissão', valor: nomeCliente(item) },
-        { campo: 'Passeio na emissão', valor: nomePasseio(item) },
-        {
-          campo: 'Reserva vinculada',
-          valor: item.reserva_id ?? 'Voucher avulso',
-        },
-        {
-          campo: 'Participantes',
-          valor: item.quantidade_pessoas ?? 'Não informado',
-        },
-        {
-          campo: 'Data do passeio na emissão',
-          valor: formatarData(item.data_passeio),
-        },
-        {
-          campo: 'Horário na emissão',
-          valor: item.horario_passeio?.slice(0, 5) || 'Não informado',
-        },
-        {
-          campo: 'Valor registrado',
-          valor: moeda(valorDoBanco(item.valor)),
-        },
-        {
-          campo: 'Validade',
-          valor: formatarData(item.validade),
-        },
-        {
-          campo: 'Status administrativo',
-          valor: status,
-        },
-        {
-          campo: 'Situação da validade',
-          valor: estaExpirado ? 'Expirada' : 'Não identificada como expirada',
-        },
-        {
-          campo: 'Data de emissão',
-          valor: formatarEmissao(item.data_emissao),
-        },
-      ],
-      observacoes: [
-        'Documento gerado a partir dos dados históricos registrados no voucher.',
-        'O status administrativo Ativo não comprova, por si só, que o voucher esteja apto para utilização.',
-        'Confirme as condições de utilização e a situação atual da reserva antes do atendimento.',
-        'Este voucher não constitui nota fiscal nem comprovante de pagamento.',
-      ],
-    });
+    try {
+      const empresa = await consultarIdentificacaoEmpresaERN();
+
+      if (!item.empresa_id || item.empresa_id !== empresa.id) {
+        throw new Error(
+          'Este voucher não pertence à empresa autenticada.'
+        );
+      }
+
+      const { data, error } = await supabase
+        .from('vouchers')
+        .select('*')
+        .eq('id', item.id)
+        .eq('empresa_id', empresa.id)
+        .single();
+
+      if (error || !data) {
+        throw new Error(
+          'Não foi possível consultar o voucher atualizado.'
+        );
+      }
+
+      const atual = data as Voucher;
+
+      if (atual.empresa_id !== empresa.id) {
+        throw new Error(
+          'Inconsistência no vínculo empresarial do voucher.'
+        );
+      }
+
+      const status = obterStatus(atual.status);
+      const expirou = expirado(atual, hoje);
+
+      const situacao = expirou
+        ? 'Expirado'
+        : status === 'Ativo'
+          ? 'Ativo - utilização sujeita a conferência'
+          : status;
+
+      baixarDocumentoPremiumERN({
+        titulo: 'Voucher Turístico',
+        subtitulo: 'Documento operacional | Plataforma Encantos Rio Negro',
+        empresa: empresa.nome,
+        identificador: atual.codigo,
+        nomeArquivo: `ERN-voucher-${atual.id}.pdf`,
+        status: situacao,
+        dados: [
+          { campo: 'Prestador do serviço', valor: empresa.nome },
+          { campo: 'CNPJ informado', valor: empresa.cnpj ?? 'Não cadastrado' },
+          { campo: 'Endereço da operadora', valor: empresa.endereco ?? 'Não cadastrado' },
+          { campo: 'Cidade', valor: empresa.cidade ?? 'Não cadastrada' },
+          { campo: 'Telefone', valor: empresa.telefone ?? 'Não cadastrado' },
+          { campo: 'E-mail', valor: empresa.email ?? 'Não cadastrado' },
+          { campo: 'Cliente na emissão', valor: nomeCliente(atual) },
+          { campo: 'Passeio na emissão', valor: nomePasseio(atual) },
+          { campo: 'Reserva vinculada', valor: atual.reserva_id ?? 'Voucher avulso' },
+          { campo: 'Participantes', valor: atual.quantidade_pessoas ?? 'Não informado' },
+          { campo: 'Data do passeio na emissão', valor: formatarData(atual.data_passeio) },
+          { campo: 'Horário na emissão', valor: atual.horario_passeio?.slice(0, 5) || 'Não informado' },
+          { campo: 'Valor registrado', valor: moeda(valorDoBanco(atual.valor)) },
+          { campo: 'Validade', valor: formatarData(atual.validade) },
+          { campo: 'Status administrativo', valor: status },
+          {
+            campo: 'Situação da validade',
+            valor: expirou ? 'Expirada' : 'Não identificada como expirada'
+          },
+          {
+            campo: 'Data de emissão',
+            valor: formatarEmissao(atual.data_emissao || atual.created_at)
+          },
+        ],
+        observacoes: [
+          'Os dados do passeio representam o histórico registrado na emissão do voucher.',
+          'Os dados empresariais refletem o cadastro consultado na data deste download.',
+          'A identificação empresarial não constitui validação cadastral ou fiscal.',
+          'O status Ativo não comprova, isoladamente, aptidão para utilização.',
+          'Confirme a reserva e as condições do serviço antes do atendimento.',
+          'Este documento não constitui nota fiscal nem comprovante de pagamento.',
+        ],
+      });
+
+    } catch (falha) {
+      setErroPDF(
+        erroTexto(falha, 'Não foi possível gerar o PDF Premium.')
+      );
+    } finally {
+      pdfEmAndamento.current = false;
+      setGerandoPDFId(null);
+    }
   }
-
   function etiqueta(item: Voucher) {
     const status = obterStatus(item.status);
     const classe =
@@ -848,11 +884,11 @@ export default function VouchersPage() {
         </button>
         <button
           type="button"
-          disabled={ocupado}
-          onClick={() => baixarPDFVoucher(item)}
+          disabled={ocupado || gerandoPDFId !== null}
+          onClick={() => void baixarPDFVoucher(item)}
           className={buttonClass}
         >
-          Baixar PDF Premium
+          {gerandoPDFId === item.id ? 'Gerando PDF...' : 'Baixar PDF Premium'}
         </button>
         <button
           type="button"
@@ -906,6 +942,21 @@ export default function VouchersPage() {
 
   return (
     <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+      {erroPDF && (
+        <div
+          role="alert"
+          className="mx-auto mt-4 max-w-4xl rounded-xl border border-red-400/30 bg-red-950/30 p-4 text-sm text-red-200"
+        >
+          <p>{erroPDF}</p>
+          <button
+            type="button"
+            onClick={() => setErroPDF(null)}
+            className={buttonClass + ' mt-3'}
+          >
+            Fechar aviso
+          </button>
+        </div>
+      )}
       {sucesso && (
         <div role="status" className="fixed left-3 right-3 top-24 z-[90] mx-auto max-w-lg rounded-2xl border border-emerald-400/25 bg-[#0B2119] p-4 text-sm text-emerald-200 shadow-2xl">
           {sucesso}
