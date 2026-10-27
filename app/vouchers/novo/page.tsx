@@ -3,6 +3,7 @@ import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
+import { reservaOperacionalERN } from "@/lib/reservasStatusERN";
 
 type Opcao = { id: string; nome: string };
 type Reserva = { id: string; cliente: string | null; pacote: string | null; cliente_id: string | null; passeio_id: string | null; quantidade_pessoas: number | null; data_reserva: string; horario: string | null; valor_total: number | string | null; valor: number | string | null; status: string | null };
@@ -27,7 +28,7 @@ function dataVoucherValida(valor: string): boolean {
   return Number.isFinite(data.getTime()) && data.toISOString().slice(0,10) === valor;
 }
 const moeda = (valor: number) => valor.toLocaleString("pt-BR", {minimumFractionDigits:2,maximumFractionDigits:2});
-const cancelada = (status: string | null) => (status ?? "").trim().toLowerCase().startsWith("cancelad");
+const disponivel = (status: string | null) => reservaOperacionalERN(status);
 const mensagem = (erro: unknown, fallback: string) => erro && typeof erro === "object" && "message" in erro && typeof erro.message === "string" ? erro.message : fallback;
 const codigoNovo = () => `ERN-${crypto.randomUUID().toUpperCase()}`;
 const CAMPOS_RESERVA = "id,cliente,pacote,cliente_id,passeio_id,quantidade_pessoas,data_reserva,horario,valor_total,valor,status";
@@ -87,7 +88,7 @@ export default function NovoVoucherPage() {
         setEmpresa(emp);setClientes(cs);setPasseios(ps);setReservas(rs);
         setForm(atual=>({...atual,codigo:atual.codigo||codigoNovo()}));
         const pedido=new URLSearchParams(window.location.search).get("reserva_id");
-        if(pedido){const r=rs.find(item=>item.id===pedido);if(!r)throw new Error("A reserva indicada não está disponível para sua empresa.");if(cancelada(r.status))throw new Error("A reserva indicada está cancelada.");selecionar(r);}
+        if(pedido){const r=rs.find(item=>item.id===pedido);if(!r)throw new Error("A reserva indicada não está disponível para sua empresa.");if(!disponivel(r.status))throw new Error("Esta reserva não permite emissão de voucher.");selecionar(r);}
       }catch(falha){if(ativo)setErroCarga(mensagem(falha,"Não foi possível carregar os cadastros."));}
       finally{if(ativo)setCarregando(false);}
     }
@@ -119,7 +120,7 @@ export default function NovoVoucherPage() {
     if(!Number.isFinite(valor)){setErro("Informe um valor maior que zero, com até duas casas decimais.");return;}
     if(form.validade&&!dataVoucherValida(form.validade)){setErro("Informe uma validade válida.");return;}
     if(!reservaId&&(!form.clienteId||!form.passeioId)){setErro("Selecione cliente e passeio para o voucher avulso.");return;}
-    if(reservaId&&(!reserva||cancelada(reserva.status))){setErro("Selecione uma reserva disponível.");return;}
+    if(reservaId&&(!reserva||!disponivel(reserva.status))){setErro("Selecione uma reserva disponível.");return;}
     if(totalExistentes>0&&!confirmarOutro){setErro("Confira os vouchers já emitidos e confirme se deseja emitir outro.");return;}
     envio.current=true;setSalvando(true);
     try{
@@ -130,7 +131,7 @@ export default function NovoVoucherPage() {
       if(reservaId){
         const {data,error}=await supabase.from("reservas").select(CAMPOS_RESERVA).eq("empresa_id",empresa).eq("id",reservaId).single();
         if(error||!data)throw new Error("A reserva não está mais disponível.");atual=data as Reserva;
-        if(cancelada(atual.status))throw new Error("Esta reserva foi cancelada.");
+        if(!disponivel(atual.status))throw new Error("A reserva não está operacional. Emissão bloqueada.");
         if(CAMPOS_RESERVA.split(",").some(campo => atual![campo as keyof Reserva] !== reserva?.[campo as keyof Reserva])){
           setReservas(lista=>lista.map(r=>r.id===atual!.id?atual!:r));
           throw new Error("A reserva foi alterada. Confira os dados atualizados antes de emitir. O valor do voucher deve ser revisado por você.");
@@ -147,7 +148,7 @@ export default function NovoVoucherPage() {
   }
   const campo="mt-2 min-h-12 w-full min-w-0 rounded-xl border border-white/15 bg-[#07110E] px-3 py-2 text-sm text-[#EDEDE3] disabled:opacity-50";
   const botao="min-h-12 rounded-xl border border-white/20 px-4 py-3 text-sm disabled:opacity-50";
-  const candidatas=reservas.filter(r=>!cancelada(r.status)&&`${r.cliente} ${r.pacote} ${r.data_reserva} ${r.id}`.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().includes(busca.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()));
+  const candidatas=reservas.filter(r=>disponivel(r.status)&&`${r.cliente} ${r.pacote} ${r.data_reserva} ${r.id}`.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().includes(busca.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()));
   return <main className="min-h-screen min-w-0 bg-[#07110E] px-4 py-8 text-[#EDEDE3] sm:px-6">
     <div className="mx-auto max-w-5xl"><Link href="/vouchers" className="inline-flex min-h-11 items-center text-sm text-[#F4C77E]">← Vouchers</Link>
       <h1 className="mt-5 text-3xl sm:text-4xl" style={{fontFamily:"var(--font-fraunces), serif"}}>Emitir voucher</h1>

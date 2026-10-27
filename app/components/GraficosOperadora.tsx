@@ -1,5 +1,7 @@
 'use client';
 
+import { normalizarStatusReservaERN } from '@/lib/reservasStatusERN';
+
 import { useMemo } from 'react';
 
 import Link from 'next/link';
@@ -34,13 +36,19 @@ const SITUACOES = [
 
   { chave: 'cancelada', nome: 'Canceladas', cor: '#FB7185' },
 
+  { chave: 'concluida', nome: 'Concluídas', cor: '#38BDF8' },
+  { chave: 'nao_compareceu', nome: 'Não compareceu', cor: '#FB923C' },
   { chave: 'outras', nome: 'Outras situações', cor: '#7DD3FC' },
 
 ] as const;
 
 function statusNormalizado(status: string | null): string {
 
-  return (status ?? '').trim().toLocaleLowerCase('pt-BR');
+  return normalizarStatusReservaERN(status)
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, '_');
 
 }
 
@@ -98,6 +106,8 @@ export default function GraficosOperadora({
 
       cancelada: 0,
 
+      concluida: 0,
+      nao_compareceu: 0,
       outras: 0,
 
     };
@@ -124,7 +134,7 @@ export default function GraficosOperadora({
 
         status === 'pendente' ||
 
-        status === 'cancelada'
+        (status === 'cancelada' || status === 'concluida' || status === 'nao_compareceu')
 
       ) {
 
@@ -138,7 +148,7 @@ export default function GraficosOperadora({
 
       const dia = porDia.get(reserva.data_reserva);
 
-      if (dia && status !== 'cancelada') {
+      if (dia && (status === 'pendente' || status === 'confirmada')) {
 
         dia.quantidade += 1;
 
@@ -278,7 +288,7 @@ export default function GraficosOperadora({
 
               <p className="mt-1 text-xs text-[#B4C8BB]">
 
-                reservas não canceladas
+                reservas pendentes ou confirmadas
 
               </p>
 
@@ -368,7 +378,7 @@ export default function GraficosOperadora({
 
                 {dados.totalSemana === 0
 
-                  ? 'Nenhuma reserva não cancelada neste período.'
+                  ? 'Nenhuma reserva pendente ou confirmada neste período.'
 
                   : 'Cada reserva representa uma operação. Canceladas ficam fora desta contagem.'}
 
@@ -560,7 +570,7 @@ export default function GraficosOperadora({
 
                   ? 'Nenhuma reserva cadastrada para este período.'
 
-                  : 'Outras situações incluem status diferentes dos três principais e reservas sem status.'}
+                  : 'Outras situações incluem status não reconhecidos ou não informados. Reservas encerradas permanecem nesta distribuição histórica.'}
 
               </p>
 

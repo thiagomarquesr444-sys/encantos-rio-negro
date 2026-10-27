@@ -98,6 +98,8 @@ export default function GraficosReservas({
       { nome: 'Confirmada', cor: 'bg-emerald-400' },
       { nome: 'Pendente', cor: 'bg-[#E3A144]' },
       { nome: 'Cancelada', cor: 'bg-rose-400' },
+      { nome: 'Concluída', cor: 'bg-sky-400' },
+      { nome: 'Não compareceu', cor: 'bg-orange-400' },
     ].map((item) => ({
       ...item,
       quantidade: selecionadas.filter(

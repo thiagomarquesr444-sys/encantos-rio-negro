@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import VinculosReserva from '@/app/components/VinculosReserva';
 import LogisticaReserva from '@/app/components/LogisticaReserva';
+import PeriodoReservaERN, { validarPeriodoReservaERN } from '@/app/components/PeriodoReservaERN';
 
 type StatusReserva = 'Pendente' | 'Confirmada' | 'Cancelada';
 
@@ -33,6 +34,8 @@ type FormReserva = {
   cliente_id: string;
   passeio_id: string;
   horario: string;
+  data_fim_prevista: string;
+  horario_fim_previsto: string;
   embarcacao_id: string;
   quantidade_pessoas: string;
   cliente: string;
@@ -49,6 +52,8 @@ const ESTADO_INICIAL: FormReserva = {
   cliente_id: '',
   passeio_id: '',
   horario: '',
+  data_fim_prevista: '',
+  horario_fim_previsto: '',
   embarcacao_id: '',
   quantidade_pessoas: '1',
   cliente: '',
@@ -387,6 +392,18 @@ export default function NovaReservaPage() {
       return;
     }
 
+    const erroPeriodoERN = validarPeriodoReservaERN(
+      form.data_reserva,
+      form.horario,
+      form.data_fim_prevista,
+      form.horario_fim_previsto
+    );
+
+    if (erroPeriodoERN) {
+      setFeedback({ tipo: 'erro', mensagem: erroPeriodoERN });
+      return;
+    }
+
     const valorTratado = converterValor(form.valor);
 
     if (valorTratado === null || valorTratado < 0) {
@@ -440,6 +457,8 @@ export default function NovaReservaPage() {
           cliente_id: form.cliente_id || null,
           passeio_id: form.passeio_id || null,
           horario: form.horario.trim() || null,
+        data_fim_prevista: form.data_fim_prevista || null,
+        horario_fim_previsto: form.horario_fim_previsto || null,
           embarcacao_id: form.embarcacao_id || null,
           cliente: form.cliente.trim(),
           pacote: form.pacote.trim(),
@@ -787,6 +806,18 @@ export default function NovaReservaPage() {
 
               <div className="mt-5 min-w-0 space-y-5">
                 <div className="min-w-0">
+                  <PeriodoReservaERN
+                    inicio={form.data_reserva}
+                    horarioInicio={form.horario}
+                    fim={form.data_fim_prevista}
+                    horarioFim={form.horario_fim_previsto}
+                    status={form.status}
+                    bloqueado={bloqueado}
+                    onChange={(campos) => {
+                      if (envioReserva.current) return;
+                      setForm((atual) => ({ ...atual, ...campos }));
+                    }}
+                  />
                   <LogisticaReserva
                     horario={form.horario}
                     embarcacaoId={form.embarcacao_id}

@@ -9,6 +9,7 @@ import React, {
 } from 'react';
 import Link from 'next/link';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import { reservaOperacionalERN } from '@/lib/reservasStatusERN';
 
 type StatusVoucher = 'Ativo' | 'Utilizado' | 'Cancelado';
 type StatusExibido = StatusVoucher | 'Desconhecido';
@@ -650,6 +651,25 @@ export default function VouchersPage() {
 
       if (!item.empresa_id || item.empresa_id !== empresaId) {
         throw new Error('Este voucher não pertence à empresa da sessão atual. Atualize a lista.');
+      }
+
+      if (item.reserva_id && edicao.status === 'Ativo') {
+        const { data: reservaAtual, error: erroReserva } = await supabase
+          .from('reservas')
+          .select('id,status')
+          .eq('id', item.reserva_id)
+          .eq('empresa_id', empresaId)
+          .single();
+
+        if (erroReserva || !reservaAtual) {
+          throw new Error('Não foi possível verificar a reserva vinculada.');
+        }
+
+        if (!reservaOperacionalERN(reservaAtual.status)) {
+          throw new Error(
+            'Esta reserva não está operacional. Não é permitido ativar o voucher.'
+          );
+        }
       }
 
       const alteracoes = {

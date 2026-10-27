@@ -6,13 +6,20 @@ import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import VinculosReserva from '@/app/components/VinculosReserva';
 import LogisticaReserva from '@/app/components/LogisticaReserva';
+import PeriodoReservaERN, { validarPeriodoReservaERN } from '@/app/components/PeriodoReservaERN';
 
-type StatusReserva = 'Pendente' | 'Confirmada' | 'Cancelada';
+import {
+  normalizarStatusReservaERN,
+  reservaEncerradaERN,
+  type StatusReservaERN as StatusReserva,
+} from '@/lib/reservasStatusERN';
 
 interface ReservaForm {
   cliente_id: string;
   passeio_id: string;
   horario: string;
+  data_fim_prevista: string;
+  horario_fim_previsto: string;
   embarcacao_id: string;
   quantidade_pessoas: string;
   cliente: string;
@@ -32,6 +39,8 @@ interface ReservaBanco {
   cliente_id?: string | null;
   passeio_id?: string | null;
   horario?: string | null;
+  data_fim_prevista?: string | null;
+  horario_fim_previsto?: string | null;
   embarcacao_id?: string | null;
   cliente?: string | null;
   nome_cliente?: string | null;
@@ -71,6 +80,8 @@ const formInicial: ReservaForm = {
   cliente_id: '',
   passeio_id: '',
   horario: '',
+  data_fim_prevista: '',
+  horario_fim_previsto: '',
   embarcacao_id: '',
   quantidade_pessoas: '',
   cliente: '',
@@ -83,14 +94,7 @@ const formInicial: ReservaForm = {
   observacoes: '',
 };
 
-function normalizarStatus(status?: string | null): StatusReserva {
-  const valor = (status ?? '').trim().toLowerCase();
-
-  if (valor.includes('confirmad')) return 'Confirmada';
-  if (valor.includes('cancelad')) return 'Cancelada';
-
-  return 'Pendente';
-}
+const normalizarStatus = normalizarStatusReservaERN;
 
 function converterValorMonetario(valor: string): number {
   let texto = valor.trim().replace(/^R\$\s*/i, '');
@@ -217,7 +221,11 @@ function EditarReservaConteudo({ id }: { id?: string }) {
   const montado = useRef(true);
   const feedbackRef = useRef<HTMLDivElement>(null);
 
-  const bloqueado = loading || salvando || gravada;
+  const somenteConsultaERN =
+    reservaEncerradaERN(statusOriginal) ||
+    statusOriginal === 'Desconhecido';
+
+  const bloqueado = loading || salvando || gravada || somenteConsultaERN;
 
   useEffect(() => {
     montado.current = true;
@@ -292,6 +300,8 @@ function EditarReservaConteudo({ id }: { id?: string }) {
           cliente_id: reserva.cliente_id ?? '',
           passeio_id: reserva.passeio_id ?? '',
           horario: reserva.horario?.slice(0, 5) ?? '',
+          data_fim_prevista: reserva.data_fim_prevista ?? '',
+          horario_fim_previsto: reserva.horario_fim_previsto?.slice(0, 5) ?? '',
           embarcacao_id: reserva.embarcacao_id ?? '',
           quantidade_pessoas: reserva.quantidade_pessoas == null
             ? ''
@@ -357,6 +367,7 @@ function EditarReservaConteudo({ id }: { id?: string }) {
 
     if (
       envioReserva.current ||
+      somenteConsultaERN ||
       loading ||
       gravada ||
       !id ||
@@ -395,6 +406,18 @@ function EditarReservaConteudo({ id }: { id?: string }) {
         tipo: 'erro',
         mensagem: 'Informe uma data válida para o passeio.',
       });
+      return;
+    }
+
+    const erroPeriodoERN = validarPeriodoReservaERN(
+      form.dataReserva,
+      form.horario,
+      form.data_fim_prevista,
+      form.horario_fim_previsto
+    );
+
+    if (erroPeriodoERN) {
+      setFeedback({ tipo: 'erro', mensagem: erroPeriodoERN });
       return;
     }
 
@@ -446,6 +469,8 @@ function EditarReservaConteudo({ id }: { id?: string }) {
         cliente_id: form.cliente_id || null,
         passeio_id: form.passeio_id || null,
         horario: form.horario.trim() || null,
+        data_fim_prevista: form.data_fim_prevista || null,
+        horario_fim_previsto: form.horario_fim_previsto || null,
         embarcacao_id: form.embarcacao_id || null,
         cliente: form.cliente.trim(),
         pacote: form.pacote.trim(),
@@ -551,14 +576,14 @@ function EditarReservaConteudo({ id }: { id?: string }) {
               Operação · Reservas
             </p>
             <h1 className="mt-3 text-3xl sm:text-4xl" style={headingStyle}>
-              Editar reserva
+              {somenteConsultaERN ? 'Consultar reserva' : 'Editar reserva'}
             </h1>
             <p className="mt-4 max-w-2xl break-words text-sm leading-7 text-[#B4C8BB]">
               Atualize os dados do atendimento, a logística e o status da reserva.
             </p>
           </div>
 
-          {!bloqueado && (
+          {!loading && !salvando && !gravada && (
             <div className="grid gap-3 sm:grid-cols-2">
               <Link href={`/vouchers?reserva_id=${idURL}`} className={buttonClass}>
                 Consultar vouchers
@@ -584,6 +609,17 @@ function EditarReservaConteudo({ id }: { id?: string }) {
             }`}
           >
             {feedback.mensagem}
+          </div>
+        )}
+
+        {somenteConsultaERN && (
+          <div
+            role="status"
+            className="mb-5 rounded-xl border border-sky-400/25 bg-sky-400/10 p-4 text-sm leading-7 text-sky-100"
+          >
+            {statusOriginal === 'Desconhecido'
+              ? 'Status não reconhecido. A edição foi bloqueada para preservar o registro até sua revisão.'
+              : `Reserva ${statusOriginal.toLocaleLowerCase('pt-BR')}. Os dados estão disponíveis somente para consulta. O encerramento não comprova pagamento.`}
           </div>
         )}
 
@@ -714,6 +750,18 @@ function EditarReservaConteudo({ id }: { id?: string }) {
 
               <div className="mt-5 min-w-0 space-y-5">
                 <div className="min-w-0">
+                  <PeriodoReservaERN
+                    inicio={form.dataReserva}
+                    horarioInicio={form.horario}
+                    fim={form.data_fim_prevista}
+                    horarioFim={form.horario_fim_previsto}
+                    status={form.status}
+                    bloqueado={bloqueado}
+                    onChange={(campos) => {
+                      if (envioReserva.current) return;
+                      setForm((atual) => ({ ...atual, ...campos }));
+                    }}
+                  />
                   <LogisticaReserva
                     horario={form.horario}
                     embarcacaoId={form.embarcacao_id}
@@ -762,6 +810,9 @@ function EditarReservaConteudo({ id }: { id?: string }) {
                     <option value="Pendente">Pendente</option>
                     <option value="Confirmada">Confirmada</option>
                     <option value="Cancelada">Cancelada</option>
+                    {somenteConsultaERN && (
+                      <option value={form.status}>{form.status}</option>
+                    )}
                   </select>
                 </div>
 

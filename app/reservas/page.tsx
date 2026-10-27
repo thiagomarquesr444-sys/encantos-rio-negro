@@ -12,14 +12,24 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import GraficosReservas from '@/app/components/GraficosReservas';
+import SituacaoPeriodoReservaERN, {
+  referenciaManausERN,
+} from '@/app/components/SituacaoPeriodoReservaERN';
 
-type StatusReserva = 'Pendente' | 'Confirmada' | 'Cancelada';
+import {
+  normalizarStatusReservaERN,
+  reservaEncerradaERN,
+  reservaOperacionalERN,
+  type StatusReservaERN as StatusReserva,
+} from '@/lib/reservasStatusERN';
 
 interface Reserva {
   id?: string | number;
   empresa_id?: string | null;
   quantidade_pessoas: number | null;
   horario?: string | null;
+  data_fim_prevista?: string | null;
+  horario_fim_previsto?: string | null;
   embarcacao_id?: string | null;
   guiaInformado?: boolean;
   statusOriginal?: string;
@@ -39,6 +49,8 @@ interface ReservaBanco {
   empresa_id?: string | null;
   quantidade_pessoas?: number | null;
   horario?: string | null;
+  data_fim_prevista?: string | null;
+  horario_fim_previsto?: string | null;
   embarcacao_id?: string | null;
   cliente?: string | null;
   nome_cliente?: string | null;
@@ -88,14 +100,7 @@ function normalizarTexto(valor: string): string {
     .toLowerCase();
 }
 
-function normalizarStatus(status?: string | null): StatusReserva {
-  const valor = (status ?? '').trim().toLowerCase();
-
-  if (valor.includes('confirmad')) return 'Confirmada';
-  if (valor.includes('cancelad')) return 'Cancelada';
-
-  return 'Pendente';
-}
+const normalizarStatus = normalizarStatusReservaERN;
 
 function normalizarQuantidadePessoas(valor: unknown): number | null {
   return (
@@ -228,12 +233,15 @@ async function obterEmpresa(): Promise<string> {
 }
 
 function StatusBadge({ status }: { status: StatusReserva }) {
-  const classe =
-    status === 'Confirmada'
-      ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-200'
-      : status === 'Cancelada'
-        ? 'border-red-400/25 bg-red-400/10 text-red-200'
-        : 'border-amber-400/25 bg-amber-400/10 text-amber-200';
+  const classes: Record<StatusReserva, string> = {
+    Pendente: 'border-amber-400/25 bg-amber-400/10 text-amber-200',
+    Confirmada: 'border-emerald-400/25 bg-emerald-400/10 text-emerald-200',
+    Cancelada: 'border-red-400/25 bg-red-400/10 text-red-200',
+    Concluída: 'border-sky-400/25 bg-sky-400/10 text-sky-200',
+    'Não compareceu': 'border-orange-400/25 bg-orange-400/10 text-orange-200',
+    Desconhecido: 'border-white/25 bg-white/10 text-white',
+  };
+  const classe = classes[status];
 
   return (
     <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${classe}`}>
@@ -375,6 +383,22 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
     inicioOperacional <= fimOperacional;
 
   const [reservas, setReservas] = useState<Reserva[]>([]);
+  const [referenciaPeriodoERN, setReferenciaPeriodoERN] = useState('');
+
+  useEffect(() => {
+    const atualizar = () => {
+      setReferenciaPeriodoERN(referenciaManausERN());
+    };
+
+    atualizar();
+    const intervalo = window.setInterval(atualizar, 60000);
+    window.addEventListener('focus', atualizar);
+
+    return () => {
+      window.clearInterval(intervalo);
+      window.removeEventListener('focus', atualizar);
+    };
+  }, []);
   const [loading, setLoading] = useState(true);
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState<'' | StatusReserva>('');
@@ -452,6 +476,8 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
           id: item.id,
           empresa_id: item.empresa_id ?? empresaId,
           horario: item.horario ?? null,
+          data_fim_prevista: item.data_fim_prevista ?? null,
+          horario_fim_previsto: item.horario_fim_previsto ?? null,
           embarcacao_id: item.embarcacao_id ?? null,
           guiaInformado: Boolean(item.guia?.trim()),
           statusOriginal: (item.status || item.Status || '').trim().toLowerCase(),
@@ -506,7 +532,7 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
         !dataValida(data) ||
         data < inicioOperacional ||
         data > fimOperacional ||
-        reserva.status === 'Cancelada'
+        !reservaOperacionalERN(reserva.status)
       ) {
         return false;
       }
@@ -756,13 +782,13 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
             href={`/reservas/editar/${encodeURIComponent(String(reserva.id))}`}
             className={buttonClass}
           >
-            Editar
+            {reservaEncerradaERN(reserva.status) ? 'Consultar' : 'Editar'}
           </Link>
         )}
 
         <button
           type="button"
-          disabled={excluindo || reserva.id == null}
+          disabled={excluindo || reserva.id == null || reservaEncerradaERN(reserva.status)}
           onClick={() => abrirModal('excluir', reserva)}
           className={`${buttonClass} border-red-400/25 text-red-300`}
         >
@@ -976,6 +1002,9 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
               <option value="Pendente">Pendentes</option>
               <option value="Confirmada">Confirmadas</option>
               <option value="Cancelada">Canceladas</option>
+              <option value="Concluída">Concluídas</option>
+              <option value="Não compareceu">Não compareceu</option>
+              <option value="Desconhecido">Status não reconhecido</option>
             </select>
           </div>
         </section>
@@ -1034,7 +1063,16 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
                           {reserva.pacote}
                         </p>
                       </div>
-                      <StatusBadge status={reserva.status} />
+                      <div className="flex min-w-0 flex-col items-start gap-2">
+                        <StatusBadge status={reserva.status} />
+                        <SituacaoPeriodoReservaERN
+                          status={reserva.statusOriginal ?? reserva.status}
+                          inicio={reserva.dataOriginal}
+                          fim={reserva.data_fim_prevista}
+                          horarioFim={reserva.horario_fim_previsto}
+                          referencia={referenciaPeriodoERN}
+                        />
+                      </div>
                     </div>
 
                     <dl className="mt-4 grid grid-cols-2 gap-4 text-sm">
@@ -1090,7 +1128,16 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
                         <td className="whitespace-nowrap px-4 py-4 font-semibold tabular-nums text-[#F4C77E]">
                           {formatarMoeda(reserva.valor)}
                         </td>
-                        <td className="px-4 py-4"><StatusBadge status={reserva.status} /></td>
+                        <td className="px-4 py-4"><div className="flex min-w-0 flex-col items-start gap-2">
+                        <StatusBadge status={reserva.status} />
+                        <SituacaoPeriodoReservaERN
+                          status={reserva.statusOriginal ?? reserva.status}
+                          inicio={reserva.dataOriginal}
+                          fim={reserva.data_fim_prevista}
+                          horarioFim={reserva.horario_fim_previsto}
+                          referencia={referenciaPeriodoERN}
+                        />
+                      </div></td>
                         <td className="min-w-[240px] px-4 py-4">{acoes(reserva)}</td>
                       </tr>
                     ))}
@@ -1115,7 +1162,7 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
 
               {idSelecionado != null && (
                 <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  {selecionada.status !== 'Cancelada' && (
+                  {reservaOperacionalERN(selecionada.status) && (
                     <Link
                       href={`/vouchers/novo?reserva_id=${idURL}`}
                       className={`${buttonClass} border-[#E3A144]/40 text-[#F4C77E]`}
@@ -1135,12 +1182,25 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
                 </div>
               )}
 
+              <div className="mt-4">
+                <SituacaoPeriodoReservaERN
+                  status={selecionada.statusOriginal ?? selecionada.status}
+                  inicio={selecionada.dataOriginal}
+                  fim={selecionada.data_fim_prevista}
+                  horarioFim={selecionada.horario_fim_previsto}
+                  referencia={referenciaPeriodoERN}
+                  detalhado
+                />
+              </div>
+
               <dl className="mt-5 grid gap-3 sm:grid-cols-2">
                 {[
                   ['Quantidade de pessoas', formatarQuantidadePessoas(selecionada.quantidade_pessoas)],
                   ['Data do passeio', selecionada.data],
                   ['Horário', selecionada.horario?.slice(0, 5) || 'Não informado'],
                   ['Status', selecionada.status],
+                  ['Término previsto', selecionada.data_fim_prevista ? formatarData(selecionada.data_fim_prevista) : 'Não informado'],
+                  ['Horário de término', selecionada.horario_fim_previsto?.slice(0, 5) || 'Não informado'],
                   ['Agência / Parceiro', selecionada.agencia],
                   ['Guia', selecionada.guia],
                   ['Embarcação vinculada', selecionada.embarcacao_id ? 'Sim' : 'Não'],
@@ -1176,8 +1236,8 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
                 será removida permanentemente.
               </p>
               <p className="mt-3 text-sm leading-7 text-[#B4C8BB]">
-                Reservas com vouchers vinculados têm a exclusão bloqueada.
-                Para preservar o histórico, prefira editar o status para Cancelada.
+                Reservas com vouchers ou lançamentos financeiros vinculados têm a exclusão bloqueada.
+                Use a exclusão apenas para cadastros indevidos. Uma data passada não significa cancelamento: confira o resultado da operação antes de alterar o status.
               </p>
 
               {erroExclusao && (

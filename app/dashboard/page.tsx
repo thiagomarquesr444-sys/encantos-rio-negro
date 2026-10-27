@@ -1,5 +1,10 @@
 'use client';
 
+import {
+  normalizarStatusReservaERN,
+  reservaOperacionalERN,
+} from '@/lib/reservasStatusERN';
+
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import GraficosOperadora from '@/app/components/GraficosOperadora';
@@ -146,7 +151,7 @@ function estiloStatusPlano(status: string): string {
 function normalizarStatusReserva(
   status: string | null | undefined,
 ): string {
-  return (status ?? '').trim().toLocaleLowerCase('pt-BR');
+  return normalizarStatusReservaERN(status).toLocaleLowerCase('pt-BR');
 }
 
 function nomeStatusReserva(
@@ -180,6 +185,18 @@ function estiloStatusReserva(
 
   if (normalizado === 'cancelada') {
     return 'border-rose-400/20 bg-rose-400/[0.08] text-rose-300';
+  }
+
+  if (normalizado === 'concluída') {
+    return 'border-sky-400/20 bg-sky-400/[0.08] text-sky-300';
+  }
+
+  if (normalizado === 'não compareceu') {
+    return 'border-orange-400/20 bg-orange-400/[0.08] text-orange-300';
+  }
+
+  if (normalizado === 'desconhecido') {
+    return 'border-white/20 bg-white/[0.08] text-white';
   }
 
   return 'border-[#E3A144]/20 bg-[#E3A144]/[0.08] text-[#F4C77E]';
@@ -674,7 +691,7 @@ function DashboardAdministrativoERN() {
 
     const reservasValidas = reservasOperacionais.filter(
       (reserva) =>
-        normalizarStatusReserva(reserva.status) !== 'cancelada',
+        reservaOperacionalERN(reserva.status),
     );
 
     const hojeReservas = reservasValidas.filter(
@@ -717,7 +734,7 @@ function DashboardAdministrativoERN() {
     return reservasOperacionais
       .filter(
         (reserva) =>
-          normalizarStatusReserva(reserva.status) !== 'cancelada',
+          reservaOperacionalERN(reserva.status),
       )
       .slice(0, 5);
   }, [reservasOperacionais]);
@@ -730,7 +747,7 @@ function DashboardAdministrativoERN() {
       (reserva) =>
         reserva.data_reserva >= hoje &&
         reserva.data_reserva <= seteDias &&
-        normalizarStatusReserva(reserva.status) !== 'cancelada',
+        reservaOperacionalERN(reserva.status),
     );
 
     const reservasPendentes = proximas.filter(
