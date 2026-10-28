@@ -4,12 +4,14 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
 type Opcao = { id: string; nome: string };
+type GuiaOpcao = Opcao & { status: string | null };
 
 type Campos = {
   cliente_id?: string;
   passeio_id?: string;
   cliente?: string;
   pacote?: string;
+  guia?: string;
 };
 
 type Props = {
@@ -17,6 +19,7 @@ type Props = {
   passeioId: string;
   clienteNome: string;
   passeioNome: string;
+  guiaNome: string;
   bloqueado: boolean;
   onChange: (campos: Campos) => void;
 };
@@ -26,11 +29,13 @@ export default function VinculosReserva({
   passeioId,
   clienteNome,
   passeioNome,
+  guiaNome,
   bloqueado,
   onChange,
 }: Props) {
   const [clientes, setClientes] = useState<Opcao[]>([]);
   const [passeios, setPasseios] = useState<Opcao[]>([]);
+  const [guias, setGuias] = useState<GuiaOpcao[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState('');
   const [tentativa, setTentativa] = useState(0);
@@ -104,14 +109,60 @@ export default function VinculosReserva({
           );
         }
 
-        const [listaClientes, listaPasseios] = await Promise.all([
-          listar('clientes'),
-          listar('passeios'),
-        ]);
+        async function listarGuias(): Promise<GuiaOpcao[]> {
+          const lista: GuiaOpcao[] = [];
+          let esperado: number | null = null;
+
+          for (let inicio = 0; inicio < 10000; inicio += 200) {
+            const { data, count, error } = await supabase
+              .from('guias')
+              .select('id,nome,status', { count: 'exact' })
+              .eq('empresa_id', perfil!.empresa_id)
+              .order('id')
+              .range(inicio, inicio + 199);
+
+            if (error || count === null || count > 10000) {
+              throw new Error('Não foi possível consultar os guias da operadora.');
+            }
+
+            if (esperado !== null && esperado !== count) {
+              throw new Error('O cadastro de guias mudou. Atualize as opções.');
+            }
+
+            esperado = count;
+            lista.push(...((data ?? []) as GuiaOpcao[]));
+
+            if (lista.length >= count) break;
+
+            if (!data?.length) {
+              throw new Error('Consulta de guias incompleta.');
+            }
+          }
+
+          if (
+            lista.length !== esperado ||
+            lista.some(item => !item.id || !item.nome) ||
+            new Set(lista.map(item => item.id)).size !== lista.length
+          ) {
+            throw new Error('Cadastro de guias inconsistente.');
+          }
+
+          return lista.sort((a, b) =>
+            a.nome.localeCompare(b.nome, 'pt-BR')
+          );
+        }
+
+        const [listaClientes, listaPasseios, listaGuias] =
+          await Promise.all([
+            listar('clientes'),
+            listar('passeios'),
+            listarGuias(),
+          ]);
 
         if (ativo) {
           setClientes(listaClientes);
           setPasseios(listaPasseios);
+          setGuias(listaGuias);
           setCarregando(false);
         }
       } catch (falha) {
@@ -165,7 +216,7 @@ export default function VinculosReserva({
         </div>
       )}
 
-      <div className="mt-4 grid min-w-0 gap-4 sm:grid-cols-2">
+      <div className="mt-4 grid min-w-0 gap-4 md:grid-cols-3">
         <label className="min-w-0 text-xs text-[#EDEDE3]/80">
           Cliente cadastrado
           <select
@@ -228,6 +279,51 @@ export default function VinculosReserva({
               </option>
             ))}
           </select>
+        </label>
+
+        <label className="min-w-0 text-xs text-[#EDEDE3]/80">
+          Guia responsável
+          <select
+            aria-label="Selecionar guia da operadora"
+            value={
+              guias.some(item => item.nome === guiaNome)
+                ? guiaNome
+                : guiaNome ? '__anterior__' : ''
+            }
+            disabled={bloqueado || carregando || Boolean(erro)}
+            className={classe}
+            onChange={(event) => {
+              const escolhido = guias.find(
+                item => item.nome === event.target.value
+              );
+              onChange({ guia: escolhido?.nome ?? '' });
+            }}
+          >
+            <option value="">
+              {carregando ? 'Carregando…' : 'Ainda não definido'}
+            </option>
+            {guiaNome &&
+              !guias.some(item => item.nome === guiaNome) && (
+                <option value="__anterior__">
+                  {guiaNome} — registro anterior
+                </option>
+              )}
+            {guias
+              .filter(item =>
+                ['ativo', 'em tour'].includes(
+                  (item.status || '').trim().toLowerCase()
+                )
+              )
+              .map(item => (
+                <option key={item.id} value={item.nome}>
+                  {item.nome}
+                  {item.status === 'Em Tour' ? ' · Em tour' : ''}
+                </option>
+              ))}
+          </select>
+          <span className="mt-2 block text-[11px] leading-5 text-[#B4C8BB]">
+            Profissionais cadastrados nesta operadora.
+          </span>
         </label>
       </div>
     </section>
