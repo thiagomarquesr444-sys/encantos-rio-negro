@@ -254,13 +254,17 @@ export default function FeedbackERN() {
 
       <style jsx global>{`
         .ern-feedback-acesso {
-          position:fixed;left:max(14px,env(safe-area-inset-left));
-          bottom:calc(76px + env(safe-area-inset-bottom,0px));
+          position:fixed;right:max(16px,env(safe-area-inset-right));
+          bottom:calc(16px + env(safe-area-inset-bottom,0px));
           z-index:90;display:flex;align-items:center;gap:8px;
           min-height:44px;padding:10px 15px;border-radius:24px;
           border:1px solid #626b77;background:#20252b;color:#f0f1f2;
           box-shadow:0 4px 18px #0003;font:600 12px sans-serif;
           cursor:pointer;
+        }
+        /* ERN V44.8 - Feedback acima do convite de instalacao */
+        body:has(.instalar-ern) .ern-feedback-acesso {
+          bottom: calc(88px + env(safe-area-inset-bottom, 0px));
         }
         .ern-feedback-dialogo {
           position:fixed;inset:0;margin:auto;
@@ -324,7 +328,11 @@ export default function FeedbackERN() {
           outline:3px solid var(--ern-destaque,#c5b595);outline-offset:3px;
         }
         @media(max-width:480px) {
-          .ern-feedback-dialogo { padding:18px; }
+          /* ERN V44.8 - Feedback acima do convite de instalacao */
+        body:has(.instalar-ern) .ern-feedback-acesso {
+          bottom: calc(88px + env(safe-area-inset-bottom, 0px));
+        }
+        .ern-feedback-dialogo { padding:18px; }
           .ern-feedback-dialogo :is(input,textarea,select) { font-size:16px; }
         }
       `}</style>

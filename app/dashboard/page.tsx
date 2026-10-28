@@ -1197,6 +1197,54 @@ function DashboardAdministrativoERN() {
           </div>
         </section>
 
+        {/* ERN_V446_CENTRAL_DECISOES */}
+        <section aria-labelledby="ern-v446-titulo" className="mt-6 overflow-hidden rounded-2xl border border-[#E3A144]/20 bg-[#151A1B] shadow-[0_12px_42px_rgba(0,0,0,0.12)]">
+          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-white/10 px-4 py-4 sm:px-6">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#E3A144]">Central de decisões</p>
+              <h2 id="ern-v446-titulo" className="mt-1 text-xl font-semibold tracking-tight text-[#F1F4EF] sm:text-2xl">O que fazer agora</h2>
+                            <p className="mt-1 max-w-2xl text-xs leading-5 text-[#B4C8BB]">Prioridades operacionais a partir das reservas dos próximos sete dias e das demandas cadastradas.</p>
+              {!loading && <p role="status" className="mt-2 text-xs font-semibold text-[#F4C77E]">{alertas.filter((item) => item.valor > 0).length} tipo(s) de prioridade · {totalAlertas} ocorrência(s) para acompanhar</p>}
+            </div>
+            <Link href="/reservas" className="inline-flex min-h-11 items-center rounded-xl border border-[#E3A144]/30 px-4 text-xs font-semibold text-[#F4C77E] hover:bg-[#E3A144]/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E3A144]">Abrir reservas →</Link>
+          </div>
+          {/* ERN_V447_CENTRAL_REFINADA - quantidade real de prioridades */}
+          <div className={`grid min-w-0 gap-3 p-4 sm:p-6 ${alertas.filter((item) => item.valor > 0).length === 1 ? 'grid-cols-1' : alertas.filter((item) => item.valor > 0).length === 2 ? 'grid-cols-1 md:grid-cols-2' : 'grid-cols-1 md:grid-cols-2 xl:grid-cols-3'}`}>
+            {loading ? (
+              <p role="status" className="col-span-full py-5 text-sm text-[#B4C8BB]">Conferindo prioridades da operação…</p>
+            ) : totalAlertas === 0 ? (
+              <div className="col-span-full flex flex-wrap items-center justify-between gap-3 rounded-xl border border-emerald-400/15 bg-emerald-400/[0.045] p-4">
+                <div>
+                  <p className="text-sm font-semibold text-emerald-200">Nenhuma pendência pelos critérios atuais</p>
+                  <p className="mt-1 text-xs leading-5 text-[#B4C8BB]">Confira a agenda e mantenha os cadastros atualizados. Isso não substitui a conferência financeira.</p>
+                </div>
+                <Link href="/demandas" className="inline-flex min-h-11 items-center rounded-lg border border-white/15 px-3 text-xs font-semibold text-[#F1F4EF]">Ver demandas →</Link>
+              </div>
+            ) : (
+              alertas.filter((alerta) => alerta.valor > 0).slice(0, 3).map((alerta, indice) => (
+                <Link key={alerta.titulo} href={alerta.href} className={`group flex min-w-0 flex-col justify-between gap-4 rounded-xl border bg-[#1C2324] p-4 transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E3A144] ${alerta.titulo === 'Reservas pendentes' || alerta.titulo === 'Sem horário' || alerta.titulo === 'Sem guia' || alerta.titulo === 'Sem embarcação' ? 'border-rose-400/35 hover:border-rose-300/70 hover:bg-rose-400/[0.06]' : alerta.titulo === 'Demandas próximas' ? 'border-amber-400/40 hover:border-amber-300/75 hover:bg-amber-400/[0.06]' : 'border-white/15 hover:border-[#E3A144]/50 hover:bg-[#242D2D]'}`}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-semibold uppercase tracking-wider text-[#E3A144]">{alerta.titulo === 'Demandas em rascunho' ? 'Organizar' : 'Acompanhar'} · prioridade {indice + 1}</p>
+                      <h3 className="mt-2 text-sm font-semibold text-[#F1F4EF]">{alerta.titulo}</h3>
+                      <p className="mt-1 text-xs leading-5 text-[#B4C8BB]">{alerta.detalhe}</p>
+                    </div>
+                    <strong className="shrink-0 text-3xl tabular-nums text-[#F4C77E]">{alerta.valor}</strong>
+                  </div>
+                  <span className="inline-flex min-h-9 items-center text-xs font-semibold text-[#F4C77E] group-hover:underline">Abrir ocorrência →</span>
+                </Link>
+              ))
+            )}
+          </div>
+          <div className="flex flex-wrap gap-2 border-t border-white/10 px-4 py-3 sm:px-6">
+            <Link href="/financeiro" className="inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-semibold text-[#C3D9D2] hover:bg-white/5">Financeiro →</Link>
+            <Link href="/demandas" className="inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-semibold text-[#C3D9D2] hover:bg-white/5">Demandas →</Link>
+            <Link href="/relatorios" className="inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-semibold text-[#C3D9D2] hover:bg-white/5">Relatórios →</Link>
+            <a href="#ern-v446-graficos" className="inline-flex min-h-11 items-center rounded-lg px-3 text-xs font-semibold text-[#C3D9D2] hover:bg-white/5">Analisar gráficos ↓</a>
+          </div>
+        </section>
+
+        <div id="ern-v446-graficos" className="scroll-mt-28">
         <GraficosOperadora
           plano={plano}
           carregandoPlano={loadingPlano}
@@ -1204,6 +1252,7 @@ function DashboardAdministrativoERN() {
           inicio={inicioPeriodo}
           carregando={loading}
         />
+        </div>
 
         <div className="mt-6 grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
           <section className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#151A1B] sm:rounded-2xl">
