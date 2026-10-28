@@ -1,4 +1,5 @@
 'use client';
+import './clientes-premium.css';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -334,7 +335,7 @@ export default function ClientesPage() {
   }
 
   return (
-    <div className="min-h-screen min-w-0 bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <div className="ern-clientes-premium ern-clientes-carteira min-h-screen min-w-0 bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
       <main className="mx-auto max-w-[1360px] space-y-6 px-4 py-7 sm:px-6 sm:py-10">
         <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
@@ -359,7 +360,7 @@ export default function ClientesPage() {
           </Link>
         </header>
 
-        <div className="grid grid-cols-3 gap-2 sm:gap-4">
+        <div className="ern-clientes-indicadores grid grid-cols-1 gap-3 sm:grid-cols-3">
           {[
             { nome: 'Todos', valor: clientes.length, filtro: '' },
             { nome: 'Ativos', valor: ativos, filtro: 'Ativo' },
@@ -395,7 +396,7 @@ export default function ClientesPage() {
           </p>
         )}
 
-        <section className={painel} aria-labelledby="carteira-clientes">
+        <section className={`${painel} ern-clientes-listagem`} aria-labelledby="carteira-clientes">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <h2 id="carteira-clientes" className="text-xl font-semibold">
               Carteira de clientes

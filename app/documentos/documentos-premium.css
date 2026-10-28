@@ -1,0 +1,144 @@
+/* ERN PREMIUM V36.1 - CENTRAL DE DOCUMENTOS
+   Navegacao por permissoes preservada.
+*/
+
+.ern-documentos-premium {
+  background: #0c1112 !important;
+  color: #f1f4ef !important;
+  min-width: 0;
+  min-height: 100vh;
+}
+
+.ern-documentos-premium > div {
+  max-width: 1500px;
+}
+
+.ern-documentos-premium header {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      ellipse 60% 120% at 100% 0,
+      rgba(227,161,68,.11),
+      transparent 82%
+    ),
+    #151a1b !important;
+  border-color: rgba(227,161,68,.19) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 13px 39px rgba(0,0,0,.14);
+}
+
+.ern-documentos-premium header::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 28px;
+  bottom: 28px;
+  width: 3px;
+  background: #e3a144;
+  pointer-events: none;
+}
+
+.ern-documentos-premium header h1 {
+  color: #fff2df;
+  letter-spacing: -.045em;
+}
+
+.ern-documentos-bento {
+  align-items: stretch;
+}
+
+.ern-documentos-bento > article {
+  position: relative;
+  min-width: 0;
+  min-height: 255px;
+  overflow: hidden;
+  background: #151a1b !important;
+  border: 1px solid rgba(255,255,255,.1) !important;
+  border-radius: 22px !important;
+  padding: 27px !important;
+  box-shadow: 0 12px 35px rgba(0,0,0,.12);
+}
+
+.ern-documentos-bento > article::before {
+  content: "";
+  position: absolute;
+  left: 27px;
+  top: 0;
+  height: 2px;
+  width: 48px;
+  background: rgba(227,161,68,.8);
+}
+
+.ern-documentos-bento > article:first-child {
+  border-color: rgba(227,161,68,.27) !important;
+  background:
+    linear-gradient(
+      135deg,
+      rgba(227,161,68,.1),
+      transparent 80%
+    ),
+    #151a1b !important;
+}
+
+.ern-documentos-bento h2 {
+  color: #fff1df;
+  letter-spacing: -.025em;
+}
+
+.ern-documentos-bento article p {
+  color: #b8c7bf;
+}
+
+.ern-documentos-bento article a {
+  border-color: rgba(227,161,68,.25) !important;
+  background: #1e2526;
+  color: #f4c77e;
+}
+
+.ern-documentos-bento article a:hover {
+  background: rgba(227,161,68,.11);
+  border-color: rgba(227,161,68,.55) !important;
+}
+
+.ern-documentos-premium
+  > div > section:last-child {
+  background: #151a1b;
+  border-color: rgba(255,255,255,.09);
+  border-radius: 20px;
+}
+
+@media (min-width: 1280px) {
+  .ern-documentos-bento > article {
+    grid-column: span 4 / span 4;
+  }
+
+  .ern-documentos-bento > article:first-child {
+    grid-column: span 8 / span 8;
+  }
+}
+
+@media (max-width: 639px) {
+  .ern-documentos-premium header {
+    padding: 23px !important;
+  }
+
+  .ern-documentos-bento > article {
+    min-height: 220px;
+    padding: 21px !important;
+  }
+}
+
+.ern-documentos-premium
+  :is(a,button):focus-visible {
+  outline: 2px solid #e3a144;
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ern-documentos-premium *,
+  .ern-documentos-premium *::before,
+  .ern-documentos-premium *::after {
+    transition: none !important;
+  }
+}

@@ -1,0 +1,591 @@
+/*
+ * ERN PREMIUM V33.1
+ * Exclusivo do cadastro interno de Hospedagens da Operadora.
+ * Sem alteracoes de persistencia, regras comerciais ou RLS.
+ */
+
+.ern-hospedagens-premium {
+  --eh-fundo: #0c1112;
+  --eh-card: #151a1b;
+  --eh-elevado: #1d2425;
+  --eh-borda: rgba(255,255,255,.095);
+  --eh-ambar: #e3a144;
+  --eh-texto: #f1f4ef;
+  --eh-muted: #acbcb5;
+
+  min-height: 100vh;
+  min-width: 0;
+  background:
+    radial-gradient(
+      ellipse 75% 290px at 50% -200px,
+      rgba(227,161,68,.10),
+      transparent 85%
+    ),
+    var(--eh-fundo) !important;
+  color: var(--eh-texto) !important;
+}
+
+/* Cabecalhos */
+
+.ern-hospedagens-premium > section:first-of-type {
+  position: relative;
+  background: #101516 !important;
+  border-bottom: 1px solid rgba(227,161,68,.16) !important;
+}
+
+.ern-hospedagens-premium > section:first-of-type::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(
+    180deg,
+    #f4c77e,
+    #ab7839 65%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+.ern-hospedagens-premium > section:first-of-type h1 {
+  color: #fff2df;
+  letter-spacing: -.045em;
+  line-height: 1.12;
+}
+
+.ern-hospedagens-premium > section:first-of-type p {
+  max-width: 730px;
+}
+
+/* Area executiva */
+
+.ern-hospedagens-premium > main {
+  max-width: 1500px;
+  min-width: 0;
+}
+
+.ern-hospedagens-indicadores > button {
+  position: relative;
+  min-width: 0;
+  min-height: 148px;
+  overflow: hidden;
+  background: var(--eh-card) !important;
+  border: 1px solid var(--eh-borda) !important;
+  border-radius: 22px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.13);
+}
+
+.ern-hospedagens-indicadores > button::before {
+  content: "";
+  position: absolute;
+  left: 20px;
+  top: 0;
+  width: 42px;
+  height: 2px;
+  background: rgba(227,161,68,.7);
+}
+
+.ern-hospedagens-indicadores > button:first-child {
+  background:
+    linear-gradient(
+      125deg,
+      rgba(227,161,68,.13),
+      rgba(227,161,68,.015)
+    ),
+    var(--eh-card) !important;
+}
+
+.ern-hospedagens-indicadores > button[aria-pressed="true"] {
+  border-color: #e3a144 !important;
+  box-shadow: 0 0 0 1px rgba(227,161,68,.18);
+}
+
+.ern-hospedagens-indicadores strong {
+  color: #f4c77e !important;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 1280px) {
+  .ern-hospedagens-indicadores > button:nth-child(1) {
+    grid-column: span 4 / span 4;
+  }
+
+  .ern-hospedagens-indicadores > button:nth-child(2) {
+    grid-column: span 3 / span 3;
+  }
+
+  .ern-hospedagens-indicadores > button:nth-child(3) {
+    grid-column: span 2 / span 2;
+  }
+
+  .ern-hospedagens-indicadores > button:nth-child(4) {
+    grid-column: span 3 / span 3;
+  }
+}
+
+/* Catalogo operacional */
+
+.ern-hospedagens-listagem {
+  background: var(--eh-card) !important;
+  border-color: var(--eh-borda) !important;
+  box-shadow: 0 12px 38px rgba(0,0,0,.14);
+}
+
+.ern-hospedagens-listagem > div:first-child {
+  background:
+    linear-gradient(
+      125deg,
+      rgba(227,161,68,.055),
+      transparent 72%
+    ),
+    var(--eh-card);
+}
+
+.ern-hospedagens-listagem h2 {
+  color: #f4efe7;
+}
+
+.ern-hospedagens-listagem table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.ern-hospedagens-listagem thead {
+  background: #202728;
+}
+
+.ern-hospedagens-listagem thead th {
+  color: #c6d0cb;
+  font-size: 10px;
+  letter-spacing: .08em;
+}
+
+.ern-hospedagens-listagem tbody tr:hover {
+  background: rgba(227,161,68,.045);
+}
+
+.ern-hospedagens-listagem article {
+  background: var(--eh-elevado) !important;
+  border-color: rgba(255,255,255,.11) !important;
+  border-radius: 18px;
+}
+
+/* Cadastro de hospedagem */
+
+.ern-hospedagens-formulario {
+  align-items: start;
+}
+
+.ern-hospedagens-formulario > * {
+  min-width: 0;
+}
+
+.ern-hospedagens-formulario > section,
+.ern-hospedagens-formulario > div > section {
+  background: var(--eh-card) !important;
+  border: 1px solid var(--eh-borda) !important;
+  border-radius: 22px;
+  box-shadow: 0 8px 30px rgba(0,0,0,.12);
+}
+
+.ern-hospedagens-formulario > div {
+  min-width: 0;
+}
+
+/* Campos e menus */
+
+.ern-hospedagens-premium input:not([type="checkbox"]),
+.ern-hospedagens-premium select,
+.ern-hospedagens-premium textarea {
+  min-width: 0;
+  max-width: 100%;
+  background: #0d1213 !important;
+  color: var(--eh-texto) !important;
+  border-color: rgba(255,255,255,.17) !important;
+  border-radius: 12px;
+}
+
+.ern-hospedagens-premium input::placeholder,
+.ern-hospedagens-premium textarea::placeholder {
+  color: #98a9a2;
+}
+
+.ern-hospedagens-premium
+  :is(input,select,textarea):focus-visible {
+  outline: 2px solid rgba(227,161,68,.85);
+  outline-offset: 2px;
+  border-color: var(--eh-ambar) !important;
+}
+
+/* Janelas de visualizacao, edicao e exclusao */
+
+.ern-hospedagens-premium
+  > div[class*="fixed"][class*="inset-0"]
+  > div {
+  background: #191f20 !important;
+  border-color: rgba(227,161,68,.18) !important;
+}
+
+.ern-hospedagens-premium
+  > div[class*="fixed"][class*="inset-0"]
+  input,
+.ern-hospedagens-premium
+  > div[class*="fixed"][class*="inset-0"]
+  select {
+  background: #0d1213 !important;
+  border: 1px solid rgba(255,255,255,.17) !important;
+  color: var(--eh-texto) !important;
+}
+
+/* Acessibilidade */
+
+.ern-hospedagens-premium :is(button,a):focus-visible {
+  outline: 2px solid var(--eh-ambar);
+  outline-offset: 3px;
+}
+
+@media (max-width: 767px) {
+  .ern-hospedagens-premium > section:first-of-type > div {
+    padding-top: 26px;
+    padding-bottom: 26px;
+  }
+
+  .ern-hospedagens-indicadores > button {
+    min-height: 128px;
+    padding: 15px;
+  }
+
+  .ern-hospedagens-listagem article {
+    border-radius: 16px;
+  }
+
+  .ern-hospedagens-premium
+    > div[class*="fixed"][class*="inset-0"]
+    > div {
+    max-height: 90dvh;
+    overflow-y: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ern-hospedagens-premium *,
+  .ern-hospedagens-premium *::before,
+  .ern-hospedagens-premium *::after {
+    transition: none !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* ============================================================
+   ERN_HOSPEDAGENS_PREMIUM_V332
+   Refinamento estrutural de listagem e cadastro.
+   ============================================================ */
+
+/* Identidade visual consistente */
+
+.ern-hospedagens-premium {
+  background: #0c1112 !important;
+}
+
+.ern-hospedagens-premium > section:first-of-type {
+  background:
+    radial-gradient(
+      ellipse 55% 100% at 100% 0%,
+      rgba(227,161,68,.065),
+      transparent 80%
+    ),
+    #101516 !important;
+}
+
+.ern-hospedagens-premium > section:first-of-type > div {
+  max-width: 1500px;
+}
+
+.ern-hospedagens-premium > section:first-of-type h1 {
+  font-size: clamp(36px,4vw,54px);
+  letter-spacing: -.05em;
+}
+
+.ern-hospedagens-premium > main {
+  max-width: 1500px;
+}
+
+/* LISTAGEM: Bento executivo */
+
+.ern-hospedagens-indicadores {
+  align-items: stretch;
+}
+
+.ern-hospedagens-indicadores > button {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 164px;
+  padding: 23px !important;
+  background: #161b1c !important;
+  border-radius: 22px !important;
+}
+
+.ern-hospedagens-indicadores > button:first-child {
+  background:
+    linear-gradient(
+      125deg,
+      rgba(227,161,68,.14),
+      rgba(227,161,68,.018) 75%
+    ),
+    #161b1c !important;
+  border-color: rgba(227,161,68,.3) !important;
+}
+
+.ern-hospedagens-indicadores > button strong {
+  margin-top: 18px;
+  line-height: 1.13;
+  overflow-wrap: anywhere;
+}
+
+.ern-hospedagens-indicadores > button:hover:not(:disabled) {
+  border-color: rgba(227,161,68,.34) !important;
+}
+
+/* Cadastro: transformar o formulario em uma composicao Bento */
+
+.ern-hospedagens-cadastro > main {
+  padding-top: 30px;
+}
+
+.ern-hospedagens-formulario {
+  display: grid;
+  gap: 22px;
+  align-items: start;
+}
+
+/* Bloco principal de identificacao */
+
+.ern-hospedagens-formulario > section:first-child {
+  position: relative;
+  padding: clamp(22px,2.5vw,36px) !important;
+  background:
+    linear-gradient(
+      140deg,
+      rgba(227,161,68,.055),
+      transparent 45%
+    ),
+    #171d1e !important;
+  border: 1px solid rgba(227,161,68,.18) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 16px 50px rgba(0,0,0,.18);
+}
+
+.ern-hospedagens-formulario > section:first-child::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 28px;
+  width: 56px;
+  height: 3px;
+  border-radius: 0 0 8px 8px;
+  background: #e3a144;
+}
+
+.ern-hospedagens-formulario > section:first-child h2 {
+  color: #fff2df;
+  font-size: clamp(24px,2.1vw,30px);
+  letter-spacing: -.035em;
+}
+
+.ern-hospedagens-formulario > section:first-child
+  > div:first-child {
+  border-color: rgba(227,161,68,.13);
+}
+
+/* Coluna secundaria */
+
+.ern-hospedagens-formulario > div:nth-child(2) {
+  display: grid;
+  gap: 20px;
+  align-content: start;
+}
+
+.ern-hospedagens-formulario > div:nth-child(2) > section {
+  margin: 0;
+  padding: clamp(20px,2vw,29px) !important;
+  background: #151a1b !important;
+  border: 1px solid rgba(255,255,255,.085) !important;
+  border-radius: 22px !important;
+}
+
+.ern-hospedagens-formulario > div:nth-child(2)
+  > section:first-child {
+  border-color: rgba(227,161,68,.2) !important;
+  background:
+    linear-gradient(
+      140deg,
+      rgba(227,161,68,.06),
+      transparent
+    ),
+    #151a1b !important;
+}
+
+.ern-hospedagens-formulario
+  > div:nth-child(2) > section h2,
+.ern-hospedagens-formulario
+  > div:nth-child(2) > section h3 {
+  color: #f4ede3;
+  letter-spacing: -.025em;
+}
+
+.ern-hospedagens-formulario
+  > div:nth-child(2) > section:last-child
+  .space-y-2 > div {
+  min-height: 37px;
+  border-radius: 10px;
+  background: #1f2627 !important;
+  border-color: rgba(255,255,255,.055) !important;
+}
+
+/* Campos: altura, espaco e hierarquia */
+
+.ern-hospedagens-cadastro input,
+.ern-hospedagens-cadastro select {
+  min-height: 51px;
+  padding: 12px 15px;
+  font-size: 14px;
+  border-radius: 13px;
+  background-color: #0d1213 !important;
+  border: 1px solid rgba(255,255,255,.16) !important;
+  color: #f4f5f1 !important;
+}
+
+.ern-hospedagens-cadastro input:hover,
+.ern-hospedagens-cadastro select:hover {
+  border-color: rgba(227,161,68,.3) !important;
+}
+
+.ern-hospedagens-cadastro
+  .ern-hospedagens-formulario label {
+  display: block;
+  margin-bottom: 9px;
+  font-size: 11px;
+  letter-spacing: .095em;
+  line-height: 1.5;
+  color: #c5d2cb;
+}
+
+/* Acoes: barra de conclusao ampla e organizada */
+
+.ern-hospedagens-formulario > div:last-child {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.ern-hospedagens-formulario > div:last-child > div {
+  border-top: 1px solid rgba(227,161,68,.19);
+  padding: 23px 0 0;
+  gap: 12px;
+}
+
+.ern-hospedagens-formulario > div:last-child
+  :is(button,a) {
+  min-height: 48px;
+  border-radius: 12px;
+  padding: 12px 19px;
+  font-size: 13px;
+}
+
+.ern-hospedagens-formulario > div:last-child
+  button[type="submit"] {
+  background: #e3a144 !important;
+  color: #101516 !important;
+  border: 1px solid #e3a144;
+  font-weight: 750;
+  box-shadow: 0 6px 25px rgba(227,161,68,.1);
+}
+
+/* Catálogo e pesquisa */
+
+.ern-hospedagens-listagem {
+  border-radius: 24px !important;
+  background: #151a1b !important;
+}
+
+.ern-hospedagens-listagem > div:first-child {
+  padding: clamp(20px,2.3vw,30px);
+}
+
+.ern-hospedagens-listagem table tbody tr {
+  border-color: rgba(255,255,255,.08);
+}
+
+.ern-hospedagens-listagem table tbody td {
+  vertical-align: middle;
+}
+
+/* Desktop: largura proporcional, nunca comprimir rodape */
+
+@media (min-width: 1024px) {
+  .ern-hospedagens-formulario {
+    grid-template-columns:
+      minmax(0,1.3fr)
+      minmax(340px,.7fr);
+  }
+
+  .ern-hospedagens-formulario > section:first-child {
+    grid-column: 1;
+  }
+
+  .ern-hospedagens-formulario > div:nth-child(2) {
+    grid-column: 2;
+  }
+
+  .ern-hospedagens-formulario > div:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+/* Tablet e celular */
+
+@media (max-width: 1023px) {
+  .ern-hospedagens-formulario {
+    grid-template-columns: minmax(0,1fr);
+  }
+
+  .ern-hospedagens-formulario > section:first-child,
+  .ern-hospedagens-formulario > div:nth-child(2),
+  .ern-hospedagens-formulario > div:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 639px) {
+  .ern-hospedagens-cadastro > main {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .ern-hospedagens-formulario > section:first-child,
+  .ern-hospedagens-formulario
+    > div:nth-child(2) > section {
+    padding: 19px !important;
+  }
+
+  .ern-hospedagens-formulario > div:last-child > div,
+  .ern-hospedagens-formulario > div:last-child > div > div {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .ern-hospedagens-formulario
+    > div:last-child :is(button,a) {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ern-hospedagens-indicadores > button {
+    min-height: 135px;
+    padding: 16px !important;
+  }
+}

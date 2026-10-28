@@ -1,4 +1,5 @@
 'use client';
+import '../hospedagens-premium.css';
 
 import React, {
   useState,
@@ -324,7 +325,7 @@ export default function NovaHospedagemPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <div className="ern-hospedagens-premium min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
       {/* =====================================================
           CABEÇALHO
       ====================================================== */}
@@ -387,7 +388,7 @@ export default function NovaHospedagemPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]"
+          className="ern-hospedagens-formulario grid min-w-0 gap-6 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]"
         >
           {/* =================================================
               IDENTIFICAÇÃO

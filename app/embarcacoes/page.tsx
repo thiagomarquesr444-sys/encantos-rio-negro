@@ -1,4 +1,5 @@
 'use client';
+import './embarcacoes-premium.css';
 
 import React, {
   useEffect,
@@ -847,7 +848,7 @@ export default function EmbarcacoesPage() {
     'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)]';
 
   return (
-    <div className="min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <div className="ern-embarcacoes-premium min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
       {/* =====================================================
           TOAST
       ====================================================== */}
@@ -944,7 +945,7 @@ export default function EmbarcacoesPage() {
             INDICADORES
         ==================================================== */}
 
-        <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
+        <div className="ern-embarcacoes-bento grid grid-cols-2 gap-3 xl:grid-cols-12">
           {cards.map(
             (card) => {
               const ativo =
@@ -1035,7 +1036,7 @@ export default function EmbarcacoesPage() {
             FROTA
         ==================================================== */}
 
-        <section className="mt-6 overflow-hidden rounded-[26px] border border-[var(--ern-borda)] bg-[var(--ern-painel)]">
+        <section className="ern-embarcacoes-catalogo mt-6 overflow-hidden rounded-[26px] border border-[var(--ern-borda)] bg-[var(--ern-painel)]">
           <div className="border-b border-[var(--ern-borda)] p-5 md:p-6">
             <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
               <div>

@@ -1,4 +1,5 @@
 'use client';
+import '../../demandas-premium.css';
 
 import {
   useEffect,
@@ -453,7 +454,7 @@ export default function EditarDemandaPage() {
       estado.tipo === 'erro'
     ) {
       return (
-        <main className="min-h-screen bg-[var(--ern-fundo)] p-5 text-[var(--ern-texto)] md:p-8">
+        <main className="ern-demandas-premium min-h-screen bg-[var(--ern-fundo)] p-5 text-[var(--ern-texto)] md:p-8">
           <div className="mx-auto max-w-3xl rounded-2xl border border-rose-400/20 bg-[var(--ern-painel)] p-6 md:p-7">
             <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-erro)]">
               Demanda indisponível
@@ -486,7 +487,7 @@ export default function EditarDemandaPage() {
     }
 
     return (
-      <main className="min-h-screen bg-[var(--ern-fundo)] p-5 text-[var(--ern-texto)] md:p-8">
+      <main className="ern-demandas-premium min-h-screen bg-[var(--ern-fundo)] p-5 text-[var(--ern-texto)] md:p-8">
         <div className="mx-auto max-w-3xl rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-6">
           <p className="text-sm text-[var(--ern-secundario)]">
             Carregando demanda...
@@ -859,7 +860,7 @@ export default function EditarDemandaPage() {
       'cancelada';
 
   return (
-    <main className="min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <main className="ern-demandas-premium min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
       <header className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
         <div className="mx-auto max-w-5xl px-4 py-8 md:px-8">
           <Link
@@ -905,6 +906,67 @@ export default function EditarDemandaPage() {
       </header>
 
       <div className="mx-auto max-w-5xl px-4 pt-7 md:px-8">
+      <section aria-label="Inteligencia desta demanda" className="ern-dem-edicao-inteligencia mx-auto max-w-5xl px-4 pt-7 md:px-8">
+        <div className="ern-dem-edicao-hero">
+          <div className="ern-dem-edicao-topo">
+            <div>
+              <p className="ern-dem-edicao-eyebrow">ANALISE OPERACIONAL · DEMANDA SELECIONADA</p>
+              <h2>Dimensionamento da operacao</h2>
+              <p>Leitura dinamica da estimativa desta demanda; nao representa todas as demandas da empresa.</p>
+            </div>
+            <span className="ern-dem-edicao-situacao">{STATUS_DEMANDA[statusAtual]}</span>
+          </div>
+          <div className="ern-dem-edicao-kpis">
+            <div className="ern-dem-edicao-kpi ern-dem-edicao-kpi-principal">
+              <span>Quantidade estimada</span>
+              <strong>{previsao !== null && Number.isFinite(previsao) ? previsao.toLocaleString('pt-BR',{maximumFractionDigits:2}) : '—'}</strong>
+              <small>{formularioAtual.unidade || 'Unidade nao definida'}</small>
+            </div>
+            <div className="ern-dem-edicao-kpi">
+              <span>Modelo de calculo</span>
+              <strong className="ern-dem-edicao-kpi-texto">{metodoEstimativa==='pessoa_dia'?'Pessoa / dia':metodoEstimativa==='combustivel_hora'?'Motor / hora':'Manual'}</strong>
+              <small>{CATEGORIAS_DEMANDA[formularioAtual.categoria]}</small>
+            </div>
+            <div className="ern-dem-edicao-kpi">
+              <span>Periodo informado</span>
+              <strong className="ern-dem-edicao-kpi-texto">{formularioAtual.data_inicio && formularioAtual.data_fim ? `${formularioAtual.data_inicio.split('-').reverse().join('/')} — ${formularioAtual.data_fim.split('-').reverse().join('/')}` : 'Nao definido'}</strong>
+              <small>{formularioAtual.localidade || 'Localidade nao informada'}</small>
+            </div>
+          </div>
+          <div className="ern-dem-edicao-grafico" aria-label="Composicao da estimativa">
+            <div className="ern-dem-edicao-grafico-topo">
+              <h3>Composicao do planejamento</h3>
+              <span>Atualizacao conforme os campos</span>
+            </div>
+            {metodoEstimativa==='combustivel_hora' ? (()=>{
+              const dias=numeroFormulario(formularioAtual.dias_estimados);
+              const horas=numeroFormulario(formularioAtual.horas_motor_dia);
+              const litros=numeroFormulario(formularioAtual.consumo_litros_hora);
+              const margem=numeroFormulario(formularioAtual.margem_percentual);
+              const base=dias!==null&&horas!==null&&litros!==null&&dias>0&&horas>0&&litros>0 ? dias*horas*litros : null;
+              const extra=base!==null&&margem!==null&&margem>=0?base*margem/100:null;
+              const total=base!==null&&extra!==null?base+extra:null;
+              return total!==null&&total>0 ? <>
+                <div className="ern-dem-edicao-barra" role="img" aria-label={`Consumo base ${base!.toLocaleString('pt-BR',{maximumFractionDigits:2})} litros; margem adicional ${extra!.toLocaleString('pt-BR',{maximumFractionDigits:2})} litros`}>
+                  <span style={{width:`${base!/total*100}%`}}/><span className="ern-dem-edicao-barra-extra" style={{width:`${extra!/total*100}%`}}/>
+                </div>
+                <div className="ern-dem-edicao-legenda"><span><i/> Base: {base!.toLocaleString('pt-BR',{maximumFractionDigits:2})} L</span><span><i className="extra"/> Margem: {extra!.toLocaleString('pt-BR',{maximumFractionDigits:2})} L</span></div>
+              </> : <p className="ern-dem-edicao-vazio">Informe dias, horas de motor, consumo e margem para visualizar a composicao.</p>;
+            })() : metodoEstimativa==='pessoa_dia' ? <>
+              <div className="ern-dem-edicao-formula">
+                <div><small>Pessoas</small><strong>{formularioAtual.pessoas_estimadas || '—'}</strong></div><b aria-hidden="true">×</b>
+                <div><small>Dias</small><strong>{formularioAtual.dias_estimados || '—'}</strong></div><b aria-hidden="true">×</b>
+                <div><small>Consumo / pessoa / dia</small><strong>{formularioAtual.consumo_pessoa_dia || '—'}</strong></div><b aria-hidden="true">=</b>
+                <div className="ern-dem-edicao-formula-total"><small>Previsao</small><strong>{previsao!==null?previsao.toLocaleString('pt-BR',{maximumFractionDigits:2}):'—'}</strong></div>
+              </div>
+              <p className="ern-dem-edicao-nota">Os valores refletem a formula de consumo da categoria selecionada.</p>
+            </> : <>
+              <div className="ern-dem-edicao-formula"><div className="ern-dem-edicao-formula-total"><small>Quantidade definida manualmente</small><strong>{previsao!==null?previsao.toLocaleString('pt-BR',{maximumFractionDigits:2}):'—'}</strong></div></div>
+              <p className="ern-dem-edicao-nota">Esta categoria usa quantidade manual; nao ha distribuicao calculada para representar.</p>
+            </>}
+          </div>
+        </div>
+      </section>
         <ItensDemanda
           key={id}
           demandaId={id}
@@ -914,7 +976,7 @@ export default function EditarDemandaPage() {
 
       <form
         onSubmit={salvar}
-        className="mx-auto max-w-5xl space-y-6 px-4 py-7 md:px-8"
+        className="ern-dem-edicao mx-auto max-w-5xl space-y-6 px-4 py-7 md:px-8"
       >
         <section className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7">
           <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">

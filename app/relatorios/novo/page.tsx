@@ -1,4 +1,5 @@
 'use client';
+import '../relatorios-premium.css';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -23,12 +24,12 @@ export default function NovoRelatorioPage() {
       router.push('/relatorios'); router.refresh();
     } catch (falha) { setErro(erroRelatorioERN(falha)); trava.current = false; setSalvando(false); }
   }
-  return <main className="min-h-screen bg-[var(--ern-fundo)] px-4 py-8 text-[var(--ern-texto)] sm:px-8"><div className="mx-auto max-w-4xl">
+  return <main className="ern-relatorios-premium min-h-screen bg-[var(--ern-fundo)] px-4 py-8 text-[var(--ern-texto)] sm:px-8"><div className="mx-auto max-w-4xl">
     <Link href="/relatorios" className="inline-flex min-h-11 items-center text-sm text-[var(--ern-destaque)]">← Relatórios</Link>
     <h1 className="mt-4 text-3xl" style={{ fontFamily: 'var(--font-fraunces), serif' }}>Novo relatório</h1>
     <p className="mt-3 text-sm leading-6 text-[var(--ern-secundario)]">Salve os critérios para consultar reservas e financeiro por período, ou mantenha um registro manual de acompanhamento.</p>
     {erro && <p role="alert" className="mt-5 rounded-xl border border-red-400/20 p-4 text-sm text-red-300">{erro}</p>}
-    <form onSubmit={salvar} className="mt-6 space-y-5"><fieldset disabled={salvando} className="min-w-0 space-y-5 rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-4 sm:p-6">
+    <form onSubmit={salvar} className="ern-relatorios-form mt-6 space-y-5"><fieldset disabled={salvando} className="min-w-0 space-y-5 rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-4 sm:p-6">
       <legend className="px-2 text-sm font-semibold text-[var(--ern-destaque)]">Identificação e critérios</legend>
       <label className="block text-sm">Título<input id="titulo" required maxLength={200} value={titulo} onChange={e => setTitulo(e.target.value)} placeholder="Ex.: Operação de outubro" className={campo} /></label>
       <label className="block text-sm">Modalidade<select aria-label="Modalidade do relatório" value={integrado ? 'integrado' : 'manual'} onChange={e => setIntegrado(e.target.value === 'integrado')} className={campo}><option value="integrado">Análise de reservas e financeiro</option><option value="manual">Registro manual de acompanhamento</option></select></label>

@@ -1,0 +1,307 @@
+/* ERN PREMIUM V36.1 - VOUCHERS DA OPERADORA
+   Somente interface. PDFs e regras Supabase preservados.
+*/
+
+.ern-vouchers-premium {
+  --ev-card: #151a1b;
+  --ev-elevado: #1d2425;
+  --ev-borda: rgba(255,255,255,.10);
+  --ev-ambar: #e3a144;
+  color: #f1f4ef;
+  background: #0c1112 !important;
+  min-width: 0;
+  min-height: 100vh;
+}
+
+/* Identidade do cabecalho */
+
+.ern-vouchers-listagem > header {
+  position: relative;
+  background:
+    radial-gradient(
+      ellipse 65% 100% at 100% 0,
+      rgba(227,161,68,.075),
+      transparent 80%
+    ),
+    #101516 !important;
+  border-bottom: 1px solid rgba(227,161,68,.18) !important;
+}
+
+.ern-vouchers-listagem > header::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(
+    #f4c77e,#aa7638,transparent
+  );
+  pointer-events: none;
+}
+
+.ern-vouchers-listagem > header h1 {
+  color: #fff2e0;
+  letter-spacing: -.05em;
+}
+
+.ern-vouchers-listagem > main {
+  max-width: 1500px;
+}
+
+/* Seis indicadores, distribuicao Bento */
+
+.ern-vouchers-bento {
+  align-items: stretch;
+}
+
+.ern-vouchers-bento > button {
+  min-width: 0;
+  min-height: 145px;
+  position: relative;
+  overflow: hidden;
+  padding: 21px !important;
+  text-align: left;
+  background: var(--ev-card) !important;
+  border: 1px solid var(--ev-borda) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,.13);
+}
+
+.ern-vouchers-bento > button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 20px;
+  width: 44px;
+  height: 2px;
+  background: rgba(227,161,68,.75);
+}
+
+.ern-vouchers-bento > button:first-child {
+  background:
+    linear-gradient(
+      135deg,
+      rgba(227,161,68,.15),
+      transparent 75%
+    ),
+    #171d1e !important;
+  border-color: rgba(227,161,68,.32) !important;
+}
+
+.ern-vouchers-bento > button strong {
+  margin-top: 25px;
+  color: #f4c77e;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.ern-vouchers-bento > button:hover {
+  border-color: rgba(227,161,68,.35) !important;
+}
+
+@media (min-width: 1024px) {
+  .ern-vouchers-bento > button {
+    grid-column: span 2 / span 2;
+  }
+}
+
+@media (min-width: 1280px) {
+  .ern-vouchers-bento > button:nth-child(1) {
+    grid-column: span 4 / span 4;
+  }
+  .ern-vouchers-bento > button:nth-child(2) {
+    grid-column: span 2 / span 2;
+  }
+  .ern-vouchers-bento > button:nth-child(3) {
+    grid-column: span 2 / span 2;
+  }
+  .ern-vouchers-bento > button:nth-child(4) {
+    grid-column: span 2 / span 2;
+  }
+  .ern-vouchers-bento > button:nth-child(5) {
+    grid-column: span 2 / span 2;
+  }
+  .ern-vouchers-bento > button:nth-child(6) {
+    grid-column: 1 / -1;
+    min-height: 110px;
+    background:
+      linear-gradient(
+        100deg,
+        rgba(227,161,68,.08),
+        transparent 75%
+      ),
+      #151a1b !important;
+  }
+}
+
+/* Filtros e carteira */
+
+.ern-vouchers-filtros,
+.ern-vouchers-carteira {
+  background: var(--ev-card) !important;
+  border: 1px solid var(--ev-borda) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 12px 35px rgba(0,0,0,.12);
+}
+
+.ern-vouchers-carteira {
+  overflow: hidden;
+}
+
+.ern-vouchers-carteira > div:first-child {
+  background:
+    linear-gradient(
+      120deg,
+      rgba(227,161,68,.055),
+      transparent 75%
+    ),
+    var(--ev-card);
+}
+
+.ern-vouchers-carteira thead {
+  background: #202728;
+}
+
+.ern-vouchers-carteira thead th {
+  color: #c6d1ca;
+  letter-spacing: .06em;
+}
+
+.ern-vouchers-carteira tbody tr:hover {
+  background: rgba(227,161,68,.045);
+}
+
+.ern-vouchers-carteira article {
+  border-bottom-color: rgba(255,255,255,.08);
+}
+
+/* Campos da listagem, cadastro e modais */
+
+.ern-vouchers-premium input:not([type="checkbox"]),
+.ern-vouchers-premium select,
+.ern-vouchers-premium textarea,
+.ern-voucher-modal input:not([type="checkbox"]),
+.ern-voucher-modal select {
+  min-width: 0;
+  max-width: 100%;
+  background: #0d1213 !important;
+  border: 1px solid rgba(255,255,255,.17) !important;
+  color: #f1f4ef !important;
+  border-radius: 12px;
+}
+
+.ern-vouchers-premium input::placeholder,
+.ern-voucher-modal input::placeholder {
+  color: #9dadA5;
+}
+
+.ern-vouchers-premium
+  :is(input,select,textarea):focus-visible,
+.ern-voucher-modal
+  :is(input,select):focus-visible {
+  outline: 2px solid #e3a144;
+  outline-offset: 2px;
+}
+
+/* Modal reutilizavel, sem alterar bloqueio de foco */
+
+.ern-voucher-modal {
+  background: #191f20 !important;
+  border-color: rgba(227,161,68,.19) !important;
+  color: #f1f4ef;
+}
+
+.ern-voucher-modal > div:first-child {
+  background: #202728;
+}
+
+/* Emissao: hierarquia do formulario */
+
+.ern-voucher-cadastro {
+  background: #0c1112 !important;
+}
+
+.ern-voucher-cadastro > div,
+.ern-voucher-cadastro > header {
+  max-width: 1500px;
+}
+
+.ern-voucher-cadastro h1 {
+  letter-spacing: -.045em;
+  color: #fff2e0;
+}
+
+.ern-voucher-form > fieldset {
+  min-width: 0;
+}
+
+.ern-voucher-form > fieldset > section {
+  min-width: 0;
+  background: #151a1b !important;
+  border: 1px solid var(--ev-borda) !important;
+  border-radius: 22px !important;
+  padding: clamp(20px,2.4vw,30px) !important;
+  box-shadow: 0 9px 30px rgba(0,0,0,.12);
+}
+
+.ern-voucher-form > fieldset > section:first-child {
+  background:
+    linear-gradient(
+      130deg,
+      rgba(227,161,68,.09),
+      transparent 60%
+    ),
+    #171d1e !important;
+  border-color: rgba(227,161,68,.28) !important;
+}
+
+.ern-voucher-form > fieldset > section h2 {
+  color: #f4c77e;
+}
+
+.ern-voucher-form > div:last-child {
+  border-top: 1px solid rgba(227,161,68,.18);
+  padding-top: 23px;
+}
+
+.ern-voucher-form
+  > div:last-child :is(a,button) {
+  min-height: 48px;
+  border-radius: 12px;
+  padding: 11px 20px;
+}
+
+/* Foco e responsividade */
+
+.ern-vouchers-premium
+  :is(a,button):focus-visible {
+  outline: 2px solid #e3a144;
+  outline-offset: 3px;
+}
+
+@media (max-width: 639px) {
+  .ern-vouchers-bento > button {
+    padding: 15px !important;
+    min-height: 122px;
+  }
+
+  .ern-voucher-form > div:last-child {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .ern-voucher-form
+    > div:last-child :is(a,button) {
+    width: 100%;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ern-vouchers-premium *,
+  .ern-vouchers-premium *::before,
+  .ern-vouchers-premium *::after {
+    transition: none !important;
+    animation-duration: .01ms !important;
+  }
+}

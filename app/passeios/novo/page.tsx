@@ -1,4 +1,5 @@
 'use client';
+import '../passeios-premium.css';
 
 import React, { useEffect, useRef, useState } from 'react';
 
@@ -673,7 +674,7 @@ export default function NovoPasseioPage() {
     };
 
   return (
-    <div className="min-h-screen bg-[var(--ern-fundo)] pb-16 text-[var(--ern-texto)]">
+    <div className="ern-passeios-premium ern-passeios-cadastro min-h-screen bg-[var(--ern-fundo)] pb-16 text-[var(--ern-texto)]">
       {/* =====================================================
           CABEÇALHO
       ====================================================== */}

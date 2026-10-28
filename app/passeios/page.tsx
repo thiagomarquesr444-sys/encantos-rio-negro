@@ -1,4 +1,5 @@
 'use client';
+import './passeios-premium.css';
 
 import React, {
   useEffect,
@@ -912,7 +913,7 @@ export default function PasseiosPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <div className="ern-passeios-premium ern-passeios-catalogo min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
       {/* =====================================================
           FEEDBACK
       ====================================================== */}
@@ -1026,7 +1027,7 @@ export default function PasseiosPage() {
             INDICADORES
         ==================================================== */}
 
-        <div className="grid grid-cols-2 gap-2 sm:gap-4 xl:grid-cols-4">
+        <div className="ern-passeios-indicadores grid grid-cols-2 gap-3 xl:grid-cols-12">
           {cards.map(
             (
               card
@@ -1074,7 +1075,7 @@ export default function PasseiosPage() {
             CATÁLOGO
         ==================================================== */}
 
-        <section className="mt-6 overflow-hidden rounded-[26px] border border-[var(--ern-borda)] bg-[var(--ern-painel)]">
+        <section className="ern-passeios-listagem mt-6 overflow-hidden rounded-[26px] border border-[var(--ern-borda)] bg-[var(--ern-painel)]">
           <div className="border-b border-[var(--ern-borda)] p-5 md:p-6">
             <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
               <div>

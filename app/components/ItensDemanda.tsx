@@ -5,6 +5,7 @@ import SeletorERN from './SeletorERN';
 import GraficoMateriaisDemanda from './GraficoMateriaisDemanda';
 import { subtotal, moeda } from '@/lib/calculosMateriaisDemanda';
 import { exportarMateriaisDemanda } from '@/lib/exportarMateriaisDemanda';
+import { exportarChecklistDemandaERN } from '@/lib/exportarChecklistDemandaERN';
 import { confirmarERN } from '@/lib/confirmarERN';
 import {
   CATEGORIAS_ITEM,
@@ -134,6 +135,23 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
     } finally {
       trava.current = false;
       setSalvando(false);
+    }
+  }
+
+  async function exportarPDF() {
+    if (!demandaId || desabilitado || alterado || trava.current || versao === null) return;
+    trava.current = true;
+    setExportando(true);
+    setErro('');
+    setAviso('');
+    try {
+      await exportarChecklistDemandaERN(demandaId, versao);
+      setAviso('Checklist PDF Premium gerado com a lista salva.');
+    } catch (falha) {
+      setErro(falha instanceof Error ? falha.message : 'Não foi possível gerar o checklist PDF.');
+    } finally {
+      trava.current = false;
+      setExportando(false);
     }
   }
 
@@ -389,6 +407,14 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
             className="min-h-12 w-full rounded-xl border border-[var(--ern-destaque)] px-4 text-sm font-semibold text-[var(--ern-destaque)] disabled:opacity-50 sm:w-auto"
           >
             {exportando ? 'Gerando arquivo…' : 'Exportar materiais · CSV'}
+          </button>
+          <button
+            type="button"
+            disabled={desabilitado || alterado || itens.length === 0}
+            onClick={() => void exportarPDF()}
+            className="ml-0 mt-3 min-h-12 w-full rounded-xl border border-[var(--ern-destaque)] bg-[var(--ern-destaque)]/10 px-4 text-sm font-semibold text-[var(--ern-destaque)] disabled:opacity-50 sm:ml-3 sm:mt-0 sm:w-auto"
+          >
+            {exportando ? 'Gerando arquivo…' : 'Gerar checklist · PDF Premium'}
           </button>
           <p className="mt-2 text-xs leading-5 text-[var(--ern-secundario)]">
             {alterado

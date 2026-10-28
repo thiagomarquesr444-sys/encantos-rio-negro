@@ -1,0 +1,35 @@
+/* ERN Financeiro Executivo V38.1A: visual de tela apenas. */
+.ern-financeiro-premium {--ef-card:#151a1b;--ef-border:rgba(255,255,255,.10);min-height:100vh;min-width:0;background:#0c1112!important;color:#f1f4ef!important}
+.ern-financeiro-painel>section:first-of-type,.ern-financeiro-cadastro>header {position:relative;background:radial-gradient(ellipse 60% 120% at 100% 0,rgba(227,161,68,.09),transparent 82%),#101516!important;border-bottom:1px solid rgba(227,161,68,.18)!important}
+.ern-financeiro-painel>section:first-of-type:before,.ern-financeiro-cadastro>header:before {content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:linear-gradient(#f4c77e,#a77638,transparent);pointer-events:none}
+.ern-financeiro-painel>section:first-of-type h1,.ern-financeiro-cadastro>header h1,.ern-financeiro-exportar h1 {font-size:clamp(34px,4vw,52px);letter-spacing:-.045em;color:#fff2df}
+.ern-financeiro-painel>main,.ern-financeiro-cadastro>main {max-width:1500px}
+.ern-financeiro-graficos>div:first-child,.ern-financeiro-graficos>div.grid>article,.ern-financeiro-graficos>article,.ern-financeiro-graficos>div.grid>div {background:#151a1b!important;border:1px solid var(--ef-border)!important;border-radius:23px!important;box-shadow:0 12px 40px rgba(0,0,0,.14)}
+.ern-financeiro-graficos>div:first-child {background:linear-gradient(125deg,rgba(227,161,68,.08),transparent 70%),#151a1b!important;border-color:rgba(227,161,68,.23)!important}
+.ern-financeiro-graficos>div.grid>article,.ern-financeiro-graficos>article {padding:clamp(19px,2.4vw,29px)!important}
+.ern-financeiro-graficos button[aria-pressed="true"] {border-color:rgba(227,161,68,.68)!important;background:rgba(227,161,68,.14)!important;color:#f4c77e!important}
+.ern-fin-tendencia {background:radial-gradient(ellipse 85% 95% at 100% 0,rgba(227,161,68,.075),transparent),#151a1b!important;border-color:rgba(227,161,68,.26)!important}
+.ern-fin-mini {display:flex;flex-direction:column;gap:7px;justify-content:space-between;min-width:0;min-height:79px;padding:14px;background:#202728;border:1px solid rgba(255,255,255,.075);border-radius:14px}
+.ern-fin-mini span {font-size:10px;color:#b8c7bd}
+.ern-fin-mini strong {font-size:24px;color:#f4c77e;font-variant-numeric:tabular-nums}
+.ern-financeiro-cadastro>main>section,.ern-financeiro-cadastro form fieldset>section {background:#151a1b!important;border:1px solid var(--ef-border)!important;border-radius:23px!important;box-shadow:0 12px 36px rgba(0,0,0,.13)}
+.ern-financeiro-cadastro form fieldset>section:first-of-type {background:linear-gradient(125deg,rgba(227,161,68,.08),transparent 70%),#171d1e!important;border-color:rgba(227,161,68,.25)!important}
+.ern-financeiro-cadastro form fieldset>section h2 {color:#f4eee6;letter-spacing:-.02em}
+.ern-financeiro-cadastro form fieldset {align-items:start}
+.ern-financeiro-cadastro form fieldset>div:last-child {grid-column:1/-1;border-top-color:rgba(227,161,68,.18)!important}
+.ern-financeiro-exportar section {background:#151a1b!important;border:1px solid var(--ef-border)!important;border-radius:23px!important;box-shadow:0 12px 35px rgba(0,0,0,.12)}
+.ern-financeiro-premium input:not([type="checkbox"]),.ern-financeiro-premium select,.ern-financeiro-premium textarea {min-width:0;max-width:100%;background:#0d1213!important;color:#f1f4ef!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:12px;color-scheme:dark}
+.ern-financeiro-premium input::placeholder {color:#a7b6ad}
+.ern-financeiro-premium :is(a,button,input,select,textarea):focus-visible {outline:2px solid #e3a144;outline-offset:3px}
+@media(max-width:639px){.ern-financeiro-cadastro>main>section,.ern-financeiro-cadastro form fieldset>section {padding:19px!important}.ern-financeiro-cadastro form fieldset {grid-template-columns:minmax(0,1fr)}.ern-financeiro-cadastro form fieldset>div:last-child {display:flex;flex-direction:column-reverse;align-items:stretch}.ern-financeiro-cadastro form fieldset>div:last-child :is(a,button) {width:100%;justify-content:center}.ern-fin-mini {padding:10px}.ern-fin-mini strong {font-size:20px}}
+@media(prefers-reduced-motion:reduce){.ern-financeiro-premium *, .ern-financeiro-graficos * {transition:none!important;animation-duration:.01ms!important}}
+/* V38.2 - acabamento unificado dos tres graficos */
+.ern-financeiro-painel .ern-fin-rosca,.ern-financeiro-painel .ern-fin-colunas {min-width:0}
+.ern-financeiro-painel .ern-fin-colunas button[aria-pressed="true"] {outline:1px solid rgba(227,161,68,.8);outline-offset:4px}
+.ern-financeiro-painel .ern-fin-rosca button[aria-pressed="true"] {border-color:#e3a144!important;background:rgba(227,161,68,.10)!important}
+.ern-financeiro-painel .ern-fin-tendencia svg {width:100%;min-height:265px}
+.ern-financeiro-painel .ern-fin-tendencia h3 {letter-spacing:-.035em}
+.ern-financeiro-painel article h3 {color:#f5efe6}
+.ern-financeiro-painel table th {color:#c8d5cc;font-weight:650}
+.ern-financeiro-painel table td {color:#e7eee8}
+@media(max-width:639px){.ern-financeiro-painel .ern-fin-colunas .relative.h-\[270px\]{height:225px}.ern-financeiro-painel .ern-fin-rosca{gap:12px}.ern-financeiro-painel .ern-fin-tendencia svg{min-height:240px}}

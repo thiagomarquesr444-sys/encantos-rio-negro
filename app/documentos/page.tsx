@@ -1,4 +1,5 @@
 'use client';
+import './documentos-premium.css';
 
 import Link from 'next/link';
 import { useModulosEquipeERN } from
@@ -29,17 +30,29 @@ const documentos = [
     modulo: 'financeiro',
     icone: '03',
   },
+  {
+    titulo: 'Painel Fiscal',
+    descricao:
+      'Consulte solicitações fiscais simuladas da operadora. Não realiza emissão de NFS-e.',
+    href: '/fiscal',
+    modulo: 'financeiro',
+    icone: '04',
+  },
 ] as const;
 
 export default function CentralDocumentosERN() {
   const { modulos, carregando, erro } = useModulosEquipeERN();
 
   const permitidos = documentos.filter(
-    item => modulos.has(item.modulo)
+    item =>
+      item.href === '/fiscal'
+        ? modulos.has('__ern_fiscal_perfil_autorizado') &&
+          (modulos.has('financeiro') || modulos.has('relatorios'))
+        : modulos.has(item.modulo)
   );
 
   return (
-    <main className="min-h-screen bg-[var(--ern-fundo)] px-4 py-8 text-[var(--ern-texto)] sm:px-8">
+    <main className="ern-documentos-premium min-h-screen bg-[#0C1112] px-4 py-8 text-[#F1F4EF] sm:px-8">
       <div className="mx-auto max-w-7xl space-y-7">
         <header className="rounded-3xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-6 sm:p-9">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--ern-destaque)]">
@@ -85,7 +98,7 @@ export default function CentralDocumentosERN() {
         ) : (
           <section
             aria-label="Tipos de documentos disponíveis"
-            className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
+            className="ern-documentos-bento grid gap-4 md:grid-cols-2 xl:grid-cols-12"
           >
             {permitidos.map(item => (
               <article

@@ -1,0 +1,73 @@
+/* ERN Demandas V40.1. Escopo visual; sem alteracoes de dados e RLS. */
+.ern-demandas-premium{--dem-fundo:#0c1112;--dem-card:#171e1f;--dem-ambar:#e8ac58;--dem-borda:rgba(255,255,255,.11);background:var(--dem-fundo)!important;color:#f4f1e8!important;min-width:0}
+.ern-demandas-premium>header{position:relative;background:radial-gradient(ellipse 70% 110% at 100% 0,rgba(232,172,88,.12),transparent 75%),#111719!important;border-bottom:1px solid rgba(232,172,88,.19)!important}
+.ern-demandas-premium>header:before{content:"";position:absolute;inset:0 auto 0 0;width:3px;background:linear-gradient(#f4c77e,#9d7139,transparent)}
+.ern-demandas-premium>header h1{color:#fff0db;letter-spacing:-.05em}
+.ern-demandas-premium>header>div,.ern-demandas-premium>div{max-width:1500px}
+.ern-demandas-premium input,.ern-demandas-premium select,.ern-demandas-premium textarea{background:#0d1213!important;color:#f3f2ed!important;border:1px solid rgba(255,255,255,.18)!important;border-radius:12px;min-width:0;color-scheme:dark}
+.ern-demandas-premium :is(input,select,textarea,button,a):focus-visible{outline:2px solid #e8ac58;outline-offset:3px}
+.ern-demandas-premium form[aria-label="Filtrar demandas"],.ern-demandas-premium .ern-dem-form>section,.ern-demandas-premium .ern-dem-edicao>section{background:#171e1f!important;border:1px solid var(--dem-borda)!important;border-radius:24px!important;box-shadow:0 12px 38px rgba(0,0,0,.12)}
+.ern-demandas-premium form[aria-label="Filtrar demandas"]{padding:clamp(18px,2vw,28px)!important}
+.ern-demandas-premium section[aria-label="Resultados da consulta"] article{background:#171e1f!important;border-radius:22px!important;border-color:var(--dem-borda)!important;box-shadow:0 12px 35px rgba(0,0,0,.1)}
+.ern-demandas-premium section[aria-label="Resultados da consulta"] article:hover{border-color:rgba(232,172,88,.4)!important}
+.ern-dem-inteligencia{margin-bottom:28px;display:grid;gap:17px}
+.ern-dem-inteligencia-head{display:flex;align-items:end;justify-content:space-between;flex-wrap:wrap;gap:16px;border:1px solid rgba(232,172,88,.23);border-radius:23px;padding:clamp(19px,2.5vw,30px);background:linear-gradient(110deg,rgba(232,172,88,.12),transparent 60%),#171e1f}
+.ern-dem-sobretitulo{font-size:10px;font-weight:750;letter-spacing:.19em;color:#e8ac58}
+.ern-dem-inteligencia-head h2{font-family:var(--font-fraunces),serif;font-size:clamp(25px,2.8vw,37px);line-height:1.14;letter-spacing:-.045em;margin-top:9px;color:#fff0db}
+.ern-dem-inteligencia-head p{color:#b5c5bd;font-size:12px;line-height:1.7;margin-top:9px}
+.ern-dem-escopo{font-size:11px;color:#f2d2a1;padding:10px 13px;border:1px solid rgba(232,172,88,.25);border-radius:12px;max-width:100%}
+.ern-dem-metricas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:13px}
+.ern-dem-metrica{min-width:0;display:flex;flex-direction:column;justify-content:space-between;gap:9px;min-height:138px;padding:22px;border:1px solid var(--dem-borda);border-radius:21px;background:#171e1f;box-shadow:0 12px 32px rgba(0,0,0,.12)}
+.ern-dem-metrica-principal{border-color:rgba(232,172,88,.29);background:linear-gradient(120deg,rgba(232,172,88,.13),transparent 90%),#171e1f}
+.ern-dem-metrica span{font-size:12px;color:#b4c4bb}.ern-dem-metrica strong{font-size:clamp(25px,3vw,40px);font-variant-numeric:tabular-nums;line-height:1;color:#f4c77e}.ern-dem-metrica small{font-size:10px;color:#aebbb4}
+.ern-dem-visual-grid{display:grid;grid-template-columns:1fr 1.15fr;gap:15px;min-width:0}
+.ern-dem-grafico{background:#171e1f;border:1px solid var(--dem-borda);border-radius:24px;min-width:0;padding:clamp(18px,2vw,27px);box-shadow:0 15px 42px rgba(0,0,0,.12)}
+.ern-dem-grafico-head{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:7px;margin-bottom:23px}.ern-dem-grafico-head h3{font-size:17px;font-weight:700;color:#f4f0e7}.ern-dem-grafico-head>span{font-size:11px;color:#a8b9b0}
+.ern-dem-rosca-layout{display:grid;grid-template-columns:215px minmax(0,1fr);align-items:center;gap:19px}
+.ern-dem-rosca{width:205px;height:205px;max-width:100%;aspect-ratio:1;border-radius:50%;display:grid;place-items:center;margin-inline:auto;box-shadow:0 0 0 7px rgba(255,255,255,.025)}
+.ern-dem-rosca-centro{width:70%;height:70%;border-radius:50%;background:#171e1f;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.05)}
+.ern-dem-rosca-centro small{font-size:11px;color:#a7b8b0}.ern-dem-rosca-centro strong{font-size:39px;font-weight:750;color:#f4c77e;line-height:1.25;font-variant-numeric:tabular-nums}
+.ern-dem-legenda{display:grid;gap:7px}.ern-dem-legenda-linha{display:grid;grid-template-columns:9px minmax(0,1fr) auto auto;gap:9px;align-items:center;color:#d9e3da;font-size:12px;min-width:0}.ern-dem-legenda-linha strong{font-variant-numeric:tabular-nums;color:#f4f0e8}.ern-dem-legenda-linha small{color:#a7b8b0;min-width:43px;text-align:right}.ern-dem-ponto{height:9px;width:9px;border-radius:3px}
+.ern-dem-barras{display:grid;gap:17px}.ern-dem-barra-linha{display:grid;gap:9px;text-align:left;width:100%;padding:7px 9px;border:1px solid transparent;border-radius:12px;color:#f2f0e9}.ern-dem-barra-linha[aria-pressed="true"]{border-color:rgba(232,172,88,.5);background:rgba(232,172,88,.07)}
+.ern-dem-barra-topo{display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:12px;min-width:0}.ern-dem-barra-topo span{overflow-wrap:anywhere;color:#d0dbd3}.ern-dem-barra-topo strong{font-variant-numeric:tabular-nums;white-space:nowrap;color:#f4c77e}
+.ern-dem-barra-trilho{display:block;height:11px;background:#293235;border-radius:5px;overflow:hidden}.ern-dem-barra-trilho>span{display:block;height:100%;border-radius:5px;transition:width .3s ease}
+.ern-dem-grafico-nota,.ern-dem-aviso,.ern-dem-vazio{font-size:11px;color:#a5b7ad;line-height:1.7}.ern-dem-grafico-nota{margin-top:21px}.ern-dem-aviso{padding:13px 16px;border:1px solid rgba(232,172,88,.16);border-radius:12px;background:rgba(232,172,88,.04)}
+.ern-dem-form>section,.ern-dem-edicao>section{padding:clamp(20px,2.7vw,35px)!important}.ern-dem-form>section h2,.ern-dem-edicao>section h2{color:#f4eadd;letter-spacing:-.025em}
+.ern-demandas-premium form:not([aria-label="Filtrar demandas"]) label{color:#cfdbd3}.ern-demandas-premium form:not([aria-label="Filtrar demandas"]) input,.ern-demandas-premium form:not([aria-label="Filtrar demandas"]) select{min-height:49px}
+@media(max-width:1100px){.ern-dem-visual-grid{grid-template-columns:1fr}.ern-dem-rosca-layout{grid-template-columns:220px minmax(0,1fr)}}
+@media(max-width:640px){.ern-dem-metricas{grid-template-columns:1fr 1fr}.ern-dem-metrica-principal{grid-column:1/-1}.ern-dem-metrica{min-height:115px;padding:17px}.ern-dem-rosca-layout{grid-template-columns:1fr;justify-items:center}.ern-dem-legenda{width:100%}.ern-dem-inteligencia-head{padding:19px}.ern-dem-grafico{padding:18px}.ern-dem-metrica strong{font-size:30px}}
+@media(prefers-reduced-motion:reduce){.ern-demandas-premium *, .ern-demandas-premium *:before,.ern-demandas-premium *:after{transition:none!important;animation-duration:.01ms!important}}
+
+/* V40.2 - painel especifico da demanda selecionada */
+.ern-demandas-premium .ern-dem-edicao-inteligencia{min-width:0}
+.ern-demandas-premium .ern-dem-edicao-hero{padding:clamp(19px,2.6vw,31px);border:1px solid rgba(232,172,88,.25);border-radius:27px;background:radial-gradient(ellipse at 92% 2%,rgba(232,172,88,.12),transparent 55%),#151c1e;box-shadow:0 20px 55px rgba(0,0,0,.17)}
+.ern-demandas-premium .ern-dem-edicao-topo,.ern-demandas-premium .ern-dem-edicao-grafico-topo{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap}
+.ern-demandas-premium .ern-dem-edicao-eyebrow{font-size:10px;font-weight:750;letter-spacing:.17em;color:#e8ac58}
+.ern-demandas-premium .ern-dem-edicao-topo h2{margin-top:9px;color:#fff3e1;font-size:clamp(24px,2.8vw,35px);letter-spacing:-.04em}
+.ern-demandas-premium .ern-dem-edicao-topo p:not(.ern-dem-edicao-eyebrow){max-width:650px;margin-top:7px;color:#adc0b9;font-size:12px;line-height:1.7}
+.ern-demandas-premium .ern-dem-edicao-situacao{flex-shrink:0;padding:9px 13px;border:1px solid rgba(232,172,88,.32);border-radius:99px;color:#f2d3a1;font-size:12px}
+.ern-demandas-premium .ern-dem-edicao-kpis{display:grid;grid-template-columns:1.2fr 1fr 1fr;gap:12px;margin-top:21px}
+.ern-demandas-premium .ern-dem-edicao-kpi{display:flex;flex-direction:column;justify-content:space-between;min-width:0;min-height:132px;gap:10px;padding:19px;border-radius:19px;border:1px solid rgba(255,255,255,.10);background:#1c2426}
+.ern-demandas-premium .ern-dem-edicao-kpi-principal{border-color:rgba(232,172,88,.30);background:linear-gradient(135deg,rgba(232,172,88,.10),transparent),#1b2324}
+.ern-demandas-premium .ern-dem-edicao-kpi span{color:#b9c7c1;font-size:11px}
+.ern-demandas-premium .ern-dem-edicao-kpi strong{color:#f7ce85;font-size:clamp(29px,3.2vw,43px);line-height:1.1;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.ern-demandas-premium .ern-dem-edicao-kpi .ern-dem-edicao-kpi-texto{font-size:clamp(14px,1.8vw,21px);color:#f1f2e8;line-height:1.4}
+.ern-demandas-premium .ern-dem-edicao-kpi small{color:#9eb2a8;overflow-wrap:anywhere;font-size:11px}
+.ern-demandas-premium .ern-dem-edicao-grafico{margin-top:13px;padding:clamp(17px,2vw,24px);border:1px solid rgba(255,255,255,.09);border-radius:20px;background:#11191b}
+.ern-demandas-premium .ern-dem-edicao-grafico h3{font-size:17px;font-weight:700;color:#f6eee3}
+.ern-demandas-premium .ern-dem-edicao-grafico-topo>span{font-size:11px;color:#a9b9b2}
+.ern-demandas-premium .ern-dem-edicao-barra{display:flex;height:26px;overflow:hidden;margin-top:22px;border-radius:9px;background:#293233}
+.ern-demandas-premium .ern-dem-edicao-barra>span{height:100%;background:linear-gradient(90deg,#c48434,#f5c779)}
+.ern-demandas-premium .ern-dem-edicao-barra>span.ern-dem-edicao-barra-extra{background:linear-gradient(90deg,#6fb5b0,#368f91)}
+.ern-demandas-premium .ern-dem-edicao-legenda{display:flex;flex-wrap:wrap;gap:18px;margin-top:13px;color:#cbd5cd;font-size:12px}
+.ern-demandas-premium .ern-dem-edicao-legenda i{display:inline-block;width:10px;height:10px;margin-right:5px;border-radius:3px;background:#e8ac58}
+.ern-demandas-premium .ern-dem-edicao-legenda i.extra{background:#51a7a5}
+.ern-demandas-premium .ern-dem-edicao-formula{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:20px}
+.ern-demandas-premium .ern-dem-edicao-formula>div{flex:1;min-width:100px;padding:12px 15px;border:1px solid rgba(255,255,255,.10);border-radius:14px;background:#20292b}
+.ern-demandas-premium .ern-dem-edicao-formula>div.ern-dem-edicao-formula-total{border-color:rgba(232,172,88,.35);background:rgba(232,172,88,.09)}
+.ern-demandas-premium .ern-dem-edicao-formula small{display:block;color:#adbbb5;font-size:11px}
+.ern-demandas-premium .ern-dem-edicao-formula strong{display:block;margin-top:5px;color:#f6e4cc;font-size:22px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.ern-demandas-premium .ern-dem-edicao-formula b{color:#e8ac58}
+.ern-demandas-premium .ern-dem-edicao-nota,.ern-demandas-premium .ern-dem-edicao-vazio{margin-top:15px;color:#aabcb4;font-size:12px;line-height:1.7}
+@media(max-width:750px){.ern-demandas-premium .ern-dem-edicao-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.ern-demandas-premium .ern-dem-edicao-kpi-principal{grid-column:1/-1}.ern-demandas-premium .ern-dem-edicao-kpi{min-height:112px;padding:15px}}
+@media(max-width:420px){.ern-demandas-premium .ern-dem-edicao-kpis{grid-template-columns:minmax(0,1fr)}.ern-demandas-premium .ern-dem-edicao-kpi-principal{grid-column:auto}}

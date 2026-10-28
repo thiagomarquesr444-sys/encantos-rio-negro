@@ -1,4 +1,5 @@
 'use client';
+import '../../reservas-premium.css';
 
 import React, { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -568,7 +569,7 @@ function EditarReservaConteudo({ id }: { id?: string }) {
   const idURL = encodeURIComponent(id);
 
   return (
-    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+    <div className="ern-reservas-premium min-h-screen bg-[#0C1112] text-[#F1F4EF]">
       <header className="border-b border-white/10 bg-[#091510]">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-5 px-4 py-8 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
           <div className="min-w-0">
@@ -626,7 +627,7 @@ function EditarReservaConteudo({ id }: { id?: string }) {
         <form onSubmit={handleAtualizar} aria-busy={salvando}>
           <fieldset
             disabled={bloqueado}
-            className="grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]"
+            className="ern-reserva-form-grid grid min-w-0 gap-5 xl:grid-cols-12"
           >
             <section className="min-w-0 rounded-2xl border border-white/10 bg-[#0A1713] p-4 sm:p-6">
               <h2 className="text-2xl" style={headingStyle}>
@@ -640,6 +641,7 @@ function EditarReservaConteudo({ id }: { id?: string }) {
                     passeioId={form.passeio_id}
                     clienteNome={form.cliente}
                     passeioNome={form.pacote}
+                    guiaNome={form.guia}
                     bloqueado={bloqueado}
                     onChange={(campos) => {
                       if (envioReserva.current) return;
@@ -785,17 +787,7 @@ function EditarReservaConteudo({ id }: { id?: string }) {
                   />
                 </div>
 
-                <div>
-                  <label htmlFor="reserva-guia" className={labelClass}>
-                    Guia responsável
-                  </label>
-                  <input
-                    id="reserva-guia"
-                    value={form.guia}
-                    onChange={(event) => alterarCampo('guia', event.target.value)}
-                    className={inputClass}
-                  />
-                </div>
+
 
                 <div>
                   <label htmlFor="reserva-status" className={labelClass}>

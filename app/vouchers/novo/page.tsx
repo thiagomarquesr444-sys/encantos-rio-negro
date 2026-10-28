@@ -1,4 +1,5 @@
 "use client";
+import "../vouchers-premium.css";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -149,13 +150,13 @@ export default function NovoVoucherPage() {
   const campo="mt-2 min-h-12 w-full min-w-0 rounded-xl border border-white/15 bg-[#07110E] px-3 py-2 text-sm text-[#EDEDE3] disabled:opacity-50";
   const botao="min-h-12 rounded-xl border border-white/20 px-4 py-3 text-sm disabled:opacity-50";
   const candidatas=reservas.filter(r=>disponivel(r.status)&&`${r.cliente} ${r.pacote} ${r.data_reserva} ${r.id}`.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().includes(busca.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()));
-  return <main className="min-h-screen min-w-0 bg-[#07110E] px-4 py-8 text-[#EDEDE3] sm:px-6">
+  return <main className="ern-vouchers-premium ern-voucher-cadastro min-h-screen min-w-0 bg-[#0C1112] px-4 py-8 text-[#F1F4EF] sm:px-6">
     <div className="mx-auto max-w-5xl"><Link href="/vouchers" className="inline-flex min-h-11 items-center text-sm text-[#F4C77E]">← Vouchers</Link>
       <h1 className="mt-5 text-3xl sm:text-4xl" style={{fontFamily:"var(--font-fraunces), serif"}}>Emitir voucher</h1>
       <p className="mt-3 text-sm leading-7 text-[#EDEDE3]/65">Use os dados de uma reserva ou emita um voucher avulso. A emissão não registra um pagamento.</p>
       {carregando&&<p role="status" className="mt-6">Carregando cadastros…</p>}
       {erroCarga&&<div role="alert" className="mt-5 rounded-xl border border-red-400/30 p-4"><p>{erroCarga}</p><button type="button" className={botao+" mt-3"} onClick={()=>setTentativa(t=>t+1)}>Tentar carregar novamente</button></div>}
-      {!carregando&&!erroCarga&&<form onSubmit={salvar} className="mt-6 space-y-5">
+      {!carregando&&!erroCarga&&<form onSubmit={salvar} className="ern-voucher-form mt-6 space-y-5">
         <fieldset disabled={salvando} className="min-w-0 space-y-5 disabled:opacity-70">
           <section className="rounded-2xl border border-[#E3A144]/25 bg-[#0C211A] p-4 sm:p-6">
             <h2 className="text-lg text-[#F4C77E]">Origem do voucher</h2>

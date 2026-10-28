@@ -1,0 +1,286 @@
+/*
+ * ERN PREMIUM V32.1
+ * Modulo interno de Passeios da Operadora.
+ * Apresentacao apenas; operacoes Supabase preservadas.
+ */
+
+.ern-passeios-premium {
+  --ep-fundo: #0c1112;
+  --ep-card: #151a1b;
+  --ep-elevado: #1c2223;
+  --ep-borda: rgba(255,255,255,.095);
+  --ep-ambar: #e3a144;
+  --ep-texto: #f1f4ef;
+  --ep-muted: #adbbb6;
+
+  min-height: 100vh;
+  min-width: 0;
+  background:
+    radial-gradient(
+      ellipse 75% 270px at 45% -190px,
+      rgba(227,161,68,.1),
+      transparent 85%
+    ),
+    var(--ep-fundo) !important;
+  color: var(--ep-texto) !important;
+}
+
+/* Cabecalhos */
+
+.ern-passeios-catalogo > section:first-of-type,
+.ern-passeios-cadastro > section:first-of-type {
+  position: relative;
+  background: #101516 !important;
+  border-bottom: 1px solid rgba(227,161,68,.17) !important;
+}
+
+.ern-passeios-catalogo > section:first-of-type::before,
+.ern-passeios-cadastro > section:first-of-type::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(
+    180deg,
+    #f4c77e,
+    #aa7637 70%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+.ern-passeios-premium > section:first-of-type h1 {
+  color: #fff3e4;
+  letter-spacing: -.045em;
+  line-height: 1.12;
+}
+
+.ern-passeios-premium > section:first-of-type p {
+  max-width: 720px;
+}
+
+/* Area operacional */
+
+.ern-passeios-premium > main {
+  min-width: 0;
+  max-width: 1500px;
+}
+
+.ern-passeios-premium > main > section {
+  min-width: 0;
+  border-radius: 23px;
+}
+
+/* Bento da listagem */
+
+.ern-passeios-indicadores > div {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  min-height: 148px;
+  background: var(--ep-card) !important;
+  border: 1px solid var(--ep-borda) !important;
+  border-radius: 22px;
+  box-shadow: 0 9px 28px rgba(0,0,0,.13);
+}
+
+.ern-passeios-indicadores > div::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 20px;
+  width: 42px;
+  height: 2px;
+  background: rgba(227,161,68,.7);
+}
+
+.ern-passeios-indicadores > div:first-child {
+  background:
+    linear-gradient(
+      120deg,
+      rgba(227,161,68,.12),
+      rgba(227,161,68,.015)
+    ),
+    var(--ep-card) !important;
+  border-color: rgba(227,161,68,.34) !important;
+}
+
+.ern-passeios-indicadores strong {
+  color: #f4c77e !important;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (min-width: 1280px) {
+  .ern-passeios-indicadores > div:nth-child(1) {
+    grid-column: span 4 / span 4;
+  }
+
+  .ern-passeios-indicadores > div:nth-child(2) {
+    grid-column: span 3 / span 3;
+  }
+
+  .ern-passeios-indicadores > div:nth-child(3) {
+    grid-column: span 2 / span 2;
+  }
+
+  .ern-passeios-indicadores > div:nth-child(4) {
+    grid-column: span 3 / span 3;
+  }
+}
+
+/* Catalogo de experiencias */
+
+.ern-passeios-listagem {
+  background: var(--ep-card) !important;
+  border-color: var(--ep-borda) !important;
+  box-shadow: 0 10px 36px rgba(0,0,0,.12);
+}
+
+.ern-passeios-listagem > div:first-child {
+  background:
+    linear-gradient(
+      125deg,
+      rgba(227,161,68,.045),
+      transparent 70%
+    ),
+    var(--ep-card);
+}
+
+.ern-passeios-listagem h2 {
+  color: #f4f0e9;
+}
+
+.ern-passeios-listagem table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.ern-passeios-listagem thead {
+  background: #202728;
+}
+
+.ern-passeios-listagem thead th {
+  color: #c4cdc9;
+  font-size: 10px;
+  letter-spacing: .08em;
+}
+
+.ern-passeios-listagem tbody tr:hover {
+  background: rgba(227,161,68,.045);
+}
+
+.ern-passeios-listagem article {
+  background: #1b2122 !important;
+  border-color: rgba(255,255,255,.12) !important;
+}
+
+/* Formularios da criacao e da edicao */
+
+.ern-passeios-premium input:not([type="checkbox"]),
+.ern-passeios-premium select,
+.ern-passeios-premium textarea {
+  min-width: 0;
+  max-width: 100%;
+  background: #0d1213 !important;
+  color: #f1f4ef !important;
+  border-color: rgba(255,255,255,.17) !important;
+  border-radius: 12px;
+}
+
+.ern-passeios-premium input::placeholder,
+.ern-passeios-premium textarea::placeholder {
+  color: #98a8a3;
+}
+
+.ern-passeios-premium
+  :is(input,select,textarea):focus-visible {
+  outline: 2px solid rgba(227,161,68,.8);
+  outline-offset: 2px;
+  border-color: #e3a144 !important;
+}
+
+.ern-passeios-cadastro > main > section {
+  background: var(--ep-card) !important;
+  border-color: var(--ep-borda) !important;
+}
+
+.ern-passeios-cadastro > main > form {
+  min-width: 0;
+  background: var(--ep-card) !important;
+  border-color: var(--ep-borda) !important;
+  border-radius: 22px;
+}
+
+.ern-passeios-cadastro > main > form > div {
+  min-width: 0;
+}
+
+.ern-passeios-cadastro > main > form textarea {
+  min-height: 130px;
+}
+
+/* Janelas de detalhes, edicao e exclusao */
+
+.ern-passeios-premium
+  > div[class*="fixed"][class*="inset-0"]
+  > div {
+  background: #191f20 !important;
+  border-color: rgba(227,161,68,.18) !important;
+}
+
+.ern-passeios-premium
+  > div[class*="fixed"][class*="inset-0"]
+  input,
+.ern-passeios-premium
+  > div[class*="fixed"][class*="inset-0"]
+  textarea,
+.ern-passeios-premium
+  > div[class*="fixed"][class*="inset-0"]
+  select {
+  background: #0d1213 !important;
+  color: #f1f4ef !important;
+  border: 1px solid rgba(255,255,255,.17) !important;
+}
+
+/* Acessibilidade */
+
+.ern-passeios-premium :is(button,a):focus-visible {
+  outline: 2px solid #e3a144;
+  outline-offset: 3px;
+}
+
+@media (max-width: 767px) {
+  .ern-passeios-premium > section:first-of-type > div {
+    padding-top: 26px;
+    padding-bottom: 26px;
+  }
+
+  .ern-passeios-indicadores {
+    gap: 12px;
+  }
+
+  .ern-passeios-indicadores > div {
+    min-height: 125px;
+    padding: 15px;
+  }
+
+  .ern-passeios-listagem article {
+    border-radius: 16px;
+  }
+
+  .ern-passeios-premium
+    > div[class*="fixed"][class*="inset-0"]
+    > div {
+    max-height: 90dvh;
+    overflow-y: auto;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ern-passeios-premium *,
+  .ern-passeios-premium *::before,
+  .ern-passeios-premium *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}

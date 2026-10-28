@@ -1,4 +1,5 @@
 'use client';
+import '../demandas-premium.css';
 
 import {
   useEffect,
@@ -605,7 +606,7 @@ export default function NovaDemandaPage() {
       'pronto';
 
   return (
-    <main className="min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <main className="ern-demandas-premium min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
       <header className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
         <div className="mx-auto max-w-5xl px-4 py-8 md:px-8">
           <Link
@@ -658,7 +659,7 @@ export default function NovaDemandaPage() {
           'pronto' && (
           <form
             onSubmit={salvar}
-            className="space-y-6"
+            className="ern-dem-form space-y-6"
           >
             <ItensDemanda
               bloqueado={bloqueado}

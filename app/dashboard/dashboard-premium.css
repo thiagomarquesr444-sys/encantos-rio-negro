@@ -1,0 +1,188 @@
+.ern-premium-dashboard {
+  --ern-fundo: #0c1112;
+  --ern-painel: #151a1b;
+  --ern-elevado: #1d2425;
+  --ern-borda: rgba(190, 208, 202, .13);
+  --ern-ambar: #e3a144;
+  --ern-texto: #f1f4ef;
+  --ern-secundario: #a5b4af;
+  background: var(--ern-fundo);
+  color: var(--ern-texto);
+}
+
+.ern-premium-dashboard main {
+  padding-top: 1.75rem;
+  padding-bottom: 4rem;
+}
+
+.ern-premium-dashboard main h2,
+.ern-premium-dashboard main h3 {
+  font-family: inherit !important;
+  font-weight: 650;
+  letter-spacing: -.025em;
+  color: var(--ern-texto);
+  text-wrap: balance;
+}
+
+.ern-premium-dashboard section,
+.ern-premium-dashboard article,
+.ern-premium-dashboard a {
+  min-width: 0;
+}
+
+.ern-premium-dashboard :is(a,button,summary):focus-visible {
+  outline: 2px solid var(--ern-ambar);
+  outline-offset: 3px;
+}
+
+.ern-premium-dashboard a[href="/reservas/nova"] {
+  background: var(--ern-ambar);
+  color: #0c1112 !important;
+  font-weight: 700;
+}
+
+.ern-premium-dashboard a[href="/reservas/nova"]:hover {
+  background: #f2b962;
+}
+
+.ern-premium-dashboard main section[class*="rounded-2xl"],
+.ern-premium-dashboard main article[class*="rounded-2xl"] {
+  border-color: var(--ern-borda);
+  box-shadow: 0 12px 35px rgba(0,0,0,.11);
+}
+
+/* Inteligencia operacional: grafico principal e secundario. */
+.ern-premium-dashboard .ern-premium-graficos {
+  align-items: stretch;
+}
+
+.ern-premium-dashboard .ern-premium-grafico {
+  background: var(--ern-painel);
+  border: 1px solid var(--ern-borda);
+  box-shadow: 0 16px 42px rgba(0,0,0,.14);
+}
+
+@media (min-width: 1280px) {
+  .ern-premium-dashboard .ern-premium-grafico:first-child {
+    grid-column: span 7;
+  }
+
+  .ern-premium-dashboard .ern-premium-grafico:nth-child(2) {
+    grid-column: span 5;
+  }
+}
+
+.ern-premium-dashboard .ern-premium-day-slot {
+  background: #222829;
+  border-radius: .75rem;
+  transition: background .2s ease;
+}
+
+.ern-premium-dashboard .ern-premium-day-slot:hover {
+  background: #2a3232;
+}
+
+/* Financeiro: hierarquia Bento de quatro indicadores. */
+.ern-premium-dashboard .ern-premium-financeiro-kpis > * {
+  min-width: 0;
+  background: var(--ern-painel);
+  border-color: var(--ern-borda);
+  border-radius: 1rem;
+  padding: 1.1rem;
+}
+
+.ern-premium-dashboard .ern-premium-financeiro-kpis > *:nth-child(1) {
+  border-left: 3px solid #a5b4af;
+}
+
+.ern-premium-dashboard .ern-premium-financeiro-kpis > *:nth-child(2) {
+  border-left: 3px solid #a5b4af;
+}
+
+.ern-premium-dashboard .ern-premium-financeiro-kpis > *:nth-child(3) {
+  border-left: 3px solid #34d399;
+}
+
+.ern-premium-dashboard .ern-premium-financeiro-kpis > *:nth-child(4) {
+  border-left: 3px solid var(--ern-ambar);
+}
+
+@media (min-width: 1280px) {
+  .ern-premium-dashboard .ern-premium-financeiro-kpis > *:nth-child(1) {
+    grid-column: span 4;
+  }
+
+  .ern-premium-dashboard .ern-premium-financeiro-kpis > *:nth-child(2) {
+    grid-column: span 4;
+  }
+
+  .ern-premium-dashboard .ern-premium-financeiro-kpis > *:nth-child(3) {
+    grid-column: span 2;
+  }
+
+  .ern-premium-dashboard .ern-premium-financeiro-kpis > *:nth-child(4) {
+    grid-column: span 2;
+  }
+
+  .ern-premium-dashboard .ern-premium-financeiro-analise > *:first-child {
+    grid-column: span 5;
+  }
+
+  .ern-premium-dashboard .ern-premium-financeiro-analise > *:nth-child(2) {
+    grid-column: span 7;
+  }
+}
+
+.ern-premium-dashboard .ern-premium-financeiro-analise > * {
+  background: var(--ern-painel);
+  border-color: var(--ern-borda);
+  border-radius: 1.25rem;
+}
+
+/* Agenda, demandas, estrutura, rede e assinatura. */
+.ern-premium-dashboard main section[class*="bg-[#151A1B]"],
+.ern-premium-dashboard main article[class*="bg-[#151A1B]"],
+.ern-premium-dashboard main section[class*="bg-[#0A1713]"],
+.ern-premium-dashboard main article[class*="bg-[#0A1713]"] {
+  background: var(--ern-painel);
+}
+
+.ern-premium-dashboard main a[class*="rounded-2xl"]:hover {
+  border-color: rgba(227,161,68,.45);
+  background-color: var(--ern-elevado);
+}
+
+.ern-premium-dashboard main a,
+.ern-premium-dashboard main button {
+  transition: background-color .2s ease,
+              border-color .2s ease,
+              color .2s ease;
+}
+
+.ern-premium-dashboard main [class*="animate-pulse"] {
+  background-color: #293132;
+}
+
+/* Responsividade e acessibilidade. */
+@media (max-width: 640px) {
+  .ern-premium-dashboard main {
+    padding-inline: .75rem;
+  }
+
+  .ern-premium-dashboard .ern-premium-grafico {
+    padding: 1rem;
+  }
+
+  .ern-premium-dashboard .ern-premium-financeiro-kpis > * {
+    padding: .85rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ern-premium-dashboard *,
+  .ern-premium-dashboard *::before,
+  .ern-premium-dashboard *::after {
+    animation-duration: .01ms !important;
+    transition-duration: .01ms !important;
+  }
+}

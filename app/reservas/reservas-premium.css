@@ -1,0 +1,325 @@
+/*
+ * ERN PREMIUM V30.3
+ * Escopo: interfaces internas da Operadora /reservas.
+ * Nao altera dados, autorizacoes ou comportamento de formularios.
+ */
+
+.ern-reservas-premium {
+  --erp-fundo: #0c1112;
+  --erp-superficie: #151a1b;
+  --erp-elevada: #1b2122;
+  --erp-borda: rgba(255,255,255,.085);
+  --erp-ambar: #e3a144;
+  --erp-texto: #f1f4ef;
+  --erp-suave: #a9b6b2;
+
+  min-height: 100vh;
+  min-width: 0;
+  background:
+    radial-gradient(
+      ellipse 72% 260px at 48% -170px,
+      rgba(227,161,68,.09),
+      transparent 82%
+    ),
+    var(--erp-fundo);
+  color: var(--erp-texto);
+}
+
+/* Cabecalho executivo */
+
+.ern-reservas-premium > header {
+  position: relative;
+  overflow: hidden;
+  background: #101516 !important;
+  border-bottom: 1px solid rgba(227,161,68,.13) !important;
+}
+
+.ern-reservas-premium > header::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(
+    180deg,
+    #f4c77e,
+    #b77c32 65%,
+    transparent
+  );
+  pointer-events: none;
+}
+
+.ern-reservas-premium > header > div {
+  position: relative;
+  max-width: 1500px;
+}
+
+.ern-reservas-premium > header h1 {
+  color: #fff5e7;
+  letter-spacing: -.04em;
+  line-height: 1.1;
+}
+
+.ern-reservas-premium > header p:first-child {
+  letter-spacing: .19em;
+}
+
+.ern-reservas-premium > header p:last-child {
+  color: #b2c0bb;
+}
+
+.ern-reservas-premium > main {
+  max-width: 1500px;
+}
+
+/* Superficies operacionais */
+
+.ern-reservas-premium > main > section,
+.ern-reservas-premium > main > form > fieldset > section,
+.ern-reservas-premium > main > form > section,
+.ern-reservas-premium > main > div > section {
+  background: var(--erp-superficie) !important;
+  border: 1px solid var(--erp-borda) !important;
+  border-radius: 22px !important;
+  box-shadow:
+    0 8px 30px rgba(0,0,0,.13),
+    inset 0 1px 0 rgba(255,255,255,.018);
+}
+
+.ern-reservas-premium > main > section {
+  margin-bottom: 20px;
+}
+
+.ern-reservas-premium > main h2 {
+  color: #f7f1e8;
+  letter-spacing: -.025em;
+}
+
+.ern-reservas-premium > main h3 {
+  color: #f0ece4;
+}
+
+/* Identidade visual dos vinculos */
+
+.ern-reservas-premium
+  section[aria-label="Vínculos com os cadastros"] {
+  background: linear-gradient(
+    125deg,
+    rgba(227,161,68,.085),
+    rgba(227,161,68,.015)
+  ) !important;
+  border-color: rgba(227,161,68,.22) !important;
+  border-radius: 18px;
+}
+
+.ern-reservas-premium
+  section[aria-label="Vínculos com os cadastros"] h3 {
+  color: #f4c77e;
+}
+
+/* Formularios */
+
+.ern-reservas-premium input:not([type="checkbox"]),
+.ern-reservas-premium select,
+.ern-reservas-premium textarea {
+  background-color: #0c1112 !important;
+  color: #f1f4ef !important;
+  border-color: rgba(255,255,255,.17) !important;
+  border-radius: 12px;
+}
+
+.ern-reservas-premium
+  :is(input,select,textarea):focus-visible {
+  outline: 2px solid rgba(227,161,68,.75);
+  outline-offset: 2px;
+  border-color: #e3a144 !important;
+}
+
+.ern-reservas-premium input::placeholder,
+.ern-reservas-premium textarea::placeholder {
+  color: #889893;
+}
+
+.ern-reservas-premium fieldset:disabled {
+  opacity: 1;
+}
+
+.ern-reservas-premium :disabled {
+  cursor: not-allowed;
+}
+
+/* Organizacao Bento: formulario da nova reserva */
+
+@media (min-width: 1280px) {
+  .ern-reservas-premium
+    .ern-reserva-form-grid > section:first-of-type {
+    grid-column: span 7 / span 7;
+  }
+
+  .ern-reservas-premium
+    .ern-reserva-form-grid > section:nth-of-type(2) {
+    grid-column: span 5 / span 5;
+  }
+}
+
+/* Indicadores e controles */
+
+.ern-reservas-premium
+  [aria-pressed="true"] {
+  border-color: rgba(227,161,68,.56) !important;
+  box-shadow: inset 0 0 0 1px rgba(227,161,68,.1);
+}
+
+.ern-reservas-premium
+  [role="progressbar"] {
+  border-radius: 999px;
+}
+
+.ern-reservas-premium
+  :is(button,a):focus-visible {
+  outline: 2px solid #e3a144;
+  outline-offset: 3px;
+}
+
+/* Carteira de reservas */
+
+.ern-reservas-premium
+  table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.ern-reservas-premium
+  thead th {
+  background: #1b2223;
+  color: #bfc9c5;
+  font-size: 11px;
+  letter-spacing: .055em;
+  font-weight: 650;
+}
+
+.ern-reservas-premium tbody tr {
+  transition: background-color 160ms ease;
+}
+
+.ern-reservas-premium tbody tr:hover {
+  background-color: rgba(227,161,68,.045);
+}
+
+.ern-reservas-premium
+  table td {
+  vertical-align: middle;
+}
+
+/* Refinamento dos cards no mobile */
+
+@media (max-width: 767px) {
+  .ern-reservas-premium > header > div {
+    padding-top: 24px;
+    padding-bottom: 24px;
+  }
+
+  .ern-reservas-premium > header h1 {
+    font-size: clamp(30px, 8vw, 40px);
+  }
+
+  .ern-reservas-premium > main {
+    padding-top: 20px;
+  }
+
+  .ern-reservas-premium
+    section[aria-label="Vínculos com os cadastros"] {
+    padding: 16px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ern-reservas-premium *,
+  .ern-reservas-premium *::before,
+  .ern-reservas-premium *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+  }
+}
+
+/* ERN_PREMIUM_RESERVAS_GRID_V304
+ * Os dois primeiros paineis ocupam 7/5 colunas.
+ * Observacoes e acoes ocupam a linha inteira.
+ */
+
+.ern-reservas-premium .ern-reserva-form-grid {
+  min-width: 0;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.ern-reservas-premium .ern-reserva-form-grid > * {
+  min-width: 0;
+  width: 100%;
+}
+
+.ern-reservas-premium
+  .ern-reserva-form-grid > section:nth-of-type(3),
+.ern-reservas-premium
+  .ern-reserva-form-grid > div {
+  grid-column: 1 / -1;
+}
+
+.ern-reservas-premium
+  .ern-reserva-form-grid > section:nth-of-type(3) textarea {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  min-height: 140px;
+}
+
+.ern-reservas-premium
+  .ern-reserva-form-grid > div:last-child {
+  display: block;
+  width: 100%;
+}
+
+.ern-reservas-premium
+  .ern-reserva-form-grid > div:last-child > div {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+
+.ern-reservas-premium
+  .ern-reserva-form-grid > div:last-child button {
+  min-width: 150px;
+  white-space: normal;
+}
+
+@media (min-width: 1280px) {
+  .ern-reservas-premium .ern-reserva-form-grid {
+    grid-template-columns:
+      repeat(12, minmax(0, 1fr));
+  }
+
+  .ern-reservas-premium
+    .ern-reserva-form-grid > section:first-of-type {
+    grid-column: span 7 / span 7;
+  }
+
+  .ern-reservas-premium
+    .ern-reserva-form-grid > section:nth-of-type(2) {
+    grid-column: span 5 / span 5;
+  }
+}
+
+@media (max-width: 639px) {
+  .ern-reservas-premium
+    .ern-reserva-form-grid > div:last-child > div {
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .ern-reservas-premium
+    .ern-reserva-form-grid > div:last-child button {
+    width: 100%;
+  }
+}

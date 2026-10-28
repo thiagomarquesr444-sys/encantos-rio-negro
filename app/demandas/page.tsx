@@ -1,4 +1,5 @@
 'use client';
+import './demandas-premium.css';
 
 import {
   useEffect,
@@ -7,6 +8,7 @@ import {
   type FormEvent,
 } from 'react';
 import Link from 'next/link';
+import DemandasInsightsPremium from '@/app/components/DemandasInsightsPremium';
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
@@ -475,7 +477,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
     Boolean(consulta.data_inicio_de || consulta.data_inicio_ate);
 
   return (
-    <main className="min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <main className="ern-demandas-premium min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
       <header className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
         <div className="mx-auto max-w-7xl px-4 py-7 sm:px-5 md:px-8 md:py-10">
           <Link
@@ -766,6 +768,12 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
             'pronto' &&
             resultado && (
               <div>
+                <DemandasInsightsPremium
+                  registros={resultado.registros}
+                  totalConsulta={resultado.total}
+                  pagina={resultado.pagina}
+                  totalPaginas={resultado.total_paginas}
+                />
                 <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm text-[var(--ern-secundario)]">
                     <strong className="text-[var(--ern-texto)]">

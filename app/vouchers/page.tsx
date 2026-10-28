@@ -1,4 +1,5 @@
 'use client';
+import './vouchers-premium.css';
 
 import React, {
   useCallback,
@@ -367,7 +368,7 @@ function Modal({
         aria-labelledby={tituloId}
         aria-busy={bloqueado}
         tabIndex={-1}
-        className="max-h-[90dvh] w-full max-w-[720px] overflow-y-auto rounded-2xl border border-white/15 bg-[#091510] shadow-2xl outline-none"
+        className="ern-voucher-modal max-h-[90dvh] w-full max-w-[720px] overflow-y-auto rounded-2xl border border-white/15 bg-[#191F20] shadow-2xl outline-none"
       >
         <div className="flex items-start justify-between gap-4 border-b border-white/10 p-5">
           <h2 id={tituloId} className="break-words text-2xl" style={headingStyle}>
@@ -941,7 +942,7 @@ export default function VouchersPage() {
   const itemModal = modal?.item;
 
   return (
-    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+    <div className="ern-vouchers-premium ern-vouchers-listagem min-h-screen bg-[#0C1112] text-[#F1F4EF]">
       {erroPDF && (
         <div
           role="alert"
@@ -1002,7 +1003,7 @@ export default function VouchersPage() {
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-3 xl:grid-cols-6">
+        <div className="ern-vouchers-bento grid grid-cols-2 gap-3 lg:grid-cols-6 xl:grid-cols-12">
           {cards.map((card) => (
             <button
               key={card.titulo}
@@ -1033,7 +1034,7 @@ export default function VouchersPage() {
           </div>
         )}
 
-        <section aria-label="Filtros de vouchers" className="mt-6 grid gap-4 rounded-2xl border border-white/10 bg-[#0A1713] p-4 sm:grid-cols-[1fr_220px]">
+        <section aria-label="Filtros de vouchers" className="ern-vouchers-filtros mt-6 grid gap-4 rounded-2xl border border-white/10 bg-[#151A1B] p-4 sm:grid-cols-[1fr_220px]">
           <div className="min-w-0">
             <label htmlFor="voucher-busca" className={labelClass}>Buscar</label>
             <input
@@ -1058,7 +1059,7 @@ export default function VouchersPage() {
           </div>
         </section>
 
-        <section aria-busy={carregando} className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-[#0A1713]">
+        <section aria-busy={carregando} className="ern-vouchers-carteira mt-6 overflow-hidden rounded-2xl border border-white/10 bg-[#151A1B]">
           <div className="flex flex-wrap items-end justify-between gap-3 border-b border-white/10 p-5">
             <h2 className="text-2xl" style={headingStyle}>Vouchers emitidos</h2>
             <p className="text-sm text-[#B4C8BB]">

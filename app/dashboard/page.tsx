@@ -6,6 +6,7 @@ import {
 } from '@/lib/reservasStatusERN';
 
 import React, { useEffect, useMemo, useState } from 'react';
+import './dashboard-premium.css';
 import Link from 'next/link';
 import GraficosOperadora from '@/app/components/GraficosOperadora';
 import MapaTerritorioERN from '@/app/components/MapaTerritorioERN';
@@ -534,10 +535,6 @@ function DashboardAdministrativoERN() {
         ].filter(Boolean);
 
         if (errosOperacionais.length > 0) {
-          console.error(
-            'Erros ao carregar dados operacionais:',
-            errosOperacionais,
-          );
 
           setError(
             'Não foi possível carregar completamente os dados operacionais.',
@@ -561,13 +558,9 @@ function DashboardAdministrativoERN() {
         );
 
         if (resPlano.error) {
-          console.error(
-            'Erro ao carregar plano:',
-            resPlano.error,
-          );
 
           setPlano(null);
-          setErroPlano(resPlano.error.message);
+          setErroPlano('Nao foi possivel consultar o plano da empresa.');
         } else {
           const resultadoPlano = primeiroResultado(
             resPlano.data,
@@ -592,10 +585,6 @@ function DashboardAdministrativoERN() {
         ].filter(Boolean);
 
         if (errosUso.length > 0) {
-          console.error(
-            'Erros ao carregar uso do plano:',
-            errosUso,
-          );
 
           setUso(null);
 
@@ -648,19 +637,13 @@ function DashboardAdministrativoERN() {
           ),
         });
       } catch (err) {
-        console.error(
-          'Erro ao carregar dashboard:',
-          err,
-        );
 
         if (!ativo) {
           return;
         }
 
         setError(
-          err instanceof Error
-            ? err.message
-            : 'Ocorreu um erro inesperado ao carregar o dashboard.',
+          'Não foi possível carregar o Dashboard. Atualize a página ou tente novamente.',
         );
       } finally {
         if (ativo) {
@@ -1029,75 +1012,41 @@ function DashboardAdministrativoERN() {
     : [];
 
   return (
-    <div className="min-h-screen min-w-0 w-full break-words bg-[#07110E] text-[#EDEDE3]">
-      <section className="ern-painel-banner relative overflow-hidden border-b border-white/[0.07] bg-[#091510] lg:aspect-[1280/720] lg:flex lg:items-center">
-        <div
-          className="relative h-48 w-full bg-cover bg-[position:50%_55%] sm:h-60 lg:absolute lg:inset-0 lg:h-full lg:bg-center lg:bg-contain lg:bg-no-repeat"
-          style={{
-            backgroundImage: "url('/images/regiao/ilha.png.jpeg')",
-          }}
-        >
-          <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-[#091510] via-transparent to-transparent lg:hidden" />
-        </div>
-
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 hidden bg-[linear-gradient(90deg,rgba(6,16,13,0.96)_0%,rgba(6,16,13,0.88)_30%,rgba(6,16,13,0.42)_60%,rgba(6,16,13,0.08)_100%)] lg:block"
-        />
-
-        <div className="pointer-events-none relative mx-auto w-full max-w-[1360px] px-4 pb-7 pt-3 sm:px-5 sm:pb-9 md:px-8 lg:flex lg:min-h-[300px] lg:items-center lg:py-10">
-          <div className="ern-painel-letreiro pointer-events-auto flex w-full min-w-0 flex-col gap-5 lg:max-w-[57%]">
-            <div>
-              <div className="flex items-center gap-3">
-                <span className="h-px w-8 bg-[#E3A144]" />
-
-                <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#E3A144]">
-                  ERN Operação
-                </span>
-              </div>
-
-              <h1
-                className="mt-3 max-w-[650px] text-[clamp(1.75rem,5vw,2.75rem)] font-medium leading-[1.12] tracking-[-0.025em] text-[#F0F0E8]"
-                style={{
-                  fontFamily:
-                    'var(--font-fraunces), serif',
-                }}
-              >
-                Sua operação no Rio Negro,
-                <br className="hidden sm:block" />{' '}
-                sob controle.
-              </h1>
-
-              <p className="mt-3 max-w-[560px] text-sm leading-6 text-[#EDEDE3]/85 sm:leading-7">
-                Acompanhe o que acontece hoje,
-                prepare as próximas operações e
-                conecte sua empresa à Rede ERN.
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:gap-3">
-              <Link
-                href="/reservas/nova"
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#E3A144] px-3 text-xs font-bold text-[#07130F] transition hover:-translate-y-0.5 hover:bg-[#F0B35C] sm:min-h-[50px] sm:px-6 sm:text-sm"
-              >
-                <span className="text-lg leading-none">
-                  +
-                </span>
-                Nova reserva
-              </Link>
-
-              <Link
-                href="/demandas"
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-white/[0.12] bg-white/[0.035] px-3 text-xs font-semibold text-[#EDEDE3]/75 backdrop-blur transition hover:bg-white/[0.07] sm:min-h-[50px] sm:px-6 sm:text-sm"
-              >
-                Ver demandas
-                <span aria-hidden="true">→</span>
-              </Link>
-            </div>
+    <div className="ern-premium-dashboard min-h-screen min-w-0 w-full break-words bg-[#0C1112] text-[#F1F4EF]">
+      <section className="border-b border-white/[0.07] bg-[#0C1112]">
+        <div className="mx-auto flex w-full max-w-[1360px] flex-wrap items-center justify-between gap-4 px-4 py-6 sm:px-5 md:px-8">
+          <div className="min-w-0">
+            <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#E3A144]">
+              ERN / Gestão da operadora
+            </p>
+            <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[#F1F4EF] sm:text-3xl">
+              {loadingPlano
+                ? 'Painel da empresa'
+                : plano?.empresa_nome?.trim()
+                  ? `Painel ${plano.empresa_nome.trim()}`
+                  : 'Painel da empresa'}
+            </h1>
+            <p className="mt-2 max-w-2xl text-xs leading-5 text-[#94A5A1] sm:text-sm">
+              Reservas, operações, demandas e indicadores da sua empresa.
+            </p>
           </div>
+
+          <nav aria-label="Ações rápidas" className="flex flex-wrap gap-2">
+            <Link
+              href="/reservas/nova"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg bg-[#E3A144] px-4 text-xs font-bold text-[#0C1112] hover:bg-[#F0B35C] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E3A144]"
+            >
+              + Nova reserva
+            </Link>
+            <Link
+              href="/demandas"
+              className="inline-flex min-h-11 items-center justify-center rounded-lg border border-white/10 bg-[#151A1B] px-4 text-xs font-semibold text-[#F1F4EF] hover:bg-[#242B2B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E3A144]"
+            >
+              Ver demandas
+            </Link>
+          </nav>
         </div>
       </section>
-
       <main className="mx-auto min-w-0 w-full max-w-[1360px] px-3 py-5 sm:px-5 sm:py-8 md:px-8 md:py-10">
         {error && (
           <div className="mb-6 rounded-2xl border border-red-500/20 bg-red-500/[0.07] px-5 py-4 text-sm text-red-200">
@@ -1121,7 +1070,7 @@ function DashboardAdministrativoERN() {
               </p>
 
               <h2
-                className="mt-2 text-2xl text-[#F0F0E8] sm:text-3xl"
+                className="mt-2 text-2xl text-[#F1F4EF] sm:text-3xl"
                 style={{
                   fontFamily:
                     'var(--font-fraunces), serif',
@@ -1138,59 +1087,99 @@ function DashboardAdministrativoERN() {
             </p>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:mt-6 sm:gap-4 xl:grid-cols-4">
+          <section
+            aria-label="Resumo executivo da operação"
+            className="mt-4 grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-12"
+          >
+            <article className="relative flex min-w-0 flex-col justify-between overflow-hidden rounded-2xl border border-white/[0.08] bg-[#171D1E] p-5 shadow-sm sm:col-span-2 sm:p-6 xl:col-span-7 xl:row-span-3">
+              <div className="absolute left-0 top-5 h-12 w-[3px] rounded-r bg-[#E3A144]" />
+
+              <div>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#E3A144]">
+                    ERN / Agenda operacional
+                  </p>
+                  <span className="rounded-lg border border-white/10 px-3 py-1 text-[10px] text-[#94A5A1]">
+                    Hoje
+                  </span>
+                </div>
+
+                <h3 className="mt-5 text-sm font-medium text-[#A5B4AF]">
+                  Operações programadas
+                </h3>
+
+                <div className="mt-3 flex flex-wrap items-end gap-3">
+                  <strong className="text-6xl font-semibold leading-none tracking-tight tabular-nums text-[#F1F4EF] sm:text-7xl">
+                    {loading ? '—' : resumoOperacional.hoje}
+                  </strong>
+                  <span className="pb-2 text-xs text-[#94A5A1]">
+                    atividades para hoje
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-8 border-t border-white/[0.08] pt-4">
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-xs text-[#94A5A1]">
+                    Acompanhe as próximas movimentações
+                  </p>
+                  <Link
+                    href="/reservas"
+                    className="inline-flex min-h-11 items-center text-xs font-semibold text-[#E3A144] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E3A144]"
+                  >
+                    Ver agenda →
+                  </Link>
+                </div>
+              </div>
+            </article>
+
             {[
               {
-                label: 'Hoje',
-                valor: resumoOperacional.hoje,
-                detalhe: 'operações programadas',
-              },
-              {
                 label: 'Próximos 7 dias',
-                valor:
-                  resumoOperacional.proximosSeteDias,
+                valor: resumoOperacional.proximosSeteDias,
                 detalhe: 'operações previstas',
+                codigo: '01',
               },
               {
                 label: 'Pessoas',
-                valor:
-                  resumoOperacional.pessoasProximosSeteDias,
-                detalhe: 'previstas em 7 dias',
+                valor: resumoOperacional.pessoasProximosSeteDias,
+                detalhe: 'viajantes previstos',
+                codigo: '02',
               },
               {
                 label: 'Pendentes',
-                valor:
-                  resumoOperacional.pendentes,
-                detalhe:
-                  'aguardando confirmação',
+                valor: resumoOperacional.pendentes,
+                detalhe: 'aguardando confirmação',
+                codigo: '03',
               },
             ].map((item) => (
-              <div
-                key={item.label}
-                className="min-w-0 rounded-2xl border border-white/[0.075] bg-[#0A1713] p-3 sm:rounded-[22px] sm:p-5"
+              <article
+                key={item.codigo}
+                className="relative flex min-w-0 items-center justify-between gap-4 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#151A1B] p-4 sm:col-span-2 xl:col-span-5"
               >
-                <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[#7C9C87]">
-                  {item.label}
-                </p>
+                <div className="absolute left-0 top-4 h-8 w-[2px] bg-[#E3A144]/80" />
 
-                <strong
-                  className="mt-3 block text-3xl font-medium tabular-nums tracking-[-0.04em] text-[#F0F0E8] sm:text-4xl"
-                  style={{
-                    fontFamily:
-                      'var(--font-fraunces), serif',
-                  }}
-                >
-                  {loading ? '—' : item.valor}
-                </strong>
+                <div className="min-w-0">
+                  <p className="text-[11px] font-medium text-[#A5B4AF]">
+                    {item.label}
+                  </p>
+                  <p className="mt-2 text-[11px] text-[#82948E]">
+                    {item.detalhe}
+                  </p>
+                </div>
 
-                <p className="mt-1 text-[11px] text-[#EDEDE3]/50">
-                  {item.detalhe}
-                </p>
-              </div>
+                <div className="shrink-0 text-right">
+                  <span className="text-[10px] text-[#71827C]">
+                    {item.codigo}
+                  </span>
+                  <strong className="mt-1 block text-3xl font-semibold tabular-nums tracking-tight text-[#F1F4EF]">
+                    {loading ? '—' : item.valor}
+                  </strong>
+                </div>
+              </article>
             ))}
-          </div>
-
-          <div className="mt-3 rounded-2xl border border-[#E3A144]/12 bg-[#E3A144]/[0.035] px-4 py-3 sm:mt-4 sm:px-5">
+          </section>
+          <div className="mt-3 rounded-xl border border-[#E3A144]/20 bg-[#151A1B] px-4 py-3 sm:px-5">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-[#EDEDE3]/60">
                 Valor das operações previstas nos
@@ -1217,15 +1206,15 @@ function DashboardAdministrativoERN() {
         />
 
         <div className="mt-6 grid min-w-0 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-          <section className="overflow-hidden rounded-2xl border border-white/[0.075] bg-[#0A1713] sm:rounded-[26px]">
+          <section className="overflow-hidden rounded-2xl border border-white/[0.08] bg-[#151A1B] sm:rounded-2xl">
             <div className="flex items-end justify-between gap-4 border-b border-white/[0.06] px-4 py-4 sm:px-6 sm:py-5">
               <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
                   Agenda operacional
                 </p>
 
                 <h2
-                  className="mt-2 text-xl text-[#F0F0E8] sm:text-2xl"
+                  className="mt-2 text-xl text-[#F1F4EF] sm:text-2xl"
                   style={{
                     fontFamily:
                       'var(--font-fraunces), serif',
@@ -1255,7 +1244,7 @@ function DashboardAdministrativoERN() {
             ) : proximasOperacoes.length === 0 ? (
               <div className="px-5 py-10 text-center sm:px-8 sm:py-14">
                 <p
-                  className="text-xl text-[#F0F0E8]"
+                  className="text-xl text-[#F1F4EF]"
                   style={{
                     fontFamily:
                       'var(--font-fraunces), serif',
@@ -1287,18 +1276,18 @@ function DashboardAdministrativoERN() {
                         index !==
                         proximasOperacoes.length -
                           1
-                          ? 'border-b border-white/[0.055]'
+                          ? 'border-b border-white/[0.08]'
                           : ''
                       }`}
                     >
                       <div>
-                        <strong className="block text-sm text-[#F0F0E8]">
+                        <strong className="block text-sm text-[#F1F4EF]">
                           {formatarData(
                             reserva.data_reserva,
                           )}
                         </strong>
 
-                        <span className="mt-1 block text-[10px] text-[#EDEDE3]/45">
+                        <span className="mt-1 block text-[10px] text-[#A5B4AF]">
                           {formatarHorario(
                             reserva.horario,
                           )}
@@ -1311,7 +1300,7 @@ function DashboardAdministrativoERN() {
                             'Cliente não informado'}
                         </p>
 
-                        <p className="mt-1 truncate text-xs text-[#EDEDE3]/45">
+                        <p className="mt-1 truncate text-xs text-[#A5B4AF]">
                           {reserva.pacote ||
                             'Passeio não informado'}
                         </p>
@@ -1330,7 +1319,7 @@ function DashboardAdministrativoERN() {
                             : 's'}
                         </p>
 
-                        <p className="mt-1 text-[10px] text-[#EDEDE3]/35">
+                        <p className="mt-1 text-[10px] text-[#94A5A1]">
                           {formatarMoeda(
                             numeroSeguro(
                               reserva.valor_total,
@@ -1355,7 +1344,7 @@ function DashboardAdministrativoERN() {
             )}
           </section>
 
-          <section className="rounded-2xl border border-white/[0.075] bg-[#0A1713] p-4 sm:rounded-[26px] sm:p-6">
+          <section className="rounded-2xl border border-white/[0.08] bg-[#151A1B] p-4 sm:rounded-2xl sm:p-6">
             <div className="flex items-center justify-between gap-3">
               <div>
                 <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
@@ -1363,7 +1352,7 @@ function DashboardAdministrativoERN() {
                 </p>
 
                 <h2
-                  className="mt-2 text-xl text-[#F0F0E8]"
+                  className="mt-2 text-xl text-[#F1F4EF]"
                   style={{
                     fontFamily:
                       'var(--font-fraunces), serif',
@@ -1391,7 +1380,7 @@ function DashboardAdministrativoERN() {
                   Nenhuma pendência operacional.
                 </p>
 
-                <p className="mt-1 text-[11px] leading-5 text-[#EDEDE3]/45">
+                <p className="mt-1 text-[11px] leading-5 text-[#A5B4AF]">
                   As próximas operações estão sem
                   alertas nos critérios atuais.
                 </p>
@@ -1432,7 +1421,7 @@ function DashboardAdministrativoERN() {
           </section>
         </div>
 
-        <section className="mt-6 overflow-hidden rounded-2xl border border-white/[0.075] bg-[#0A1713] sm:rounded-[26px]">
+        <section className="mt-6 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#151A1B] sm:rounded-2xl">
           <div className="flex flex-col gap-4 border-b border-white/[0.06] px-4 py-4 sm:flex-row sm:items-end sm:justify-between sm:px-6 sm:py-5">
             <div>
               <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
@@ -1440,7 +1429,7 @@ function DashboardAdministrativoERN() {
               </p>
 
               <h2
-                className="mt-2 text-xl text-[#F0F0E8] sm:text-2xl"
+                className="mt-2 text-xl text-[#F1F4EF] sm:text-2xl"
                 style={{
                   fontFamily:
                     'var(--font-fraunces), serif',
@@ -1461,12 +1450,12 @@ function DashboardAdministrativoERN() {
           <div className="grid gap-0 lg:grid-cols-[240px_minmax(0,1fr)]">
             <div className="grid grid-cols-2 border-b border-white/[0.06] lg:grid-cols-1 lg:border-b-0 lg:border-r">
               <div className="p-4 sm:p-5">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[#7C9C87]">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[#E3A144]">
                   Abertas
                 </p>
 
                 <strong
-                  className="mt-2 block text-3xl text-[#F0F0E8]"
+                  className="mt-2 block text-3xl text-[#F1F4EF]"
                   style={{
                     fontFamily:
                       'var(--font-fraunces), serif',
@@ -1478,13 +1467,13 @@ function DashboardAdministrativoERN() {
                 </strong>
               </div>
 
-              <div className="border-l border-white/[0.055] p-4 sm:p-5 lg:border-l-0 lg:border-t">
-                <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[#7C9C87]">
+              <div className="border-l border-white/[0.08] p-4 sm:p-5 lg:border-l-0 lg:border-t">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.15em] text-[#E3A144]">
                   Rascunhos
                 </p>
 
                 <strong
-                  className="mt-2 block text-3xl text-[#F0F0E8]"
+                  className="mt-2 block text-3xl text-[#F1F4EF]"
                   style={{
                     fontFamily:
                       'var(--font-fraunces), serif',
@@ -1509,12 +1498,12 @@ function DashboardAdministrativoERN() {
                 </div>
               ) : demandasDestaque.length === 0 ? (
                 <div className="px-5 py-9 sm:px-8">
-                  <p className="text-sm font-semibold text-[#F0F0E8]">
+                  <p className="text-sm font-semibold text-[#F1F4EF]">
                     Sua empresa ainda não tem
                     demandas ativas.
                   </p>
 
-                  <p className="mt-2 text-xs leading-5 text-[#EDEDE3]/45">
+                  <p className="mt-2 text-xs leading-5 text-[#A5B4AF]">
                     Quando houver necessidades de
                     contratação, elas aparecerão
                     aqui.
@@ -1530,7 +1519,7 @@ function DashboardAdministrativoERN() {
                         index !==
                         demandasDestaque.length -
                           1
-                          ? 'border-b border-white/[0.055]'
+                          ? 'border-b border-white/[0.08]'
                           : ''
                       }`}
                     >
@@ -1562,7 +1551,7 @@ function DashboardAdministrativoERN() {
                           {demanda.titulo}
                         </p>
 
-                        <p className="mt-1 truncate text-xs text-[#EDEDE3]/45">
+                        <p className="mt-1 truncate text-xs text-[#A5B4AF]">
                           {demanda.localidade}
                         </p>
                       </div>
@@ -1575,7 +1564,7 @@ function DashboardAdministrativoERN() {
                           {demanda.unidade}
                         </p>
 
-                        <p className="mt-1 text-[10px] text-[#EDEDE3]/35">
+                        <p className="mt-1 text-[10px] text-[#94A5A1]">
                           {demanda.data_inicio &&
                           demanda.data_fim
                             ? `${formatarData(
@@ -1597,12 +1586,12 @@ function DashboardAdministrativoERN() {
         <section className="mt-7">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
                 Visão geral
               </p>
 
               <h2
-                className="mt-2 text-xl text-[#F0F0E8] sm:text-2xl"
+                className="mt-2 text-xl text-[#F1F4EF] sm:text-2xl"
                 style={{
                   fontFamily:
                     'var(--font-fraunces), serif',
@@ -1622,25 +1611,25 @@ function DashboardAdministrativoERN() {
               <Link
                 key={item.titulo}
                 href={item.href}
-                className="group min-w-0 rounded-2xl border border-white/[0.075] bg-[#0A1713] p-3 transition duration-300 hover:-translate-y-0.5 hover:border-[#E3A144]/20 hover:bg-[#0C1B16] sm:rounded-[22px] sm:p-5"
+                className="group min-w-0 rounded-2xl border border-white/[0.08] bg-[#151A1B] p-3 transition duration-300 hover:-translate-y-0.5 hover:border-[#E3A144]/20 hover:bg-[#242B2B] sm:rounded-2xl sm:p-5"
               >
                 <div className="flex items-start justify-between">
                   <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border border-[#E3A144]/15 bg-[#E3A144]/7 text-[#E3A144] sm:h-10 sm:w-10">
                     {item.icon}
                   </div>
 
-                  <span className="text-sm text-[#EDEDE3]/35 transition group-hover:translate-x-0.5 group-hover:text-[#E3A144]">
+                  <span className="text-sm text-[#94A5A1] transition group-hover:translate-x-0.5 group-hover:text-[#E3A144]">
                     →
                   </span>
                 </div>
 
                 <div className="mt-3 sm:mt-8">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#EDEDE3]/45">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#A5B4AF]">
                     {item.titulo}
                   </p>
 
                   <strong
-                    className="mt-1 block text-3xl font-medium tabular-nums tracking-[-0.04em] text-[#F0F0E8] sm:mt-2 sm:text-4xl"
+                    className="mt-1 block text-3xl font-medium tabular-nums tracking-[-0.04em] text-[#F1F4EF] sm:mt-2 sm:text-4xl"
                     style={{
                       fontFamily:
                         'var(--font-fraunces), serif',
@@ -1651,7 +1640,7 @@ function DashboardAdministrativoERN() {
                       : item.valor}
                   </strong>
 
-                  <p className="mt-1 text-[11px] text-[#EDEDE3]/40">
+                  <p className="mt-1 text-[11px] text-[#94A5A1]">
                     {item.detalhe}
                   </p>
                 </div>
@@ -1665,14 +1654,14 @@ function DashboardAdministrativoERN() {
         </div>
 
         <div className="mt-7">
-          <section className="overflow-hidden rounded-2xl border border-[#E3A144]/15 bg-[#0A1713] sm:rounded-[26px]">
+          <section className="overflow-hidden rounded-2xl border border-[#E3A144]/15 bg-[#151A1B] sm:rounded-2xl">
             <div className="border-b border-white/[0.06] px-4 py-4 sm:px-6 sm:py-5">
               <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
                 Rede ERN
               </p>
 
               <h2
-                className="mt-2 text-2xl text-[#F0F0E8]"
+                className="mt-2 text-2xl text-[#F1F4EF]"
                 style={{
                   fontFamily:
                     'var(--font-fraunces), serif',
@@ -1715,9 +1704,9 @@ function DashboardAdministrativoERN() {
                 {
                   nome: 'Presença pública',
                   descricao:
-                    'Perfil e publicações',
-                  href: '',
-                  ativo: false,
+                    'Gerenciar perfil público da operadora',
+                  href: '/configuracoes/perfil-publico',
+                  ativo: true,
                 },
               ].map((item, index) =>
                 item.ativo ? (
@@ -1726,11 +1715,11 @@ function DashboardAdministrativoERN() {
                     key={item.nome}
                     className={`group p-4 transition hover:bg-white/[0.025] sm:p-5 ${
                       index % 2 === 0
-                        ? 'border-r border-white/[0.055]'
+                        ? 'border-r border-white/[0.08]'
                         : ''
                     } ${
                       index < 2
-                        ? 'border-b border-white/[0.055]'
+                        ? 'border-b border-white/[0.08]'
                         : ''
                     }`}
                   >
@@ -1738,7 +1727,7 @@ function DashboardAdministrativoERN() {
                       {item.nome}
                     </p>
 
-                    <p className="mt-1 text-[10px] leading-4 text-[#EDEDE3]/40">
+                    <p className="mt-1 text-[10px] leading-4 text-[#94A5A1]">
                       {item.descricao}
                     </p>
 
@@ -1751,11 +1740,11 @@ function DashboardAdministrativoERN() {
                     key={item.nome}
                     className={`p-4 sm:p-5 ${
                       index % 2 === 0
-                        ? 'border-r border-white/[0.055]'
+                        ? 'border-r border-white/[0.08]'
                         : ''
                     } ${
                       index < 2
-                        ? 'border-b border-white/[0.055]'
+                        ? 'border-b border-white/[0.08]'
                         : ''
                     }`}
                   >
@@ -1763,7 +1752,7 @@ function DashboardAdministrativoERN() {
                       {item.nome}
                     </p>
 
-                    <p className="mt-1 text-[10px] leading-4 text-[#EDEDE3]/35">
+                    <p className="mt-1 text-[10px] leading-4 text-[#94A5A1]">
                       {item.descricao}
                     </p>
 
@@ -1780,7 +1769,7 @@ function DashboardAdministrativoERN() {
         </div>
 
         <div className="mt-7 grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(0,0.85fr)]">
-          <section className="rounded-2xl border border-white/[0.075] bg-[#0A1713] p-4 sm:rounded-[26px] sm:p-6">
+          <section className="rounded-2xl border border-white/[0.08] bg-[#151A1B] p-4 sm:rounded-2xl sm:p-6">
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
@@ -1788,7 +1777,7 @@ function DashboardAdministrativoERN() {
                 </p>
 
                 <h2
-                  className="mt-2 text-xl text-[#F0F0E8] sm:text-2xl"
+                  className="mt-2 text-xl text-[#F1F4EF] sm:text-2xl"
                   style={{
                     fontFamily:
                       'var(--font-fraunces), serif',
@@ -1798,7 +1787,7 @@ function DashboardAdministrativoERN() {
                 </h2>
               </div>
 
-              <span className="hidden rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1 text-[9px] uppercase tracking-[0.15em] text-[#EDEDE3]/45 sm:block">
+              <span className="hidden rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1 text-[9px] uppercase tracking-[0.15em] text-[#A5B4AF] sm:block">
                 ERN
               </span>
             </div>
@@ -1815,7 +1804,7 @@ function DashboardAdministrativoERN() {
                       {atalho.titulo}
                     </p>
 
-                    <p className="mt-2 max-w-[200px] text-[11px] leading-5 text-[#EDEDE3]/40">
+                    <p className="mt-2 max-w-[200px] text-[11px] leading-5 text-[#94A5A1]">
                       {atalho.descricao}
                     </p>
                   </div>
@@ -1833,7 +1822,7 @@ function DashboardAdministrativoERN() {
           </div>
         </div>
 
-        <section className="mt-7 min-w-0 overflow-hidden rounded-2xl border border-[#E3A144]/15 bg-[#0A1713] sm:rounded-[26px]">
+        <section className="mt-7 min-w-0 overflow-hidden rounded-2xl border border-[#E3A144]/15 bg-[#151A1B] sm:rounded-2xl">
           <div className="grid min-w-0 lg:grid-cols-[minmax(0,0.72fr)_minmax(0,1.28fr)]">
             <div className="relative min-w-0 border-b border-white/[0.065] p-4 sm:p-5 md:p-6 lg:border-b-0 lg:border-r">
               <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full border border-[#E3A144]/10" />
@@ -1858,7 +1847,7 @@ function DashboardAdministrativoERN() {
                 </div>
 
                 <h2
-                  className="mt-3 break-words text-2xl text-[#F0F0E8] sm:mt-4 sm:text-3xl"
+                  className="mt-3 break-words text-2xl text-[#F1F4EF] sm:mt-4 sm:text-3xl"
                   style={{
                     fontFamily:
                       'var(--font-fraunces), serif',
@@ -1882,7 +1871,7 @@ function DashboardAdministrativoERN() {
                   <div className="mt-4 inline-flex max-w-full items-center gap-2 rounded-xl border border-white/[0.07] bg-white/[0.025] px-3 py-2 sm:mt-6">
                     <span className="h-2 w-2 rounded-full bg-[#E3A144]" />
 
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#EDEDE3]/45">
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[#A5B4AF]">
                       {plano.plano_codigo}
                     </span>
                   </div>
@@ -1909,12 +1898,12 @@ function DashboardAdministrativoERN() {
             <div className="min-w-0 p-4 sm:p-5 md:p-6">
               <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
                 <div>
-                  <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+                  <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
                     Uso da assinatura
                   </p>
 
                   <h3
-                    className="mt-2 text-xl text-[#F0F0E8]"
+                    className="mt-2 text-xl text-[#F1F4EF]"
                     style={{
                       fontFamily:
                         'var(--font-fraunces), serif',
@@ -1924,7 +1913,7 @@ function DashboardAdministrativoERN() {
                   </h3>
                 </div>
 
-                <p className="text-[10px] text-[#EDEDE3]/40">
+                <p className="text-[10px] text-[#94A5A1]">
                   Limites aplicados em tempo real
                 </p>
               </div>
@@ -1941,11 +1930,11 @@ function DashboardAdministrativoERN() {
                       key={label}
                       className="min-w-0 rounded-xl border border-white/[0.065] bg-white/[0.018] p-3 sm:rounded-[18px] sm:p-4"
                     >
-                      <p className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[#EDEDE3]/45">
+                      <p className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[#A5B4AF]">
                         {label}
                       </p>
 
-                      <strong className="mt-2 block text-xl text-[#F0F0E8] sm:text-2xl">
+                      <strong className="mt-2 block text-xl text-[#F1F4EF] sm:text-2xl">
                         —
                       </strong>
                     </div>
@@ -1985,12 +1974,12 @@ function DashboardAdministrativoERN() {
                               : 'border-white/[0.065] bg-white/[0.018]'
                           }`}
                         >
-                          <p className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[#EDEDE3]/45">
+                          <p className="text-[9px] font-semibold uppercase tracking-[0.13em] text-[#A5B4AF]">
                             {label}
                           </p>
 
                           <strong
-                            className="mt-2 block text-xl font-medium tabular-nums text-[#F0F0E8] sm:text-2xl"
+                            className="mt-2 block text-xl font-medium tabular-nums text-[#F1F4EF] sm:text-2xl"
                             style={{
                               fontFamily:
                                 'var(--font-fraunces), serif',
@@ -2050,11 +2039,11 @@ function DashboardAdministrativoERN() {
           <div className="border-t border-white/[0.065] px-4 py-4 sm:px-5 sm:py-5 md:px-6">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+                <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
                   Recursos do plano
                 </p>
 
-                <p className="mt-1 max-w-[480px] text-xs leading-5 text-[#EDEDE3]/45">
+                <p className="mt-1 max-w-[480px] text-xs leading-5 text-[#A5B4AF]">
                   Recursos incluídos na assinatura
                   da empresa.
                 </p>
@@ -2062,7 +2051,7 @@ function DashboardAdministrativoERN() {
 
               <div className="flex max-w-[760px] flex-wrap gap-2">
                 {loadingPlano && (
-                  <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-2 text-[10px] text-[#EDEDE3]/45">
+                  <span className="rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-2 text-[10px] text-[#A5B4AF]">
                     Carregando recursos...
                   </span>
                 )}
@@ -2083,14 +2072,14 @@ function DashboardAdministrativoERN() {
                           className={`inline-flex min-w-0 max-w-full items-center gap-2 rounded-full border px-3 py-2 text-[10px] font-medium ${
                             liberado
                               ? 'border-emerald-400/15 bg-emerald-400/[0.06] text-emerald-200/80'
-                              : 'border-white/[0.07] bg-white/[0.02] text-[#EDEDE3]/40'
+                              : 'border-white/[0.07] bg-white/[0.02] text-[#94A5A1]'
                           }`}
                         >
                           <span
                             className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[8px] ${
                               liberado
                                 ? 'bg-emerald-400/10 text-emerald-300'
-                                : 'bg-white/[0.04] text-[#EDEDE3]/35'
+                                : 'bg-white/[0.04] text-[#94A5A1]'
                             }`}
                           >
                             {liberado ? '✓' : '—'}
@@ -2106,14 +2095,14 @@ function DashboardAdministrativoERN() {
           </div>
         </section>
 
-        <section className="mt-7 overflow-hidden rounded-2xl border border-white/[0.075] bg-[#0A1713] sm:rounded-[26px]">
+        <section className="mt-7 overflow-hidden rounded-2xl border border-white/[0.08] bg-[#151A1B] sm:rounded-2xl">
           <div className="border-b border-white/[0.065] px-4 py-4 sm:px-6 sm:py-5">
-            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#7C9C87]">
+            <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
               Estrutura da operação
             </p>
 
             <h2
-              className="mt-2 text-xl text-[#F0F0E8] sm:text-2xl"
+              className="mt-2 text-xl text-[#F1F4EF] sm:text-2xl"
               style={{
                 fontFamily:
                   'var(--font-fraunces), serif',
@@ -2151,7 +2140,7 @@ function DashboardAdministrativoERN() {
                 href={item.href}
                 className={`group flex min-h-14 items-center justify-between px-4 py-4 transition hover:bg-white/[0.025] sm:px-5 ${
                   index > 0
-                    ? 'border-t border-white/[0.055] sm:border-l sm:border-t-0'
+                    ? 'border-t border-white/[0.08] sm:border-l sm:border-t-0'
                     : ''
                 }`}
               >

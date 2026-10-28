@@ -1,0 +1,420 @@
+/*
+ ERN PREMIUM V35.1
+ Exclusivo dos guias internos da Operadora.
+ Nao interfere no login profissional /guia
+ nem no componente VinculosReserva.
+*/
+
+.ern-guias-premium {
+  --eg-fundo: #0c1112;
+  --eg-card: #151a1b;
+  --eg-card-alto: #1d2425;
+  --eg-borda: rgba(255,255,255,.095);
+  --eg-ambar: #e3a144;
+  --eg-texto: #f1f4ef;
+
+  min-height: 100vh;
+  min-width: 0;
+  background: var(--eg-fundo) !important;
+  color: var(--eg-texto) !important;
+}
+
+/* Cabecalho executivo */
+
+.ern-guias-premium > section:first-of-type {
+  position: relative;
+  background:
+    radial-gradient(
+      ellipse 58% 95% at 100% 0%,
+      rgba(227,161,68,.075),
+      transparent 82%
+    ),
+    #101516 !important;
+  border-bottom: 1px solid rgba(227,161,68,.16) !important;
+}
+
+.ern-guias-premium > section:first-of-type::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 3px;
+  background: linear-gradient(
+    180deg, #f4c77e, #aa7638 70%, transparent
+  );
+  pointer-events: none;
+}
+
+.ern-guias-premium > section:first-of-type > div {
+  max-width: 1500px;
+}
+
+.ern-guias-premium > section:first-of-type h1 {
+  color: #fff2e1;
+  font-size: clamp(36px,4vw,54px);
+  letter-spacing: -.05em;
+  line-height: 1.12;
+}
+
+.ern-guias-premium > main {
+  min-width: 0;
+  max-width: 1500px;
+}
+
+/* Indicadores Bento */
+
+.ern-guias-bento {
+  align-items: stretch;
+}
+
+.ern-guias-bento > button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  min-height: 160px;
+  padding: 23px !important;
+  overflow: hidden;
+  background: var(--eg-card) !important;
+  border: 1px solid var(--eg-borda) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 12px 30px rgba(0,0,0,.13);
+}
+
+.ern-guias-bento > button::before {
+  content: "";
+  position: absolute;
+  left: 22px;
+  top: 0;
+  width: 44px;
+  height: 2px;
+  background: rgba(227,161,68,.76);
+}
+
+.ern-guias-bento > button:first-child {
+  background:
+    linear-gradient(
+      125deg,
+      rgba(227,161,68,.14),
+      rgba(227,161,68,.015) 75%
+    ),
+    var(--eg-card) !important;
+  border-color: rgba(227,161,68,.34) !important;
+}
+
+.ern-guias-bento > button strong {
+  margin-top: 17px;
+  color: #f4c77e !important;
+  line-height: 1.12;
+  font-variant-numeric: tabular-nums;
+}
+
+.ern-guias-bento > button[aria-pressed="true"] {
+  border-color: #e3a144 !important;
+  box-shadow: 0 0 0 1px rgba(227,161,68,.17);
+}
+
+.ern-guias-bento > button:hover {
+  border-color: rgba(227,161,68,.37) !important;
+}
+
+@media (min-width: 1280px) {
+  .ern-guias-bento > button:nth-child(1) {
+    grid-column: span 4 / span 4;
+  }
+
+  .ern-guias-bento > button:nth-child(2) {
+    grid-column: span 3 / span 3;
+  }
+
+  .ern-guias-bento > button:nth-child(3) {
+    grid-column: span 2 / span 2;
+  }
+
+  .ern-guias-bento > button:nth-child(4) {
+    grid-column: span 3 / span 3;
+  }
+}
+
+/* Carteira de profissionais */
+
+.ern-guias-catalogo {
+  background: var(--eg-card) !important;
+  border-color: var(--eg-borda) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 14px 40px rgba(0,0,0,.13);
+}
+
+.ern-guias-catalogo > div:first-child {
+  background:
+    linear-gradient(
+      125deg,
+      rgba(227,161,68,.05),
+      transparent 75%
+    ),
+    var(--eg-card);
+}
+
+.ern-guias-catalogo h2 {
+  color: #f6eee4;
+}
+
+.ern-guias-catalogo thead {
+  background: #202728;
+}
+
+.ern-guias-catalogo thead th {
+  color: #c4d0ca;
+  letter-spacing: .075em;
+  font-size: 10px;
+}
+
+.ern-guias-catalogo tbody tr:hover {
+  background: rgba(227,161,68,.045);
+}
+
+.ern-guias-catalogo article {
+  background: var(--eg-card-alto) !important;
+  border-color: rgba(255,255,255,.1) !important;
+  border-radius: 18px;
+}
+
+/* Nova guia: formulario Bento */
+
+.ern-guias-form {
+  width: 100%;
+  align-items: start;
+  gap: 22px;
+}
+
+.ern-guias-form > * {
+  min-width: 0;
+}
+
+.ern-guias-form > section:first-child {
+  position: relative;
+  background:
+    linear-gradient(
+      140deg,
+      rgba(227,161,68,.065),
+      transparent 50%
+    ),
+    #171d1e !important;
+  border: 1px solid rgba(227,161,68,.2) !important;
+  border-radius: 24px !important;
+  padding: clamp(22px,2.5vw,35px) !important;
+  box-shadow: 0 16px 48px rgba(0,0,0,.17);
+}
+
+.ern-guias-form > section:first-child::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 28px;
+  width: 56px;
+  height: 3px;
+  background: #e3a144;
+}
+
+.ern-guias-form > section:first-child h2 {
+  color: #fff0de;
+  letter-spacing: -.035em;
+}
+
+.ern-guias-form > div:nth-child(2) {
+  display: grid;
+  align-content: start;
+  gap: 20px;
+  min-width: 0;
+}
+
+.ern-guias-form > div:nth-child(2) > section {
+  margin: 0;
+  padding: clamp(20px,2vw,29px) !important;
+  border-radius: 22px !important;
+  border: 1px solid var(--eg-borda) !important;
+  background: var(--eg-card) !important;
+}
+
+.ern-guias-form > div:nth-child(2) > section:first-child {
+  background:
+    linear-gradient(
+      140deg,
+      rgba(227,161,68,.065),
+      transparent
+    ),
+    var(--eg-card) !important;
+  border-color: rgba(227,161,68,.2) !important;
+}
+
+.ern-guias-form > div:nth-child(2) > section h2 {
+  color: #f5ecdf;
+  letter-spacing: -.03em;
+}
+
+.ern-guias-form > div:nth-child(2)
+  > section:last-child .space-y-2 > div {
+  background: #202728 !important;
+  border-color: rgba(255,255,255,.065) !important;
+  border-radius: 11px;
+  min-height: 38px;
+}
+
+/* Campos */
+
+.ern-guias-premium input:not([type="checkbox"]),
+.ern-guias-premium select {
+  min-width: 0;
+  max-width: 100%;
+  background: #0d1213 !important;
+  color: #f1f4ef !important;
+  border: 1px solid rgba(255,255,255,.17) !important;
+  border-radius: 13px;
+}
+
+.ern-guias-form input,
+.ern-guias-form select {
+  min-height: 51px;
+  padding: 12px 15px;
+  font-size: 14px;
+}
+
+.ern-guias-form label {
+  display: block;
+  margin-bottom: 9px;
+  font-size: 11px;
+  line-height: 1.5;
+  letter-spacing: .095em;
+  color: #c5d2cb;
+}
+
+.ern-guias-premium input::placeholder {
+  color: #98a8a1;
+}
+
+.ern-guias-premium
+  :is(input,select):focus-visible {
+  outline: 2px solid rgba(227,161,68,.85);
+  outline-offset: 2px;
+  border-color: #e3a144 !important;
+}
+
+.ern-guias-premium :disabled {
+  cursor: not-allowed;
+}
+
+/* Barra inferior de acoes */
+
+.ern-guias-form > div:last-child {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.ern-guias-form > div:last-child > div {
+  border-top: 1px solid rgba(227,161,68,.19);
+  padding-top: 23px;
+  gap: 12px;
+}
+
+.ern-guias-form > div:last-child
+  :is(a,button) {
+  min-height: 48px;
+  padding: 12px 19px;
+  border-radius: 12px;
+  font-size: 13px;
+}
+
+.ern-guias-form > div:last-child
+  button[type="submit"] {
+  background: #e3a144 !important;
+  color: #101516 !important;
+  font-weight: 750;
+  border: 1px solid #e3a144;
+}
+
+/* Janelas de detalhes, edicao e exclusao */
+
+.ern-guias-premium
+  > div[role="dialog"]
+  > div {
+  background: #191f20 !important;
+  border: 1px solid rgba(227,161,68,.18) !important;
+  max-height: 92dvh;
+}
+
+.ern-guias-premium
+  > div[role="dialog"]
+  input,
+.ern-guias-premium
+  > div[role="dialog"]
+  select {
+  background: #0d1213 !important;
+  border-color: rgba(255,255,255,.17) !important;
+  color: #f1f4ef !important;
+}
+
+.ern-guias-premium
+  > div[role="dialog"] .grid > div {
+  min-width: 0;
+}
+
+/* Teclado, mobile e reducao de movimento */
+
+.ern-guias-premium
+  :is(a,button):focus-visible {
+  outline: 2px solid #e3a144;
+  outline-offset: 3px;
+}
+
+@media (max-width: 1023px) {
+  .ern-guias-form {
+    grid-template-columns: minmax(0,1fr);
+  }
+
+  .ern-guias-form > * {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 639px) {
+  .ern-guias-premium > section:first-of-type > div {
+    padding-top: 27px;
+    padding-bottom: 27px;
+  }
+
+  .ern-guias-bento > button {
+    padding: 16px !important;
+    min-height: 134px;
+  }
+
+  .ern-guias-form > section:first-child,
+  .ern-guias-form > div:nth-child(2) > section {
+    padding: 19px !important;
+  }
+
+  .ern-guias-form > div:last-child > div,
+  .ern-guias-form > div:last-child > div > div {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .ern-guias-form > div:last-child
+    :is(a,button) {
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ern-guias-premium *,
+  .ern-guias-premium *::before,
+  .ern-guias-premium *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+}

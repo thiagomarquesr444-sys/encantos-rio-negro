@@ -1,4 +1,6 @@
 'use client';
+import '../../financeiro-premium.css';
+import '../../financeiro-operacoes-v39.css';
 
 import { useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
@@ -237,7 +239,7 @@ export default function NovaDespesaPage() {
   }
 
   return (
-    <div className="min-h-screen min-w-0 bg-[#07110E] text-[#EDEDE3]">
+    <div className="ern-financeiro-premium ern-financeiro-cadastro ern-fin-v39-despesa min-h-screen min-w-0 bg-[#07110E] text-[#EDEDE3]">
       <header className="border-b border-white/10 bg-[#091510]">
         <div className="mx-auto max-w-[1180px] px-4 py-7 sm:px-6 md:px-8 md:py-10">
           <Link
@@ -287,7 +289,7 @@ export default function NovaDespesaPage() {
         <form onSubmit={salvar} aria-busy={salvando}>
           <fieldset
             disabled={salvando}
-            className="grid min-w-0 gap-5 disabled:opacity-70 lg:grid-cols-[1.15fr_0.85fr]"
+            className="ern-fin-v39-bento grid min-w-0 gap-5 disabled:opacity-70 lg:grid-cols-[1.15fr_0.85fr]"
           >
             <legend className="sr-only">
               Cadastro de despesa financeira

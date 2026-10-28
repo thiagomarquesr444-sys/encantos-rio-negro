@@ -1,4 +1,5 @@
 'use client';
+import '../embarcacoes-premium.css';
 
 import React, {
   useState,
@@ -274,7 +275,7 @@ export default function NovaEmbarcacaoPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <div className="ern-embarcacoes-premium min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
       {/* =====================================================
           CABEÇALHO
       ====================================================== */}
@@ -337,7 +338,7 @@ export default function NovaEmbarcacaoPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]"
+          className="ern-embarcacoes-form grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)]"
         >
           {/* =================================================
               IDENTIFICAÇÃO

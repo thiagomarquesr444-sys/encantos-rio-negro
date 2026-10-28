@@ -1,4 +1,6 @@
 'use client';
+import '../../financeiro-premium.css';
+import '../../financeiro-operacoes-v39.css';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -254,7 +256,7 @@ export default function NovaReceitaPage() {
     }
   }
   return (
-    <div className="min-h-screen min-w-0 bg-[#07110E] text-[#EDEDE3]">
+    <div className="ern-financeiro-premium ern-financeiro-cadastro ern-fin-v39-receita min-h-screen min-w-0 bg-[#07110E] text-[#EDEDE3]">
       <header className="border-b border-white/10 bg-[#091510]">
         <div className="mx-auto max-w-[1180px] px-4 py-7 sm:px-6 md:px-8 md:py-10">
           <Link
@@ -295,7 +297,7 @@ export default function NovaReceitaPage() {
             {mensagemSucesso}
           </div>
         )}
-        <section aria-labelledby="receita-reserva-titulo" className="mb-5 rounded-2xl border border-[#E3A144]/25 bg-[#0C211A] p-5 sm:p-7">
+        <section aria-labelledby="receita-reserva-titulo" className="ern-fin-v39-vinculo mb-5 rounded-2xl border border-[#E3A144]/25 bg-[#0C211A] p-5 sm:p-7">
           <h2 id="receita-reserva-titulo" className="text-xl font-semibold text-[#F4C77E]">Vincular receita a uma reserva</h2>
           <p className="mt-3 text-sm leading-7 text-[#B4C8BB]">Opcional. Registre o valor desta parcela e o vencimento combinado. O total comercial da reserva não é preenchido como pagamento. Cada lançamento precisa representar uma parcela própria.</p>
           {carregandoReservas && <p role="status" className="mt-3 text-sm">Carregando reservas…</p>}
@@ -310,7 +312,7 @@ export default function NovaReceitaPage() {
         <form onSubmit={salvar} aria-busy={salvando}>
           <fieldset
             disabled={salvando}
-            className="grid min-w-0 gap-5 disabled:opacity-70 lg:grid-cols-[1.15fr_0.85fr]"
+            className="ern-fin-v39-bento grid min-w-0 gap-5 disabled:opacity-70 lg:grid-cols-[1.15fr_0.85fr]"
           >
             <legend className="sr-only">
               Cadastro de receita financeira

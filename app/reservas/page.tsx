@@ -1,4 +1,5 @@
 'use client';
+import './reservas-premium.css';
 
 import React, {
   Suspense,
@@ -805,7 +806,7 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
     : encodeURIComponent(String(idSelecionado));
 
   return (
-    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+    <div className="ern-reservas-premium min-h-screen bg-[#0C1112] text-[#F1F4EF]">
       {sucesso && (
         <div
           role="status"

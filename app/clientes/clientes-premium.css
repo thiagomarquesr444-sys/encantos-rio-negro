@@ -1,0 +1,314 @@
+/*
+ * ERN PREMIUM V31.1
+ * Escopo exclusivo da carteira e dos formularios de Clientes.
+ * Sem alteracoes nas consultas e gravacoes.
+ */
+
+.ern-clientes-premium {
+  --ec-fundo: #0c1112;
+  --ec-card: #151a1b;
+  --ec-card-elevado: #1c2223;
+  --ec-borda: rgba(255,255,255,.095);
+  --ec-ambar: #e3a144;
+  --ec-texto: #f1f4ef;
+  --ec-secundario: #abbab4;
+
+  min-height: 100vh;
+  min-width: 0;
+  background:
+    radial-gradient(
+      ellipse 70% 280px at 50% -200px,
+      rgba(227,161,68,.10),
+      transparent 85%
+    ),
+    var(--ec-fundo) !important;
+  color: var(--ec-texto) !important;
+}
+
+.ern-clientes-premium > div,
+.ern-clientes-premium > main {
+  min-width: 0;
+}
+
+/* Cabecalho executivo */
+
+.ern-clientes-premium header {
+  position: relative;
+  padding-bottom: 22px;
+  border-bottom: 1px solid rgba(227,161,68,.15);
+}
+
+.ern-clientes-premium header::before {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  height: 2px;
+  width: 74px;
+  border-radius: 20px;
+  background: linear-gradient(90deg,#e3a144,transparent);
+}
+
+.ern-clientes-premium header h1 {
+  font-family: var(--font-fraunces), Georgia, serif;
+  color: #fff3e1;
+  letter-spacing: -.045em;
+  line-height: 1.12;
+}
+
+.ern-clientes-premium header p:first-child {
+  color: #edb66c;
+  letter-spacing: .18em;
+}
+
+.ern-clientes-premium header p:last-child {
+  color: var(--ec-secundario);
+}
+
+/* Cartoes Bento e superficies */
+
+.ern-clientes-premium .ern-clientes-indicadores {
+  align-items: stretch;
+}
+
+.ern-clientes-premium .ern-clientes-indicadores > button {
+  min-width: 0;
+  min-height: 154px;
+  position: relative;
+  overflow: hidden;
+  background: var(--ec-card) !important;
+  border: 1px solid var(--ec-borda) !important;
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.13);
+  text-align: left;
+}
+
+.ern-clientes-premium .ern-clientes-indicadores > button::before {
+  content: "";
+  position: absolute;
+  left: 24px;
+  top: 0;
+  width: 46px;
+  height: 2px;
+  background: rgba(227,161,68,.7);
+}
+
+.ern-clientes-premium .ern-clientes-indicadores > button:first-child {
+  background:
+    linear-gradient(
+      120deg,
+      rgba(227,161,68,.12),
+      rgba(227,161,68,.025) 65%
+    ),
+    var(--ec-card) !important;
+}
+
+.ern-clientes-premium .ern-clientes-indicadores strong {
+  display: block;
+  margin-top: 20px;
+  color: #f4c77e;
+  font-family: var(--font-fraunces), Georgia, serif;
+  font-size: clamp(34px, 3.5vw, 49px);
+  line-height: 1.1;
+  letter-spacing: -.045em;
+  font-variant-numeric: tabular-nums;
+}
+
+.ern-clientes-premium
+  .ern-clientes-indicadores > button[aria-pressed="true"] {
+  border-color: rgba(227,161,68,.62) !important;
+  box-shadow:
+    0 0 0 1px rgba(227,161,68,.2),
+    inset 0 0 40px rgba(227,161,68,.04);
+}
+
+@media (min-width: 1024px) {
+  .ern-clientes-premium .ern-clientes-indicadores {
+    grid-template-columns:
+      minmax(0,5fr)
+      minmax(0,4fr)
+      minmax(0,3fr);
+  }
+}
+
+.ern-clientes-premium .ern-clientes-listagem,
+.ern-clientes-premium .ern-cliente-form-card,
+.ern-clientes-formulario section[aria-label="Uso do plano"] {
+  min-width: 0;
+  background: var(--ec-card) !important;
+  border: 1px solid var(--ec-borda) !important;
+  border-radius: 23px;
+  box-shadow: 0 10px 36px rgba(0,0,0,.11);
+}
+
+.ern-clientes-premium .ern-clientes-listagem {
+  overflow: hidden;
+}
+
+.ern-clientes-premium .ern-clientes-listagem h2,
+.ern-clientes-premium .ern-cliente-form-card h2 {
+  color: #f5eee5;
+  letter-spacing: -.02em;
+}
+
+/* Formularios */
+
+.ern-clientes-premium input,
+.ern-clientes-premium select,
+.ern-clientes-premium textarea {
+  min-width: 0;
+  max-width: 100%;
+  background-color: #0d1213 !important;
+  color: #f1f4ef !important;
+  border: 1px solid rgba(255,255,255,.17) !important;
+  border-radius: 12px;
+}
+
+.ern-clientes-premium input::placeholder,
+.ern-clientes-premium textarea::placeholder {
+  color: #98a7a1;
+}
+
+.ern-clientes-premium
+  :is(input,select,textarea):focus-visible {
+  outline: 2px solid rgba(227,161,68,.85);
+  outline-offset: 2px;
+  border-color: #e3a144 !important;
+}
+
+.ern-clientes-premium
+  .ern-cliente-form-card fieldset > div {
+  min-width: 0;
+}
+
+.ern-clientes-premium
+  .ern-cliente-form-card textarea {
+  min-height: 136px;
+  resize: vertical;
+}
+
+.ern-clientes-premium
+  .ern-cliente-form-card aside {
+  background: #202728 !important;
+  border-color: rgba(227,161,68,.14) !important;
+  border-radius: 16px;
+}
+
+.ern-clientes-premium
+  .ern-cliente-form-card > div:last-child {
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ern-clientes-premium
+  .ern-cliente-form-card > div:last-child button {
+  min-width: 148px;
+}
+
+/* Carteira: tabela e cartoes mobile */
+
+.ern-clientes-premium table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.ern-clientes-premium table thead {
+  background: var(--ec-card-elevado);
+}
+
+.ern-clientes-premium table thead th {
+  padding-top: 18px;
+  padding-bottom: 18px;
+  color: #bfcbc5;
+  font-size: 11px;
+  letter-spacing: .06em;
+}
+
+.ern-clientes-premium table tbody tr {
+  transition: background-color 160ms ease;
+}
+
+.ern-clientes-premium table tbody tr:hover {
+  background-color: rgba(227,161,68,.045);
+}
+
+.ern-clientes-premium table td,
+.ern-clientes-premium table th {
+  vertical-align: middle;
+}
+
+.ern-clientes-premium
+  .ern-clientes-listagem article {
+  background: #1b2122 !important;
+  border-color: rgba(255,255,255,.1) !important;
+  border-radius: 18px;
+}
+
+/* Janela de detalhes / exclusao */
+
+.ern-clientes-premium dialog {
+  background: #181e1f !important;
+  color: #f1f4ef !important;
+  border: 1px solid rgba(227,161,68,.17) !important;
+  border-radius: 22px;
+}
+
+.ern-clientes-premium dialog::backdrop {
+  background: rgba(0,0,0,.72);
+  backdrop-filter: blur(4px);
+}
+
+/* Teclado e acessibilidade */
+
+.ern-clientes-premium
+  :is(a,button):focus-visible {
+  outline: 2px solid #e3a144;
+  outline-offset: 3px;
+}
+
+@media (max-width: 639px) {
+  .ern-clientes-premium header {
+    gap: 18px;
+  }
+
+  .ern-clientes-premium header h1 {
+    font-size: clamp(31px,8vw,40px);
+  }
+
+  .ern-clientes-premium .ern-clientes-indicadores {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+  }
+
+  .ern-clientes-premium
+    .ern-clientes-indicadores > button:first-child {
+    grid-column: 1 / -1;
+  }
+
+  .ern-clientes-premium
+    .ern-clientes-indicadores > button {
+    min-height: 128px;
+    padding: 18px;
+  }
+
+  .ern-clientes-premium
+    .ern-cliente-form-card > div:last-child {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: stretch;
+  }
+
+  .ern-clientes-premium
+    .ern-cliente-form-card > div:last-child button {
+    width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ern-clientes-premium *,
+  .ern-clientes-premium *::before,
+  .ern-clientes-premium *::after {
+    transition: none !important;
+    animation-duration: 0.01ms !important;
+  }
+}

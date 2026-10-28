@@ -1,0 +1,344 @@
+/* ERN EMBARCACOES PREMIUM V34.1
+   Escopo exclusivo da frota interna da Operadora.
+   Nenhuma regra de reserva, cadastro ou RLS alterada.
+*/
+
+.ern-embarcacoes-premium {
+  --ef-fundo: #0c1112;
+  --ef-card: #151a1b;
+  --ef-elevado: #1e2526;
+  --ef-borda: rgba(255,255,255,.095);
+  --ef-ambar: #e3a144;
+  --ef-texto: #f1f4ef;
+  min-width: 0;
+  min-height: 100vh;
+  background: var(--ef-fundo) !important;
+  color: var(--ef-texto) !important;
+}
+
+/* Cabecalho executivo */
+
+.ern-embarcacoes-premium > section:first-of-type {
+  position: relative;
+  background:
+    radial-gradient(
+      ellipse 58% 95% at 100% 0%,
+      rgba(227,161,68,.07),
+      transparent 82%
+    ),
+    #101516 !important;
+  border-bottom: 1px solid rgba(227,161,68,.15) !important;
+}
+
+.ern-embarcacoes-premium > section:first-of-type::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: linear-gradient(
+    180deg,#f4c77e,#a77638,transparent
+  );
+}
+
+.ern-embarcacoes-premium > section:first-of-type > div {
+  max-width: 1500px;
+}
+
+.ern-embarcacoes-premium > section:first-of-type h1 {
+  color: #fff3e4;
+  font-size: clamp(36px,4vw,54px);
+  letter-spacing: -.05em;
+  line-height: 1.12;
+}
+
+.ern-embarcacoes-premium > main {
+  min-width: 0;
+  max-width: 1500px;
+}
+
+/* Indicadores Bento */
+
+.ern-embarcacoes-bento {
+  align-items: stretch;
+}
+
+.ern-embarcacoes-bento > button {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-width: 0;
+  min-height: 156px;
+  padding: 23px !important;
+  overflow: hidden;
+  background: var(--ef-card) !important;
+  border: 1px solid var(--ef-borda) !important;
+  border-radius: 22px !important;
+  box-shadow: 0 10px 30px rgba(0,0,0,.13);
+}
+
+.ern-embarcacoes-bento > button::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 22px;
+  width: 44px;
+  height: 2px;
+  background: rgba(227,161,68,.75);
+}
+
+.ern-embarcacoes-bento > button:first-child {
+  background:
+    linear-gradient(
+      125deg,
+      rgba(227,161,68,.14),
+      rgba(227,161,68,.015) 75%
+    ),
+    var(--ef-card) !important;
+  border-color: rgba(227,161,68,.32) !important;
+}
+
+.ern-embarcacoes-bento > button strong {
+  margin-top: 18px;
+  color: #f4c77e !important;
+  font-variant-numeric: tabular-nums;
+}
+
+.ern-embarcacoes-bento > button[aria-pressed="true"] {
+  border-color: #e3a144 !important;
+  box-shadow: 0 0 0 1px rgba(227,161,68,.16);
+}
+
+@media (min-width: 1280px) {
+  .ern-embarcacoes-bento > button:nth-child(1) {
+    grid-column: span 4 / span 4;
+  }
+  .ern-embarcacoes-bento > button:nth-child(2) {
+    grid-column: span 3 / span 3;
+  }
+  .ern-embarcacoes-bento > button:nth-child(3) {
+    grid-column: span 2 / span 2;
+  }
+  .ern-embarcacoes-bento > button:nth-child(4) {
+    grid-column: span 3 / span 3;
+  }
+}
+
+/* Catalogo da frota */
+
+.ern-embarcacoes-catalogo {
+  background: var(--ef-card) !important;
+  border-color: var(--ef-borda) !important;
+  border-radius: 24px !important;
+  box-shadow: 0 14px 40px rgba(0,0,0,.15);
+}
+
+.ern-embarcacoes-catalogo > div:first-child {
+  background:
+    linear-gradient(
+      125deg,rgba(227,161,68,.052),transparent 74%
+    ),
+    var(--ef-card);
+}
+
+.ern-embarcacoes-catalogo h2 {
+  color: #f5eee5;
+}
+
+.ern-embarcacoes-catalogo thead {
+  background: #202728;
+}
+
+.ern-embarcacoes-catalogo thead th {
+  color: #c5d1ca;
+  font-size: 10px;
+  letter-spacing: .07em;
+}
+
+.ern-embarcacoes-catalogo tbody tr:hover {
+  background: rgba(227,161,68,.045);
+}
+
+.ern-embarcacoes-catalogo article {
+  background: var(--ef-elevado) !important;
+  border-color: rgba(255,255,255,.1) !important;
+  border-radius: 18px;
+}
+
+/* Nova embarcacao: Bento completo */
+
+.ern-embarcacoes-form {
+  width: 100%;
+  align-items: start;
+}
+
+.ern-embarcacoes-form > * {
+  min-width: 0;
+}
+
+.ern-embarcacoes-form > section:first-child {
+  position: relative;
+  background:
+    linear-gradient(
+      140deg,rgba(227,161,68,.055),transparent 45%
+    ),
+    #171d1e !important;
+  border: 1px solid rgba(227,161,68,.2) !important;
+  border-radius: 24px !important;
+  padding: clamp(21px,2.5vw,35px) !important;
+  box-shadow: 0 14px 45px rgba(0,0,0,.16);
+}
+
+.ern-embarcacoes-form > section:first-child::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 28px;
+  width: 56px;
+  height: 3px;
+  background: #e3a144;
+}
+
+.ern-embarcacoes-form > div:nth-child(2) {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 20px;
+}
+
+.ern-embarcacoes-form > div:nth-child(2) > section {
+  background: var(--ef-card) !important;
+  border: 1px solid var(--ef-borda) !important;
+  border-radius: 22px !important;
+  padding: clamp(20px,2vw,28px) !important;
+}
+
+.ern-embarcacoes-form > div:nth-child(2) > section:first-child {
+  background:
+    linear-gradient(
+      140deg,rgba(227,161,68,.065),transparent
+    ),
+    var(--ef-card) !important;
+  border-color: rgba(227,161,68,.2) !important;
+}
+
+.ern-embarcacoes-form h2,
+.ern-embarcacoes-form h3 {
+  color: #fff1df;
+  letter-spacing: -.025em;
+}
+
+.ern-embarcacoes-form > div:last-child {
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+/* Campos */
+
+.ern-embarcacoes-premium input:not([type="checkbox"]),
+.ern-embarcacoes-premium select,
+.ern-embarcacoes-premium textarea {
+  min-width: 0;
+  max-width: 100%;
+  background: #0d1213 !important;
+  color: #f1f4ef !important;
+  border: 1px solid rgba(255,255,255,.17) !important;
+  border-radius: 12px;
+}
+
+.ern-embarcacoes-form input,
+.ern-embarcacoes-form select {
+  min-height: 50px;
+  font-size: 14px;
+}
+
+.ern-embarcacoes-premium input::placeholder {
+  color: #9aa9a3;
+}
+
+.ern-embarcacoes-premium
+  :is(input,select,textarea):focus-visible {
+  outline: 2px solid rgba(227,161,68,.85);
+  outline-offset: 2px;
+  border-color: #e3a144 !important;
+}
+
+/* Modais */
+
+.ern-embarcacoes-premium
+  > div[class*="fixed"][class*="inset-0"]
+  > div {
+  background: #191f20 !important;
+  border-color: rgba(227,161,68,.18) !important;
+  max-height: 92dvh;
+}
+
+.ern-embarcacoes-premium
+  > div[class*="fixed"][class*="inset-0"]
+  input,
+.ern-embarcacoes-premium
+  > div[class*="fixed"][class*="inset-0"]
+  select {
+  background: #0d1213 !important;
+  color: #f1f4ef !important;
+  border-color: rgba(255,255,255,.17) !important;
+}
+
+.ern-embarcacoes-premium
+  :is(a,button):focus-visible {
+  outline: 2px solid #e3a144;
+  outline-offset: 3px;
+}
+
+@media (max-width: 1023px) {
+  .ern-embarcacoes-form {
+    grid-template-columns: minmax(0,1fr);
+  }
+
+  .ern-embarcacoes-form > * {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 639px) {
+  .ern-embarcacoes-premium > section:first-of-type > div {
+    padding-top: 27px;
+    padding-bottom: 27px;
+  }
+
+  .ern-embarcacoes-bento > button {
+    min-height: 130px;
+    padding: 15px !important;
+  }
+
+  .ern-embarcacoes-form > section:first-child,
+  .ern-embarcacoes-form > div:nth-child(2) > section {
+    padding: 18px !important;
+  }
+
+  .ern-embarcacoes-form > div:last-child > div,
+  .ern-embarcacoes-form > div:last-child > div > div {
+    display: flex;
+    flex-direction: column-reverse;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .ern-embarcacoes-form > div:last-child
+    :is(a,button) {
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ern-embarcacoes-premium *,
+  .ern-embarcacoes-premium *::before,
+  .ern-embarcacoes-premium *::after {
+    transition-duration: .01ms !important;
+    animation-duration: .01ms !important;
+  }
+}

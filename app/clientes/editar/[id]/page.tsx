@@ -1,4 +1,5 @@
 'use client';
+import '../../clientes-premium.css';
 
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
@@ -335,7 +336,7 @@ export default function EditarClientePage() {
   ];
 
   return (
-    <main className="min-h-screen min-w-0 bg-[var(--ern-fundo)] px-4 py-7 text-[var(--ern-texto)] sm:px-6 sm:py-10">
+    <main className="ern-clientes-premium ern-clientes-formulario min-h-screen min-w-0 bg-[var(--ern-fundo)] px-4 py-7 text-[var(--ern-texto)] sm:px-6 sm:py-10">
       <div className="mx-auto max-w-5xl space-y-6">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
@@ -391,7 +392,7 @@ export default function EditarClientePage() {
               </p>
             )}
 
-            <form onSubmit={salvar} className={painel}>
+            <form onSubmit={salvar} className={`${painel} ern-cliente-form-card`}>
               <h2 className="text-xl font-semibold">Dados do viajante</h2>
 
           <aside

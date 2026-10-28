@@ -1,4 +1,5 @@
 'use client';
+import './guias-premium.css';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -457,7 +458,7 @@ export default function GuiasPage() {
     'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)]';
 
   return (
-    <div className="min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <div className="ern-guias-premium min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
       {mensagemSucesso && (
         <div
           role="status"
@@ -541,7 +542,7 @@ export default function GuiasPage() {
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
+        <div className="ern-guias-bento grid grid-cols-2 gap-3 xl:grid-cols-12">
           {cards.map((card) => {
             const ativo =
               card.filtro !== null &&
@@ -609,7 +610,7 @@ export default function GuiasPage() {
           </div>
         )}
 
-        <section className="mt-6 overflow-hidden rounded-[26px] border border-[var(--ern-borda)] bg-[var(--ern-painel)]">
+        <section className="ern-guias-catalogo mt-6 overflow-hidden rounded-[26px] border border-[var(--ern-borda)] bg-[var(--ern-painel)]">
           <div className="border-b border-[var(--ern-borda)] p-5 md:p-6">
             <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
               <div>

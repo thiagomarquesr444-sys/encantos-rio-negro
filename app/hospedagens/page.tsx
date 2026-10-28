@@ -1,4 +1,5 @@
 'use client';
+import './hospedagens-premium.css';
 
 export const dynamic = 'force-dynamic';
 
@@ -899,7 +900,7 @@ export default function HospedagensPage() {
     'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)]';
 
   return (
-    <div className="min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <div className="ern-hospedagens-premium min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
       {/* TOAST */}
 
       {mensagemSucesso && (
@@ -986,7 +987,7 @@ export default function HospedagensPage() {
             INDICADORES
         ==================================================== */}
 
-        <div className="grid grid-cols-2 gap-3 md:gap-4 xl:grid-cols-4">
+        <div className="ern-hospedagens-indicadores grid grid-cols-2 gap-3 xl:grid-cols-12">
           {cards.map(
             (card) => {
               const ativo =
@@ -1062,7 +1063,7 @@ export default function HospedagensPage() {
             TABELA
         ==================================================== */}
 
-        <section className="mt-6 overflow-hidden rounded-[26px] border border-[var(--ern-borda)] bg-[var(--ern-painel)]">
+        <section className="ern-hospedagens-listagem mt-6 overflow-hidden rounded-[26px] border border-[var(--ern-borda)] bg-[var(--ern-painel)]">
           <div className="border-b border-[var(--ern-borda)] p-5 md:p-6">
             <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
               <div>

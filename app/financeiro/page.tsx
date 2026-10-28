@@ -1,4 +1,5 @@
 'use client';
+import './financeiro-premium.css';
 
 import React, {
   useCallback,
@@ -692,7 +693,7 @@ export default function FinanceiroPage() {
     : 'Pendente';
 
   return (
-    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
+    <div className="ern-financeiro-premium ern-financeiro-painel min-h-screen bg-[#07110E] text-[#EDEDE3]">
       {mensagemSucesso && (
         <div
           role="status"

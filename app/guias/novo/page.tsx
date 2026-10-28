@@ -1,4 +1,5 @@
 'use client';
+import '../guias-premium.css';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -298,7 +299,7 @@ export default function NovoGuiaPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <div className="ern-guias-premium min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
       <section className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
         <div className="mx-auto max-w-[1180px] px-5 py-10 md:px-8 md:py-12">
           <Link
@@ -362,7 +363,7 @@ export default function NovoGuiaPage() {
 
         <form
           onSubmit={handleSubmit}
-          className="grid gap-6 lg:grid-cols-[1.15fr_0.85fr]"
+          className="ern-guias-form grid min-w-0 gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,0.7fr)]"
         >
           <section className="rounded-[26px] border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7">
             <div className="border-b border-[var(--ern-borda)] pb-5">
