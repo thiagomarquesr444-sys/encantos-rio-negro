@@ -42,6 +42,13 @@ export function permiteLinkEquipeERN(
     return true;
   }
 
+  if (caminho === '/fiscal') {
+    return modulos.has('__ern_fiscal_perfil_autorizado') &&
+      ['financeiro', 'relatorios'].some(
+        modulo => modulos.has(modulo)
+      );
+  }
+
   if (caminho === '/documentos') {
     return ['vouchers', 'relatorios', 'financeiro'].some(
       modulo => modulos.has(modulo)
@@ -117,6 +124,43 @@ export function useModulosEquipeERN(): Estado {
             modulos.add(linha.modulo);
           }
         }
+
+        // Marcador local de visibilidade, nao e autorizacao do servidor.
+        // Falha de consulta oculta somente o link fiscal.
+        if (
+          modulos.has('financeiro') ||
+          modulos.has('relatorios')
+        ) {
+          try {
+            const { data: autenticacao, error: erroAuth } =
+              await supabase.auth.getUser();
+
+            if (!erroAuth && autenticacao.user) {
+              const { data: perfil, error: erroPerfil } =
+                await supabase
+                  .from('perfis')
+                  .select('role,empresa_id')
+                  .eq('id', autenticacao.user.id)
+                  .maybeSingle();
+
+              if (
+                !erroPerfil &&
+                perfil?.empresa_id &&
+                (
+                  perfil.role === 'admin_empresa' ||
+                  perfil.role === 'financeiro' ||
+                  perfil.role === 'admin_plataforma'
+                )
+              ) {
+                modulos.add('__ern_fiscal_perfil_autorizado');
+              }
+            }
+          } catch {
+            // Nenhuma permissao fiscal e presumida.
+          }
+        }
+
+        if (!ativo || operacao !== versao) return;
 
         setEstado({
           modulos,

@@ -18,6 +18,7 @@ const ROTAS_EMPRESA = [
   '/relatorios',
   '/vouchers',
   '/documentos',
+  '/fiscal',
   '/planos',
   '/demandas',
 ] as const;
@@ -94,6 +95,7 @@ function moduloRotaEmpresaERN(pathname: string): string | null {
     ['/relatorios', 'relatorios'],
     ['/vouchers', 'vouchers'],
     ['/documentos', 'documentos'],
+    ['/fiscal', 'fiscal'],
     ['/planos', 'planos'],
     ['/demandas', 'demandas'],
   ];
@@ -357,6 +359,38 @@ export async function proxy(request: NextRequest) {
       // da operadora e com papel empresarial permitido.
       if (rotaEmpresa && papelEmpresaPermitido) {
         const moduloERN = moduloRotaEmpresaERN(pathname);
+
+        if (moduloERN === 'fiscal') {
+          const papelFiscalPermitido =
+            perfil?.role === 'admin_empresa' ||
+            perfil?.role === 'financeiro' ||
+            perfil?.role === 'admin_plataforma';
+
+          if (papelFiscalPermitido) {
+            for (const modulo of ['financeiro', 'relatorios']) {
+              const { data: autorizado, error: falha } =
+                await supabase.rpc('ern_pode_acessar_modulo', {
+                  p_modulo: modulo,
+                });
+
+              if (falha) return indisponivel();
+              if (autorizado === true) return response;
+            }
+          }
+
+          return transferirCookies(
+            new NextResponse(
+              'Seu perfil não possui permissão para acessar o Painel Fiscal.',
+              {
+                status: 403,
+                headers: {
+                  'Content-Type': 'text/plain; charset=utf-8',
+                  'X-Content-Type-Options': 'nosniff',
+                },
+              },
+            ),
+          );
+        }
 
         if (moduloERN === 'documentos') {
           // A Central exige ao menos um modulo documental.
