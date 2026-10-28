@@ -1,0 +1,42 @@
+/* ERN V39.2 -- Operations only. No selectors affecting the finance dashboard. */
+.ern-fin-v39-receita,.ern-fin-v39-despesa,.ern-fin-v39-exportar{--v39-gold:#e3a144;--v39-surface:#151b1c;--v39-raised:#202829;--v39-border:rgba(255,255,255,.11);color:#f2f3ee;background:#0c1112!important}
+.ern-fin-v39-receita>header,.ern-fin-v39-despesa>header{border-bottom-color:rgba(227,161,68,.22)!important}
+.ern-fin-v39-receita>main,.ern-fin-v39-despesa>main{max-width:1360px}
+.ern-fin-v39-vinculo{position:relative;overflow:hidden;background:linear-gradient(108deg,rgba(227,161,68,.11),transparent 75%),var(--v39-surface)!important;border:1px solid rgba(227,161,68,.32)!important;border-radius:24px!important;box-shadow:0 17px 44px rgba(0,0,0,.16)}
+.ern-fin-v39-vinculo:before{content:"";position:absolute;left:0;top:24px;bottom:24px;width:3px;background:#e3a144}
+.ern-fin-v39-vinculo h2{letter-spacing:-.025em;color:#ffdfad!important}
+.ern-fin-v39-vinculo label{display:block;min-width:0}
+.ern-fin-v39-vinculo>div.grid{align-items:end}
+.ern-fin-v39-bento{align-items:start;gap:22px!important;grid-template-columns:minmax(0,1fr)}
+.ern-fin-v39-bento>section{min-width:0;position:relative;overflow:hidden;min-height:100%;padding:clamp(22px,3vw,35px)!important;background:var(--v39-surface)!important;border:1px solid var(--v39-border)!important;border-radius:24px!important;box-shadow:0 17px 42px rgba(0,0,0,.15)}
+.ern-fin-v39-bento>section:first-of-type{border-color:rgba(227,161,68,.30)!important;background:linear-gradient(135deg,rgba(227,161,68,.095),transparent 65%),var(--v39-surface)!important}
+.ern-fin-v39-bento>section:before{content:"";position:absolute;top:0;left:30px;height:3px;width:52px;background:rgba(227,161,68,.75)}
+.ern-fin-v39-despesa .ern-fin-v39-bento>section:nth-of-type(2):before{background:#fb7185}
+.ern-fin-v39-bento>section h2{font-family:var(--font-fraunces),Georgia,serif;font-size:clamp(21px,2.2vw,27px);font-weight:550!important;line-height:1.25;letter-spacing:-.04em;color:#f6ebdd!important}
+.ern-fin-v39-bento>section p{line-height:1.7}
+.ern-fin-v39-receita input,.ern-fin-v39-despesa input,.ern-fin-v39-receita select,.ern-fin-v39-despesa select,.ern-fin-v39-exportar input,.ern-fin-v39-exportar select{min-width:0;width:100%;background:#0d1314!important;color:#eef4ef!important;border:1px solid rgba(255,255,255,.19)!important;border-radius:13px!important;min-height:50px;transition:border-color .15s ease,box-shadow .15s ease}
+.ern-fin-v39-receita input:focus-visible,.ern-fin-v39-despesa input:focus-visible,.ern-fin-v39-receita select:focus-visible,.ern-fin-v39-despesa select:focus-visible,.ern-fin-v39-exportar input:focus-visible,.ern-fin-v39-exportar select:focus-visible{outline:2px solid rgba(227,161,68,.82);outline-offset:2px;border-color:#e3a144!important}
+.ern-fin-v39-bento>div:last-child{border-top:1px solid rgba(227,161,68,.25)!important;gap:13px;padding-top:25px!important}
+.ern-fin-v39-bento>div:last-child :is(button,a){min-height:50px;border-radius:12px;min-width:155px;transition:filter .15s ease,transform .15s ease}
+.ern-fin-v39-bento>div:last-child :is(button,a):hover:not(:disabled){filter:brightness(1.13)}
+.ern-fin-v39-exportar>div{max-width:1450px}
+.ern-fin-v39-exportar>div>h1{font-size:clamp(35px,3.6vw,50px);letter-spacing:-.05em}
+.ern-fin-v39-filtros{border-radius:24px!important;background:linear-gradient(125deg,rgba(227,161,68,.075),transparent 80%),var(--v39-surface)!important;border:1px solid rgba(227,161,68,.22)!important;padding:clamp(21px,2.5vw,33px)!important;box-shadow:0 14px 38px rgba(0,0,0,.12)}
+.ern-fin-v39-filtros h2{font-family:var(--font-fraunces),Georgia,serif;font-size:24px!important;letter-spacing:-.03em}
+.ern-fin-v39-filtros>div.grid{align-items:end}
+.ern-fin-v39-filtros label{display:block;min-width:0;color:#d3dcd5}
+.ern-fin-v39-metricas{align-items:stretch}
+.ern-fin-v39-metricas>div{position:relative;display:flex;flex-direction:column;justify-content:space-between;min-height:145px;overflow:hidden;padding:23px!important;background:var(--v39-surface);border:1px solid var(--v39-border)!important;border-radius:21px!important;box-shadow:0 10px 29px rgba(0,0,0,.13)}
+.ern-fin-v39-metricas>div:before{content:"";position:absolute;left:23px;top:0;width:46px;height:2px;background:#e3a144}
+.ern-fin-v39-metricas>div:first-child{border-color:rgba(227,161,68,.3)!important;background:linear-gradient(120deg,rgba(227,161,68,.105),transparent 77%),var(--v39-surface)}
+.ern-fin-v39-metricas>div p:last-child{font-variant-numeric:tabular-nums;overflow-wrap:anywhere;font-weight:650}
+.ern-fin-v39-previa{background:var(--v39-surface)!important;border:1px solid var(--v39-border)!important;border-radius:24px!important;box-shadow:0 12px 36px rgba(0,0,0,.12)}
+.ern-fin-v39-previa>div:first-child{padding:clamp(20px,2.5vw,31px)!important;gap:15px;border-bottom:1px solid var(--v39-border)}
+.ern-fin-v39-previa h2{font-family:var(--font-fraunces),Georgia,serif;letter-spacing:-.03em;font-size:27px!important;color:#f7efe4}
+.ern-fin-v39-previa table thead{background:var(--v39-raised);color:#d6ddd5}
+.ern-fin-v39-previa table th{font-weight:650;letter-spacing:.025em}
+.ern-fin-v39-previa table tbody tr:hover{background:rgba(227,161,68,.05)}
+.ern-fin-v39-previa>div:first-child button{font-weight:700;min-height:49px}
+@media(min-width:1024px){.ern-fin-v39-bento{grid-template-columns:minmax(0,1.45fr) minmax(0,.85fr)!important}.ern-fin-v39-bento>section:first-of-type{grid-column:1}.ern-fin-v39-bento>section:nth-of-type(2){grid-column:2}.ern-fin-v39-bento>div:last-child{grid-column:1/-1}}
+@media(max-width:639px){.ern-fin-v39-receita>main,.ern-fin-v39-despesa>main{padding-left:14px;padding-right:14px}.ern-fin-v39-vinculo,.ern-fin-v39-bento>section{padding:19px!important;border-radius:19px!important}.ern-fin-v39-bento>div:last-child{display:flex;flex-direction:column-reverse;align-items:stretch}.ern-fin-v39-bento>div:last-child :is(button,a){width:100%;justify-content:center}.ern-fin-v39-metricas>div{padding:17px!important;min-height:115px}.ern-fin-v39-previa>div:first-child{display:flex;flex-direction:column;align-items:stretch}.ern-fin-v39-previa>div:first-child button{width:100%}}
+@media(prefers-reduced-motion:reduce){.ern-fin-v39-receita *, .ern-fin-v39-despesa *, .ern-fin-v39-exportar *{transition:none!important;animation-duration:.01ms!important}}
