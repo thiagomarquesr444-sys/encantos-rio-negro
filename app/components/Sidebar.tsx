@@ -1,6 +1,6 @@
 'use client';
 
-import FaunaCabecalhoERN from '@/app/components/FaunaCabecalhoERN';
+// Cabecalho Premium: sem sobreposicao de fauna. ERN_GLOBAL_V432
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -120,6 +120,11 @@ const GRUPOS: NavGroup[] = [
         label: 'Exportar relatório',
         href: '/financeiro/exportar',
         descricao: 'Gerar relatório financeiro em CSV',
+      },
+      {
+        label: 'Painel Fiscal',
+        href: '/fiscal',
+        descricao: 'Acompanhamento de simulações fiscais',
       },
     ],
   },
@@ -303,48 +308,7 @@ export default function Sidebar() {
 
   const nomeSistema = config.nome_sistema || 'Encantos Rio Negro';
 
-  useEffect(() => {
-    const cabecalho = headerRef.current;
-    if (!cabecalho) return;
 
-    const marca = cabecalho.querySelector('a[href="/dashboard"]');
-    const menu = cabecalho.querySelector('nav');
-    if (!marca || !menu) return;
-
-    let ativo = true;
-
-    function posicionar() {
-      if (!ativo || !cabecalho || !marca || !menu) return;
-
-      const origem = cabecalho.getBoundingClientRect();
-      const marcaRect = marca.getBoundingClientRect();
-      const menuRect = menu.getBoundingClientRect();
-      const intervalo = menuRect.left - marcaRect.right;
-      const cabe = menuRect.width > 0 && intervalo >= 90;
-
-      cabecalho.style.setProperty('--ern-arara-opacidade', cabe ? '1' : '0');
-
-      if (cabe) {
-        const centro = (marcaRect.right + menuRect.left) / 2;
-        cabecalho.style.setProperty(
-          '--ern-arara-x',
-          (centro - origem.left - 35.34) + 'px',
-        );
-      }
-    }
-
-    const observador = new ResizeObserver(posicionar);
-    observador.observe(cabecalho);
-    observador.observe(marca);
-    observador.observe(menu);
-    posicionar();
-    void document.fonts.ready.then(posicionar);
-
-    return () => {
-      ativo = false;
-      observador.disconnect();
-    };
-  }, [nomeSistema]);
 
   useEffect(() => {
     let ativo = true;
@@ -542,7 +506,7 @@ export default function Sidebar() {
 
       if (error) throw error;
 
-      window.location.assign('/login');
+      window.location.assign('/acesso');
     } catch {
       setErroSaida(
         'Não foi possível sair da conta. Verifique sua conexão e tente novamente.',
@@ -583,13 +547,13 @@ export default function Sidebar() {
       <header
         style={{
           /* ERN_MENU_TEMA_DIRETO_V1 */
-          backgroundColor: 'var(--ern-fundo, #101214)',
-          color: 'var(--ern-texto, #f0f1f2)',
-          borderColor: 'var(--ern-borda, #454b53)',
+          backgroundColor: '#0c1112',
+          color: '#f1f4ef',
+          borderColor: 'rgba(227,161,68,.20)',
           transitionProperty: 'box-shadow',
         }}
         ref={headerRef}
-        className="ern-navegacao-ilustrada fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#07110E]/95 text-[#EDEDE3] backdrop-blur-xl"
+        className="ern-navegacao-premium fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#0C1112] text-[#F1F4EF]"
         onBlur={(evento) => {
           const destino = evento.relatedTarget;
 
@@ -601,7 +565,7 @@ export default function Sidebar() {
           }
         }}
       >
-        <FaunaCabecalhoERN altura={76} oncaNaConta araraEntreMarcaEMenu />
+        {/* Navegacao executiva ERN Premium */}
         <div className="mx-auto flex h-[82px] max-w-[1600px] items-center justify-between gap-3 px-4 md:px-6">
           <Link
             href="/dashboard"
@@ -678,7 +642,7 @@ export default function Sidebar() {
                   <div
                     id={painelId}
                     hidden={!aberto}
-                    className="absolute right-0 top-[calc(100%+12px)] w-72 rounded-2xl border border-white/10 bg-[#0A1713] p-2 shadow-2xl"
+                    className="absolute right-0 top-[calc(100%+12px)] w-72 rounded-2xl border border-[#E3A144]/15 bg-[#151A1B] p-2 shadow-2xl"
                   >
                     {grupo.itens.map((item) => (
                       <LinkNavegacao
@@ -712,7 +676,7 @@ export default function Sidebar() {
               <div
                 id="nav-conta"
                 hidden={dropdown !== 'conta'}
-                className="absolute right-0 top-[calc(100%+12px)] w-72 rounded-2xl border border-white/10 bg-[#0A1713] p-2 shadow-2xl"
+                className="absolute right-0 top-[calc(100%+12px)] w-72 rounded-2xl border border-[#E3A144]/15 bg-[#151A1B] p-2 shadow-2xl"
               >
                 <p className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-[#E3A144]">
                   {nomeContaERN || 'Minha conta'}
@@ -772,12 +736,12 @@ export default function Sidebar() {
         ref={dialogRef}
         id="menu-mobile-ern"
         style={{
-          backgroundColor: 'var(--ern-painel, #1a1d21)',
-          color: 'var(--ern-texto, #f0f1f2)',
-          borderColor: 'var(--ern-borda, #454b53)',
+          backgroundColor: '#151a1b',
+          color: '#f1f4ef',
+          borderColor: 'rgba(227,161,68,.20)',
         }}
         aria-labelledby="titulo-menu-mobile"
-        className="menu-mobile"
+        className="menu-mobile ern-menu-premium"
         onCancel={(evento) => {
           evento.preventDefault();
           setMobileAberto(false);
@@ -915,37 +879,68 @@ export default function Sidebar() {
       </dialog>
 
       <style jsx>{`
-        /* ERN: identidade amazonica */
-        .ern-navegacao-ilustrada,
-        .menu-mobile {
+        /* ERN PREMIUM V29: navegacao executiva */
+        .ern-navegacao-premium {
           isolation: isolate;
+          background: #0c1112 !important;
+          color: #f1f4ef !important;
+          border-bottom: 1px solid rgba(227,161,68,.16);
+          box-shadow: 0 10px 32px rgba(0,0,0,.23);
         }
 
-        .ern-navegacao-ilustrada::before,
-        .menu-mobile::before {
+        .ern-navegacao-premium::before,
+        .ern-menu-premium::before {
+          content: none !important;
+          background-image: none !important;
+        }
+
+        .ern-navegacao-premium nav a,
+        .ern-navegacao-premium nav button {
+          position: relative;
+        }
+
+        .ern-navegacao-premium nav a[aria-current="page"]::after {
           content: '';
           position: absolute;
-          inset: 0;
-          z-index: -1;
-          pointer-events: none;
-          background-image: url('/images/regiao/ern-amazonia.jpg');
-          background-repeat: no-repeat;
-          opacity: 0.16;
+          left: 14px;
+          right: 14px;
+          bottom: 3px;
+          height: 2px;
+          border-radius: 99px;
+          background: #e3a144;
         }
 
-        .ern-navegacao-ilustrada::before {
-          background-image: url('/images/regiao/ern-amazonia-paisagem.png');
-          background-size: cover;
-          background-position: center top;
-          background-repeat: no-repeat;
+        .ern-navegacao-premium [id^="nav-desktop-"],
+        .ern-navegacao-premium #nav-conta {
+          background: #151a1b;
+          border-color: rgba(227,161,68,.15);
+          box-shadow: 0 22px 70px rgba(0,0,0,.4);
         }
 
-        .menu-mobile::before {
-          background-size: contain;
-          background-position: center;
-          background-repeat: no-repeat;
+        .ern-menu-premium {
+          background: #151a1b !important;
+          color: #f1f4ef !important;
+          border-left: 1px solid rgba(227,161,68,.2);
         }
 
+        .ern-menu-premium nav a[aria-current="page"] {
+          background: rgba(227,161,68,.12);
+          color: #f4c77e;
+          border-left: 3px solid #e3a144;
+        }
+
+        .ern-navegacao-premium :is(a,button):focus-visible,
+        .ern-menu-premium :is(a,button):focus-visible {
+          outline: 2px solid #e3a144;
+          outline-offset: 3px;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+          .ern-navegacao-premium *,
+          .ern-menu-premium * {
+            transition: none !important;
+          }
+        }
 
         .menu-mobile {
           position: fixed;

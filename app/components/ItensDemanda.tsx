@@ -48,6 +48,8 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
   const [erro, setErro] = useState('');
   const [aviso, setAviso] = useState('');
   const [tentativa, setTentativa] = useState(0);
+  // ERN_V42_CONFERENCIA: filtro local; gravacao permanece em Salvar lista.
+  const [filtroConferencia, setFiltroConferencia] = useState<'todos' | 'nao_atendidos' | SituacaoItem>('nao_atendidos');
   const trava = useRef(false);
 
   useEffect(() => {
@@ -187,6 +189,14 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
   }
 
   const atendidos = itens.filter((item) => item.situacao === 'atendido').length;
+  const pendentes = itens.filter((item) => item.situacao === 'pendente').length;
+  const separacao = itens.filter((item) => item.situacao === 'em_separacao').length;
+  const selecionados = itens.map((item, indice) => ({ item, indice })).filter(({ item }) =>
+    filtroConferencia === 'todos' ||
+    (filtroConferencia === 'nao_atendidos'
+      ? item.situacao !== 'atendido'
+      : item.situacao === filtroConferencia)
+  );
 
   return (
     <section
@@ -242,11 +252,67 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
             previa={!demandaId || alterado}
           />
 
+          <section aria-label="Conferencia rapida de materiais" className="mt-5 rounded-2xl border border-[#E3A144]/25 bg-[#101718] p-4 sm:p-5">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[.17em] text-[#E3A144]">Conferencia operacional</p>
+                <h3 className="mt-2 text-xl font-semibold text-[#F1EFE8]">Lista para separacao e compras</h3>
+                <p className="mt-2 max-w-2xl text-xs leading-6 text-[#B4C8BB]">Filtre os materiais e atualize a situacao sem procurar cada campo do formulario. Use Salvar lista para confirmar as mudancas.</p>
+              </div>
+              <span className="rounded-lg border border-white/10 px-3 py-2 text-xs text-[#F4C77E]">
+                {alterado ? 'Alteracoes ainda nao salvas' : 'Versao salva carregada'}
+              </span>
+            </div>
+            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {[
+                { nome: 'Total', numero: itens.length },
+                { nome: 'Pendentes', numero: pendentes },
+                { nome: 'Em separacao', numero: separacao },
+                { nome: 'Atendidos', numero: atendidos },
+              ].map((indicador) => (
+                <div key={indicador.nome} className="min-w-0 rounded-xl border border-white/10 bg-[#1D2526] p-3">
+                  <p className="text-[11px] text-[#B4C8BB]">{indicador.nome}</p>
+                  <p className="mt-1 text-2xl font-bold tabular-nums text-[#F4C77E]">{indicador.numero}</p>
+                </div>
+              ))}
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-2" role="group" aria-label="Filtrar situacao dos materiais">
+              {([
+                ['nao_atendidos', 'Nao atendidos'],
+                ['todos', 'Todos'],
+                ['pendente', 'Pendentes'],
+                ['em_separacao', 'Em separacao'],
+                ['atendido', 'Atendidos'],
+              ] as const).map(([valor, nome]) => (
+                <button key={valor} type="button" aria-pressed={filtroConferencia === valor}
+                  onClick={() => setFiltroConferencia(valor)}
+                  className={`min-h-11 rounded-xl border px-3 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E3A144] ${filtroConferencia === valor ? 'border-[#E3A144] bg-[#E3A144]/15 text-[#F4C77E]' : 'border-white/15 text-[#B4C8BB] hover:bg-white/5'}`}>
+                  {nome}
+                </button>
+              ))}
+            </div>
+            <p role="status" className="mt-3 text-xs text-[#B4C8BB]">{selecionados.length} de {itens.length} materiais exibidos neste filtro.</p>
+          </section>
           <div className="mt-5 space-y-3">
-            {itens.map((item, indice) => {
+            {selecionados.map(({ item, indice }) => {
               const valor = subtotal(item);
               return (
                 <article key={item.chave} className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] p-3 sm:p-4">
+                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-[#131B1C] p-2 sm:p-3">
+                    <span className="text-xs font-semibold text-[#F4C77E]">Conferencia rapida</span>
+                    <div className="flex flex-wrap gap-2">
+                      <button type="button" disabled={desabilitado || item.situacao === 'em_separacao'}
+                        onClick={() => editar(item.chave, { situacao: 'em_separacao' })}
+                        className="min-h-11 rounded-lg border border-white/20 px-3 text-xs text-[#EDEDE3] disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-[#E3A144]">
+                        Em separacao
+                      </button>
+                      <button type="button" disabled={desabilitado || item.situacao === 'atendido'}
+                        onClick={() => editar(item.chave, { situacao: 'atendido' })}
+                        className="min-h-11 rounded-lg border border-[#E3A144]/50 bg-[#E3A144]/15 px-3 text-xs font-semibold text-[#F4C77E] disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-[#E3A144]">
+                        Marcar atendido
+                      </button>
+                    </div>
+                  </div>
                   <div className="mb-3 flex items-center justify-between gap-3">
                     <h3 className="text-sm font-semibold text-[var(--ern-destaque)]">Item {indice + 1}</h3>
                     <button
@@ -356,6 +422,11 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
             })}
           </div>
 
+          {itens.length > 0 && selecionados.length === 0 && (
+            <p className="rounded-xl border border-dashed border-white/15 p-5 text-sm text-[#B4C8BB]">
+              Nenhum material corresponde ao filtro. Escolha Todos para consultar a lista completa.
+            </p>
+          )}
           {!itens.length && (
             <p className="mt-5 rounded-xl border border-dashed border-[var(--ern-borda)] p-4 text-sm text-[var(--ern-secundario)]">
               Esta demanda ainda não possui materiais na lista.

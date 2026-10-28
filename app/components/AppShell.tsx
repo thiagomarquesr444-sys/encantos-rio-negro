@@ -25,6 +25,7 @@ const ROTAS_GESTAO = [
   '/relatorios',
   '/vouchers',
   '/documentos',
+  '/fiscal',
   '/planos',
   '/demandas',
 ] as const;
@@ -237,6 +238,14 @@ export default function AppShell({
       if (!document.hidden) void carregarTema();
     }
 
+    // ERN_V43_3_SINCRONIZACAO_ABAS: refaz a consulta autorizada, nunca aplica
+    // diretamente o valor recebido de outra aba (evita tema de outra conta).
+    function aoMudarPreferenciaEmOutraAba(evento: StorageEvent) {
+      if (evento.key !== 'ern-tema-visual-v1' && evento.key !== null) return;
+      if (!ativo) return;
+      void carregarTema();
+    }
+
     void carregarTema();
 
     const { data: { subscription } } =
@@ -264,6 +273,7 @@ export default function AppShell({
       });
 
     window.addEventListener('ern:tema-salvo', atualizarTema);
+    window.addEventListener('storage', aoMudarPreferenciaEmOutraAba);
     document.addEventListener('visibilitychange', aoRetornar);
 
     return () => {
@@ -272,6 +282,7 @@ export default function AppShell({
       clearTimeout(tarefa);
       subscription.unsubscribe();
       window.removeEventListener('ern:tema-salvo', atualizarTema);
+      window.removeEventListener('storage', aoMudarPreferenciaEmOutraAba);
       document.removeEventListener('visibilitychange', aoRetornar);
     };
   }, [rotaGestao]);
