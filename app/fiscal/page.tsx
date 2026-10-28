@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import PreparacaoFiscalERN from '@/app/components/PreparacaoFiscalERN';
+import CadastroFiscalERN from '@/app/components/CadastroFiscalERN';
 
 type StatusFiscal =
   | 'rascunho'
@@ -572,6 +573,8 @@ export default function PainelFiscalERN() {
                 </div>
               </article>
             </section>
+
+            <CadastroFiscalERN />
 
             <PreparacaoFiscalERN aoAtualizar={atualizar} />
 
