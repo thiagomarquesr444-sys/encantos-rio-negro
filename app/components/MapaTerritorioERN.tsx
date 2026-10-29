@@ -845,7 +845,7 @@ export default function MapaTerritorioERN({
   return (
     <section
       aria-labelledby="titulo-mapa-ern"
-      className="mt-7 min-w-0 overflow-hidden rounded-2xl border border-[#E3A144]/25 bg-[var(--ern-painel,#0A1713)] text-[color:var(--ern-texto,#EDEDE3)] sm:rounded-[26px]"
+      className="mt-7 min-w-0 overflow-hidden rounded-2xl border border-[#E3A144]/25 bg-[var(--ern-painel,#0A1713)] text-[color:var(--ern-texto,#EDEDE3)] sm:rounded-2xl"
     >
       <style>{`
         @keyframes ern-gps-a-bordo-pulso {

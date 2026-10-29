@@ -71,7 +71,18 @@ export default function PreparacaoFiscalERN({
       if (error || !data) throw new Error('Não foi possível consultar as reservas desta operadora.');
       setEmpresaId(empresa);
       setParcial(data.length > 100);
-      setReservas((data as ReservaFiscal[]).slice(0, 100));
+      const lista = (data as ReservaFiscal[]).slice(0, 100);
+      setReservas(lista);
+      // A URL guarda apenas a referencia; o banco valida a posse da reserva.
+      const url = new URL(window.location.href);
+      const solicitada = url.searchParams.get('reserva') ?? '';
+      const autorizada = lista.some(item => item.id === solicitada) ? solicitada : '';
+      setSelecionada(autorizada);
+      aoSelecionarReserva(autorizada);
+      if (solicitada && !autorizada) {
+        url.searchParams.delete('reserva');
+        window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+      }
     } catch (e) {
       setEmpresaId(null);
       setReservas([]);
@@ -170,7 +181,18 @@ export default function PreparacaoFiscalERN({
             <p className="text-xs text-[#94A5A1]">{reservas.length} reservas analisadas · {elegiveis} potencialmente elegíveis</p>
             {parcial && <p className="text-xs text-amber-300">Amostra limitada a 100 reservas. Refine a seleção em uma próxima versão.</p>}
             <label htmlFor="ern-reserva-fiscal" className="block text-xs font-medium">Selecione a reserva</label>
-            <select id="ern-reserva-fiscal" disabled={processando || carregando} value={selecionada} onChange={e => { setSelecionada(e.target.value); aoSelecionarReserva(e.target.value); setConfirmado(false); setAviso(null); }} className="min-h-11 w-full rounded-lg border border-white/20 bg-[#202728] px-3 text-sm text-white">
+            <select id="ern-reserva-fiscal" disabled={processando || carregando} value={selecionada} onChange={e => {
+              const id = e.target.value;
+              if (id && !reservas.some(item => item.id === id)) return;
+              setSelecionada(id);
+              aoSelecionarReserva(id);
+              setConfirmado(false);
+              setAviso(null);
+              const url = new URL(window.location.href);
+              if (id) url.searchParams.set('reserva', id);
+              else url.searchParams.delete('reserva');
+              window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
+            }} className="min-h-11 w-full rounded-lg border border-white/20 bg-[#202728] px-3 text-sm text-white">
               <option value="">Escolha uma reserva</option>
               {reservas.map(r => <option key={r.id} value={r.id}>{r.id.slice(0,8)} · {r.status ?? 'sem status'} · {moeda(Number(r.valor_total ?? 0))}{motivo(r) ? ' · PENDENTE' : ''}</option>)}
             </select>

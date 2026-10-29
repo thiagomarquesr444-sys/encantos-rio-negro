@@ -14,20 +14,8 @@ export default function AvisoPrivacidadeAcessoERN({
   googleDisponivel,
 }: Props) {
   return (
-    <aside
-      aria-labelledby="aviso-privacidade-acesso-titulo"
-      className="mt-6 rounded-2xl border border-white/20 p-4"
-      style={{
-        backgroundColor: '#07110E',
-        color: '#EDEDE3',
-      }}
-    >
-      <h2
-        id="aviso-privacidade-acesso-titulo"
-        className="text-sm font-semibold"
-      >
-        Sua conta e seus dados
-      </h2>
+    <details className="ern-privacidade-acesso">
+      <summary>Sua conta e seus dados</summary>
 
       <div
         className="mt-3 space-y-3 text-sm leading-6"
@@ -37,8 +25,8 @@ export default function AvisoPrivacidadeAcessoERN({
           <p>
             O cadastro por e-mail utiliza seu endereço e uma
             senha para criar as credenciais de acesso.
-            A confirmação da senha é conferida nesta tela
-            e não é enviada como um segundo dado de cadastro.
+            Use um endereço ao qual você tenha acesso e uma
+            senha exclusiva para esta conta.
           </p>
         ) : modo === 'recuperacao' ? (
           <p>
@@ -108,6 +96,6 @@ export default function AvisoPrivacidadeAcessoERN({
           </Link>
         ))}
       </nav>
-    </aside>
+    </details>
   );
 }

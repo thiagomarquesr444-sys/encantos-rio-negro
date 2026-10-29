@@ -71,8 +71,13 @@ export default function HistoricoRevisaoFiscalERN({ reservaSelecionada }: { rese
     const existente = historico.find(r => r.reserva_id === reservaSelecionada);
     setEstado(existente?.estado ?? 'em_preparacao');
     setObservacoes(existente?.observacoes ?? '');
-    setAviso('');
   }, [reservaSelecionada, historico]);
+
+  // Mensagens sao limpas apenas quando a reserva realmente muda, nao
+  // quando o historico e recarregado apos uma gravacao bem-sucedida.
+  useEffect(() => {
+    setAviso('');
+  }, [reservaSelecionada]);
 
   async function salvar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();

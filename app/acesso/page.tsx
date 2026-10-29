@@ -9,7 +9,7 @@ import {
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
-import LogoERN from '@/app/components/LogoERN';
+import AcessoPremiumERN from '@/app/components/AcessoPremiumERN';
 import CadastroOperadoraERN from '@/app/components/CadastroOperadoraERN';
 import { supabase } from '@/lib/supabase';
 import {
@@ -426,39 +426,10 @@ function ConteudoAcesso() {
             : 'Concluir seu acesso';
 
   return (
-    <main
-      className="min-h-dvh bg-[#07110E] text-[#EDEDE3]"
-      style={{
-        paddingTop:
-          'max(1.5rem, env(safe-area-inset-top, 0px))',
-        paddingRight:
-          'max(1rem, env(safe-area-inset-right, 0px))',
-        paddingBottom:
-          'max(1.5rem, env(safe-area-inset-bottom, 0px))',
-        paddingLeft:
-          'max(1rem, env(safe-area-inset-left, 0px))',
-      }}
-    >
-      <div className="mx-auto w-full min-w-0 max-w-2xl sm:py-4">
+    <AcessoPremiumERN etapa="acesso" perfil={tipoExibido ?? solicitado}>
+      <div className="ern-acesso-form">
         <header className="flex flex-wrap items-center justify-between gap-4">
-          <Link
-            href="/"
-            aria-label="Encantos Rio Negro — portal público"
-            className={`inline-flex min-w-0 items-center gap-3 rounded-xl ${focoClass}`}
-          >
-            <span className="shrink-0">
-              <LogoERN tamanho={56} prioridade />
-            </span>
 
-            <span className="min-w-0">
-              <span className="block text-sm font-semibold text-[#F0F0E8] sm:text-base">
-                Encantos Rio Negro
-              </span>
-              <span className="mt-1 block text-xs text-[#EDEDE3]/60">
-                Voltar ao portal
-              </span>
-            </span>
-          </Link>
 
           {conta && (
             <button
@@ -659,7 +630,7 @@ function ConteudoAcesso() {
           Experiências, encontros e oportunidades no Rio Negro.
         </p>
       </div>
-    </main>
+    </AcessoPremiumERN>
   );
 }
 
@@ -667,12 +638,9 @@ export default function AcessoPage() {
   return (
     <Suspense
       fallback={
-        <div
-          role="status"
-          className="flex min-h-dvh items-center justify-center bg-[#07110E] px-5 text-sm text-[#EDEDE3]/70"
-        >
-          Preparando seu acesso...
-        </div>
+        <AcessoPremiumERN etapa="acesso">
+          <div className="ern-acesso-form"><section role="status" aria-live="polite">Preparando seu acesso...</section></div>
+        </AcessoPremiumERN>
       }
     >
       <ConteudoAcesso />

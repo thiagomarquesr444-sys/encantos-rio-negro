@@ -12,7 +12,8 @@ const normalizar = (texto: string) =>
 const locais = Array.from(new Map(
   LOCALIDADES_RIO_NEGRO
     .filter(p => Number.isFinite(p.coordenadas[0]) &&
-      Number.isFinite(p.coordenadas[1]))
+      Number.isFinite(p.coordenadas[1]) && Math.abs(p.coordenadas[0]) <= 90 &&
+      Math.abs(p.coordenadas[1]) <= 180)
     .map(p => [
       `${normalizar(p.nome)}|${p.municipio}|${p.coordenadas.join(',')}`,
       p,
@@ -43,6 +44,7 @@ export default function MapaPage() {
 
 function MapaOperacional() {
   const recipiente = useRef<HTMLElement>(null);
+  const painelConteudo = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLDivElement>(null);
   const mapa = useRef<Mapa | null>(null);
   const biblioteca = useRef<typeof import('leaflet') | null>(null);
@@ -56,33 +58,51 @@ function MapaOperacional() {
   const [pronto, setPronto] = useState(false);
   const [erroMapa, setErroMapa] = useState('');
   const [tentativa, setTentativa] = useState(0);
-  // ERN_MAPA_REFINADO_V2
+  // ERN_MAPA_COMPOSICAO_V51_1
+  const [aba, setAba] = useState<'territorio' | 'localizacao'>('territorio');
+  const [somenteSedes, setSomenteSedes] = useState(false);
   const [busca, setBusca] = useState('');
   const [municipio, setMunicipio] = useState('');
   const [noturno, setNoturno] = useState(true);
   const [destinoId, setDestinoId] = useState('');
+  const [avisoDestino, setAvisoDestino] = useState('');
   const [painel, setPainel] = useState(true);
   const [gps, setGPS] = useState(false);
   const [bordo, setBordo] = useState(false);
   const [seguir, setSeguir] = useState(false);
   const [posicao, setPosicao] = useState<Posicao | null>(null);
   const [erroGPS, setErroGPS] = useState('');
-  const [agora, setAgora] = useState(Date.now());
+  const [agora, setAgora] = useState(0);
+  const [limite, setLimite] = useState(30);
+  const [gpsPausado, setGPSPausado] = useState(false);
+  const [avisoBase, setAvisoBase] = useState('');
+  const [emTelaCheia, setEmTelaCheia] = useState(false);
 
   const destino = locais.find(p => p.id === destinoId);
   const resultados = useMemo(() => {
     const termo = normalizar(busca.trim());
     return locais.filter(p =>
+      (!somenteSedes || p.categoria === 'Cidade') &&
       (!municipio || p.municipio === municipio) &&
       (!termo || normalizar(`${p.nome} ${p.municipio}`).includes(termo))
     );
-  }, [busca, municipio]);
+  }, [busca, municipio, somenteSedes]);
 
-  const recente = !!posicao &&
+  const recente = !gpsPausado && !!posicao &&
     agora - posicao.instante >= -5000 &&
     agora - posicao.instante <= 45000;
   const confiavel = recente && !!posicao &&
     posicao.precisao <= 100 && !erroGPS && gps;
+
+  useEffect(() => {
+    setLimite(30);
+  }, [busca, municipio, somenteSedes]);
+
+  useEffect(() => {
+    const atualizar = () => setEmTelaCheia(document.fullscreenElement === recipiente.current);
+    document.addEventListener('fullscreenchange', atualizar);
+    return () => document.removeEventListener('fullscreenchange', atualizar);
+  }, []);
 
   useEffect(() => {
     seguindo.current = seguir;
@@ -109,6 +129,7 @@ function MapaOperacional() {
     let tamanho: ResizeObserver | null = null;
     setPronto(false);
     setErroMapa('');
+    setAvisoBase('');
 
     async function iniciar() {
       try {
@@ -138,7 +159,7 @@ function MapaOperacional() {
         ).addTo(instancia);
 
         base.on('tileerror', () => {
-          if (!encerrado) setErroMapa(
+          if (!encerrado) setAvisoBase(
             'Algumas imagens do mapa não carregaram. Confira sua conexão.'
           );
         });
@@ -146,26 +167,7 @@ function MapaOperacional() {
         pontos.current = L.layerGroup().addTo(instancia);
         alvo.current = L.layerGroup().addTo(instancia);
 
-        for (const local of locais) {
-          const texto = document.createElement('span');
-          texto.textContent = `${local.nome} · ${local.municipio}`;
-          L.circleMarker(local.coordenadas, {
-            radius: local.categoria === 'Cidade' ? 7 : 4,
-            color: '#133a31',
-            weight: 1,
-            fillColor: local.categoria === 'Cidade' ? '#efb655' : '#438e78',
-            fillOpacity: .85,
-          })
-            .bindTooltip(texto)
-            .on('click', () => {
-              setDestinoId(local.id);
-              setPainel(true);
-              setSeguir(false);
-            })
-            .addTo(pontos.current);
-        }
-
-        instancia.fitBounds(
+        if (locais.length) instancia.fitBounds(
           L.latLngBounds(locais.map(p => p.coordenadas)),
           { padding: [30, 30], animate: false }
         );
@@ -198,8 +200,87 @@ function MapaOperacional() {
 
   useEffect(() => {
     const L = biblioteca.current;
+    const camada = pontos.current;
+    const m = mapa.current;
+    if (!pronto || !L || !camada || !m) return;
+    const desenhar = () => {
+      camada.clearLayers();
+      const escolher = (local: typeof locais[number]) => {
+        setDestinoId(local.id);
+        painelConteudo.current?.scrollTo({ top: 0 });
+        setPainel(true);
+        setAba('territorio');
+        seguindo.current = false;
+        setSeguir(false);
+        m.setView(local.coordenadas, Math.max(13, m.getZoom()), { animate: false });
+      };
+      const rotulo = (local: typeof locais[number]) => {
+        const el = document.createElement('span');
+        el.textContent = `${local.nome} · ${local.municipio}`;
+        return el;
+      };
+      // Grade em pixels projetados: agrupa apenas a visualizacao, preserva o catalogo.
+      const grupos = new Map<string, typeof locais>();
+      for (const local of resultados) {
+        if (local.categoria === 'Cidade') {
+          L.circleMarker(local.coordenadas, {
+            radius: 7, color: '#fff0cd', weight: 2,
+            fillColor: '#e3a144', fillOpacity: 1,
+          }).bindTooltip(rotulo(local), {
+            permanent: m.getZoom() >= 8, direction: 'right', offset: [11, 0],
+            className: 'ern-sede-rotulo',
+          }).on('click', () => escolher(local)).addTo(camada);
+          continue;
+        }
+        const pixel = m.project(local.coordenadas, m.getZoom());
+        const chave = m.getZoom() <= 11
+          ? `${Math.floor(pixel.x / 64)}:${Math.floor(pixel.y / 64)}` : local.id;
+        const grupo = grupos.get(chave) ?? [];
+        grupo.push(local);
+        grupos.set(chave, grupo);
+      }
+      for (const grupo of grupos.values()) {
+        if (grupo.length === 1) {
+          const local = grupo[0];
+          L.circleMarker(local.coordenadas, {
+            radius: 4, color: '#0d2421', weight: 1,
+            fillColor: '#75c9b0', fillOpacity: .9,
+          }).bindTooltip(rotulo(local)).on('click', () => escolher(local)).addTo(camada);
+        } else {
+          const centro: [number, number] = [
+            grupo.reduce((n, l) => n + l.coordenadas[0], 0) / grupo.length,
+            grupo.reduce((n, l) => n + l.coordenadas[1], 0) / grupo.length,
+          ];
+          const quantidade = document.createElement('span');
+          quantidade.className = 'ern-grupo-corpo';
+          quantidade.textContent = String(grupo.length);
+          const dica = document.createElement('span');
+          dica.textContent = `${grupo.length} localidades agrupadas. Clique para ampliar.`;
+          L.marker(centro, {
+            icon: L.divIcon({ className: 'ern-grupo-mapa', html: quantidade,
+              iconSize: [38, 38], iconAnchor: [19, 19] }),
+            title: `${grupo.length} localidades agrupadas`,
+          }).bindTooltip(dica).on('click', () => {
+            seguindo.current = false;
+            setSeguir(false);
+            m.fitBounds(L.latLngBounds(grupo.map(l => l.coordenadas)), {
+              padding: [55, 55], maxZoom: Math.min(14, m.getZoom() + 2), animate: false,
+            });
+          }).addTo(camada);
+        }
+      }
+    };
+    desenhar();
+    m.on('zoomend', desenhar);
+    return () => { m.off('zoomend', desenhar); camada.clearLayers(); };
+  }, [resultados, pronto]);
+
+  useEffect(() => {
+    const L = biblioteca.current;
     if (!pronto || !L || !alvo.current) return;
     alvo.current.clearLayers();
+    mapa.current?.closePopup();
+    setAvisoDestino('');
     if (!destino) return;
     const texto = document.createElement('span');
     texto.textContent = `Destino: ${destino.nome}`;
@@ -214,56 +295,85 @@ function MapaOperacional() {
   useEffect(() => {
     if (!gps) return;
     let ativo = true;
-    let identificador: number | undefined;
-
-    if (!window.isSecureContext || !navigator.geolocation) {
-      setErroGPS('Localização indisponível: use HTTPS ou localhost e um aparelho compatível.');
-      return;
-    }
-
-    const relogio = window.setInterval(() => setAgora(Date.now()), 1000);
-    const atualizarRelogio = () => setAgora(Date.now());
-    document.addEventListener('visibilitychange', atualizarRelogio);
-
-    try {
-      identificador = navigator.geolocation.watchPosition(
-        leitura => {
-          if (!ativo) return;
+    let identificador: number | null = null;
+    let geracao = 0;
+    const limpar = () => {
+      geracao += 1;
+      if (identificador !== null) navigator.geolocation.clearWatch(identificador);
+      identificador = null;
+    };
+    const pausar = () => {
+      limpar();
+      setGPSPausado(true);
+      setAgora(Date.now());
+    };
+    const iniciarLeitura = () => {
+      limpar();
+      if (!ativo) return;
+      if (document.visibilityState === 'hidden') { pausar(); return; }
+      setGPSPausado(false);
+      setPosicao(null);
+      setErroGPS('');
+      if (!window.isSecureContext || !navigator.geolocation) {
+        setErroGPS('Localização indisponível: use HTTPS ou localhost e um aparelho compatível.');
+        setGPS(false);
+        seguindo.current = false;
+        setSeguir(false);
+        return;
+      }
+      const atual = geracao;
+      try {
+        identificador = navigator.geolocation.watchPosition(leitura => {
+          if (!ativo || atual !== geracao) return;
           const { latitude, longitude, accuracy } = leitura.coords;
-          if (
-            !Number.isFinite(latitude) || Math.abs(latitude) > 90 ||
-            !Number.isFinite(longitude) || Math.abs(longitude) > 180 ||
-            !Number.isFinite(accuracy) || accuracy < 0 ||
-            !Number.isFinite(leitura.timestamp)
-          ) {
+          if (!Number.isFinite(latitude) || Math.abs(latitude) > 90 ||
+              !Number.isFinite(longitude) || Math.abs(longitude) > 180 ||
+              !Number.isFinite(accuracy) || accuracy < 0 ||
+              !Number.isFinite(leitura.timestamp)) {
             setErroGPS('O aparelho retornou uma leitura inválida.');
             return;
           }
           setErroGPS('');
           setAgora(Date.now());
-          setPosicao({
-            lat: latitude, lng: longitude,
-            precisao: accuracy, instante: leitura.timestamp,
-          });
-        },
-        falha => {
-          if (ativo) setErroGPS(
-            falha.code === 1
-              ? 'Permissão de localização negada. Autorize nas configurações do navegador.'
-              : 'Sem uma nova localização válida. A última posição não representa acompanhamento ativo.'
-          );
-        },
-        { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 }
-      );
-    } catch {
-      setErroGPS('Não foi possível iniciar a localização.');
-    }
-
+          setPosicao({ lat: latitude, lng: longitude,
+            precisao: accuracy, instante: leitura.timestamp });
+        }, falha => {
+          if (!ativo || atual !== geracao) return;
+          setAgora(Date.now());
+          if (falha.code === 1) {
+            limpar();
+            setGPS(false);
+            setPosicao(null);
+            setSeguir(false);
+            seguindo.current = false;
+            setErroGPS('Permissão negada. Autorize a localização nas configurações do navegador e tente novamente.');
+          } else {
+            setErroGPS('Sem uma nova localização válida. A última posição é apenas uma referência.');
+          }
+        }, { enableHighAccuracy: true, maximumAge: 0, timeout: 15000 });
+      } catch {
+        setErroGPS('Não foi possível iniciar a localização. Tente novamente.');
+        setGPS(false);
+        setSeguir(false);
+        seguindo.current = false;
+      }
+    };
+    const visibilidade = () => {
+      if (document.visibilityState === 'hidden') pausar();
+      else iniciarLeitura();
+    };
+    const relogio = window.setInterval(() => setAgora(Date.now()), 1000);
+    document.addEventListener('visibilitychange', visibilidade);
+    window.addEventListener('pagehide', pausar);
+    window.addEventListener('pageshow', iniciarLeitura);
+    iniciarLeitura();
     return () => {
       ativo = false;
-      if (identificador !== undefined) navigator.geolocation.clearWatch(identificador);
+      limpar();
       window.clearInterval(relogio);
-      document.removeEventListener('visibilitychange', atualizarRelogio);
+      document.removeEventListener('visibilitychange', visibilidade);
+      window.removeEventListener('pagehide', pausar);
+      window.removeEventListener('pageshow', iniciarLeitura);
     };
   }, [gps]);
 
@@ -310,49 +420,69 @@ function MapaOperacional() {
     if (seguindo.current && recente && posicao.precisao <= 2000 && !erroGPS) {
       m.panTo(coordenadas, { animate: false });
     }
-  }, [posicao, gps, bordo, confiavel, pronto, seguir]);
+  }, [posicao, gps, bordo, confiavel, pronto, seguir, recente, erroGPS]);
 
   function iniciar(bordoEscolhido: boolean) {
     setBordo(bordoEscolhido);
     setErroGPS('');
+    setGPSPausado(false);
     setSeguir(true);
     seguindo.current = true;
     setGPS(true);
   }
 
-  // ERN_NAVEGACAO_BUSCA_V3
-  useEffect(() => {
-    if (!pronto) return;
-
-    const preparar = (valor: string) => valor.normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase().trim().replace(/\s+/g, ' ');
-
-    const termo = preparar(busca);
-    if (!termo) return;
-
-    const cidade = locais.find(p =>
-      p.categoria === 'Cidade' && preparar(p.nome) === termo
-    );
-
-    if (!cidade) return;
-
-    const tarefa = window.setTimeout(() => {
-      setMunicipio(cidade.municipio);
-      setDestinoId(cidade.id);
-      setSeguir(false);
-      seguindo.current = false;
-      mapa.current?.setView(cidade.coordenadas, 12, { animate: false });
-    }, 650);
-
-    return () => window.clearTimeout(tarefa);
-  }, [busca, pronto]);
-
-  function verDestino() {
-    if (!destino || !mapa.current) return;
+  function verRegiao() {
+    setBusca('');
+    setMunicipio('');
+    setSomenteSedes(false);
+    setDestinoId('');
     setSeguir(false);
     seguindo.current = false;
-    mapa.current.setView(destino.coordenadas, 13, { animate: false });
+    const L = biblioteca.current;
+    if (L && locais.length) mapa.current?.fitBounds(
+      L.latLngBounds(locais.map(p => p.coordenadas)),
+      { padding: [40, 40], animate: false }
+    );
+  }
+
+  function enquadrarResultados() {
+    const L = biblioteca.current;
+    if (!L || !resultados.length) return;
+    setSeguir(false);
+    seguindo.current = false;
+    mapa.current?.fitBounds(L.latLngBounds(resultados.map(p => p.coordenadas)), {
+      padding: [40, 40], maxZoom: 13, animate: false,
+    });
+  }
+
+  function verDestino() {
+    const m = mapa.current;
+    const L = biblioteca.current;
+    if (!destino || !pronto || !m || !L) {
+      setAvisoDestino('Aguarde o mapa carregar e selecione uma localidade.');
+      return;
+    }
+    setSeguir(false);
+    seguindo.current = false;
+    m.stop();
+    m.invalidateSize({ pan: false });
+    m.setView(destino.coordenadas, Math.min(18, Math.max(15, m.getZoom())), {
+      animate: false,
+    });
+    const detalhes = document.createElement('div');
+    detalhes.className = 'ern-popup-destino-conteudo';
+    const titulo = document.createElement('strong');
+    titulo.textContent = destino.nome;
+    const contexto = document.createElement('p');
+    contexto.textContent = `${destino.municipio} · ${destino.categoria}`;
+    const coordenadas = document.createElement('p');
+    coordenadas.textContent = destino.coordenadas.map(n => n.toFixed(5)).join(', ');
+    detalhes.append(titulo, contexto, coordenadas);
+    // Conteudo montado com textContent: nomes do catalogo nunca viram HTML.
+    L.popup({ className: 'ern-popup-destino', maxWidth: 260,
+      offset: [0, -20], autoPanPadding: [24, 24] })
+      .setLatLng(destino.coordenadas).setContent(detalhes).openOn(m);
+    setAvisoDestino(`Destino em destaque: ${destino.nome}. Detalhes abertos no mapa.`);
   }
 
   async function telaCheia() {
@@ -366,48 +496,85 @@ function MapaOperacional() {
   }
 
   return (
-    <main ref={recipiente} className={`ern-mapa-operacional ${noturno ? "ern-mapa-noturno" : ""}`}
+    <main ref={recipiente} className={`ern-mapa-operacional ${noturno ? "ern-mapa-noturno" : ""} ${painel ? "ern-painel-aberto" : ""}`}
       style={{ top: topo }} aria-label="Mapa operacional ERN">
       <div ref={canvas} className="ern-cartografia" aria-label="Mapa interativo de localidades" />
-      <div className="ern-barra-mapa">
-        <div><strong>Mapa ERN</strong><small>Território · destino · acompanhamento</small></div>
-        <button onClick={() => setPainel(!painel)} aria-expanded={painel}
-          aria-controls="ern-operacao-controles">
-          {painel ? 'Recolher painel' : 'Abrir painel'}
-        </button>
+      <header className="ern-barra-mapa">
+        <div className="ern-mapa-titulo"><span className="ern-mapa-emblema" aria-hidden="true">◎</span>
+          <div><small className="ern-mapa-kicker">ENCANTOS RIO NEGRO / OPERADORA</small>
+            <h1>Centro territorial<span>Alto e Baixo Rio Negro</span></h1></div>
+        </div>
+        <div className="ern-mapa-metricas" aria-label="Resumo do catálogo">
+          <div><strong>{locais.length}</strong><small>localidades</small></div>
+          <div><strong>{new Set(locais.map(p => p.municipio)).size}</strong><small>municípios</small></div>
+          <div><strong>{resultados.length}</strong><small>no filtro</small></div>
+        </div>
+        <nav className="ern-mapa-comandos" aria-label="Controles do mapa">
+          <button onClick={() => setPainel(v => !v)} aria-expanded={painel}
+            aria-controls="ern-operacao-controles">{painel ? 'Ocultar painel' : 'Abrir painel'}</button>
+          <button onClick={verRegiao} disabled={!pronto}>Ver região</button>
+          <button onClick={telaCheia} aria-pressed={emTelaCheia}>
+            {emTelaCheia ? 'Sair da tela cheia' : 'Tela cheia'}</button>
+        </nav>
+      </header>
+
+      <div className="ern-mapa-contexto">
+        <div><span className="ern-ponto-sinal" /><strong>{destino ? destino.nome : municipio || 'Visão regional'}</strong>
+          <small>{destino ? destino.municipio : 'Explore os agrupamentos para revelar localidades'}</small></div>
         <button onClick={() => setNoturno(v => !v)} aria-pressed={noturno}>
-          {noturno ? 'Base original' : 'Modo noturno'}
-        </button>
-        <button onClick={telaCheia}>Tela cheia</button>
+          {noturno ? 'Cartografia original' : 'Cartografia grafite'}</button>
       </div>
 
       {painel && <aside id="ern-operacao-controles" className="ern-painel-mapa">
-        <p className="ern-selo">SUA OPERAÇÃO NO RIO NEGRO</p>
-        <h1>Escolha seu destino</h1>
+        <div className="ern-painel-cabecalho"><p className="ern-selo">EXPLORADOR ERN</p>
+          <h2>Seu próximo destino</h2>
+          <p>Referências para planejar sua operação.</p></div>
+        <div className="ern-mapa-abas" role="group" aria-label="Conteúdo do painel">
+          <button aria-pressed={aba === 'territorio'} onClick={() => setAba('territorio')}>Território</button>
+          <button aria-pressed={aba === 'localizacao'} onClick={() => setAba('localizacao')}>Localização {gps && '●'}</button>
+        </div>
+        <div ref={painelConteudo} className="ern-painel-conteudo">
+        <div hidden={aba !== 'territorio'}>
+        {destino && <div className="ern-destino-resumo">
+          <strong>{destino.nome}</strong>
+          <small>{destino.municipio} · {destino.categoria}</small>
+          <small>{destino.coordenadas.map(n => n.toFixed(5)).join(', ')}</small>
+          <button onClick={verDestino} disabled={!pronto}>Ampliar e ver destino</button>
+          <p className="ern-destino-confirmacao" role="status" aria-live="polite">{avisoDestino}</p>
+        </div>}
         <label htmlFor="ern-busca">Buscar localidade ou município</label>
         <input id="ern-busca" value={busca}
-          onChange={e => setBusca(e.target.value)}
+          onChange={e => { setBusca(e.target.value); setDestinoId(''); }}
           placeholder="Barcelos, Moura, Novo Airão…" />
-        <label htmlFor="ern-municipio">Filtrar lista por município</label>
+        <label htmlFor="ern-municipio">Município</label>
         <select id="ern-municipio" value={municipio}
-          onChange={e => setMunicipio(e.target.value)}>
+          onChange={e => { setMunicipio(e.target.value); setDestinoId(''); }}>
           <option value="">Todos os municípios cadastrados</option>
           {Array.from(new Set(locais.map(p => p.municipio))).sort().map(nome =>
             <option key={nome} value={nome}>{nome}</option>
           )}
         </select>
 
+        <div className="ern-escopo-mapa" role="group" aria-label="Tipo de localidade">
+          <button aria-pressed={!somenteSedes} onClick={() => { setSomenteSedes(false); setDestinoId(''); }}>Todas</button>
+          <button aria-pressed={somenteSedes} onClick={() => { setSomenteSedes(true); setDestinoId(''); }}>Sedes municipais</button>
+        </div>
         <div className="ern-lista-cabecalho">
           <strong>Localidades</strong>
           <span>{resultados.length} encontradas</span>
         </div>
+        <div className="ern-ferramentas-busca">
+          <button disabled={!pronto || !resultados.length} onClick={enquadrarResultados}>Enquadrar resultados</button>
+          {(busca || municipio || somenteSedes) && <button onClick={verRegiao}>Limpar filtros</button>}
+        </div>
         <ul className="ern-resultados-destino" aria-label="Resultados de localidades">
-          {resultados.slice(0, 30).map(p => (
+          {resultados.slice(0, limite).map(p => (
             <li key={p.id}>
               <button
                 aria-pressed={destinoId === p.id}
                 onClick={() => {
                   setDestinoId(p.id);
+                  painelConteudo.current?.scrollTo({ top: 0 });
                   setSeguir(false);
                   seguindo.current = false;
                   mapa.current?.setView(p.coordenadas, 13, { animate: false });
@@ -423,25 +590,24 @@ function MapaOperacional() {
           ))}
         </ul>
         {resultados.length === 0 && <p role="status">Nenhuma localidade encontrada. Ajuste a busca.</p>}
-        {resultados.length > 30 && <p className="ern-ajuda-busca">
-          Exibindo os primeiros 30 resultados. Digite o nome para refinar.
-          As demais localidades continuam representadas no mapa.
-        </p>}
+        {resultados.length > limite && <button className="ern-carregar-locais"
+          onClick={() => setLimite(v => v + 30)}>
+          Mostrar mais localidades ({Math.min(limite, resultados.length)} de {resultados.length})
+        </button>}
 
-        {destino && <div className="ern-destino-resumo">
-          <strong>{destino.nome}</strong>
-          <small>{destino.municipio} · {destino.categoria}</small>
-          <small>{destino.coordenadas.map(n => n.toFixed(5)).join(', ')}</small>
-          <button onClick={verDestino}>Mostrar destino</button>
-        </div>}
 
+
+        </div>
+        <div hidden={aba !== 'localizacao'}>
+        <div className="ern-gps-apresentacao"><span aria-hidden="true">⌖</span>
+          <h3>Acompanhe sua posição</h3><p>Ative a localização no aparelho que está com você ou a bordo da embarcação.</p></div>
         <div className="ern-acoes-mapa">
           <button onClick={() => iniciar(false)} aria-pressed={gps && !bordo}>
             Minha posição
           </button>
           <button className="ern-principal" onClick={() => iniciar(true)}
             aria-pressed={gps && bordo}>Estou a bordo</button>
-          <button disabled={!gps || !posicao} aria-pressed={seguir}
+          <button disabled={!gps || !posicao || !recente || !!erroGPS || posicao.precisao > 2000} aria-pressed={seguir}
             onClick={() => {
               setSeguir(v => !v);
               seguindo.current = !seguir;
@@ -456,7 +622,9 @@ function MapaOperacional() {
         </div>
 
         <div className="ern-sinal" role="status">
-          <strong>{!gps ? 'Localização desligada'
+          <strong>{erroGPS && !gps ? 'Localização exige atenção'
+            : !gps ? 'Localização desligada'
+            : gpsPausado ? 'Localização pausada · aba em segundo plano'
             : erroGPS ? 'Localização exige atenção'
             : !posicao ? 'Aguardando localização…'
             : !recente ? 'Última posição desatualizada'
@@ -470,6 +638,7 @@ function MapaOperacional() {
           </>}
         </div>
 
+        </div>
         <details>
           <summary>Fontes e alcance do mapa</summary>
           <p>Referências territoriais do IBGE nos seis municípios cadastrados.
@@ -482,8 +651,22 @@ function MapaOperacional() {
           <a href="https://www.marinha.mil.br/chm/dados-do-segnav-cartas-nauticas" target="_blank" rel="noopener noreferrer">Cartas náuticas · CHM ↗</a>
           <a href="https://www.marinha.mil.br/chm/dados-do-segnav-aviso-aos-navegantes-tela" target="_blank" rel="noopener noreferrer">Avisos aos Navegantes ↗</a>
         </details>
+        </div>
+        <div className="ern-painel-rodape"><span className={gps && confiavel ? 'ern-sinal-ativo' : ''} />
+          {gps ? (confiavel ? 'GPS com sinal recente' : 'GPS aguardando sinal válido') : 'GPS desligado'}
+          <button onClick={() => setAba(aba === 'territorio' ? 'localizacao' : 'territorio')}>
+            {aba === 'territorio' ? 'Abrir GPS ↗' : 'Ver território ↗'}</button></div>
       </aside>}
 
+      {avisoBase && <div className="ern-aviso-base" role="status">
+        {avisoBase} <button onClick={() => setTentativa(v => v + 1)}>Recarregar mapa</button>
+      </div>}
+      <div className="ern-legenda-mapa" aria-label="Legenda do mapa">
+        <span><i className="ern-legenda-cidade" />Sede municipal</span>
+        <span><i className="ern-legenda-local" />Localidade</span>
+        <span><i className="ern-legenda-grupo" />Grupo · clique para ampliar</span>
+        <span><i className="ern-legenda-gps" />Aparelho</span>
+      </div>
       {!pronto && !erroMapa && <div className="ern-aviso-mapa" role="status">Abrindo o território ERN…</div>}
       {erroMapa && <div className="ern-aviso-mapa" role="alert">
         {erroMapa}
@@ -491,147 +674,139 @@ function MapaOperacional() {
       </div>}
 
       <style jsx global>{`
-        .ern-mapa-operacional{position:fixed;left:0;right:0;bottom:0;z-index:20;isolation:isolate;overflow:hidden;background:#10251e;color:#fff8e9;font-family:var(--font-work-sans),sans-serif}
-        .ern-mapa-operacional:fullscreen{top:0!important;height:100%;width:100%}
-        .ern-cartografia{position:absolute;inset:0;z-index:0}
-        .ern-barra-mapa{position:absolute;top:14px;left:14px;right:68px;z-index:1001;display:flex;align-items:center;gap:8px;pointer-events:none}
-        .ern-barra-mapa>*{pointer-events:auto}
-        .ern-barra-mapa>div{background:#0a211eed;border:1px solid #d9b16b66;border-radius:14px;padding:12px 16px;margin-right:auto}
-        .ern-mapa-operacional small{display:block;font-size:11px;line-height:1.7;color:#c6d8ce}
-        .ern-mapa-operacional button{min-height:44px;border:1px solid #d5c7a066;background:#102b26;color:#fff8e9;border-radius:10px;padding:8px 12px;font:600 12px var(--font-work-sans),sans-serif;cursor:pointer}
-        .ern-mapa-operacional button:disabled{opacity:.45;cursor:default}
-        .ern-mapa-operacional button.ern-principal{background:#edbb65;color:#241c0b;border-color:#edbb65}
-        .ern-mapa-operacional :is(button,input,select,a,summary):focus-visible{outline:3px solid #ffd68a;outline-offset:3px}
-        .ern-painel-mapa{position:absolute;z-index:1001;left:14px;top:92px;bottom:38px;width:330px;overflow:auto;overscroll-behavior:contain;border:1px solid #caa66366;border-radius:18px;background:#0a211ef5;padding:18px;box-shadow:0 15px 45px #0005}
-        .ern-selo{font-size:9px;letter-spacing:.16em;color:#f2c97e}
-        .ern-painel-mapa h1{font:500 25px var(--font-fraunces),serif;margin:8px 0 18px}
-        .ern-painel-mapa label{display:block;font-size:11px;margin:12px 0 6px;color:#d6e3d9}
-        .ern-painel-mapa :is(input,select){box-sizing:border-box;min-height:46px;width:100%;min-width:0;border:1px solid #ffffff38;border-radius:10px;padding:10px;background:#122e29;color:#fff8e9;font-size:13px}
-        .ern-destino-resumo,.ern-sinal{margin-top:16px;padding:12px;border:1px solid #d4b37155;border-radius:12px;background:#18372d}
-        .ern-destino-resumo strong,.ern-sinal strong{font-size:13px}
-        .ern-destino-resumo button{margin-top:8px;width:100%}
-        .ern-acoes-mapa{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
-        .ern-acoes-mapa button{font-size:11px}
-        .ern-sinal p,.ern-painel-mapa details p{font-size:11px;line-height:1.7}
-        .ern-painel-mapa details{margin-top:18px;font-size:12px}
-        .ern-painel-mapa summary{min-height:36px;cursor:pointer}
-        .ern-painel-mapa a{display:flex;align-items:center;min-height:44px;font-size:11px;color:#f3ce8a;text-decoration:underline}
-        .ern-aviso-mapa{position:absolute;bottom:40px;right:16px;z-index:1002;max-width:min(360px,85%);padding:12px;border-radius:12px;background:#122a24;color:#fff;font-size:12px}
+        .ern-mapa-operacional{--ern-lateral:340px;--ern-barra:96px;position:fixed;left:0;right:0;bottom:0;z-index:20;isolation:isolate;overflow:hidden;background:#101719;color:#eaf0ed;font-family:var(--font-work-sans),sans-serif}
+        .ern-mapa-operacional:fullscreen{inset:0!important;width:100%;height:100%}
+        .ern-mapa-operacional *{box-sizing:border-box}
+        .ern-cartografia{position:absolute;left:0;right:0;top:var(--ern-barra);bottom:0;z-index:0}
+        .ern-painel-aberto .ern-cartografia{left:var(--ern-lateral)}
+        .ern-mapa-operacional .leaflet-container{background:#192329}
+        .ern-mapa-noturno .leaflet-tile-pane{filter:grayscale(1) invert(1) contrast(.88) brightness(.85)}
+        .ern-mapa-operacional button{min-height:40px;border:1px solid #ffffff20;background:#1a2529;color:#eaf0ed;border-radius:8px;padding:9px 13px;font:500 12px var(--font-work-sans),sans-serif;cursor:pointer;transition:background .15s,border-color .15s}
+        .ern-mapa-operacional button:hover:not(:disabled){background:#2b393b;border-color:#d4ac67}
+        .ern-mapa-operacional button:disabled{opacity:.4;cursor:default}
+        .ern-mapa-operacional :is(button,input,select,a,summary):focus-visible{outline:2px solid #edb65e;outline-offset:3px}
+        .ern-mapa-operacional small{display:block;font-size:11px;line-height:1.6;color:#a3b6b1}
+        .ern-barra-mapa{position:absolute;inset:0 0 auto;height:var(--ern-barra);z-index:1001;display:flex;align-items:center;gap:24px;padding:18px 26px;background:#11191b;border-bottom:1px solid #ffffff14}
+        .ern-mapa-titulo{display:flex;align-items:center;gap:14px;flex-shrink:0}
+        .ern-mapa-emblema{display:grid;place-items:center;width:46px;height:46px;border:1px solid #d8ac6550;border-radius:13px;font-size:32px;font-weight:300;color:#e4b86f;background:linear-gradient(145deg,#d6a45b15,transparent)}
+        .ern-mapa-operacional .ern-mapa-kicker{font-size:8px;letter-spacing:.16em;color:#e3b570;font-weight:700;margin-bottom:6px}
+        .ern-barra-mapa h1{font-size:23px;letter-spacing:-.04em;font-weight:600;line-height:1;margin:0;white-space:nowrap}
+        .ern-barra-mapa h1 span{display:block;color:#90a5a0;font-size:10px;font-weight:400;letter-spacing:.02em;margin-top:7px}
+        .ern-mapa-metricas{display:flex;align-items:center;gap:26px;margin:0 auto;padding:0 26px;border-left:1px solid #ffffff14}
+        .ern-mapa-metricas strong{font-size:24px;font-weight:500;font-variant-numeric:tabular-nums;line-height:1.1;color:#f3dec0}
+        .ern-mapa-metricas small{font-size:10px;margin-top:3px}
+        .ern-mapa-comandos{display:flex;gap:8px}
+        .ern-painel-mapa{position:absolute;z-index:1001;top:var(--ern-barra);bottom:74px;left:0;width:var(--ern-lateral);display:flex;flex-direction:column;background:#121d20;border-right:1px solid #ffffff12;overflow:hidden}
+        .ern-painel-cabecalho{padding:24px 22px 18px}
+        .ern-painel-mapa .ern-selo{margin:0 0 9px;font-size:8px;font-weight:700;letter-spacing:.18em;color:#d8ae6b}
+        .ern-painel-mapa h2{font-size:23px;line-height:1.2;letter-spacing:-.04em;font-weight:500;margin:0 0 8px}
+        .ern-painel-cabecalho>p:last-child{font-size:11px;line-height:1.6;color:#96aca5;margin:0}
+        .ern-mapa-abas{display:flex;gap:0;padding:0 22px;border-bottom:1px solid #ffffff12;flex-shrink:0}
+        .ern-mapa-abas button{flex:1;border:0;border-bottom:2px solid transparent;border-radius:0;background:none;min-height:45px;color:#96aca5;font-size:12px}
+        .ern-mapa-abas button[aria-pressed=true]{border-bottom-color:#e4b16c;color:#f0cc96}
+        .ern-painel-conteudo{padding:18px 22px 24px;overflow:auto;flex:1;min-height:0;scrollbar-width:thin;scrollbar-color:#435b56 transparent;overscroll-behavior:contain}
+        .ern-painel-conteudo [hidden]{display:none!important}
+        .ern-painel-mapa label{display:block;font-size:10px;font-weight:500;color:#afc0bb;margin:0 0 7px}
+        .ern-painel-mapa :is(input,select){width:100%;min-width:0;min-height:44px;border:1px solid #ffffff20;border-radius:8px;background:#0c171b;color:#eaf0ed;padding:11px 12px;font-size:12px;margin:0 0 16px}
+        .ern-painel-mapa input::placeholder{color:#7e9790}
+        .ern-escopo-mapa{display:flex;gap:6px;margin:0 0 20px}
+        .ern-escopo-mapa button{font-size:10px;min-height:32px;padding:6px 11px;border-radius:20px;background:transparent;color:#9cb2aa}
+        .ern-escopo-mapa button[aria-pressed=true]{background:#d6ac651a;border-color:#d6ac6560;color:#edc387}
+        .ern-lista-cabecalho{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px;font-size:11px}
+        .ern-lista-cabecalho strong{font-weight:500}
+        .ern-lista-cabecalho>span{font-size:10px;color:#97afa6}
+        .ern-ferramentas-busca{display:flex;gap:6px;margin-bottom:10px}
+        .ern-ferramentas-busca button{flex:1;min-height:34px;font-size:10px;padding:7px}
+        .ern-resultados-destino{padding:0;margin:0;list-style:none}
+        .ern-resultados-destino li{border-bottom:1px solid #ffffff0c}
+        .ern-resultados-destino button{display:flex;align-items:center;gap:11px;text-align:left;width:100%;min-height:66px;padding:12px 4px;background:none;border:0;border-radius:6px}
+        .ern-resultados-destino button[aria-pressed=true]{background:#e3ae5f12;box-shadow:inset 2px 0 #e3ae5f;padding-left:9px}
+        .ern-local-indicador{display:grid;place-items:center;flex-shrink:0;width:28px;height:28px;background:#719c8e12;border:1px solid #719c8e28;border-radius:50%;color:#b6d4c8;font-size:15px}
+        .ern-resultados-destino button>span:nth-child(2){min-width:0;overflow-wrap:anywhere}
+        .ern-resultados-destino strong{display:block;font-size:11px;font-weight:500;line-height:1.5}
+        .ern-resultados-destino small{font-size:10px;color:#8ea89d}
+        .ern-local-selecionado{margin-left:auto;font-size:8px;color:#e4b16c}
+        .ern-carregar-locais{width:100%;margin-top:14px;font-size:10px!important}
+        .ern-destino-resumo{padding:16px;margin-top:18px;background:linear-gradient(130deg,#b58d3920,#b58d3908);border:1px solid #e3ae5f50;border-radius:12px}
+        .ern-destino-resumo strong{display:block;font-size:16px;font-weight:500;margin-bottom:5px}
+        .ern-destino-resumo button{width:100%;margin-top:12px;background:#e4b16c;color:#231b10;border-color:#e4b16c}
+        .ern-painel-rodape{display:flex;gap:7px;align-items:center;min-height:58px;padding:9px 18px;background:#10191c;border-top:1px solid #ffffff12;font-size:9px;color:#92aaa0;flex-shrink:0}
+        .ern-painel-rodape>span{height:6px;width:6px;border-radius:50%;background:#647570}
+        .ern-painel-rodape>span.ern-sinal-ativo{background:#70c4a6}
+        .ern-painel-rodape button{margin-left:auto;border:0;background:none;font-size:9px;padding:7px 0;color:#edc387}
+        .ern-mapa-contexto{position:absolute;top:calc(var(--ern-barra) + 20px);left:20px;right:66px;z-index:1000;display:flex;align-items:flex-start;gap:12px;pointer-events:none}
+        .ern-painel-aberto .ern-mapa-contexto{left:calc(var(--ern-lateral) + 20px)}
+        .ern-mapa-contexto>div{padding:11px 15px;border:1px solid #ffffff25;background:#101b20ed;border-radius:10px;box-shadow:0 4px 20px #0003}
+        .ern-mapa-contexto strong{font-size:12px;font-weight:500}
+        .ern-mapa-contexto small{font-size:9px;margin:4px 0 0 14px}
+        .ern-ponto-sinal{display:inline-block;width:6px;height:6px;border-radius:50%;background:#dfb16b;margin-right:8px}
+        .ern-mapa-contexto button{margin-left:auto;pointer-events:auto;background:#101b20ed;font-size:10px}
+        .ern-legenda-mapa{position:absolute;bottom:24px;left:20px;z-index:1000;display:flex;gap:14px;flex-wrap:wrap;border:1px solid #ffffff20;border-radius:8px;padding:9px 12px;background:#101b20ed;font-size:9px;color:#a9beb6;pointer-events:none}
+        .ern-painel-aberto .ern-legenda-mapa{left:calc(var(--ern-lateral) + 20px)}
+        .ern-legenda-mapa span{display:flex;gap:5px;align-items:center}
+        .ern-legenda-mapa i{display:inline-block;width:6px;height:6px;border-radius:50%}
+        .ern-legenda-cidade{background:#e4b16c}.ern-legenda-local{background:#75c9b0}.ern-legenda-gps{background:#4389ed}.ern-legenda-grupo{border:1px solid #75c9b0}
+        .ern-grupo-mapa{background:none;border:0}
+        .ern-grupo-corpo{display:grid;place-items:center;width:38px;height:38px;border-radius:50%;background:#11312cf2;color:#b6f1db;border:1px solid #85cfb988;box-shadow:0 0 0 5px #70b79c17,0 3px 15px #0006;font:600 12px var(--font-work-sans),sans-serif;font-variant-numeric:tabular-nums}
+        .ern-mapa-operacional .leaflet-tooltip{background:#15242a;color:#e3eee8;border:1px solid #ffffff25;padding:8px 11px;border-radius:7px;font-size:11px;box-shadow:0 4px 12px #0003}
+        .ern-mapa-operacional .leaflet-tooltip.ern-sede-rotulo{background:#101b20df;color:#f0ca8d;border-color:#d9ad6355;padding:5px 9px;font-weight:500;font-size:11px}
+        .ern-mapa-operacional .leaflet-control-zoom{border:1px solid #ffffff25;box-shadow:0 4px 16px #0003;border-radius:8px;overflow:hidden;margin-top:20px;margin-right:16px}
+        .ern-mapa-operacional .leaflet-control-zoom a{background:#142329;color:#e3eee8;border-color:#ffffff20}
+        .ern-mapa-operacional .leaflet-control-attribution{background:#101b20ed;color:#ccd9d3;font-size:9px}
+        .ern-mapa-operacional .leaflet-control-attribution a{color:#dfba7c}
+        .ern-mapa-operacional .leaflet-control-scale-line{background:#101b20de;color:#c8d9d1;border-color:#809b91;font-size:9px}
         .ern-posicao-icone{background:none;border:0}
-        .ern-posicao-corpo{width:40px;height:40px;border:3px solid white;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#1765c1;color:white;box-sizing:border-box;box-shadow:0 2px 10px #0007}
+        .ern-posicao-corpo{display:grid;place-items:center;width:40px;height:40px;border:3px solid white;border-radius:50%;background:#1765c1;color:white;box-shadow:0 2px 10px #0007}
         .ern-bordo-vivo{animation:ern-bordo-pulso 1.8s ease-out infinite}
         @keyframes ern-bordo-pulso{0%,100%{box-shadow:0 0 0 0 #268cf099}60%{box-shadow:0 0 0 17px #268cf000}}
-        @media(prefers-reduced-motion:reduce){.ern-bordo-vivo{animation:none;outline:3px solid #69caff}}
+        .ern-gps-apresentacao{padding:10px 0 20px}
+        .ern-gps-apresentacao>span{display:grid;place-items:center;width:52px;height:52px;border:1px solid #d8ac6540;border-radius:15px;color:#edc387;font-size:36px;background:#d8ac650c}
+        .ern-gps-apresentacao h3{font-size:19px;font-weight:500;margin:18px 0 8px}
+        .ern-gps-apresentacao p,.ern-sinal p,.ern-painel-mapa details p{font-size:11px;line-height:1.8;color:#a5bbb0}
+        .ern-acoes-mapa{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+        .ern-acoes-mapa button{font-size:10px;min-height:48px}
+        .ern-acoes-mapa button.ern-principal{background:#e4b16c;color:#231b10;border-color:#e4b16c}
+        .ern-acoes-mapa button[aria-pressed=true]{outline:1px solid #e4b16c;outline-offset:2px}
+        .ern-sinal{padding:15px;margin-top:20px;background:#0e191d;border:1px solid #ffffff18;border-radius:12px}
+        .ern-sinal strong{font-size:12px;font-weight:500}
+        .ern-sinal small{font-size:10px}
+        .ern-painel-mapa details{margin-top:24px;padding-top:16px;border-top:1px solid #ffffff12;font-size:10px;color:#93a99f}
+        .ern-painel-mapa summary{min-height:32px;cursor:pointer}
+        .ern-painel-mapa a{display:flex;align-items:center;min-height:40px;font-size:10px;color:#e4bd83;text-decoration:underline}
+        .ern-aviso-mapa,.ern-aviso-base{position:absolute;top:calc(var(--ern-barra) + 110px);right:24px;z-index:1002;max-width:min(340px,85%);padding:14px;border:1px solid #e4b16c70;border-radius:10px;background:#142329;color:#eaf0ed;font-size:12px;line-height:1.7}
+        .ern-aviso-base button{display:block;margin-top:8px}
+        @media(prefers-reduced-motion:reduce){.ern-bordo-vivo{animation:none;outline:3px solid #69caff}.ern-mapa-operacional button{transition:none}}
+        @media(max-width:1100px) and (min-width:768px){.ern-mapa-operacional{--ern-lateral:300px;--ern-barra:90px}.ern-mapa-metricas{gap:14px;padding-left:18px;padding-right:0}.ern-mapa-metricas>div:last-child{display:none}.ern-barra-mapa{padding:14px 18px;gap:16px}.ern-mapa-comandos button{font-size:10px;padding:8px}.ern-mapa-titulo{gap:9px}.ern-mapa-emblema{display:none}.ern-barra-mapa h1{font-size:20px}}
         @media(max-width:767px){
-          .ern-barra-mapa{top:10px;left:10px;right:56px;flex-wrap:wrap}
-          .ern-barra-mapa>div{width:100%;padding:8px 12px}
-          .ern-barra-mapa button{min-height:40px;padding:7px 10px;font-size:11px}
-          .ern-painel-mapa{left:10px;right:10px;top:auto;bottom:32px;width:auto;max-height:43%;padding:14px;border-radius:16px}
-          .ern-painel-mapa h1{font-size:22px;margin-bottom:10px}
-          .ern-aviso-mapa{top:125px;bottom:auto;right:10px}
+          .ern-mapa-operacional{--ern-barra:114px;--ern-lateral:0px}
+          .ern-barra-mapa{padding:13px 14px;gap:10px;flex-wrap:wrap;align-content:center}
+          .ern-mapa-titulo{flex:1;gap:10px}.ern-mapa-emblema{width:36px;height:36px;font-size:26px;border-radius:10px}
+          .ern-mapa-operacional .ern-mapa-kicker{font-size:7px;margin-bottom:5px}.ern-barra-mapa h1{font-size:19px}.ern-barra-mapa h1 span{display:none}
+          .ern-mapa-metricas{padding:0;margin:0;border:0;gap:12px}.ern-mapa-metricas strong{font-size:17px}.ern-mapa-metricas small{font-size:8px}.ern-mapa-metricas>div:last-child{display:none}
+          .ern-mapa-comandos{width:100%;gap:6px}.ern-mapa-comandos button{flex:1;min-height:36px;font-size:10px;padding:7px}
+          .ern-painel-aberto .ern-cartografia{left:0;bottom:calc(42% + 74px)}
+          .ern-painel-mapa{top:auto;bottom:74px;left:0;width:100%;height:42%;border-right:0;border-top:1px solid #e4b16c50}
+          .ern-painel-cabecalho{display:none}.ern-mapa-abas{padding:0 16px}.ern-mapa-abas button{min-height:40px}
+          .ern-painel-conteudo{padding:14px 16px 18px}.ern-painel-rodape{min-height:40px;padding:4px 16px}
+          .ern-painel-aberto .ern-mapa-contexto,.ern-mapa-contexto{top:calc(var(--ern-barra) + 10px);left:10px;right:54px;gap:6px}
+          .ern-mapa-contexto>div{padding:8px 10px}.ern-mapa-contexto strong{font-size:10px}.ern-mapa-contexto small{display:none}.ern-mapa-contexto button{font-size:8px;min-height:32px;padding:6px 8px}
+          .ern-legenda-mapa{left:10px;bottom:26px;max-width:calc(100% - 20px);gap:8px;font-size:8px;padding:6px 8px}
+          .ern-painel-aberto .ern-legenda-mapa{left:10px;bottom:calc(42% + 98px)}
+          .ern-mapa-operacional .leaflet-control-zoom{margin:10px 8px}.ern-aviso-mapa,.ern-aviso-base{top:calc(var(--ern-barra) + 65px);right:10px;font-size:10px;max-width:75%}
         }
-        /* ERN_MAPA_REFINADO_V2 */
-        .ern-mapa-operacional{background:#071d22}
-        .ern-mapa-noturno .leaflet-tile-pane{
-          filter:invert(1) hue-rotate(180deg) brightness(.72) saturate(.6);
-        }
-        .ern-mapa-operacional .leaflet-container{background:#11282d}
-        .ern-barra-mapa{top:16px;left:16px;right:70px;gap:8px}
-        .ern-barra-mapa>div{
-          border:1px solid #d7c28b55;
-          border-radius:12px;background:#081d24f5;
-          box-shadow:0 8px 28px #0004;
-        }
-        .ern-barra-mapa strong{font-size:17px;letter-spacing:-.02em}
-        .ern-barra-mapa small{font-size:10px;letter-spacing:.04em}
-        .ern-mapa-operacional button{
-          background:#102c34;border-color:#809d9d55;
-          transition:background .15s ease,border-color .15s ease;
-        }
-        .ern-mapa-operacional button:hover:not(:disabled){
-          background:#1a3e47;border-color:#e6c583;
-        }
-        .ern-painel-mapa{
-          top:96px;left:16px;bottom:44px;width:310px;
-          padding:17px;border-radius:16px;
-          background:linear-gradient(165deg,#0b2530f7,#09241ff7);
-          border-color:#c9b47b66;box-shadow:0 18px 48px #0006;
-          scrollbar-width:thin;scrollbar-color:#64867c #0a252b;
-        }
-        .ern-painel-mapa h1{font-size:26px;line-height:1.15;margin:8px 0 15px}
-        .ern-painel-mapa :is(input,select){
-          background:#071e27;border-color:#75938b55;
-          min-height:44px;border-radius:9px;
-        }
-        .ern-lista-cabecalho{
-          display:flex;align-items:center;justify-content:space-between;
-          gap:8px;margin:17px 0 8px;font-size:11px;
-        }
-        .ern-lista-cabecalho>span{color:#b7ccc4;font-size:10px}
-        .ern-resultados-destino{
-          list-style:none;padding:0;margin:0;max-height:190px;
-          overflow:auto;scrollbar-width:thin;
-        }
-        .ern-resultados-destino li+li{border-top:1px solid #ffffff12}
-        .ern-resultados-destino button{
-          width:100%;display:flex;align-items:center;gap:10px;
-          padding:10px 7px;text-align:left;border:0;border-radius:8px;
-          background:transparent;
-        }
-        .ern-resultados-destino button[aria-pressed=true]{
-          background:#d2ad5425;box-shadow:inset 2px 0 #e7bd67;
-        }
-        .ern-resultados-destino strong{display:block;font-size:11px;line-height:1.5}
-        .ern-resultados-destino small{font-size:10px}
-        .ern-local-indicador{
-          flex-shrink:0;display:grid;place-items:center;
-          width:27px;height:27px;border-radius:9px;
-          background:#36695e55;color:#eac477;
-        }
-        .ern-local-selecionado{margin-left:auto;font-size:9px;color:#f2cb80}
-        .ern-ajuda-busca{font-size:10px!important;color:#b6c9c3}
-        .ern-destino-resumo{
-          border-color:#e4bd69;background:#b9903420;
-          box-shadow:inset 3px 0 #edbd63;
-        }
-        .ern-sinal{background:#0a202b;border-color:#759ca35c}
-        .ern-acoes-mapa button.ern-principal{
-          background:#e7ba69;color:#211b0e;border-color:#e7ba69;
-        }
-        .ern-acoes-mapa button[aria-pressed=true]{
-          outline:1px solid #e7ba69;outline-offset:2px;
-        }
-        .ern-mapa-operacional .leaflet-control-zoom{
-          border:1px solid #c8b78588;box-shadow:0 5px 20px #0005;
-        }
-        .ern-mapa-operacional .leaflet-control-zoom a{
-          background:#102c34;color:#fff4d8;border-color:#708a8455;
-        }
-        .ern-mapa-operacional .leaflet-tooltip{
-          background:#102c34;color:#fff5dc;border:1px solid #e7bd67;
-          border-radius:9px;padding:8px 11px;font-size:11px;
-        }
-        .ern-mapa-operacional .leaflet-control-attribution{
-          background:#09242deb;color:#dbe5dc;
-        }
-        .ern-mapa-operacional .leaflet-control-attribution a{color:#f3d28c}
-        .ern-mapa-operacional .leaflet-control-scale-line{
-          background:#09242de8;color:#fff4db;border-color:#c9bd8c;
-        }
-        @media(prefers-reduced-motion:reduce){
-          .ern-mapa-operacional button{transition:none}
-        }
-        @media(max-width:767px){
-          .ern-barra-mapa{top:10px;left:10px;right:56px;gap:6px}
-          .ern-barra-mapa>div{padding:8px 11px}
-          .ern-barra-mapa small{font-size:9px}
-          .ern-painel-mapa{
-            top:auto;left:10px;right:10px;bottom:32px;
-            width:auto;max-height:45%;padding:14px;
-          }
-          .ern-resultados-destino{max-height:140px}
-          .ern-painel-mapa h1{font-size:23px}
-        }
+
+        @media(max-width:380px){.ern-mapa-metricas{display:none}}
+
+        .ern-mapa-operacional .ern-destino-resumo button{background:#e4b16c;color:#231b10;border-color:#e4b16c}
+        .ern-mapa-operacional .ern-destino-resumo button:hover:not(:disabled){background:#f1c482;color:#231b10;border-color:#f1c482}
+        .ern-mapa-operacional .ern-destino-confirmacao{font-size:10px;line-height:1.7;color:#c7e2d5;margin:10px 0 0}
+        .ern-mapa-operacional .ern-destino-confirmacao:empty{display:none}
+        .ern-mapa-operacional .ern-popup-destino .leaflet-popup-content-wrapper{background:#142329;color:#edf3ef;border:1px solid #e4b16c88;border-radius:12px;box-shadow:0 8px 28px #0006}
+        .ern-mapa-operacional .ern-popup-destino .leaflet-popup-tip{background:#142329}
+        .ern-mapa-operacional .ern-popup-destino .leaflet-popup-content{margin:18px 24px 18px 18px;line-height:1.7}
+        .ern-mapa-operacional .ern-popup-destino-conteudo strong{font:600 16px var(--font-work-sans),sans-serif;color:#f1c482}
+        .ern-mapa-operacional .ern-popup-destino-conteudo p{font:400 11px var(--font-work-sans),sans-serif;color:#c4d6ce;margin:8px 0 0}
+        .ern-mapa-operacional .ern-popup-destino .leaflet-popup-close-button{color:#edf3ef;width:28px;height:28px;font-size:21px}
       `}</style>
     </main>
   );

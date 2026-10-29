@@ -116,7 +116,10 @@ export default function CadastroOperadoraERN({ usuarioId }: Props) {
     'focus-visible:outline-[#F4C77E] disabled:opacity-60';
 
   return (
-    <div className="mt-6 min-w-0">
+    <div className="ern-cadastro-empresa mt-6 min-w-0">
+      <div className="ern-cadastro-etapas" aria-label="Etapa 2 de 2">
+        01 · Conta conectada<span aria-hidden="true" /><strong>02 · Sua empresa</strong>
+      </div>
       <h2 className="text-xl font-semibold text-[#F4C77E]">
         Cadastre sua operadora
       </h2>

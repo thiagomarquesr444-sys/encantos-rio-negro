@@ -8,7 +8,9 @@ import {
 } from 'react';
 import Link from 'next/link';
 
-import LogoERN from '@/app/components/LogoERN';
+import AcessoPremiumERN from '@/app/components/AcessoPremiumERN';
+import RequisitosSenhaERN from '@/app/components/RequisitosSenhaERN';
+import { validarSenhaERN } from '@/lib/politicaSenhaERN';
 import { supabase } from '@/lib/supabase';
 
 interface ContaSenha {
@@ -124,8 +126,9 @@ export default function NovaSenhaPage() {
 
     setErro('');
 
-    if (senha.length < 8) {
-      setErro('Use uma senha com pelo menos 8 caracteres.');
+    const erroSenha = validarSenhaERN(senha);
+    if (erroSenha) {
+      setErro(erroSenha);
       return;
     }
 
@@ -195,32 +198,14 @@ export default function NovaSenhaPage() {
   }
 
   return (
-    <main
-      className="flex min-h-dvh w-full flex-col bg-[#07110E] text-[#EDEDE3]"
-      style={{
-        paddingTop:
-          'max(1rem, env(safe-area-inset-top, 0px))',
-        paddingRight:
-          'max(1rem, env(safe-area-inset-right, 0px))',
-        paddingBottom:
-          'max(1.5rem, env(safe-area-inset-bottom, 0px))',
-        paddingLeft:
-          'max(1rem, env(safe-area-inset-left, 0px))',
-      }}
-    >
-      <div className="mx-auto my-auto w-full min-w-0 max-w-[460px] py-4">
+    <AcessoPremiumERN etapa="senha">
+      <div className="ern-acesso-form">
         <section
           aria-labelledby="senha-titulo"
           className="rounded-3xl border border-white/10 bg-[#0D1B16] p-5 shadow-xl sm:p-8"
         >
           <header className="text-center">
-            <Link
-              href="/"
-              aria-label="Ir ao portal Encantos Rio Negro"
-              className={`inline-flex rounded-full align-middle ${FOCO}`}
-            >
-              <LogoERN tamanho={76} prioridade />
-            </Link>
+
 
             <p className="mt-3 text-sm font-semibold text-[#F4C77E]">
               Encantos Rio Negro
@@ -324,20 +309,22 @@ export default function NovaSenhaPage() {
                 <input
                   id="nova-senha"
                   name="password"
+                  aria-describedby="ern-requisitos-nova-senha"
                   type={mostrarSenha ? 'text' : 'password'}
                   autoComplete="new-password"
                   autoCapitalize="none"
                   spellCheck={false}
-                  minLength={8}
+                  minLength={12}
                   required
                   disabled={salvando}
                   value={senha}
                   onChange={(event) =>
                     setSenha(event.target.value)
                   }
-                  placeholder="Pelo menos 8 caracteres"
+                  placeholder="Crie uma senha exclusiva"
                   className={INPUT}
                 />
+                <RequisitosSenhaERN senha={senha} id="ern-requisitos-nova-senha" />
               </div>
 
               <div>
@@ -355,7 +342,7 @@ export default function NovaSenhaPage() {
                   autoComplete="new-password"
                   autoCapitalize="none"
                   spellCheck={false}
-                  minLength={8}
+                  minLength={12}
                   required
                   disabled={salvando}
                   value={confirmacao}
@@ -404,6 +391,6 @@ export default function NovaSenhaPage() {
           </footer>
         </section>
       </div>
-    </main>
+    </AcessoPremiumERN>
   );
 }

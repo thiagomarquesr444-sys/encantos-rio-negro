@@ -2,6 +2,7 @@
 
 import {
   Suspense,
+  useCallback,
   useRef,
   useState,
   type FormEvent,
@@ -10,8 +11,16 @@ import {
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
-import LogoERN from '@/app/components/LogoERN';
+import CaptchaERN from '@/app/components/CaptchaERN';
+import { validarCaptchaERN, type TokenCaptchaERN } from '@/lib/captchaERN';
+
+const captchaHabilitado = process.env.NEXT_PUBLIC_ERN_CAPTCHA_HABILITADO === 'true';
+const captchaSitekey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? '';
+
+import AcessoPremiumERN from '@/app/components/AcessoPremiumERN';
 import AvisoPrivacidadeAcessoERN from '@/app/components/AvisoPrivacidadeAcessoERN';
+import RequisitosSenhaERN from '@/app/components/RequisitosSenhaERN';
+import { validarSenhaERN } from '@/lib/politicaSenhaERN';
 import { supabase } from '@/lib/supabase';
 import {
   interpretarTipoAcesso,
@@ -61,6 +70,9 @@ function mensagemDoErro(
       : '';
 
   switch (codigo) {
+    case 'captcha_failed':
+      return 'A verificação de segurança não foi aceita. Conclua uma nova verificação e tente novamente.';
+
     case 'invalid_credentials':
       return 'E-mail ou senha inválidos. Confira os dados e tente novamente.';
 
@@ -143,6 +155,12 @@ function FormularioLogin() {
   const [sucesso, setSucesso] =
     useState('');
 
+  const tokenCaptcha = useRef<TokenCaptchaERN | null>(null);
+  const [revisaoCaptcha, setRevisaoCaptcha] = useState(0);
+  const receberTokenCaptcha = useCallback((valor: string | null) => {
+    tokenCaptcha.current = valor ? { valor, recebidoEm: Date.now() } : null;
+  }, []);
+
   const emProcessamento =
     useRef(false);
 
@@ -171,6 +189,8 @@ function FormularioLogin() {
       return;
     }
 
+    tokenCaptcha.current = null;
+    setRevisaoCaptcha((atual) => atual + 1);
     setModo(proximo);
     setSenha('');
     setConfirmacaoSenha('');
@@ -501,11 +521,9 @@ function FormularioLogin() {
     }
 
     if (modo === 'cadastro') {
-      if (senha.length < 8) {
-        setErro(
-          'Use uma senha com pelo menos 8 caracteres.',
-        );
-
+      const erroSenha = validarSenhaERN(senha);
+      if (erroSenha) {
+        setErro(erroSenha);
         return;
       }
 
@@ -520,6 +538,15 @@ function FormularioLogin() {
         return;
       }
     }
+
+    const erroCaptcha = validarCaptchaERN(captchaHabilitado, captchaSitekey, tokenCaptcha.current);
+    if (erroCaptcha) {
+      setErro(erroCaptcha);
+      return;
+    }
+    const captchaToken = captchaHabilitado ? tokenCaptcha.current?.valor : undefined;
+    // Consumo local imediato: nenhuma segunda tentativa reutiliza este token.
+    tokenCaptcha.current = null;
 
     emProcessamento.current =
       true;
@@ -539,6 +566,7 @@ function FormularioLogin() {
             .resetPasswordForEmail(
               emailInformado,
               {
+                captchaToken,
                 redirectTo:
                   criarUrlRetorno(
                     '/auth/nova-senha',
@@ -582,6 +610,7 @@ function FormularioLogin() {
               password: senha,
 
               options: {
+                captchaToken,
                 emailRedirectTo:
                   criarUrlRetorno(
                     destinoAcesso,
@@ -650,6 +679,7 @@ function FormularioLogin() {
               emailInformado,
 
             password: senha,
+            options: { captchaToken },
           });
 
       if (error) {
@@ -681,6 +711,8 @@ function FormularioLogin() {
         'Não foi possível concluir a solicitação. Confira sua conexão e tente novamente.',
       );
     } finally {
+      tokenCaptcha.current = null;
+      setRevisaoCaptcha((atual) => atual + 1);
       emProcessamento.current =
         false;
 
@@ -745,23 +777,8 @@ function FormularioLogin() {
     'mb-2 block text-sm font-medium text-[#EDEDE3]/85';
 
   return (
-    <main
-      className="flex min-h-dvh w-full flex-col bg-[#07110E] text-[#EDEDE3]"
-      style={{
-        paddingTop:
-          'max(1rem, env(safe-area-inset-top, 0px))',
-
-        paddingRight:
-          'max(1rem, env(safe-area-inset-right, 0px))',
-
-        paddingBottom:
-          'max(1.5rem, env(safe-area-inset-bottom, 0px))',
-
-        paddingLeft:
-          'max(1rem, env(safe-area-inset-left, 0px))',
-      }}
-    >
-      <div className="mx-auto my-auto w-full min-w-0 max-w-[460px] py-2 sm:py-6">
+    <AcessoPremiumERN etapa={modo} perfil={acesso}>
+      <div className="ern-acesso-form">
         <Link
           href="/operadores#acessos-profissionais"
           className={`mb-3 inline-flex min-h-12 items-center gap-2 rounded-lg px-1 text-sm text-[#EDEDE3]/75 transition-colors hover:text-[#F4C77E] sm:mb-5 ${focoClass}`}
@@ -778,16 +795,7 @@ function FormularioLogin() {
           className="min-w-0 rounded-3xl border border-white/10 bg-[#0D1B16] p-5 shadow-xl sm:p-8"
         >
           <header className="text-center">
-            <Link
-              href="/"
-              aria-label="Ir ao portal Encantos Rio Negro"
-              className={`inline-flex rounded-full align-middle ${focoClass}`}
-            >
-              <LogoERN
-                tamanho={76}
-                prioridade
-              />
-            </Link>
+
 
             <p className="mt-3 text-sm font-semibold text-[#F4C77E]">
               Encantos Rio Negro
@@ -815,6 +823,14 @@ function FormularioLogin() {
             </p>
           </header>
 
+          <div className="ern-acesso-modos" role="group" aria-label="Acesso ou criação de conta">
+            <button type="button" disabled={bloqueado} aria-pressed={modo === 'login'} onClick={() => alterarModo('login')}>Entrar</button>
+            <button type="button" disabled={bloqueado} aria-pressed={modo === 'cadastro'} onClick={() => alterarModo('cadastro')}>Criar conta</button>
+          </div>
+          {modo === 'cadastro' && acesso === 'operadora' && <div className="ern-cadastro-etapas" aria-label="Etapa 1 de 2">
+            <strong>01 · Sua conta</strong><span aria-hidden="true" />02 · Sua empresa
+          </div>}
+
           {erro && (
             <div
               id="login-erro"
@@ -836,7 +852,7 @@ function FormularioLogin() {
           )}
 
           {googleDisponivel && (
-            <div className="mt-6">
+            <div className="ern-acesso-google mt-6">
               <button
                 type="button"
                 disabled={
@@ -972,6 +988,7 @@ function FormularioLogin() {
                 <input
                   id="login-senha"
                   name="password"
+                  aria-describedby={modo === 'cadastro' ? 'ern-requisitos-cadastro' : undefined}
                   type={
                     mostrarSenha
                       ? 'text'
@@ -990,7 +1007,7 @@ function FormularioLogin() {
                   minLength={
                     modo ===
                     'cadastro'
-                      ? 8
+                      ? 12
                       : undefined
                   }
                   required
@@ -1009,13 +1026,15 @@ function FormularioLogin() {
                   placeholder={
                     modo ===
                     'cadastro'
-                      ? 'Pelo menos 8 caracteres'
+                      ? 'Crie uma senha exclusiva'
                       : 'Sua senha'
                   }
                   className={
                     inputClass
                   }
                 />
+
+                {modo === 'cadastro' && <RequisitosSenhaERN senha={senha} id="ern-requisitos-cadastro" />}
 
                 <button
                   type="button"
@@ -1073,7 +1092,7 @@ function FormularioLogin() {
                   spellCheck={
                     false
                   }
-                  minLength={8}
+                  minLength={12}
                   required
                   disabled={
                     bloqueado
@@ -1141,6 +1160,9 @@ function FormularioLogin() {
                 </p>
               )}
 
+            {captchaHabilitado && <CaptchaERN sitekey={captchaSitekey} acao={modo}
+              revisao={revisaoCaptcha} onToken={receberTokenCaptcha} />}
+
             <button
               type="submit"
               disabled={
@@ -1154,7 +1176,7 @@ function FormularioLogin() {
             </button>
           </form>
 
-          <div className="mt-4 flex flex-col gap-1">
+          <div className="ern-acesso-acoes-secundarias mt-4 flex flex-col gap-1" data-modo={modo}>
             {modo ===
             'login' ? (
               <>
@@ -1225,7 +1247,7 @@ function FormularioLogin() {
           </footer>
         </section>
       </div>
-    </main>
+    </AcessoPremiumERN>
   );
 }
 
@@ -1233,12 +1255,9 @@ export default function LoginPage() {
   return (
     <Suspense
       fallback={
-        <div
-          role="status"
-          className="flex min-h-dvh items-center justify-center bg-[#07110E] px-5 text-sm text-[#EDEDE3]/75"
-        >
-          Carregando acesso...
-        </div>
+        <AcessoPremiumERN etapa="login">
+          <div className="ern-acesso-form"><section role="status" aria-live="polite">Carregando acesso...</section></div>
+        </AcessoPremiumERN>
       }
     >
       <FormularioLogin />
