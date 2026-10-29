@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import PreparacaoFiscalERN from '@/app/components/PreparacaoFiscalERN';
 import CadastroFiscalERN from '@/app/components/CadastroFiscalERN';
+import HistoricoRevisaoFiscalERN from '@/app/components/HistoricoRevisaoFiscalERN';
 
 type StatusFiscal =
   | 'rascunho'
@@ -577,6 +578,8 @@ export default function PainelFiscalERN() {
             <CadastroFiscalERN />
 
             <PreparacaoFiscalERN aoAtualizar={atualizar} />
+
+            <HistoricoRevisaoFiscalERN />
 
             <section
               aria-label="Atividade e controle fiscal"
