@@ -27,7 +27,13 @@ function motivo(reserva: ReservaFiscal): string | null {
   return null;
 }
 
-export default function PreparacaoFiscalERN({ aoAtualizar }: { aoAtualizar: () => void }) {
+export default function PreparacaoFiscalERN({
+  aoAtualizar,
+  aoSelecionarReserva,
+}: {
+  aoAtualizar: () => void;
+  aoSelecionarReserva: (reservaId: string) => void;
+}) {
   const [empresaId, setEmpresaId] = useState<string | null>(null);
   const [reservas, setReservas] = useState<ReservaFiscal[]>([]);
   const [selecionada, setSelecionada] = useState('');
@@ -69,11 +75,13 @@ export default function PreparacaoFiscalERN({ aoAtualizar }: { aoAtualizar: () =
     } catch (e) {
       setEmpresaId(null);
       setReservas([]);
+      setSelecionada('');
+      aoSelecionarReserva('');
       setAviso({ tipo: 'erro', mensagem: e instanceof Error ? e.message : 'Consulta indisponível.' });
     } finally {
       setCarregando(false);
     }
-  }, []);
+  }, [aoSelecionarReserva]);
 
   useEffect(() => { void carregar(); }, [carregar]);
 
@@ -162,7 +170,7 @@ export default function PreparacaoFiscalERN({ aoAtualizar }: { aoAtualizar: () =
             <p className="text-xs text-[#94A5A1]">{reservas.length} reservas analisadas · {elegiveis} potencialmente elegíveis</p>
             {parcial && <p className="text-xs text-amber-300">Amostra limitada a 100 reservas. Refine a seleção em uma próxima versão.</p>}
             <label htmlFor="ern-reserva-fiscal" className="block text-xs font-medium">Selecione a reserva</label>
-            <select id="ern-reserva-fiscal" value={selecionada} onChange={e => { setSelecionada(e.target.value); setConfirmado(false); setAviso(null); }} className="min-h-11 w-full rounded-lg border border-white/20 bg-[#202728] px-3 text-sm text-white">
+            <select id="ern-reserva-fiscal" disabled={processando || carregando} value={selecionada} onChange={e => { setSelecionada(e.target.value); aoSelecionarReserva(e.target.value); setConfirmado(false); setAviso(null); }} className="min-h-11 w-full rounded-lg border border-white/20 bg-[#202728] px-3 text-sm text-white">
               <option value="">Escolha uma reserva</option>
               {reservas.map(r => <option key={r.id} value={r.id}>{r.id.slice(0,8)} · {r.status ?? 'sem status'} · {moeda(Number(r.valor_total ?? 0))}{motivo(r) ? ' · PENDENTE' : ''}</option>)}
             </select>

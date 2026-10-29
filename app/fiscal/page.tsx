@@ -177,6 +177,7 @@ export default function PainelFiscalERN() {
   const [indicadores, setIndicadores] = useState<Indicadores>(VAZIO);
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
   const [versao, setVersao] = useState(0);
+  const [reservaFiscalSelecionada, setReservaFiscalSelecionada] = useState('');
 
   const atualizar = useCallback(() => {
     setVersao(atual => atual + 1);
@@ -577,9 +578,9 @@ export default function PainelFiscalERN() {
 
             <CadastroFiscalERN />
 
-            <PreparacaoFiscalERN aoAtualizar={atualizar} />
+            <PreparacaoFiscalERN aoAtualizar={atualizar} aoSelecionarReserva={setReservaFiscalSelecionada} />
 
-            <HistoricoRevisaoFiscalERN />
+            <HistoricoRevisaoFiscalERN reservaSelecionada={reservaFiscalSelecionada} />
 
             <section
               aria-label="Atividade e controle fiscal"

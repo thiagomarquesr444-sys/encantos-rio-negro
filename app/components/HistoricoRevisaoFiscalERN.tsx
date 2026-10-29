@@ -12,13 +12,13 @@ const rotulos: Record<Estado, string> = {
 const caixa = 'min-w-0 rounded-2xl border border-white/[0.08] bg-[#151A1B] p-4 text-[#F1F4EF] sm:p-5';
 const campo = 'mt-2 min-h-11 w-full rounded-xl border border-white/15 bg-[#101616] px-3 py-2 text-sm text-[#F1F4EF] focus-visible:outline-2 focus-visible:outline-[#E3A144] disabled:opacity-50';
 
-export default function HistoricoRevisaoFiscalERN() {
+export default function HistoricoRevisaoFiscalERN({ reservaSelecionada }: { reservaSelecionada: string }) {
   const [empresaId, setEmpresaId] = useState('');
   const [usuarioId, setUsuarioId] = useState('');
   const [editor, setEditor] = useState(false);
   const [reservas, setReservas] = useState<Reserva[]>([]);
   const [historico, setHistorico] = useState<Revisao[]>([]);
-  const [reservaId, setReservaId] = useState('');
+  const reservaId = reservaSelecionada;
   const [estado, setEstado] = useState<Estado>('em_preparacao');
   const [observacoes, setObservacoes] = useState('');
   const [carregando, setCarregando] = useState(true);
@@ -65,18 +65,20 @@ export default function HistoricoRevisaoFiscalERN() {
     return () => { ativo = false; };
   }, [versao]);
 
-  function selecionar(id: string) {
-    setReservaId(id); setErro(''); setAviso('');
-    const existente = historico.find(r => r.reserva_id === id);
+  // A mesma reserva controla a previa da DPS e esta revisao persistida.
+  // A troca de reserva descarta somente o rascunho local nao salvo.
+  useEffect(() => {
+    const existente = historico.find(r => r.reserva_id === reservaSelecionada);
     setEstado(existente?.estado ?? 'em_preparacao');
     setObservacoes(existente?.observacoes ?? '');
-  }
+    setAviso('');
+  }, [reservaSelecionada, historico]);
 
   async function salvar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!editor || !empresaId || !usuarioId || !reservaId || trava.current) return;
     if (observacoes.length > 1200) { setErro('Observações acima de 1.200 caracteres.'); return; }
-    if (!reservas.some(r => r.id === reservaId)) { setErro('Selecione uma reserva válida.'); return; }
+    if (!reservas.some(r => r.id === reservaId)) { setErro('Reserva selecionada não está disponível para esta operadora.'); return; }
     if (estado === 'revisado_internamente' && !window.confirm('Confirmar apenas a revisão INTERNA? Isto não autoriza nem emite NFS-e.')) return;
     trava.current = true; setSalvando(true); setErro(''); setAviso('');
     try {
@@ -94,8 +96,8 @@ export default function HistoricoRevisaoFiscalERN() {
           .select('id').single();
         if (error || !data) throw new Error('Registro não confirmado. Confira se já existe revisão para esta reserva antes de tentar novamente.');
       }
-      setAviso('Revisão interna salva. Nenhuma DPS ou NFS-e foi emitida.');
       atualizar();
+      setAviso('Revisão interna salva. Nenhuma DPS ou NFS-e foi emitida.');
     } catch (e) { setErro(e instanceof Error ? e.message : 'Erro ao salvar revisão.'); }
     finally { trava.current = false; setSalvando(false); }
   }
@@ -115,12 +117,12 @@ export default function HistoricoRevisaoFiscalERN() {
       {aviso && <p role="status" className="mt-3 rounded-lg border border-emerald-400/30 p-3 text-sm text-emerald-200">{aviso}</p>}
       {empresaId && !carregando && <div className="mt-4 grid min-w-0 gap-4 lg:grid-cols-2">
         <form onSubmit={salvar} className="min-w-0 space-y-3 rounded-xl border border-white/10 bg-[#101616] p-4">
-          <label className="block text-xs font-semibold">Reserva
-            <select className={campo} value={reservaId} onChange={e => selecionar(e.target.value)} disabled={salvando}>
-              <option value="">Selecione uma reserva</option>
-              {reservas.map(r => <option key={r.id} value={r.id}>{r.id.slice(0,8)} · {r.status ?? 'sem status'}</option>)}
-            </select>
-          </label>
+          <div className="rounded-lg border border-[#E3A144]/20 bg-[#E3A144]/[0.04] p-3 text-xs">
+            <p className="font-semibold text-[#E9B76B]">Reserva sincronizada com a preparação</p>
+            <p className="mt-1 break-words text-[#D6E2D9]">{reservaId
+              ? `Reserva ${reservaId.slice(0, 8)} · ${reservas.find(r => r.id === reservaId)?.status ?? 'Situação não disponível'}`
+              : 'Selecione uma reserva na Central Fiscal acima para registrar ou consultar a revisão.'}</p>
+          </div>
           <label className="block text-xs font-semibold">Etapa de revisão
             <select className={campo} value={estado} onChange={e => setEstado(e.target.value as Estado)} disabled={!editor || salvando}>
               {Object.entries(rotulos).map(([k,v]) => <option key={k} value={k}>{v}</option>)}
@@ -138,7 +140,7 @@ export default function HistoricoRevisaoFiscalERN() {
           <p className="mt-1 text-[11px] text-[#94A5A1]">Até 50 registros da sua operadora.</p>
           {historico.length === 0 ? <p className="mt-4 text-xs text-[#94A5A1]">Nenhuma revisão registrada.</p> :
             <ul className="mt-3 space-y-2">{historico.map(r =>
-              <li key={r.id} className="rounded-lg border border-white/[0.07] p-3">
+              <li key={r.id} className={`rounded-lg border p-3 ${r.reserva_id === reservaId ? 'border-[#E3A144]/50 bg-[#E3A144]/[0.04]' : 'border-white/[0.07]'}`}>
                 <div className="flex flex-wrap justify-between gap-2 text-xs"><strong>Reserva {r.reserva_id.slice(0,8)}</strong><span className="text-[#E9B76B]">{rotulos[r.estado] ?? 'Estado desconhecido'}</span></div>
                 <p className="mt-1 text-[11px] text-[#94A5A1]">Atualizado em {new Date(r.updated_at).toLocaleString('pt-BR', { timeZone:'America/Manaus' })}</p>
                 {r.observacoes && <p className="mt-2 whitespace-pre-wrap break-words text-xs text-[#C2CFC8]">{r.observacoes}</p>}
