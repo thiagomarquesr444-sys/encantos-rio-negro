@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import PreviaDPSERN from '@/app/components/PreviaDPSERN';
 
 type ReservaFiscal = {
   id: string;
@@ -182,6 +183,7 @@ export default function PreparacaoFiscalERN({ aoAtualizar }: { aoAtualizar: () =
           </div>
         </div>
       ) : null}
+      <PreviaDPSERN reservaId={selecionada} />
       {aviso && <p role="status" className={`mt-4 rounded-lg border p-3 text-xs ${aviso.tipo === 'sucesso' ? 'border-emerald-500/40 text-emerald-300' : aviso.tipo === 'aviso' ? 'border-amber-500/40 text-amber-300' : 'border-rose-500/40 text-rose-300'}`}>{aviso.mensagem}</p>}
     </section>
   );
