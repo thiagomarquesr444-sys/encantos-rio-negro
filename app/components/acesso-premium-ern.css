@@ -110,3 +110,27 @@
   .ern-acesso-premium .ern-acesso-manifesto{padding-top:0}
   .ern-acesso-premium .ern-acesso-form>section{padding:22px 18px!important}
 }
+
+/* V54: etapa intermediaria de acesso com foco unico. */
+.ern-acesso-premium[data-etapa="acesso"]{display:flex;flex-direction:column;min-height:100dvh;background:radial-gradient(ellipse at 50% 40%,#25352e55,transparent 65%),#0b1213}
+.ern-acesso-premium[data-etapa="acesso"] .ern-acesso-topo{width:100%;box-sizing:border-box}
+.ern-acesso-premium[data-etapa="acesso"] .ern-acesso-grade{display:block;width:100%;max-width:580px;margin:auto;box-sizing:border-box;padding:36px 20px}
+.ern-acesso-premium[data-etapa="acesso"] .ern-acesso-formulario{width:100%;min-width:0}
+.ern-acesso-premium[data-etapa="acesso"] .ern-acesso-form{display:flex;flex-direction:column;gap:18px}
+.ern-acesso-premium[data-etapa="acesso"] .ern-acesso-form>section{order:1;margin:0;padding:30px!important;border-color:#dfb77335;background:linear-gradient(145deg,#1a2527,#101b1d);box-shadow:0 24px 80px #0004;text-align:center}
+.ern-acesso-premium[data-etapa="acesso"] .ern-acesso-form>header{order:2;justify-content:center}
+.ern-acesso-premium[data-etapa="acesso"] .ern-acesso-form>p{order:3;margin:0;font-size:11px}
+.ern-acesso-premium[data-etapa="acesso"] .ern-acesso-form>section h1{font-size:clamp(25px,4vw,32px);line-height:1.2}
+.ern-acesso-premium[data-etapa="acesso"] .ern-acesso-form>section p{line-height:1.7}
+.ern-acesso-premium[data-etapa="acesso"] .ern-acesso-form>section>button{margin-top:24px}
+.ern-acesso-premium[data-etapa="acesso"] .ern-acesso-form>section form{text-align:left}
+.ern-acesso-premium[data-etapa="acesso"] .ern-acesso-form>header button{min-height:40px;font-size:12px;color:#c7d2cd}
+.ern-acesso-premium[data-etapa="acesso"] .ern-acesso-base{width:100%;box-sizing:border-box;margin-top:0}
+.ern-acesso-simbolo{display:grid;place-items:center;width:56px;height:56px;border:1px solid #dfb77355;border-radius:18px;margin:0 auto 20px;color:#edc586;background:#dfb7730a}
+@media(max-width:600px){
+ .ern-acesso-premium[data-etapa="acesso"] .ern-acesso-grade{padding:28px 16px}
+ .ern-acesso-premium[data-etapa="acesso"] .ern-acesso-form>section{padding:24px 20px!important}
+ .ern-acesso-premium[data-etapa="acesso"] .ern-acesso-marca strong{font-size:19px}
+ .ern-acesso-premium[data-etapa="acesso"] .ern-acesso-marca small{font-size:8px}
+ .ern-acesso-premium[data-etapa="acesso"] .ern-acesso-voltar{font-size:11px;padding:10px}
+}

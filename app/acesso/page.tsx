@@ -450,6 +450,9 @@ function ConteudoAcesso() {
           aria-busy={bloqueado}
           className="mt-8 min-w-0 rounded-3xl border border-white/10 bg-[#0D1B16] p-5 sm:mt-12 sm:p-8"
         >
+          <div className="ern-acesso-simbolo" aria-hidden="true">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none"><path d="M12 3 20 6v6c0 4-4 7-8 9-4-2-8-5-8-9V6l8-3Z" stroke="currentColor" strokeWidth="1.4"/><path d="m8 12 3 3 5-6" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/></svg>
+          </div>
           <h1
             id="acesso-titulo"
             className="break-words text-2xl leading-tight text-[#F0F0E8] sm:text-3xl"
@@ -460,11 +463,7 @@ function ConteudoAcesso() {
             {titulo}
           </h1>
 
-          {conta?.email && (
-            <p className="mt-3 break-all text-sm leading-6 text-[#EDEDE3]/65">
-              Conta conectada: {conta.email}
-            </p>
-          )}
+
 
           {erro && (
             <div
@@ -551,13 +550,7 @@ function ConteudoAcesso() {
                 {descricoes[tipoExibido]}
               </p>
 
-              {existente === 'operadora' && (
-                <p className="mt-4 text-sm leading-7 text-[#EDEDE3]/65">
-                  Cada integrante da equipe utiliza seu
-                  próprio usuário vinculado à empresa,
-                  conforme as permissões e o limite do plano.
-                </p>
-              )}
+
 
               {(tipoExibido === 'guia' ||
                 tipoExibido === 'fornecedor') && (
