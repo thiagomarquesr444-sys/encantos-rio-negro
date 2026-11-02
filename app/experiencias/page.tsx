@@ -1,12 +1,12 @@
 import type { Metadata } from 'next';
-import ExperienciasPublicasERN from '@/app/components/ExperienciasPublicasERN';
+import ExperienciasPremiumERN from '@/app/components/ExperienciasPremiumERN';
 
 export const metadata: Metadata = {
-  title: 'Experiências no Rio Negro, Amazonas | Encantos da Amazônia',
+  title: 'Experiências na Amazônia: pesca esportiva, rios, cultura e história | Encantos da Amazônia',
   description:
-    'Explore possibilidades de experiências no Rio Negro: natureza, navegação, cultura, sabores e pesca esportiva. Conheça o território e os profissionais da Rede EDA.',
+    'Pesca esportiva, navegação, natureza, festivais, sabores e a história dos municípios do Rio Negro. Planeje com o Concierge e fale com operadores da Rede EDA.',
 };
 
 export default function ExperienciasPage() {
-  return <ExperienciasPublicasERN />;
+  return <ExperienciasPremiumERN />;
 }
