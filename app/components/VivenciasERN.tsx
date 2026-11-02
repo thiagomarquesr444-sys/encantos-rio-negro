@@ -67,7 +67,7 @@ export function MidiaVivenciaERN({ midia }: { midia: MidiaPublicacao }) {
           src={midia.url}
           poster={midia.thumbnail_url || undefined}
           controls playsInline preload="none"
-          aria-label={midia.alt_text || 'Vídeo · Vivências ERN'}
+          aria-label={midia.alt_text || 'Vídeo · Vivências EDA'}
           onPlay={event => pauseOthers(event.currentTarget)}
           style={{ display: 'block', width: '100%', maxHeight: '66svh', minHeight: 180, objectFit: 'contain' }}
         />
@@ -293,12 +293,12 @@ export function CompartilharVivenciaERN({ post }: { post: PublicacaoPublica }) {
       ctx.strokeRect(48, 48, 984, 1254);
       ctx.fillStyle = '#f4c77e';
       ctx.font = 'bold 90px sans-serif';
-      ctx.fillText('ERN', 90, 180);
+      ctx.fillText('EDA', 90, 180);
       ctx.font = '28px sans-serif';
       ctx.fillText('ENCANTOS RIO NEGRO', 90, 235);
       ctx.fillStyle = '#fff7e7';
       ctx.font = 'bold 38px sans-serif';
-      ctx.fillText('Vivências ERN', 90, 360);
+      ctx.fillText('Vivências EDA', 90, 360);
 
       function linhas(text: string, y: number, font: string, height: number, max: number) {
         ctx!.font = font;
@@ -357,7 +357,7 @@ export function CompartilharVivenciaERN({ post }: { post: PublicacaoPublica }) {
   return (
     <div style={{ margin: '14px 0' }}>
       <button type="button" style={button} aria-expanded={aberto} onClick={() => setAberto(value => !value)}>
-        {tr('Compartilhar · ERN', 'Share · ERN', 'Compartir · ERN')}
+        {tr('Compartilhar · EDA', 'Share · EDA', 'Compartir · EDA')}
       </button>
       {aberto && (
         <div style={panel}>
@@ -483,7 +483,7 @@ export function ListaVivenciasERN({
   return (
     <section style={{ marginTop: 26, minWidth: 0 }} aria-label="Vivências ERN">
       <h2 style={{ fontFamily: 'var(--font-fraunces), Georgia, serif', fontSize: 28 }}>
-        {destino ? tr('Vivências neste lugar', 'Experiences here', 'Vivencias en este lugar') : 'Vivências ERN'}
+        {destino ? tr('Vivências neste lugar', 'Experiences here', 'Vivencias en este lugar') : 'Vivências EDA'}
       </h2>
       <p>{tr('O Rio Negro em movimento, pelas pessoas que fazem parte dele.', 'The Rio Negro in motion, through its people.', 'El río Negro en movimiento, a través de su gente.')}</p>
       {erro && <p role="alert">{erro}</p>}

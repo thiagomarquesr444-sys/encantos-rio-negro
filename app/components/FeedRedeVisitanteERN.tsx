@@ -6,6 +6,7 @@ import { CompartilharVivenciaERN, ListaVivenciasERN } from './VivenciasERN';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import Link from 'next/link';
 import { useLanguage } from './LanguageProvider';
+import LogoERN from './LogoERN';
 import { redeTranslations, type RedeTranslation } from '@/lib/i18n/rede';
 import { supabase } from '@/lib/supabase';
 import {
@@ -19,7 +20,10 @@ import './FeedRedeVisitanteERN.css';
 const PAGE = 12;
 const copy = {
   PT: {
-    title: 'O Rio Negro acontece aqui.', sub: 'Lugares, histórias e quem faz parte deles.',
+    title: 'Quem vive a Amazônia, mostra a Amazônia.', titleParts: ['Quem vive a', 'Amazônia', ', mostra a Amazônia.'], sub: 'Lugares, histórias e quem faz parte deles, do Rio Negro a Parintins.',
+    seeOnMap: 'Ver no mapa', featured: 'Destino em destaque', featuredName: 'Encontro das Águas', featuredText: 'Onde o Rio Negro encontra o Solimões, diante de Manaus.', openMap: 'Abrir no mapa',
+    verifiedTitle: 'Operadores verificados', viewProfile: 'Ver perfil', conciergeText: 'Gostou de uma história? Transforme em viagem.', conciergeCta: 'Planejar agora',
+    opsTitle: 'Trabalha com turismo?', opsText: 'Publique na Rede e apareça no mapa de Destinos.', opsCta: 'Encantos Gestão',
     feed: 'Explorar a rede', map: 'Explorar no mapa', experiences: 'Conhecer experiências',
     search: 'Buscar histórias, lugares e experiências', searchButton: 'Buscar', filters: 'Filtrar',
     territory: 'Território', allTerritories: 'Todos os territórios', profiles: 'Quem compartilha na rede',
@@ -29,7 +33,7 @@ const copy = {
     mediaError: 'Não foi possível abrir esta mídia.', retryImage: 'Tentar novamente',
     location: 'Explorar este território', plan: 'Planejar uma viagem', join: 'Fazer parte da EDA',
     joinText: 'Você atua na região? Conheça os acessos da rede.', operator: 'Operadora', guide: 'Guia', supplier: 'Fornecedor',
-    mapTitle: 'Uma história pode virar viagem.', mapText: 'Continue a descoberta pelos lugares do Rio Negro.',
+    mapTitle: 'Uma história pode virar viagem.', mapText: 'Continue a descoberta pelos lugares da Amazônia.',
     emptyTitle: 'Novas conexões começam com uma história.', emptyText: 'Ainda não há publicações disponíveis nesta seleção.',
     selection: 'Sua busca', clear: 'Limpar filtros', refresh: 'Atualizar publicações',
     socialUnavailable: 'As publicações estão disponíveis, mas não foi possível consultar suas interações. Atualize para tentar novamente.',
@@ -40,7 +44,10 @@ const copy = {
     newPosts: 'publicações adicionadas', scrollTop: 'Voltar ao início', filterActive: 'Filtros ativos',
   },
   EN: {
-    title: 'The Rio Negro happens here.', sub: 'Places, stories and the people behind them.',
+    title: 'Those who live the Amazon show the Amazon.', titleParts: ['Those who live the', 'Amazon', ' show the Amazon.'], sub: 'Places, stories and the people behind them, from the Rio Negro to Parintins.',
+    seeOnMap: 'See on the map', featured: 'Featured destination', featuredName: 'Meeting of the Waters', featuredText: 'Where the Rio Negro meets the Solimões, in front of Manaus.', openMap: 'Open on the map',
+    verifiedTitle: 'Verified operators', viewProfile: 'View profile', conciergeText: 'Loved a story? Turn it into a trip.', conciergeCta: 'Plan now',
+    opsTitle: 'Do you work in tourism?', opsText: 'Post on the Network and appear on the Destinations map.', opsCta: 'Encantos Gestão',
     feed: 'Explore the network', map: 'Explore the map', experiences: 'Discover experiences',
     search: 'Search stories, places and experiences', searchButton: 'Search', filters: 'Filter',
     territory: 'Territory', allTerritories: 'All territories', profiles: 'People sharing on the network',
@@ -50,7 +57,7 @@ const copy = {
     mediaError: 'This media could not be opened.', retryImage: 'Try again',
     location: 'Explore this territory', plan: 'Plan a trip', join: 'Join EDA',
     joinText: 'Do you work in the region? Explore the network access options.', operator: 'Tour operator', guide: 'Guide', supplier: 'Supplier',
-    mapTitle: 'A story can become a journey.', mapText: 'Continue discovering the places of the Rio Negro.',
+    mapTitle: 'A story can become a journey.', mapText: 'Continue discovering the places of the Amazon.',
     emptyTitle: 'New connections begin with a story.', emptyText: 'No posts are available for this selection yet.',
     selection: 'Your search', clear: 'Clear filters', refresh: 'Refresh posts',
     socialUnavailable: 'Posts are available, but your interactions could not be checked. Refresh to try again.',
@@ -61,7 +68,10 @@ const copy = {
     newPosts: 'posts added', scrollTop: 'Back to the beginning', filterActive: 'Active filters',
   },
   ES: {
-    title: 'El Río Negro sucede aquí.', sub: 'Lugares, historias y las personas que los hacen posibles.',
+    title: 'Quien vive la Amazonía, muestra la Amazonía.', titleParts: ['Quien vive la', 'Amazonía', ', muestra la Amazonía.'], sub: 'Lugares, historias y las personas que los hacen posibles, del Río Negro a Parintins.',
+    seeOnMap: 'Ver en el mapa', featured: 'Destino destacado', featuredName: 'Encuentro de las Aguas', featuredText: 'Donde el Río Negro encuentra al Solimões, frente a Manaos.', openMap: 'Abrir en el mapa',
+    verifiedTitle: 'Operadores verificados', viewProfile: 'Ver perfil', conciergeText: '¿Te gustó una historia? Conviértela en viaje.', conciergeCta: 'Planear ahora',
+    opsTitle: '¿Trabajas en turismo?', opsText: 'Publica en la Red y aparece en el mapa de Destinos.', opsCta: 'Encantos Gestão',
     feed: 'Explorar la red', map: 'Explorar el mapa', experiences: 'Conocer experiencias',
     search: 'Buscar historias, lugares y experiencias', searchButton: 'Buscar', filters: 'Filtrar',
     territory: 'Territorio', allTerritories: 'Todos los territorios', profiles: 'Quienes comparten en la red',
@@ -71,7 +81,7 @@ const copy = {
     mediaError: 'No se pudo abrir este contenido.', retryImage: 'Intentar de nuevo',
     location: 'Explorar este territorio', plan: 'Planear un viaje', join: 'Ser parte de EDA',
     joinText: '¿Trabajas en la región? Conoce los accesos de la red.', operator: 'Operadora', guide: 'Guía', supplier: 'Proveedor',
-    mapTitle: 'Una historia puede convertirse en un viaje.', mapText: 'Sigue descubriendo los lugares del Río Negro.',
+    mapTitle: 'Una historia puede convertirse en un viaje.', mapText: 'Sigue descubriendo los lugares de la Amazonía.',
     emptyTitle: 'Las nuevas conexiones comienzan con una historia.', emptyText: 'Todavía no hay publicaciones disponibles para esta selección.',
     selection: 'Tu búsqueda', clear: 'Limpiar filtros', refresh: 'Actualizar publicaciones',
     socialUnavailable: 'Las publicaciones están disponibles, pero no se pudieron consultar tus interacciones. Actualiza para intentarlo de nuevo.',
@@ -105,7 +115,13 @@ function placeName(p: PublicacaoPublica) { return p.localidade_texto || p.territ
 function mapHref(p: PublicacaoPublica) {
   if (p.destino_slug) return '/destinos?lugar=' + encodeURIComponent(p.destino_slug) + '&publicacao=' + encodeURIComponent(p.slug);
   const local = normalize([p.localidade_texto, p.territorio?.nome, p.autor.cidade].filter(Boolean).join(' '));
-  const scene = local.includes('novo airao') ? 'novo-airao' : local.includes('barcelos') ? 'barcelos' : null;
+  // ERN_REDE_PREMIUM_V1: liga a publicação ao destino no mapa.
+  const pares: [string, string][] = [
+    ['anavilhanas', 'anavilhanas'], ['novo airao', 'novo-airao'], ['mariua', 'mariua'], ['araca', 'serra-do-araca'],
+    ['barcelos', 'barcelos'], ['santa isabel', 'santa-isabel-do-rio-negro'], ['sao gabriel', 'sao-gabriel-da-cachoeira'],
+    ['encontro das aguas', 'encontro-das-aguas'], ['manaus', 'encontro-das-aguas'], ['parintins', 'parintins'],
+  ];
+  const scene = pares.find(([termo]) => local.includes(termo))?.[1] ?? null;
   return scene ? `/destinos?lugar=${scene}` : '/destinos';
 }
 function publicationDate(value: string, lang: string) {
@@ -180,7 +196,7 @@ function PostCard({ post, order, total, state, busy, ui, tr, lang, onFollow, onI
       {post.autor.categoria !== 'ern_editorial' && <button type="button" className="ern-r-follow" aria-pressed={following} disabled={!known || busy.has(`follow:${post.autor.id}`)} onClick={() => void onFollow(post.autor.id)}>{following ? tr.feed.following : tr.feed.follow}</button>}
     </header>
     <MediaGallery post={post} ui={ui} eager={order === 0} />
-    <div className="ern-r-post-body"><div className="ern-r-post-tags">{category && <span>{category}</span>}{post.destaque && <span>{tr.feed.featured}</span>}<Link href={mapHref(post)} aria-label={`${ui.location}: ${placeName(post)}`}><Icon name="go" />{placeName(post)}</Link></div>
+    <div className="ern-r-post-body"><div className="ern-r-post-tags">{category && <span>{category}</span>}{post.destaque && <span>{tr.feed.featured}</span>}<Link className="ern-r-no-mapa" href={mapHref(post)} aria-label={`${ui.seeOnMap}: ${placeName(post)}`}><Icon name="go" />{placeName(post)} <span aria-hidden="true">· {ui.seeOnMap}</span></Link></div>
       <h2 id={`ern-r-title-${post.id}`}><Link href={postHref(post)}>{post.titulo}</Link></h2>
       {caption && <><p id={`ern-r-caption-${post.id}`} className={expanded ? 'ern-r-caption' : 'ern-r-caption ern-r-clamp'}>{caption}</p>{caption.length > 220 && <button type="button" className="ern-r-read-more" aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>{expanded ? ui.collapse : ui.expand}</button>}</>}
       <Link className="ern-r-read-post" href={postHref(post)}>{ui.read} <Icon name="arrow" /></Link>
@@ -449,49 +465,13 @@ export default function FeedRedeVisitanteERN() {
   return <div className="ern-r-root">
     <a className="ern-r-skip" href="#ern-r-feed-title">{ui.feed}</a>
     <div className="ern-r-layout">
-      <aside className="ern-r-left" aria-label="EDA"><div className="ern-r-sticky"><Link className="ern-r-brand" href="/rede"><span className="ern-r-brand-mark"><Icon name="compass" /></span><span>Rede EDA<small>Encantos da Amazônia</small></span></Link><nav className="ern-r-nav"><button type="button" aria-current={abaERN === 'rede' && !filtered ? 'page' : undefined} onClick={() => { selecionarAbaERN('rede'); clear(); beforeFeed.current?.focus(); }}><Icon name="compass" />{ui.feed}</button><button type="button" aria-current={abaERN === 'vivencias' ? 'page' : undefined} onClick={() => selecionarAbaERN('vivencias')}><span aria-hidden="true">▶</span>Vivências EDA</button><Link href="/destinos"><Icon name="map" />{ui.map}</Link><Link href="/experiencias"><Icon name="go" />{ui.experiences}</Link></nav><div className="ern-r-left-note"><p>{ui.joinText}</p><Link href="/acesso?acesso=operadora">{ui.operator} ↗</Link><Link href="/acesso?acesso=guia">{ui.guide} ↗</Link><Link href="/acesso?acesso=fornecedor">{ui.supplier} ↗</Link></div><div className="ern-r-legal"><Link href="/privacidade">{ui.privacy}</Link><Link href="/termos">{ui.terms}</Link></div></div></aside>
+      <aside className="ern-r-left" aria-label="EDA"><div className="ern-r-sticky"><Link className="ern-r-brand" href="/rede"><LogoERN tamanho={44} /><span>Rede EDA<small>Encantos da Amazônia</small></span></Link><nav className="ern-r-nav"><button type="button" aria-current={abaERN === 'rede' && !filtered ? 'page' : undefined} onClick={() => { selecionarAbaERN('rede'); clear(); beforeFeed.current?.focus(); }}><Icon name="compass" />{ui.feed}</button><button type="button" aria-current={abaERN === 'vivencias' ? 'page' : undefined} onClick={() => selecionarAbaERN('vivencias')}><span aria-hidden="true">▶</span>Vivências EDA</button><Link href="/destinos"><Icon name="map" />{ui.map}</Link><Link href="/experiencias"><Icon name="go" />{ui.experiences}</Link></nav><div className="ern-r-left-note"><strong>{ui.opsTitle}</strong><p>{ui.opsText}</p><Link className="ern-r-ouro" href="/acesso?acesso=operadora">{ui.opsCta} →</Link><span className="ern-r-left-links"><Link href="/acesso?acesso=guia">{ui.guide} ↗</Link><Link href="/acesso?acesso=fornecedor">{ui.supplier} ↗</Link></span></div><div className="ern-r-legal"><Link href="/privacidade">{ui.privacy}</Link><Link href="/termos">{ui.terms}</Link></div></div></aside>
       <div className="ern-r-main">
-        <header className="ern-r-intro"><p>REDE EDA</p><h1 ref={beforeFeed} tabIndex={-1} id="ern-r-feed-title">{ui.title}</h1><span>{ui.sub}</span><nav className="ern-r-mobile-nav"><Link href="/destinos"><Icon name="map" />{ui.map}</Link><Link href="/experiencias">{ui.experiences} ↗</Link></nav></header>
-        <div
-          role="group"
-          aria-label={idioma === 'EN' ? 'Explore the network' : idioma === 'ES' ? 'Explorar la red' : 'Explorar a rede'}
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 8,
-            margin: '20px 0',
-          }}
-        >
-          <button
-            type="button"
-            className="ern-r-button"
-            aria-pressed={abaERN === 'rede'}
-            onClick={() => selecionarAbaERN('rede')}
-            style={{
-              background: abaERN === 'rede' ? '#8a4b12' : 'transparent',
-              color: abaERN === 'rede' ? '#fffaf0' : '#8a4b12',
-            }}
-          >
-            {ui.feed}
-          </button>
-
-          <button
-            type="button"
-            className="ern-r-button"
-            aria-pressed={abaERN === 'vivencias'}
-            onClick={() => selecionarAbaERN('vivencias')}
-            style={{
-              background: abaERN === 'vivencias' ? '#8a4b12' : 'transparent',
-              color: abaERN === 'vivencias' ? '#fffaf0' : '#8a4b12',
-            }}
-          >
-            <span aria-hidden="true">▶ </span>
-            Vivências EDA
-          </button>
-
-          <Link className="ern-r-button" href="/destinos">
-            {ui.map} ↗
-          </Link>
+        <header className="ern-r-intro"><p>REDE EDA</p><h1 ref={beforeFeed} tabIndex={-1} id="ern-r-feed-title" aria-label={ui.title}><span aria-hidden="true">{ui.titleParts[0]} <span className="ern-r-dourado">{ui.titleParts[1]}</span>{ui.titleParts[2]}</span></h1><span>{ui.sub}</span><nav className="ern-r-mobile-nav"><Link href="/destinos"><Icon name="map" />{ui.map}</Link><Link href="/experiencias">{ui.experiences} ↗</Link></nav></header>
+        <div className="ern-r-abas" role="group" aria-label={ui.feed}>
+          <button type="button" aria-pressed={abaERN === 'rede'} onClick={() => selecionarAbaERN('rede')}>{ui.feed}</button>
+          <button type="button" aria-pressed={abaERN === 'vivencias'} onClick={() => selecionarAbaERN('vivencias')}><span aria-hidden="true">▶ </span>Vivências EDA</button>
+          <Link href="/destinos"><Icon name="map" />{ui.map}</Link>
         </div>
 
         <div
@@ -503,7 +483,7 @@ export default function FeedRedeVisitanteERN() {
         <div className="ern-r-category-strip" aria-label={tr.feed.allCategories}><button type="button" aria-pressed={!category} onClick={() => setCategory('')}>{tr.feed.allCategories}</button>{categories.map(item => <button type="button" key={item.id} aria-pressed={category === item.id} onClick={() => setCategory(item.id)}>{(tr.categories as Record<string, string>)[item.slug] ?? item.nome}</button>)}</div>
         {filtered && <div className="ern-r-filter-summary"><span>{ui.selection}: {[search, territories.find(item => item.id === territory)?.nome, categories.find(item => item.id === category)?.nome].filter(Boolean).join(' · ')}</span><button type="button" onClick={clear}>{ui.clear} ×</button></div>}
         {metadataError && <p role="status" className="ern-r-inline-notice">{ui.metadataUnavailable}</p>}
-        {authors.length > 0 && <section className="ern-r-authors" aria-label={ui.profiles}><div className="ern-r-authors-label">{ui.profiles}</div><div className="ern-r-author-strip">{authors.map(author => <Link key={author.id} href={profileHref(author)}><Avatar author={author} /><span>{author.nome_publico}</span></Link>)}</div></section>}
+        {authors.length > 0 && <section className="ern-r-authors" aria-label={ui.profiles}><div className="ern-r-authors-label">{ui.profiles}</div><div className="ern-r-author-strip">{authors.map(author => <Link key={author.id} href={profileHref(author)} data-verificado={author.verificado || undefined}><span className="ern-r-anel"><Avatar author={author} /></span><span>{author.nome_publico}</span></Link>)}</div></section>}
         {socialMissing && <div role="status" className="ern-r-inline-notice">{ui.socialUnavailable} <button type="button" onClick={() => setRevision(value => value + 1)}>{ui.refresh}</button></div>}
         {state.kind === 'loading' && <div className="ern-r-loading" role="status"><span className="ern-r-loading-mark" aria-hidden="true">≈</span>{ui.loading}</div>}
         {state.kind === 'error' && <section className="ern-r-empty" role="alert"><h2>{tr.feed.errorTitle}</h2><p>{state.message}</p><button type="button" className="ern-r-button" onClick={() => setRevision(value => value + 1)}>{tr.feed.retry}</button></section>}
@@ -526,7 +506,18 @@ export default function FeedRedeVisitanteERN() {
           <ListaVivenciasERN />
         )}
       </div>
-      <aside className="ern-r-right"><div className="ern-r-sticky"><Link className="ern-r-map-card" href="/destinos"><div><Photo src="/images/regiao/barceloscapital.jpg.jpeg" alt="Barcelos · acervo EDA" /></div><span className="ern-r-kicker">ENCANTOS RIO NEGRO</span><h2>{ui.mapTitle}</h2><p>{ui.mapText}</p><strong>{ui.map} <Icon name="arrow" /></strong></Link><section className="ern-r-plan-card"><Icon name="compass" /><h2>EDA Concierge</h2><p>{ui.sub}</p><Link href="/#concierge">{ui.plan} ↗</Link></section><p className="ern-r-right-footer">{ui.footer}</p></div></aside>
+      <aside className="ern-r-right"><div className="ern-r-sticky">
+        <Link className="ern-r-destaque" href="/destinos?lugar=encontro-das-aguas">
+          <span className="ern-r-destaque-foto"><Photo src="/images/fundo/encontro-das-aguas-celular.jpg" alt="" /><span className="ern-r-destaque-selo">{ui.featured}</span></span>
+          <span className="ern-r-destaque-texto"><strong>{ui.featuredName}</strong><span>{ui.featuredText}</span><span className="ern-r-destaque-acao"><Icon name="map" />{ui.openMap}</span></span>
+        </Link>
+        {authors.some(author => author.verificado) && <section className="ern-r-verificados" aria-labelledby="ern-r-verificados-titulo">
+          <h2 id="ern-r-verificados-titulo">{ui.verifiedTitle}</h2>
+          {authors.filter(author => author.verificado).slice(0, 4).map(author => <Link key={author.id} href={profileHref(author)}><Avatar author={author} /><span><strong>{author.nome_publico}</strong><small>{[author.cidade, author.uf].filter(Boolean).join(' · ') || 'Amazonas'}</small></span><em>{ui.viewProfile}</em></Link>)}
+        </section>}
+        <section className="ern-r-plan-card"><span className="ern-r-plan-mark" aria-hidden="true">✦</span><h2>EDA Concierge</h2><p>{ui.conciergeText}</p><Link href="/#concierge">{ui.conciergeCta} →</Link></section>
+        <p className="ern-r-right-footer">{ui.footer}</p>
+      </div></aside>
     </div>
     {notice && <div className="ern-r-toast" role="status"><p>{notice.text}</p>{notice.login && <Link href="/acesso">{ui.join} ↗</Link>}<button type="button" onClick={() => setNotice(null)} aria-label={ui.close}>×</button></div>}
   </div>;

@@ -257,6 +257,27 @@ export const destinosTranslations = {
           'Serras • Corredeiras • Povos indígenas',
         etiqueta: 'DESTINO',
       },
+
+      // ERN_DESTINOS_AMAZONAS_V1
+      'encontro-das-aguas': {
+        titulo: 'Encontro das Águas',
+        local: 'Manaus',
+        descricao:
+          'Diante de Manaus, as águas escuras do Rio Negro e as águas barrentas do Solimões correm lado a lado por quilômetros antes de se misturar.',
+        destaque:
+          'Rios • Paisagem • Passeio de barco',
+        etiqueta: 'DESTINO',
+      },
+
+      parintins: {
+        titulo: 'Parintins',
+        local: 'Baixo Amazonas',
+        descricao:
+          'Ilha no Rio Amazonas que se divide entre o azul do Caprichoso e o vermelho do Garantido no Festival Folclórico, celebrado no fim de junho.',
+        destaque:
+          'Festival • Boi-bumbá • Cultura',
+        etiqueta: 'DESTINO',
+      },
     },
   },
 
@@ -520,6 +541,27 @@ export const destinosTranslations = {
           'Mountains • Rapids • Indigenous peoples',
         etiqueta: 'DESTINATION',
       },
+
+      // ERN_DESTINOS_AMAZONAS_V1
+      'encontro-das-aguas': {
+        titulo: 'Meeting of the Waters',
+        local: 'Manaus',
+        descricao:
+          'In front of Manaus, the dark waters of the Rio Negro and the muddy waters of the Solimões run side by side for kilometres before mixing.',
+        destaque:
+          'Rivers • Scenery • Boat trip',
+        etiqueta: 'DESTINATION',
+      },
+
+      parintins: {
+        titulo: 'Parintins',
+        local: 'Lower Amazon',
+        descricao:
+          'An island on the Amazon River that splits between the blue of Caprichoso and the red of Garantido during the Folklore Festival in late June.',
+        destaque:
+          'Festival • Boi-bumbá • Culture',
+        etiqueta: 'DESTINATION',
+      },
     },
   },
 
@@ -781,6 +823,27 @@ export const destinosTranslations = {
           'Rápidos, islas, playas y sierras en el horizonte, en el municipio con mayor presencia de pueblos indígenas de Brasil.',
         destaque:
           'Sierras • Rápidos • Pueblos indígenas',
+        etiqueta: 'DESTINO',
+      },
+
+      // ERN_DESTINOS_AMAZONAS_V1
+      'encontro-das-aguas': {
+        titulo: 'Encuentro de las Aguas',
+        local: 'Manaos',
+        descricao:
+          'Frente a Manaos, las aguas oscuras del Río Negro y las aguas barrosas del Solimões corren lado a lado durante kilómetros antes de mezclarse.',
+        destaque:
+          'Ríos • Paisaje • Paseo en barco',
+        etiqueta: 'DESTINO',
+      },
+
+      parintins: {
+        titulo: 'Parintins',
+        local: 'Bajo Amazonas',
+        descricao:
+          'Isla del río Amazonas que se divide entre el azul de Caprichoso y el rojo de Garantido en el Festival Folclórico, a finales de junio.',
+        destaque:
+          'Festival • Boi-bumbá • Cultura',
         etiqueta: 'DESTINO',
       },
     },

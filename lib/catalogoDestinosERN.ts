@@ -65,18 +65,7 @@ export const CATALOGO_DESTINOS_ERN: DestinoCatalogo[] = [
   { tipo: 'mapa', id: 'novo-airao', regiao: 'baixo', interesses: ['aguas', 'natureza', 'cultura'], imagem: '/images/destinos/novo-airao/capa.jpg' },
   { tipo: 'mapa', id: 'jau', regiao: 'baixo', interesses: ['natureza'], imagem: '/images/regiao/ern-amazonia.jpg' },
   { tipo: 'mapa', id: 'festival-peixe-boi', regiao: 'baixo', interesses: ['cultura'], imagem: '/images/cultura/festivaldopeixeboi.jpg' },
-  {
-    tipo: 'curadoria',
-    id: 'encontro-das-aguas',
-    regiao: 'baixo',
-    interesses: ['aguas'],
-    imagem: null,
-    textos: {
-      PT: { titulo: 'Encontro das Águas', local: 'Manaus', descricao: 'Onde o Rio Negro encontra o Solimões e as duas águas correm lado a lado antes de se misturar.' },
-      EN: { titulo: 'Meeting of the Waters', local: 'Manaus', descricao: 'Where the Rio Negro meets the Solimões and the two waters run side by side before mixing.' },
-      ES: { titulo: 'Encuentro de las Aguas', local: 'Manaos', descricao: 'Donde el Río Negro se encuentra con el Solimões y las dos aguas corren lado a lado antes de mezclarse.' },
-    },
-  },
+  { tipo: 'mapa', id: 'encontro-das-aguas', regiao: 'baixo', interesses: ['aguas'], imagem: '/images/fundo/encontro-das-aguas-celular.jpg' },
 
   // Alto Rio Negro
   { tipo: 'mapa', id: 'santa-isabel-do-rio-negro', regiao: 'alto', interesses: ['aguas', 'cultura'], imagem: '/images/destinos/santa-isabel/santa-isabel-praca.jpg' },

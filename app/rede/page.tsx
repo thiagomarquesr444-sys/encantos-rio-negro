@@ -2,13 +2,13 @@
 
 import PublicHeader from '@/app/components/PublicHeader';
 import FeedRedeVisitanteERN from '@/app/components/FeedRedeVisitanteERN';
-import TemaPortalERN from '@/app/components/TemaPortalERN';
 
+// ERN_REDE_PREMIUM_V1: tema fixo verde-noite (sem alternância de modo).
 export default function RedePage() {
   return (
-    <TemaPortalERN>
+    <div className="min-h-dvh bg-[#07110E] text-[#EDEDE3]">
       <PublicHeader />
       <main><FeedRedeVisitanteERN /></main>
-    </TemaPortalERN>
+    </div>
   );
 }
