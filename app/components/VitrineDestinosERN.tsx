@@ -129,7 +129,7 @@ export default function VitrineDestinosERN({
         <div
           role="group"
           aria-label={t.eyebrow}
-          className="mt-12 flex gap-2 overflow-x-auto pb-2"
+          className="mt-12 flex gap-2 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
           {ABAS.map((item) => {
             const ativa = item === aba;

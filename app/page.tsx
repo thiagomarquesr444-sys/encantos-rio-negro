@@ -39,11 +39,22 @@ export default function Home() {
   function buscarDestino(texto: string) {
     setBusca(texto);
     const reduzido = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const alvo = () => document.getElementById('destinos');
+
+    // Espera a vitrine aplicar o filtro antes de rolar.
     window.requestAnimationFrame(() => {
-      document
-        .getElementById('destinos')
-        ?.scrollIntoView({ behavior: reduzido ? 'auto' : 'smooth', block: 'start' });
+      window.requestAnimationFrame(() => {
+        alvo()?.scrollIntoView({ behavior: reduzido ? 'auto' : 'smooth', block: 'start' });
+      });
     });
+
+    // Garante a chegada aos resultados se a rolagem suave for interrompida.
+    window.setTimeout(() => {
+      const secao = alvo();
+      if (secao && Math.abs(secao.getBoundingClientRect().top) > 160) {
+        secao.scrollIntoView({ behavior: 'auto', block: 'start' });
+      }
+    }, 1200);
   }
 
   return (

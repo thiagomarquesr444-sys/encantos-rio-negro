@@ -10,7 +10,7 @@ import { homeTranslations, type HomeTranslation } from '@/lib/i18n/home';
 
 const textos = {
   PT: {
-    placeholder: 'Para onde você quer ir no Rio Negro?',
+    placeholder: 'Para onde você quer ir?',
     rotulo: 'Buscar destino',
     buscar: 'Buscar',
     sugestoes: 'Populares:',
@@ -22,7 +22,7 @@ const textos = {
     ],
   },
   EN: {
-    placeholder: 'Where do you want to go on the Rio Negro?',
+    placeholder: 'Where do you want to go?',
     rotulo: 'Search destination',
     buscar: 'Search',
     sugestoes: 'Popular:',
@@ -34,7 +34,7 @@ const textos = {
     ],
   },
   ES: {
-    placeholder: '¿A dónde quieres ir en el Río Negro?',
+    placeholder: '¿A dónde quieres ir?',
     rotulo: 'Buscar destino',
     buscar: 'Buscar',
     sugestoes: 'Populares:',
