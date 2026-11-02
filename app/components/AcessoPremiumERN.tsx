@@ -3,42 +3,90 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import LogoERN from './LogoERN';
 import './acesso-premium-ern.css';
-type Props = { children: ReactNode; etapa: 'login' | 'cadastro' | 'recuperacao' | 'acesso' | 'senha'; perfil?: 'operadora' | 'guia' | 'fornecedor' | null };
+
+// ERN_ACESSO_PREMIUM_V2
+// Moldura das telas de login, cadastro e recuperação no padrão Encantos da
+// Amazônia: foto do Encontro das Águas, promessa clara, escolha do perfil
+// e o cartão do formulário. A lógica de autenticação fica nas páginas.
+
+type Perfil = 'operadora' | 'guia' | 'fornecedor';
+type Props = { children: ReactNode; etapa: 'login' | 'cadastro' | 'recuperacao' | 'acesso' | 'senha'; perfil?: Perfil | null };
+
+const PERFIS: { id: Perfil; nome: string; icone: string }[] = [
+  { id: 'operadora', nome: 'Operadora', icone: '🏢' },
+  { id: 'guia', nome: 'Guia', icone: '🧭' },
+  { id: 'fornecedor', nome: 'Fornecedor', icone: '🚤' },
+];
+
+const BENEFICIOS: Record<Perfil | 'geral', [string, string][]> = {
+  geral: [
+    ['📅', 'Reservas, clientes e financeiro em um só lugar'],
+    ['🏹', 'Sua vitrine na Rede EDA e no mapa de Destinos'],
+    ['💬', 'Visitantes chamando você direto no WhatsApp'],
+  ],
+  operadora: [
+    ['📅', 'Reservas, clientes, vouchers e financeiro da empresa'],
+    ['👥', 'Equipe com acessos por função'],
+    ['🏹', 'Perfil verificado na Rede EDA e no mapa de Destinos'],
+  ],
+  guia: [
+    ['🧭', 'Perfil profissional próprio, independente das operadoras'],
+    ['📍', 'Suas experiências no mapa de cada cidade'],
+    ['💬', 'Contato direto com visitantes pelo WhatsApp'],
+  ],
+  fornecedor: [
+    ['🚤', 'Barcos, hospedagens, transporte e serviços em destaque'],
+    ['🤝', 'Conexão com as operadoras da região'],
+    ['🏹', 'Presença na Rede EDA para quem planeja a viagem'],
+  ],
+};
+
 export default function AcessoPremiumERN({ children, etapa, perfil }: Props) {
   const cadastrar = etapa === 'cadastro';
   const recuperar = etapa === 'recuperacao' || etapa === 'senha';
-  const nome = perfil === 'operadora' ? 'OPERADORA DE TURISMO' : perfil === 'guia' ? 'GUIA INDEPENDENTE' : perfil === 'fornecedor' ? 'FORNECEDOR DA REDE' : 'REDE DE TURISMO';
-  return <main className="ern-acesso-premium" data-etapa={etapa}>
+  const mostrarPerfis = etapa === 'login' || etapa === 'cadastro';
+  const nome = perfil === 'operadora' ? 'Operadora de turismo' : perfil === 'guia' ? 'Guia de turismo' : perfil === 'fornecedor' ? 'Fornecedor da Rede' : 'Acesso profissional';
+  const beneficios = BENEFICIOS[perfil ?? 'geral'];
+
+  return <main className="ern-acesso-premium ern-acesso-v2" data-etapa={etapa}>
     <header className="ern-acesso-topo">
       <Link href="/" className="ern-acesso-marca" aria-label="Encantos da Amazônia — voltar ao portal">
-        <LogoERN tamanho={48} prioridade />
-        <span><strong>Encantos Gestão</strong><small>TERRITÓRIO DE POSSIBILIDADES</small></span>
+        <LogoERN tamanho={44} prioridade />
+        <span><strong>Encantos Gestão</strong><small>PARA QUEM FAZ O TURISMO NO AMAZONAS</small></span>
       </Link>
-      <Link href="/" className="ern-acesso-voltar">Explorar o portal <span aria-hidden="true">↗</span></Link>
+      <Link href="/operadores" className="ern-acesso-voltar"><span aria-hidden="true">←</span> Conhecer a plataforma</Link>
     </header>
     <div className="ern-acesso-grade">
-      {etapa !== 'acesso' && <aside className="ern-acesso-manifesto" aria-label="Boas-vindas à ERN">
-        <span className="ern-acesso-etiqueta"><i aria-hidden="true" />{nome}</span>
-        <h2>{recuperar ? <>Retome sua conexão.<br /><em>Seu espaço espera.</em></> : cadastrar ? <>Sua jornada começa<br /><em>com uma conexão.</em></> : <>O Rio Negro conecta.<br /><em>Você faz acontecer.</em></>}</h2>
-        <p>{recuperar ? 'Recupere o acesso para continuar sua jornada na Encantos da Amazônia.' : perfil === 'guia' ? 'Seu conhecimento do território encontra um espaço próprio na rede de turismo do Rio Negro.' : perfil === 'fornecedor' ? 'Produtos, serviços e relações que aproximam seu negócio de quem movimenta o turismo regional.' : 'Organize sua operação e construa novas conexões no Alto e Baixo Rio Negro.'}</p>
-        <div className="ern-acesso-arte" aria-hidden="true">
-          <svg viewBox="0 0 640 300" fill="none">
-            <defs><linearGradient id="ern-rio-ouro" x1="50" y1="40" x2="600" y2="260" gradientUnits="userSpaceOnUse"><stop stopColor="#765d38"/><stop offset=".5" stopColor="#f1cd86"/><stop offset="1" stopColor="#84673e"/></linearGradient></defs>
-            <g stroke="#c9d4bd" strokeOpacity=".08">{[35,70,105,140,175,210,245,280].map(y => <path key={y} d={`M0 ${y}H640`} />)}{[40,120,200,280,360,440,520,600].map(x => <path key={x} d={`M${x} 0V300`} />)}</g>
-            <g stroke="url(#ern-rio-ouro)">
-              <path d="M-30 235C80 270 65 115 175 145S270 280 350 165 440 40 525 85 575 190 680 120" strokeWidth="28" opacity=".05"/>
-              <path d="M-30 235C80 270 65 115 175 145S270 280 350 165 440 40 525 85 575 190 680 120" strokeWidth="1.5"/>
-              <path d="M8 261C110 280 97 143 174 167S282 299 372 176 457 68 524 107 604 212 660 161" opacity=".28"/>
-              <path d="M175 145C178 100 133 69 180 15M350 165C310 137 317 66 281 25M525 85C554 40 592 55 610 0" opacity=".4"/>
-            </g>
-            {[[84,215],[175,145],[283,213],[350,165],[438,71],[525,85]].map(([x,y],i) => <g key={i}><circle cx={x} cy={y} r="14" fill="#e1b774" fillOpacity=".05"/><circle cx={x} cy={y} r="6" stroke="#edc586" strokeOpacity=".4"/><circle cx={x} cy={y} r="2" fill="#edc586"/></g>)}
-          </svg>
-          <div className="ern-acesso-arte-legenda"><span>ALTO RIO NEGRO</span><span>BAIXO RIO NEGRO</span></div>
+      {etapa !== 'acesso' && <aside className="ern-acesso-manifesto" aria-label="Boas-vindas à Encantos Gestão">
+        <picture className="ern-acesso-foto" aria-hidden="true">
+          <source media="(max-width: 767px)" srcSet="/images/fundo/encontro-das-aguas-celular.jpg" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src="/images/fundo/encontro-das-aguas-1920.jpg" alt="" />
+        </picture>
+        <div className="ern-acesso-manifesto-texto">
+          <span className="ern-acesso-etiqueta"><i aria-hidden="true" />{nome}</span>
+          <h2>{recuperar
+            ? <>Retome seu acesso.<br /><em>Sua operação espera.</em></>
+            : cadastrar
+              ? <>Sua vitrine na Amazônia<br /><em>começa aqui.</em></>
+              : <>A Amazônia conecta.<br /><em>Você faz acontecer.</em></>}</h2>
+          {!recuperar && <ul className="ern-acesso-beneficios">
+            {beneficios.map(([icone, texto]) => <li key={texto}><span aria-hidden="true">{icone}</span>{texto}</li>)}
+          </ul>}
+          {recuperar && <p>Recupere o acesso para continuar sua jornada na Encantos da Amazônia.</p>}
         </div>
-        <div className="ern-acesso-pilares"><span><b>01</b> Território</span><span><b>02</b> Conexões</span><span><b>03</b> Possibilidades</span></div>
-        <p className="ern-acesso-assinatura">Uma plataforma com a identidade do nosso lugar.</p>
       </aside>}
-      <div className="ern-acesso-formulario">{children}</div>
+      <div className="ern-acesso-formulario">
+        {mostrarPerfis && <nav className="ern-acesso-perfis" aria-label="Eu sou">
+          <span>Eu sou</span>
+          <div>
+            {PERFIS.map(item => <Link key={item.id} href={`/login?acesso=${item.id}`} replace scroll={false} aria-current={perfil === item.id ? 'true' : undefined}>
+              <span aria-hidden="true">{item.icone}</span>{item.nome}
+            </Link>)}
+          </div>
+        </nav>}
+        {children}
+      </div>
     </div>
     <footer className="ern-acesso-base"><span>Encantos Gestão · do Rio Negro a Parintins</span><nav aria-label="Informações da plataforma"><Link href="/privacidade">Privacidade</Link><Link href="/termos">Termos</Link><Link href="/contato">Atendimento</Link></nav></footer>
   </main>;

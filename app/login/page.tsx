@@ -42,19 +42,19 @@ const apresentacoes = {
   },
 
   guia: {
-    etiqueta: 'Rede ERN • Guia autônomo',
+    etiqueta: 'Rede EDA • Guia autônomo',
     titulo: 'Acesso do guia',
     cadastro: 'Cadastre-se como guia',
     descricao:
-      'Acesse seu espaço independente de guia na Rede ERN.',
+      'Acesse seu espaço independente de guia na Rede EDA.',
   },
 
   fornecedor: {
-    etiqueta: 'Rede ERN • Fornecedor',
+    etiqueta: 'Rede EDA • Fornecedor',
     titulo: 'Acesso do fornecedor',
     cadastro: 'Cadastre-se como fornecedor',
     descricao:
-      'Acesse seu espaço independente de comerciante ou prestador de serviços na Rede ERN.',
+      'Acesse seu espaço independente de comerciante ou prestador de serviços na Rede EDA.',
   },
 };
 
@@ -111,9 +111,9 @@ function FormularioLogin() {
   const apresentacao = acesso
     ? apresentacoes[acesso]
     : {
-        etiqueta: 'Acesso profissional ERN',
+        etiqueta: 'Acesso profissional · Encantos Gestão',
         titulo: 'Acesse sua conta',
-        cadastro: 'Crie sua conta ERN',
+        cadastro: 'Crie sua conta na Encantos Gestão',
         descricao:
           'Entre para acessar o espaço vinculado à sua conta.',
       };
@@ -358,7 +358,7 @@ function FormularioLogin() {
         )
       ) {
         await recusarEntrada(
-          'Os vínculos desta conta precisam ser revisados pela equipe ERN. Não foi possível liberar a entrada.',
+          'Os vínculos desta conta precisam ser revisados pela equipe EDA. Não foi possível liberar a entrada.',
         );
 
         return;
@@ -386,8 +386,8 @@ function FormularioLogin() {
             ? 'uma operadora de turismo'
             : modalidadeAtual ===
                 'guia'
-              ? 'um guia autônomo da Rede ERN'
-              : 'um fornecedor da Rede ERN';
+              ? 'um guia autônomo da Rede EDA'
+              : 'um fornecedor da Rede EDA';
 
         const destino =
           acesso === 'operadora'
@@ -736,11 +736,11 @@ function FormularioLogin() {
           ? 'Crie suas credenciais. O vínculo com a empresa precisa ser autorizado.'
           : acesso ===
               'guia'
-            ? 'Crie sua conta de guia independente na Rede ERN. Depois você concluirá seu perfil profissional.'
+            ? 'Crie sua conta de guia independente na Rede EDA. Depois você concluirá seu perfil profissional.'
             : acesso ===
                 'fornecedor'
-              ? 'Crie sua conta de fornecedor independente na Rede ERN. Depois você concluirá seu perfil profissional.'
-              : 'Crie suas credenciais para continuar o cadastro na ERN.'
+              ? 'Crie sua conta de fornecedor independente na Rede EDA. Depois você concluirá seu perfil profissional.'
+              : 'Crie suas credenciais para continuar o cadastro na Encantos Gestão.'
         : apresentacao.descricao;
 
   const textoBotao =

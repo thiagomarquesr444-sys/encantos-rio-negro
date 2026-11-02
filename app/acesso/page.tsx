@@ -35,17 +35,17 @@ const titulos: Record<TipoAcesso, string> = {
 
 const nomes: Record<TipoAcesso, string> = {
   operadora: 'operadora de turismo',
-  guia: 'guia autônomo da Rede ERN',
-  fornecedor: 'fornecedor da Rede ERN',
+  guia: 'guia autônomo da Rede EDA',
+  fornecedor: 'fornecedor da Rede EDA',
 };
 
 const descricoes: Record<TipoAcesso, string> = {
   operadora:
     'Acesse a operação da sua empresa conforme as permissões do seu usuário.',
   guia:
-    'Acesse seu espaço independente e mantenha seu cadastro de guia na Rede ERN.',
+    'Acesse seu espaço independente e mantenha seu cadastro de guia na Rede EDA.',
   fornecedor:
-    'Acesse seu espaço independente e mantenha seu cadastro de comerciante ou prestador de serviços na Rede ERN.',
+    'Acesse seu espaço independente e mantenha seu cadastro de comerciante ou prestador de serviços na Rede EDA.',
 };
 
 function analisarConta(conta: AcessosConta) {
@@ -239,7 +239,7 @@ function ConteudoAcesso() {
 
       if (verificada.conflito) {
         throw new Error(
-          'Os vínculos desta conta precisam ser revisados pela equipe ERN.',
+          'Os vínculos desta conta precisam ser revisados pela equipe EDA.',
         );
       }
 
@@ -314,7 +314,7 @@ function ConteudoAcesso() {
 
       if (verificada.empresarial) {
         throw new Error(
-          'Esta conta pertence a uma operadora. Para se cadastrar na Rede ERN como profissional independente, utilize uma conta própria dessa modalidade.',
+          'Esta conta pertence a uma operadora. Para se cadastrar na Rede EDA como profissional independente, utilize uma conta própria dessa modalidade.',
         );
       }
 
@@ -555,7 +555,7 @@ function ConteudoAcesso() {
               {(tipoExibido === 'guia' ||
                 tipoExibido === 'fornecedor') && (
                 <p className="mt-4 text-sm leading-7 text-[#EDEDE3]/65">
-                  Este espaço pertence à Rede ERN e não
+                  Este espaço pertence à Rede EDA e não
                   concede acesso à gestão das operadoras.
                 </p>
               )}
