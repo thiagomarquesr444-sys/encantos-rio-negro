@@ -4,7 +4,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import {
+  listarCategoriasPublicas,
   listarFeedPublico,
+  type CategoriaPublicacao,
   type PublicacaoPublica,
 } from '@/lib/redePublica';
 
@@ -19,6 +21,9 @@ const textos = {
     empty: 'Novas histórias chegarão em breve.',
     error: 'Não foi possível carregar as publicações.',
     retry: 'Tentar novamente',
+    todas: 'Todas',
+    verificado: 'Perfil verificado',
+    filtro: 'Filtrar por categoria',
   },
   EN: {
     eyebrow: 'Life on the Rio Negro',
@@ -30,6 +35,9 @@ const textos = {
     empty: 'New stories are coming soon.',
     error: 'Posts could not be loaded.',
     retry: 'Try again',
+    todas: 'All',
+    verificado: 'Verified profile',
+    filtro: 'Filter by category',
   },
   ES: {
     eyebrow: 'La vida en Rio Negro',
@@ -41,6 +49,9 @@ const textos = {
     empty: 'Pronto llegarán nuevas historias.',
     error: 'No se pudieron cargar las publicaciones.',
     retry: 'Intentar de nuevo',
+    todas: 'Todas',
+    verificado: 'Perfil verificado',
+    filtro: 'Filtrar por categoría',
   },
 };
 
@@ -56,12 +67,22 @@ export default function FeedDescubraERN() {
   const t = textos[idioma];
   const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' });
   const [tentativa, setTentativa] = useState(0);
+  const [categorias, setCategorias] = useState<CategoriaPublicacao[]>([]);
+  const [categoriaId, setCategoriaId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let ativo = true;
+    listarCategoriasPublicas()
+      .then(itens => { if (ativo) setCategorias(itens); })
+      .catch(() => { if (ativo) setCategorias([]); });
+    return () => { ativo = false; };
+  }, []);
 
   useEffect(() => {
     let ativo = true;
     setEstado({ tipo: 'carregando' });
 
-    listarFeedPublico(idioma, { limite: 6 })
+    listarFeedPublico(idioma, { limite: 6, categoriaId: categoriaId ?? undefined })
       .then(itens => {
         if (ativo) setEstado({ tipo: 'pronto', itens });
       })
@@ -70,7 +91,7 @@ export default function FeedDescubraERN() {
       });
 
     return () => { ativo = false; };
-  }, [idioma, tentativa]);
+  }, [idioma, tentativa, categoriaId]);
 
   return (
     <section
@@ -99,6 +120,25 @@ export default function FeedDescubraERN() {
             {t.all} <span aria-hidden="true">↗</span>
           </Link>
         </div>
+
+        {categorias.length > 0 && (
+          <div role="group" aria-label={t.filtro} className="mt-8 flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+            {[{ id: null as string | null, nome: t.todas }, ...categorias.map(c => ({ id: c.id as string | null, nome: c.nome }))].map(opcao => {
+              const ativa = opcao.id === categoriaId;
+              return (
+                <button
+                  key={opcao.id ?? 'todas'}
+                  type="button"
+                  aria-pressed={ativa}
+                  onClick={() => setCategoriaId(opcao.id)}
+                  className={`min-h-[40px] shrink-0 rounded-full border px-4 text-sm font-semibold transition ${foco} ${ativa ? 'border-[#805600] bg-[#805600] text-[#fffcf0]' : 'border-[#cdba7a] text-[#30260d] hover:border-[#805600]'}`}
+                >
+                  {opcao.nome}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         {estado.tipo === 'carregando' && (
           <p role="status" className="mt-10 text-sm text-[#695727]">{t.loading}</p>
@@ -138,7 +178,7 @@ export default function FeedDescubraERN() {
                   style={{ animationDelay: `${indice * 55}ms` }}
                 >
                   {imagem && (
-                    <Link href={href} tabIndex={-1} aria-hidden="true" className="block overflow-hidden rounded-lg bg-[#fffcf0]">
+                    <Link href={href} tabIndex={-1} aria-hidden="true" className="block overflow-hidden rounded-[18px] bg-[#fffcf0]">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={imagem}
@@ -155,6 +195,9 @@ export default function FeedDescubraERN() {
                     className={`mt-5 inline-flex min-h-11 max-w-full items-center text-sm font-semibold hover:underline ${foco}`}
                   >
                     <span className="break-words">{item.autor.nome_publico}</span>
+                    {item.autor.verificado && (
+                      <span title={t.verificado} aria-label={t.verificado} className="ml-2 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#805600] text-[11px] text-[#fffcf0]">✓</span>
+                    )}
                   </Link>
 
                   <h3

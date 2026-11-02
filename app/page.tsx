@@ -25,9 +25,9 @@ const FOCO =
   'focus-visible:outline-[#F4C77E]';
 
 const faixaOperador = {
-  PT: { destaque: 'Trabalha com turismo no Rio Negro?', texto: 'Organize reservas, vouchers e o financeiro da sua operação e apareça para quem procura o território.', link: 'Conhecer a ERN para operadores' },
-  EN: { destaque: 'Do you work in tourism on the Rio Negro?', texto: 'Organize bookings, vouchers and finances, and be found by people looking for the region.', link: 'ERN for operators' },
-  ES: { destaque: '¿Trabajas con turismo en el Río Negro?', texto: 'Organiza reservas, vouchers y finanzas, y aparece para quienes buscan el territorio.', link: 'ERN para operadores' },
+  PT: { destaque: 'Trabalha com turismo no Rio Negro?', texto: 'Organize reservas, vouchers e o financeiro da sua operação e apareça para quem procura o território.', link: 'Conhecer a ERN para operadores', precos: 'Ver planos e preços' },
+  EN: { destaque: 'Do you work in tourism on the Rio Negro?', texto: 'Organize bookings, vouchers and finances, and be found by people looking for the region.', link: 'ERN for operators', precos: 'See plans and pricing' },
+  ES: { destaque: '¿Trabajas con turismo en el Río Negro?', texto: 'Organiza reservas, vouchers y finanzas, y aparece para quienes buscan el territorio.', link: 'ERN para operadores', precos: 'Ver planes y precios' },
 };
 
 export default function Home() {
@@ -113,12 +113,20 @@ export default function Home() {
               <strong className="font-semibold text-[#F4C77E]">{faixa.destaque}</strong>{' '}
               {faixa.texto}
             </p>
-            <a
-              href="/operadores"
-              className={`inline-flex min-h-[44px] shrink-0 items-center gap-2 text-sm font-semibold text-[#F4C77E] hover:underline hover:underline-offset-4 ${FOCO}`}
-            >
-              {faixa.link} <span aria-hidden="true">→</span>
-            </a>
+            <div className="flex shrink-0 flex-wrap items-center gap-x-6 gap-y-1">
+              <a
+                href="/precos"
+                className={`inline-flex min-h-[44px] items-center gap-2 text-sm font-semibold text-[#F4C77E] hover:underline hover:underline-offset-4 ${FOCO}`}
+              >
+                {faixa.precos} <span aria-hidden="true">→</span>
+              </a>
+              <a
+                href="/operadores"
+                className={`inline-flex min-h-[44px] items-center gap-2 text-sm font-semibold text-[#EDEDE3] hover:underline hover:underline-offset-4 ${FOCO}`}
+              >
+                {faixa.link}
+              </a>
+            </div>
           </div>
         </div>
       </section>

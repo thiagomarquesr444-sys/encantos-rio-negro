@@ -156,8 +156,8 @@ export default function LibrasERN() {
         .ern-libras {
           position: fixed;
           right: max(12px, env(safe-area-inset-right));
-          top: 50%;
-          transform: translateY(-50%);
+          /* ERN_DOCK_FLUTUANTES_V1: acima do ERN e do Feedback, fora do conteúdo */
+          bottom: calc(172px + env(safe-area-inset-bottom, 0px));
           z-index: 60;
           font-family: var(--font-work-sans), sans-serif;
         }

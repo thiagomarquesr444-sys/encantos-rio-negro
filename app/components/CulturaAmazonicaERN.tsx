@@ -223,6 +223,7 @@ export default function CulturaAmazonicaERN() {
   const { idioma } = useLanguage();
   const t = textos[idioma];
   const [selecionado, setSelecionado] = useState('barcelos');
+  const [todos, setTodos] = useState(false);
   const recipiente = useRef<HTMLElement>(null);
   const colecao = colecoes.find(item => item.id === selecionado) ?? colecoes[0];
 
@@ -264,7 +265,7 @@ export default function CulturaAmazonicaERN() {
               type="button"
               aria-pressed={selecionado === item.id}
               aria-controls="cultura-colecao"
-              onClick={() => setSelecionado(item.id)}
+              onClick={() => { setSelecionado(item.id); setTodos(false); }}
               className={`min-h-12 border-b-2 pb-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#805600] ${selecionado === item.id ? 'border-[#805600] text-[#805600]' : 'border-transparent text-[#695727] hover:border-[#cdba7a]'}`}
             >
               {item.municipio}
@@ -277,7 +278,7 @@ export default function CulturaAmazonicaERN() {
           key={colecao.id}
           className="cultura-entrada mt-10 grid items-start gap-x-8 gap-y-12 md:grid-cols-2 lg:grid-cols-3"
         >
-          {colecao.videos.map(item => {
+          {(todos ? colecao.videos : colecao.videos.slice(0, 2)).map(item => {
             const vertical = item.altura > item.largura;
 
             return (
@@ -311,6 +312,18 @@ export default function CulturaAmazonicaERN() {
             );
           })}
         </div>
+
+        {!todos && colecao.videos.length > 2 && (
+          <div className="mt-10 flex justify-center">
+            <button
+              type="button"
+              onClick={() => setTodos(true)}
+              className="inline-flex min-h-[48px] items-center gap-2 rounded-xl border border-[#805600]/50 px-6 text-sm font-semibold text-[#805600] transition hover:bg-[#805600]/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#805600]"
+            >
+              {idioma === 'EN' ? 'More videos' : idioma === 'ES' ? 'Más videos' : 'Ver mais vídeos'} ({colecao.videos.length - 2})
+            </button>
+          </div>
+        )}
       </div>
 
       <style jsx>{`

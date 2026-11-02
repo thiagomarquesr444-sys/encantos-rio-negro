@@ -111,7 +111,7 @@ export default function InstalarERN() {
       <style jsx>{`
         .instalar-ern {
           position: fixed;
-          right: 16px;
+          left: 16px;
           bottom: calc(16px + env(safe-area-inset-bottom, 0px));
           z-index: 60;
           display: flex;
