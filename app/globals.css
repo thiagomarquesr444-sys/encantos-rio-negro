@@ -277,20 +277,25 @@ body {
 
 /* ERN_REDE_AMARELA */
 .ern-publico {
-  --ern-fundo: #fff7db;
-  --ern-painel: #fffcf0;
-  --ern-elevado: #f5e8b8;
-  --ern-texto: #30260d;
-  --ern-secundario: #695727;
-  --ern-borda: #cdba7a;
-  --ern-destaque: #805600;
-  --ern-botao: #805600;
+  /* ERN_PORTAL_RIO_NEGRO_V1: areia branca, água-preta cor de chá e floresta.
+     Substitui o antigo tema amarelo do portal público. */
+  --ern-fundo: #f3f1ec;
+  --ern-painel: #ffffff;
+  --ern-elevado: #e8e5dd;
+  --ern-texto: #0f1c17;
+  --ern-secundario: #4b5a53;
+  --ern-borda: #d6d2c8;
+  --ern-destaque: #8a4b12;
+  --ern-botao: #13342a;
   --ern-sobre-botao: #ffffff;
-  --ern-suave: rgb(128 86 0 / 6%);
-  --ern-hover: #684500;
+  --ern-suave: rgb(19 52 42 / 5%);
+  --ern-hover: #0b231c;
   --ern-sucesso: #145c38;
   --ern-alerta: #744700;
   --ern-erro: #a51d2d;
+
+  /* Títulos com letreiro de software atual (Inter), no lugar da serifada. */
+  --font-fraunces: "Inter Variable";
 
   background: var(--ern-fundo);
   color: var(--ern-texto);
@@ -368,16 +373,14 @@ body {
   color: var(--ern-sobre-botao);
 }
 
-.ern-publico .ern-navegacao-ilustrada {
-  background-color: var(--ern-fundo);
-  color: var(--ern-texto);
-  border-color: var(--ern-borda);
+.ern-publico :is(h1, h2, h3) {
+  font-weight: 600;
+  letter-spacing: -0.035em;
 }
 
-.ern-publico dialog.menu-publico {
-  background: var(--ern-painel);
-  color: var(--ern-texto);
-  border-left-color: var(--ern-borda);
+.ern-publico :is(h1, h2, h3) [class~="font-normal"],
+.ern-publico [class~="font-normal"]:is(h1, h2, h3) {
+  font-weight: 600;
 }
 
 .ern-publico :is(

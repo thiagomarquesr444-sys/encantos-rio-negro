@@ -174,24 +174,23 @@ export default function VitrineDestinosERN({
             {t.vazio}
           </p>
         ) : (
-          <ul className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {visiveis.map((destino) => (
-              <li
-                key={destino.id}
-                className="group flex min-w-0 flex-col overflow-hidden rounded-[18px] border border-[#355043] bg-[#0A1713] transition hover:border-[#F4C77E]/60"
-              >
-                <div className="relative aspect-[4/3] overflow-hidden bg-[#10231B]">
+          // ERN_VITRINE_BENTO_V1: grade em mosaico; o primeiro destino ganha destaque.
+          <ul className="mt-10 grid auto-rows-[240px] grid-flow-dense gap-4 sm:grid-cols-2 md:auto-rows-[260px] lg:grid-cols-4">
+            {visiveis.map((destino, indice) => {
+              const destaque = indice === 0;
+              const conteudo = (
+                <>
                   {destino.imagem ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={destino.imagem}
                       alt={destino.titulo}
-                      loading="lazy"
+                      loading={destaque ? 'eager' : 'lazy'}
                       decoding="async"
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.04] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                      className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.05] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
                     />
                   ) : (
-                    <div className="flex h-full w-full flex-col items-center justify-center gap-3 text-[#B8C9BF]">
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[#10231B] text-[#B8C9BF]">
                       <svg aria-hidden="true" width="64" height="32" viewBox="0 0 64 32" fill="none" stroke="#38BDF8" strokeWidth="2.5" strokeLinecap="round">
                         <path d="M2 12c6-6 10 6 16 0s10 6 16 0 10 6 16 0 10 6 12 2" />
                         <path d="M2 24c6-6 10 6 16 0s10 6 16 0 10 6 16 0 10 6 12 2" stroke="#E3A144" />
@@ -199,51 +198,74 @@ export default function VitrineDestinosERN({
                       <span className="text-xs font-semibold uppercase tracking-[0.14em]">{t.semFoto}</span>
                     </div>
                   )}
-                  <span className="absolute left-3 top-3 rounded-full bg-[#07110E]/85 px-3 py-1 text-xs font-semibold text-[#F4C77E]">
-                    {t.regiaoNomes[destino.regiao]}
-                  </span>
-                </div>
-
-                <div className="flex flex-1 flex-col gap-3 p-5">
-                  <div>
-                    <h3
-                      className="text-2xl leading-tight text-[#F0F0E8]"
-                      style={{ fontFamily: 'var(--font-fraunces), serif' }}
-                    >
-                      {destino.titulo}
-                    </h3>
-                    <p className="mt-1 text-sm text-[#B8C9BF]">{destino.local}</p>
-                  </div>
-                  <p className="line-clamp-3 text-sm leading-6 text-[#D6DFD9]">
-                    {destino.descricao}
-                  </p>
-                  <ul className="flex flex-wrap gap-2" aria-label={t.rotuloInteresses}>
-                    {destino.interesses.map((interesse: InteresseERN) => (
-                      <li
-                        key={interesse}
-                        className="rounded-full border border-[#355043] px-2.5 py-0.5 text-xs text-[#D6DFD9]"
-                      >
-                        {t.interesses[interesse]}
-                      </li>
-                    ))}
-                  </ul>
-                  <div className="mt-auto pt-2">
+                  <div
+                    aria-hidden="true"
+                    className="absolute inset-0 bg-gradient-to-t from-[#05100C] via-[#05100C]/45 to-transparent"
+                  />
+                  <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
+                    <span className="rounded-full bg-[#07110E]/70 px-3 py-1 text-xs font-semibold text-[#F4C77E] backdrop-blur-md">
+                      {t.regiaoNomes[destino.regiao]}
+                    </span>
                     {destino.curadoria ? (
-                      <span className="inline-flex min-h-[40px] items-center rounded-full bg-[#10231B] px-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#B8C9BF]">
+                      <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-[#EDEDE3] backdrop-blur-md">
                         {t.curadoria}
                       </span>
                     ) : (
-                      <Link
-                        href={destino.href}
-                        className={`inline-flex min-h-[44px] items-center gap-2 text-sm font-semibold text-[#F4C77E] hover:underline hover:underline-offset-4 ${FOCO}`}
+                      <span
+                        aria-hidden="true"
+                        className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/15 text-[#F0F0E8] backdrop-blur-md transition group-hover:bg-[#E3A144] group-hover:text-[#07110E]"
                       >
-                        {t.verMapa} <span aria-hidden="true">→</span>
-                      </Link>
+                        ↗
+                      </span>
                     )}
                   </div>
-                </div>
-              </li>
-            ))}
+                  <div className="absolute inset-x-0 bottom-0 p-5">
+                    <p className="text-xs font-medium uppercase tracking-[0.14em] text-[#B8C9BF]">{destino.local}</p>
+                    <h3
+                      className={`mt-1 font-semibold leading-tight tracking-[-0.02em] text-[#F0F0E8] ${destaque ? 'text-3xl md:text-4xl' : 'text-xl'}`}
+                    >
+                      {destino.titulo}
+                    </h3>
+                    {destaque && (
+                      <p className="mt-2 line-clamp-2 max-w-[460px] text-sm leading-6 text-[#D6DFD9]">
+                        {destino.descricao}
+                      </p>
+                    )}
+                    <ul className="mt-3 flex flex-wrap gap-1.5" aria-label={t.rotuloInteresses}>
+                      {destino.interesses.map((interesse: InteresseERN) => (
+                        <li
+                          key={interesse}
+                          className="rounded-full border border-white/20 px-2.5 py-0.5 text-[11px] text-[#EDEDE3]"
+                        >
+                          {t.interesses[interesse]}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </>
+              );
+
+              return (
+                <li
+                  key={destino.id}
+                  className={`group relative min-w-0 overflow-hidden rounded-[22px] bg-[#0A1713] ring-1 ring-white/10 transition hover:ring-[#F4C77E]/50 ${
+                    destaque ? 'sm:col-span-2 sm:row-span-2' : ''
+                  }`}
+                >
+                  {destino.curadoria ? (
+                    <div className="absolute inset-0">{conteudo}</div>
+                  ) : (
+                    <Link
+                      href={destino.href}
+                      aria-label={`${t.verMapa}: ${destino.titulo}`}
+                      className={`absolute inset-0 block rounded-[22px] ${FOCO}`}
+                    >
+                      {conteudo}
+                    </Link>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
 

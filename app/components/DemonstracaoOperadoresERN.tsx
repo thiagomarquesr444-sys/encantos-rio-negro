@@ -13,7 +13,7 @@ const capturas = [
 const textos = {
   PT: {
     titulo: 'Conheça a ERN em funcionamento',
-    nomes: ['Dashboard amarelo', 'Dashboard azul', 'Materiais e orçamento'],
+    nomes: ['Painel em tema claro', 'Painel em tema azul', 'Materiais e orçamento'],
     descricoes: [
       'Dashboard da ERN com navegação e apresentação no tema amarelo',
       'Dashboard da ERN no tema azul, com atalhos para reservas e demandas',
@@ -28,7 +28,7 @@ const textos = {
   },
   EN: {
     titulo: 'Explore ERN in action',
-    nomes: ['Yellow dashboard', 'Blue dashboard', 'Materials and budget'],
+    nomes: ['Dashboard in light theme', 'Dashboard in blue theme', 'Materials and budget'],
     descricoes: [
       'ERN dashboard with navigation and a yellow theme',
       'ERN dashboard in a blue theme, with shortcuts to reservations and company needs',
@@ -43,7 +43,7 @@ const textos = {
   },
   ES: {
     titulo: 'Conozca ERN en funcionamiento',
-    nomes: ['Panel amarillo', 'Panel azul', 'Materiales y presupuesto'],
+    nomes: ['Panel en tema claro', 'Panel en tema azul', 'Materiales y presupuesto'],
     descricoes: [
       'Panel de ERN con navegación y presentación en el tema amarillo',
       'Panel de ERN en el tema azul, con accesos a reservas y necesidades',

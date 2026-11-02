@@ -1,6 +1,5 @@
 'use client';
 
-import FaunaCabecalhoERN from '@/app/components/FaunaCabecalhoERN';
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -220,21 +219,17 @@ export default function PublicHeader() {
 
   return (
     <>
+      {/* ERN_CABECALHO_RIO_NEGRO_V1: verde-noite translúcido, sem ilustrações.
+          Na home, fica transparente sobre a abertura até a pessoa rolar. */}
       <header
-        style={{
-          /* ERN_MENU_TEMA_DIRETO_V1 */
-          backgroundColor: 'var(--ern-fundo, #101214)',
-          color: 'var(--ern-texto, #f0f1f2)',
-          borderColor: 'var(--ern-borda, #454b53)',
-          transitionProperty: 'box-shadow',
-        }}
-        className={`ern-navegacao-ilustrada fixed inset-x-0 top-0 z-[100] border-b text-[#EDEDE3] transition-colors duration-300 motion-reduce:transition-none ${
+        className={`ern-navegacao-ilustrada ern-publico-hero fixed inset-x-0 top-0 z-[100] border-b text-[#EDEDE3] transition-[background-color,box-shadow,border-color] duration-300 motion-reduce:transition-none ${
           rolouPagina
-            ? 'border-white/15 bg-[#08130F]/95 shadow-lg backdrop-blur-xl'
-            : 'border-white/10 bg-[#08130F]/85 backdrop-blur-xl'
+            ? 'border-white/10 bg-[#08130F]/95 shadow-[0_10px_30px_rgb(0_0_0/25%)] backdrop-blur-xl'
+            : pathname === '/'
+              ? 'border-white/10 bg-[#07110E]/25 backdrop-blur-[2px]'
+              : 'border-white/10 bg-[#08130F]/95 backdrop-blur-xl'
         }`}
       >
-        <FaunaCabecalhoERN altura={70} deslocamentoArara={60} />
         <div className="mx-auto flex h-[76px] max-w-[1320px] items-center justify-between gap-3 px-4 sm:px-6 xl:px-8">
           <Link
             href="/"
@@ -341,13 +336,8 @@ export default function PublicHeader() {
       <dialog
         ref={dialogRef}
         id="menu-publico-ern"
-        style={{
-          backgroundColor: 'var(--ern-painel, #1a1d21)',
-          color: 'var(--ern-texto, #f0f1f2)',
-          borderColor: 'var(--ern-borda, #454b53)',
-        }}
         aria-labelledby="titulo-menu-publico"
-        className="menu-publico"
+        className="menu-publico ern-publico-hero"
         onCancel={(event) => {
           event.preventDefault();
           fecharMenu();
@@ -509,32 +499,6 @@ export default function PublicHeader() {
         .menu-publico {
           isolation: isolate;
         }
-
-        .ern-navegacao-ilustrada::before,
-        .menu-publico::before {
-          content: '';
-          position: absolute;
-          inset: 0;
-          z-index: -1;
-          pointer-events: none;
-          background-image: url('/images/regiao/ern-amazonia.jpg');
-          background-repeat: no-repeat;
-          opacity: 0.16;
-        }
-
-        .ern-navegacao-ilustrada::before {
-          background-image: url('/images/regiao/ern-amazonia-paisagem.png');
-          background-size: cover;
-          background-position: center top;
-          background-repeat: no-repeat;
-        }
-
-        .menu-publico::before {
-          background-size: contain;
-          background-position: center;
-          background-repeat: no-repeat;
-        }
-
 
         .menu-publico {
           position: fixed;
