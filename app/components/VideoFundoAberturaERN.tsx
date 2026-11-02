@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 
 // ERN_VIDEO_ABERTURA_V1
-// Fundo da abertura com o Rio Negro em Anavilhanas.
+// Fundo da abertura: canais, praias e água-preta de Anavilhanas (sem letreiros).
 // A foto (poster) aparece sempre; o vídeo só carrega quando a pessoa
 // não pediu menos movimento nem economia de dados, e a conexão não é 2G.
 // Há uma versão horizontal (computador) e uma vertical (celular).
@@ -12,12 +12,12 @@ type ConexaoNavegador = { saveData?: boolean; effectiveType?: string };
 
 const VIDEOS = {
   desktop: {
-    video: '/videos/abertura/rio-negro-abertura-desktop.mp4',
-    poster: '/videos/abertura/rio-negro-abertura-desktop.jpg',
+    video: '/videos/abertura/descubra-desktop.mp4',
+    poster: '/videos/abertura/descubra-desktop.jpg',
   },
   mobile: {
-    video: '/videos/abertura/rio-negro-abertura-mobile.mp4',
-    poster: '/videos/abertura/rio-negro-abertura-mobile.jpg',
+    video: '/videos/abertura/descubra-mobile.mp4',
+    poster: '/videos/abertura/descubra-mobile.jpg',
   },
 };
 
