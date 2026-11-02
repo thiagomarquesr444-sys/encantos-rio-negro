@@ -8,7 +8,7 @@ import PaginaInstitucionalERN, {
 export const metadata: Metadata = {
   title: 'Termos de Serviço',
   description:
-    'Informações sobre o uso do portal, dos espaços profissionais e da plataforma de gestão Encantos Rio Negro.',
+    'Informações sobre o uso do portal, dos espaços profissionais e da plataforma de gestão Encantos da Amazônia.',
   robots: {
     index: false,
     follow: true,
@@ -19,14 +19,14 @@ const secoes = [
   {
     titulo: '1. Responsável pelo projeto',
     paragrafos: [
-      'O projeto Encantos Rio Negro é conduzido por Thiago Rodrigues Marques, em Barcelos, Amazonas, Brasil. A pessoa jurídica do projeto ainda não foi constituída.',
+      'O projeto Encantos da Amazônia (anteriormente Encantos Rio Negro) é conduzido por Thiago Rodrigues Marques, em Barcelos, Amazonas, Brasil. A pessoa jurídica do projeto ainda não foi constituída.',
       'O canal de atendimento é contato.encantosrionegro@gmail.com.',
     ],
   },
   {
     titulo: '2. Serviços e funcionalidades',
     paragrafos: [
-      'A ERN reúne um portal público sobre o Rio Negro, perfis e publicações profissionais e ferramentas de gestão para empresas usuárias.',
+      'A EDA reúne um portal público sobre a Amazônia, do Rio Negro a Parintins, perfis e publicações profissionais e ferramentas de gestão para empresas usuárias.',
       'Funcionalidades identificadas como prévia, em preparação ou em desenvolvimento não devem ser consideradas disponíveis para contratação. O concierge e sua estrutura de agentes ainda estão em preparação.',
       'O uso da plataforma não garante vendas, reservas, renda, aprovação cadastral ou resultados comerciais.',
     ],
@@ -44,7 +44,7 @@ const secoes = [
     paragrafos: [
       'Quem publica deve apresentar informações verdadeiras e possuir os direitos e as autorizações necessários sobre o conteúdo e os dados pessoais utilizados.',
       'Não publique avaliações inventadas, qualificações não comprovadas, documentos de clientes ou conteúdo enganoso.',
-      'O envio de uma publicação não transfere automaticamente sua propriedade intelectual à ERN. A apresentação de uma imagem no portal também não concede ao visitante autorização para reutilizá-la.',
+      'O envio de uma publicação não transfere automaticamente sua propriedade intelectual à EDA. A apresentação de uma imagem no portal também não concede ao visitante autorização para reutilizá-la.',
       'Problemas com publicações podem ser comunicados pelo atendimento, com indicação da página e do motivo da solicitação.',
     ],
   },
@@ -92,7 +92,7 @@ export default function TermosPage() {
   return (
     <PaginaInstitucionalERN
       titulo="Termos de Serviço"
-      descricao="Condições e informações sobre o uso do projeto Encantos Rio Negro. Versão inicial em revisão."
+      descricao="Condições e informações sobre o uso do projeto Encantos da Amazônia. Versão inicial em revisão."
     >
       {secoes.map((secao) => (
         <SecaoInstitucionalERN

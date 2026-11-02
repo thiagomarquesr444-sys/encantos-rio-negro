@@ -41,7 +41,7 @@ export default function OfflineBaseERN() {
           updateViaCache: 'none',
         });
       } catch (erro) {
-        console.error('Nao foi possivel preparar a tela offline ERN.', erro);
+        console.error('Nao foi possivel preparar a tela offline EDA.', erro);
       }
     }
 

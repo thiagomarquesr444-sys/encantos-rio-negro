@@ -43,7 +43,7 @@ function respostaFalha(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Verificação de acesso • Encantos Rio Negro</title>
+  <title>Verificação de acesso • Encantos da Amazônia</title>
   <style>
     * { box-sizing: border-box; }
     body {

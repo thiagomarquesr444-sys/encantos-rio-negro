@@ -9,7 +9,7 @@ import PaginaInstitucionalERN, {
 export const metadata: Metadata = {
   title: 'Política de Privacidade',
   description:
-    'Informações sobre o tratamento de dados pessoais no projeto Encantos Rio Negro e o canal para exercício de direitos.',
+    'Informações sobre o tratamento de dados pessoais no projeto Encantos da Amazônia e o canal para exercício de direitos.',
   robots: {
     index: false,
     follow: true,
@@ -25,7 +25,7 @@ const finalidades = [
   {
     titulo: 'Perfis e publicações',
     texto:
-      'Informações profissionais e conteúdos cadastrados podem compor perfis e publicações da Rede ERN. Antes de publicar, confira quais informações estarão visíveis. Não inclua dados de terceiros sem uma justificativa adequada.',
+      'Informações profissionais e conteúdos cadastrados podem compor perfis e publicações da Rede EDA. Antes de publicar, confira quais informações estarão visíveis. Não inclua dados de terceiros sem uma justificativa adequada.',
   },
   {
     titulo: 'Gestão das operadoras',
@@ -35,7 +35,7 @@ const finalidades = [
   {
     titulo: 'Assinaturas da plataforma',
     texto:
-      'O checkout utiliza dados cadastrais da empresa para a contratação. Ao criar um cliente no Asaas, a integração encaminha nome, CPF/CNPJ e, quando preenchidos, e-mail e telefone. Identificadores de assinatura, cobrança, valor e situação de pagamento também são registrados pela ERN.',
+      'O checkout utiliza dados cadastrais da empresa para a contratação. Ao criar um cliente no Asaas, a integração encaminha nome, CPF/CNPJ e, quando preenchidos, e-mail e telefone. Identificadores de assinatura, cobrança, valor e situação de pagamento também são registrados pela EDA.',
   },
   {
     titulo: 'Atendimento',
@@ -48,7 +48,7 @@ export default function PrivacidadePage() {
   return (
     <PaginaInstitucionalERN
       titulo="Política de Privacidade"
-      descricao="Informações sobre dados pessoais no projeto Encantos Rio Negro."
+      descricao="Informações sobre dados pessoais no projeto Encantos da Amazônia."
     >
       <SecaoInstitucionalERN titulo="Sobre esta versão">
         <p>
@@ -66,19 +66,19 @@ export default function PrivacidadePage() {
 
       <SecaoInstitucionalERN titulo="1. Responsável e contato">
         <p>
-          O projeto Encantos Rio Negro é atualmente conduzido por
+          O projeto Encantos da Amazônia (anteriormente Encantos Rio Negro) é atualmente conduzido por
           Thiago Rodrigues Marques, em Barcelos, Amazonas, Brasil,
           e ainda não possui pessoa jurídica constituída.
         </p>
 
         <p>
           Para assuntos relativos aos dados tratados diretamente
-          pela ERN, utilize:
+          pela EDA, utilize:
         </p>
 
         <LinkInstitucionalERN
           href={`mailto:${EMAIL_ATENDIMENTO_ERN}?subject=${encodeURIComponent(
-            'ERN — Solicitação sobre dados pessoais',
+            'EDA — Solicitação sobre dados pessoais',
           )}`}
         >
           {EMAIL_ATENDIMENTO_ERN}
@@ -99,7 +99,7 @@ export default function PrivacidadePage() {
             <div key={item.titulo}>
               <h3
                 className="font-semibold"
-                style={{ color: '#30260D' }}
+                style={{ color: '#0f1c17' }}
               >
                 {item.titulo}
               </h3>
@@ -173,7 +173,7 @@ export default function PrivacidadePage() {
 
       <SecaoInstitucionalERN titulo="6. Publicações e terceiros">
         <p>
-          Conteúdos publicados no portal e na Rede ERN podem ser
+          Conteúdos publicados no portal e na Rede EDA podem ser
           acessados por visitantes e compartilhados fora da
           plataforma. Evite publicar documentos, dados de clientes,
           endereços particulares ou informações sensíveis.

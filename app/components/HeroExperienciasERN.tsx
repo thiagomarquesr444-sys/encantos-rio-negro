@@ -67,7 +67,7 @@ export default function HeroExperienciasERN({
           isolation: isolate;
           overflow: hidden;
           background: #173033;
-          border-bottom: 1px solid #cdba7a;
+          border-bottom: 1px solid #d6d2c8;
         }
 
         .midia-abertura {
@@ -236,7 +236,7 @@ export default function HeroExperienciasERN({
         @media (max-width: 767px) {
           .hero-experiencias-ern {
             margin: 16px;
-            border: 1px solid #cdba7a;
+            border: 1px solid #d6d2c8;
             border-radius: 20px;
             background: #173033;
             box-shadow: 0 8px 24px rgb(0 0 0 / 10%);

@@ -27,7 +27,7 @@ const copy = {
     auto: 'Carregar ao rolar', read: 'Ver publicação completa', expand: 'Ler mais', collapse: 'Mostrar menos',
     media: 'Mídias da publicação', previous: 'Mídia anterior', next: 'Próxima mídia', credit: 'Crédito',
     mediaError: 'Não foi possível abrir esta mídia.', retryImage: 'Tentar novamente',
-    location: 'Explorar este território', plan: 'Planejar uma viagem', join: 'Fazer parte da ERN',
+    location: 'Explorar este território', plan: 'Planejar uma viagem', join: 'Fazer parte da EDA',
     joinText: 'Você atua na região? Conheça os acessos da rede.', operator: 'Operadora', guide: 'Guia', supplier: 'Fornecedor',
     mapTitle: 'Uma história pode virar viagem.', mapText: 'Continue a descoberta pelos lugares do Rio Negro.',
     emptyTitle: 'Novas conexões começam com uma história.', emptyText: 'Ainda não há publicações disponíveis nesta seleção.',
@@ -36,7 +36,7 @@ const copy = {
     metadataUnavailable: 'Os filtros não carregaram por completo. Você pode continuar pelo feed.',
     shareLink: 'Link da publicação', close: 'Fechar aviso', keyboard: 'Navegação por teclado',
     keyboardHelp: 'No feed: Page Down e Page Up alternam publicações. Ctrl + Home volta ao início; Ctrl + End vai aos controles após o feed.',
-    privacy: 'Privacidade', terms: 'Termos', footer: 'Encantos Rio Negro · Rede pública',
+    privacy: 'Privacidade', terms: 'Termos', footer: 'Encantos da Amazônia · Rede pública',
     newPosts: 'publicações adicionadas', scrollTop: 'Voltar ao início', filterActive: 'Filtros ativos',
   },
   EN: {
@@ -48,7 +48,7 @@ const copy = {
     auto: 'Load while scrolling', read: 'Read full post', expand: 'Read more', collapse: 'Show less',
     media: 'Post media', previous: 'Previous media', next: 'Next media', credit: 'Credit',
     mediaError: 'This media could not be opened.', retryImage: 'Try again',
-    location: 'Explore this territory', plan: 'Plan a trip', join: 'Join ERN',
+    location: 'Explore this territory', plan: 'Plan a trip', join: 'Join EDA',
     joinText: 'Do you work in the region? Explore the network access options.', operator: 'Tour operator', guide: 'Guide', supplier: 'Supplier',
     mapTitle: 'A story can become a journey.', mapText: 'Continue discovering the places of the Rio Negro.',
     emptyTitle: 'New connections begin with a story.', emptyText: 'No posts are available for this selection yet.',
@@ -57,7 +57,7 @@ const copy = {
     metadataUnavailable: 'Some filters could not load. You can continue browsing the feed.',
     shareLink: 'Post link', close: 'Close notice', keyboard: 'Keyboard navigation',
     keyboardHelp: 'In the feed: Page Down and Page Up move between posts. Ctrl + Home returns to the beginning; Ctrl + End moves to the controls after the feed.',
-    privacy: 'Privacy', terms: 'Terms', footer: 'Encantos Rio Negro · Public network',
+    privacy: 'Privacy', terms: 'Terms', footer: 'Encantos da Amazônia · Public network',
     newPosts: 'posts added', scrollTop: 'Back to the beginning', filterActive: 'Active filters',
   },
   ES: {
@@ -69,7 +69,7 @@ const copy = {
     auto: 'Cargar al desplazarse', read: 'Ver publicación completa', expand: 'Leer más', collapse: 'Mostrar menos',
     media: 'Contenido multimedia', previous: 'Anterior', next: 'Siguiente', credit: 'Crédito',
     mediaError: 'No se pudo abrir este contenido.', retryImage: 'Intentar de nuevo',
-    location: 'Explorar este territorio', plan: 'Planear un viaje', join: 'Ser parte de ERN',
+    location: 'Explorar este territorio', plan: 'Planear un viaje', join: 'Ser parte de EDA',
     joinText: '¿Trabajas en la región? Conoce los accesos de la red.', operator: 'Operadora', guide: 'Guía', supplier: 'Proveedor',
     mapTitle: 'Una historia puede convertirse en un viaje.', mapText: 'Sigue descubriendo los lugares del Río Negro.',
     emptyTitle: 'Las nuevas conexiones comienzan con una historia.', emptyText: 'Todavía no hay publicaciones disponibles para esta selección.',
@@ -78,7 +78,7 @@ const copy = {
     metadataUnavailable: 'Algunos filtros no se cargaron. Puedes seguir explorando el feed.',
     shareLink: 'Enlace de la publicación', close: 'Cerrar aviso', keyboard: 'Navegación por teclado',
     keyboardHelp: 'En el feed: Page Down y Page Up alternan publicaciones. Ctrl + Home vuelve al inicio; Ctrl + End pasa a los controles después del feed.',
-    privacy: 'Privacidad', terms: 'Términos', footer: 'Encantos Rio Negro · Red pública',
+    privacy: 'Privacidad', terms: 'Términos', footer: 'Encantos da Amazônia · Red pública',
     newPosts: 'publicaciones añadidas', scrollTop: 'Volver al inicio', filterActive: 'Filtros activos',
   },
 };
@@ -115,7 +115,7 @@ function publicationDate(value: string, lang: string) {
 function Photo({ src, alt, className = '', eager = false, errorText = '' }: { src: string; alt: string; className?: string; eager?: boolean; errorText?: string }) {
   const [error, setError] = useState(false);
   useEffect(() => setError(false), [src]);
-  if (error) return <div className={`ern-r-photo-fallback ${className}`} role="img" aria-label={alt}>{errorText || 'ERN'}</div>;
+  if (error) return <div className={`ern-r-photo-fallback ${className}`} role="img" aria-label={alt}>{errorText || 'EDA'}</div>;
   // eslint-disable-next-line @next/next/no-img-element
   return <img src={src} alt={alt} className={className} loading={eager ? 'eager' : 'lazy'} decoding="async" onError={() => setError(true)} />;
 }
@@ -378,8 +378,8 @@ export default function FeedRedeVisitanteERN() {
     catch (error) {
       if (gen !== generation.current) return;
       const text = mensagemErroRedePublica(error);
-      const followLogin = text === 'Entre na ERN para seguir perfis.';
-      const interactionLogin = text === 'Entre na ERN para interagir com publicações.';
+      const followLogin = text === 'Entre na EDA para seguir perfis.';
+      const interactionLogin = text === 'Entre na EDA para interagir com publicações.';
       setNotice({ text: followLogin ? tr.feed.followRequired : interactionLogin ? tr.feed.interactionRequired : text, login: followLogin || interactionLogin });
     } finally {
       if (socialLocks.current.get(lock) === gen) socialLocks.current.delete(lock);
@@ -449,9 +449,9 @@ export default function FeedRedeVisitanteERN() {
   return <div className="ern-r-root">
     <a className="ern-r-skip" href="#ern-r-feed-title">{ui.feed}</a>
     <div className="ern-r-layout">
-      <aside className="ern-r-left" aria-label="ERN"><div className="ern-r-sticky"><Link className="ern-r-brand" href="/rede"><span className="ern-r-brand-mark"><Icon name="compass" /></span><span>Rede ERN<small>Encantos Rio Negro</small></span></Link><nav className="ern-r-nav"><button type="button" aria-current={abaERN === 'rede' && !filtered ? 'page' : undefined} onClick={() => { selecionarAbaERN('rede'); clear(); beforeFeed.current?.focus(); }}><Icon name="compass" />{ui.feed}</button><button type="button" aria-current={abaERN === 'vivencias' ? 'page' : undefined} onClick={() => selecionarAbaERN('vivencias')}><span aria-hidden="true">▶</span>Vivências ERN</button><Link href="/destinos"><Icon name="map" />{ui.map}</Link><Link href="/experiencias"><Icon name="go" />{ui.experiences}</Link></nav><div className="ern-r-left-note"><p>{ui.joinText}</p><Link href="/acesso?acesso=operadora">{ui.operator} ↗</Link><Link href="/acesso?acesso=guia">{ui.guide} ↗</Link><Link href="/acesso?acesso=fornecedor">{ui.supplier} ↗</Link></div><div className="ern-r-legal"><Link href="/privacidade">{ui.privacy}</Link><Link href="/termos">{ui.terms}</Link></div></div></aside>
+      <aside className="ern-r-left" aria-label="EDA"><div className="ern-r-sticky"><Link className="ern-r-brand" href="/rede"><span className="ern-r-brand-mark"><Icon name="compass" /></span><span>Rede EDA<small>Encantos da Amazônia</small></span></Link><nav className="ern-r-nav"><button type="button" aria-current={abaERN === 'rede' && !filtered ? 'page' : undefined} onClick={() => { selecionarAbaERN('rede'); clear(); beforeFeed.current?.focus(); }}><Icon name="compass" />{ui.feed}</button><button type="button" aria-current={abaERN === 'vivencias' ? 'page' : undefined} onClick={() => selecionarAbaERN('vivencias')}><span aria-hidden="true">▶</span>Vivências EDA</button><Link href="/destinos"><Icon name="map" />{ui.map}</Link><Link href="/experiencias"><Icon name="go" />{ui.experiences}</Link></nav><div className="ern-r-left-note"><p>{ui.joinText}</p><Link href="/acesso?acesso=operadora">{ui.operator} ↗</Link><Link href="/acesso?acesso=guia">{ui.guide} ↗</Link><Link href="/acesso?acesso=fornecedor">{ui.supplier} ↗</Link></div><div className="ern-r-legal"><Link href="/privacidade">{ui.privacy}</Link><Link href="/termos">{ui.terms}</Link></div></div></aside>
       <div className="ern-r-main">
-        <header className="ern-r-intro"><p>REDE ERN</p><h1 ref={beforeFeed} tabIndex={-1} id="ern-r-feed-title">{ui.title}</h1><span>{ui.sub}</span><nav className="ern-r-mobile-nav"><Link href="/destinos"><Icon name="map" />{ui.map}</Link><Link href="/experiencias">{ui.experiences} ↗</Link></nav></header>
+        <header className="ern-r-intro"><p>REDE EDA</p><h1 ref={beforeFeed} tabIndex={-1} id="ern-r-feed-title">{ui.title}</h1><span>{ui.sub}</span><nav className="ern-r-mobile-nav"><Link href="/destinos"><Icon name="map" />{ui.map}</Link><Link href="/experiencias">{ui.experiences} ↗</Link></nav></header>
         <div
           role="group"
           aria-label={idioma === 'EN' ? 'Explore the network' : idioma === 'ES' ? 'Explorar la red' : 'Explorar a rede'}
@@ -468,8 +468,8 @@ export default function FeedRedeVisitanteERN() {
             aria-pressed={abaERN === 'rede'}
             onClick={() => selecionarAbaERN('rede')}
             style={{
-              background: abaERN === 'rede' ? '#805600' : 'transparent',
-              color: abaERN === 'rede' ? '#fffaf0' : '#805600',
+              background: abaERN === 'rede' ? '#8a4b12' : 'transparent',
+              color: abaERN === 'rede' ? '#fffaf0' : '#8a4b12',
             }}
           >
             {ui.feed}
@@ -481,12 +481,12 @@ export default function FeedRedeVisitanteERN() {
             aria-pressed={abaERN === 'vivencias'}
             onClick={() => selecionarAbaERN('vivencias')}
             style={{
-              background: abaERN === 'vivencias' ? '#805600' : 'transparent',
-              color: abaERN === 'vivencias' ? '#fffaf0' : '#805600',
+              background: abaERN === 'vivencias' ? '#8a4b12' : 'transparent',
+              color: abaERN === 'vivencias' ? '#fffaf0' : '#8a4b12',
             }}
           >
             <span aria-hidden="true">▶ </span>
-            Vivências ERN
+            Vivências EDA
           </button>
 
           <Link className="ern-r-button" href="/destinos">
@@ -526,7 +526,7 @@ export default function FeedRedeVisitanteERN() {
           <ListaVivenciasERN />
         )}
       </div>
-      <aside className="ern-r-right"><div className="ern-r-sticky"><Link className="ern-r-map-card" href="/destinos"><div><Photo src="/images/regiao/barceloscapital.jpg.jpeg" alt="Barcelos · acervo ERN" /></div><span className="ern-r-kicker">ENCANTOS RIO NEGRO</span><h2>{ui.mapTitle}</h2><p>{ui.mapText}</p><strong>{ui.map} <Icon name="arrow" /></strong></Link><section className="ern-r-plan-card"><Icon name="compass" /><h2>ERN Concierge</h2><p>{ui.sub}</p><Link href="/#concierge">{ui.plan} ↗</Link></section><p className="ern-r-right-footer">{ui.footer}</p></div></aside>
+      <aside className="ern-r-right"><div className="ern-r-sticky"><Link className="ern-r-map-card" href="/destinos"><div><Photo src="/images/regiao/barceloscapital.jpg.jpeg" alt="Barcelos · acervo EDA" /></div><span className="ern-r-kicker">ENCANTOS RIO NEGRO</span><h2>{ui.mapTitle}</h2><p>{ui.mapText}</p><strong>{ui.map} <Icon name="arrow" /></strong></Link><section className="ern-r-plan-card"><Icon name="compass" /><h2>EDA Concierge</h2><p>{ui.sub}</p><Link href="/#concierge">{ui.plan} ↗</Link></section><p className="ern-r-right-footer">{ui.footer}</p></div></aside>
     </div>
     {notice && <div className="ern-r-toast" role="status"><p>{notice.text}</p>{notice.login && <Link href="/acesso">{ui.join} ↗</Link>}<button type="button" onClick={() => setNotice(null)} aria-label={ui.close}>×</button></div>}
   </div>;

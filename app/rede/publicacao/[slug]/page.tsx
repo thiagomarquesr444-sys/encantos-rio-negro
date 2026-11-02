@@ -57,7 +57,7 @@ type Estado =
   | { tipo: 'ausente' }
   | { tipo: 'pronto'; item: PublicacaoPublica };
 
-const foco = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#805600] focus-visible:ring-offset-4';
+const foco = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8a4b12] focus-visible:ring-offset-4';
 
 export default function PublicacaoRedePage() {
   const { slug } = useParams<{ slug: string }>();
@@ -99,11 +99,11 @@ export default function PublicacaoRedePage() {
 
   return (
     <TemaPortalERN>
-    <div className="ern-rede-detalhe min-h-screen bg-[#fff7db] text-[#30260d]">
+    <div className="ern-rede-detalhe min-h-screen bg-[#f3f1ec] text-[#0f1c17]">
       <PublicHeader />
 
       <main className="mx-auto max-w-5xl px-5 pb-16 pt-28 sm:px-8">
-        <Link href="/rede" className={`inline-flex min-h-12 items-center gap-3 text-sm font-semibold text-[#805600] ${foco}`}>
+        <Link href="/rede" className={`inline-flex min-h-12 items-center gap-3 text-sm font-semibold text-[#8a4b12] ${foco}`}>
           <span aria-hidden="true">←</span> {t.back}
         </Link>
 
@@ -117,7 +117,7 @@ export default function PublicacaoRedePage() {
             <button
               type="button"
               onClick={() => setTentativa(valor => valor + 1)}
-              className={`mt-6 min-h-12 rounded-xl bg-[#805600] px-5 font-semibold text-white ${foco}`}
+              className={`mt-6 min-h-12 rounded-xl bg-[#8a4b12] px-5 font-semibold text-white ${foco}`}
             >
               {t.retry}
             </button>
@@ -127,16 +127,16 @@ export default function PublicacaoRedePage() {
         {estado.tipo === 'ausente' && (
           <section className="py-16">
             <h1 className="text-3xl">{t.missing}</h1>
-            <p className="mt-4 text-sm leading-7 text-[#695727]">{t.missingText}</p>
+            <p className="mt-4 text-sm leading-7 text-[#4b5a53]">{t.missingText}</p>
           </section>
         )}
 
         {item && (
           <article className="pt-8">
-            <header className="border-b border-[#cdba7a] pb-8">
+            <header className="border-b border-[#d6d2c8] pb-8">
               <Link
                 href={`/rede/perfil/${encodeURIComponent(item.autor.slug)}`}
-                className={`inline-flex min-h-11 items-center text-sm font-semibold text-[#805600] hover:underline ${foco}`}
+                className={`inline-flex min-h-11 items-center text-sm font-semibold text-[#8a4b12] hover:underline ${foco}`}
               >
                 {item.autor.nome_publico}
               </Link>
@@ -149,12 +149,12 @@ export default function PublicacaoRedePage() {
               </h1>
 
               {item.resumo && (
-                <p className="mt-6 whitespace-pre-wrap break-words text-lg leading-8 text-[#695727]">
+                <p className="mt-6 whitespace-pre-wrap break-words text-lg leading-8 text-[#4b5a53]">
                   {item.resumo}
                 </p>
               )}
 
-              <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[#695727]">
+              <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[#4b5a53]">
                 {item.localidade_texto && <span>{item.localidade_texto}</span>}
                 {data && Number.isFinite(data.getTime()) && (
                   <time dateTime={item.publicado_em}>
@@ -175,7 +175,7 @@ export default function PublicacaoRedePage() {
                   <figure key={midia.id}>
                     <MidiaVivenciaERN midia={midia} />
                     {midia.credito && (
-                      <figcaption className="mt-3 text-xs leading-6 text-[#695727]">
+                      <figcaption className="mt-3 text-xs leading-6 text-[#4b5a53]">
                         {t.credit}: {midia.credito}
                       </figcaption>
                     )}
@@ -187,23 +187,23 @@ export default function PublicacaoRedePage() {
             <CompartilharVivenciaERN post={item} />
             {item.destino_slug && (
               <Link
-                className="inline-flex min-h-12 items-center rounded-xl border border-[#cdba7a] px-4 py-3"
+                className="inline-flex min-h-12 items-center rounded-xl border border-[#d6d2c8] px-4 py-3"
                 href={`/destinos?lugar=${encodeURIComponent(item.destino_slug)}&publicacao=${encodeURIComponent(item.slug)}`}
               >
                 {idioma === 'EN' ? 'View on map' : idioma === 'ES' ? 'Ver en el mapa' : 'Ver no mapa'} ↗
               </Link>
             )}
             {item.conteudo && (
-              <div className="mx-auto mt-10 max-w-3xl whitespace-pre-wrap break-words text-base leading-8 text-[#30260d] sm:text-lg sm:leading-9">
+              <div className="mx-auto mt-10 max-w-3xl whitespace-pre-wrap break-words text-base leading-8 text-[#0f1c17] sm:text-lg sm:leading-9">
                 {item.conteudo}
               </div>
             )}
 
-            <footer className="mt-12 flex flex-wrap items-center justify-between gap-5 border-t border-[#cdba7a] pt-7">
+            <footer className="mt-12 flex flex-wrap items-center justify-between gap-5 border-t border-[#d6d2c8] pt-7">
               <p className="break-words font-semibold">{item.autor.nome_publico}</p>
               <Link
                 href={`/rede/perfil/${encodeURIComponent(item.autor.slug)}`}
-                className={`inline-flex min-h-12 items-center gap-3 text-sm font-semibold text-[#805600] ${foco}`}
+                className={`inline-flex min-h-12 items-center gap-3 text-sm font-semibold text-[#8a4b12] ${foco}`}
               >
                 {t.author} <span aria-hidden="true">↗</span>
               </Link>

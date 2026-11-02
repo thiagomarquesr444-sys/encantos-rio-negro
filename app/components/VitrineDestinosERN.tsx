@@ -248,7 +248,7 @@ export default function VitrineDestinosERN({
               return (
                 <li
                   key={destino.id}
-                  className={`group relative min-w-0 overflow-hidden rounded-[22px] bg-[#0A1713] ring-1 ring-white/10 transition hover:ring-[#F4C77E]/50 ${
+                  className={`ern-revela-rolagem group relative min-w-0 overflow-hidden rounded-[22px] bg-[#0A1713] ring-1 ring-white/10 transition hover:ring-[#F4C77E]/50 ${
                     destaque ? 'sm:col-span-2 sm:row-span-2' : ''
                   }`}
                 >

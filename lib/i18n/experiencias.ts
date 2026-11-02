@@ -3,7 +3,7 @@ import type { Idioma } from '@/lib/i18n/types';
 export const experienciasTranslations = {
   PT: {
     hero: {
-      eyebrow: 'Experiências ERN',
+      eyebrow: 'Experiências EDA',
       title:
         'Não escolha apenas um lugar. Escolha o que você quer viver.',
       description:
@@ -12,7 +12,7 @@ export const experienciasTranslations = {
       plan: 'Montar minha viagem',
       sideEyebrow: 'Experiência antes do pacote',
       sideTitle:
-        'A ERN começa pelo interesse do visitante e só depois chega à operação.',
+        'A EDA começa pelo interesse do visitante e só depois chega à operação.',
       sideDescription:
         'Isso permite conectar desejos reais a operadores, hospedagens, guias e experiências compatíveis.',
     },
@@ -35,7 +35,7 @@ export const experienciasTranslations = {
       paragraph1:
         'Algumas pessoas chegam pela pesca. Outras pela floresta, pelos festivais, pelas praias ou simplesmente pela vontade de conhecer uma Amazônia diferente.',
       paragraph2:
-        'A função da ERN é transformar esse interesse em uma jornada organizada e conectada a quem realmente trabalha no território.',
+        'A função da EDA é transformar esse interesse em uma jornada organizada e conectada a quem realmente trabalha no território.',
     },
 
     more: 'Quero saber mais',
@@ -45,7 +45,7 @@ export const experienciasTranslations = {
       title:
         'Nem todo visitante procura a mesma Amazônia.',
       description:
-        'A ERN pode usar o perfil e o interesse do visitante para construir uma experiência mais coerente com a viagem desejada.',
+        'A EDA pode usar o perfil e o interesse do visitante para construir uma experiência mais coerente com a viagem desejada.',
       items: [
         {
           titulo: 'Quero aventura',
@@ -75,13 +75,13 @@ export const experienciasTranslations = {
       title:
         'A experiência escolhida pode virar uma oportunidade real.',
       description:
-        'Quando o visitante demonstra interesse, a ERN pode organizar informações iniciais e preparar a conexão com operadores, hospedagens, guias ou outros prestadores adequados.',
+        'Quando o visitante demonstra interesse, a EDA pode organizar informações iniciais e preparar a conexão com operadores, hospedagens, guias ou outros prestadores adequados.',
       button: 'Falar com o Concierge',
       example: 'Exemplo de jornada',
       steps: [
         'Visitante escolhe uma experiência',
         'Concierge entende perfil e período',
-        'ERN organiza o contexto da viagem',
+        'EDA organiza o contexto da viagem',
         'Operador confirma possibilidade real',
         'Atendimento segue para reserva e operação',
       ],
@@ -91,8 +91,8 @@ export const experienciasTranslations = {
       eyebrow:
         'Sua empresa oferece experiências?',
       title:
-        'A ERN também foi criada para quem faz o turismo acontecer.',
-      button: 'Conhecer ERN Gestão',
+        'A EDA também foi criada para quem faz o turismo acontecer.',
+      button: 'Conhecer Encantos Gestão',
     },
 
     experiences: {
@@ -190,7 +190,7 @@ export const experienciasTranslations = {
 
   EN: {
     hero: {
-      eyebrow: 'ERN Experiences',
+      eyebrow: 'EDA Experiences',
       title:
         'Do not choose only a place. Choose what you want to experience.',
       description:
@@ -199,7 +199,7 @@ export const experienciasTranslations = {
       plan: 'Build my trip',
       sideEyebrow: 'Experience before package',
       sideTitle:
-        'ERN starts with the visitor’s interests and only then moves into operation.',
+        'EDA starts with the visitor’s interests and only then moves into operation.',
       sideDescription:
         'This helps connect real travel interests with suitable operators, accommodation, guides and experiences.',
     },
@@ -222,7 +222,7 @@ export const experienciasTranslations = {
       paragraph1:
         'Some travelers arrive because of fishing. Others come for the forest, festivals, beaches or simply because they want to discover a different side of the Amazon.',
       paragraph2:
-        'ERN exists to turn that interest into an organized journey connected to the people who actually work in the territory.',
+        'EDA exists to turn that interest into an organized journey connected to the people who actually work in the territory.',
     },
 
     more: 'Learn more',
@@ -232,7 +232,7 @@ export const experienciasTranslations = {
       title:
         'Not every visitor is looking for the same Amazon.',
       description:
-        'ERN can use the visitor’s profile and interests to build an experience that better fits the journey they want.',
+        'EDA can use the visitor’s profile and interests to build an experience that better fits the journey they want.',
       items: [
         {
           titulo: 'I want adventure',
@@ -262,13 +262,13 @@ export const experienciasTranslations = {
       title:
         'The experience you choose can become a real opportunity.',
       description:
-        'When a visitor shows interest, ERN can organize the initial information and prepare the connection with operators, accommodation providers, guides or other suitable partners.',
+        'When a visitor shows interest, EDA can organize the initial information and prepare the connection with operators, accommodation providers, guides or other suitable partners.',
       button: 'Talk to the Concierge',
       example: 'Example journey',
       steps: [
         'Visitor chooses an experience',
         'Concierge understands profile and travel period',
-        'ERN organizes the travel context',
+        'EDA organizes the travel context',
         'Operator confirms real availability',
         'Service moves forward to reservation and operation',
       ],
@@ -278,8 +278,8 @@ export const experienciasTranslations = {
       eyebrow:
         'Does your company offer experiences?',
       title:
-        'ERN was also created for the people who make tourism happen.',
-      button: 'Discover ERN Management',
+        'EDA was also created for the people who make tourism happen.',
+      button: 'Discover Encantos Gestão',
     },
 
     experiences: {
@@ -379,7 +379,7 @@ export const experienciasTranslations = {
 
   ES: {
     hero: {
-      eyebrow: 'Experiencias ERN',
+      eyebrow: 'Experiencias EDA',
       title:
         'No elijas solamente un lugar. Elige lo que quieres vivir.',
       description:
@@ -389,7 +389,7 @@ export const experienciasTranslations = {
       sideEyebrow:
         'La experiencia antes del paquete',
       sideTitle:
-        'ERN comienza por el interés del visitante y solo después llega a la operación.',
+        'EDA comienza por el interés del visitante y solo después llega a la operación.',
       sideDescription:
         'Esto permite conectar deseos reales con operadores, hospedajes, guías y experiencias compatibles.',
     },
@@ -412,7 +412,7 @@ export const experienciasTranslations = {
       paragraph1:
         'Algunas personas llegan por la pesca. Otras por el bosque, los festivales, las playas o simplemente por el deseo de conocer una Amazonía diferente.',
       paragraph2:
-        'La función de ERN es transformar ese interés en una jornada organizada y conectada con quienes realmente trabajan en el territorio.',
+        'La función de EDA es transformar ese interés en una jornada organizada y conectada con quienes realmente trabajan en el territorio.',
     },
 
     more: 'Quiero saber más',
@@ -422,7 +422,7 @@ export const experienciasTranslations = {
       title:
         'No todos los visitantes buscan la misma Amazonía.',
       description:
-        'ERN puede usar el perfil y los intereses del visitante para construir una experiencia más coherente con el viaje deseado.',
+        'EDA puede usar el perfil y los intereses del visitante para construir una experiencia más coherente con el viaje deseado.',
       items: [
         {
           titulo: 'Quiero aventura',
@@ -453,13 +453,13 @@ export const experienciasTranslations = {
       title:
         'La experiencia elegida puede convertirse en una oportunidad real.',
       description:
-        'Cuando el visitante demuestra interés, ERN puede organizar la información inicial y preparar la conexión con operadores, hospedajes, guías u otros prestadores adecuados.',
+        'Cuando el visitante demuestra interés, EDA puede organizar la información inicial y preparar la conexión con operadores, hospedajes, guías u otros prestadores adecuados.',
       button: 'Hablar con el Concierge',
       example: 'Ejemplo de recorrido',
       steps: [
         'El visitante elige una experiencia',
         'El Concierge entiende el perfil y el período',
-        'ERN organiza el contexto del viaje',
+        'EDA organiza el contexto del viaje',
         'El operador confirma la posibilidad real',
         'La atención avanza hacia la reserva y la operación',
       ],
@@ -469,8 +469,8 @@ export const experienciasTranslations = {
       eyebrow:
         '¿Tu empresa ofrece experiencias?',
       title:
-        'ERN también fue creada para quienes hacen que el turismo suceda.',
-      button: 'Conocer ERN Gestión',
+        'EDA también fue creada para quienes hacen que el turismo suceda.',
+      button: 'Conocer Encantos Gestão',
     },
 
     experiences: {

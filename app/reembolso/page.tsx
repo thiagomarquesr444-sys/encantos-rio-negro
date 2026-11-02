@@ -9,7 +9,7 @@ import PaginaInstitucionalERN, {
 export const metadata: Metadata = {
   title: 'Cancelamento e reembolso',
   description:
-    'Informações sobre cancelamento de assinaturas e solicitações de reembolso na Encantos Rio Negro.',
+    'Informações sobre cancelamento de assinaturas e solicitações de reembolso na Encantos da Amazônia.',
   robots: {
     index: false,
     follow: true,
@@ -20,7 +20,7 @@ const secoes = [
   {
     titulo: '1. A que esta política se refere',
     paragrafos: [
-      'Esta página trata principalmente das assinaturas da plataforma ERN Gestão. Uma reserva turística é uma contratação distinta e deve identificar seu fornecedor e suas condições.',
+      'Esta página trata principalmente das assinaturas da plataforma Encantos Gestão. Uma reserva turística é uma contratação distinta e deve identificar seu fornecedor e suas condições.',
       'Versão inicial de 21 de outubro de 2026, em revisão. Os procedimentos operacionais de reembolso e confirmação de atendimento ainda precisam ser validados.',
     ],
   },
@@ -57,7 +57,7 @@ const secoes = [
   {
     titulo: '6. Como solicitar atendimento',
     paragrafos: [
-      'Envie uma mensagem ao contato da ERN com o e-mail da conta, a descrição do pedido e, se disponível, o identificador da cobrança ou assinatura.',
+      'Envie uma mensagem ao contato da EDA com o e-mail da conta, a descrição do pedido e, se disponível, o identificador da cobrança ou assinatura.',
       'Não envie senha, código de autenticação ou dados completos do cartão. O pedido pode exigir verificação proporcional de identidade e conferência da transação.',
       'O prazo e o modo de processamento devem ser informados no atendimento, observados os deveres legais. Prazos bancários ou de apresentação do crédito não justificam atraso indevido na providência de restituição.',
     ],
@@ -66,8 +66,8 @@ const secoes = [
     titulo: '7. Reservas e serviços turísticos',
     paragrafos: [
       'Para passeios, hospedagens, transporte e demais serviços turísticos, consulte também a oferta e o contrato do fornecedor identificado na contratação.',
-      'Uma regra de cancelamento do fornecedor não pode afastar direitos legalmente assegurados. A responsabilidade da ERN depende de sua participação efetiva na oferta e na contratação.',
-      'Se não conseguir identificar o responsável pelo serviço anunciado, informe o endereço da publicação ao atendimento da ERN.',
+      'Uma regra de cancelamento do fornecedor não pode afastar direitos legalmente assegurados. A responsabilidade da EDA depende de sua participação efetiva na oferta e na contratação.',
+      'Se não conseguir identificar o responsável pelo serviço anunciado, informe o endereço da publicação ao atendimento da EDA.',
     ],
   },
   {
@@ -99,7 +99,7 @@ export default function ReembolsoPage() {
       <SecaoInstitucionalERN titulo="Enviar solicitação">
         <LinkInstitucionalERN
           href={`mailto:${EMAIL_ATENDIMENTO_ERN}?subject=${encodeURIComponent(
-            'ERN — Cancelamento ou solicitação de reembolso',
+            'EDA — Cancelamento ou solicitação de reembolso',
           )}`}
         >
           Solicitar cancelamento ou reembolso por e-mail

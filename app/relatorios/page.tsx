@@ -66,7 +66,7 @@ function Resumo({
 
       baixarDocumentoPremiumERN({
         titulo: titulo || 'Relatório Gerencial',
-        subtitulo: 'Análise gerencial integrada | Encantos Rio Negro',
+        subtitulo: 'Análise gerencial integrada | Encantos Gestão',
         identificador: relatorioId,
         empresa: empresa.nome,
         status: 'Análise recalculada',

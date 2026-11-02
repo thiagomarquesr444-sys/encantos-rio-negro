@@ -1171,3 +1171,116 @@ html[data-ern-portal="escuro"] .ern-publico {
     scroll-behavior: auto;
   }
 }
+
+/* ERN_MOVIMENTO_PUBLICO_V1
+   Padrão de letreiros e entradas do portal público:
+   - .ern-palavra / .ern-dourado: título da abertura, palavra por palavra;
+   - .ern-revela: entrada suave (subir + aparecer);
+   - h1 das páginas públicas entra com o mesmo movimento;
+   - h2 e cartões aparecem ao rolar (navegadores com animation-timeline).
+   Tudo desligado para quem pede "reduzir movimento". */
+.ern-palavra {
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(0.45em);
+  filter: blur(8px);
+  animation: ern-palavra 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) forwards;
+}
+
+.ern-dourado {
+  background: linear-gradient(100deg, #e3a144 0%, #fbe3ae 40%, #e3a144 60%, #c47a3a 100%);
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation:
+    ern-palavra 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) forwards,
+    ern-brilho 6s 1.6s ease-in-out infinite;
+}
+
+.ern-revela,
+.ern-publico h1:not(.ern-titulo-animado) {
+  animation: ern-sobe 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+
+.ern-pulso {
+  animation: ern-pulso 2.4s ease-in-out infinite;
+}
+
+.ern-fundo-respira {
+  transform-origin: 60% 60%;
+  animation: ern-respira 20s ease-in-out infinite alternate;
+}
+
+@supports (animation-timeline: view()) {
+  /* Só cartões: títulos ficam sempre visíveis (seções com overflow oculto
+     viram "rolagem própria" e travavam a animação no início). */
+  .ern-revela-rolagem {
+    animation: ern-sobe linear both;
+    animation-timeline: view();
+    animation-range: entry 0% entry 40%;
+  }
+}
+
+@keyframes ern-palavra {
+  to { opacity: 1; transform: none; filter: none; }
+}
+
+@keyframes ern-sobe {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes ern-brilho {
+  0%, 100% { background-position: 0% 0; }
+  50% { background-position: 100% 0; }
+}
+
+@keyframes ern-pulso {
+  0%, 100% { box-shadow: 0 0 0 4px rgb(71 176 135 / 22%); }
+  50% { box-shadow: 0 0 0 8px rgb(71 176 135 / 0%); }
+}
+
+@keyframes ern-respira {
+  from { transform: scale(1); }
+  to { transform: scale(1.04); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ern-palavra,
+  .ern-dourado,
+  .ern-revela,
+  .ern-pulso,
+  .ern-fundo-respira,
+  .ern-revela-rolagem,
+  .ern-publico h1,
+  .ern-publico h2 {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+    filter: none !important;
+  }
+}
+
+/* ERN_SELO_LUGARES_V1: trilho contínuo de lugares; bordas suavizadas. */
+.ern-selo-lugares {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+.ern-selo-trilho {
+  animation: ern-selo-rola 45s linear infinite;
+}
+
+.ern-selo-lugares:hover .ern-selo-trilho {
+  animation-play-state: paused;
+}
+
+@keyframes ern-selo-rola {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ern-selo-trilho { animation: none; }
+}

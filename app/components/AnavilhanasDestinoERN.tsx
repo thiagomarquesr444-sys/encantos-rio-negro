@@ -18,12 +18,12 @@ const textos = {
       'Protegida como estação ecológica desde 1981, a área tornou-se Parque Nacional em 2008. Sua história aproxima a descoberta da Amazônia do cuidado com a floresta: navegar por esse território também é aprender a observar seus ritmos.',
     invitationTitle: 'Qual Anavilhanas você quer descobrir?',
     invitation:
-      'Os canais, a floresta e a perspectiva de quem navega revelam detalhes que uma única fotografia não conta. Explore os registros e continue sua descoberta de Novo Airão pela ERN.',
+      'Os canais, a floresta e a perspectiva de quem navega revelam detalhes que uma única fotografia não conta. Explore os registros e continue sua descoberta de Novo Airão pela EDA.',
     practical:
       'Planeje a visita com profissionais locais e confirme as condições do rio, o percurso e as orientações do parque. Praias e encontros com animais dependem das condições naturais.',
     gallery: 'Olhares de Anavilhanas',
     photo: 'Fotografia',
-    alt: 'Registro de Anavilhanas fornecido à Encantos Rio Negro',
+    alt: 'Registro de Anavilhanas fornecido à Encantos da Amazônia',
     video: 'Anavilhanas em movimento',
     sources: 'Conheça as fontes',
   },
@@ -40,12 +40,12 @@ const textos = {
       'Protected as an ecological station since 1981, the area became a National Park in 2008. Its history connects discovery with forest conservation: travelling through this territory also means learning to observe its rhythms.',
     invitationTitle: 'Which Anavilhanas will you discover?',
     invitation:
-      'The channels, the forest and the view from the water reveal details no single photograph can tell. Explore these records and continue discovering Novo Airão with ERN.',
+      'The channels, the forest and the view from the water reveal details no single photograph can tell. Explore these records and continue discovering Novo Airão with EDA.',
     practical:
       'Plan your visit with local professionals and confirm river conditions, routes and park guidance. Beaches and wildlife encounters depend on natural conditions.',
     gallery: 'Views of Anavilhanas',
     photo: 'Photograph',
-    alt: 'Photograph of Anavilhanas provided to Encantos Rio Negro',
+    alt: 'Photograph of Anavilhanas provided to Encantos da Amazônia',
     video: 'Anavilhanas in motion',
     sources: 'Explore the sources',
   },
@@ -62,12 +62,12 @@ const textos = {
       'Protegida como estación ecológica desde 1981, el área se convirtió en Parque Nacional en 2008. Su historia une el descubrimiento de la Amazonía con el cuidado de la selva: recorrer este territorio también significa aprender a observar sus ritmos.',
     invitationTitle: '¿Qué Anavilhanas quieres descubrir?',
     invitation:
-      'Los canales, la selva y la mirada desde el agua revelan detalles que una sola fotografía no cuenta. Explora estos registros y sigue descubriendo Novo Airão con ERN.',
+      'Los canales, la selva y la mirada desde el agua revelan detalles que una sola fotografía no cuenta. Explora estos registros y sigue descubriendo Novo Airão con EDA.',
     practical:
       'Planifica la visita con profesionales locales y confirma las condiciones del río, el recorrido y las indicaciones del parque. Las playas y los encuentros con animales dependen de las condiciones naturales.',
     gallery: 'Miradas de Anavilhanas',
     photo: 'Fotografía',
-    alt: 'Fotografía de Anavilhanas proporcionada a Encantos Rio Negro',
+    alt: 'Fotografía de Anavilhanas proporcionada a Encantos da Amazônia',
     video: 'Anavilhanas en movimiento',
     sources: 'Consulta las fuentes',
   },

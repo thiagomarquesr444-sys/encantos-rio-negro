@@ -3,8 +3,8 @@ import type { MetadataRoute } from 'next';
 export default function manifest(): MetadataRoute.Manifest {
   return {
     id: '/',
-    name: 'Encantos Rio Negro',
-    short_name: 'ERN',
+    name: 'Encantos da Amazônia',
+    short_name: 'EDA',
     description: 'Turismo, cultura e gest\u00e3o conectados ao Rio Negro.',
     lang: 'pt-BR',
     start_url: '/',

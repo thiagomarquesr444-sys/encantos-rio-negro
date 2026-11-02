@@ -208,7 +208,7 @@ export default function NovaSenhaPage() {
 
 
             <p className="mt-3 text-sm font-semibold text-[#F4C77E]">
-              Encantos Rio Negro
+              Encantos Gestão
             </p>
 
             <h1

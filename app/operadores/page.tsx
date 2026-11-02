@@ -10,17 +10,17 @@ import { useLanguage } from '@/app/components/LanguageProvider';
 const textos = {
   PT: {
     skip: 'Ir para o conteúdo',
-    eyebrow: 'ERN Gestão · turismo no Rio Negro',
+    eyebrow: 'Encantos Gestão · turismo no Rio Negro',
     title: 'Sua operação organizada. Sua experiência conectada ao mundo.',
-    intro: 'Clientes, reservas, logística e financeiro em um ambiente de gestão. Uma página pública para apresentar sua operadora e compartilhar experiências na Rede ERN.',
-    access: 'Acessar a ERN',
+    intro: 'Clientes, reservas, logística e financeiro em um ambiente de gestão. Uma página pública para apresentar sua operadora e compartilhar experiências na Rede EDA.',
+    access: 'Acessar a EDA',
     screens: 'Ver a plataforma por dentro',
-    caption: 'Tela da ERN Gestão. Os recursos disponíveis dependem do plano e do tipo de acesso.',
-    image: 'Dashboard da ERN Gestão com indicadores e informações da operação',
+    caption: 'Tela da Encantos Gestão. Os recursos disponíveis dependem do plano e do tipo de acesso.',
+    image: 'Dashboard da Encantos Gestão com indicadores e informações da operação',
     pillars: ['Gestão da operadora', 'Presença pública', 'Conexões no território'],
     workEyebrow: 'Da rotina à divulgação',
     workTitle: 'Organize por dentro. Apresente por fora.',
-    workIntro: 'A ERN reúne duas frentes que se complementam: o trabalho da sua equipe e a apresentação pública da sua operação.',
+    workIntro: 'A EDA reúne duas frentes que se complementam: o trabalho da sua equipe e a apresentação pública da sua operação.',
     managementTitle: 'Um lugar para acompanhar a operação',
     managementText: 'Organize os registros da empresa e acompanhe as etapas de cada atendimento.',
     managementItems: [
@@ -34,13 +34,13 @@ const textos = {
     publicItems: [
       'Perfil público com apresentação e canais de contato',
       'Publicações com imagens, roteiros e experiências',
-      'Conteúdo acessível aos visitantes da Rede ERN',
+      'Conteúdo acessível aos visitantes da Rede EDA',
       'Contato com o prestador pelos canais que ele disponibilizar',
     ],
     network: 'Conhecer a Rede pública',
     networkEyebrow: 'Uma rede, diferentes atuações',
     networkTitle: 'Quem faz o turismo acontecer também precisa se encontrar.',
-    networkIntro: 'Operadoras, guias e fornecedores têm papéis diferentes. A ERN oferece caminhos de acesso próprios e uma vitrine pública para aproximar o visitante do território.',
+    networkIntro: 'Operadoras, guias e fornecedores têm papéis diferentes. A EDA oferece caminhos de acesso próprios e uma vitrine pública para aproximar o visitante do território.',
     roles: [
       ['Operadoras', 'Gestão da empresa e apresentação de experiências para o público.'],
       ['Guias', 'Cadastro profissional próprio, com identidade independente das operadoras.'],
@@ -56,12 +56,12 @@ const textos = {
     ],
     futureEyebrow: 'Próximos passos do produto',
     futureTitle: 'Uma base que continua evoluindo.',
-    futureText: 'Concierge e agentes de atendimento fazem parte da evolução planejada da ERN. Não são apresentados aqui como recursos disponíveis para uso imediato.',
+    futureText: 'Concierge e agentes de atendimento fazem parte da evolução planejada da EDA. Não são apresentados aqui como recursos disponíveis para uso imediato.',
     futureNote: 'A confirmação de uma viagem depende das condições, da disponibilidade e do atendimento de cada prestador.',
     finalEyebrow: 'Comece pela sua atuação',
     finalTitle: 'Conheça a estrutura. Escolha seu acesso.',
     finalText: 'Explore as telas e entre pelo perfil adequado. A disponibilidade de módulos e benefícios deve ser conferida nas condições do plano.',
-    contact: 'Falar com a ERN',
+    contact: 'Falar com a EDA',
     legal: 'Informações e atendimento',
     footer: [
       ['Contato', '/contato'],
@@ -72,17 +72,17 @@ const textos = {
   },
   EN: {
     skip: 'Skip to content',
-    eyebrow: 'ERN Management · Rio Negro tourism',
+    eyebrow: 'Encantos Gestão · Rio Negro tourism',
     title: 'Organize your operation. Connect your experiences with the world.',
-    intro: 'Clients, reservations, logistics and finance in a management environment. A public page to introduce your business and share experiences on Rede ERN.',
-    access: 'Access ERN',
+    intro: 'Clients, reservations, logistics and finance in a management environment. A public page to introduce your business and share experiences on Rede EDA.',
+    access: 'Access EDA',
     screens: 'Explore the platform',
-    caption: 'ERN Management screen. Available features depend on the plan and access type.',
-    image: 'ERN Management dashboard showing indicators and operational information',
+    caption: 'Encantos Gestão screen. Available features depend on the plan and access type.',
+    image: 'Encantos Gestão dashboard showing indicators and operational information',
     pillars: ['Operator management', 'Public presence', 'Regional connections'],
     workEyebrow: 'From daily work to public presence',
     workTitle: 'Organize your business. Present your experiences.',
-    workIntro: 'ERN brings together two complementary areas: your team’s work and the public presentation of your business.',
+    workIntro: 'EDA brings together two complementary areas: your team’s work and the public presentation of your business.',
     managementTitle: 'A place to follow your operation',
     managementText: 'Organize company records and follow the stages of each service.',
     managementItems: [
@@ -96,13 +96,13 @@ const textos = {
     publicItems: [
       'Public profile with an introduction and contact channels',
       'Posts featuring images, itineraries and experiences',
-      'Content available to visitors on Rede ERN',
+      'Content available to visitors on Rede EDA',
       'Direct contact through the channels provided by each business',
     ],
     network: 'Explore the public network',
     networkEyebrow: 'One network, different roles',
     networkTitle: 'The people behind tourism need ways to connect.',
-    networkIntro: 'Operators, guides and suppliers have different roles. ERN provides dedicated access paths and a public showcase that brings visitors closer to the region.',
+    networkIntro: 'Operators, guides and suppliers have different roles. EDA provides dedicated access paths and a public showcase that brings visitors closer to the region.',
     roles: [
       ['Operators', 'Business management and public presentation of experiences.'],
       ['Guides', 'An individual professional profile, independent of tour operators.'],
@@ -118,12 +118,12 @@ const textos = {
     ],
     futureEyebrow: 'Product development',
     futureTitle: 'A foundation that keeps evolving.',
-    futureText: 'Concierge and service agents are part of ERN’s planned development. They are not presented here as features available for immediate use.',
+    futureText: 'Concierge and service agents are part of EDA’s planned development. They are not presented here as features available for immediate use.',
     futureNote: 'Trip confirmation depends on each provider’s terms, availability and service.',
     finalEyebrow: 'Start with your role',
     finalTitle: 'Explore the platform. Choose your access.',
     finalText: 'Explore the screens and select the right profile. Check the plan terms for module and benefit availability.',
-    contact: 'Contact ERN',
+    contact: 'Contact EDA',
     legal: 'Information and support',
     footer: [
       ['Contact', '/contato'],
@@ -134,17 +134,17 @@ const textos = {
   },
   ES: {
     skip: 'Ir al contenido',
-    eyebrow: 'ERN Gestión · turismo en el Río Negro',
+    eyebrow: 'Encantos Gestão · turismo en el Río Negro',
     title: 'Su operación organizada. Sus experiencias conectadas con el mundo.',
-    intro: 'Clientes, reservas, logística y finanzas en un entorno de gestión. Una página pública para presentar su empresa y compartir experiencias en Rede ERN.',
-    access: 'Acceder a ERN',
+    intro: 'Clientes, reservas, logística y finanzas en un entorno de gestión. Una página pública para presentar su empresa y compartir experiencias en Rede EDA.',
+    access: 'Acceder a EDA',
     screens: 'Explorar la plataforma',
-    caption: 'Pantalla de ERN Gestión. Las funciones disponibles dependen del plan y del tipo de acceso.',
-    image: 'Panel de ERN Gestión con indicadores e información de la operación',
+    caption: 'Pantalla de Encantos Gestão. Las funciones disponibles dependen del plan y del tipo de acceso.',
+    image: 'Panel de Encantos Gestão con indicadores e información de la operación',
     pillars: ['Gestión del operador', 'Presencia pública', 'Conexiones regionales'],
     workEyebrow: 'De la rutina a la divulgación',
     workTitle: 'Organice su empresa. Presente sus experiencias.',
-    workIntro: 'ERN reúne dos áreas complementarias: el trabajo de su equipo y la presentación pública de su empresa.',
+    workIntro: 'EDA reúne dos áreas complementarias: el trabajo de su equipo y la presentación pública de su empresa.',
     managementTitle: 'Un lugar para seguir su operación',
     managementText: 'Organice los registros de la empresa y acompañe las etapas de cada atención.',
     managementItems: [
@@ -158,13 +158,13 @@ const textos = {
     publicItems: [
       'Perfil público con presentación y canales de contacto',
       'Publicaciones con imágenes, itinerarios y experiencias',
-      'Contenido disponible para los visitantes de Rede ERN',
+      'Contenido disponible para los visitantes de Rede EDA',
       'Contacto a través de los canales que cada prestador ofrece',
     ],
     network: 'Conocer la red pública',
     networkEyebrow: 'Una red, diferentes actividades',
     networkTitle: 'Quienes hacen posible el turismo necesitan encontrarse.',
-    networkIntro: 'Operadores, guías y proveedores tienen funciones diferentes. ERN ofrece accesos propios y una vitrina pública para acercar al visitante al territorio.',
+    networkIntro: 'Operadores, guías y proveedores tienen funciones diferentes. EDA ofrece accesos propios y una vitrina pública para acercar al visitante al territorio.',
     roles: [
       ['Operadores', 'Gestión de la empresa y presentación pública de experiencias.'],
       ['Guías', 'Registro profesional propio, independiente de los operadores.'],
@@ -180,12 +180,12 @@ const textos = {
     ],
     futureEyebrow: 'Evolución del producto',
     futureTitle: 'Una base que sigue evolucionando.',
-    futureText: 'El Concierge y los agentes de atención forman parte de la evolución prevista de ERN. No se presentan aquí como funciones disponibles para uso inmediato.',
+    futureText: 'El Concierge y los agentes de atención forman parte de la evolución prevista de EDA. No se presentan aquí como funciones disponibles para uso inmediato.',
     futureNote: 'La confirmación de un viaje depende de las condiciones, disponibilidad y atención de cada prestador.',
     finalEyebrow: 'Empiece por su actividad',
     finalTitle: 'Conozca la estructura. Elija su acceso.',
     finalText: 'Explore las pantallas y seleccione el perfil adecuado. Consulte las condiciones del plan para conocer los módulos y beneficios disponibles.',
-    contact: 'Contactar con ERN',
+    contact: 'Contactar con EDA',
     legal: 'Información y atención',
     footer: [
       ['Contacto', '/contato'],
@@ -327,7 +327,7 @@ export default function OperadoresPage() {
 
       <footer className="rodape">
         <div className="limite rodape-interior">
-          <p>Encantos Rio Negro · Barcelos, Amazonas</p>
+          <p>Encantos da Amazônia · nascida em Barcelos, no Rio Negro</p>
           <nav aria-label={t.legal}>
             {t.footer.map(([rotulo, href]) => (
               <Link href={href} key={href}>{rotulo}</Link>
@@ -338,68 +338,68 @@ export default function OperadoresPage() {
 
       <style jsx>{`
         .comercial-ern {
-          background:#fff7db;
-          color:#30260d;
+          background:#f3f1ec;
+          color:#0f1c17;
           font-family:var(--font-work-sans),sans-serif;
         }
         .limite { width:100%; max-width:1240px; margin:0 auto; min-width:0; }
-        .abertura { padding:144px 24px 72px; border-bottom:1px solid #cdba7a; }
+        .abertura { padding:144px 24px 72px; border-bottom:1px solid #d6d2c8; }
         .abertura-grid { display:grid; grid-template-columns:.95fr 1.05fr; gap:48px; align-items:center; }
         .abertura-texto { min-width:0; }
-        .chamada { color:#805600; font-size:11px; line-height:1.7; font-weight:700; text-transform:uppercase; letter-spacing:.16em; }
+        .chamada { color:#8a4b12; font-size:11px; line-height:1.7; font-weight:700; text-transform:uppercase; letter-spacing:.16em; }
         h1,h2,h3 { font-family:var(--font-fraunces),serif; overflow-wrap:anywhere; }
         h1 { font-size:clamp(36px,4.5vw,66px); line-height:1.06; letter-spacing:-.04em; margin:20px 0 0; }
         h2 { font-size:clamp(30px,3.8vw,48px); line-height:1.12; letter-spacing:-.025em; margin:16px 0 0; }
         h3 { font-size:26px; line-height:1.2; }
         p { overflow-wrap:anywhere; }
-        .introducao { margin-top:24px; font-size:17px; line-height:1.9; color:#695727; }
+        .introducao { margin-top:24px; font-size:17px; line-height:1.9; color:#4b5a53; }
         .acoes { display:flex; flex-wrap:wrap; gap:12px; margin-top:28px; }
         .acoes a { display:inline-flex; align-items:center; justify-content:center; min-height:52px; padding:12px 20px; border-radius:12px; font-size:14px; font-weight:700; text-align:center; text-decoration:none; }
-        .principal { background:#805600; color:#fff; border:1px solid #805600; }
+        .principal { background:#8a4b12; color:#fff; border:1px solid #8a4b12; }
         .principal:hover { background:#644300; }
-        .secundario { border:1px solid #a58b48; color:#30260d; }
+        .secundario { border:1px solid #a58b48; color:#0f1c17; }
         .secundario:hover { background:#f0e4bb; }
-        .pilares { display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:26px; padding:0; list-style:none; color:#695727; font-size:12px; line-height:1.8; }
-        .pilares li { border-bottom:1px solid #cdba7a; padding-bottom:4px; }
-        .hero-captura { min-width:0; margin:0; padding:12px; background:#fffcf0; border:1px solid #cdba7a; border-radius:18px; box-shadow:0 18px 45px #30260d12; }
+        .pilares { display:flex; flex-wrap:wrap; gap:8px 18px; margin-top:26px; padding:0; list-style:none; color:#4b5a53; font-size:12px; line-height:1.8; }
+        .pilares li { border-bottom:1px solid #d6d2c8; padding-bottom:4px; }
+        .hero-captura { min-width:0; margin:0; padding:12px; background:#ffffff; border:1px solid #d6d2c8; border-radius:18px; box-shadow:0 18px 45px #0f1c1712; }
         .hero-captura :global(a) { display:block; border-radius:8px; }
         .hero-captura :global(.captura) { display:block; width:100%; height:auto; border-radius:8px; }
-        figcaption { padding:12px 4px 2px; color:#695727; font-size:12px; line-height:1.7; }
+        figcaption { padding:12px 4px 2px; color:#4b5a53; font-size:12px; line-height:1.7; }
         .bloco { padding:80px 24px; }
         .cabecalho { max-width:800px; }
-        .cabecalho>p:last-child:not(.chamada) { margin-top:22px; color:#695727; font-size:16px; line-height:1.9; }
+        .cabecalho>p:last-child:not(.chamada) { margin-top:22px; color:#4b5a53; font-size:16px; line-height:1.9; }
         .dupla { display:grid; grid-template-columns:1fr 1fr; gap:48px; margin-top:40px; }
-        .frente { min-width:0; border-top:2px solid #805600; padding-top:24px; }
-        .frente>p { margin-top:16px; color:#695727; line-height:1.8; }
+        .frente { min-width:0; border-top:2px solid #8a4b12; padding-top:24px; }
+        .frente>p { margin-top:16px; color:#4b5a53; line-height:1.8; }
         .lista { padding-left:20px; margin-top:20px; list-style:disc; }
-        .lista li { padding:6px 0; color:#695727; line-height:1.75; font-size:14px; overflow-wrap:anywhere; }
-        :global(.comercial-ern .texto-link) { display:inline-flex; align-items:center; gap:16px; min-height:48px; margin-top:20px; color:#805600; font-weight:700; text-decoration:underline; text-underline-offset:5px; }
-        .rede { background:#fffcf0; border-top:1px solid #cdba7a; border-bottom:1px solid #cdba7a; }
+        .lista li { padding:6px 0; color:#4b5a53; line-height:1.75; font-size:14px; overflow-wrap:anywhere; }
+        :global(.comercial-ern .texto-link) { display:inline-flex; align-items:center; gap:16px; min-height:48px; margin-top:20px; color:#8a4b12; font-weight:700; text-decoration:underline; text-underline-offset:5px; }
+        .rede { background:#ffffff; border-top:1px solid #d6d2c8; border-bottom:1px solid #d6d2c8; }
         .tres { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:32px; margin-top:36px; }
-        .papel { border-top:1px solid #cdba7a; padding-top:22px; }
-        .papel p,.etapas p { margin-top:14px; color:#695727; font-size:15px; line-height:1.85; }
-        .nota { max-width:860px; margin-top:28px; color:#695727; font-size:13px; line-height:1.85; }
+        .papel { border-top:1px solid #d6d2c8; padding-top:22px; }
+        .papel p,.etapas p { margin-top:14px; color:#4b5a53; font-size:15px; line-height:1.85; }
+        .nota { max-width:860px; margin-top:28px; color:#4b5a53; font-size:13px; line-height:1.85; }
         .etapas { list-style:none; padding:0; }
         .etapas li { min-width:0; }
-        .numero { display:flex; align-items:center; justify-content:center; width:40px; height:40px; border:1px solid #a58b48; border-radius:50%; color:#805600; font-size:14px; font-weight:700; margin-bottom:20px; }
-        .evolucao { padding:48px 24px; background:#f0e4bb; border-block:1px solid #cdba7a; }
+        .numero { display:flex; align-items:center; justify-content:center; width:40px; height:40px; border:1px solid #a58b48; border-radius:50%; color:#8a4b12; font-size:14px; font-weight:700; margin-bottom:20px; }
+        .evolucao { padding:48px 24px; background:#f0e4bb; border-block:1px solid #d6d2c8; }
         .evolucao-grid { display:grid; grid-template-columns:1fr 1fr; gap:48px; align-items:start; }
-        .evolucao-grid>div>p:not(.chamada) { color:#695727; line-height:1.9; }
+        .evolucao-grid>div>p:not(.chamada) { color:#4b5a53; line-height:1.9; }
         .evolucao h2 { font-size:clamp(28px,3vw,38px); }
         .escolha { padding-bottom:28px; }
         .escolha .limite { max-width:840px; text-align:center; }
-        .escolha .limite>p:not(.chamada) { margin-top:22px; color:#695727; line-height:1.9; }
-        .rodape { padding:30px 24px; border-top:1px solid #cdba7a; }
+        .escolha .limite>p:not(.chamada) { margin-top:22px; color:#4b5a53; line-height:1.9; }
+        .rodape { padding:30px 24px; border-top:1px solid #d6d2c8; }
         .rodape-interior { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:20px; }
-        .rodape p { color:#695727; font-size:12px; line-height:1.8; }
+        .rodape p { color:#4b5a53; font-size:12px; line-height:1.8; }
         .rodape nav { display:flex; flex-wrap:wrap; gap:4px 20px; }
-        .rodape nav :global(a) { display:inline-flex; align-items:center; min-height:44px; color:#695727; font-size:12px; text-decoration:underline; text-underline-offset:4px; }
-        .pular { position:fixed; left:16px; top:12px; z-index:1000; transform:translateY(-200%); padding:14px 20px; background:#fff7db; color:#30260d; border:2px solid #805600; border-radius:8px; }
+        .rodape nav :global(a) { display:inline-flex; align-items:center; min-height:44px; color:#4b5a53; font-size:12px; text-decoration:underline; text-underline-offset:4px; }
+        .pular { position:fixed; left:16px; top:12px; z-index:1000; transform:translateY(-200%); padding:14px 20px; background:#f3f1ec; color:#0f1c17; border:2px solid #8a4b12; border-radius:8px; }
         .pular:focus { transform:translateY(0); }
         .acoes a:focus-visible,.pular:focus-visible,
         .hero-captura :global(a:focus-visible),
         :global(.comercial-ern .texto-link:focus-visible),
-        .rodape nav :global(a:focus-visible) { outline:3px solid #805600; outline-offset:4px; }
+        .rodape nav :global(a:focus-visible) { outline:3px solid #8a4b12; outline-offset:4px; }
         @media(max-width:1023px) {
           .abertura-grid { grid-template-columns:1fr; gap:32px; }
           .abertura-texto { max-width:780px; }

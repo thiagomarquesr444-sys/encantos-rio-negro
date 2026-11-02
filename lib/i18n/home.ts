@@ -3,13 +3,13 @@ import type { Idioma } from '@/lib/i18n/types';
 export const homeTranslations = {
   PT: {
     hero: {
-      location: 'Rio Negro • Barcelos • Amazonas',
+      location: 'Barcelos • Novo Airão • Manaus • Rio Negro • Rio Solimões • Encontro das Águas • Parintins • Santa Isabel do Rio Negro • São Gabriel da Cachoeira • Anavilhanas • Serra do Aracá',
       title:
-        'O Rio Negro tem um jeito novo de ser vivido.',
+        'A Amazônia como você nunca viu.',
       description:
-        'Experiências, hospedagens e roteiros pelo Rio Negro, organizados com tecnologia e conhecimento local.',
+        'Experiências, hospedagens, pesca esportiva e roteiros pelo Amazonas, do Rio Negro a Parintins, organizados com tecnologia e conhecimento local.',
       description2:
-        'A ERN aproxima visitantes de operadores locais e oferece a tecnologia que ajuda quem trabalha com turismo a organizar clientes, reservas, experiências e operação em um só lugar.',
+        'A EDA aproxima visitantes de operadores locais e oferece a tecnologia que ajuda quem trabalha com turismo a organizar clientes, reservas, experiências e operação em um só lugar.',
       plan: 'Planejar minha viagem',
       explore: 'Explorar o Rio Negro',
       localService: 'Atendimento local',
@@ -65,7 +65,7 @@ export const homeTranslations = {
       title:
         'Uma Amazônia que não cabe em um catálogo.',
       description:
-        'Barcelos é porta de entrada para rios, ilhas, praias, pesca, comunidades e paisagens que mudam com o ciclo das águas. A ERN nasce para aproximar o visitante desse território sem transformar a experiência em turismo genérico.',
+        'Barcelos é porta de entrada para rios, ilhas, praias, pesca, comunidades e paisagens que mudam com o ciclo das águas. A EDA nasce para aproximar o visitante desse território sem transformar a experiência em turismo genérico.',
     },
 
     territory: {
@@ -73,10 +73,10 @@ export const homeTranslations = {
       title:
         'Natureza, cultura e histórias que atravessam o território.',
       description:
-        'O Rio Negro vai além de um único destino. A ERN conecta paisagens, festas, comunidades, rios, arquipélagos e experiências que ajudam a contar a identidade de Barcelos, Novo Airão e de toda essa região amazônica.',
+        'O Rio Negro vai além de um único destino. A EDA conecta paisagens, festas, comunidades, rios, arquipélagos e experiências que ajudam a contar a identidade de Barcelos, Novo Airão e de toda essa região amazônica.',
       unsure: 'Não sabe por onde começar?',
       unsureDescription:
-        'Conte ao Concierge o tipo de experiência que você procura e a ERN ajuda a organizar possibilidades pelo território.',
+        'Conte ao Concierge o tipo de experiência que você procura e a EDA ajuda a organizar possibilidades pelo território.',
       conciergeButton: 'Planejar com o Concierge',
     },
 
@@ -142,7 +142,7 @@ export const homeTranslations = {
       eyebrow: 'Experiências',
       title: 'Experiências do Rio Negro',
       description:
-        'Pesca esportiva, natureza, cultura ribeirinha, passeios e hospedagens formarão a vitrine de experiências da ERN.',
+        'Pesca esportiva, natureza, cultura ribeirinha, passeios e hospedagens formarão a vitrine de experiências da EDA.',
     },
 
     network: {
@@ -154,12 +154,12 @@ export const homeTranslations = {
     },
 
     management: {
-      eyebrow: 'ERN para operadores',
+      eyebrow: 'EDA para operadores',
       title:
         'A experiência do turista na frente. A operação organizada por trás.',
       description:
-        'A ERN também é uma plataforma de gestão para quem trabalha com turismo: clientes, reservas, passeios, embarcações, hospedagens, guias, vouchers, financeiro e relacionamento com parceiros.',
-      button: 'Conhecer a ERN Gestão',
+        'A EDA também é uma plataforma de gestão para quem trabalha com turismo: clientes, reservas, passeios, embarcações, hospedagens, guias, vouchers, financeiro e relacionamento com parceiros.',
+      button: 'Conhecer a Encantos Gestão',
       modules: [
         'Clientes',
         'Reservas',
@@ -173,20 +173,20 @@ export const homeTranslations = {
     },
 
     footer: {
-      left: 'ERN Concierge — Barcelos, Amazonas.',
-      right: 'Encantos Rio Negro',
+      left: 'EDA Concierge — Barcelos, Amazonas.',
+      right: 'Encantos da Amazônia',
     },
   },
 
   EN: {
     hero: {
-      location: 'Rio Negro • Barcelos • Amazonas',
+      location: 'Barcelos • Novo Airão • Manaus • Rio Negro • Solimões River • Meeting of the Waters • Parintins • Santa Isabel do Rio Negro • São Gabriel da Cachoeira • Anavilhanas • Serra do Aracá',
       title:
-        'There is a new way to experience the Rio Negro.',
+        'The Amazon as you have never seen it.',
       description:
-        'Experiences, accommodation and itineraries across the Rio Negro, organized with technology and local knowledge.',
+        'Experiences, accommodation, sport fishing and itineraries across Amazonas, from the Rio Negro to Parintins, organized with technology and local knowledge.',
       description2:
-        'ERN connects visitors with local operators and provides technology that helps tourism professionals organize clients, reservations, experiences and operations in one place.',
+        'EDA connects visitors with local operators and provides technology that helps tourism professionals organize clients, reservations, experiences and operations in one place.',
       plan: 'Plan my trip',
       explore: 'Explore the Rio Negro',
       localService: 'Local support',
@@ -242,7 +242,7 @@ export const homeTranslations = {
       title:
         'An Amazon that cannot fit into a catalog.',
       description:
-        'Barcelos is a gateway to rivers, islands, beaches, fishing, communities and landscapes that change with the water cycle. ERN was created to bring visitors closer to this territory without turning the experience into generic tourism.',
+        'Barcelos is a gateway to rivers, islands, beaches, fishing, communities and landscapes that change with the water cycle. EDA was created to bring visitors closer to this territory without turning the experience into generic tourism.',
     },
 
     territory: {
@@ -250,10 +250,10 @@ export const homeTranslations = {
       title:
         'Nature, culture and stories across the territory.',
       description:
-        'The Rio Negro goes far beyond a single destination. ERN connects landscapes, festivals, communities, rivers, archipelagos and experiences that help tell the identity of Barcelos, Novo Airão and this entire Amazonian region.',
+        'The Rio Negro goes far beyond a single destination. EDA connects landscapes, festivals, communities, rivers, archipelagos and experiences that help tell the identity of Barcelos, Novo Airão and this entire Amazonian region.',
       unsure: 'Not sure where to begin?',
       unsureDescription:
-        'Tell the Concierge what kind of experience you are looking for and ERN can help organize possibilities across the territory.',
+        'Tell the Concierge what kind of experience you are looking for and EDA can help organize possibilities across the territory.',
       conciergeButton: 'Plan with the Concierge',
     },
 
@@ -319,7 +319,7 @@ export const homeTranslations = {
       eyebrow: 'Experiences',
       title: 'Rio Negro experiences',
       description:
-        'Sport fishing, nature, riverside culture, tours and accommodation will form ERN’s showcase of experiences.',
+        'Sport fishing, nature, riverside culture, tours and accommodation will form EDA’s showcase of experiences.',
     },
 
     network: {
@@ -331,12 +331,12 @@ export const homeTranslations = {
     },
 
     management: {
-      eyebrow: 'ERN for operators',
+      eyebrow: 'EDA for operators',
       title:
         'The visitor experience in front. Organized operations behind it.',
       description:
-        'ERN is also a management platform for tourism professionals: clients, reservations, tours, boats, accommodation, guides, vouchers, finance and partner relationships.',
-      button: 'Discover ERN Management',
+        'EDA is also a management platform for tourism professionals: clients, reservations, tours, boats, accommodation, guides, vouchers, finance and partner relationships.',
+      button: 'Discover Encantos Gestão',
       modules: [
         'Clients',
         'Reservations',
@@ -350,20 +350,20 @@ export const homeTranslations = {
     },
 
     footer: {
-      left: 'ERN Concierge — Barcelos, Amazonas.',
-      right: 'Encantos Rio Negro',
+      left: 'EDA Concierge — Barcelos, Amazonas.',
+      right: 'Encantos da Amazônia',
     },
   },
 
   ES: {
     hero: {
-      location: 'Río Negro • Barcelos • Amazonas',
+      location: 'Barcelos • Novo Airão • Manaos • Río Negro • Río Solimões • Encuentro de las Aguas • Parintins • Santa Isabel do Rio Negro • São Gabriel da Cachoeira • Anavilhanas • Serra do Aracá',
       title:
-        'Hay una nueva manera de vivir el Río Negro.',
+        'La Amazonía como nunca la has visto.',
       description:
-        'Experiencias, hospedajes e itinerarios por el Río Negro, organizados con tecnología y conocimiento local.',
+        'Experiencias, hospedajes, pesca deportiva e itinerarios por Amazonas, del Río Negro a Parintins, organizados con tecnología y conocimiento local.',
       description2:
-        'ERN conecta a los visitantes con operadores locales y ofrece tecnología para ayudar a quienes trabajan con turismo a organizar clientes, reservas, experiencias y operaciones en un solo lugar.',
+        'EDA conecta a los visitantes con operadores locales y ofrece tecnología para ayudar a quienes trabajan con turismo a organizar clientes, reservas, experiencias y operaciones en un solo lugar.',
       plan: 'Planificar mi viaje',
       explore: 'Explorar el Río Negro',
       localService: 'Atención local',
@@ -419,7 +419,7 @@ export const homeTranslations = {
       title:
         'Una Amazonía que no cabe en un catálogo.',
       description:
-        'Barcelos es una puerta de entrada a ríos, islas, playas, pesca, comunidades y paisajes que cambian con el ciclo de las aguas. ERN nace para acercar al visitante a este territorio sin transformar la experiencia en turismo genérico.',
+        'Barcelos es una puerta de entrada a ríos, islas, playas, pesca, comunidades y paisajes que cambian con el ciclo de las aguas. EDA nace para acercar al visitante a este territorio sin transformar la experiencia en turismo genérico.',
     },
 
     territory: {
@@ -427,10 +427,10 @@ export const homeTranslations = {
       title:
         'Naturaleza, cultura e historias que atraviesan el territorio.',
       description:
-        'El Río Negro va mucho más allá de un único destino. ERN conecta paisajes, fiestas, comunidades, ríos, archipiélagos y experiencias que ayudan a contar la identidad de Barcelos, Novo Airão y toda esta región amazónica.',
+        'El Río Negro va mucho más allá de un único destino. EDA conecta paisajes, fiestas, comunidades, ríos, archipiélagos y experiencias que ayudan a contar la identidad de Barcelos, Novo Airão y toda esta región amazónica.',
       unsure: '¿No sabes por dónde empezar?',
       unsureDescription:
-        'Cuéntale al Concierge qué tipo de experiencia buscas y ERN te ayuda a organizar posibilidades por el territorio.',
+        'Cuéntale al Concierge qué tipo de experiencia buscas y EDA te ayuda a organizar posibilidades por el territorio.',
       conciergeButton: 'Planificar con el Concierge',
     },
 
@@ -496,7 +496,7 @@ export const homeTranslations = {
       eyebrow: 'Experiencias',
       title: 'Experiencias del Río Negro',
       description:
-        'Pesca deportiva, naturaleza, cultura ribereña, paseos y hospedajes formarán la vitrina de experiencias de ERN.',
+        'Pesca deportiva, naturaleza, cultura ribereña, paseos y hospedajes formarán la vitrina de experiencias de EDA.',
     },
 
     network: {
@@ -508,12 +508,12 @@ export const homeTranslations = {
     },
 
     management: {
-      eyebrow: 'ERN para operadores',
+      eyebrow: 'EDA para operadores',
       title:
         'La experiencia del visitante al frente. La operación organizada por detrás.',
       description:
-        'ERN también es una plataforma de gestión para quienes trabajan con turismo: clientes, reservas, paseos, embarcaciones, hospedajes, guías, vouchers, finanzas y relación con socios.',
-      button: 'Conocer ERN Gestión',
+        'EDA también es una plataforma de gestión para quienes trabajan con turismo: clientes, reservas, paseos, embarcaciones, hospedajes, guías, vouchers, finanzas y relación con socios.',
+      button: 'Conocer Encantos Gestão',
       modules: [
         'Clientes',
         'Reservas',
@@ -527,8 +527,8 @@ export const homeTranslations = {
     },
 
     footer: {
-      left: 'ERN Concierge — Barcelos, Amazonas.',
-      right: 'Encantos Rio Negro',
+      left: 'EDA Concierge — Barcelos, Amazonas.',
+      right: 'Encantos da Amazônia',
     },
   },
 } satisfies Record<Idioma, unknown>;

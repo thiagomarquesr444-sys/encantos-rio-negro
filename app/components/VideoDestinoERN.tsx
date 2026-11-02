@@ -214,8 +214,8 @@ export default function VideoDestinoERN({ title, poster, videos }: Props) {
           overflow: hidden;
           border: 1px solid #d5bf81;
           border-radius: 16px;
-          background: #fffcf0;
-          color: #30260d;
+          background: #ffffff;
+          color: #0f1c17;
         }
         .cabecalho {
           display: flex;
@@ -230,9 +230,9 @@ export default function VideoDestinoERN({ title, poster, videos }: Props) {
           font-family: var(--font-fraunces), serif;
           font-size: 22px;
           line-height: 1.2;
-          color: #30260d;
+          color: #0f1c17;
         }
-        .cabecalho > span { color: #805600; }
+        .cabecalho > span { color: #8a4b12; }
         .capa {
           position: relative;
           display: block;
@@ -273,7 +273,7 @@ export default function VideoDestinoERN({ title, poster, videos }: Props) {
           padding-left: 3px;
           border: 1px solid #f3d5a0;
           border-radius: 50%;
-          background: #805600;
+          background: #8a4b12;
           color: white;
           box-sizing: border-box;
           font-size: 20px;
@@ -308,25 +308,25 @@ export default function VideoDestinoERN({ title, poster, videos }: Props) {
           padding: 9px 12px;
           border: 1px solid #a58b48;
           border-radius: 10px;
-          background: #fffcf0;
-          color: #805600;
+          background: #ffffff;
+          color: #8a4b12;
           font: inherit;
           font-size: 12px;
           cursor: pointer;
         }
         .opcoes button[aria-pressed="true"] {
-          background: #805600;
+          background: #8a4b12;
           color: white;
         }
         .nota {
           margin: 0;
           padding: 10px 14px 14px;
-          color: #695727;
+          color: #4b5a53;
           font-size: 11px;
           line-height: 1.6;
         }
         button:focus-visible, a:focus-visible, video:focus-visible {
-          outline: 3px solid #805600;
+          outline: 3px solid #8a4b12;
           outline-offset: -3px;
         }
       `}</style>

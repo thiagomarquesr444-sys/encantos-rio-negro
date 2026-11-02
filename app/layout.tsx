@@ -26,10 +26,10 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  applicationName: 'Encantos Rio Negro',
+  applicationName: 'Encantos da Amazônia',
   appleWebApp: {
     capable: true,
-    title: 'ERN',
+    title: 'EDA',
     statusBarStyle: 'default',
   },
   icons: {
@@ -42,8 +42,8 @@ export const metadata: Metadata = {
     ],
   },
   title: {
-    default: 'Encantos Rio Negro',
-    template: '%s • Encantos Rio Negro',
+    default: 'Encantos da Amazônia',
+    template: '%s • Encantos da Amazônia',
   },
   description:
     'Experiências, hospedagens, roteiros e turismo receptivo no Rio Negro, em Barcelos, Amazonas.',

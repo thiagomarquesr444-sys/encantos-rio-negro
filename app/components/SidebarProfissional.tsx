@@ -116,7 +116,7 @@ function configuracaoNavegacao(
               label: 'Portal público',
               href: '/',
               descricao:
-                'Visualizar a Encantos Rio Negro como visitante',
+                'Visualizar a Encantos da Amazônia como visitante',
             },
           ],
         },
@@ -187,7 +187,7 @@ function configuracaoNavegacao(
             label: 'Portal público',
             href: '/',
             descricao:
-              'Visualizar a Encantos Rio Negro como visitante',
+              'Visualizar a Encantos da Amazônia como visitante',
           },
         ],
       },
@@ -465,7 +465,7 @@ function NavegacaoProfissional({
                   fontFamily: 'var(--font-fraunces), serif',
                 }}
               >
-                Encantos Rio Negro
+                Encantos Gestão
               </span>
               <span className="mt-1 block truncate text-[10px] uppercase tracking-widest text-[#B4C8BB]">
                 {navegacao.subtitulo}

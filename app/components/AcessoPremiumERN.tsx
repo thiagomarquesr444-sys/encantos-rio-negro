@@ -10,9 +10,9 @@ export default function AcessoPremiumERN({ children, etapa, perfil }: Props) {
   const nome = perfil === 'operadora' ? 'OPERADORA DE TURISMO' : perfil === 'guia' ? 'GUIA INDEPENDENTE' : perfil === 'fornecedor' ? 'FORNECEDOR DA REDE' : 'REDE DE TURISMO';
   return <main className="ern-acesso-premium" data-etapa={etapa}>
     <header className="ern-acesso-topo">
-      <Link href="/" className="ern-acesso-marca" aria-label="Encantos Rio Negro — voltar ao portal">
+      <Link href="/" className="ern-acesso-marca" aria-label="Encantos da Amazônia — voltar ao portal">
         <LogoERN tamanho={48} prioridade />
-        <span><strong>Encantos Rio Negro</strong><small>TERRITÓRIO DE POSSIBILIDADES</small></span>
+        <span><strong>Encantos Gestão</strong><small>TERRITÓRIO DE POSSIBILIDADES</small></span>
       </Link>
       <Link href="/" className="ern-acesso-voltar">Explorar o portal <span aria-hidden="true">↗</span></Link>
     </header>
@@ -20,7 +20,7 @@ export default function AcessoPremiumERN({ children, etapa, perfil }: Props) {
       {etapa !== 'acesso' && <aside className="ern-acesso-manifesto" aria-label="Boas-vindas à ERN">
         <span className="ern-acesso-etiqueta"><i aria-hidden="true" />{nome}</span>
         <h2>{recuperar ? <>Retome sua conexão.<br /><em>Seu espaço espera.</em></> : cadastrar ? <>Sua jornada começa<br /><em>com uma conexão.</em></> : <>O Rio Negro conecta.<br /><em>Você faz acontecer.</em></>}</h2>
-        <p>{recuperar ? 'Recupere o acesso para continuar sua jornada na Encantos Rio Negro.' : perfil === 'guia' ? 'Seu conhecimento do território encontra um espaço próprio na rede de turismo do Rio Negro.' : perfil === 'fornecedor' ? 'Produtos, serviços e relações que aproximam seu negócio de quem movimenta o turismo regional.' : 'Organize sua operação e construa novas conexões no Alto e Baixo Rio Negro.'}</p>
+        <p>{recuperar ? 'Recupere o acesso para continuar sua jornada na Encantos da Amazônia.' : perfil === 'guia' ? 'Seu conhecimento do território encontra um espaço próprio na rede de turismo do Rio Negro.' : perfil === 'fornecedor' ? 'Produtos, serviços e relações que aproximam seu negócio de quem movimenta o turismo regional.' : 'Organize sua operação e construa novas conexões no Alto e Baixo Rio Negro.'}</p>
         <div className="ern-acesso-arte" aria-hidden="true">
           <svg viewBox="0 0 640 300" fill="none">
             <defs><linearGradient id="ern-rio-ouro" x1="50" y1="40" x2="600" y2="260" gradientUnits="userSpaceOnUse"><stop stopColor="#765d38"/><stop offset=".5" stopColor="#f1cd86"/><stop offset="1" stopColor="#84673e"/></linearGradient></defs>
@@ -40,6 +40,6 @@ export default function AcessoPremiumERN({ children, etapa, perfil }: Props) {
       </aside>}
       <div className="ern-acesso-formulario">{children}</div>
     </div>
-    <footer className="ern-acesso-base"><span>Encantos Rio Negro · Alto e Baixo Rio Negro</span><nav aria-label="Informações da plataforma"><Link href="/privacidade">Privacidade</Link><Link href="/termos">Termos</Link><Link href="/contato">Atendimento</Link></nav></footer>
+    <footer className="ern-acesso-base"><span>Encantos Gestão · do Rio Negro a Parintins</span><nav aria-label="Informações da plataforma"><Link href="/privacidade">Privacidade</Link><Link href="/termos">Termos</Link><Link href="/contato">Atendimento</Link></nav></footer>
   </main>;
 }

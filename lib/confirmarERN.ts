@@ -36,7 +36,7 @@ export function confirmarERN(
     const marca = document.createElement('p');
     marca.className =
       'text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--ern-destaque)]';
-    marca.textContent = 'Encantos Rio Negro';
+    marca.textContent = 'Encantos';
 
     const titulo = document.createElement('h2');
     titulo.id = `${identificador}-titulo`;

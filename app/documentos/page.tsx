@@ -68,7 +68,7 @@ export default function CentralDocumentosERN() {
 
           <p className="mt-4 max-w-3xl text-sm leading-7 text-[var(--ern-secundario)]">
             Uma entrada única para documentos turísticos e
-            gerenciais do Encantos Rio Negro. Acesse apenas os
+            gerenciais da Encantos Gestão. Acesse apenas os
             recursos autorizados para sua conta.
           </p>
         </header>

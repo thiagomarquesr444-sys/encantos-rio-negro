@@ -452,7 +452,7 @@ export default function PainelProfissional({
 
         <section className="mt-8 rounded-3xl border border-[#E3A144]/20 bg-[#E3A144]/[0.05] p-6 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-            Rede Encantos Rio Negro
+            Rede Encantos da Amazônia
           </p>
 
           <h2

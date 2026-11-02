@@ -49,7 +49,7 @@ export default function ExportarRelatorioPage(){
 
     baixarDocumentoPremiumERN({
       titulo: "Demonstrativo Financeiro",
-      subtitulo: "Encantos Rio Negro | Relatório operacional",
+      subtitulo: "Encantos Gestão | Relatório operacional",
       nomeArquivo: `ERN-financeiro-premium-${hoje}.pdf`,
       status: "Demonstrativo gerado",
       dados: [

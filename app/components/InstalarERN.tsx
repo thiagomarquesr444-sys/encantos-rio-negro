@@ -81,7 +81,7 @@ export default function InstalarERN() {
   if (!disponivel && !erro) return null;
 
   return (
-    <aside aria-label="Instalar ERN" className="instalar-ern">
+    <aside aria-label="Instalar EDA" className="instalar-ern">
       {erro ? (
         <p role="status">{erro}</p>
       ) : (
@@ -90,7 +90,7 @@ export default function InstalarERN() {
           disabled={instalando}
           onClick={() => void instalar()}
         >
-          {instalando ? 'Abrindo\u2026' : 'Instalar ERN'}
+          {instalando ? 'Abrindo\u2026' : 'Instalar EDA'}
           <span aria-hidden="true"> ↗</span>
         </button>
       )}
@@ -117,10 +117,10 @@ export default function InstalarERN() {
           display: flex;
           align-items: center;
           max-width: calc(100vw - 32px);
-          border: 1px solid #cdba7a;
+          border: 1px solid #d6d2c8;
           border-radius: 16px;
-          background: #fffcf0;
-          color: #30260d;
+          background: #ffffff;
+          color: #0f1c17;
           box-shadow: 0 8px 28px #0003;
         }
         button {
@@ -134,7 +134,7 @@ export default function InstalarERN() {
         p { padding: 12px 16px; font-size: 13px; }
         button:disabled { opacity: .6; cursor: default; }
         button:focus-visible {
-          outline: 3px solid #805600;
+          outline: 3px solid #8a4b12;
           outline-offset: 3px;
         }
       `}</style>

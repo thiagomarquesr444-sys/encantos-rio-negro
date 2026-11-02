@@ -239,10 +239,10 @@ export default function CulturaAmazonicaERN() {
           if (video !== atual) video.pause();
         });
       }}
-      className="border-t border-[#cdba7a]/60 bg-[#fffcf0] px-5 py-16 text-[#30260d] md:px-8 md:py-24"
+      className="border-t border-[#d6d2c8]/60 bg-[#ffffff] px-5 py-16 text-[#0f1c17] md:px-8 md:py-24"
     >
       <div className="mx-auto max-w-[1180px]">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#805600]">
+        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#8a4b12]">
           {t.eyebrow}
         </p>
 
@@ -254,11 +254,11 @@ export default function CulturaAmazonicaERN() {
           {t.title}
         </h2>
 
-        <p className="mt-5 max-w-2xl text-sm leading-7 text-[#695727]">
+        <p className="mt-5 max-w-2xl text-sm leading-7 text-[#4b5a53]">
           {t.description}
         </p>
 
-        <div aria-label={t.choose} role="group" className="mt-8 flex flex-wrap gap-x-6 gap-y-3 border-b border-[#cdba7a]/70">
+        <div aria-label={t.choose} role="group" className="mt-8 flex flex-wrap gap-x-6 gap-y-3 border-b border-[#d6d2c8]/70">
           {colecoes.map(item => (
             <button
               key={item.id}
@@ -266,7 +266,7 @@ export default function CulturaAmazonicaERN() {
               aria-pressed={selecionado === item.id}
               aria-controls="cultura-colecao"
               onClick={() => { setSelecionado(item.id); setTodos(false); }}
-              className={`min-h-12 border-b-2 pb-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#805600] ${selecionado === item.id ? 'border-[#805600] text-[#805600]' : 'border-transparent text-[#695727] hover:border-[#cdba7a]'}`}
+              className={`min-h-12 border-b-2 pb-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8a4b12] ${selecionado === item.id ? 'border-[#8a4b12] text-[#8a4b12]' : 'border-transparent text-[#4b5a53] hover:border-[#d6d2c8]'}`}
             >
               {item.municipio}
             </button>
@@ -287,7 +287,7 @@ export default function CulturaAmazonicaERN() {
                 lang="pt-BR"
                 className={`min-w-0 ${vertical ? '' : 'md:col-span-2'}`}
               >
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#805600]">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8a4b12]">
                   {colecao.municipio} · Amazonas
                 </p>
 
@@ -298,7 +298,7 @@ export default function CulturaAmazonicaERN() {
                   {item.titulo}
                 </h3>
 
-                <p className="mb-5 mt-4 max-w-2xl text-sm leading-7 text-[#695727]">
+                <p className="mb-5 mt-4 max-w-2xl text-sm leading-7 text-[#4b5a53]">
                   {item.descricao}
                 </p>
 
@@ -318,7 +318,7 @@ export default function CulturaAmazonicaERN() {
             <button
               type="button"
               onClick={() => setTodos(true)}
-              className="inline-flex min-h-[48px] items-center gap-2 rounded-xl border border-[#805600]/50 px-6 text-sm font-semibold text-[#805600] transition hover:bg-[#805600]/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#805600]"
+              className="inline-flex min-h-[48px] items-center gap-2 rounded-xl border border-[#8a4b12]/50 px-6 text-sm font-semibold text-[#8a4b12] transition hover:bg-[#8a4b12]/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a4b12]"
             >
               {idioma === 'EN' ? 'More videos' : idioma === 'ES' ? 'Más videos' : 'Ver mais vídeos'} ({colecao.videos.length - 2})
             </button>

@@ -16,7 +16,7 @@ const textos = {
     sugestoes: 'Populares:',
     destaques: [
       { titulo: 'Atendimento local', texto: 'Quem conhece o rio ajuda você a planejar.' },
-      { titulo: 'Operadores conectados', texto: 'Agências, guias e barqueiros da região na Rede ERN.' },
+      { titulo: 'Operadores conectados', texto: 'Agências, guias e barqueiros da região na Rede EDA.' },
       { titulo: 'Planejamento personalizado', texto: 'Roteiros pensados para o seu tempo e interesse.' },
       { titulo: 'Leve no interior', texto: 'Pensado para Starlink e internet de comunidade.' },
     ],
@@ -28,7 +28,7 @@ const textos = {
     sugestoes: 'Popular:',
     destaques: [
       { titulo: 'Local support', texto: 'People who know the river help you plan.' },
-      { titulo: 'Connected operators', texto: 'Agencies, guides and boat operators on the ERN Network.' },
+      { titulo: 'Connected operators', texto: 'Agencies, guides and boat operators on the EDA Network.' },
       { titulo: 'Personal planning', texto: 'Itineraries shaped around your time and interests.' },
       { titulo: 'Light in remote areas', texto: 'Designed for Starlink and community internet.' },
     ],
@@ -40,7 +40,7 @@ const textos = {
     sugestoes: 'Populares:',
     destaques: [
       { titulo: 'Atención local', texto: 'Quien conoce el río te ayuda a planificar.' },
-      { titulo: 'Operadores conectados', texto: 'Agencias, guías y barqueros de la región en la Red ERN.' },
+      { titulo: 'Operadores conectados', texto: 'Agencias, guías y barqueros de la región en la Red EDA.' },
       { titulo: 'Planificación personalizada', texto: 'Rutas pensadas para tu tiempo e interés.' },
       { titulo: 'Liviano en el interior', texto: 'Pensado para Starlink e internet comunitaria.' },
     ],
@@ -77,6 +77,42 @@ function Icone({ indice }: { indice: number }) {
   );
 }
 
+// ERN_LETREIRO_ANIMADO_V1
+// As palavras sobem e ganham foco uma a uma; "Amazônia" (ou "Rio Negro")
+// fica em dourado com um brilho lento. Leitores de tela leem o título inteiro.
+const DESTAQUE = /^(Rio|Río)$/;
+const DESTAQUE_UNICO = /^(Amazônia|Amazon|Amazonía)[.,]?$/;
+
+function TituloAnimado({ texto }: { texto: string }) {
+  const palavras = texto.split(' ');
+  const pecas: { texto: string; dourado: boolean }[] = [];
+  for (let i = 0; i < palavras.length; i += 1) {
+    const atual = palavras[i];
+    const proxima = palavras[i + 1] ?? '';
+    if (DESTAQUE.test(atual) && proxima.startsWith('Negro')) {
+      pecas.push({ texto: `${atual} ${proxima}`, dourado: true });
+      i += 1;
+    } else {
+      pecas.push({ texto: atual, dourado: DESTAQUE_UNICO.test(atual) });
+    }
+  }
+  return (
+    <span aria-hidden="true">
+      {pecas.map((peca, indice) => (
+        <span key={`${peca.texto}-${indice}`}>
+          <span
+            className={`ern-palavra ${peca.dourado ? 'ern-dourado' : ''}`}
+            style={{ animationDelay: `${200 + indice * 90}ms` }}
+          >
+            {peca.texto}
+          </span>
+          {indice < pecas.length - 1 ? ' ' : ''}
+        </span>
+      ))}
+    </span>
+  );
+}
+
 export default function HeroImersivoERN({
   onBuscar,
 }: {
@@ -94,25 +130,40 @@ export default function HeroImersivoERN({
 
   return (
     <div className="relative z-10 mx-auto flex max-w-[1180px] flex-col items-center px-5 pb-16 pt-32 text-center md:px-8 md:pb-20 md:pt-40">
-      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#F4C77E]">
-        {h.location}
+      {/* ERN_SELO_LUGARES_V1: lugares do Amazonas rolando devagar dentro da cápsula. */}
+      <p
+        aria-label={h.location.replace(/ • /g, ', ')}
+        className="ern-revela ern-selo-lugares relative w-full max-w-[560px] overflow-hidden rounded-full border border-[#F4C77E]/25 bg-[#07110E]/55 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#F4C77E] backdrop-blur-md sm:text-xs"
+      >
+        <span aria-hidden="true" className="ern-selo-trilho flex w-max">
+          {[0, 1].map((copia) => (
+            <span key={copia} className="flex shrink-0 items-center">
+              {h.location.split(' • ').map((lugar) => (
+                <span key={`${copia}-${lugar}`} className="flex items-center gap-3 whitespace-nowrap pl-3">
+                  <span className="h-1.5 w-1.5 rotate-45 bg-gradient-to-b from-[#F7D595] to-[#E3A144]" />
+                  {lugar}
+                </span>
+              ))}
+            </span>
+          ))}
+        </span>
       </p>
 
       <h1
-        className="mt-6 max-w-[880px] text-[clamp(2.25rem,6vw,4.5rem)] font-normal leading-[1.04] tracking-[-0.035em] text-[#F0F0E8]"
-        style={{ fontFamily: 'var(--font-fraunces), serif' }}
+        aria-label={h.title}
+        className="ern-titulo-animado mt-7 max-w-[980px] text-[clamp(2.4rem,6.4vw,5rem)] leading-[1.02] tracking-[-0.045em] text-[#F5F3EA]"
       >
-        {h.title}
+        <TituloAnimado texto={h.title} />
       </h1>
 
-      <p className="mt-6 max-w-[620px] text-base leading-7 text-[#E2E8E4] md:text-lg md:leading-8">
+      <p className="ern-revela mt-7 max-w-[640px] text-base leading-7 text-[#DBE3DE] [animation-delay:900ms] md:text-lg md:leading-8">
         {h.description}
       </p>
 
       <form
         role="search"
         onSubmit={enviar}
-        className="mt-10 flex w-full max-w-[640px] items-stretch gap-2 rounded-2xl border border-white/15 bg-[#07110E]/80 p-2 backdrop-blur-md"
+        className="ern-revela mt-10 flex w-full max-w-[660px] items-stretch gap-2 rounded-[20px] border border-white/15 bg-[#07110E]/75 p-2 shadow-[0_30px_60px_rgb(0_0_0/35%)] backdrop-blur-xl [animation-delay:1100ms]"
       >
         <label htmlFor="ern-busca-destino" className="sr-only">
           {t.rotulo}
@@ -128,7 +179,7 @@ export default function HeroImersivoERN({
         />
         <button
           type="submit"
-          className={`inline-flex min-h-[52px] shrink-0 items-center gap-2 rounded-xl bg-[#E3A144] px-5 text-sm font-semibold text-[#07110E] transition hover:bg-[#F4C77E] ${FOCO}`}
+          className={`inline-flex min-h-[52px] shrink-0 items-center gap-2 rounded-[14px] bg-gradient-to-b from-[#F7D595] to-[#E3A144] px-6 text-sm font-bold text-[#07110E] shadow-[inset_0_1px_0_rgb(255_255_255/55%)] transition hover:brightness-105 ${FOCO}`}
         >
           <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M21 21l-4.3-4.3" />
@@ -137,7 +188,7 @@ export default function HeroImersivoERN({
         </button>
       </form>
 
-      <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-sm text-[#D6DFD9]">
+      <div className="ern-revela mt-5 flex flex-wrap items-center justify-center gap-2 text-sm text-[#D6DFD9] [animation-delay:1250ms]">
         <span>{t.sugestoes}</span>
         {SUGESTOES.map((sugestao) => (
           <button
@@ -147,14 +198,14 @@ export default function HeroImersivoERN({
               setTermo(sugestao);
               onBuscar(sugestao);
             }}
-            className={`min-h-[36px] rounded-full border border-white/20 px-3 text-sm text-[#F0F0E8] transition hover:border-[#F4C77E] hover:text-[#F4C77E] ${FOCO}`}
+            className={`min-h-[36px] rounded-full border border-white/20 bg-white/[0.04] px-3.5 text-sm text-[#F0F0E8] backdrop-blur-md transition hover:border-[#F4C77E] hover:text-[#F4C77E] ${FOCO}`}
           >
             {sugestao}
           </button>
         ))}
       </div>
 
-      <ul className="mt-16 grid w-full gap-8 text-left sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="ern-revela mt-16 grid w-full gap-8 text-left [animation-delay:1400ms] sm:grid-cols-2 lg:grid-cols-4">
         {t.destaques.map((destaque, indice) => (
           <li key={destaque.titulo} className="flex flex-col gap-3">
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#F4C77E]/30 bg-[#07110E]/60 text-[#F4C77E]">

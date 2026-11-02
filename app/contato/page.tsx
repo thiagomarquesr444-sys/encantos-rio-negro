@@ -9,7 +9,7 @@ import PaginaInstitucionalERN, {
 export const metadata: Metadata = {
   title: 'Contato e atendimento',
   description:
-    'Atendimento da Encantos Rio Negro para suporte, privacidade, assinaturas e solicitações de cancelamento ou reembolso.',
+    'Atendimento da Encantos da Amazônia para suporte, privacidade, assinaturas e solicitações de cancelamento ou reembolso.',
 };
 
 const assuntos = [
@@ -17,28 +17,28 @@ const assuntos = [
     titulo: 'Suporte e informações',
     descricao:
       'Dúvidas sobre o portal, sua conta ou o funcionamento da plataforma.',
-    assunto: 'ERN — Suporte e informações',
+    assunto: 'EDA — Suporte e informações',
     acao: 'Solicitar atendimento',
   },
   {
     titulo: 'Privacidade e dados pessoais',
     descricao:
       'Solicitações de acesso, correção, exclusão ou informações sobre o tratamento dos seus dados pessoais.',
-    assunto: 'ERN — Solicitação sobre dados pessoais',
+    assunto: 'EDA — Solicitação sobre dados pessoais',
     acao: 'Falar sobre privacidade',
   },
   {
     titulo: 'Assinaturas e cancelamento',
     descricao:
       'Dúvidas sobre cobranças, renovação, cancelamento da assinatura ou solicitação de reembolso.',
-    assunto: 'ERN — Assinatura, cancelamento ou reembolso',
+    assunto: 'EDA — Assinatura, cancelamento ou reembolso',
     acao: 'Falar sobre assinatura',
   },
   {
     titulo: 'Conteúdo e acessibilidade',
     descricao:
       'Comunique conteúdo incorreto, problemas com publicações ou dificuldades para utilizar a plataforma.',
-    assunto: 'ERN — Conteúdo ou acessibilidade',
+    assunto: 'EDA — Conteúdo ou acessibilidade',
     acao: 'Comunicar um problema',
   },
 ];
@@ -47,9 +47,9 @@ export default function ContatoPage() {
   return (
     <PaginaInstitucionalERN
       titulo="Contato e atendimento"
-      descricao="Canal de atendimento do projeto Encantos Rio Negro."
+      descricao="Canal de atendimento do projeto Encantos da Amazônia."
     >
-      <SecaoInstitucionalERN titulo="Fale com a ERN">
+      <SecaoInstitucionalERN titulo="Fale com a EDA">
         <p>
           Responsável pelo projeto: Thiago Rodrigues Marques.
           Localidade: Barcelos, Amazonas, Brasil.

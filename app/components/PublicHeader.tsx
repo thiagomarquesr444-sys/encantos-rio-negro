@@ -5,6 +5,8 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
+import SeletorIdiomaERN from '@/app/components/SeletorIdiomaERN';
+import BandeiraIdiomaERN from '@/app/components/BandeiraIdiomaERN';
 import LogoERN from '@/app/components/LogoERN';
 import {
   useLanguage,
@@ -31,7 +33,7 @@ const textos = {
     menu: 'Menu',
     closeMenu: 'Fechar menu',
     navigation: 'Navegação do portal',
-    home: 'Encantos Rio Negro — início',
+    home: 'Encantos da Amazônia — início',
   },
   EN: {
     discover: 'Discover',
@@ -44,7 +46,7 @@ const textos = {
     menu: 'Menu',
     closeMenu: 'Close menu',
     navigation: 'Portal navigation',
-    home: 'Encantos Rio Negro — home',
+    home: 'Encantos da Amazônia — home',
   },
   ES: {
     discover: 'Descubre',
@@ -57,7 +59,7 @@ const textos = {
     menu: 'Menú',
     closeMenu: 'Cerrar menú',
     navigation: 'Navegación del portal',
-    home: 'Encantos Rio Negro — inicio',
+    home: 'Encantos da Amazônia — inicio',
   },
 };
 
@@ -210,10 +212,11 @@ export default function PublicHeader() {
   }, [idioma]);
 
   function classeLink(ativo: boolean) {
-    return `inline-flex min-h-12 items-center rounded-xl px-3 text-sm font-medium transition-colors motion-reduce:transition-none ${FOCO} ${
+    // ERN_MENU_PREMIUM_V1: cápsula de vidro; a seção ativa ganha botão dourado.
+    return `inline-flex min-h-10 items-center rounded-full px-4 text-sm font-semibold transition motion-reduce:transition-none ${FOCO} ${
       ativo
-        ? 'bg-[#E3A144]/10 text-[#F4C77E]'
-        : 'text-[#EDEDE3]/80 hover:bg-white/5 hover:text-white'
+        ? 'bg-gradient-to-b from-[#F7D595] to-[#E3A144] text-[#07130F] shadow-[0_6px_18px_rgb(227_161_68/35%),inset_0_1px_0_rgb(255_255_255/50%)]'
+        : 'text-[#EDEDE3]/80 hover:bg-white/[0.07] hover:text-white'
     }`;
   }
 
@@ -237,28 +240,22 @@ export default function PublicHeader() {
             onClick={fecharMenu}
             className={`flex min-w-0 items-center gap-2.5 rounded-xl xl:shrink-0 ${FOCO}`}
           >
-            <LogoERN tamanho={48} prioridade />
+            <LogoERN tamanho={44} prioridade />
 
             <span className="min-w-0 leading-none">
-              <span
-                className="block text-base font-medium text-[#F0F0E8] sm:text-lg"
-                style={{
-                  fontFamily:
-                    'var(--font-fraunces), serif',
-                }}
-              >
+              <span className="block text-lg font-semibold tracking-[-0.02em] text-[#F0F0E8] sm:text-xl">
                 Encantos
               </span>
 
-              <span className="mt-1.5 block text-[10px] font-semibold uppercase tracking-[0.18em] text-[#F4C77E]">
-                Rio Negro
+              <span className="mt-1 block text-[9.5px] font-semibold uppercase tracking-[0.24em] text-[#F4C77E]">
+                da Amazônia
               </span>
             </span>
           </Link>
 
           <nav
             aria-label={t.navigation}
-            className="hidden items-center gap-1 xl:flex"
+            className="ern-menu-capsula hidden items-center gap-1 rounded-full border border-white/12 bg-white/[0.06] p-1.5 shadow-[inset_0_1px_0_rgb(255_255_255/8%),0_10px_30px_rgb(0_0_0/25%)] backdrop-blur-xl xl:flex"
           >
             {links.map((item) => {
               const ativo = rotaAtiva(pathname, item.href);
@@ -282,40 +279,26 @@ export default function PublicHeader() {
               aria-current={
                 paginaOperadores ? 'page' : undefined
               }
-              className={`${classeLink(paginaOperadores)} border border-white/15`}
+              className={`ern-botao-fantasma inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-semibold backdrop-blur-md transition-colors motion-reduce:transition-none ${FOCO} ${
+                paginaOperadores
+                  ? 'border-[#F4C77E]/60 text-[#F4C77E]'
+                  : 'border-white/15 bg-white/[0.04] text-[#EDEDE3] hover:border-[#F4C77E]/60 hover:text-[#F4C77E]'
+              }`}
             >
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 21V8l9-5 9 5v13M9 21v-7h6v7" />
+              </svg>
               {t.operators}
             </Link>
 
-            <label className="relative">
-              <span className="sr-only">{t.language}</span>
-
-              <select
-                value={idioma}
-                onChange={(event) => {
-                  const selecionado = idiomas.find(
-                    (item) => item === event.target.value,
-                  );
-
-                  if (selecionado) {
-                    setIdioma(selecionado);
-                  }
-                }}
-                className={`min-h-12 rounded-xl border border-white/15 bg-[#0A1713] px-3 text-sm font-semibold text-[#EDEDE3] ${FOCO}`}
-              >
-                {idiomas.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <SeletorIdiomaERN idioma={idioma} aoMudar={setIdioma} rotulo={t.language} />
 
             <Link
               href="/#concierge"
-              className={`inline-flex min-h-12 items-center justify-center rounded-xl bg-[#E3A144] px-4 text-sm font-bold text-[#07130F] transition-colors hover:bg-[#F0B35C] ${FOCO}`}
+              className={`ern-botao-ouro group inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#F7D595] to-[#E3A144] px-5 text-sm font-bold text-[#07130F] shadow-[0_10px_26px_rgb(227_161_68/35%),inset_0_1px_0_rgb(255_255_255/55%)] transition hover:brightness-105 ${FOCO}`}
             >
               {t.plan}
+              <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none">→</span>
             </Link>
           </div>
 
@@ -382,7 +365,7 @@ export default function PublicHeader() {
               </h2>
 
               <p className="mt-1 text-sm text-[#EDEDE3]/70">
-                Encantos Rio Negro
+                Encantos da Amazônia
               </p>
             </div>
 
@@ -451,12 +434,13 @@ export default function PublicHeader() {
                       aria-label={nomesIdiomas[item]}
                       aria-pressed={ativo}
                       onClick={() => setIdioma(item)}
-                      className={`min-h-12 rounded-xl border px-2 text-sm font-semibold ${FOCO} ${
+                      className={`inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border px-2 text-sm font-semibold ${FOCO} ${
                         ativo
                           ? 'border-[#E3A144]/60 bg-[#E3A144]/10 text-[#F4C77E]'
                           : 'border-white/20 text-[#EDEDE3]/80 hover:bg-white/5'
                       }`}
                     >
+                      <BandeiraIdiomaERN idioma={item} />
                       {item}
                     </button>
                   );
@@ -494,7 +478,7 @@ export default function PublicHeader() {
       </dialog>
 
       <style jsx>{`
-        /* ERN: identidade amazonica */
+        /* EDA: identidade amazonica */
         .ern-navegacao-ilustrada,
         .menu-publico {
           isolation: isolate;

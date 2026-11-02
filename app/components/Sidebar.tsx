@@ -306,7 +306,7 @@ export default function Sidebar() {
   const acionadorDropdownRef = useRef<HTMLButtonElement | null>(null);
   const saidaEmAndamento = useRef(false);
 
-  const nomeSistema = config.nome_sistema || 'Encantos Rio Negro';
+  const nomeSistema = config.nome_sistema || 'Encantos Gestão';
 
 
 
@@ -772,7 +772,7 @@ export default function Sidebar() {
               </h2>
 
               <p className="mt-1 text-xs text-[#B4C8BB]">
-                Encantos Rio Negro
+                Encantos Gestão
               </p>
             </div>
 

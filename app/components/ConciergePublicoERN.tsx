@@ -7,10 +7,10 @@ import { useLanguage } from '@/app/components/LanguageProvider';
 
 const textos = {
   PT: {
-    title: 'ERN Concierge',
+    title: 'EDA Concierge',
     status: 'Assistente virtual · descoberta guiada',
     welcome: 'Vamos descobrir sua próxima viagem?',
-    intro: 'A Encantos Rio Negro conecta você ao território e aos profissionais da região. Nossa rede está em formação.',
+    intro: 'A Encantos da Amazônia conecta você ao território e aos profissionais da região. Nossa rede está em formação.',
     notice: 'Preços, acesso, disponibilidade e reservas precisam de confirmação com cada prestador.',
     questions: [
       'O que você gostaria de viver?',
@@ -40,9 +40,9 @@ const textos = {
     copy: 'Copiar resumo',
     copied: 'Resumo copiado.',
     copyError: 'Não foi possível copiar. Selecione o resumo abaixo e copie manualmente.',
-    privacy: 'As escolhas não são gravadas pela ERN e se perdem ao sair ou recarregar. O envio por e-mail acontece somente por sua iniciativa.',
-    subject: 'ERN — interesse em viagem',
-    greeting: 'Olá, equipe ERN! Gostaria de informações sobre estas possibilidades de viagem:',
+    privacy: 'As escolhas não são gravadas pela EDA e se perdem ao sair ou recarregar. O envio por e-mail acontece somente por sua iniciativa.',
+    subject: 'EDA — interesse em viagem',
+    greeting: 'Olá, equipe EDA! Gostaria de informações sobre estas possibilidades de viagem:',
     ending: 'Entendo que este pedido não confirma preço, disponibilidade ou reserva.',
     guidance: [
       'Converse sobre roteiro, equipamentos e regras aplicáveis antes de contratar a pesca.',
@@ -53,10 +53,10 @@ const textos = {
     ],
   },
   EN: {
-    title: 'ERN Concierge',
+    title: 'EDA Concierge',
     status: 'Virtual assistant · guided discovery',
     welcome: 'Where could your next trip take you?',
-    intro: 'Encantos Rio Negro connects you with the region and local professionals. Our network is taking shape.',
+    intro: 'Encantos da Amazônia connects you with the region and local professionals. Our network is taking shape.',
     notice: 'Prices, access, availability and bookings require confirmation with each provider.',
     questions: [
       'What would you like to experience?',
@@ -86,9 +86,9 @@ const textos = {
     copy: 'Copy summary',
     copied: 'Summary copied.',
     copyError: 'Could not copy. Select the summary below and copy it manually.',
-    privacy: 'ERN does not save these choices. They reset when you leave or reload. Email is sent only when you choose to send it.',
-    subject: 'ERN — travel enquiry',
-    greeting: 'Hello, ERN team! I would like information about these travel possibilities:',
+    privacy: 'EDA does not save these choices. They reset when you leave or reload. Email is sent only when you choose to send it.',
+    subject: 'EDA — travel enquiry',
+    greeting: 'Hello, EDA team! I would like information about these travel possibilities:',
     ending: 'I understand this request does not confirm prices, availability or a booking.',
     guidance: [
       'Discuss routes, equipment and applicable fishing rules before booking.',
@@ -99,10 +99,10 @@ const textos = {
     ],
   },
   ES: {
-    title: 'ERN Concierge',
+    title: 'EDA Concierge',
     status: 'Asistente virtual · descubrimiento guiado',
     welcome: '¿Descubrimos su próximo viaje?',
-    intro: 'Encantos Rio Negro le conecta con el territorio y los profesionales locales. Nuestra red está en formación.',
+    intro: 'Encantos da Amazônia le conecta con el territorio y los profesionales locales. Nuestra red está en formación.',
     notice: 'Precios, acceso, disponibilidad y reservas requieren confirmación con cada prestador.',
     questions: [
       '¿Qué le gustaría vivir?',
@@ -132,9 +132,9 @@ const textos = {
     copy: 'Copiar resumen',
     copied: 'Resumen copiado.',
     copyError: 'No se pudo copiar. Seleccione el resumen y cópielo manualmente.',
-    privacy: 'ERN no guarda estas elecciones. Se pierden al salir o recargar. El correo se envía solo por su iniciativa.',
-    subject: 'ERN — consulta sobre viaje',
-    greeting: '¡Hola, equipo ERN! Quisiera información sobre estas posibilidades de viaje:',
+    privacy: 'EDA no guarda estas elecciones. Se pierden al salir o recargar. El correo se envía solo por su iniciativa.',
+    subject: 'EDA — consulta sobre viaje',
+    greeting: '¡Hola, equipo EDA! Quisiera información sobre estas posibilidades de viaje:',
     ending: 'Entiendo que esta solicitud no confirma precios, disponibilidad ni reserva.',
     guidance: [
       'Converse sobre itinerarios, equipos y reglas de pesca antes de contratar.',
@@ -159,24 +159,24 @@ const conversaTextos = {
     send: 'Enviar',
     input: 'Sua mensagem',
     placeholder: 'Escreva sua mensagem...',
-    hello: 'Olá! Sou o assistente virtual da Encantos Rio Negro. Nossa rede está em formação. Vamos descobrir o que combina com sua viagem? Você procura pesca, natureza, cultura, hospedagem ou ainda está explorando?',
+    hello: 'Olá! Sou o assistente virtual da Encantos da Amazônia. Nossa rede está em formação. Vamos descobrir o que combina com sua viagem? Você procura pesca, natureza, cultura, hospedagem ou ainda está explorando?',
     destination: 'Qual lugar você gostaria de conhecer? Pode ser Manaus, Novo Airão, Barcelos, Santa Isabel, São Gabriel ou um destino ainda a definir.',
     period: 'Em qual mês ou período você pensa em viajar? Se ainda não sabe, pode dizer “a definir”.',
     group: 'Quantas pessoas vão e por quantos dias? Pode responder, por exemplo, “2 pessoas, 5 dias”, ou deixar a definir.',
     summary: 'Aqui está o que você compartilhou:',
     details: ['Interesse', 'Destino', 'Período', 'Grupo e duração'],
-    finish: 'Podemos começar pelo mapa ou pelos perfis da Rede. Para verificar possibilidades de atendimento, você também pode preparar um e-mail para a ERN. Ainda não há preço, disponibilidade ou reserva confirmados.',
-    fallback: 'Nesta versão, consigo organizar suas preferências e orientar sobre os próximos passos. Para uma pergunta específica, use o contato da ERN abaixo. Você também pode escrever “mapa”, “rede”, “preço” ou “resumo”.',
+    finish: 'Podemos começar pelo mapa ou pelos perfis da Rede. Para verificar possibilidades de atendimento, você também pode preparar um e-mail para a EDA. Ainda não há preço, disponibilidade ou reserva confirmados.',
+    fallback: 'Nesta versão, consigo organizar suas preferências e orientar sobre os próximos passos. Para uma pergunta específica, use o contato da EDA abaixo. Você também pode escrever “mapa”, “rede”, “preço” ou “resumo”.',
     map: 'O mapa de Destinos ajuda a descobrir lugares. Use “Explorar destinos” abaixo. Os marcadores podem representar bases regionais, e não pontos exatos de acesso.',
     network: 'Na Rede você encontra publicações e perfis. Confira os canais informados por cada profissional. A presença de um perfil não confirma disponibilidade.',
     price: 'Ainda não consulto preços nem disponibilidade. Esses dados dependem do prestador, do período e da operação. Posso organizar suas preferências para um pedido de informações.',
-    contact: 'O contato da ERN é contato.encantosrionegro@gmail.com. O botão de e-mail prepara uma mensagem; ela só é enviada quando você envia no seu aplicativo.',
+    contact: 'O contato da EDA é contato.encantosrionegro@gmail.com. O botão de e-mail prepara uma mensagem; ela só é enviada quando você envia no seu aplicativo.',
     pending: 'Vamos completar suas preferências primeiro.',
     privacy: 'A conversa fica apenas nesta página e se perde ao recarregar. Evite documentos, senhas e dados sensíveis.',
     emailHelp: 'O e-mail abre no seu aplicativo para revisão e envio.',
     restart: 'Nova conversa',
     visitor: 'Você',
-    limit: 'Você chegou ao limite desta conversa. Inicie uma nova conversa ou utilize o contato da ERN.',
+    limit: 'Você chegou ao limite desta conversa. Inicie uma nova conversa ou utilize o contato da EDA.',
     limitButton: 'Nova conversa para continuar',
     clear: 'Apagar esta conversa e começar novamente?',
     language: 'Português',
@@ -188,24 +188,24 @@ const conversaTextos = {
     send: 'Send',
     input: 'Your message',
     placeholder: 'Write your message...',
-    hello: 'Hello! I am the Encantos Rio Negro virtual assistant. Our network is taking shape. What would you like to explore: fishing, nature, culture, accommodation, or possibilities?',
+    hello: 'Hello! I am the Encantos da Amazônia virtual assistant. Our network is taking shape. What would you like to explore: fishing, nature, culture, accommodation, or possibilities?',
     destination: 'Which place would you like to visit? Manaus, Novo Airão, Barcelos, Santa Isabel, São Gabriel, or a destination still to be decided?',
     period: 'Which month or period are you considering? You can also say “not decided”.',
     group: 'How many people and how many days? For example, “2 people, 5 days”, or leave it undecided.',
     summary: 'Here is what you shared:',
     details: ['Interest', 'Destination', 'Period', 'Group and duration'],
-    finish: 'Start with the map or network profiles below. You can also prepare an email to ERN to ask about possible assistance. Prices, availability and bookings are not confirmed.',
-    fallback: 'This version organizes preferences and explains next steps. For a specific enquiry, use the ERN contact below. You can also type “map”, “network”, “price” or “summary”.',
+    finish: 'Start with the map or network profiles below. You can also prepare an email to EDA to ask about possible assistance. Prices, availability and bookings are not confirmed.',
+    fallback: 'This version organizes preferences and explains next steps. For a specific enquiry, use the EDA contact below. You can also type “map”, “network”, “price” or “summary”.',
     map: 'The destination map helps you discover places. Use “Explore destinations” below. Markers may represent regional bases rather than exact access points.',
     network: 'The network contains posts and profiles. Check each professional’s contact channels. A profile does not confirm availability.',
     price: 'I do not check prices or availability yet. They depend on the provider, period and operation. I can organize preferences for an enquiry.',
-    contact: 'Contact ERN at contato.encantosrionegro@gmail.com. The email button prepares a message; it is sent only when you send it in your email app.',
+    contact: 'Contact EDA at contato.encantosrionegro@gmail.com. The email button prepares a message; it is sent only when you send it in your email app.',
     pending: 'Let us complete your preferences first.',
     privacy: 'This conversation stays only on this page and resets on reload. Avoid documents, passwords and sensitive information.',
     emailHelp: 'Email opens in your app for review and sending.',
     restart: 'New conversation',
     visitor: 'You',
-    limit: 'This conversation has reached its limit. Start a new one or contact ERN.',
+    limit: 'This conversation has reached its limit. Start a new one or contact EDA.',
     limitButton: 'Start a new conversation to continue',
     clear: 'Clear this conversation and start again?',
     language: 'English',
@@ -217,14 +217,14 @@ const conversaTextos = {
     send: 'Enviar',
     input: 'Su mensaje',
     placeholder: 'Escriba su mensaje...',
-    hello: '¡Hola! Soy el asistente virtual de Encantos Rio Negro. Nuestra red está en formación. ¿Busca pesca, naturaleza, cultura, alojamiento o desea explorar posibilidades?',
+    hello: '¡Hola! Soy el asistente virtual de Encantos da Amazônia. Nuestra red está en formación. ¿Busca pesca, naturaleza, cultura, alojamiento o desea explorar posibilidades?',
     destination: '¿Qué lugar le gustaría conocer? Manaus, Novo Airão, Barcelos, Santa Isabel, São Gabriel, o un destino por definir.',
     period: '¿En qué mes o período piensa viajar? Si todavía no sabe, puede decir “por definir”.',
     group: '¿Cuántas personas y cuántos días? Por ejemplo, “2 personas, 5 días”, o déjelo por definir.',
     summary: 'Esto es lo que compartió:',
     details: ['Interés', 'Destino', 'Período', 'Grupo y duración'],
-    finish: 'Puede empezar por el mapa o los perfiles de la red. También puede preparar un correo a ERN para consultar posibilidades de atención. No hay precios, disponibilidad ni reservas confirmados.',
-    fallback: 'Esta versión organiza preferencias y orienta sobre los próximos pasos. Para una consulta específica, utilice el contacto de ERN. También puede escribir “mapa”, “red”, “precio” o “resumen”.',
+    finish: 'Puede empezar por el mapa o los perfiles de la red. También puede preparar un correo a EDA para consultar posibilidades de atención. No hay precios, disponibilidad ni reservas confirmados.',
+    fallback: 'Esta versión organiza preferencias y orienta sobre los próximos pasos. Para una consulta específica, utilice el contacto de EDA. También puede escribir “mapa”, “red”, “precio” o “resumen”.',
     map: 'El mapa de destinos ayuda a descubrir lugares. Use “Explorar destinos” abajo. Los marcadores pueden representar bases regionales, no puntos exactos de acceso.',
     network: 'La red contiene publicaciones y perfiles. Consulte los canales de cada profesional. Un perfil no confirma disponibilidad.',
     price: 'Todavía no consulto precios ni disponibilidad. Dependen del prestador, período y operación. Puedo organizar preferencias para una consulta.',
@@ -234,7 +234,7 @@ const conversaTextos = {
     emailHelp: 'El correo abre en su aplicación para revisar y enviar.',
     restart: 'Nueva conversación',
     visitor: 'Usted',
-    limit: 'Esta conversación llegó a su límite. Inicie otra o utilice el contacto de ERN.',
+    limit: 'Esta conversación llegó a su límite. Inicie otra o utilice el contacto de EDA.',
     limitButton: 'Inicie otra conversación para continuar',
     clear: '¿Borrar esta conversación y empezar de nuevo?',
     language: 'Español',
@@ -618,85 +618,97 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
           width: 100%;
           max-width: 360px;
           margin-left: auto;
-          border: 1px solid #d5bf81;
+          border: 1px solid #d6d2c8;
           border-radius: 20px;
-          background: #fffcf0;
-          color: #30260d;
+          background: #ffffff;
+          color: #0f1c17;
           box-shadow: 0 10px 28px rgb(0 0 0 / 12%);
           font-family: var(--font-work-sans), sans-serif;
         }
         .cartao-topo, .chat-topo {
           display: flex; align-items: center; gap: 10px;
-          padding: 14px 16px; border-bottom: 1px solid #dfcf9e;
-          background: #fff3cf; border-radius: 20px 20px 0 0;
+          padding: 14px 16px; border-bottom: 1px solid #e3dfd6;
+          background: #f3f1ec; border-radius: 20px 20px 0 0;
         }
         .avatar {
           display: grid; place-items: center; flex-shrink: 0;
           width: 32px; height: 32px; border-radius: 50%;
-          background: #805600; color: white;
+          background: #8a4b12; color: white;
         }
         .marca { margin: 0; font-size: 14px; font-weight: 700; }
-        .legenda { margin: 3px 0 0; font-size: 10px; line-height: 1.5; color: #695727; }
+        .legenda { margin: 3px 0 0; font-size: 10px; line-height: 1.5; color: #4b5a53; }
         .cartao-corpo { padding: 16px; }
         .cartao-corpo h2 {
           margin: 0; font-family: var(--font-fraunces), serif;
-          color: #30260d; font-size: 23px; line-height: 1.2;
+          color: #0f1c17; font-size: 23px; line-height: 1.2;
         }
         .cartao-corpo p {
           margin: 10px 0 14px; font-size: 12px;
-          line-height: 1.65; color: #695727;
+          line-height: 1.65; color: #4b5a53;
         }
         button { font-family: inherit; cursor: pointer; }
         .principal {
           display: inline-flex; align-items: center; justify-content: center; gap: 10px;
-          min-height: 44px; padding: 10px 16px; border: 1px solid #805600;
-          border-radius: 12px; background: #805600; color: white;
+          min-height: 44px; padding: 10px 16px; border: 1px solid #8a4b12;
+          border-radius: 12px; background: #8a4b12; color: white;
           font-size: 13px; font-weight: 600;
         }
         .cartao-corpo .principal { width: 100%; }
-        .principal:hover:not(:disabled) { background: #644300; }
+        .principal:hover:not(:disabled) { background: #6e3a0c; }
         button:disabled { opacity: .55; cursor: not-allowed; }
+        /* ERN_CONCIERGE_LATERAL_V1: painel lateral direito */
         dialog {
           box-sizing: border-box;
-          position: fixed; inset: 0;
-          width: min(460px, calc(100vw - 32px));
-          height: min(680px, calc(100dvh - 32px));
+          position: fixed; inset: 16px 16px 16px auto;
+          width: min(440px, calc(100vw - 32px));
+          height: calc(100dvh - 32px);
           max-width: none; max-height: none;
-          margin: auto; padding: 0;
-          border: 1px solid #d5bf81; border-radius: 20px;
-          background: #fffcf0; color: #30260d;
+          margin: 0 0 0 auto; padding: 0;
+          border: 1px solid #d6d2c8; border-radius: 20px;
+          background: #ffffff; color: #0f1c17;
           overflow: hidden;
           font-family: var(--font-work-sans), sans-serif;
           box-shadow: 0 24px 80px rgb(0 0 0 / 30%);
         }
-        dialog::backdrop { background: rgb(3 15 11 / 65%); }
+        dialog::backdrop { background: rgb(3 15 11 / 35%); backdrop-filter: blur(2px); }
+        dialog[open] { animation: ern-painel-entra .35s cubic-bezier(.2,.7,.2,1); }
+        @keyframes ern-painel-entra {
+          from { transform: translateX(32px); opacity: 0; }
+          to { transform: none; opacity: 1; }
+        }
+        @media (prefers-reduced-motion: reduce) { dialog[open] { animation: none; } }
+        .ern-chat-compacto {
+          width: 0 !important; height: 0; margin: 0 !important;
+          border: 0 !important; background: transparent !important; box-shadow: none !important;
+        }
+        .cartao-topo, .cartao-corpo { display: none !important; }
         .janela { display: flex; flex-direction: column; height: 100%; min-height: 0; }
         .chat-topo { flex-shrink: 0; padding: 12px 14px; }
         .identidade { flex: 1; min-width: 0; }
-        .identidade h2 { margin: 0; color: #30260d; font-size: 15px; font-weight: 700; }
-        .identidade p { margin: 3px 0 0; color: #695727; font-size: 10px; }
+        .identidade h2 { margin: 0; color: #0f1c17; font-size: 15px; font-weight: 700; }
+        .identidade p { margin: 3px 0 0; color: #4b5a53; font-size: 10px; }
         .fechar {
           flex-shrink: 0; width: 44px; height: 44px;
           border: 1px solid #c4ae72; border-radius: 12px;
-          background: transparent; color: #805600; font-size: 26px;
+          background: transparent; color: #8a4b12; font-size: 26px;
         }
         .informacoes { flex-shrink: 0; padding: 8px 14px; border-bottom: 1px solid #e4d9b5; }
-        .informacoes p { margin: 0; font-size: 10px; line-height: 1.5; color: #695727; }
+        .informacoes p { margin: 0; font-size: 10px; line-height: 1.5; color: #4b5a53; }
         .mensagens {
           flex: 1; min-height: 0; overflow-y: auto;
           padding: 16px 14px; overscroll-behavior: contain;
-          scrollbar-width: thin; background: #faf3df;
+          scrollbar-width: thin; background: #f7f6f2;
         }
         .linha { display: flex; margin-bottom: 12px; }
         .visitante { justify-content: flex-end; }
         .balao {
           max-width: 88%; padding: 11px 13px; border-radius: 15px 15px 15px 4px;
-          background: #fffdf6; border: 1px solid #dfcf9e;
+          background: #fffdf6; border: 1px solid #e3dfd6;
           overflow-wrap: anywhere;
         }
         .visitante .balao {
           border-radius: 15px 15px 4px 15px;
-          background: #805600; border-color: #805600; color: #fff;
+          background: #8a4b12; border-color: #8a4b12; color: #fff;
         }
         .autor { display: block; margin-bottom: 5px; font-size: 10px; font-weight: 700; }
         .balao p { margin: 0; white-space: pre-wrap; font-size: 13px; line-height: 1.65; }
@@ -709,25 +721,25 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
           display: inline-flex; align-items: center;
           min-height: 36px; padding: 7px 10px;
           border: 1px solid #b89c56; border-radius: 999px;
-          color: #805600; background: #fffdf6;
+          color: #8a4b12; background: #fffdf6;
           font-size: 11px; line-height: 1.4; text-decoration: none;
         }
         .compositor {
           display: flex; gap: 8px; padding: 10px 12px;
-          border-top: 1px solid #dfcf9e; flex-shrink: 0;
+          border-top: 1px solid #e3dfd6; flex-shrink: 0;
         }
         .compositor input {
           flex: 1; min-width: 0; width: 100%; min-height: 44px;
           box-sizing: border-box; padding: 10px 12px;
           border: 1px solid #a58b48; border-radius: 12px;
-          color: #30260d; background: white; font: inherit; font-size: 16px;
+          color: #0f1c17; background: white; font: inherit; font-size: 16px;
         }
         .compositor input::placeholder { color: #75643b; }
         .chat-rodape { padding: 0 14px 10px; flex-shrink: 0; }
-        .chat-rodape p { margin: 0 0 5px; font-size: 10px; line-height: 1.5; color: #695727; }
+        .chat-rodape p { margin: 0 0 5px; font-size: 10px; line-height: 1.5; color: #4b5a53; }
         .chat-rodape button {
           min-height: 32px; padding: 4px 0; border: 0;
-          background: transparent; color: #805600;
+          background: transparent; color: #8a4b12;
           font-size: 11px; text-decoration: underline;
         }
         .limite { font-size: 12px; line-height: 1.6; }
@@ -771,13 +783,14 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
         }
         button:focus-visible, input:focus-visible,
         .mensagens:focus-visible, .atalhos :global(a:focus-visible) {
-          outline: 3px solid #805600; outline-offset: 2px;
+          outline: 3px solid #8a4b12; outline-offset: 2px;
         }
         @media (max-width: 1023px) {
           .ern-chat-compacto { margin-inline: auto; }
         }
         @media (max-width: 600px) {
           dialog {
+            inset: 8px;
             width: calc(100vw - 16px);
             height: calc(100dvh - 16px);
             border-radius: 16px;
@@ -802,7 +815,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
           bottom: 18px;
           width: 3px;
           border-radius: 3px;
-          background: #b58b38;
+          background: #e3a144;
           pointer-events: none;
         }
 
@@ -853,10 +866,10 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
             min-height: 48px;
             max-width: calc(100vw - 32px);
             padding: 8px 14px 8px 8px;
-            border: 1px solid #d5bf81;
+            border: 1px solid #d6d2c8;
             border-radius: 999px;
-            background: #fffcf0;
-            color: #30260d;
+            background: #ffffff;
+            color: #0f1c17;
             box-shadow: 0 5px 20px rgb(0 0 0 / 20%);
             font-size: 12px;
             font-weight: 700;
@@ -869,7 +882,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
             width: 32px;
             height: 32px;
             border-radius: 50%;
-            background: #805600;
+            background: #8a4b12;
             color: #fff;
             font-size: 20px;
           }
@@ -878,6 +891,115 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
         @media (max-height: 500px) {
           .informacoes, .chat-rodape p { display: none; }
           .sugestoes { max-height: 72px; overflow-y: auto; }
+        }
+
+        /* ERN_CONCIERGE_PREMIUM_V1: visual premium no padrão Encantos da Amazônia */
+        dialog {
+          border: 1px solid rgb(244 199 126 / 28%);
+          background: #f7f6f2;
+          box-shadow: 0 30px 90px rgb(3 16 11 / 45%), 0 0 0 1px rgb(255 255 255 / 4%);
+        }
+        .chat-topo {
+          position: relative;
+          gap: 12px;
+          padding: 16px 16px 14px;
+          border-bottom: 0;
+          background: radial-gradient(120% 140% at 0% 0%, #1b4a3a 0%, #0b1f18 55%, #07110e 100%);
+          color: #f0f0e8;
+        }
+        .chat-topo::after {
+          content: '';
+          position: absolute; left: 16px; right: 16px; bottom: 0; height: 1px;
+          background: linear-gradient(90deg, transparent, rgb(244 199 126 / 55%), transparent);
+        }
+        .chat-topo .avatar {
+          position: relative;
+          width: 42px; height: 42px;
+          background: linear-gradient(180deg, #f7d595, #e3a144);
+          color: #07110e; font-size: 20px;
+          box-shadow: 0 8px 22px rgb(227 161 68 / 35%), inset 0 1px 0 rgb(255 255 255 / 55%);
+        }
+        .chat-topo .avatar::after {
+          content: '';
+          position: absolute; right: -1px; bottom: -1px;
+          width: 11px; height: 11px; border-radius: 50%;
+          background: #f4c77e; border: 2px solid #0b1f18;
+        }
+        .identidade h2 { color: #f5f3ea; font-size: 16px; font-weight: 650; letter-spacing: -.01em; }
+        .identidade p { color: #b8c9bf; font-size: 11px; }
+        .fechar {
+          border: 1px solid rgb(255 255 255 / 16%);
+          border-radius: 999px;
+          background: rgb(255 255 255 / 6%);
+          color: #f0f0e8; font-size: 22px;
+        }
+        .fechar:hover { border-color: rgb(244 199 126 / 60%); color: #f4c77e; }
+        .informacoes { padding: 10px 16px; border-bottom: 1px solid #e3dfd6; background: #ffffff; }
+        .informacoes p { font-size: 11px; }
+        .mensagens { padding: 18px 16px; background: #f7f6f2; }
+        .linha { margin-bottom: 14px; }
+        .balao {
+          padding: 12px 14px;
+          border-radius: 18px 18px 18px 6px;
+          border: 1px solid #ebe7de;
+          background: #ffffff;
+          box-shadow: 0 1px 2px rgb(15 28 23 / 6%), 0 6px 18px rgb(15 28 23 / 5%);
+        }
+        .assistente .autor { color: #8a4b12; }
+        .visitante .balao {
+          border: 0;
+          border-radius: 18px 18px 6px 18px;
+          background: linear-gradient(180deg, #1b4a3a, #13342a);
+          color: #f5f3ea;
+          box-shadow: 0 8px 20px rgb(19 52 42 / 25%);
+        }
+        .visitante .autor { color: #f4c77e; }
+        .balao p { font-size: 14px; line-height: 1.6; }
+        .sugestoes, .atalhos { gap: 8px; padding: 12px 16px; border-top: 1px solid #e3dfd6; background: #ffffff; }
+        .sugestoes button, .atalhos :global(a) {
+          min-height: 38px; padding: 8px 14px;
+          border: 1px solid rgb(227 161 68 / 55%);
+          background: #fffaf0; color: #6e3a0c;
+          font-size: 12.5px; font-weight: 600;
+          transition: background .2s, border-color .2s, transform .2s;
+        }
+        .sugestoes button:hover, .atalhos :global(a:hover) {
+          background: #f7d595; border-color: #e3a144; transform: translateY(-1px);
+        }
+        .compositor {
+          gap: 8px; margin: 10px 12px 6px; padding: 6px;
+          border: 1px solid #e3dfd6; border-radius: 999px;
+          background: #ffffff;
+          box-shadow: 0 6px 18px rgb(15 28 23 / 6%);
+        }
+        .compositor input {
+          min-height: 44px; padding: 10px 14px;
+          border: 0; border-radius: 999px; background: transparent;
+        }
+        .compositor input:focus-visible { outline: none; }
+        .compositor:focus-within { border-color: #e3a144; box-shadow: 0 0 0 3px rgb(227 161 68 / 25%); }
+        .compositor input::placeholder { color: #7a857f; }
+        .compositor .principal {
+          min-height: 44px; padding: 10px 18px;
+          border: 0; border-radius: 999px;
+          background: linear-gradient(180deg, #f7d595, #e3a144);
+          color: #07110e; font-weight: 700;
+          box-shadow: inset 0 1px 0 rgb(255 255 255 / 55%);
+        }
+        .compositor .principal:hover:not(:disabled) { background: linear-gradient(180deg, #fbe3ae, #eaa94d); }
+        .chat-rodape { padding: 4px 16px 12px; }
+        .chat-rodape p { font-size: 11px; }
+        .chat-rodape button { color: #8a4b12; font-weight: 600; }
+        .ern-pontos i { background: #e3a144; }
+        @media (prefers-reduced-motion: no-preference) {
+          .linha { animation: ern-balao-entra .32s cubic-bezier(.2,.7,.2,1) both; }
+        }
+        @keyframes ern-balao-entra {
+          from { opacity: 0; transform: translateY(8px); }
+          to { opacity: 1; transform: none; }
+        }
+        @media (max-width: 600px) {
+          .chat-topo { border-radius: 16px 16px 0 0; }
         }
       `}</style>
     </section>

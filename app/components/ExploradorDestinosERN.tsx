@@ -24,9 +24,9 @@ const copy = {
     mapNote: 'O mapa mostra bases regionais. Praias e acessos mudam com as águas.',
     baseNote: 'O mapa está na base regional, não no ponto exato deste atrativo. Combine o acesso com quem conhece o lugar.',
     exactNote: 'Referência da Ilha da Praia Grande. A posição não indica desembarque nem o limite atual da areia.',
-    context: 'Imagem de contexto · acervo ERN', collection: 'Acervo ERN',
+    context: 'Imagem de contexto · acervo EDA', collection: 'Acervo EDA',
     galleryTitle: 'Deixe uma paisagem escolher você.', galleryIntro: 'Lugares, celebrações e diferentes formas de viver o Rio Negro.',
-    details: 'O que torna esse lugar especial', plan: 'Planejar minha viagem', network: 'Conhecer a rede ERN',
+    details: 'O que torna esse lugar especial', plan: 'Planejar minha viagem', network: 'Conhecer a rede EDA',
     share: 'Compartilhar lugar', copied: 'Link copiado.', copyLink: 'Copie o link do lugar',
     selectionEmpty: 'Sua viagem começa com uma curiosidade. Toque no coração dos lugares que você quer conhecer.',
     selectionNote: 'Sua seleção fica nesta página durante a visita. Não é uma reserva nem um trajeto de navegação.',
@@ -50,9 +50,9 @@ const copy = {
     mapNote: 'The map shows regional bases. Beaches and access change with river levels.',
     baseNote: 'The map shows the regional base, not the exact attraction. Arrange access with local people who know the place.',
     exactNote: 'Reference for Ilha da Praia Grande. It does not identify a landing point or the current shoreline.',
-    context: 'Context image · ERN collection', collection: 'ERN collection',
+    context: 'Context image · EDA collection', collection: 'EDA collection',
     galleryTitle: 'Let a landscape choose you.', galleryIntro: 'Places, celebrations and different ways to experience the Rio Negro.',
-    details: 'What makes this place special', plan: 'Plan my trip', network: 'Explore the ERN network',
+    details: 'What makes this place special', plan: 'Plan my trip', network: 'Explore the EDA network',
     share: 'Share this place', copied: 'Link copied.', copyLink: 'Copy the place link',
     selectionEmpty: 'Your journey starts with curiosity. Tap the heart on places you want to visit.',
     selectionNote: 'Your selection stays on this page during your visit. It is neither a booking nor a navigation route.',
@@ -76,9 +76,9 @@ const copy = {
     mapNote: 'El mapa muestra bases regionales. Las playas y los accesos cambian con las aguas.',
     baseNote: 'El mapa muestra la base regional, no el punto exacto del atractivo. Organiza el acceso con quienes conocen el lugar.',
     exactNote: 'Referencia de Ilha da Praia Grande. No indica desembarque ni el límite actual de la arena.',
-    context: 'Imagen de contexto · acervo ERN', collection: 'Acervo ERN',
+    context: 'Imagen de contexto · acervo EDA', collection: 'Acervo EDA',
     galleryTitle: 'Deja que un paisaje te elija.', galleryIntro: 'Lugares, celebraciones y diferentes formas de vivir el Río Negro.',
-    details: 'Lo que hace especial este lugar', plan: 'Planear mi viaje', network: 'Conocer la red ERN',
+    details: 'Lo que hace especial este lugar', plan: 'Planear mi viaje', network: 'Conocer la red EDA',
     share: 'Compartir lugar', copied: 'Enlace copiado.', copyLink: 'Copia el enlace del lugar',
     selectionEmpty: 'Tu viaje comienza con curiosidad. Toca el corazón de los lugares que quieres conocer.',
     selectionNote: 'Tu selección permanece en esta página durante la visita. No es una reserva ni una ruta de navegación.',
@@ -196,7 +196,7 @@ const normalize = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, 
 function SceneImage({ src, alt, eager = false }: { src: string; alt: string; eager?: boolean }) {
   const [failed, setFailed] = useState(false);
   useEffect(() => setFailed(false), [src]);
-  if (failed) return <div className="ern-v-image-fallback" role="img" aria-label={alt}>ERN · Rio Negro</div>;
+  if (failed) return <div className="ern-v-image-fallback" role="img" aria-label={alt}>EDA · Rio Negro</div>;
   // Acervo local: sem serviço externo de imagens.
   // eslint-disable-next-line @next/next/no-img-element
   return <img src={src} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" onError={() => setFailed(true)} />;
@@ -507,7 +507,7 @@ export default function ExploradorDestinosERN() {
               alignItems: 'center',
               gap: '5px',
               marginTop: '8px',
-              color: '#805600',
+              color: '#8a4b12',
               fontSize: '11px',
               fontWeight: 600,
             }}>
@@ -857,7 +857,7 @@ export default function ExploradorDestinosERN() {
                   border: '1px solid #d5bf81',
                   borderRadius: '14px',
                   background: '#fff3cf',
-                  color: '#30260d',
+                  color: '#0f1c17',
                 }}
               >
                 <p><strong>{fishing.legend}</strong></p>
@@ -901,7 +901,7 @@ export default function ExploradorDestinosERN() {
       <p>{u.mapNote}</p><nav aria-label={u.overview}><button type="button" aria-pressed={region === 'all'} onClick={overview}>{u.all}</button>{cities.map(c => <button type="button" key={c.id} aria-pressed={region === c.id} onClick={() => { chooseCity(c.id); }}>{c.name}</button>)}</nav></div>
     <section id="ern-v-galeria" className="ern-v-gallery" aria-labelledby="ern-v-gallery-title"><p className="ern-v-kicker">{t.discovery.title}</p><h2 id="ern-v-gallery-title">{interest === 'fishing' ? fishing.filter : u.galleryTitle}</h2><p className="ern-v-section-intro">{u.galleryIntro}</p><div className="ern-v-gallery-grid">{filtered.length ? filtered.map(scene => sceneCard(scene, false)) : <div className="ern-v-empty"><p>{u.noResults}</p><button type="button" className="ern-v-button" onClick={overview}>{u.clear}</button></div>}</div></section>
     <section className="ern-v-waters" aria-labelledby="ern-v-waters-title"><div className="ern-v-waters-image"><SceneImage src="/images/regiao/viagembarco.png.jpeg" alt={`${t.waters.eyebrow} · ${u.context}`} /><span className="ern-v-photo-tag">{u.context}</span></div><div className="ern-v-waters-copy"><p className="ern-v-kicker">{t.waters.eyebrow}</p><h2 id="ern-v-waters-title">{t.waters.title}</h2><p>{t.waters.description}</p><div><h3>{t.waters.highLabel}</h3><p>{t.waters.highDescription}</p><h3>{t.waters.lowLabel}</h3><p>{t.waters.lowDescription}</p></div><p className="ern-v-detail-note">{u.waterNote}</p></div></section>
-    <section className="ern-v-plan"><p className="ern-v-kicker">ERN CONCIERGE</p><h2>{t.planning.title}</h2><p>{t.planning.description}</p><Link className="ern-v-button" href="/#concierge">{u.plan} ↗</Link><Link className="ern-v-network-link" href="/rede">{u.network} ↗</Link></section>
-    <footer className="ern-v-footer"><span>Encantos Rio Negro</span><Link href="/privacidade">{u.privacy}</Link><Link href="/termos">{u.terms}</Link></footer>
+    <section className="ern-v-plan"><p className="ern-v-kicker">EDA CONCIERGE</p><h2>{t.planning.title}</h2><p>{t.planning.description}</p><Link className="ern-v-button" href="/#concierge">{u.plan} ↗</Link><Link className="ern-v-network-link" href="/rede">{u.network} ↗</Link></section>
+    <footer className="ern-v-footer"><span>Encantos da Amazônia</span><Link href="/privacidade">{u.privacy}</Link><Link href="/termos">{u.terms}</Link></footer>
   </div>;
 }

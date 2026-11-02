@@ -100,7 +100,7 @@ const TEMAS: Record<
 };
 
 const PADRAO: Configuracao = {
-  nome_sistema: 'Encantos Rio Negro',
+  nome_sistema: 'Encantos Gestão',
   tema: 'verde',
   moeda: 'BRL',
   fuso_horario: 'America/Manaus',

@@ -86,7 +86,7 @@ export const RECURSOS_PLANOS: Record<
   rede_basica: {
     nome: 'Rede ERN',
     descricao:
-      'Presença básica da empresa na Rede Encantos Rio Negro.',
+      'Presença básica da empresa na Rede Encantos da Amazônia.',
     planoMinimo: 'Grátis',
   },
 
@@ -128,7 +128,7 @@ export const RECURSOS_PLANOS: Record<
   destaque_rede: {
     nome: 'Destaque na Rede',
     descricao:
-      'Ganhe maior exposição dentro da Rede Encantos Rio Negro.',
+      'Ganhe maior exposição dentro da Rede Encantos da Amazônia.',
     planoMinimo: 'Premium',
   },
 };

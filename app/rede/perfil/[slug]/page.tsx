@@ -45,7 +45,7 @@ const textos = {
     error: 'Não foi possível carregar o perfil.',
     retry: 'Tentar novamente',
     operator: 'Operadora de turismo',
-    profile: 'Perfil na Rede ERN',
+    profile: 'Perfil na Rede EDA',
     about: 'Conheça',
     specialties: 'Experiências e especialidades',
     languages: 'Idiomas de atendimento',
@@ -58,9 +58,9 @@ const textos = {
     direct:
       'O atendimento e a contratação são realizados diretamente com o anunciante.',
     join: 'Sua operadora também pode fazer parte desta rede.',
-    joinLink: 'Conhecer a ERN',
+    joinLink: 'Conhecer a EDA',
     message:
-      'Olá! Encontrei seu perfil na Rede ERN e gostaria de informações sobre suas experiências.',
+      'Olá! Encontrei seu perfil na Rede EDA e gostaria de informações sobre suas experiências.',
   },
   EN: {
     back: 'Explore the network',
@@ -71,7 +71,7 @@ const textos = {
     error: 'The profile could not be loaded.',
     retry: 'Try again',
     operator: 'Tour operator',
-    profile: 'ERN Network profile',
+    profile: 'EDA Network profile',
     about: 'About',
     specialties: 'Experiences and specialties',
     languages: 'Service languages',
@@ -84,9 +84,9 @@ const textos = {
     direct:
       'Service and bookings are handled directly by the advertiser.',
     join: 'Your tour company can also be part of this network.',
-    joinLink: 'Discover ERN',
+    joinLink: 'Discover EDA',
     message:
-      'Hello! I found your profile on the ERN Network and would like information about your experiences.',
+      'Hello! I found your profile on the EDA Network and would like information about your experiences.',
   },
   ES: {
     back: 'Explorar la red',
@@ -97,7 +97,7 @@ const textos = {
     error: 'No se pudo cargar el perfil.',
     retry: 'Intentar de nuevo',
     operator: 'Operadora de turismo',
-    profile: 'Perfil en la Red ERN',
+    profile: 'Perfil en la Red EDA',
     about: 'Conoce',
     specialties: 'Experiencias y especialidades',
     languages: 'Idiomas de atención',
@@ -110,54 +110,54 @@ const textos = {
     direct:
       'La atención y la contratación se realizan directamente con el anunciante.',
     join: 'Tu operadora también puede formar parte de esta red.',
-    joinLink: 'Conocer ERN',
+    joinLink: 'Conocer EDA',
     message:
-      '¡Hola! Encontré su perfil en la Red ERN y quisiera información sobre sus experiencias.',
+      '¡Hola! Encontré su perfil en la Red EDA y quisiera información sobre sus experiencias.',
   },
 };
 
 const TEXTOS_EDITORIAL = {
   "PT": {
-    "profile": "Editorial oficial ERN",
+    "profile": "Editorial oficial EDA",
     "about": "Sobre",
     "specialties": "Temas do editorial",
     "languages": "Idiomas do portal",
-    "contact": "Converse com a equipe ERN",
+    "contact": "Converse com a equipe EDA",
     "contactText": "Fale sobre a plataforma, participação na rede, parcerias ou sugestões de conteúdo.",
-    "whatsapp": "Falar com a ERN",
+    "whatsapp": "Falar com a EDA",
     "website": "Explorar o portal",
-    "direct": "Para consultar passeios, valores e reservas, fale diretamente com a operadora responsável na Rede ERN.",
+    "direct": "Para consultar passeios, valores e reservas, fale diretamente com a operadora responsável na Rede EDA.",
     "join": "Sua operadora merece ser descoberta no Rio Negro.",
     "joinLink": "Conhecer a plataforma",
-    "message": "Olá! Encontrei o perfil editorial da ERN e gostaria de falar com a equipe sobre a plataforma."
+    "message": "Olá! Encontrei o perfil editorial da EDA e gostaria de falar com a equipe sobre a plataforma."
   },
   "EN": {
-    "profile": "Official ERN editorial",
+    "profile": "Official EDA editorial",
     "about": "About",
     "specialties": "Editorial topics",
     "languages": "Portal languages",
-    "contact": "Contact the ERN team",
+    "contact": "Contact the EDA team",
     "contactText": "Talk to us about the platform, joining the network, partnerships or content suggestions.",
-    "whatsapp": "Contact ERN",
+    "whatsapp": "Contact EDA",
     "website": "Explore the portal",
-    "direct": "For tours, prices and bookings, contact the responsible tour operator directly on the ERN Network.",
+    "direct": "For tours, prices and bookings, contact the responsible tour operator directly on the EDA Network.",
     "join": "Help travelers discover your Rio Negro tour company.",
     "joinLink": "Discover the platform",
-    "message": "Hello! I found the ERN editorial profile and would like to contact the team about the platform."
+    "message": "Hello! I found the EDA editorial profile and would like to contact the team about the platform."
   },
   "ES": {
-    "profile": "Editorial oficial ERN",
+    "profile": "Editorial oficial EDA",
     "about": "Sobre",
     "specialties": "Temas del editorial",
     "languages": "Idiomas del portal",
-    "contact": "Habla con el equipo ERN",
+    "contact": "Habla con el equipo EDA",
     "contactText": "Consulta sobre la plataforma, la participación en la red, alianzas o sugerencias de contenido.",
-    "whatsapp": "Contactar con ERN",
+    "whatsapp": "Contactar con EDA",
     "website": "Explorar el portal",
-    "direct": "Para excursiones, precios y reservas, contacta directamente con la operadora responsable en la Red ERN.",
+    "direct": "Para excursiones, precios y reservas, contacta directamente con la operadora responsable en la Red EDA.",
     "join": "Tu operadora merece ser descubierta en Rio Negro.",
     "joinLink": "Conocer la plataforma",
-    "message": "¡Hola! Encontré el perfil editorial de ERN y quisiera hablar con el equipo sobre la plataforma."
+    "message": "¡Hola! Encontré el perfil editorial de EDA y quisiera hablar con el equipo sobre la plataforma."
   }
 };
 

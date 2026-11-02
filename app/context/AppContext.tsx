@@ -18,7 +18,7 @@ const AppContext = createContext<ConfigContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
   const [config, setConfig] = useState({
-    nome_sistema: 'Encantos Rio Negro - Gestão',
+    nome_sistema: 'Encantos Gestão',
     tema: 'Escuro',
     moeda: 'BRL',
     fuso_horario: 'America/Manaus',
@@ -30,7 +30,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
       const { data, error } = await supabase.from('configuracoes').select('*').limit(1).single();
       if (!error && data) {
         setConfig({
-          nome_sistema: data.nome_sistema || 'Encantos Rio Negro',
+          nome_sistema: data.nome_sistema || 'Encantos Gestão',
           tema: data.tema || 'Escuro',
           moeda: data.moeda || 'BRL',
           fuso_horario: data.fuso_horario || 'America/Manaus',

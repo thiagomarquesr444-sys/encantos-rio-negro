@@ -798,7 +798,7 @@ function FormularioLogin() {
 
 
             <p className="mt-3 text-sm font-semibold text-[#F4C77E]">
-              Encantos Rio Negro
+              Encantos Gestão
             </p>
 
             <p className="mt-2 text-xs font-medium text-[#EDEDE3]/65">

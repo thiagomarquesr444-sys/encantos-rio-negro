@@ -12,11 +12,11 @@ const capturas = [
 
 const textos = {
   PT: {
-    titulo: 'Conheça a ERN em funcionamento',
+    titulo: 'Conheça a EDA em funcionamento',
     nomes: ['Painel em tema claro', 'Painel em tema azul', 'Materiais e orçamento'],
     descricoes: [
-      'Dashboard da ERN com navegação e apresentação no tema amarelo',
-      'Dashboard da ERN no tema azul, com atalhos para reservas e demandas',
+      'Dashboard da EDA com navegação e apresentação no tema amarelo',
+      'Dashboard da EDA no tema azul, com atalhos para reservas e demandas',
       'Tela de materiais da operação com estimativa de custos e gráfico por categoria',
     ],
     selecionar: 'Mostrar',
@@ -27,11 +27,11 @@ const textos = {
     aviso: 'Telas da plataforma. Recursos conforme o plano e o tipo de acesso.',
   },
   EN: {
-    titulo: 'Explore ERN in action',
+    titulo: 'Explore EDA in action',
     nomes: ['Dashboard in light theme', 'Dashboard in blue theme', 'Materials and budget'],
     descricoes: [
-      'ERN dashboard with navigation and a yellow theme',
-      'ERN dashboard in a blue theme, with shortcuts to reservations and company needs',
+      'EDA dashboard with navigation and a yellow theme',
+      'EDA dashboard in a blue theme, with shortcuts to reservations and company needs',
       'Operation materials screen with cost estimates and a chart by category',
     ],
     selecionar: 'Show',
@@ -42,11 +42,11 @@ const textos = {
     aviso: 'Platform screens. Features depend on the plan and access type.',
   },
   ES: {
-    titulo: 'Conozca ERN en funcionamiento',
+    titulo: 'Conozca EDA en funcionamiento',
     nomes: ['Panel en tema claro', 'Panel en tema azul', 'Materiales y presupuesto'],
     descricoes: [
-      'Panel de ERN con navegación y presentación en el tema amarillo',
-      'Panel de ERN en el tema azul, con accesos a reservas y necesidades',
+      'Panel de EDA con navegación y presentación en el tema amarillo',
+      'Panel de EDA en el tema azul, con accesos a reservas y necesidades',
       'Pantalla de materiales de la operación con estimación de costes y gráfico por categoría',
     ],
     selecionar: 'Mostrar',
@@ -251,24 +251,24 @@ export default function DemonstracaoOperadoresERN() {
       </dialog>
 
       <style jsx>{`
-        .demonstracao{min-width:0;width:100%;padding:12px;background:#fffcf0;color:#30260d;border:1px solid #cdba7a;border-radius:18px;box-shadow:0 18px 45px #30260d12}
-        .palco{aspect-ratio:1870/1022;background:#fff7db;border-radius:9px;overflow:hidden}
+        .demonstracao{min-width:0;width:100%;padding:12px;background:#ffffff;color:#0f1c17;border:1px solid #d6d2c8;border-radius:18px;box-shadow:0 18px 45px #0f1c1712}
+        .palco{aspect-ratio:1870/1022;background:#f3f1ec;border-radius:9px;overflow:hidden}
         .abrir{display:block;width:100%;height:100%;cursor:zoom-in}
         .abrir :global(.principal){display:block;width:100%;height:100%;object-fit:contain}
         .base{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 12px;padding:8px 2px}
         .nome{font-size:13px;font-weight:700;line-height:1.6}
-        .rotacao{min-height:44px;padding:6px 10px;font-size:12px;color:#805600;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
+        .rotacao{min-height:44px;padding:6px 10px;font-size:12px;color:#8a4b12;text-decoration:underline;text-underline-offset:4px;cursor:pointer}
         .miniaturas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
-        .miniaturas button{min-width:0;border:2px solid #cdba7a;border-radius:8px;overflow:hidden;background:#fff7db;text-align:left;cursor:pointer}
-        .miniaturas button[aria-pressed=true]{border-color:#805600;background:#f0e4bb}
+        .miniaturas button{min-width:0;border:2px solid #d6d2c8;border-radius:8px;overflow:hidden;background:#f3f1ec;text-align:left;cursor:pointer}
+        .miniaturas button[aria-pressed=true]{border-color:#8a4b12;background:#f0e4bb}
         .miniaturas :global(.miniatura){display:block;width:100%;height:auto;aspect-ratio:1870/1022;object-fit:contain}
         .miniaturas span{display:flex;align-items:center;min-height:44px;padding:6px 8px;font-size:11px;line-height:1.5;font-weight:600;overflow-wrap:anywhere}
-        .aviso{margin:12px 2px 2px;color:#695727;font-size:12px;line-height:1.7}
-        button:focus-visible{outline:3px solid #805600;outline-offset:3px}
+        .aviso{margin:12px 2px 2px;color:#4b5a53;font-size:12px;line-height:1.7}
+        button:focus-visible{outline:3px solid #8a4b12;outline-offset:3px}
         .abrir:focus-visible{outline-offset:-4px}
-        .ampliacao{position:fixed;inset:0;margin:auto;width:calc(100vw - 24px);max-width:1500px;max-height:94dvh;overflow:auto;padding:0;border:1px solid #cdba7a;border-radius:14px;background:#fffcf0;color:#30260d}
+        .ampliacao{position:fixed;inset:0;margin:auto;width:calc(100vw - 24px);max-width:1500px;max-height:94dvh;overflow:auto;padding:0;border:1px solid #d6d2c8;border-radius:14px;background:#ffffff;color:#0f1c17}
         .ampliacao::backdrop{background:#07110edb}
-        .topo{position:sticky;top:0;z-index:1;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:10px 16px;background:#fffcf0;border-bottom:1px solid #cdba7a}
+        .topo{position:sticky;top:0;z-index:1;display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding:10px 16px;background:#ffffff;border-bottom:1px solid #d6d2c8}
         .topo h3{font-size:14px;font-weight:700}
         .topo button{min-height:44px;padding:8px;font-size:13px;cursor:pointer}
         .imagem-ampliada{padding:8px}

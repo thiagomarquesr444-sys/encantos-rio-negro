@@ -16,7 +16,7 @@ type Props = {
 
 const textos = {
   PT: {
-    abrir: 'ERN — Assistente de viagem',
+    abrir: 'EDA — Assistente de viagem',
     opcoes: 'Opções do assistente',
     esquerda: 'Mover para esquerda',
     direita: 'Mover para direita',
@@ -25,7 +25,7 @@ const textos = {
     retomar: 'Retomar efeitos',
   },
   EN: {
-    abrir: 'ERN — Travel assistant',
+    abrir: 'EDA — Travel assistant',
     opcoes: 'Assistant options',
     esquerda: 'Move to the left',
     direita: 'Move to the right',
@@ -34,7 +34,7 @@ const textos = {
     retomar: 'Resume effects',
   },
   ES: {
-    abrir: 'ERN — Asistente de viaje',
+    abrir: 'EDA — Asistente de viaje',
     opcoes: 'Opciones del asistente',
     esquerda: 'Mover a la izquierda',
     direita: 'Mover a la derecha',
@@ -259,7 +259,7 @@ export default function ConciergeLancadorERN({
         }}
       >
         <span className="orbe" aria-hidden="true">✦</span>
-        <span>ERN</span>
+        <span>EDA</span>
       </button>
 
       <button
@@ -315,8 +315,8 @@ export default function ConciergeLancadorERN({
           padding: 4px;
           border: 1px solid #c4ae72;
           border-radius: 999px;
-          background: #fffcf0;
-          color: #30260d;
+          background: #ffffff;
+          color: #0f1c17;
           box-shadow: 0 5px 22px rgb(0 0 0 / 22%);
           font-family: var(--font-work-sans), sans-serif;
           user-select: none;
@@ -398,7 +398,7 @@ export default function ConciergeLancadorERN({
           padding: 6px;
           border: 1px solid #c4ae72;
           border-radius: 14px;
-          background: #fffcf0;
+          background: #ffffff;
           box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
         }
         .painel button {

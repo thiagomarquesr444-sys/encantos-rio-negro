@@ -254,7 +254,7 @@ export function criarDocumentoPremiumERN(dados: DocumentoPremiumERN): jsPDF {
     pdf.setFont("helvetica", "normal");
     pdf.setFontSize(8);
     pdf.setTextColor(...CINZA);
-    pdf.text("Encantos Rio Negro", MARGEM, altura - 16);
+    pdf.text("Encantos Gestão", MARGEM, altura - 16);
     pdf.text(`Página ${pagina} de ${paginas}`, largura - MARGEM, altura - 16, { align: "right" });
   }
   return pdf;

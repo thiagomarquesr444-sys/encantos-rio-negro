@@ -162,7 +162,7 @@ export default function PainelPorFuncaoERN({
             className="text-[10px] font-semibold uppercase tracking-[0.2em]"
             style={{ color: 'var(--ern-destaque, #F4C77E)' }}
           >
-            Encantos Rio Negro · equipe
+            Encantos Gestão · equipe
           </p>
 
           <h1

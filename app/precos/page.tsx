@@ -52,7 +52,7 @@ const textos = {
     gratis: 'para sempre',
     recomendado: 'Recomendado',
     usuarios: 'usuários da equipe', clientes: 'clientes', reservas: 'reservas por mês', passeios: 'passeios no catálogo', ilimitado: 'Sem limite de',
-    recursos: { rede_basica: 'Perfil na Rede ERN', vouchers: 'Vouchers em PDF', financeiro: 'Financeiro', relatorios: 'Relatórios', destaque_rede: 'Destaque na Rede', concierge_ia: 'Concierge com IA', whatsapp: 'Atendimento por WhatsApp' } as Record<string, string>,
+    recursos: { rede_basica: 'Perfil na Rede EDA', vouchers: 'Vouchers em PDF', financeiro: 'Financeiro', relatorios: 'Relatórios', destaque_rede: 'Destaque na Rede', concierge_ia: 'Concierge com IA', whatsapp: 'Atendimento por WhatsApp' } as Record<string, string>,
     implantacao: 'em implantação',
     comecar: 'Criar conta grátis',
     assinar: 'Começar com este plano',
@@ -60,7 +60,7 @@ const textos = {
     erro: 'Não foi possível carregar os planos agora.',
     tentar: 'Tentar novamente',
     pagamento: 'Os planos pagos são cobrados pelo Asaas. Você cancela pelo painel e continua usando até o fim do período pago.',
-    conhecer: 'Conhecer a ERN para operadores',
+    conhecer: 'Conhecer a EDA para operadores',
   },
   EN: {
     eyebrow: 'Plans and pricing',
@@ -74,7 +74,7 @@ const textos = {
     gratis: 'forever',
     recomendado: 'Recommended',
     usuarios: 'team users', clientes: 'clients', reservas: 'bookings per month', passeios: 'tours in catalog', ilimitado: 'Unlimited',
-    recursos: { rede_basica: 'ERN Network profile', vouchers: 'PDF vouchers', financeiro: 'Finance', relatorios: 'Reports', destaque_rede: 'Featured on the Network', concierge_ia: 'AI Concierge', whatsapp: 'WhatsApp support' } as Record<string, string>,
+    recursos: { rede_basica: 'EDA Network profile', vouchers: 'PDF vouchers', financeiro: 'Finance', relatorios: 'Reports', destaque_rede: 'Featured on the Network', concierge_ia: 'AI Concierge', whatsapp: 'WhatsApp support' } as Record<string, string>,
     implantacao: 'coming soon',
     comecar: 'Create free account',
     assinar: 'Start with this plan',
@@ -82,7 +82,7 @@ const textos = {
     erro: 'Plans could not be loaded right now.',
     tentar: 'Try again',
     pagamento: 'Paid plans are billed through Asaas. Cancel from your dashboard and keep using it until the paid period ends.',
-    conhecer: 'ERN for operators',
+    conhecer: 'EDA for operators',
   },
   ES: {
     eyebrow: 'Planes y precios',
@@ -96,7 +96,7 @@ const textos = {
     gratis: 'para siempre',
     recomendado: 'Recomendado',
     usuarios: 'usuarios del equipo', clientes: 'clientes', reservas: 'reservas por mes', passeios: 'paseos en el catálogo', ilimitado: 'Sin límite de',
-    recursos: { rede_basica: 'Perfil en la Red ERN', vouchers: 'Vouchers en PDF', financeiro: 'Finanzas', relatorios: 'Informes', destaque_rede: 'Destacado en la Red', concierge_ia: 'Concierge con IA', whatsapp: 'Atención por WhatsApp' } as Record<string, string>,
+    recursos: { rede_basica: 'Perfil en la Red EDA', vouchers: 'Vouchers en PDF', financeiro: 'Finanzas', relatorios: 'Informes', destaque_rede: 'Destacado en la Red', concierge_ia: 'Concierge con IA', whatsapp: 'Atención por WhatsApp' } as Record<string, string>,
     implantacao: 'en implementación',
     comecar: 'Crear cuenta gratis',
     assinar: 'Empezar con este plan',
@@ -104,7 +104,7 @@ const textos = {
     erro: 'No se pudieron cargar los planes ahora.',
     tentar: 'Intentar de nuevo',
     pagamento: 'Los planes pagos se cobran por Asaas. Cancelas desde el panel y sigues usando hasta el fin del período pagado.',
-    conhecer: 'ERN para operadores',
+    conhecer: 'EDA para operadores',
   },
 };
 

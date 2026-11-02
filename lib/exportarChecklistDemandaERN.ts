@@ -230,7 +230,7 @@ export async function exportarChecklistDemandaERN(
     pdf.setFont('helvetica','normal');
     pdf.setFontSize(7.5);
     pdf.setTextColor(...CINZA);
-    pdf.text(`Encantos Rio Negro  |  Lista salva v${lista.versao}  |  ${dataGeracao}`,margem,altura-15);
+    pdf.text(`Encantos Gestão  |  Lista salva v${lista.versao}  |  ${dataGeracao}`,margem,altura-15);
     pdf.text(`Página ${n} de ${paginas}`,direita,altura-15,{align:'right'});
   }
   pdf.save(salvarNomeSeguro(demandaId,lista.versao));

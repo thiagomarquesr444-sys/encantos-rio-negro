@@ -3,7 +3,7 @@ import type { Idioma } from '@/lib/i18n/types';
 export const destinosTranslations = {
   PT: {
     hero: {
-      eyebrow: 'Destinos ERN',
+      eyebrow: 'Destinos EDA',
       title:
         'O Rio Negro não é um destino. É um território inteiro para descobrir.',
       description:
@@ -14,7 +14,7 @@ export const destinosTranslations = {
       sideTitle:
         'Escolha menos pelo mapa e mais pelo tipo de experiência que você quer viver.',
       sideDescription:
-        'A ERN organiza o território para transformar inspiração em planejamento e planejamento em conexão com operadores locais.',
+        'A EDA organiza o território para transformar inspiração em planejamento e planejamento em conexão com operadores locais.',
     },
 
     discovery: {
@@ -33,7 +33,7 @@ export const destinosTranslations = {
       eyebrow: 'Explore com contexto',
       title: 'Não queremos mostrar apenas onde ir.',
       paragraph1:
-        'Cada lugar muda com as águas, com a época do ano e com a forma de chegar. Por isso, a ERN combina território, cultura, experiências e operação local em uma mesma jornada.',
+        'Cada lugar muda com as águas, com a época do ano e com a forma de chegar. Por isso, a EDA combina território, cultura, experiências e operação local em uma mesma jornada.',
       paragraph2:
         'Antes de escolher um roteiro, o visitante pode entender o destino, descobrir o que faz sentido para seu perfil e conversar com o Concierge para avançar no planejamento.',
     },
@@ -108,10 +108,10 @@ export const destinosTranslations = {
     },
 
     planning: {
-      eyebrow: 'ERN Concierge',
+      eyebrow: 'EDA Concierge',
       title: 'Você não precisa conhecer o mapa para começar.',
       description:
-        'Diga quando pretende viajar, quantas pessoas vão, o que gosta de fazer e quanto tempo deseja permanecer. A ERN ajuda a organizar as possibilidades antes da confirmação com os operadores.',
+        'Diga quando pretende viajar, quantas pessoas vão, o que gosta de fazer e quanto tempo deseja permanecer. A EDA ajuda a organizar as possibilidades antes da confirmação com os operadores.',
       button: 'Começar planejamento',
       questionsTitle: 'O Concierge pode começar por',
       questions: [
@@ -127,7 +127,7 @@ export const destinosTranslations = {
       eyebrow: 'Você trabalha com turismo?',
       title:
         'Sua operação também pode fazer parte dessa jornada.',
-      button: 'Conhecer ERN Gestão',
+      button: 'Conhecer Encantos Gestão',
     },
 
     destinations: {
@@ -262,7 +262,7 @@ export const destinosTranslations = {
 
   EN: {
     hero: {
-      eyebrow: 'ERN Destinations',
+      eyebrow: 'EDA Destinations',
       title:
         'The Rio Negro is not just a destination. It is an entire territory to discover.',
       description:
@@ -273,7 +273,7 @@ export const destinosTranslations = {
       sideTitle:
         'Choose less by the map and more by the kind of experience you want to live.',
       sideDescription:
-        'ERN organizes the territory to turn inspiration into planning, and planning into connections with local operators.',
+        'EDA organizes the territory to turn inspiration into planning, and planning into connections with local operators.',
     },
 
     discovery: {
@@ -293,7 +293,7 @@ export const destinosTranslations = {
       title:
         'We do not want to show you only where to go.',
       paragraph1:
-        'Every place changes with the waters, the season and the way you get there. That is why ERN combines territory, culture, experiences and local operations into one journey.',
+        'Every place changes with the waters, the season and the way you get there. That is why EDA combines territory, culture, experiences and local operations into one journey.',
       paragraph2:
         'Before choosing an itinerary, visitors can understand the destination, discover what best fits their profile and talk to the Concierge to move forward with planning.',
     },
@@ -369,11 +369,11 @@ export const destinosTranslations = {
     },
 
     planning: {
-      eyebrow: 'ERN Concierge',
+      eyebrow: 'EDA Concierge',
       title:
         'You do not need to know the map to get started.',
       description:
-        'Tell us when you want to travel, how many people are going, what you enjoy doing and how long you want to stay. ERN helps organize the possibilities before confirmation with local operators.',
+        'Tell us when you want to travel, how many people are going, what you enjoy doing and how long you want to stay. EDA helps organize the possibilities before confirmation with local operators.',
       button: 'Start planning',
       questionsTitle:
         'The Concierge can start by asking',
@@ -390,7 +390,7 @@ export const destinosTranslations = {
       eyebrow: 'Do you work in tourism?',
       title:
         'Your operation can also become part of this journey.',
-      button: 'Discover ERN Management',
+      button: 'Discover Encantos Gestão',
     },
 
     destinations: {
@@ -525,7 +525,7 @@ export const destinosTranslations = {
 
   ES: {
     hero: {
-      eyebrow: 'Destinos ERN',
+      eyebrow: 'Destinos EDA',
       title:
         'El Río Negro no es solo un destino. Es un territorio entero por descubrir.',
       description:
@@ -536,7 +536,7 @@ export const destinosTranslations = {
       sideTitle:
         'Elige menos por el mapa y más por el tipo de experiencia que quieres vivir.',
       sideDescription:
-        'ERN organiza el territorio para transformar inspiración en planificación y planificación en conexión con operadores locales.',
+        'EDA organiza el territorio para transformar inspiración en planificación y planificación en conexión con operadores locales.',
     },
 
     discovery: {
@@ -556,7 +556,7 @@ export const destinosTranslations = {
       title:
         'No queremos mostrar solamente dónde ir.',
       paragraph1:
-        'Cada lugar cambia con las aguas, la época del año y la forma de llegar. Por eso, ERN combina territorio, cultura, experiencias y operación local en un mismo recorrido.',
+        'Cada lugar cambia con las aguas, la época del año y la forma de llegar. Por eso, EDA combina territorio, cultura, experiencias y operación local en un mismo recorrido.',
       paragraph2:
         'Antes de elegir un itinerario, el visitante puede comprender el destino, descubrir qué encaja mejor con su perfil y conversar con el Concierge para avanzar en la planificación.',
     },
@@ -632,11 +632,11 @@ export const destinosTranslations = {
     },
 
     planning: {
-      eyebrow: 'ERN Concierge',
+      eyebrow: 'EDA Concierge',
       title:
         'No necesitas conocer el mapa para empezar.',
       description:
-        'Dinos cuándo quieres viajar, cuántas personas van, qué te gusta hacer y cuánto tiempo deseas permanecer. ERN ayuda a organizar las posibilidades antes de la confirmación con los operadores.',
+        'Dinos cuándo quieres viajar, cuántas personas van, qué te gusta hacer y cuánto tiempo deseas permanecer. EDA ayuda a organizar las posibilidades antes de la confirmación con los operadores.',
       button: 'Comenzar planificación',
       questionsTitle:
         'El Concierge puede comenzar preguntando',
@@ -653,7 +653,7 @@ export const destinosTranslations = {
       eyebrow: '¿Trabajas con turismo?',
       title:
         'Tu operación también puede formar parte de este recorrido.',
-      button: 'Conocer ERN Gestión',
+      button: 'Conocer Encantos Gestão',
     },
 
     destinations: {

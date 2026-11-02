@@ -278,7 +278,7 @@ export default function ComandoERNPage() {
         </h1>
 
         <p className="mt-3 max-w-2xl text-sm leading-6 text-[#695727]">
-          Administre a voz oficial da Encantos Rio Negro na rede pública.
+          Administre a voz oficial da Encantos da Amazônia na rede pública.
         </p>
 
         <nav aria-label="Atalhos do comando" className="mt-5 flex flex-wrap gap-4 text-sm">

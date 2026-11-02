@@ -805,7 +805,7 @@ export default function VouchersPage() {
 
       baixarDocumentoPremiumERN({
         titulo: 'Voucher Turístico',
-        subtitulo: 'Documento operacional | Plataforma Encantos Rio Negro',
+        subtitulo: 'Documento operacional | Plataforma Encantos Gestão',
         empresa: empresa.nome,
         identificador: atual.codigo,
         nomeArquivo: `ERN-voucher-${atual.id}.pdf`,

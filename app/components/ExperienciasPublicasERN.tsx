@@ -71,11 +71,11 @@ const textos = {
     territoryNote: 'Os nomes são pontos de partida para descoberta, não um roteiro pronto nem uma indicação de disponibilidade.',
     peopleEyebrow: 'Pessoas que fazem acontecer',
     peopleTitle: 'Da inspiração à conversa certa.',
-    peopleText: 'Na Rede ERN, você pode explorar publicações e acessar os perfis dos autores. Confira os canais disponibilizados por cada prestador para perguntar sobre a experiência que procura.',
+    peopleText: 'Na Rede EDA, você pode explorar publicações e acessar os perfis dos autores. Confira os canais disponibilizados por cada prestador para perguntar sobre a experiência que procura.',
     peopleGroups: ['Operadoras e agências', 'Guias', 'Fornecedores e serviços'],
-    peopleButton: 'Explorar a Rede ERN',
+    peopleButton: 'Explorar a Rede EDA',
     business: 'Você trabalha com turismo?',
-    businessLink: 'Conheça a ERN Gestão',
+    businessLink: 'Conheça a Encantos Gestão',
     planningEyebrow: 'Antes de planejar',
     planningTitle: 'Boas perguntas fazem parte da viagem.',
     planning: [
@@ -145,11 +145,11 @@ const textos = {
     territoryNote: 'These places are starting points for discovery, not a ready-made itinerary or a statement of availability.',
     peopleEyebrow: 'People who make it happen',
     peopleTitle: 'From inspiration to the right conversation.',
-    peopleText: 'On Rede ERN, explore posts and visit author profiles. Use the contact channels provided by each business to ask about the experience you are looking for.',
+    peopleText: 'On Rede EDA, explore posts and visit author profiles. Use the contact channels provided by each business to ask about the experience you are looking for.',
     peopleGroups: ['Operators and agencies', 'Guides', 'Suppliers and services'],
-    peopleButton: 'Explore Rede ERN',
+    peopleButton: 'Explore Rede EDA',
     business: 'Do you work in tourism?',
-    businessLink: 'Explore ERN Management',
+    businessLink: 'Explore Encantos Gestão',
     planningEyebrow: 'Before you plan',
     planningTitle: 'Good questions are part of the trip.',
     planning: [
@@ -214,11 +214,11 @@ const textos = {
     territoryNote: 'Los nombres son puntos de partida para descubrir, no un itinerario listo ni una indicación de disponibilidad.',
     peopleEyebrow: 'Personas que lo hacen posible',
     peopleTitle: 'De la inspiración a la conversación adecuada.',
-    peopleText: 'En Rede ERN puede explorar publicaciones y visitar los perfiles de sus autores. Consulte los canales que ofrece cada prestador para preguntar por la experiencia que busca.',
+    peopleText: 'En Rede EDA puede explorar publicaciones y visitar los perfiles de sus autores. Consulte los canales que ofrece cada prestador para preguntar por la experiencia que busca.',
     peopleGroups: ['Operadores y agencias', 'Guías', 'Proveedores y servicios'],
-    peopleButton: 'Explorar Rede ERN',
+    peopleButton: 'Explorar Rede EDA',
     business: '¿Trabaja con turismo?',
-    businessLink: 'Conozca ERN Gestión',
+    businessLink: 'Conozca Encantos Gestão',
     planningEyebrow: 'Antes de planificar',
     planningTitle: 'Las buenas preguntas son parte del viaje.',
     planning: [
@@ -381,7 +381,7 @@ export default function ExperienciasPublicasERN() {
 
       <footer className="rodape">
         <div className="limite rodape-grid">
-          <p>Encantos Rio Negro · Amazonas</p>
+          <p>Encantos da Amazônia</p>
           <nav aria-label={t.legalLabel}>
             {t.footer.map(([rotulo, href]) => (
               <Link href={href} key={href}>{rotulo}</Link>
@@ -405,69 +405,69 @@ export default function ExperienciasPublicasERN() {
         .ern-concierge-experiencias :global(.cartao-corpo) {
           display: none;
         }
-        .experiencias-ern{background:#fff7db;color:#30260d;font-family:var(--font-work-sans),sans-serif}
+        .experiencias-ern{background:#f3f1ec;color:#0f1c17;font-family:var(--font-work-sans),sans-serif}
         .limite{width:100%;max-width:1180px;margin:0 auto;min-width:0}
         h1,h2,h3{font-family:var(--font-fraunces),serif;overflow-wrap:anywhere}
         p,li{overflow-wrap:anywhere}
-        .chamada{color:#805600;font-size:11px;font-weight:700;line-height:1.8;letter-spacing:.16em;text-transform:uppercase}
-        .hero{padding:128px 24px 64px;border-bottom:1px solid #cdba7a}
+        .chamada{color:#8a4b12;font-size:11px;font-weight:700;line-height:1.8;letter-spacing:.16em;text-transform:uppercase}
+        .hero{padding:128px 24px 64px;border-bottom:1px solid #d6d2c8}
         .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:64px;align-items:center}
         .hero-texto{min-width:0}
         h1{font-size:clamp(42px,5.7vw,78px);line-height:1.03;letter-spacing:-.04em;margin-top:24px;max-width:680px}
-        .introducao{max-width:600px;margin-top:26px;font-size:18px;line-height:1.9;color:#695727}
+        .introducao{max-width:600px;margin-top:26px;font-size:18px;line-height:1.9;color:#4b5a53}
         .acoes{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
         .acoes a,:global(.experiencias-ern a.principal){display:inline-flex;align-items:center;justify-content:center;gap:16px;min-height:52px;padding:12px 22px;border-radius:12px;font-size:14px;font-weight:700;text-align:center;text-decoration:none}
-        .principal,:global(.experiencias-ern a.principal){background:#805600;color:#fff;border:1px solid #805600}
+        .principal,:global(.experiencias-ern a.principal){background:#8a4b12;color:#fff;border:1px solid #8a4b12}
         .principal:hover,:global(.experiencias-ern a.principal:hover){background:#644300}
-        :global(.experiencias-ern a.secundario){border:1px solid #a58b48;color:#30260d}
+        :global(.experiencias-ern a.secundario){border:1px solid #a58b48;color:#0f1c17}
         :global(.experiencias-ern a.secundario:hover){background:#f0e4bb}
         figure{min-width:0;margin:0}
         .hero-foto{width:100%;max-width:460px;justify-self:end}
         .hero-foto :global(.foto-principal){display:block;width:100%;height:auto;border-radius:16px}
-        figcaption{padding-top:12px;color:#695727;font-size:12px;line-height:1.8}
+        figcaption{padding-top:12px;color:#4b5a53;font-size:12px;line-height:1.8}
         .bloco{padding:72px 24px}
         .cabecalho{max-width:780px}
         h2{font-size:clamp(32px,4vw,48px);line-height:1.12;letter-spacing:-.025em;margin-top:16px}
-        .cabecalho>p:last-of-type:not(.chamada){margin-top:22px;color:#695727;line-height:1.9}
+        .cabecalho>p:last-of-type:not(.chamada){margin-top:22px;color:#4b5a53;line-height:1.9}
         .explorar{scroll-margin-top:100px}
         .interesses{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
-        .interesses a{display:inline-flex;align-items:center;justify-content:space-between;gap:20px;min-height:48px;padding:10px 18px;border:1px solid #a58b48;border-radius:999px;font-size:13px;font-weight:600;color:#805600;text-decoration:none}
+        .interesses a{display:inline-flex;align-items:center;justify-content:space-between;gap:20px;min-height:48px;padding:10px 18px;border:1px solid #a58b48;border-radius:999px;font-size:13px;font-weight:600;color:#8a4b12;text-decoration:none}
         .interesses a:hover{background:#f0e4bb}
         .possibilidades{display:grid;grid-template-columns:1fr 1fr;gap:40px 48px;margin-top:44px}
-        .possibilidades article{min-width:0;border-top:1px solid #cdba7a;padding-top:24px;scroll-margin-top:110px}
+        .possibilidades article{min-width:0;border-top:1px solid #d6d2c8;padding-top:24px;scroll-margin-top:110px}
         h3{font-size:27px;line-height:1.2;margin-top:14px}
-        .descricao{color:#695727;line-height:1.9;font-size:16px;margin-top:20px}
-        :global(.experiencias-ern a.texto-link){display:inline-flex;align-items:center;gap:16px;min-height:48px;margin-top:18px;color:#805600;font-size:14px;font-weight:700;text-decoration:underline;text-underline-offset:5px}
-        .encontro{background:#fffcf0;border-block:1px solid #cdba7a}
+        .descricao{color:#4b5a53;line-height:1.9;font-size:16px;margin-top:20px}
+        :global(.experiencias-ern a.texto-link){display:inline-flex;align-items:center;gap:16px;min-height:48px;margin-top:18px;color:#8a4b12;font-size:14px;font-weight:700;text-decoration:underline;text-underline-offset:5px}
+        .encontro{background:#ffffff;border-block:1px solid #d6d2c8}
         .encontro-grid{display:grid;grid-template-columns:1fr 1fr;gap:64px;align-items:center}
         .encontro-grid :global(.foto-encontro){display:block;width:100%;height:auto;border-radius:16px}
-        .orientacao{margin-top:24px;padding-left:18px;border-left:2px solid #805600;color:#695727;font-size:14px;line-height:1.9}
+        .orientacao{margin-top:24px;padding-left:18px;border-left:2px solid #8a4b12;color:#4b5a53;font-size:14px;line-height:1.9}
         .territorio-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:64px;align-items:start}
-        .localidades{padding:0;list-style:none;border-top:1px solid #cdba7a}
-        .localidades li{padding:16px 0;border-bottom:1px solid #cdba7a;font-family:var(--font-fraunces),serif;font-size:24px}
-        .nota{max-width:900px;margin-top:24px;font-size:13px;color:#695727;line-height:1.9}
-        .pessoas{border-top:1px solid #cdba7a}
+        .localidades{padding:0;list-style:none;border-top:1px solid #d6d2c8}
+        .localidades li{padding:16px 0;border-bottom:1px solid #d6d2c8;font-family:var(--font-fraunces),serif;font-size:24px}
+        .nota{max-width:900px;margin-top:24px;font-size:13px;color:#4b5a53;line-height:1.9}
+        .pessoas{border-top:1px solid #d6d2c8}
         .pessoas-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:64px;align-items:center}
         .pessoas :global(a.principal){margin-top:26px}
-        .rede-caminhos{padding:28px;border:1px solid #cdba7a;border-radius:16px;background:#fffcf0}
+        .rede-caminhos{padding:28px;border:1px solid #d6d2c8;border-radius:16px;background:#ffffff}
         .rede-caminhos ul{padding:0;list-style:none}
-        .rede-caminhos li{padding:14px 0;border-bottom:1px solid #cdba7a;font-size:17px;font-weight:600}
-        .planejamento{background:#f0e4bb;border-top:1px solid #cdba7a}
+        .rede-caminhos li{padding:14px 0;border-bottom:1px solid #d6d2c8;font-size:17px;font-weight:600}
+        .planejamento{background:#f0e4bb;border-top:1px solid #d6d2c8}
         .perguntas{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:32px;margin-top:28px}
         .perguntas h3{font-size:25px}
         .perguntas .descricao{font-size:14px}
-        .rodape{padding:28px 24px;border-top:1px solid #cdba7a}
+        .rodape{padding:28px 24px;border-top:1px solid #d6d2c8}
         .rodape-grid{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:20px}
-        .rodape p{font-size:12px;color:#695727}
+        .rodape p{font-size:12px;color:#4b5a53}
         .rodape nav{display:flex;flex-wrap:wrap;gap:4px 20px}
-        .rodape nav :global(a){display:inline-flex;align-items:center;min-height:44px;color:#695727;font-size:12px;text-decoration:underline;text-underline-offset:4px}
-        .pular{position:fixed;top:12px;left:16px;z-index:1000;transform:translateY(-200%);padding:14px 20px;background:#fff7db;color:#30260d;border:2px solid #805600;border-radius:8px}
+        .rodape nav :global(a){display:inline-flex;align-items:center;min-height:44px;color:#4b5a53;font-size:12px;text-decoration:underline;text-underline-offset:4px}
+        .pular{position:fixed;top:12px;left:16px;z-index:1000;transform:translateY(-200%);padding:14px 20px;background:#f3f1ec;color:#0f1c17;border:2px solid #8a4b12;border-radius:8px}
         .pular:focus{transform:translateY(0)}
         .pular:focus-visible,.acoes :global(a:focus-visible),
         .interesses a:focus-visible,
         :global(.experiencias-ern a.texto-link:focus-visible),
         :global(.experiencias-ern a.principal:focus-visible),
-        .rodape nav :global(a:focus-visible){outline:3px solid #805600;outline-offset:4px}
+        .rodape nav :global(a:focus-visible){outline:3px solid #8a4b12;outline-offset:4px}
         @media(max-width:1023px){
           .hero-grid,.encontro-grid,.territorio-grid,.pessoas-grid{gap:32px}
           h1{font-size:clamp(42px,6vw,64px)}

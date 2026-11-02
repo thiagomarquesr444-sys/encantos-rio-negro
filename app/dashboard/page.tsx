@@ -1723,7 +1723,7 @@ function DashboardAdministrativoERN() {
                 O painel operacional será também a
                 ponte entre a empresa, os
                 profissionais e o futuro portal
-                público Encantos Rio Negro.
+                público Encantos da Amazônia.
               </p>
             </div>
 
@@ -2207,7 +2207,7 @@ function DashboardAdministrativoERN() {
 
         <div className="mt-6 flex flex-col gap-2 border-t border-white/[0.06] pt-6 text-[10px] text-[#EDEDE3]/38 sm:mt-10 sm:flex-row sm:items-center sm:justify-between">
           <span>
-            ERN Gestão — Encantos Rio Negro
+            Encantos Gestão — Encantos da Amazônia
           </span>
 
           <span>

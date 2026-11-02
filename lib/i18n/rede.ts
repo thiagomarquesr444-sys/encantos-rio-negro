@@ -18,7 +18,7 @@ export const redeTranslations = {
         'Explorar o feed',
 
       join:
-        'Fazer parte da ERN',
+        'Fazer parte da EDA',
 
       sideEyebrow:
         'Uma rede viva',
@@ -27,7 +27,7 @@ export const redeTranslations = {
         'Conteúdo, pessoas e oportunidades conectados pelo Rio Negro.',
 
       sideDescription:
-        'Operadoras, guias, fornecedores e a própria ERN compartilham o que acontece no território, cada um com sua identidade e presença pública.',
+        'Operadoras, guias, fornecedores e a própria EDA compartilham o que acontece no território, cada um com sua identidade e presença pública.',
     },
 
     feed: {
@@ -53,7 +53,7 @@ export const redeTranslations = {
         'Publicações recentes',
 
       featured:
-        'Destaque ERN',
+        'Destaque EDA',
 
       loading:
         'Carregando o Rio Negro...',
@@ -68,7 +68,7 @@ export const redeTranslations = {
         'O feed está pronto para receber suas primeiras histórias.',
 
       noPostsDescription:
-        'A estrutura pública da ERN já está ativa. As primeiras publicações editoriais e dos parceiros aparecerão aqui.',
+        'A estrutura pública da EDA já está ativa. As primeiras publicações editoriais e dos parceiros aparecerão aqui.',
 
       follow:
         'Seguir',
@@ -80,7 +80,7 @@ export const redeTranslations = {
         'Perfil verificado',
 
       editorial:
-        'Editorial ERN',
+        'Editorial EDA',
 
       readMore:
         'Ler publicação',
@@ -101,10 +101,10 @@ export const redeTranslations = {
         'Link copiado',
 
       interactionRequired:
-        'Entre na ERN para curtir, salvar ou marcar “Quero ir”.',
+        'Entre na EDA para curtir, salvar ou marcar “Quero ir”.',
 
       followRequired:
-        'Entre na ERN para seguir este perfil.',
+        'Entre na EDA para seguir este perfil.',
 
       clear:
         'Limpar filtros',
@@ -182,7 +182,7 @@ export const redeTranslations = {
         'Rede Encantos — Alto e Baixo Rio Negro.',
 
       right:
-        'Encantos Rio Negro',
+        'Encantos da Amazônia',
     },
   },
 
@@ -201,7 +201,7 @@ export const redeTranslations = {
         'Explore the feed',
 
       join:
-        'Join ERN',
+        'Join EDA',
 
       sideEyebrow:
         'A living network',
@@ -210,7 +210,7 @@ export const redeTranslations = {
         'Content, people and opportunities connected by the Rio Negro.',
 
       sideDescription:
-        'Operators, guides, suppliers and ERN itself share what is happening across the territory, each with their own public identity and presence.',
+        'Operators, guides, suppliers and EDA itself share what is happening across the territory, each with their own public identity and presence.',
     },
 
     feed: {
@@ -236,7 +236,7 @@ export const redeTranslations = {
         'Recent posts',
 
       featured:
-        'ERN highlight',
+        'EDA highlight',
 
       loading:
         'Loading the Rio Negro...',
@@ -251,7 +251,7 @@ export const redeTranslations = {
         'The feed is ready for its first stories.',
 
       noPostsDescription:
-        'ERN’s public structure is already active. The first editorial and partner publications will appear here.',
+        'EDA’s public structure is already active. The first editorial and partner publications will appear here.',
 
       follow:
         'Follow',
@@ -263,7 +263,7 @@ export const redeTranslations = {
         'Verified profile',
 
       editorial:
-        'ERN Editorial',
+        'EDA Editorial',
 
       readMore:
         'Read post',
@@ -284,10 +284,10 @@ export const redeTranslations = {
         'Link copied',
 
       interactionRequired:
-        'Sign in to ERN to like, save or mark “I want to go”.',
+        'Sign in to EDA to like, save or mark “I want to go”.',
 
       followRequired:
-        'Sign in to ERN to follow this profile.',
+        'Sign in to EDA to follow this profile.',
 
       clear:
         'Clear filters',
@@ -365,7 +365,7 @@ export const redeTranslations = {
         'Encantos Network — Upper and Lower Rio Negro.',
 
       right:
-        'Encantos Rio Negro',
+        'Encantos da Amazônia',
     },
   },
 
@@ -384,7 +384,7 @@ export const redeTranslations = {
         'Explorar el feed',
 
       join:
-        'Formar parte de ERN',
+        'Formar parte de EDA',
 
       sideEyebrow:
         'Una red viva',
@@ -393,7 +393,7 @@ export const redeTranslations = {
         'Contenido, personas y oportunidades conectados por el Río Negro.',
 
       sideDescription:
-        'Operadores, guías, proveedores y la propia ERN comparten lo que sucede en el territorio, cada uno con su identidad y presencia pública.',
+        'Operadores, guías, proveedores y la propia EDA comparten lo que sucede en el territorio, cada uno con su identidad y presencia pública.',
     },
 
     feed: {
@@ -419,7 +419,7 @@ export const redeTranslations = {
         'Publicaciones recientes',
 
       featured:
-        'Destacado ERN',
+        'Destacado EDA',
 
       loading:
         'Cargando el Río Negro...',
@@ -434,7 +434,7 @@ export const redeTranslations = {
         'El feed está listo para recibir sus primeras historias.',
 
       noPostsDescription:
-        'La estructura pública de ERN ya está activa. Las primeras publicaciones editoriales y de los socios aparecerán aquí.',
+        'La estructura pública de EDA ya está activa. Las primeras publicaciones editoriales y de los socios aparecerán aquí.',
 
       follow:
         'Seguir',
@@ -446,7 +446,7 @@ export const redeTranslations = {
         'Perfil verificado',
 
       editorial:
-        'Editorial ERN',
+        'Editorial EDA',
 
       readMore:
         'Leer publicación',
@@ -467,10 +467,10 @@ export const redeTranslations = {
         'Enlace copiado',
 
       interactionRequired:
-        'Inicia sesión en ERN para indicar que te gusta, guardar o marcar “Quiero ir”.',
+        'Inicia sesión en EDA para indicar que te gusta, guardar o marcar “Quiero ir”.',
 
       followRequired:
-        'Inicia sesión en ERN para seguir este perfil.',
+        'Inicia sesión en EDA para seguir este perfil.',
 
       clear:
         'Limpiar filtros',
@@ -548,7 +548,7 @@ export const redeTranslations = {
         'Red Encantos — Alto y Bajo Río Negro.',
 
       right:
-        'Encantos Rio Negro',
+        'Encantos da Amazônia',
     },
   },
 } satisfies Record<
