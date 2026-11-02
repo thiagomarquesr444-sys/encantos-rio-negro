@@ -145,7 +145,7 @@ export default function FeedDescubraERN() {
                         alt=""
                         loading="lazy"
                         decoding="async"
-                        className="aspect-[4/3] w-full object-contain"
+                        className="aspect-[4/3] w-full object-cover"
                       />
                     </Link>
                   )}
