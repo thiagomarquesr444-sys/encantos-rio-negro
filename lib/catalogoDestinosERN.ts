@@ -79,30 +79,8 @@ export const CATALOGO_DESTINOS_ERN: DestinoCatalogo[] = [
   },
 
   // Alto Rio Negro
-  {
-    tipo: 'curadoria',
-    id: 'santa-isabel-do-rio-negro',
-    regiao: 'alto',
-    interesses: ['aguas', 'cultura'],
-    imagem: null,
-    textos: {
-      PT: { titulo: 'Santa Isabel do Rio Negro', local: 'Alto Rio Negro', descricao: 'Entre Barcelos e São Gabriel: praias de vazante, comunidades ribeirinhas e o ritmo do rio.' },
-      EN: { titulo: 'Santa Isabel do Rio Negro', local: 'Upper Rio Negro', descricao: 'Between Barcelos and São Gabriel: dry-season beaches, riverside communities and the rhythm of the river.' },
-      ES: { titulo: 'Santa Isabel do Rio Negro', local: 'Alto Río Negro', descricao: 'Entre Barcelos y São Gabriel: playas de estiaje, comunidades ribereñas y el ritmo del río.' },
-    },
-  },
-  {
-    tipo: 'curadoria',
-    id: 'sao-gabriel-da-cachoeira',
-    regiao: 'alto',
-    interesses: ['natureza', 'cultura'],
-    imagem: null,
-    textos: {
-      PT: { titulo: 'São Gabriel da Cachoeira', local: 'Alto Rio Negro', descricao: 'Corredeiras, serras e a cultura de muitos povos indígenas no extremo noroeste do Amazonas.' },
-      EN: { titulo: 'São Gabriel da Cachoeira', local: 'Upper Rio Negro', descricao: 'Rapids, mountains and the culture of many Indigenous peoples in the far northwest of Amazonas.' },
-      ES: { titulo: 'São Gabriel da Cachoeira', local: 'Alto Río Negro', descricao: 'Rápidos, sierras y la cultura de muchos pueblos indígenas en el extremo noroeste de Amazonas.' },
-    },
-  },
+  { tipo: 'mapa', id: 'santa-isabel-do-rio-negro', regiao: 'alto', interesses: ['aguas', 'cultura'], imagem: '/images/destinos/santa-isabel/santa-isabel-praca.jpg' },
+  { tipo: 'mapa', id: 'sao-gabriel-da-cachoeira', regiao: 'alto', interesses: ['aguas', 'natureza', 'cultura'], imagem: '/images/destinos/sao-gabriel/sao-gabriel-por-do-sol.jpg' },
   {
     tipo: 'curadoria',
     id: 'pico-da-neblina',

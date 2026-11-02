@@ -122,7 +122,36 @@ const scenes: Scene[] = [
   { id: 'anavilhanas', city: 'novo-airao', image: '/images/destinos/anavilhanas/capa.jpg', interests: ['waters', 'nature'], source: `${icmbio}parna-de-anavilhanas/parna-de-anavilhanas` },
   { id: 'jau', city: 'novo-airao', image: '/images/regiao/ern-amazonia.jpg', context: true, interests: ['nature'], source: `${icmbio}parna-do-jau/informacoes-sobre-visitacao-2013-parna-do-jau` },
   { id: 'festival-peixe-boi', city: 'novo-airao', image: '/images/cultura/festivaldopeixeboi.jpg', interests: ['culture'], source: municipalSource },
+  // ERN_ALTO_RIO_NEGRO_V1
+  { id: 'santa-isabel-do-rio-negro', city: 'santa-isabel', image: '/images/destinos/santa-isabel/santa-isabel-aerea.jpg', interests: ['waters', 'culture'], source: municipalSource },
+  { id: 'sao-gabriel-da-cachoeira', city: 'sao-gabriel', image: '/images/destinos/sao-gabriel/sao-gabriel-aerea.jpg', interests: ['waters', 'nature', 'culture'], source: municipalSource },
 ];
+
+// ERN_MARCOS_ALTO_RIO_NEGRO_V1
+// Marcos visuais das cidades do Alto Rio Negro, no mesmo padrão do
+// tucunaré de Barcelos e do boto de Novo Airão.
+const marcosCidade: Partial<Record<CityId, { scene: DestinationId; imagem: string; largura: number; legenda: Record<'PT' | 'EN' | 'ES', string> }>> = {
+  'sao-gabriel': {
+    scene: 'sao-gabriel-da-cachoeira',
+    imagem: '/images/marcos/flecha-sao-gabriel.svg',
+    largura: 64,
+    legenda: {
+      PT: 'São Gabriel da Cachoeira · flecha · referência regional',
+      EN: 'São Gabriel da Cachoeira · arrow · regional reference',
+      ES: 'São Gabriel da Cachoeira · flecha · referencia regional',
+    },
+  },
+  'santa-isabel': {
+    scene: 'santa-isabel-do-rio-negro',
+    imagem: '/images/marcos/quadrilha-santa-isabel.svg',
+    largura: 56,
+    legenda: {
+      PT: 'Santa Isabel do Rio Negro · quadrilhas juninas · referência regional',
+      EN: 'Santa Isabel do Rio Negro · June quadrilhas · regional reference',
+      ES: 'Santa Isabel do Rio Negro · cuadrillas juninas · referencia regional',
+    },
+  },
+};
 // ERN_PESCA_MAPA_V1
 const fishingCopy = {
   PT: {
@@ -405,6 +434,32 @@ export default function ExploradorDestinosERN() {
           if (destinoNovoAirao) choose(destinoNovoAirao);
         });
 
+        marker.addTo(pins.current!);
+        return;
+      }
+
+      const marco = marcosCidade[c.id];
+      if (marco) {
+        const legenda = marco.legenda[lang];
+        const marker = L.marker(c.coords, {
+          title: legenda,
+          alt: legenda,
+          keyboard: true,
+          zIndexOffset: 300,
+          icon: L.divIcon({
+            className: 'ern-v-marco-marker',
+            iconSize: [64, 48],
+            iconAnchor: [32, 42],
+            html: `<span class="ern-v-marco-visual"><img src="${marco.imagem}" alt="" width="${marco.largura}" height="42" draggable="false" /></span>`,
+          }),
+        });
+        const label = document.createElement('span');
+        label.textContent = legenda;
+        marker.bindTooltip(label, { direction: 'top', offset: [0, -38] });
+        marker.on('click', () => {
+          const destino = scenes.find(scene => scene.id === marco.scene);
+          if (destino) choose(destino);
+        });
         marker.addTo(pins.current!);
         return;
       }

@@ -192,3 +192,45 @@
     transform: translateY(-2px) rotate(2deg);
   }
 }
+
+/* ERN_MARCOS_ALTO_RIO_NEGRO_V1 */
+.ern-v-marco-marker {
+  background: transparent;
+  border: 0;
+}
+
+.ern-v-marco-visual {
+  display: grid !important;
+  place-items: center !important;
+  width: 64px !important;
+  height: 46px !important;
+  padding: 2px !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+.ern-v-marco-visual img {
+  display: block !important;
+  width: auto !important;
+  height: 42px !important;
+  max-width: 64px !important;
+  min-width: 0 !important;
+  position: static !important;
+  object-fit: contain !important;
+  user-select: none;
+  pointer-events: none;
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 35%));
+}
+
+.ern-v-marco-marker:focus-visible {
+  outline: 3px solid #805600;
+  outline-offset: 4px;
+  border-radius: 10px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .ern-v-marco-visual img {
+    transform-origin: 50% 80%;
+    animation: ern-boto-movimento 1.6s ease-in-out 3;
+  }
+}

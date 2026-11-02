@@ -237,6 +237,26 @@ export const destinosTranslations = {
           'Cultura • Festival • Comunidade',
         etiqueta: 'CULTURA',
       },
+
+      'santa-isabel-do-rio-negro': {
+        titulo: 'Santa Isabel do Rio Negro',
+        local: 'Alto Rio Negro',
+        descricao:
+          'Entre Barcelos e São Gabriel: orla de águas pretas, praias de vazante, comunidades ribeirinhas e o tradicional festival de quadrilhas juninas.',
+        destaque:
+          'Rio • Quadrilhas • Comunidade',
+        etiqueta: 'DESTINO',
+      },
+
+      'sao-gabriel-da-cachoeira': {
+        titulo: 'São Gabriel da Cachoeira',
+        local: 'Alto Rio Negro',
+        descricao:
+          'Corredeiras, ilhas, praias e serras no horizonte, no município com a maior presença de povos indígenas do Brasil.',
+        destaque:
+          'Serras • Corredeiras • Povos indígenas',
+        etiqueta: 'DESTINO',
+      },
     },
   },
 
@@ -480,6 +500,26 @@ export const destinosTranslations = {
           'Culture • Festival • Community',
         etiqueta: 'CULTURE',
       },
+
+      'santa-isabel-do-rio-negro': {
+        titulo: 'Santa Isabel do Rio Negro',
+        local: 'Upper Rio Negro',
+        descricao:
+          'Between Barcelos and São Gabriel: a black-water riverfront, dry-season beaches, riverside communities and a traditional June quadrilha festival.',
+        destaque:
+          'River • Quadrilhas • Community',
+        etiqueta: 'DESTINATION',
+      },
+
+      'sao-gabriel-da-cachoeira': {
+        titulo: 'São Gabriel da Cachoeira',
+        local: 'Upper Rio Negro',
+        descricao:
+          'Rapids, islands, beaches and mountains on the horizon, in the Brazilian municipality with the largest Indigenous presence.',
+        destaque:
+          'Mountains • Rapids • Indigenous peoples',
+        etiqueta: 'DESTINATION',
+      },
     },
   },
 
@@ -722,6 +762,26 @@ export const destinosTranslations = {
         destaque:
           'Cultura • Festival • Comunidad',
         etiqueta: 'CULTURA',
+      },
+
+      'santa-isabel-do-rio-negro': {
+        titulo: 'Santa Isabel do Rio Negro',
+        local: 'Alto Río Negro',
+        descricao:
+          'Entre Barcelos y São Gabriel: costanera de aguas negras, playas de estiaje, comunidades ribereñas y el tradicional festival de cuadrillas juninas.',
+        destaque:
+          'Río • Cuadrillas • Comunidad',
+        etiqueta: 'DESTINO',
+      },
+
+      'sao-gabriel-da-cachoeira': {
+        titulo: 'São Gabriel da Cachoeira',
+        local: 'Alto Río Negro',
+        descricao:
+          'Rápidos, islas, playas y sierras en el horizonte, en el municipio con mayor presencia de pueblos indígenas de Brasil.',
+        destaque:
+          'Sierras • Rápidos • Pueblos indígenas',
+        etiqueta: 'DESTINO',
       },
     },
   },

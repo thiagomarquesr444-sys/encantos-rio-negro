@@ -69,12 +69,12 @@ export default function Home() {
       <section className="ern-publico-hero relative overflow-hidden bg-[#07110E]">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src="/images/regiao/serra.png.jpeg"
+          src="/images/regiao/ilha.png.jpeg"
           alt=""
           aria-hidden="true"
           fetchPriority="high"
           decoding="async"
-          className="absolute inset-0 h-full w-full object-cover object-[50%_30%]"
+          className="absolute inset-0 h-full w-full object-cover object-[50%_45%]"
         />
         <div
           aria-hidden="true"
