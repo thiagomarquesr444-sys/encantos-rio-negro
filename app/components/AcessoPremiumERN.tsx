@@ -2,6 +2,8 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import LogoERN from './LogoERN';
+import ArcoFlechaERN from './ArcoFlechaERN';
+import IconeERN, { type NomeIconeERN } from './IconeERN';
 import './acesso-premium-ern.css';
 
 // ERN_ACESSO_PREMIUM_V2
@@ -12,32 +14,35 @@ import './acesso-premium-ern.css';
 type Perfil = 'operadora' | 'guia' | 'fornecedor';
 type Props = { children: ReactNode; etapa: 'login' | 'cadastro' | 'recuperacao' | 'acesso' | 'senha'; perfil?: Perfil | null };
 
-const PERFIS: { id: Perfil; nome: string; icone: string }[] = [
-  { id: 'operadora', nome: 'Operadora', icone: '🏢' },
-  { id: 'guia', nome: 'Guia', icone: '🧭' },
-  { id: 'fornecedor', nome: 'Fornecedor', icone: '🚤' },
+const PERFIS: { id: Perfil; nome: string }[] = [
+  { id: 'operadora', nome: 'Operadora' },
+  { id: 'guia', nome: 'Guia' },
+  { id: 'fornecedor', nome: 'Fornecedor' },
 ];
 
-const BENEFICIOS: Record<Perfil | 'geral', [string, string][]> = {
+// 'arco' usa o ícone de reação da marca; os demais vêm de IconeERN.
+type IconeBeneficio = NomeIconeERN | 'arco';
+
+const BENEFICIOS: Record<Perfil | 'geral', [IconeBeneficio, string][]> = {
   geral: [
-    ['📅', 'Reservas, clientes e financeiro em um só lugar'],
-    ['🏹', 'Sua vitrine na Rede EDA e no mapa de Destinos'],
-    ['💬', 'Visitantes chamando você direto no WhatsApp'],
+    ['calendario', 'Reservas, clientes e financeiro em um só lugar'],
+    ['arco', 'Sua vitrine na Rede EDA e no mapa de Destinos'],
+    ['whatsapp', 'Visitantes chamando você direto no WhatsApp'],
   ],
   operadora: [
-    ['📅', 'Reservas, clientes, vouchers e financeiro da empresa'],
-    ['👥', 'Equipe com acessos por função'],
-    ['🏹', 'Perfil verificado na Rede EDA e no mapa de Destinos'],
+    ['calendario', 'Reservas, clientes, vouchers e financeiro da empresa'],
+    ['equipe', 'Equipe com acessos por função'],
+    ['arco', 'Perfil verificado na Rede EDA e no mapa de Destinos'],
   ],
   guia: [
-    ['🧭', 'Perfil profissional próprio, independente das operadoras'],
-    ['📍', 'Suas experiências no mapa de cada cidade'],
-    ['💬', 'Contato direto com visitantes pelo WhatsApp'],
+    ['guia', 'Perfil profissional próprio, independente das operadoras'],
+    ['local', 'Suas experiências no mapa de cada cidade'],
+    ['whatsapp', 'Contato direto com visitantes pelo WhatsApp'],
   ],
   fornecedor: [
-    ['🚤', 'Barcos, hospedagens, transporte e serviços em destaque'],
-    ['🤝', 'Conexão com as operadoras da região'],
-    ['🏹', 'Presença na Rede EDA para quem planeja a viagem'],
+    ['fornecedor', 'Barcos, hospedagens, transporte e serviços em destaque'],
+    ['parceria', 'Conexão com as operadoras da região'],
+    ['arco', 'Presença na Rede EDA para quem planeja a viagem'],
   ],
 };
 
@@ -71,7 +76,7 @@ export default function AcessoPremiumERN({ children, etapa, perfil }: Props) {
               ? <>Sua vitrine na Amazônia<br /><em>começa aqui.</em></>
               : <>A Amazônia conecta.<br /><em>Você faz acontecer.</em></>}</h2>
           {!recuperar && <ul className="ern-acesso-beneficios">
-            {beneficios.map(([icone, texto]) => <li key={texto}><span aria-hidden="true">{icone}</span>{texto}</li>)}
+            {beneficios.map(([icone, texto]) => <li key={texto}><span aria-hidden="true">{icone === 'arco' ? <ArcoFlechaERN tamanho={17} /> : <IconeERN nome={icone} tamanho={17} />}</span>{texto}</li>)}
           </ul>}
           {recuperar && <p>Recupere o acesso para continuar sua jornada na Encantos da Amazônia.</p>}
         </div>
@@ -81,7 +86,7 @@ export default function AcessoPremiumERN({ children, etapa, perfil }: Props) {
           <span>Eu sou</span>
           <div>
             {PERFIS.map(item => <Link key={item.id} href={`/login?acesso=${item.id}`} replace scroll={false} aria-current={perfil === item.id ? 'true' : undefined}>
-              <span aria-hidden="true">{item.icone}</span>{item.nome}
+              <span aria-hidden="true"><IconeERN nome={item.id} tamanho={22} /></span>{item.nome}
             </Link>)}
           </div>
         </nav>}

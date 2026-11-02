@@ -187,3 +187,6 @@
 .ern-acesso-v2 .ern-acesso-grade{align-items:start}
 .ern-acesso-v2 .ern-acesso-manifesto{position:sticky;top:20px;align-self:start;height:min(calc(100svh - 130px),720px);min-height:520px}
 @media(max-width:767px){.ern-acesso-v2 .ern-acesso-manifesto{position:relative;top:auto;height:auto;min-height:340px}}
+.ern-acesso-v2 .ern-acesso-beneficios li>span{color:#f7d595}
+.ern-acesso-v2 .ern-acesso-perfis a>span{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:rgb(255 255 255 / 5%);color:#cdd8d2;font-size:0}
+.ern-acesso-v2 .ern-acesso-perfis a[aria-current=true]>span{background:linear-gradient(180deg,#f7d595,#e3a144);color:#07110e}

@@ -9,6 +9,7 @@ import Link from 'next/link';
 import PublicHeader from '@/app/components/PublicHeader';
 import LogoERN from '@/app/components/LogoERN';
 import ArcoFlechaERN from '@/app/components/ArcoFlechaERN';
+import IconeERN, { type NomeIconeERN } from '@/app/components/IconeERN';
 import { useLanguage } from '@/app/components/LanguageProvider';
 
 type Texto = {
@@ -16,9 +17,9 @@ type Texto = {
   start: string; plans: string; checks: string[];
   panelLabel: string; panelHello: string; panelExample: string; kpis: [string, string][];
   revenue: string; next: string; trips: string[]; menu: string[];
-  flowEyebrow: string; flowTitle: string; step: string; flow: [string, string, string][];
+  flowEyebrow: string; flowTitle: string; step: string; flow: [NomeIconeERN | 'arco', string, string][];
   featEyebrow: string; featTitle: string; fishingTag: string; fishingTitle: string; fishingText: string;
-  feats: [string, string, string][]; mapTitle: string; mapText: string; profileTitle: string; profileText: string;
+  feats: [NomeIconeERN, string, string][]; mapTitle: string; mapText: string; profileTitle: string; profileText: string;
   rolesTitle: string; roles: [string, string, string, string, string][];
   finalTitle: [string, string, string]; finalText: string; contact: string; note: string;
   footer: [string, string][];
@@ -35,23 +36,23 @@ const textos: Record<'PT' | 'EN' | 'ES', Texto> = {
     panelLabel: 'Encantos Gestão · Painel', panelHello: 'Bom dia, equipe', panelExample: 'Exemplo',
     kpis: [['12', 'reservas no mês'], ['R$ 48 mil', 'a receber'], ['86', 'flechadas na Rede'], ['23', 'chamadas no WhatsApp']],
     revenue: 'Receita · últimos 6 meses', next: 'Próximas saídas',
-    trips: ['🎣 Mariuá · 5 dias · 4 pax', '🛶 Anavilhanas · 2 pax', '⛰ Serra do Aracá · 6 pax'],
+    trips: ['Mariuá · 5 dias · 4 pax', 'Anavilhanas · 2 pax', 'Serra do Aracá · 6 pax'],
     menu: ['Painel', 'Reservas', 'Clientes', 'Passeios', 'Financeiro', 'Vouchers', 'Rede EDA'],
     flowEyebrow: 'Do clique à reserva', flowTitle: 'O visitante descobre. Você fecha a viagem.', step: 'Passo',
     flow: [
-      ['🗺', 'Descobre no mapa', 'Seu passeio aparece no Destinos, na cidade e na vista de satélite.'],
-      ['🏹', 'Flecha na Rede', 'Suas fotos e vídeos recebem reações, salvamentos e comentários.'],
-      ['💬', 'Chama no WhatsApp', 'Um botão leva o visitante direto para a sua conversa.'],
-      ['✅', 'Reserva no Gestão', 'Cliente, voucher, pagamento e agenda organizados.'],
+      ['mapa', 'Descobre no mapa', 'Seu passeio aparece no Destinos, na cidade e na vista de satélite.'],
+      ['arco', 'Flecha na Rede', 'Suas fotos e vídeos recebem reações, salvamentos e comentários.'],
+      ['whatsapp', 'Chama no WhatsApp', 'Um botão leva o visitante direto para a sua conversa.'],
+      ['confirmado', 'Reserva no Gestão', 'Cliente, voucher, pagamento e agenda organizados.'],
     ],
     featEyebrow: 'Tudo que a operação precisa', featTitle: 'Organize por dentro. Apareça por fora.',
     fishingTag: 'Pesca esportiva', fishingTitle: 'Temporada, barcos-hotel e grupos',
     fishingText: 'Saídas, pescadores, embarcações e guias organizados por expedição.',
     feats: [
-      ['📅', 'Reservas e agenda', 'Saídas, lotação e status de cada viagem.'],
-      ['👥', 'Clientes', 'Histórico, documentos e preferências.'],
-      ['💰', 'Financeiro e NFS-e', 'Receitas, despesas e nota fiscal conforme o plano.'],
-      ['🎫', 'Vouchers em PDF', 'Em três idiomas, com a sua marca.'],
+      ['calendario', 'Reservas e agenda', 'Saídas, lotação e status de cada viagem.'],
+      ['equipe', 'Clientes', 'Histórico, documentos e preferências.'],
+      ['financeiro', 'Financeiro e NFS-e', 'Receitas, despesas e nota fiscal conforme o plano.'],
+      ['voucher', 'Vouchers em PDF', 'Em três idiomas, com a sua marca.'],
     ],
     mapTitle: 'Mapa operacional por satélite', mapText: 'Embarques, praias e pontos da sua operação vistos de cima.',
     profileTitle: 'Perfil público + Rede EDA', profileText: 'Página com selo verificado, publicações e botão de WhatsApp para os visitantes.',
@@ -77,23 +78,23 @@ const textos: Record<'PT' | 'EN' | 'ES', Texto> = {
     panelLabel: 'Encantos Gestão · Dashboard', panelHello: 'Good morning, team', panelExample: 'Example',
     kpis: [['12', 'bookings this month'], ['R$ 48k', 'receivable'], ['86', 'arrows on the Network'], ['23', 'WhatsApp contacts']],
     revenue: 'Revenue · last 6 months', next: 'Upcoming departures',
-    trips: ['🎣 Mariuá · 5 days · 4 pax', '🛶 Anavilhanas · 2 pax', '⛰ Serra do Aracá · 6 pax'],
+    trips: ['Mariuá · 5 days · 4 pax', 'Anavilhanas · 2 pax', 'Serra do Aracá · 6 pax'],
     menu: ['Dashboard', 'Bookings', 'Clients', 'Tours', 'Finance', 'Vouchers', 'EDA Network'],
     flowEyebrow: 'From click to booking', flowTitle: 'Visitors discover. You close the trip.', step: 'Step',
     flow: [
-      ['🗺', 'Discover on the map', 'Your tour appears on Destinations, in the city and in satellite view.'],
-      ['🏹', 'Arrow on the Network', 'Your photos and videos get reactions, saves and comments.'],
-      ['💬', 'Message on WhatsApp', 'One button takes the visitor straight to your chat.'],
-      ['✅', 'Book in Gestão', 'Client, voucher, payment and schedule organized.'],
+      ['mapa', 'Discover on the map', 'Your tour appears on Destinations, in the city and in satellite view.'],
+      ['arco', 'Arrow on the Network', 'Your photos and videos get reactions, saves and comments.'],
+      ['whatsapp', 'Message on WhatsApp', 'One button takes the visitor straight to your chat.'],
+      ['confirmado', 'Book in Gestão', 'Client, voucher, payment and schedule organized.'],
     ],
     featEyebrow: 'Everything your operation needs', featTitle: 'Organized inside. Visible outside.',
     fishingTag: 'Sport fishing', fishingTitle: 'Seasons, boat hotels and groups',
     fishingText: 'Departures, anglers, boats and guides organized by expedition.',
     feats: [
-      ['📅', 'Bookings and schedule', 'Departures, capacity and status of each trip.'],
-      ['👥', 'Clients', 'History, documents and preferences.'],
-      ['💰', 'Finance and invoices', 'Income, expenses and service invoices depending on the plan.'],
-      ['🎫', 'PDF vouchers', 'In three languages, with your brand.'],
+      ['calendario', 'Bookings and schedule', 'Departures, capacity and status of each trip.'],
+      ['equipe', 'Clients', 'History, documents and preferences.'],
+      ['financeiro', 'Finance and invoices', 'Income, expenses and service invoices depending on the plan.'],
+      ['voucher', 'PDF vouchers', 'In three languages, with your brand.'],
     ],
     mapTitle: 'Satellite operations map', mapText: 'Boarding points, beaches and spots of your operation seen from above.',
     profileTitle: 'Public profile + EDA Network', profileText: 'A verified page with posts and a WhatsApp button for visitors.',
@@ -119,23 +120,23 @@ const textos: Record<'PT' | 'EN' | 'ES', Texto> = {
     panelLabel: 'Encantos Gestão · Panel', panelHello: 'Buenos días, equipo', panelExample: 'Ejemplo',
     kpis: [['12', 'reservas del mes'], ['R$ 48 mil', 'por cobrar'], ['86', 'flechazos en la Red'], ['23', 'contactos por WhatsApp']],
     revenue: 'Ingresos · últimos 6 meses', next: 'Próximas salidas',
-    trips: ['🎣 Mariuá · 5 días · 4 pax', '🛶 Anavilhanas · 2 pax', '⛰ Serra do Aracá · 6 pax'],
+    trips: ['Mariuá · 5 días · 4 pax', 'Anavilhanas · 2 pax', 'Serra do Aracá · 6 pax'],
     menu: ['Panel', 'Reservas', 'Clientes', 'Paseos', 'Finanzas', 'Vouchers', 'Red EDA'],
     flowEyebrow: 'Del clic a la reserva', flowTitle: 'El visitante descubre. Tú cierras el viaje.', step: 'Paso',
     flow: [
-      ['🗺', 'Descubre en el mapa', 'Tu paseo aparece en Destinos, en la ciudad y en la vista satelital.'],
-      ['🏹', 'Flecha en la Red', 'Tus fotos y videos reciben reacciones, guardados y comentarios.'],
-      ['💬', 'Escribe por WhatsApp', 'Un botón lleva al visitante directo a tu conversación.'],
-      ['✅', 'Reserva en Gestão', 'Cliente, voucher, pago y agenda organizados.'],
+      ['mapa', 'Descubre en el mapa', 'Tu paseo aparece en Destinos, en la ciudad y en la vista satelital.'],
+      ['arco', 'Flecha en la Red', 'Tus fotos y videos reciben reacciones, guardados y comentarios.'],
+      ['whatsapp', 'Escribe por WhatsApp', 'Un botón lleva al visitante directo a tu conversación.'],
+      ['confirmado', 'Reserva en Gestão', 'Cliente, voucher, pago y agenda organizados.'],
     ],
     featEyebrow: 'Todo lo que la operación necesita', featTitle: 'Organiza por dentro. Aparece por fuera.',
     fishingTag: 'Pesca deportiva', fishingTitle: 'Temporada, barcos-hotel y grupos',
     fishingText: 'Salidas, pescadores, embarcaciones y guías organizados por expedición.',
     feats: [
-      ['📅', 'Reservas y agenda', 'Salidas, cupos y estado de cada viaje.'],
-      ['👥', 'Clientes', 'Historial, documentos y preferencias.'],
-      ['💰', 'Finanzas y facturas', 'Ingresos, gastos y factura según el plan.'],
-      ['🎫', 'Vouchers en PDF', 'En tres idiomas, con tu marca.'],
+      ['calendario', 'Reservas y agenda', 'Salidas, cupos y estado de cada viaje.'],
+      ['equipe', 'Clientes', 'Historial, documentos y preferencias.'],
+      ['financeiro', 'Finanzas y facturas', 'Ingresos, gastos y factura según el plan.'],
+      ['voucher', 'Vouchers en PDF', 'En tres idiomas, con tu marca.'],
     ],
     mapTitle: 'Mapa operativo satelital', mapText: 'Embarques, playas y puntos de tu operación vistos desde arriba.',
     profileTitle: 'Perfil público + Red EDA', profileText: 'Página con sello verificado, publicaciones y botón de WhatsApp para los visitantes.',
@@ -175,7 +176,7 @@ function PainelExemplo({ t }: { t: Texto }) {
         </div>
         <div className="p-4">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#F4C77E]">Barcelos · AM</p>
-          <b className="mt-1 block text-lg text-[#F5F3EA]">{t.panelHello} 👋</b>
+          <b className="mt-1 block text-lg text-[#F5F3EA]">{t.panelHello}</b>
           <div className="mt-3 grid grid-cols-4 gap-2 max-sm:grid-cols-2">
             {t.kpis.map(([valor, rotulo]) => <div key={rotulo} className="rounded-[14px] border border-white/[0.08] bg-[#0D1C17] p-3"><b className="block text-xl text-[#F5F3EA]">{valor}</b><span className="text-[11px] leading-tight text-[#8FA39A]">{rotulo}</span></div>)}
           </div>
@@ -186,7 +187,7 @@ function PainelExemplo({ t }: { t: Texto }) {
             </div>
             <div className="rounded-[14px] border border-white/[0.08] bg-[#0D1C17] p-3">
               <span className="text-[11px] text-[#8FA39A]">{t.next}</span>
-              {t.trips.map(viagem => <span key={viagem} className="mt-2 block text-xs text-[#DBE3DE]">{viagem}</span>)}
+              {t.trips.map(viagem => <span key={viagem} className="mt-2 flex items-center gap-1.5 text-xs text-[#DBE3DE]"><IconeERN nome="rio" tamanho={13} className="text-[#F4C77E]" />{viagem}</span>)}
             </div>
           </div>
         </div>
@@ -214,7 +215,7 @@ export default function OperadoresPage() {
                 <Link href="/login?acesso=operadora" className={`${OURO} ${FOCO}`}>{t.start} <span aria-hidden="true">→</span></Link>
                 <Link href="/planos" className={`${VIDRO} ${FOCO}`}>{t.plans}</Link>
               </div>
-              <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-[#8FA39A]">{t.checks.map(item => <li key={item}>✓ {item}</li>)}</ul>
+              <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-[#8FA39A]">{t.checks.map((item, i) => <li key={item} className="flex items-center gap-1.5"><IconeERN nome={(['idiomas', 'celular', 'rio'] as const)[i] ?? 'confirmado'} tamanho={15} className="text-[#F4C77E]" />{item}</li>)}</ul>
             </div>
             <PainelExemplo t={t} />
           </div>
@@ -227,7 +228,7 @@ export default function OperadoresPage() {
             <ol className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {t.flow.map(([icone, titulo, texto], i) => (
                 <li key={titulo} className={`${CARTAO} ern-revela-rolagem`}>
-                  <span className="grid size-11 place-items-center rounded-xl bg-[#E3A144]/15 text-xl text-[#F4C77E]" aria-hidden="true">{i === 1 ? <ArcoFlechaERN tamanho={24} /> : icone}</span>
+                  <span className="grid size-11 place-items-center rounded-xl bg-[#E3A144]/15 text-[#F4C77E]" aria-hidden="true">{icone === 'arco' ? <ArcoFlechaERN tamanho={24} /> : <IconeERN nome={icone} tamanho={22} />}</span>
                   <span className="mt-4 block text-[11px] font-bold uppercase tracking-[0.16em] text-[#F4C77E]">{t.step} {i + 1}</span>
                   <h3 className="mt-2 text-lg font-semibold text-[#F5F3EA]">{titulo}</h3>
                   <p className="mt-1.5 text-sm leading-6 text-[#B8C9BF]">{texto}</p>
@@ -254,13 +255,13 @@ export default function OperadoresPage() {
               </article>
               {t.feats.map(([icone, titulo, texto]) => (
                 <article key={titulo} className={`${CARTAO} ern-revela-rolagem`}>
-                  <span className="grid size-11 place-items-center rounded-xl bg-[#E3A144]/15 text-xl" aria-hidden="true">{icone}</span>
+                  <span className="grid size-11 place-items-center rounded-xl bg-[#E3A144]/15 text-[#F4C77E]" aria-hidden="true"><IconeERN nome={icone} tamanho={22} /></span>
                   <h3 className="mt-3 text-lg font-semibold text-[#F5F3EA]">{titulo}</h3>
                   <p className="mt-1.5 text-sm leading-6 text-[#B8C9BF]">{texto}</p>
                 </article>
               ))}
               <article className={`${CARTAO} md:col-span-2`}>
-                <span className="grid size-11 place-items-center rounded-xl bg-[#E3A144]/15 text-xl" aria-hidden="true">🛰</span>
+                <span className="grid size-11 place-items-center rounded-xl bg-[#E3A144]/15 text-[#F4C77E]" aria-hidden="true"><IconeERN nome="satelite" tamanho={22} /></span>
                 <h3 className="mt-3 text-lg font-semibold text-[#F5F3EA]">{t.mapTitle}</h3>
                 <p className="mt-1.5 text-sm leading-6 text-[#B8C9BF]">{t.mapText}</p>
               </article>

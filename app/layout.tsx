@@ -35,7 +35,7 @@ export const metadata: Metadata = {
   icons: {
     apple: [
       {
-        url: '/icons/ern-apple-180.png',
+        url: '/icons/eda-apple-180.png',
         sizes: '180x180',
         type: 'image/png',
       },
