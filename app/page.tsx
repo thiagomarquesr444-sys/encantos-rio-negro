@@ -7,6 +7,7 @@ import ConciergePublicoERN from '@/app/components/ConciergePublicoERN';
 import FeedDescubraERN from '@/app/components/FeedDescubraERN';
 import CulturaAmazonicaERN from '@/app/components/CulturaAmazonicaERN';
 import VitrineGestaoERN from '@/app/components/VitrineGestaoERN';
+import VideoFundoAberturaERN from '@/app/components/VideoFundoAberturaERN';
 import HeroImersivoERN from '@/app/components/HeroImersivoERN';
 import VitrineDestinosERN from '@/app/components/VitrineDestinosERN';
 import { useLanguage } from '@/app/components/LanguageProvider';
@@ -67,15 +68,7 @@ export default function Home() {
       <PublicHeader />
 
       <section className="ern-publico-hero relative overflow-hidden bg-[#07110E]">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src="/images/regiao/ilha.png.jpeg"
-          alt=""
-          aria-hidden="true"
-          fetchPriority="high"
-          decoding="async"
-          className="absolute inset-0 h-full w-full object-cover object-[50%_45%]"
-        />
+        <VideoFundoAberturaERN />
         <div
           aria-hidden="true"
           className="absolute inset-0"
