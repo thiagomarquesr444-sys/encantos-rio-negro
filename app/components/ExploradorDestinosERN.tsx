@@ -12,6 +12,7 @@ import { useLanguage } from './LanguageProvider';
 import { destinosTranslations } from '@/lib/i18n/destinos';
 import { HISTORIAS_MUNICIPIOS } from '@/lib/historiasMunicipiosERN';
 import { MUNICIPIOS_AMAZONAS, type MunicipioAM } from '@/lib/municipiosAmazonasERN';
+import ArcoFlechaERN from './ArcoFlechaERN';
 import SateliteCidadeERN, { chaveEmbedGoogle } from './SateliteCidadeERN';
 import { chaveGoogleMapas, criarMotorGoogle, criarMotorLeaflet, type MotorMapa, type PinMapa } from './motorMapaERN';
 import {
@@ -350,7 +351,9 @@ export default function ExploradorDestinosERN() {
     if (interest !== 'all' && !scene.interests.includes(interest)) setInterest('all');
     const base = cities.find(item => item.id === scene.city)!;
     setMunicipio(null);
-    if (scene.coords) abrirSatelite(t.destinations[scene.id].titulo, scene.coords, 15); else setSatelite(null);
+    // Todo destino abre a vista de satélite: no ponto exato ou no centro da cidade-base.
+    if (scene.coords) abrirSatelite(t.destinations[scene.id].titulo, scene.coords, 15);
+    else abrirSatelite(base.name, base.coords);
     map.current?.setView(scene.coords ?? base.coords, scene.coords ? zoomLugar() : zoomCidade());
     document.getElementById('ern-v-explorar')?.scrollIntoView({ block: 'start' });
     document.getElementById(`ern-v-item-${scene.id}`)?.scrollIntoView({ block: 'nearest' });
@@ -586,7 +589,7 @@ export default function ExploradorDestinosERN() {
             </span>
           )}{!compact && <p>{d.descricao}</p>}<span className="ern-v-card-link">{u.discover} <span aria-hidden="true">↗</span></span></div>
       </button>
-      <button type="button" className="ern-v-heart" aria-pressed={saved.includes(scene.id)} aria-label={`${saved.includes(scene.id) ? u.saved : u.save}: ${d.titulo}`} onClick={() => toggleSaved(scene.id)}>{saved.includes(scene.id) ? '♥' : '♡'}</button>
+      <button type="button" className="ern-v-heart" aria-pressed={saved.includes(scene.id)} aria-label={`${saved.includes(scene.id) ? u.saved : u.save}: ${d.titulo}`} onClick={() => toggleSaved(scene.id)}><ArcoFlechaERN ativo={saved.includes(scene.id)} /></button>
     </article>;
   }
 
@@ -634,7 +637,7 @@ export default function ExploradorDestinosERN() {
                   <span className="ern-v-item-destaque">{d.destaque}</span>
                 </span>
               </button>
-              <button type="button" className="ern-v-item-coracao" aria-pressed={saved.includes(scene.id)} aria-label={`${saved.includes(scene.id) ? u.saved : u.save}: ${d.titulo}`} onClick={() => toggleSaved(scene.id)}>{saved.includes(scene.id) ? '♥' : '♡'}</button>
+              <button type="button" className="ern-v-item-coracao" aria-pressed={saved.includes(scene.id)} aria-label={`${saved.includes(scene.id) ? u.saved : u.save}: ${d.titulo}`} onClick={() => toggleSaved(scene.id)}><ArcoFlechaERN ativo={saved.includes(scene.id)} /></button>
             </li>;
           }) : <li className="ern-v-empty"><p>{u.noResults}</p><button type="button" onClick={overview}>{u.clear}</button></li>}
         </ul>
@@ -654,7 +657,7 @@ export default function ExploradorDestinosERN() {
       <div className="ern-v-tools">
         <button type="button" onClick={overview}>{u.overview}</button>
         <button type="button" disabled={status !== 'ready' || geoBusy} onClick={locate}>{geoBusy ? u.locating : u.locate}</button>
-        <button type="button" aria-expanded={drawer === 'saved'} onClick={() => { rememberTrigger(); setDrawer('saved'); }}><span aria-hidden="true">♡</span> {u.selection} {saved.length > 0 && `(${saved.length})`}</button>
+        <button type="button" aria-expanded={drawer === 'saved'} onClick={() => { rememberTrigger(); setDrawer('saved'); }}><ArcoFlechaERN tamanho={18} /> {u.selection} {saved.length > 0 && `(${saved.length})`}</button>
       </div>
       {status !== 'ready' && <div className="ern-v-map-status" role={status === 'error' ? 'alert' : 'status'}><p>{status === 'loading' ? u.loading : u.mapError}</p>{status === 'error' && <button type="button" className="ern-v-button" onClick={() => setAttempt(n => n + 1)}>{u.retry}</button>}</div>}
       {(tileError || geoError || position) && <div className="ern-v-notice" role="status">{tileError && <p>{u.tilesError}</p>}{geoError && <p>{u.geoError}</p>}{position && <p>{u.geoNote} {Math.round(position.accuracy)} m. <button type="button" onClick={() => { requestId.current += 1; setPosition(null); setGeoBusy(false); }}>{u.removeGeo}</button></p>}</div>}
@@ -1029,7 +1032,7 @@ export default function ExploradorDestinosERN() {
                 somenteVideos={false}
               />
             )}
-            {active ? <><p className="ern-v-detail-note">{active.coords ? u.exactNote : u.baseNote}</p><button type="button" className="ern-v-button ern-v-button-soft" aria-pressed={saved.includes(active.id)} onClick={() => toggleSaved(active.id)}>{saved.includes(active.id) ? '♥' : '♡'} {saved.includes(active.id) ? u.saved : u.save}</button><div className="ern-v-detail-actions"><button type="button" onClick={() => void share()}>{u.share} ↗</button><a href={active.source} target="_blank" rel="noopener noreferrer">{u.source} ↗</a></div>{active.coords && <a className="ern-v-coordinate-source" href="https://www.geonames.org/12965878/ilha-da-praia-grande.html" target="_blank" rel="noopener noreferrer">GeoNames · CC BY 4.0 ↗</a>}</> : <div className="ern-v-regional-links">{scenes.filter(scene => scene.city === city.id).map(scene => <button type="button" key={scene.id} onClick={() => choose(scene)}>{t.destinations[scene.id].titulo} ↗</button>)}<a href={municipalSource} target="_blank" rel="noopener noreferrer">Amazonastur ↗</a></div>}
+            {active ? <><p className="ern-v-detail-note">{active.coords ? u.exactNote : u.baseNote}</p><button type="button" className="ern-v-button ern-v-button-soft" aria-pressed={saved.includes(active.id)} onClick={() => toggleSaved(active.id)}><ArcoFlechaERN ativo={saved.includes(active.id)} /> {saved.includes(active.id) ? u.saved : u.save}</button><div className="ern-v-detail-actions"><button type="button" onClick={() => void share()}>{u.share} ↗</button><a href={active.source} target="_blank" rel="noopener noreferrer">{u.source} ↗</a></div>{active.coords && <a className="ern-v-coordinate-source" href="https://www.geonames.org/12965878/ilha-da-praia-grande.html" target="_blank" rel="noopener noreferrer">GeoNames · CC BY 4.0 ↗</a>}</> : <div className="ern-v-regional-links">{scenes.filter(scene => scene.city === city.id).map(scene => <button type="button" key={scene.id} onClick={() => choose(scene)}>{t.destinations[scene.id].titulo} ↗</button>)}<a href={municipalSource} target="_blank" rel="noopener noreferrer">Amazonastur ↗</a></div>}
             {shareUrl && <label className="ern-v-share-field">{u.copyLink}<input readOnly value={shareUrl} onFocus={event => event.currentTarget.select()} /></label>}<p role="status" className="ern-v-copy-status">{message}</p>
             </>}
             </div>

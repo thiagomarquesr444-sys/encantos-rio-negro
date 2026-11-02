@@ -275,3 +275,23 @@
   .ern-r-root .ern-r-mobile-nav{display:none}
   .ern-r-root .ern-r-post-actions button{padding:0 10px}
 }
+
+/* ERN_REACAO_FLECHAR_V1 — arco que puxa a corda e dispara a flecha */
+.ern-r-root .ern-r-arco{overflow:visible;flex-shrink:0}
+.ern-r-root .ern-r-arco .ern-r-arco-madeira{stroke:#c9d6cf;transition:stroke .2s}
+.ern-r-root .ern-r-arco polyline,.ern-r-root .ern-r-arco line,.ern-r-root .ern-r-arco .ern-r-arco-flecha path:last-child{stroke:#c9d6cf}
+.ern-r-root .ern-r-arco .ern-r-arco-flecha path:first-of-type{fill:#c9d6cf;stroke:none}
+.ern-r-root .ern-r-flechar:hover .ern-r-arco-corda{transform:translateX(-3px);transition:transform .25s ease}
+.ern-r-root .ern-r-arco-ativo .ern-r-arco-madeira{stroke:#f4c77e}
+.ern-r-root .ern-r-arco-ativo polyline,.ern-r-root .ern-r-arco-ativo line,.ern-r-root .ern-r-arco-ativo .ern-r-arco-flecha path:last-child{stroke:#f7d595}
+.ern-r-root .ern-r-arco-ativo .ern-r-arco-flecha path:first-of-type{fill:#f4c77e}
+@media(prefers-reduced-motion:no-preference){
+  .ern-r-root .ern-r-arco-ativo .ern-r-arco-corda{animation:ern-r-puxa .9s cubic-bezier(.3,.7,.2,1)}
+  .ern-r-root .ern-r-arco-ativo .ern-r-arco-flecha{animation:ern-r-dispara .9s cubic-bezier(.3,.7,.2,1)}
+}
+@keyframes ern-r-puxa{0%{transform:translateX(0)}45%{transform:translateX(-7px)}55%{transform:translateX(-7px)}62%{transform:translateX(1px)}100%{transform:translateX(0)}}
+@keyframes ern-r-dispara{0%,55%{transform:translateX(0);opacity:1}80%{transform:translateX(34px);opacity:0}81%{transform:translateX(-6px);opacity:0}100%{transform:translateX(0);opacity:1}}
+.ern-r-root .ern-r-post-actions .ern-r-flechar[aria-pressed=true]{color:#f7d595}
+.ern-r-root .ern-r-whatsapp{display:inline-flex;align-items:center;gap:7px;margin-left:auto;min-height:40px;padding:0 16px;border-radius:999px;background:#1fa855;color:#fff!important;font-size:12.5px;font-weight:700;box-shadow:0 8px 20px rgb(31 168 85 / 25%);transition:filter .2s}
+.ern-r-root .ern-r-whatsapp:hover{filter:brightness(1.08)}
+@media(max-width:480px){.ern-r-root .ern-r-whatsapp{width:100%;justify-content:center;margin:6px 0 0}.ern-r-root .ern-r-post-actions{flex-wrap:wrap}}

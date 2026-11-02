@@ -21,6 +21,7 @@ const PAGE = 12;
 const copy = {
   PT: {
     title: 'Quem vive a Amazônia, mostra a Amazônia.', titleParts: ['Quem vive a', 'Amazônia', ', mostra a Amazônia.'], sub: 'Lugares, histórias e quem faz parte deles, do Rio Negro a Parintins.',
+    flechar: 'Flechar', flechado: 'Flechado', whatsapp: 'Chamar no WhatsApp', whatsappMsg: (titulo: string) => `Olá! Vi a publicação "${titulo}" na Rede Encantos da Amazônia e quero saber mais.`,
     seeOnMap: 'Ver no mapa', featured: 'Destino em destaque', featuredName: 'Encontro das Águas', featuredText: 'Onde o Rio Negro encontra o Solimões, diante de Manaus.', openMap: 'Abrir no mapa',
     verifiedTitle: 'Operadores verificados', viewProfile: 'Ver perfil', conciergeText: 'Gostou de uma história? Transforme em viagem.', conciergeCta: 'Planejar agora',
     opsTitle: 'Trabalha com turismo?', opsText: 'Publique na Rede e apareça no mapa de Destinos.', opsCta: 'Encantos Gestão',
@@ -45,6 +46,7 @@ const copy = {
   },
   EN: {
     title: 'Those who live the Amazon show the Amazon.', titleParts: ['Those who live the', 'Amazon', ' show the Amazon.'], sub: 'Places, stories and the people behind them, from the Rio Negro to Parintins.',
+    flechar: 'Arrow', flechado: 'Arrowed', whatsapp: 'Message on WhatsApp', whatsappMsg: (titulo: string) => `Hello! I saw the post "${titulo}" on the Encantos da Amazônia Network and would like to know more.`,
     seeOnMap: 'See on the map', featured: 'Featured destination', featuredName: 'Meeting of the Waters', featuredText: 'Where the Rio Negro meets the Solimões, in front of Manaus.', openMap: 'Open on the map',
     verifiedTitle: 'Verified operators', viewProfile: 'View profile', conciergeText: 'Loved a story? Turn it into a trip.', conciergeCta: 'Plan now',
     opsTitle: 'Do you work in tourism?', opsText: 'Post on the Network and appear on the Destinations map.', opsCta: 'Encantos Gestão',
@@ -69,6 +71,7 @@ const copy = {
   },
   ES: {
     title: 'Quien vive la Amazonía, muestra la Amazonía.', titleParts: ['Quien vive la', 'Amazonía', ', muestra la Amazonía.'], sub: 'Lugares, historias y las personas que los hacen posibles, del Río Negro a Parintins.',
+    flechar: 'Flechar', flechado: 'Flechado', whatsapp: 'Escribir por WhatsApp', whatsappMsg: (titulo: string) => `¡Hola! Vi la publicación "${titulo}" en la Red Encantos da Amazônia y quiero saber más.`,
     seeOnMap: 'Ver en el mapa', featured: 'Destino destacado', featuredName: 'Encuentro de las Aguas', featuredText: 'Donde el Río Negro encuentra al Solimões, frente a Manaos.', openMap: 'Abrir en el mapa',
     verifiedTitle: 'Operadores verificados', viewProfile: 'Ver perfil', conciergeText: '¿Te gustó una historia? Conviértela en viaje.', conciergeCta: 'Planear ahora',
     opsTitle: '¿Trabajas en turismo?', opsText: 'Publica en la Red y aparece en el mapa de Destinos.', opsCta: 'Encantos Gestão',
@@ -105,6 +108,26 @@ const paths: Record<IconName, string> = {
 };
 function Icon({ name, filled = false }: { name: IconName; filled?: boolean }) {
   return <svg width="21" height="21" viewBox="0 0 24 24" fill={filled ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={paths[name]} /></svg>;
+}
+// ERN_REACAO_FLECHAR_V1: o arco puxa a corda e dispara a flecha ao reagir.
+function ArcoFlecha({ ativo }: { ativo: boolean }) {
+  return <svg className={`ern-r-arco${ativo ? ' ern-r-arco-ativo' : ''}`} width="26" height="26" viewBox="0 0 40 40" aria-hidden="true">
+    <path className="ern-r-arco-madeira" d="M14 4 C 30 12, 30 28, 14 36" fill="none" strokeWidth="3" strokeLinecap="round" />
+    <g className="ern-r-arco-corda">
+      <polyline points="14,4 10,20 14,36" fill="none" strokeWidth="1.4" />
+      <g className="ern-r-arco-flecha">
+        <line x1="10" y1="20" x2="33" y2="20" strokeWidth="2" strokeLinecap="round" />
+        <path d="M33 16 L39 20 L33 24 Z" />
+        <path d="M10 20 l-4 -4 M10 20 l-4 4" fill="none" strokeWidth="1.6" strokeLinecap="round" />
+      </g>
+    </g>
+  </svg>;
+}
+function linkWhatsApp(numero: string | null | undefined, texto: string) {
+  const digitos = (numero ?? '').replace(/\D/g, '');
+  if (digitos.length < 10) return null;
+  const completo = digitos.length <= 11 ? `55${digitos}` : digitos;
+  return `https://wa.me/${completo}?text=${encodeURIComponent(texto)}`;
 }
 function emptySocial(): EstadoSocialRede { return { autenticado: false, perfisSeguidos: new Set<string>(), interacoes: {} }; }
 const emptyInteraction = { curtida: false, salvo: false, quero_ir: false };
@@ -203,7 +226,11 @@ function PostCard({ post, order, total, state, busy, ui, tr, lang, onFollow, onI
     </div>
     <CompartilharVivenciaERN post={post} />
     <footer className="ern-r-post-actions">
-      {([{ type: 'curtida', icon: 'heart', label: tr.feed.like }, { type: 'quero_ir', icon: 'go', label: tr.feed.wantGo }, { type: 'salvo', icon: 'save', label: tr.feed.save }] as const).map(action => <button type="button" key={action.type} aria-pressed={interaction[action.type]} disabled={!post.permitir_interacoes || !known || busy.has(`post:${post.id}:${action.type}`)} onClick={() => void onInteract(post.id, action.type)}><Icon name={action.icon} filled={interaction[action.type] && action.type !== 'quero_ir'} /><span>{action.label}</span></button>)}
+      {([{ type: 'curtida', icon: 'heart', label: interaction.curtida ? ui.flechado : ui.flechar }, { type: 'quero_ir', icon: 'go', label: tr.feed.wantGo }, { type: 'salvo', icon: 'save', label: tr.feed.save }] as const).map(action => <button type="button" key={action.type} className={action.type === 'curtida' ? 'ern-r-flechar' : undefined} aria-pressed={interaction[action.type]} disabled={!post.permitir_interacoes || !known || busy.has(`post:${post.id}:${action.type}`)} onClick={() => void onInteract(post.id, action.type)}>{action.type === 'curtida' ? <ArcoFlecha ativo={interaction.curtida} /> : <Icon name={action.icon} filled={interaction[action.type] && action.type !== 'quero_ir'} />}<span>{action.label}</span></button>)}
+      {post.autor.categoria !== 'ern_editorial' && (() => {
+        const zap = linkWhatsApp(post.autor.whatsapp, ui.whatsappMsg(post.titulo));
+        return zap ? <a className="ern-r-whatsapp" href={zap} target="_blank" rel="noopener noreferrer"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.3-.4.8-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.3.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2-.1-.1-.3-.2-.5-.3Z" /></svg>{ui.whatsapp}</a> : null;
+      })()}
 
     </footer>
     {shared?.id === post.id && <label className="ern-r-share-field">{ui.shareLink}<input readOnly value={shared.url} onFocus={event => event.currentTarget.select()} /></label>}

@@ -411,3 +411,17 @@
 .ern-v-root .ern-v-ops button.ern-v-network-link,.ern-v-root .ern-v-muni-acoes button.ern-v-network-link{border:0;background:transparent;cursor:pointer}
 @media(max-width:900px){.ern-v-root .ern-v-satelite-barra{top:10px;left:10px;right:10px}.ern-v-root .ern-v-satelite-externo{display:none}.ern-v-root .ern-v-satelite-visoes button{padding:0 9px;font-size:11.5px}}
 .ern-v-root .ern-v-satelite ~ .ern-v-tools{display:none}
+
+/* ERN_ARCO_FLECHA_V1 — arco no lugar do coração em Destinos */
+.ern-arco{overflow:visible;flex-shrink:0;vertical-align:middle}
+.ern-v-root :is(.ern-v-item-coracao,.ern-v-heart,.ern-v-button-soft,.ern-v-tools button){gap:6px}
+.ern-v-root .ern-v-item-coracao,.ern-v-root .ern-v-heart{font-size:0!important}
+.ern-v-root .ern-v-item-coracao:hover .ern-arco-corda,.ern-v-root .ern-v-heart:hover .ern-arco-corda{transform:translateX(-3px);transition:transform .25s ease}
+.ern-v-root .ern-v-button-soft{display:inline-flex;align-items:center;justify-content:center}
+@media(prefers-reduced-motion:no-preference){
+  .ern-arco-ativo .ern-arco-corda{animation:ern-arco-puxa .9s cubic-bezier(.3,.7,.2,1)}
+  .ern-arco-ativo .ern-arco-flecha{animation:ern-arco-dispara .9s cubic-bezier(.3,.7,.2,1)}
+}
+@keyframes ern-arco-puxa{0%{transform:translateX(0)}45%{transform:translateX(-7px)}55%{transform:translateX(-7px)}62%{transform:translateX(1px)}100%{transform:translateX(0)}}
+@keyframes ern-arco-dispara{0%,55%{transform:translateX(0);opacity:1}80%{transform:translateX(34px);opacity:0}81%{transform:translateX(-6px);opacity:0}100%{transform:translateX(0);opacity:1}}
+.ern-v-root .ern-v-stage .ern-v-tools button{display:inline-flex;align-items:center;white-space:nowrap}
