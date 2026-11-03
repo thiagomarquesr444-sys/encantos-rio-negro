@@ -7,6 +7,8 @@ import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Sidebar from '@/app/components/Sidebar';
 import SidebarProfissional from '@/app/components/SidebarProfissional';
+// ERN_TEMA_CLARO_GERADO_V1: versão clara dos estilos próprios das páginas da gestão.
+import '@/app/tema-claro-gestao.css';
 
 type Tema = 'verde' | 'azul' | 'amarelo' | 'branco' | 'grafite';
 

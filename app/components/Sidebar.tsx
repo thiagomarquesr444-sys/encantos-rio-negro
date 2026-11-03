@@ -507,7 +507,7 @@ export default function Sidebar() {
             <LogoERN tamanho={38} prioridade />
             {!recolhido && <span className="min-w-0">
               <span className="block truncate font-[family-name:var(--font-inter)] text-base font-semibold text-[#F0F0E8]">{nomeSistema}</span>
-              <span className="block text-[9px] font-semibold uppercase tracking-[0.2em] text-[#F4C77E]">Gestão da operadora</span>
+              <span className="block whitespace-nowrap text-[8.5px] font-semibold uppercase tracking-[0.13em] text-[#F4C77E]">Gestão da operadora</span>
             </span>}
           </Link>
           <button
@@ -540,7 +540,7 @@ export default function Sidebar() {
           <LogoERN tamanho={36} prioridade />
           <span className="min-w-0">
             <span className="block truncate font-[family-name:var(--font-inter)] text-[15px] font-semibold text-[#F0F0E8]">{nomeSistema}</span>
-            <span className="block text-[9px] font-semibold uppercase tracking-[0.2em] text-[#F4C77E]">Gestão da operadora</span>
+            <span className="block whitespace-nowrap text-[8.5px] font-semibold uppercase tracking-[0.13em] text-[#F4C77E]">Gestão da operadora</span>
           </span>
         </Link>
         <button
