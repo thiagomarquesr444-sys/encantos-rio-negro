@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto';
 import {
   NextRequest,
   NextResponse,
@@ -812,10 +813,14 @@ export async function POST(
         'asaas-access-token'
       );
 
+    // ERN_WEBHOOK_COMPARACAO_SEGURA_V1: comparação em tempo constante.
+    const recebido = Buffer.from(tokenRecebido ?? '', 'utf8');
+    const esperado = Buffer.from(ASAAS_WEBHOOK_TOKEN, 'utf8');
+
     if (
       !tokenRecebido ||
-      tokenRecebido !==
-        ASAAS_WEBHOOK_TOKEN
+      recebido.length !== esperado.length ||
+      !timingSafeEqual(recebido, esperado)
     ) {
       console.warn(
         '[ASAAS WEBHOOK] Token inválido.'
