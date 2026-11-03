@@ -7,6 +7,9 @@ import { useMemo } from 'react';
 import Link from 'next/link';
 import type { PlanoAtual } from '@/lib/plano';
 import PendenciasFinanceirasDashboard from '@/app/components/PendenciasFinanceirasDashboard';
+import { BarrasAgrupadasEDA, BarrasHorizontaisEDA, CartaoGraficoEDA, RoscaEDA, type TomGraficoEDA } from '@/app/components/GraficosEDA';
+
+// ERN_GRAFICOS_EDA_V1: inteligência operacional do painel no conjunto premium.
 
 type ReservaGrafico = {
 
@@ -28,19 +31,14 @@ type Props = {
 
 };
 
-const SITUACOES = [
-
-  { chave: 'confirmada', nome: 'Confirmadas', cor: '#34D399' },
-
-  { chave: 'pendente', nome: 'Pendentes', cor: '#E3A144' },
-
-  { chave: 'cancelada', nome: 'Canceladas', cor: '#FB7185' },
-
-  { chave: 'concluida', nome: 'Concluídas', cor: '#38BDF8' },
-  { chave: 'nao_compareceu', nome: 'Não compareceu', cor: '#FB923C' },
-  { chave: 'outras', nome: 'Outras situações', cor: '#7DD3FC' },
-
-] as const;
+const SITUACOES: { chave: 'confirmada' | 'pendente' | 'cancelada' | 'concluida' | 'nao_compareceu' | 'outras'; nome: string; tom: TomGraficoEDA }[] = [
+  { chave: 'confirmada', nome: 'Confirmadas', tom: 'ok' },
+  { chave: 'pendente', nome: 'Pendentes', tom: 'at' },
+  { chave: 'cancelada', nome: 'Canceladas', tom: 'er' },
+  { chave: 'concluida', nome: 'Concluídas', tom: 'info' },
+  { chave: 'nao_compareceu', nome: 'Não compareceu', tom: 'nt' },
+  { chave: 'outras', nome: 'Outras situações', tom: 'nt' },
+];
 
 function statusNormalizado(status: string | null): string {
 
@@ -216,462 +214,112 @@ export default function GraficosOperadora({
   }, [inicio, reservas]);
   const aguardando = carregando || !dados;
 
+  const inteiro = (v: number) => v.toLocaleString('pt-BR');
+
   return (
-
-    <section
-
-      aria-labelledby="graficos-operadora-titulo"
-
-      aria-busy={carregando}
-
-      className="ern-premium-inteligencia mt-8 min-w-0"
-
-    >
-
-      <div className="mb-4 flex flex-wrap items-end justify-between gap-3">
-
+    <section aria-labelledby="graficos-operadora-titulo" aria-busy={carregando} style={{ display: 'grid', gap: 16, minWidth: 0 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'flex-end', justifyContent: 'space-between', gap: 12 }}>
         <div>
-
-          <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-
-            Inteligência operacional
-
-          </p>
-
-          <h2
-
-            id="graficos-operadora-titulo"
-
-            className="mt-2 text-2xl text-[#F1F4EF] sm:text-3xl"
-
-            style={{ fontFamily: 'var(--font-fraunces), serif' }}
-
-          >
-
-            Sua operação em números
-
-          </h2>
-
+          <p className="eda-g-eb">Inteligência operacional</p>
+          <h2 id="graficos-operadora-titulo" className="eda-sec-titulo" style={{ margin: '4px 0 0' }}>Sua operação em números</h2>
         </div>
+        <Link href="/reservas" className="eda-pg-bt eda-pg-bt-p">Gerenciar reservas →</Link>
+      </div>
 
-        <Link
+      <section className="eda-pg-kpis" aria-label="Leitura executiva de reservas" style={{ marginTop: 0 }}>
+        <div className="eda-pg-kpi">
+          <small>Operações · próximos 7 dias</small>
+          <b>{aguardando ? '—' : leituraExecutiva?.semanaAtual ?? 0}</b>
+          <span>Pendentes e confirmadas · {inicio ? `${dataCurta(inicio)} a ${dataCurta(leituraExecutiva?.dia7 ?? inicio)}` : 'aguardando período'}</span>
+        </div>
+        <div className="eda-pg-kpi">
+          <small>Operações · semana seguinte</small>
+          <b>{aguardando ? '—' : leituraExecutiva?.semanaSeguinte ?? 0}</b>
+          <span>{leituraExecutiva ? `${dataCurta(leituraExecutiva.dia8)} a ${dataCurta(leituraExecutiva.dia14)}` : 'aguardando período'}</span>
+        </div>
+        <div className={`eda-pg-kpi ${leituraExecutiva?.pendentes30 ? 'eda-pg-kpi-at' : ''}`}>
+          <small>Reservas pendentes · 30 dias</small>
+          <b>{aguardando ? '—' : leituraExecutiva?.pendentes30 ?? 0}</b>
+          <span>Solicitações para acompanhamento</span>
+        </div>
+        <div className="eda-pg-kpi">
+          <small>Canceladas · próximos 30 dias</small>
+          <b>{aguardando ? '—' : leituraExecutiva?.canceladas30 ?? 0}</b>
+          <span>Contagem por data da operação</span>
+        </div>
+      </section>
 
-          href="/reservas"
-
-          className="inline-flex min-h-11 items-center rounded-xl px-3 text-sm font-semibold text-[#F4C77E] focus-visible:outline-2 focus-visible:outline-offset-4"
-
+      <div className="eda-g-grade-cartoes">
+        <CartaoGraficoEDA
+          etiqueta="Agenda"
+          titulo="Operações por dia"
+          sub={dados ? `Hoje e os próximos seis dias · ${dataCurta(inicio)} a ${dataCurta(dados.fimSemana)}` : 'Hoje e os próximos seis dias'}
+          acoes={<span className="eda-g-numero">{aguardando ? '—' : dados.totalSemana}<small>pendentes ou confirmadas</small></span>}
         >
-
-          Gerenciar reservas →
-
-        </Link>
-
-      </div>
-
-      {/* Resumo de decisão: dados de reservas, não faturamento realizado. */}
-      <div className="mb-5 grid min-w-0 gap-3 sm:grid-cols-2 xl:grid-cols-4" aria-label="Leitura executiva de reservas">
-        <article className="min-w-0 rounded-2xl border border-white/10 bg-[#151A1B] p-4">
-          <p className="text-xs font-medium text-[#B4C8BB]">Operações · próximos 7 dias</p>
-          <p className="mt-2 text-3xl font-semibold tabular-nums text-[#F4C77E]">{aguardando ? '—' : leituraExecutiva?.semanaAtual ?? 0}</p>
-          <p className="mt-2 text-xs leading-5 text-[#B4C8BB]">Pendentes e confirmadas · {inicio ? `${dataCurta(inicio)} a ${dataCurta(leituraExecutiva?.dia7 ?? inicio)}` : 'aguardando período'}</p>
-        </article>
-        <article className="min-w-0 rounded-2xl border border-white/10 bg-[#151A1B] p-4">
-          <p className="text-xs font-medium text-[#B4C8BB]">Operações · semana seguinte</p>
-          <p className="mt-2 text-3xl font-semibold tabular-nums text-[#F1F4EF]">{aguardando ? '—' : leituraExecutiva?.semanaSeguinte ?? 0}</p>
-          <p className="mt-2 text-xs leading-5 text-[#B4C8BB]">Pendentes e confirmadas · {leituraExecutiva ? `${dataCurta(leituraExecutiva.dia8)} a ${dataCurta(leituraExecutiva.dia14)}` : 'aguardando período'}</p>
-        </article>
-        <article className="min-w-0 rounded-2xl border border-[#E3A144]/20 bg-[#151A1B] p-4">
-          <p className="text-xs font-medium text-[#B4C8BB]">Reservas pendentes · 30 dias</p>
-          <p className="mt-2 text-3xl font-semibold tabular-nums text-[#F4C77E]">{aguardando ? '—' : leituraExecutiva?.pendentes30 ?? 0}</p>
-          <p className="mt-2 text-xs leading-5 text-[#B4C8BB]">Solicitações para acompanhamento · <Link href="/reservas" className="underline underline-offset-4 focus-visible:outline-2">abrir reservas</Link></p>
-        </article>
-        <article className="min-w-0 rounded-2xl border border-white/10 bg-[#151A1B] p-4">
-          <p className="text-xs font-medium text-[#B4C8BB]">Canceladas · próximos 30 dias</p>
-          <p className="mt-2 text-3xl font-semibold tabular-nums text-[#F1F4EF]">{aguardando ? '—' : leituraExecutiva?.canceladas30 ?? 0}</p>
-          <p className="mt-2 text-xs leading-5 text-[#B4C8BB]">Contagem histórica por data da operação, sem implicar perda financeira.</p>
-        </article>
-      </div>
-      <div className="ern-premium-graficos grid min-w-0 gap-4 xl:grid-cols-12">
-
-        <article className="ern-premium-grafico min-w-0 rounded-2xl border border-white/10 bg-[#151A1B] p-4 sm:p-6">
-
-          <div className="flex flex-wrap items-start justify-between gap-3">
-
-            <div>
-
-              <h3 className="text-base font-semibold text-[#F1F4EF]">
-
-                Operações por dia
-
-              </h3>
-
-              <p className="mt-1 text-xs leading-5 text-[#B4C8BB]">
-
-                Hoje e os próximos seis dias · horário de Manaus
-
-              </p>
-
-              {dados && (
-
-                <p className="mt-1 text-xs text-[#B4C8BB]">
-
-                  {dataCurta(inicio)} a {dataCurta(dados.fimSemana)}
-
-                </p>
-
-              )}
-
-            </div>
-
-            <div className="text-right">
-
-              <strong className="text-3xl tabular-nums text-[#F4C77E]">
-
-                {aguardando ? '—' : dados.totalSemana}
-
-              </strong>
-
-              <p className="mt-1 text-xs text-[#B4C8BB]">
-
-                reservas pendentes ou confirmadas
-
-              </p>
-
-            </div>
-
-          </div>
-
           {aguardando ? (
-
-            <p
-
-              role="status"
-
-              className="flex min-h-56 items-center justify-center text-sm text-[#B4C8BB]"
-
-            >
-
-              Carregando operações...
-
-            </p>
-
+            <p role="status" className="eda-pg-estado">Carregando operações…</p>
+          ) : dados.totalSemana === 0 ? (
+            <div className="eda-pg-vazio" style={{ padding: '24px 12px' }}>
+              <b>Nenhuma operação nos próximos 7 dias</b>
+              <p>Consulte as reservas e organize a próxima viagem.</p>
+              <Link href="/reservas" className="eda-pg-bt eda-pg-bt-p">Ver reservas</Link>
+            </div>
           ) : (
-
-            <>
-
-              <p className="mt-5 text-xs text-[#B4C8BB]">
-
-                Escala: 0 a {dados.escala} reservas por dia
-
-              </p>
-
-              {/* ERN_DASHBOARD_REDESIGN_V445: comparacao operacional real de 14 dias. */}
-              {leituraExecutiva && (
-                <div className="mt-5 rounded-2xl border border-[#E3A144]/15 bg-[#0D1213] p-4 sm:p-5">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h4 className="text-sm font-semibold text-[#F1F4EF]">Ritmo das proximas duas semanas</h4>
-                    <span className="text-[11px] text-[#B4C8BB]">Operacoes pendentes e confirmadas</span>
-                  </div>
-                  {([
-                    { nome: 'Esta semana', quantidade: leituraExecutiva.semanaAtual, cor: '#E3A144', periodo: `${dataCurta(inicio)} - ${dataCurta(leituraExecutiva.dia7)}` },
-                    { nome: 'Semana seguinte', quantidade: leituraExecutiva.semanaSeguinte, cor: '#38BDF8', periodo: `${dataCurta(leituraExecutiva.dia8)} - ${dataCurta(leituraExecutiva.dia14)}` },
-                  ]).map(faixa => {
-                    const max = Math.max(1, leituraExecutiva.semanaAtual, leituraExecutiva.semanaSeguinte);
-                    return (
-                      <div key={faixa.nome} className="mt-4">
-                        <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
-                          <span className="font-semibold text-[#F1F4EF]">{faixa.nome} <span className="font-normal text-[#B4C8BB]">· {faixa.periodo}</span></span>
-                          <strong className="tabular-nums text-[#F4C77E]">{faixa.quantidade}</strong>
-                        </div>
-                        <div role="img" aria-label={`${faixa.nome}: ${faixa.quantidade} operacoes`} className="h-3 overflow-hidden rounded-full bg-white/10">
-                          <div className="h-full rounded-full transition-[width] duration-300 motion-reduce:transition-none" style={{ width: `${faixa.quantidade / max * 100}%`, backgroundColor: faixa.cor }} />
-                        </div>
-                      </div>
-                    );
-                  })}
-                  <p className="mt-4 text-xs leading-5 text-[#B4C8BB]">
-                    {leituraExecutiva.semanaAtual + leituraExecutiva.semanaSeguinte === 0
-                      ? 'Nenhuma operacao ativa programada para os proximos 14 dias. Confira as reservas ou cadastre uma nova operacao.'
-                      : leituraExecutiva.semanaSeguinte > leituraExecutiva.semanaAtual
-                        ? 'A semana seguinte concentra mais operacoes. Revise equipe, embarcacoes e materiais.'
-                        : 'Use este comparativo para organizar equipe, passeios, embarcacoes e materiais.'}
-                  </p>
-                </div>
-              )}
-              {dados.totalSemana === 0 ? (
-                <div className="mt-4 flex min-h-36 flex-col items-center justify-center rounded-xl border border-dashed border-white/15 bg-[#0D1213] px-5 text-center">
-                  <p className="text-sm font-semibold text-[#F1F4EF]">Nenhuma operacao nos proximos 7 dias</p>
-                  <p className="mt-2 text-xs leading-5 text-[#B4C8BB]">Sem barras artificiais. Consulte reservas e organize a proxima viagem.</p>
-                  <Link href="/reservas" className="mt-3 text-sm font-semibold text-[#F4C77E] underline underline-offset-4">Ver reservas</Link>
-                </div>
-              ) : (
-              <ol
-
-                aria-label="Quantidade de operações em cada dia"
-
-                className="mt-3 grid grid-cols-7 gap-1 sm:gap-3"
-
-              >
-
-                {dados.dias.map((dia, indice) => (
-
-                  <li key={dia.data} className="min-w-0 text-center">
-
-                    <div className="ern-premium-day-slot relative h-32 rounded-lg border-b border-white/15 bg-white/[0.025]">
-
-                      <div
-
-                        aria-hidden="true"
-
-                        className="absolute inset-x-1 bottom-0 rounded-t-md bg-gradient-to-t from-[#93611F] to-[#E3A144] sm:inset-x-2"
-
-                        style={{
-
-                          height: `${(dia.quantidade / dados.escala) * 100}%`,
-
-                        }}
-
-                      />
-
-                      <span className="absolute inset-x-0 top-2 mx-auto w-fit rounded bg-[#0C1112]/90 px-1.5 py-0.5 text-xs font-semibold tabular-nums text-[#F1F4EF]">
-
-                        {dia.quantidade}
-
-                      </span>
-
-                    </div>
-
-                    <span className="mt-2 block text-[10px] tabular-nums text-[#EDEDE3] sm:text-xs">
-
-                      {dataCurta(dia.data)}
-
-                    </span>
-
-                    <span className="mt-1 block text-[10px] text-[#B4C8BB]">
-
-                      {indice === 0 ? 'Hoje' : `+${indice}d`}
-
-                    </span>
-
-                  </li>
-
-                ))}
-
-              </ol>
-              )}
-
-              <p className="mt-4 text-xs leading-5 text-[#B4C8BB]">
-
-                {dados.totalSemana === 0
-
-                  ? 'Nenhuma reserva pendente ou confirmada neste período.'
-
-                  : 'Cada reserva representa uma operação. Canceladas ficam fora desta contagem.'}
-
-              </p>
-
-            </>
-
+            <BarrasAgrupadasEDA
+              categorias={dados.dias.map((dia, indice) => (indice === 0 ? 'Hoje' : dataCurta(dia.data)))}
+              series={[{ nome: 'Operações', c: 's1', valores: dados.dias.map((dia) => dia.quantidade) }]}
+              formatar={inteiro}
+              rotulo="Operações pendentes e confirmadas em cada dia"
+              altura={200}
+            />
           )}
-
-        </article>
-
-        <article className="ern-premium-grafico min-w-0 rounded-2xl border border-white/10 bg-[#151A1B] p-4 sm:p-6">
-
-          <div className="flex flex-wrap items-start justify-between gap-3">
-
-            <div>
-
-              <h3 className="text-base font-semibold text-[#F1F4EF]">
-
-                Reservas por situação
-
-              </h3>
-
-              <p className="mt-1 text-xs leading-5 text-[#B4C8BB]">
-
-                Hoje e os próximos 29 dias · inclui canceladas
-
+          {leituraExecutiva && !aguardando && (
+            <div style={{ marginTop: 16 }}>
+              <BarrasHorizontaisEDA
+                linhas={[
+                  { rotulo: 'Esta semana', valores: [leituraExecutiva.semanaAtual] },
+                  { rotulo: 'Semana seguinte', valores: [leituraExecutiva.semanaSeguinte] },
+                ]}
+                series={[{ nome: 'Operações', c: 's4' }]}
+                formatar={inteiro}
+                rotulo="Ritmo das próximas duas semanas"
+                largRotulo={118}
+              />
+              <p className="eda-pg-texto-mut" style={{ marginTop: 8 }}>
+                {leituraExecutiva.semanaAtual + leituraExecutiva.semanaSeguinte === 0
+                  ? 'Nenhuma operação ativa nos próximos 14 dias.'
+                  : leituraExecutiva.semanaSeguinte > leituraExecutiva.semanaAtual
+                    ? 'A semana seguinte concentra mais operações. Revise equipe, embarcações e materiais.'
+                    : 'Use este comparativo para organizar equipe, passeios, embarcações e materiais.'}
               </p>
-
-              {dados && (
-
-                <p className="mt-1 text-xs text-[#B4C8BB]">
-
-                  {dataCurta(inicio)} a {dataCurta(dados.fimMes)}
-
-                </p>
-
-              )}
-
             </div>
+          )}
+        </CartaoGraficoEDA>
 
-            <div className="text-right">
-
-              <strong className="text-3xl tabular-nums text-[#F1F4EF]">
-
-                {aguardando ? '—' : dados.totalMes}
-
-              </strong>
-
-              <p className="mt-1 text-xs text-[#B4C8BB]">
-
-                reservas no período
-
-              </p>
-
-            </div>
-
-          </div>
-
+        <CartaoGraficoEDA
+          etiqueta="Situação"
+          titulo="Reservas por situação"
+          sub={dados ? `Hoje e os próximos 29 dias · inclui canceladas · ${dataCurta(inicio)} a ${dataCurta(dados.fimMes)}` : 'Hoje e os próximos 29 dias'}
+        >
           {aguardando ? (
-
-            <p
-
-              role="status"
-
-              className="flex min-h-56 items-center justify-center text-sm text-[#B4C8BB]"
-
-            >
-
-              Carregando situações...
-
-            </p>
-
+            <p role="status" className="eda-pg-estado">Carregando situações…</p>
+          ) : dados.totalMes === 0 ? (
+            <p className="eda-pg-texto-mut">Nenhuma reserva cadastrada para este período.</p>
           ) : (
-
             <>
-
-              <div
-
-                aria-hidden="true"
-
-                className="mt-6 flex h-5 overflow-hidden rounded-full bg-white/5"
-
-              >
-
-                {SITUACOES.map((situacao) => (
-
-                  <div
-
-                    key={situacao.chave}
-
-                    style={{
-
-                      backgroundColor: situacao.cor,
-
-                      width:
-
-                        dados.totalMes === 0
-
-                          ? '0%'
-
-                          : `${(dados.contagem[situacao.chave] / dados.totalMes) * 100}%`,
-
-                    }}
-
-                  />
-
-                ))}
-
-              </div>
-
-              <ul
-
-                aria-label="Distribuição das reservas por situação"
-
-                className="mt-5 space-y-4"
-
-              >
-
-                {SITUACOES.map((situacao) => {
-
-                  const quantidade = dados.contagem[situacao.chave];
-
-                  const percentual =
-
-                    dados.totalMes === 0
-
-                      ? 0
-
-                      : (quantidade / dados.totalMes) * 100;
-
-                  return (
-
-                    <li
-
-                      key={situacao.chave}
-
-                      className="flex items-center justify-between gap-3"
-
-                    >
-
-                      <span className="flex min-w-0 items-center gap-2 text-sm text-[#EDEDE3]">
-
-                        <span
-
-                          aria-hidden="true"
-
-                          className="h-2.5 w-2.5 shrink-0 rounded-full"
-
-                          style={{ backgroundColor: situacao.cor }}
-
-                        />
-
-                        {situacao.nome}
-
-                      </span>
-
-                      <span className="shrink-0 text-sm tabular-nums text-[#B4C8BB]">
-
-                        <strong className="mr-2 text-[#F1F4EF]">
-
-                          {quantidade}
-
-                        </strong>
-
-                        {percentual.toLocaleString('pt-BR', {
-
-                          minimumFractionDigits: 1,
-
-                          maximumFractionDigits: 1,
-
-                        })}
-
-                        %
-
-                      </span>
-
-                    </li>
-
-                  );
-
-                })}
-
-              </ul>
-
-              <p className="mt-5 text-xs leading-5 text-[#B4C8BB]">
-
-                {dados.totalMes === 0
-
-                  ? 'Nenhuma reserva cadastrada para este período.'
-
-                  : 'Outras situações incluem status não reconhecidos ou não informados. Reservas encerradas permanecem nesta distribuição histórica.'}
-
-              </p>
-
+              <RoscaEDA
+                itens={SITUACOES.filter((s) => dados.contagem[s.chave] > 0 || ['confirmada', 'pendente', 'cancelada'].includes(s.chave)).map((s) => ({ nome: s.nome, valor: dados.contagem[s.chave], tom: s.tom }))}
+                centro={String(dados.totalMes)}
+                sub={dados.totalMes === 1 ? 'reserva' : 'reservas'}
+                rotulo="Distribuição das reservas por situação"
+              />
+              <p className="eda-pg-texto-mut" style={{ marginTop: 12 }}>Outras situações incluem status não reconhecidos ou não informados.</p>
             </>
-
           )}
-
-        </article>
-
+        </CartaoGraficoEDA>
       </div>
 
       <PendenciasFinanceirasDashboard plano={plano} carregandoPlano={carregandoPlano} />
     </section>
-
   );
-
 }
-

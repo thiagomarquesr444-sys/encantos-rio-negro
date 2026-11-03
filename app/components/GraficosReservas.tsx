@@ -1,6 +1,9 @@
 'use client';
 
 import { useId, useMemo, useState } from 'react';
+import { BarrasHorizontaisEDA, CartaoGraficoEDA, RoscaEDA, TabelaNumerosEDA, type TomGraficoEDA } from '@/app/components/GraficosEDA';
+
+// ERN_GRAFICOS_EDA_V1: painel das reservas no conjunto premium.
 
 type ReservaAnalise = {
   pacote: string;
@@ -42,32 +45,6 @@ function mesValido(valor: string): boolean {
   return /^\d{4}-(0[1-9]|1[0-2])$/.test(valor);
 }
 
-function Barra({
-  quantidade,
-  total,
-  cor,
-}: {
-  quantidade: number;
-  total: number;
-  cor: string;
-}) {
-  const largura = total > 0
-    ? Math.min(100, Math.max(0, (quantidade / total) * 100))
-    : 0;
-
-  return (
-    <div
-      aria-hidden="true"
-      className="h-3 overflow-hidden rounded-full bg-white/10"
-    >
-      <div
-        className={`h-full rounded-full transition-all ${cor}`}
-        style={{ width: `${largura}%` }}
-      />
-    </div>
-  );
-}
-
 export default function GraficosReservas({
   reservas,
   carregando,
@@ -95,11 +72,11 @@ export default function GraficosReservas({
     });
 
     const status = [
-      { nome: 'Confirmada', cor: 'bg-emerald-400' },
-      { nome: 'Pendente', cor: 'bg-[#E3A144]' },
-      { nome: 'Cancelada', cor: 'bg-rose-400' },
-      { nome: 'Concluída', cor: 'bg-sky-400' },
-      { nome: 'Não compareceu', cor: 'bg-orange-400' },
+      { nome: 'Confirmada', tom: 'ok' as TomGraficoEDA },
+      { nome: 'Pendente', tom: 'at' as TomGraficoEDA },
+      { nome: 'Cancelada', tom: 'er' as TomGraficoEDA },
+      { nome: 'Concluída', tom: 'info' as TomGraficoEDA },
+      { nome: 'Não compareceu', tom: 'nt' as TomGraficoEDA },
     ].map((item) => ({
       ...item,
       quantidade: selecionadas.filter(
@@ -179,211 +156,90 @@ export default function GraficosReservas({
     };
   }, [reservas, mes, filtroValido]);
 
-  const painel =
-    'min-w-0 rounded-2xl border border-white/10 bg-[#0A1713] p-4 sm:p-5';
-
   const valorConfirmado = analise.somaExcedida
     ? 'indisponível'
     : moeda(analise.totalCentavos / 100);
 
+  const curto = (centavos: number) => {
+    const reais = centavos / 100;
+    return reais >= 1000
+      ? `R$ ${(reais / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`
+      : moeda(reais);
+  };
+
+  const itensRosca = [
+    ...analise.status.map((item) => ({ nome: item.nome === 'Não compareceu' ? 'Não compareceu' : `${item.nome}s`, valor: item.quantidade, tom: item.tom })),
+    ...(analise.desconhecidos > 0 ? [{ nome: 'Sem status', valor: analise.desconhecidos, tom: 'nt' as TomGraficoEDA }] : []),
+  ].filter((item) => item.valor > 0 || ['Confirmadas', 'Pendentes', 'Canceladas'].includes(item.nome));
+
   return (
-    <section
-      aria-labelledby={tituloId}
-      aria-busy={carregando}
-      className="mb-7 min-w-0 space-y-4"
-    >
-      <div className={painel}>
-        <p className="text-xs uppercase tracking-widest text-[#E3A144]">
-          Inteligência operacional
-        </p>
-        <h2
-          id={tituloId}
-          className="mt-2 text-2xl text-[#F0F0E8]"
-          style={{ fontFamily: 'var(--font-fraunces), serif' }}
-        >
-          Panorama das reservas
-        </h2>
-        <p className="mt-3 text-sm leading-7 text-[#C5D4CA]">
-          Análise pela data do passeio e pelo status atual da reserva.
-          O período abaixo controla somente este painel e respeita o
-          recorte do dashboard, quando presente.
-        </p>
-
-        <div className="mt-4 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-end">
-          <div className="min-w-0 sm:w-60">
-            <label
-              htmlFor={mesId}
-              className="mb-2 block text-sm text-[#C5D4CA]"
-            >
-              Mês do passeio
+    <section aria-labelledby={tituloId} aria-busy={carregando} style={{ display: 'grid', gap: 16, minWidth: 0 }}>
+      <CartaoGraficoEDA
+        etiqueta="Inteligência operacional"
+        titulo="Panorama das reservas"
+        sub="Pela data do passeio e pelo status atual. O mês abaixo vale só para estes gráficos."
+        acoes={
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'end', gap: 8 }}>
+            <label className="eda-pg-campo" htmlFor={mesId} style={{ minWidth: 180 }}>
+              <span id={tituloId}>Mês do passeio</span>
+              <input id={mesId} type="month" value={mes} aria-invalid={!filtroValido} onChange={(event) => setMes(event.target.value)} />
             </label>
-            <input
-              id={mesId}
-              type="month"
-              value={mes}
-              aria-invalid={!filtroValido}
-              onChange={(event) => setMes(event.target.value)}
-              className="min-h-12 w-full min-w-0 max-w-full rounded-xl border border-white/15 bg-[#07110E] px-3 text-base text-[#EDEDE3] outline-none focus:border-[#E3A144] [color-scheme:dark] sm:text-sm"
-            />
+            <button type="button" onClick={() => setMes('')} className="eda-pg-bt">Todos os meses</button>
           </div>
-          <button
-            type="button"
-            onClick={() => setMes('')}
-            className="min-h-12 rounded-xl border border-white/15 px-4 text-sm text-[#EDEDE3] transition hover:bg-white/5"
-          >
-            Todos os meses
-          </button>
-        </div>
-
-        <p className="mt-3 text-xs leading-6 text-[#B4C8BB]">
-          {mes && filtroValido
-            ? `Mês selecionado: ${mes.slice(5, 7)}/${mes.slice(0, 4)}`
-            : 'Período: todos os meses dos registros carregados'}
+        }
+      >
+        <p className="eda-pg-texto-mut">
+          {mes && filtroValido ? `Mês selecionado: ${mes.slice(5, 7)}/${mes.slice(0, 4)}` : 'Período: todos os meses dos registros carregados.'}
         </p>
-      </div>
+      </CartaoGraficoEDA>
 
       {!filtroValido ? (
-        <p
-          role="alert"
-          className={`${painel} text-sm text-amber-200`}
-        >
-          Selecione um mês válido ou use Todos os meses.
-        </p>
+        <p role="alert" className="eda-pg-aviso eda-pg-aviso-at">Selecione um mês válido ou use Todos os meses.</p>
       ) : carregando ? (
-        <p role="status" className={`${painel} text-sm text-[#C5D4CA]`}>
-          Carregando análise das reservas…
-        </p>
+        <p role="status" className="eda-pg-estado">Carregando análise das reservas…</p>
       ) : (
         <>
-          {analise.total === 0 && (
-            <p role="status" className={`${painel} text-sm text-[#C5D4CA]`}>
-              Nenhuma reserva no período selecionado.
-            </p>
-          )}
+          <div className="eda-g-grade-cartoes">
+            <CartaoGraficoEDA etiqueta="Situação" titulo="Reservas por situação" sub={`${analise.total} ${analise.total === 1 ? 'reserva' : 'reservas'} no período`}>
+              {analise.total === 0 ? (
+                <p className="eda-pg-texto-mut">Nenhuma reserva no período selecionado.</p>
+              ) : (
+                <RoscaEDA itens={itensRosca} centro={String(analise.total)} sub={analise.total === 1 ? 'reserva' : 'reservas'} rotulo="Reservas por situação" />
+              )}
+            </CartaoGraficoEDA>
 
-          <div className="grid min-w-0 gap-4 lg:grid-cols-2">
-            <article className={painel}>
-              <h3 className="text-lg font-semibold text-[#EDEDE3]">
-                Distribuição por status
-              </h3>
-
-              <div className="mt-5 space-y-5">
-                {analise.status.map((item) => (
-                  <div key={item.nome} className="min-w-0">
-                    <div className="mb-2 flex flex-wrap justify-between gap-2 text-sm text-[#C5D4CA]">
-                      <span>{item.nome}</span>
-                      <span className="tabular-nums">
-                        {item.quantidade} · {percentual(item.quantidade, analise.total)}%
-                      </span>
-                    </div>
-                    <Barra
-                      quantidade={item.quantidade}
-                      total={analise.total}
-                      cor={item.cor}
-                    />
-                  </div>
-                ))}
-
-                {analise.desconhecidos > 0 && (
-                  <div>
-                    <div className="mb-2 flex flex-wrap justify-between gap-2 text-sm text-amber-200">
-                      <span>Status não reconhecido</span>
-                      <span className="tabular-nums">
-                        {analise.desconhecidos} · {percentual(analise.desconhecidos, analise.total)}%
-                      </span>
-                    </div>
-                    <Barra
-                      quantidade={analise.desconhecidos}
-                      total={analise.total}
-                      cor="bg-slate-400"
-                    />
-                  </div>
-                )}
-              </div>
-            </article>
-
-            <article className={painel}>
-              <h3 className="text-lg font-semibold text-[#EDEDE3]">
-                Valor confirmado por passeio
-              </h3>
-              <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">
-                Cinco maiores valores comerciais e agrupamento dos demais.
-                Não representa recebimentos.
-              </p>
-
+            <CartaoGraficoEDA etiqueta="Vendas" titulo="Valor confirmado por passeio" sub="Cinco maiores valores comerciais; não representa recebimentos.">
               {analise.somaExcedida ? (
-                <p role="alert" className="mt-5 text-sm leading-7 text-amber-200">
-                  A soma ultrapassa o limite de precisão deste painel.
-                  Os valores não serão exibidos para evitar totais incorretos.
-                </p>
+                <p role="alert" className="eda-pg-aviso eda-pg-aviso-at" style={{ margin: 0 }}>A soma ultrapassa o limite de precisão deste painel. Os valores não serão exibidos para evitar totais incorretos.</p>
               ) : analise.passeios.length === 0 ? (
-                <p className="mt-5 text-sm leading-7 text-[#C5D4CA]">
-                  {analise.status[0].quantidade === 0
-                    ? 'Nenhuma reserva confirmada no período.'
-                    : 'Não há valores válidos para compor este gráfico.'}
+                <p className="eda-pg-texto-mut">
+                  {analise.status[0].quantidade === 0 ? 'Nenhuma reserva confirmada no período.' : 'Não há valores válidos para compor este gráfico.'}
                 </p>
               ) : (
-                <div className="mt-5 space-y-5">
-                  {analise.passeios.map((item) => (
-                    <div key={item.chave} className="min-w-0">
-                      <div className="mb-2 flex min-w-0 flex-col gap-1 text-sm sm:flex-row sm:justify-between sm:gap-3">
-                        <span className="min-w-0 break-words text-[#C5D4CA]">
-                          {item.nome}
-                        </span>
-                        <span className="break-words font-semibold tabular-nums text-[#F4C77E]">
-                          {moeda(item.centavos / 100)}
-                        </span>
-                      </div>
-                      <Barra
-                        quantidade={item.centavos}
-                        total={analise.totalCentavos}
-                        cor="bg-[#E3A144]"
-                      />
-                    </div>
-                  ))}
-                </div>
+                <>
+                  <BarrasHorizontaisEDA
+                    linhas={analise.passeios.map((item) => ({ rotulo: item.nome.length > 20 ? `${item.nome.slice(0, 19)}…` : item.nome, valores: [item.centavos] }))}
+                    series={[{ nome: 'Valor confirmado', c: 's1' }]}
+                    formatar={curto}
+                    rotulo="Valor confirmado por passeio"
+                    largRotulo={140}
+                  />
+                  <TabelaNumerosEDA cabecalho={['Passeio', 'Valor confirmado']} linhas={analise.passeios.map((item) => [item.nome, moeda(item.centavos / 100)])} />
+                </>
               )}
-            </article>
+            </CartaoGraficoEDA>
           </div>
 
-          <article className={painel}>
-            <h3 className="text-lg font-semibold text-[#EDEDE3]">
-              Leitura operacional
-            </h3>
-            <p className="mt-3 break-words text-sm leading-7 text-[#C5D4CA]">
-              No período selecionado, há {analise.total} reserva(s):
-              {' '}{analise.status[0].quantidade} confirmada(s),
-              {' '}{analise.status[1].quantidade} pendente(s) e
-              {' '}{analise.status[2].quantidade} cancelada(s).
-              {analise.desconhecidos > 0
-                ? ` Há também ${analise.desconhecidos} com status não reconhecido.`
-                : ''}
-              {' '}Valor comercial confirmado: {valorConfirmado}.
-              {analise.status[1].quantidade > 0
-                ? ' As reservas pendentes precisam de definição operacional.'
-                : ' Não há reservas pendentes neste recorte.'}
+          <CartaoGraficoEDA etiqueta="Leitura" titulo="Resumo do período">
+            <p className="eda-pg-texto-mut" style={{ color: 'var(--g-texto)' }}>
+              {analise.total} reserva(s): {analise.status[0].quantidade} confirmada(s), {analise.status[1].quantidade} pendente(s) e {analise.status[2].quantidade} cancelada(s).
+              {analise.desconhecidos > 0 ? ` Há também ${analise.desconhecidos} com status não reconhecido.` : ''}
+              {' '}Valor comercial confirmado: <b>{valorConfirmado}</b>.
+              {analise.status[1].quantidade > 0 ? ' As reservas pendentes precisam de definição operacional.' : ' Não há reservas pendentes neste recorte.'}
             </p>
-
-            <p className="mt-3 text-xs leading-6 text-[#B4C8BB]">
-              Este resumo descreve a situação atual. Os filtros da listagem
-              abaixo são independentes do mês escolhido neste painel.
-            </p>
-
-            {analise.semData > 0 && (
-              <p className="mt-3 text-sm leading-7 text-amber-200">
-                Há {analise.semData} reserva(s) sem data válida entre os
-                registros carregados. Elas ficam fora dos recortes mensais.
-              </p>
-            )}
-
-            {analise.valorInvalido > 0 && (
-              <p className="mt-3 text-sm leading-7 text-amber-200">
-                {analise.valorInvalido} valor(es) de reservas confirmadas
-                foram excluídos da soma por serem inválidos.
-                O total exibido considera apenas os valores válidos.
-              </p>
-            )}
-          </article>
+            {analise.semData > 0 && <p className="eda-pg-aviso eda-pg-aviso-at">{analise.semData} reserva(s) sem data válida ficam fora dos recortes mensais.</p>}
+            {analise.valorInvalido > 0 && <p className="eda-pg-aviso eda-pg-aviso-at">{analise.valorInvalido} valor(es) de reservas confirmadas foram excluídos da soma por serem inválidos.</p>}
+          </CartaoGraficoEDA>
         </>
       )}
     </section>

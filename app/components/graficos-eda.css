@@ -1,0 +1,105 @@
+/* ERN_GRAFICOS_EDA_V1 — cores validadas (daltonismo e contraste) por tema. */
+.eda-g, .eda-g-cartao, .eda-g-tendencia, .eda-g-eb {
+  --g-painel: #0b1814;
+  --g-texto: #f2f0e6;
+  --g-sec: #93a79d;
+  --g-mudo: #6f8379;
+  --g-borda: rgb(255 255 255 / 8%);
+  --g-grade: rgb(255 255 255 / 7%);
+  --g-suave: rgb(255 255 255 / 4%);
+  --g-ouro: #f4c77e;
+  --g-s1: #c4822f;
+  --g-s2: #3aa97f;
+  --g-s3: #cf6a4c;
+  --g-s4: #4a8fd6;
+  --g-ok: #5cc49a;
+  --g-at: #f2c86b;
+  --g-er: #f08a8a;
+  --g-info: #8cc3f2;
+  --g-nt: #6f8379;
+  --g-dica: #11231c;
+}
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) :is(.eda-g, .eda-g-cartao, .eda-g-tendencia, .eda-g-eb) {
+  --g-painel: #ffffff;
+  --g-texto: #13241d;
+  --g-sec: #5f7068;
+  --g-mudo: #8a978f;
+  --g-borda: rgb(19 36 29 / 10%);
+  --g-grade: rgb(19 36 29 / 8%);
+  --g-suave: rgb(19 36 29 / 4%);
+  --g-ouro: #9a5d14;
+  --g-s1: #c9822a;
+  --g-s2: #2f8a66;
+  --g-s3: #b5543a;
+  --g-s4: #2f6ea3;
+  --g-ok: #237a57;
+  --g-at: #94690a;
+  --g-er: #b53c3c;
+  --g-info: #2f6ea3;
+  --g-nt: #8a978f;
+  --g-dica: #13241d;
+}
+
+.eda-g { position: relative; min-width: 0; font-variant-numeric: tabular-nums; }
+.eda-g svg { display: block; width: 100%; height: auto; overflow: visible; }
+.eda-g svg text { font-family: inherit; font-size: 11px; fill: var(--g-sec); }
+.eda-g svg .eda-g-valor { fill: var(--g-texto); font-weight: 600; }
+.eda-g svg .eda-g-alerta { fill: var(--g-er); font-weight: 650; }
+.eda-g svg .eda-g-centro { fill: var(--g-texto); font-size: 26px; font-weight: 650; }
+.eda-g-grade { stroke: var(--g-grade); stroke-width: 1; }
+.eda-g-base { stroke: var(--g-borda); stroke-width: 1.2; }
+.eda-g-guia { stroke: var(--g-sec); stroke-width: 1; stroke-dasharray: 3 3; opacity: .6; }
+.eda-g-trilho { fill: var(--g-suave); }
+.eda-g-trilho-traco { stroke: var(--g-suave); }
+.eda-g-alvo { fill: transparent; cursor: pointer; outline: none; }
+.eda-g-alvo:focus-visible { fill: var(--g-suave); }
+.eda-g-arco { cursor: pointer; outline: none; }
+.eda-g-arco:focus-visible { stroke-width: 22; }
+
+.eda-g-dica {
+  position: absolute; z-index: 5; pointer-events: none; transform: translateY(-100%);
+  min-width: 160px; max-width: 240px; padding: 10px 12px; border-radius: 12px;
+  background: var(--g-dica); color: #f2f0e6; font-size: 12px; line-height: 1.5;
+  box-shadow: 0 12px 30px rgb(0 0 0 / 28%);
+}
+.eda-g-dica b { display: block; margin-bottom: 4px; font-size: 12.5px; }
+.eda-g-dica-linha { display: flex; justify-content: space-between; gap: 14px; }
+.eda-g-dica-linha b { display: inline; margin: 0; font-weight: 600; }
+.eda-g-dica-linha i, .eda-g-legenda i, .eda-g-rosca-lista i { display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 3px; vertical-align: -1px; }
+
+.eda-g-legenda { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 12px; font-size: 12px; color: var(--g-sec); }
+
+.eda-g-rosca { display: grid; grid-template-columns: 180px minmax(0, 1fr); align-items: center; gap: 20px; }
+.eda-g-rosca-svg { max-width: 180px; }
+.eda-g-rosca-lista { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.eda-g-rosca-lista li { display: flex; justify-content: space-between; gap: 12px; font-size: 13px; }
+.eda-g-rosca-lista span { color: var(--g-texto); font-weight: 600; }
+.eda-g-rosca-lista b { color: var(--g-texto); font-weight: 600; }
+
+.eda-g-tabela { margin-top: 10px; font-size: 12px; color: var(--g-sec); }
+.eda-g-tabela summary { cursor: pointer; font-weight: 650; color: var(--g-ouro); }
+.eda-g-tabela-rolagem { overflow-x: auto; }
+.eda-g-tabela table { width: 100%; margin-top: 8px; border-collapse: collapse; }
+.eda-g-tabela :is(th, td) { padding: 6px 4px; text-align: right; border-top: 1px solid var(--g-borda); white-space: nowrap; }
+.eda-g-tabela :is(th, td):first-child { text-align: left; }
+.eda-g-tabela th { font-weight: 650; color: var(--g-sec); }
+.eda-g-tabela td { color: var(--g-texto); }
+
+.eda-g-tendencia { width: 96px; height: 32px; }
+
+.eda-g-cartao { min-width: 0; padding: 20px 22px; border-radius: 20px; background: var(--g-painel); color: var(--g-texto); border: 1px solid var(--g-borda); }
+.eda-g-cartao-topo { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px; margin-bottom: 14px; }
+.eda-g-eb { margin: 0; font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--g-ouro, #e3a144); }
+.eda-g-cartao h3 { margin: 4px 0 0; font-size: 15.5px; font-weight: 650; letter-spacing: -.01em; color: var(--g-texto); }
+.eda-g-sub { margin: 3px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--g-sec); }
+.eda-g-grade-cartoes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.eda-g-grade-cartoes > .eda-g-largo { grid-column: 1 / -1; }
+
+@media (max-width: 900px) { .eda-g-grade-cartoes { grid-template-columns: minmax(0, 1fr); } }
+@media (max-width: 520px) {
+  .eda-g-rosca { grid-template-columns: minmax(0, 1fr); justify-items: center; }
+  .eda-g-rosca-lista { width: 100%; }
+  .eda-g-cartao { padding: 16px; }
+}
+.eda-g-numero { display: grid; justify-items: end; font-size: 28px; font-weight: 650; letter-spacing: -.03em; line-height: 1; color: var(--g-texto); }
+.eda-g-numero small { margin-top: 4px; font-size: 11.5px; font-weight: 500; letter-spacing: 0; color: var(--g-sec); }

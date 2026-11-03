@@ -1,61 +1,65 @@
 "use client";
-import { useMemo, useState } from "react";
+// ERN_GRAFICOS_EDA_V1: panorama das demandas no conjunto premium.
+import { useMemo } from "react";
 import { CATEGORIAS_DEMANDA, STATUS_DEMANDA, type Demanda } from "@/lib/demandas";
+import { BarrasHorizontaisEDA, CartaoGraficoEDA, RoscaEDA, type TomGraficoEDA } from "@/app/components/GraficosEDA";
 
 type Props = { registros: Demanda[]; totalConsulta: number; pagina: number; totalPaginas: number };
-const statusCores: Record<string,string> = { aberta: "#5fd5ad", rascunho: "#94a3b8", encerrada: "#67b7e8", cancelada: "#f58f94" };
-const cores = ["#e8ac58", "#68b9e7", "#6bd4b0", "#b6a4f5", "#f18f91", "#9caaba", "#d5ca82"];
+const TOM_STATUS: Record<string, TomGraficoEDA> = { aberta: "at", rascunho: "nt", encerrada: "ok", cancelada: "er" };
 
 export default function DemandasInsightsPremium({ registros, totalConsulta, pagina, totalPaginas }: Props) {
-  const [categoriaAtiva, setCategoriaAtiva] = useState<string | null>(null);
   const analise = useMemo(() => {
     const estados = Object.entries(STATUS_DEMANDA).map(([id, nome]) => ({ id, nome, quantidade: registros.filter(r => r.status === id).length }));
-    const categorias = Object.entries(CATEGORIAS_DEMANDA).map(([id, nome]) => ({ id, nome, quantidade: registros.filter(r => r.categoria === id).length })).filter(c => c.quantidade > 0).sort((a,b) => b.quantidade - a.quantidade);
+    const categorias = Object.entries(CATEGORIAS_DEMANDA)
+      .map(([id, nome]) => ({ id, nome, quantidade: registros.filter(r => r.categoria === id).length }))
+      .filter(c => c.quantidade > 0)
+      .sort((a, b) => b.quantidade - a.quantidade);
     return { estados, categorias, quantidade: registros.length, abertas: estados.find(s => s.id === "aberta")?.quantidade ?? 0 };
   }, [registros]);
   const total = analise.quantidade;
-  let acumulado = 0;
-  const segmentos = analise.estados.map(item => {
-    const inicio = acumulado;
-    acumulado += total > 0 ? item.quantidade / total * 100 : 0;
-    return `${statusCores[item.id] ?? "#e8ac58"} ${inicio}% ${acumulado}%`;
-  });
-  const fundoRosca = total > 0 ? `conic-gradient(${segmentos.join(", ")})` : "conic-gradient(#394345 0% 100%)";
-  const maior = Math.max(1, ...analise.categorias.map(c => c.quantidade));
+  const inteiro = (v: number) => v.toLocaleString("pt-BR");
+
   return (
-    <section className="ern-dem-inteligencia" aria-labelledby="ern-demandas-inteligencia">
-      <div className="ern-dem-inteligencia-head">
-        <div><span className="ern-dem-sobretitulo">CENTRO DE INTELIGENCIA OPERACIONAL</span>
-          <h2 id="ern-demandas-inteligencia">Panorama das demandas</h2>
-          <p>Distribuicao da pagina consultada, sem estimativas ou dados simulados.</p>
+    <section aria-labelledby="ern-demandas-inteligencia" style={{ display: "grid", gap: 16, minWidth: 0 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "flex-end", justifyContent: "space-between", gap: 10 }}>
+        <div>
+          <p className="eda-g-eb">Inteligência operacional</p>
+          <h2 id="ern-demandas-inteligencia" className="eda-sec-titulo" style={{ margin: "4px 0 0" }}>Panorama das demandas</h2>
         </div>
-        <span className="ern-dem-escopo">Pagina {pagina + 1} de {Math.max(1,totalPaginas)} · {totalConsulta} resultado(s) na consulta</span>
+        <span className="eda-pg-mut" style={{ fontSize: 12.5 }}>Página {pagina + 1} de {Math.max(1, totalPaginas)} · {totalConsulta} resultado(s)</span>
       </div>
-      <div className="ern-dem-metricas">
-        <div className="ern-dem-metrica ern-dem-metrica-principal"><span>Demandas nesta pagina</span><strong>{total}</strong><small>Total da consulta: {totalConsulta}</small></div>
-        <div className="ern-dem-metrica"><span>Abertas nesta pagina</span><strong>{analise.abertas}</strong><small>Disponiveis para acompanhamento</small></div>
-        <div className="ern-dem-metrica"><span>Categorias presentes</span><strong>{analise.categorias.length}</strong><small>Tipos de necessidade exibidos</small></div>
+
+      <section className="eda-pg-kpis" aria-label="Resumo da página" style={{ marginTop: 0, gridTemplateColumns: "repeat(3, minmax(0, 1fr))" }}>
+        <div className="eda-pg-kpi"><small>Demandas nesta página</small><b>{total}</b><span>Total da consulta: {totalConsulta}</span></div>
+        <div className={`eda-pg-kpi ${analise.abertas ? "eda-pg-kpi-at" : ""}`}><small>Abertas nesta página</small><b>{analise.abertas}</b><span>Disponíveis para acompanhamento</span></div>
+        <div className="eda-pg-kpi"><small>Categorias presentes</small><b>{analise.categorias.length}</b><span>Tipos de necessidade exibidos</span></div>
+      </section>
+
+      <div className="eda-g-grade-cartoes">
+        <CartaoGraficoEDA etiqueta="Situação" titulo="Demandas por situação" sub="Distribuição dos registros desta página.">
+          {total === 0 ? <p className="eda-pg-texto-mut">Nenhuma demanda nesta página.</p> : (
+            <RoscaEDA
+              itens={analise.estados.map(s => ({ nome: s.nome, valor: s.quantidade, tom: TOM_STATUS[s.id] ?? "nt" }))}
+              centro={String(total)}
+              sub={total === 1 ? "demanda" : "demandas"}
+              rotulo={`Distribuição de status dos ${total} registros desta página`}
+            />
+          )}
+        </CartaoGraficoEDA>
+        <CartaoGraficoEDA etiqueta="Categorias" titulo="Demandas por categoria" sub="Contagem de demandas, não valores financeiros.">
+          {analise.categorias.length === 0 ? <p className="eda-pg-texto-mut">Sem categorias nos registros desta página.</p> : (
+            <BarrasHorizontaisEDA
+              linhas={analise.categorias.map(c => ({ rotulo: c.nome, valores: [c.quantidade] }))}
+              series={[{ nome: "Demandas", c: "s1" }]}
+              formatar={inteiro}
+              rotulo="Demandas por categoria"
+              largRotulo={130}
+            />
+          )}
+        </CartaoGraficoEDA>
       </div>
-      <div className="ern-dem-visual-grid">
-        <article className="ern-dem-grafico">
-          <div className="ern-dem-grafico-head"><h3>Situacao operacional</h3><span>Distribuicao por status</span></div>
-          <div className="ern-dem-rosca-layout">
-            <div role="img" aria-label={`Distribuicao de status dos ${total} registros desta pagina`} className="ern-dem-rosca" style={{background: fundoRosca}}>
-              <div className="ern-dem-rosca-centro"><small>Demandas</small><strong>{total}</strong><small>na pagina</small></div>
-            </div>
-            <div className="ern-dem-legenda">{analise.estados.map(s => <div key={s.id} className="ern-dem-legenda-linha"><span className="ern-dem-ponto" style={{background:statusCores[s.id] ?? "#e8ac58"}}/><span>{s.nome}</span><strong>{s.quantidade}</strong><small>{total ? (s.quantidade/total*100).toLocaleString("pt-BR",{maximumFractionDigits:1}) : "0"}%</small></div>)}</div>
-          </div>
-        </article>
-        <article className="ern-dem-grafico">
-          <div className="ern-dem-grafico-head"><h3>Mapa de categorias</h3><span>Frequencia por demanda</span></div>
-          {analise.categorias.length ? <div className="ern-dem-barras">{analise.categorias.map((c,i) => <button key={c.id} type="button" aria-pressed={categoriaAtiva===c.id} className="ern-dem-barra-linha" onClick={()=>setCategoriaAtiva(categoriaAtiva===c.id ? null : c.id)}>
-            <span className="ern-dem-barra-topo"><span>{c.nome}</span><strong>{c.quantidade} · {total ? (c.quantidade/total*100).toLocaleString("pt-BR",{maximumFractionDigits:1}) : "0"}%</strong></span>
-            <span className="ern-dem-barra-trilho"><span style={{width:`${100*c.quantidade/maior}%`,background:cores[i%cores.length]}}/></span>
-          </button>)}</div> : <p className="ern-dem-vazio">Sem categorias nos registros desta pagina.</p>}
-          <p className="ern-dem-grafico-nota">Selecione uma barra para destaca-la. As quantidades sao contagens, nao valores financeiros.</p>
-        </article>
-      </div>
-      <p className="ern-dem-aviso">A listagem usa paginacao no servidor. Graficos e indicadores descrevem somente os {total} registros carregados nesta pagina; nao representam a distribuicao de todas as {totalConsulta} demandas encontradas.</p>
+
+      <p className="eda-pg-nota">A listagem usa paginação no servidor. Estes gráficos descrevem só os {total} registros desta página, não todas as {totalConsulta} demandas encontradas.</p>
     </section>
   );
 }

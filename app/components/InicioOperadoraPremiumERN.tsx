@@ -15,6 +15,7 @@ import { analisarGraficosFinanceirosERN, periodoRecenteERN } from '@/lib/finance
 import { analisarPendenciasDashboardERN } from '@/lib/financeiroDashboardERN';
 import { normalizarStatusReservaERN, reservaOperacionalERN } from '@/lib/reservasStatusERN';
 import ArcoFlechaERN from './ArcoFlechaERN';
+import { BarrasAgrupadasEDA, TendenciaEDA } from './GraficosEDA';
 import './inicio-operadora-premium.css';
 
 export type ReservaInicioERN = {
@@ -344,7 +345,7 @@ export default function InicioOperadoraPremiumERN({
           valor={!financeiroLiberado ? '—' : fin ? moedaCurta(fin.mesAtual?.recebido ?? 0) : '…'}
           etiqueta={!financeiroLiberado ? 'Recurso do plano' : fin ? `Pago no mês ${moedaCurta(fin.mesAtual?.pago ?? 0)}` : 'Carregando'}
           tom="nt" href="/financeiro"
-          extra={spark.length > 1 && <svg className="eda-spark" viewBox="0 0 110 32" aria-hidden="true"><polyline points={spark.map((v, i) => `${(i * 110) / (spark.length - 1)},${30 - (v / maiorSpark) * 26}`).join(' ')} /></svg>} />
+          extra={spark.length > 1 && <TendenciaEDA valores={spark} className="eda-spark" />} />
         <Kpi rotulo="A receber" icone="relogio"
           valor={!financeiroLiberado ? '—' : fin ? moedaCurta(fin.pend.totais.receber) : '…'}
           etiqueta={!financeiroLiberado ? 'Recurso do plano' : fin ? (fin.pend.faixas[0].qtdReceber ? `${moedaCurta(fin.pend.faixas[0].receber)} vencido` : `${moedaCurta(fin.pend.proximos.receber)} em 7 dias`) : 'Carregando'}
@@ -413,23 +414,22 @@ export default function InicioOperadoraPremiumERN({
         <section className="eda-card" aria-labelledby="eda-fin">
           <div className="eda-ct">
             <span><p className="eda-eb eda-eb-p">Financeiro</p><h2 id="eda-fin">Recebido e pago · 6 meses</h2></span>
-            <span className="eda-legenda"><span><i className="eda-l-ouro" />Recebido</span><span><i className="eda-l-cinza" />Pago</span></span>
           </div>
           {!financeiroLiberado ? (
             <div className="eda-vazio"><Icone nome="dinheiro" tamanho={22} /><span>O financeiro faz parte dos planos com o recurso Financeiro.</span><Link href="/planos" className="eda-lk">Ver planos <Icone nome="seta" tamanho={13} /></Link></div>
           ) : erroFinanceiro ? <p className="eda-vazio" role="alert">{erroFinanceiro}</p> : !fin ? <p className="eda-vazio">Carregando lançamentos…</p> : (
             <>
-              <div className="eda-barras" role="img" aria-label={`Recebido e pago nos últimos 6 meses. ${meses.map(m => `${m.nome}: recebido ${moedaCentavos(m.recebido)}, pago ${moedaCentavos(m.pago)}`).join('; ')}`}>
-                {meses.map(m => (
-                  <div key={m.chave} className="eda-mes">
-                    <div className="eda-par">
-                      <span className="eda-b-ouro" style={{ height: `${Math.max(2, (m.recebido / maiorMes) * 100)}%` }} />
-                      <span className="eda-b-cinza" style={{ height: `${Math.max(2, (m.pago / maiorMes) * 100)}%` }} />
-                    </div>
-                    <small>{m.nome.replace('.', '').split(' ')[0]}</small>
-                  </div>
-                ))}
-              </div>
+              <BarrasAgrupadasEDA
+                categorias={meses.map(m => m.nome.replace('.', '').split(' ')[0])}
+                series={[
+                  { nome: 'Recebido', c: 's1', valores: meses.map(m => m.recebido) },
+                  { nome: 'Pago', c: 's4', valores: meses.map(m => m.pago) },
+                ]}
+                formatar={moedaCurta}
+                formatarEixo={v => moedaCurta(v).replace('R$ ', '')}
+                rotulo="Recebido e pago nos últimos 6 meses"
+                altura={210}
+              />
               <div className="eda-mini">
                 <div><small>Resultado do mês</small><b>{moedaCurta((fin.mesAtual?.recebido ?? 0) - (fin.mesAtual?.pago ?? 0))}</b></div>
                 <div><small>A receber · 7 dias</small><b>{moedaCurta(fin.pend.proximos.receber)}</b></div>

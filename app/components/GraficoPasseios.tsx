@@ -1,6 +1,9 @@
 'use client';
 
 import { useId, useMemo } from 'react';
+import { BarrasHorizontaisEDA, CartaoGraficoEDA } from '@/app/components/GraficosEDA';
+
+// ERN_GRAFICOS_EDA_V1: passeios por categoria no conjunto premium.
 
 type Item = {
   categoria?: string | null;
@@ -69,94 +72,22 @@ export default function GraficoPasseios({
     });
   }, [passeios]);
 
-  const fundo = grupos.length
-    ? `conic-gradient(${grupos
-        .map(
-          (grupo) =>
-            `${grupo.cor} ${grupo.inicio}% ${grupo.fim}%`,
-        )
-        .join(', ')})`
-    : 'var(--ern-borda)';
-
   return (
-    <section
-      aria-labelledby={tituloId}
-      className="mb-6 min-w-0 rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-4 text-[var(--ern-texto)] sm:p-6"
-    >
-      <div className="grid min-w-0 gap-5 md:grid-cols-[220px_minmax(0,1fr)] md:items-center">
-        <div
-          aria-hidden="true"
-          className="relative mx-auto flex h-40 w-40 items-center justify-center rounded-full md:h-48 md:w-48"
-          style={{ background: fundo }}
-        >
-          <div className="flex h-28 w-28 flex-col items-center justify-center rounded-full bg-[var(--ern-painel)] md:h-32 md:w-32">
-            <strong className="text-3xl">
-              {passeios.length}
-            </strong>
-            <span className="text-xs text-[var(--ern-secundario)]">
-              passeios
-            </span>
-          </div>
-        </div>
-
-        <div className="min-w-0">
-          <p className="text-xs uppercase tracking-widest text-[var(--ern-destaque)]">
-            Composição do catálogo
-          </p>
-
-          <h2
-            id={tituloId}
-            className="mt-2 text-2xl"
-            style={{
-              fontFamily: 'var(--font-fraunces), serif',
-            }}
-          >
-            Experiências por categoria
-          </h2>
-
-          <p className="mt-2 text-sm leading-6 text-[var(--ern-secundario)]">
-            {passeios.length} passeio(s) neste recorte. A busca e o
-            filtro de categoria da listagem controlam este gráfico.
-            Não representa vendas ou receita.
-          </p>
-
-          {grupos.length === 0 ? (
-            <p className="mt-4 text-sm text-[var(--ern-secundario)]">
-              Nenhum passeio corresponde aos filtros.
-            </p>
-          ) : (
-            <ul className="mt-4 grid min-w-0 gap-3 sm:grid-cols-2">
-              {grupos.map((grupo) => (
-                <li
-                  key={grupo.chave}
-                  className="flex min-w-0 items-start gap-2 text-sm"
-                >
-                  <span
-                    aria-hidden="true"
-                    className="mt-1 h-3 w-3 shrink-0 rounded-full"
-                    style={{ backgroundColor: grupo.cor }}
-                  />
-
-                  <span className="min-w-0 [overflow-wrap:anywhere]">
-                    {grupo.nome}
-
-                    <span className="mt-1 block text-xs text-[var(--ern-secundario)]">
-                      {grupo.quantidade} passeio(s) ·{' '}
-                      {(
-                        (grupo.quantidade / passeios.length) *
-                        100
-                      ).toLocaleString('pt-BR', {
-                        maximumFractionDigits: 1,
-                      })}
-                      %
-                    </span>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-    </section>
+    <div aria-labelledby={tituloId}>
+      <CartaoGraficoEDA etiqueta="Catálogo" titulo="Passeios por categoria" sub={`${passeios.length} ${passeios.length === 1 ? 'passeio cadastrado' : 'passeios cadastrados'}`}>
+        <span id={tituloId} className="eda-pg-sr">Passeios por categoria</span>
+        {grupos.length === 0 ? (
+          <p className="eda-pg-texto-mut">Nenhum passeio cadastrado ainda.</p>
+        ) : (
+          <BarrasHorizontaisEDA
+            linhas={grupos.map((g) => ({ rotulo: g.nome.length > 18 ? `${g.nome.slice(0, 17)}…` : g.nome, valores: [g.quantidade] }))}
+            series={[{ nome: 'Passeios', c: 's1' }]}
+            formatar={(v) => v.toLocaleString('pt-BR')}
+            rotulo="Passeios por categoria"
+            largRotulo={130}
+          />
+        )}
+      </CartaoGraficoEDA>
+    </div>
   );
 }
