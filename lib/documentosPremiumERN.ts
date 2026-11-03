@@ -1,5 +1,8 @@
 import { jsPDF } from "jspdf";
 import { autoTable } from "jspdf-autotable";
+import { CORES_PDF, cabecalhoPDF, rodapesPDF, seloPDF, tomDaSituacaoPDF } from "@/lib/pdfMarcaEDA";
+
+// ERN_PDF_MARCA_EDA_V1: documentos com a identidade Encantos Gestão (lib/pdfMarcaEDA).
 
 export type LinhaDocumentoERN = {
   campo: string;
@@ -23,15 +26,17 @@ export type DocumentoPremiumERN = {
   observacoes?: string[];
   nomeArquivo: string;
   dataGeracao?: Date;
+  /** Tipo exibido no canto do cabeçalho (ex.: Voucher, Relatório financeiro). */
+  tipo?: string;
 };
 
 type CorERN = [number, number, number];
-const VERDE: CorERN = [18, 58, 47];
-const PRETO: CorERN = [30, 38, 35];
-const CINZA: CorERN = [106, 116, 111];
-const DOURADO: CorERN = [178, 128, 53];
+const VERDE: CorERN = CORES_PDF.noite;
+const PRETO: CorERN = CORES_PDF.texto;
+const CINZA: CorERN = CORES_PDF.secundario;
+const DOURADO: CorERN = CORES_PDF.ouro;
 const MARGEM = 18;
-const TOPO = 20;
+const TOPO = 16;
 const LIMITE_RODAPE = 271;
 
 function texto(valor: unknown): string {
@@ -101,14 +106,10 @@ export function criarDocumentoPremiumERN(dados: DocumentoPremiumERN): jsPDF {
     }
   }
 
-  // Cabeçalho compacto, com altura contabilizada antes de desenhar.
-  pdf.setFillColor(...VERDE);
-  pdf.rect(0, 0, largura, 5, "F");
-  escreverLinhas(["ENCANTOS RIO NEGRO"], MARGEM, 6, 13, VERDE, true);
-  escreverLinhas(["Plataforma de turismo e gestão"], MARGEM, 6, 8, CINZA);
-  pdf.setDrawColor(224, 228, 225);
-  pdf.line(MARGEM, y, largura - MARGEM, y);
-  y += 9;
+  const geradoEm = dataManaus(dados.dataGeracao ?? new Date());
+
+  // Cabeçalho com a marca Encantos Gestão (faixa escura + linha dourada).
+  y = cabecalhoPDF(pdf, { tipo: dados.tipo ?? "Documento", detalhe: geradoEm, margem: MARGEM });
 
   const titulos = quebrar(dados.titulo, area, 18, true);
   garantir(titulos.length * 8 + 5);
@@ -122,16 +123,16 @@ export function criarDocumentoPremiumERN(dados: DocumentoPremiumERN): jsPDF {
   y += 4;
 
   if (dados.status) {
-    const linhas = quebrar(`SITUAÇÃO: ${texto(dados.status)}`, area, 9, true);
-    garantir(linhas.length * 5 + 4);
-    escreverLinhas(linhas, MARGEM, 5, 9, VERDE, true);
-    y += 4;
+    garantir(10);
+    y += 2;
+    seloPDF(pdf, texto(dados.status).slice(0, 60), MARGEM, y, tomDaSituacaoPDF(texto(dados.status)));
+    y += 8;
   }
 
   const identificacao: LinhaDocumentoERN[] = [
     ...(dados.empresa ? [{ campo: "Empresa", valor: dados.empresa }] : []),
     ...(dados.identificador ? [{ campo: "Identificação", valor: dados.identificador }] : []),
-    { campo: "Gerado em", valor: dataManaus(dados.dataGeracao ?? new Date()) },
+    { campo: "Gerado em", valor: geradoEm },
     ...(dados.dados ?? []),
   ];
 
@@ -139,15 +140,18 @@ export function criarDocumentoPremiumERN(dados: DocumentoPremiumERN): jsPDF {
   const larguraColuna = (area - gap) / 2;
   for (let i = 0; i < identificacao.length; i += 2) {
     const celulas = identificacao.slice(i, i + 2).map(item => {
-      const rotulo = quebrar(item.campo.toUpperCase(), larguraColuna - 2, 7.5, true);
-      const valor = quebrar(texto(item.valor), larguraColuna - 2, 9);
+      const rotulo = quebrar(item.campo.toUpperCase(), larguraColuna - 9, 7.5, true);
+      const valor = quebrar(texto(item.valor), larguraColuna - 9, 9);
       return { rotulo, valor };
     });
     const alturaLinha = Math.max(...celulas.map(c => c.rotulo.length * 3.7 + c.valor.length * 4.5 + 2));
-    garantir(alturaLinha + 3);
+    garantir(alturaLinha + 9);
+    y += 4;
     const inicioLinha = y;
     celulas.forEach((celula, indice) => {
-      const x = MARGEM + indice * (larguraColuna + gap);
+      const x = MARGEM + indice * (larguraColuna + gap) + 4;
+      pdf.setFillColor(...CORES_PDF.creme);
+      pdf.roundedRect(x - 4, inicioLinha - 5, larguraColuna, alturaLinha + 4.5, 2.5, 2.5, "F");
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(7.5);
       pdf.setTextColor(...CINZA);
@@ -167,6 +171,7 @@ export function criarDocumentoPremiumERN(dados: DocumentoPremiumERN): jsPDF {
     });
     y = inicioLinha + alturaLinha + 3;
   }
+  y += 3;
 
   if (dados.tabela) {
     const tabela = dados.tabela;
@@ -188,16 +193,18 @@ export function criarDocumentoPremiumERN(dados: DocumentoPremiumERN): jsPDF {
       margin: { left: MARGEM, right: MARGEM, top: TOPO, bottom: altura - limite + 3 },
       head: [tabela.colunas],
       body: tabela.linhas.map(linha => linha.map(texto)),
-      theme: "striped",
+      theme: "plain",
       styles: {
         font: "helvetica",
-        fontSize: 8,
-        cellPadding: 2.1,
+        fontSize: 8.2,
+        cellPadding: { top: 2.6, bottom: 2.6, left: 2.6, right: 2.6 },
         overflow: "linebreak",
         textColor: PRETO,
+        lineColor: CORES_PDF.borda,
+        lineWidth: { bottom: 0.2, top: 0, left: 0, right: 0 },
       },
-      headStyles: { fillColor: VERDE, textColor: [255, 255, 255], fontStyle: "bold" },
-      alternateRowStyles: { fillColor: [246, 248, 246] },
+      headStyles: { fillColor: VERDE, textColor: CORES_PDF.ouroClaro, fontStyle: "bold", fontSize: 7.4, lineWidth: 0 },
+      alternateRowStyles: { fillColor: CORES_PDF.creme },
     });
     const resultado = pdf as jsPDF & { lastAutoTable?: { finalY: number } };
     const ultima = pdf.getNumberOfPages();
@@ -246,17 +253,7 @@ export function criarDocumentoPremiumERN(dados: DocumentoPremiumERN): jsPDF {
     }
   }
 
-  const paginas = pdf.getNumberOfPages();
-  for (let pagina = 1; pagina <= paginas; pagina++) {
-    pdf.setPage(pagina);
-    pdf.setDrawColor(224, 228, 225);
-    pdf.line(MARGEM, altura - 23, largura - MARGEM, altura - 23);
-    pdf.setFont("helvetica", "normal");
-    pdf.setFontSize(8);
-    pdf.setTextColor(...CINZA);
-    pdf.text("Encantos Gestão", MARGEM, altura - 16);
-    pdf.text(`Página ${pagina} de ${paginas}`, largura - MARGEM, altura - 16, { align: "right" });
-  }
+  rodapesPDF(pdf, { margem: MARGEM, complemento: `Gerado em ${geradoEm} (horário de Manaus)` });
   return pdf;
 }
 

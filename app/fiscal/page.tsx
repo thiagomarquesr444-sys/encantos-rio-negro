@@ -694,7 +694,7 @@ export default function PainelFiscalERN() {
         )}
 
         <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-white/[0.07] pt-4 text-[10px] text-[#71837D]">
-          <p>ENCANTOS RIO NEGRO · Inteligência fiscal</p>
+          <p>ENCANTOS GESTÃO · Inteligência fiscal</p>
           <p>Dados restritos à operadora · Sem emissão fiscal real</p>
         </footer>
       </div>

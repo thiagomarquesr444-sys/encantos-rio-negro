@@ -66,7 +66,8 @@ function Resumo({
 
       baixarDocumentoPremiumERN({
         titulo: titulo || 'Relatório Gerencial',
-        subtitulo: 'Análise gerencial integrada | Encantos Gestão',
+        subtitulo: 'Análise gerencial integrada da operação',
+        tipo: 'Relatório gerencial',
         identificador: relatorioId,
         empresa: empresa.nome,
         status: 'Análise recalculada',

@@ -806,7 +806,8 @@ export default function VouchersPage() {
 
       baixarDocumentoPremiumERN({
         titulo: 'Voucher Turístico',
-        subtitulo: 'Documento operacional | Plataforma Encantos Gestão',
+        subtitulo: 'Documento operacional da viagem',
+        tipo: 'Voucher',
         empresa: empresa.nome,
         identificador: atual.codigo,
         nomeArquivo: `EDA-voucher-${atual.id}.pdf`,

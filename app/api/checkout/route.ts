@@ -1079,7 +1079,7 @@ async function executarCheckoutERN(
                 ],
 
               description:
-                `ERN Gestão - ${plano.nome}`,
+                `Encantos Gestão - ${plano.nome}`,
 
               externalReference: contextoERN.operacaoId,
             }),
@@ -1186,7 +1186,7 @@ async function executarCheckoutERN(
       );
 
       throw new Error(
-        'A nova assinatura foi criada no Asaas, mas não foi possível registrar a troca no ERN.'
+        'A nova assinatura foi criada no Asaas, mas não foi possível registrar a troca na Encantos Gestão.'
       );
     }
 
@@ -1302,7 +1302,7 @@ async function executarCheckoutERN(
       ) > 0.009
     ) {
       throw new Error(
-        'O valor da cobrança Asaas não corresponde ao preço do plano no ERN.'
+        'O valor da cobrança Asaas não corresponde ao preço do plano na Encantos Gestão.'
       );
     }
 
@@ -1381,7 +1381,7 @@ async function executarCheckoutERN(
       );
 
       throw new Error(
-        'A cobrança foi criada no Asaas, mas não pôde ser registrada no ERN.'
+        'A cobrança foi criada no Asaas, mas não pôde ser registrada na Encantos Gestão.'
       );
     }
 

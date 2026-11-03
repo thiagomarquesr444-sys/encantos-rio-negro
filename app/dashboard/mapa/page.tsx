@@ -501,7 +501,7 @@ function MapaOperacional() {
       <div ref={canvas} className="ern-cartografia" aria-label="Mapa interativo de localidades" />
       <header className="ern-barra-mapa">
         <div className="ern-mapa-titulo"><span className="ern-mapa-emblema" aria-hidden="true">◎</span>
-          <div><small className="ern-mapa-kicker">ENCANTOS RIO NEGRO / OPERADORA</small>
+          <div><small className="ern-mapa-kicker">ENCANTOS GESTÃO / OPERADORA</small>
             <h1>Centro territorial<span>Alto e Baixo Rio Negro</span></h1></div>
         </div>
         <div className="ern-mapa-metricas" aria-label="Resumo do catálogo">

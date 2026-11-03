@@ -49,7 +49,8 @@ export default function ExportarRelatorioPage(){
 
     baixarDocumentoPremiumERN({
       titulo: "Demonstrativo Financeiro",
-      subtitulo: "Encantos Gestão | Relatório operacional",
+      subtitulo: "Receitas, despesas e pendências do período selecionado",
+      tipo: "Relatório financeiro",
       nomeArquivo: `EDA-financeiro-premium-${hoje}.pdf`,
       status: "Demonstrativo gerado",
       dados: [

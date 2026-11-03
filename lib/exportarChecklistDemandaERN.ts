@@ -3,16 +3,18 @@ import { autoTable } from 'jspdf-autotable';
 import { supabase } from '@/lib/supabase';
 import { carregarItensDemanda, CATEGORIAS_ITEM, SITUACOES_ITEM } from '@/lib/itensDemanda';
 import { subtotal, moeda } from '@/lib/calculosMateriaisDemanda';
+import { CORES_PDF, cabecalhoPDF, rodapesPDF } from '@/lib/pdfMarcaEDA';
+// ERN_PDF_MARCA_EDA_V1: checklist com a identidade Encantos Gestão (lib/pdfMarcaEDA).
 
 const dataBR = (data: string | null | undefined) =>
   data && /^\d{4}-\d{2}-\d{2}$/.test(data)
     ? data.split('-').reverse().join('/')
     : 'Não informado';
 
-const VERDE: [number,number,number] = [18,58,47];
-const DOURADO: [number,number,number] = [178,128,53];
-const ESCURO: [number,number,number] = [30,38,35];
-const CINZA: [number,number,number] = [95,105,100];
+const VERDE: [number,number,number] = CORES_PDF.noite;
+const DOURADO: [number,number,number] = CORES_PDF.ouro;
+const ESCURO: [number,number,number] = CORES_PDF.texto;
+const CINZA: [number,number,number] = CORES_PDF.secundario;
 
 function salvarNomeSeguro(id:string,versao:number):string {
   return `EDA-checklist-compras-${id.replace(/[^a-zA-Z0-9-]/g,'').slice(0,8)}-v${versao}.pdf`;
@@ -64,20 +66,8 @@ export async function exportarChecklistDemandaERN(
   const direita=largura-margem;
   let y=19;
 
-  pdf.setFillColor(...VERDE);
-  pdf.rect(0,0,largura,5,'F');
-  pdf.setFont('helvetica','bold');
-  pdf.setFontSize(10);
-  pdf.setTextColor(...VERDE);
-  pdf.text('ENCANTOS RIO NEGRO',margem,y);
-  pdf.setFontSize(7);
-  pdf.setFont('helvetica','normal');
-  pdf.setTextColor(...CINZA);
-  pdf.text('GESTÃO OPERACIONAL  /  CHECKLIST PARA COMPRAS',direita,y,{align:'right'});
-  y+=8;
-  pdf.setDrawColor(220,225,221);
-  pdf.line(margem,y,direita,y);
-  y+=9;
+  const geradoEm=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Manaus',dateStyle:'short',timeStyle:'short'}).format(new Date());
+  y=cabecalhoPDF(pdf,{tipo:'Checklist de compras',detalhe:geradoEm,margem});
   pdf.setFont('helvetica','bold');
   pdf.setFontSize(17);
   pdf.setTextColor(...ESCURO);
@@ -222,16 +212,6 @@ export async function exportarChecklistDemandaERN(
   }
 
   const paginas=pdf.getNumberOfPages();
-  const dataGeracao=new Intl.DateTimeFormat('pt-BR',{timeZone:'America/Manaus',dateStyle:'short',timeStyle:'short'}).format(new Date());
-  for(let n=1;n<=paginas;n++){
-    pdf.setPage(n);
-    pdf.setDrawColor(215,220,216);
-    pdf.line(margem,altura-21,direita,altura-21);
-    pdf.setFont('helvetica','normal');
-    pdf.setFontSize(7.5);
-    pdf.setTextColor(...CINZA);
-    pdf.text(`Encantos Gestão  |  Lista salva v${lista.versao}  |  ${dataGeracao}`,margem,altura-15);
-    pdf.text(`Página ${n} de ${paginas}`,direita,altura-15,{align:'right'});
-  }
+  rodapesPDF(pdf,{margem,complemento:`Lista salva v${lista.versao} · gerada em ${geradoEm} (horário de Manaus)`});
   pdf.save(salvarNomeSeguro(demandaId,lista.versao));
 }
