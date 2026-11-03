@@ -1,0 +1,523 @@
+'use client';
+
+// ERN_INICIO_OPERADORA_PREMIUM_V1
+// Página inicial do painel da operadora (Encantos Gestão): resumo do dia,
+// números principais, agenda do rio, pendências com ação, financeiro,
+// demandas, Rede EDA, cadastros e plano. As cores vêm do tema da empresa
+// (Noite ou Claro) por variáveis próprias em inicio-operadora-premium.css.
+
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
+import { possuiRecurso, type PlanoAtual, type SituacaoLimite } from '@/lib/plano';
+import { consultarFinanceiroERN, type RegistroFinanceiroERN } from '@/lib/financeiroConsultaERN';
+import { analisarGraficosFinanceirosERN, periodoRecenteERN } from '@/lib/financeiroGraficosERN';
+import { analisarPendenciasDashboardERN } from '@/lib/financeiroDashboardERN';
+import { normalizarStatusReservaERN, reservaOperacionalERN } from '@/lib/reservasStatusERN';
+import ArcoFlechaERN from './ArcoFlechaERN';
+import './inicio-operadora-premium.css';
+
+export type ReservaInicioERN = {
+  id: string;
+  data_reserva: string;
+  horario: string | null;
+  quantidade_pessoas: number | null;
+  valor_total: number | null;
+  status: string | null;
+  cliente: string | null;
+  pacote: string | null;
+  guia: string | null;
+  embarcacao_id: string | null;
+};
+
+export type DemandaInicioERN = {
+  id: string;
+  titulo: string;
+  categoria: string;
+  localidade: string;
+  data_inicio: string | null;
+  quantidade: number;
+  unidade: string;
+  status: string;
+};
+
+type Props = {
+  hoje: string;
+  reservas: ReservaInicioERN[];
+  demandas: DemandaInicioERN[];
+  stats: { clientes: number; reservas: number; roteiros: number; embarcacoes: number };
+  plano: PlanoAtual | null;
+  carregandoPlano: boolean;
+  uso: Record<string, SituacaoLimite> | null;
+  carregando: boolean;
+  erro: string | null;
+};
+
+type Rede = { slug: string | null; publicado: boolean; verificado: boolean; publicadas: number; rascunhos: number } | null;
+
+// ---------- utilidades ----------
+const ICONES: Record<string, ReactNode> = {
+  barco: <><path d="M3 15l2 4h14l2-4H3z" /><path d="M12 3v12M12 4l6 8h-6" /></>,
+  calendario: <><rect x="3" y="5" width="18" height="16" rx="3" /><path d="M8 3v4M16 3v4M3 10h18" /></>,
+  dinheiro: <><rect x="3" y="6" width="18" height="12" rx="3" /><circle cx="12" cy="12" r="2.5" /></>,
+  relogio: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>,
+  alerta: <><path d="M12 3l9.5 17h-19L12 3z" /><path d="M12 10v4M12 17.5v.5" /></>,
+  lista: <><path d="M9 6h12M9 12h12M9 18h12" /><circle cx="4" cy="6" r="1" /><circle cx="4" cy="12" r="1" /><circle cx="4" cy="18" r="1" /></>,
+  documento: <><path d="M6 3h8l4 4v14H6z" /><path d="M14 3v4h4M9 12h6M9 16h6" /></>,
+  guia: <><circle cx="12" cy="6" r="3" /><path d="M12 9v6M8 21l4-6 4 6M7 12h10" /></>,
+  equipe: <><circle cx="9" cy="8" r="3" /><path d="M3 20c0-3.3 2.7-6 6-6s6 2.7 6 6" /><circle cx="17" cy="9" r="2.4" /><path d="M16 14.2c2.9.3 5 2.6 5 5.8" /></>,
+  local: <><path d="M12 21s-7-6.2-7-11a7 7 0 1 1 14 0c0 4.8-7 11-7 11z" /><circle cx="12" cy="10" r="2.5" /></>,
+  mais: <path d="M12 5v14M5 12h14" />,
+  seta: <path d="M5 12h14M13 6l6 6-6 6" />,
+  ok: <><circle cx="12" cy="12" r="9" /><path d="M8 12.5l2.7 2.7L16 10" /></>,
+};
+
+function Icone({ nome, tamanho = 18 }: { nome: keyof typeof ICONES; tamanho?: number }) {
+  return (
+    <svg width={tamanho} height={tamanho} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {ICONES[nome]}
+    </svg>
+  );
+}
+
+const moedaCentavos = (n: number) => (n / 100).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+
+function moedaCurta(centavos: number): string {
+  const reais = centavos / 100;
+  if (reais >= 1_000_000) return `R$ ${(reais / 1_000_000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mi`;
+  if (reais >= 10_000) return `R$ ${(reais / 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} mil`;
+  return reais.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+}
+
+function somarDias(dataISO: string, dias: number): string {
+  const d = new Date(`${dataISO}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + dias);
+  return d.toISOString().slice(0, 10);
+}
+
+function rotuloDia(dataISO: string, hoje: string): string {
+  if (dataISO === hoje) return 'HOJE';
+  if (dataISO === somarDias(hoje, 1)) return 'AMANHÃ';
+  const d = new Date(`${dataISO}T12:00:00Z`);
+  const semana = new Intl.DateTimeFormat('pt-BR', { weekday: 'short', timeZone: 'UTC' }).format(d).replace('.', '').toUpperCase();
+  return `${semana} ${d.getUTCDate()}`;
+}
+
+function centavosValor(valor: unknown): number | null {
+  if (typeof valor !== 'number' && typeof valor !== 'string') return null;
+  const texto = String(valor).trim();
+  if (!/^\d+(?:\.\d{1,2})?$/.test(texto)) return null;
+  const [reais, decimal = ''] = texto.split('.');
+  const n = Number(reais) * 100 + Number(decimal.padEnd(2, '0'));
+  return Number.isSafeInteger(n) && n > 0 ? n : null;
+}
+
+function saudacao(): string {
+  const hora = Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: 'America/Manaus' }).format(new Date())) % 24;
+  if (hora < 12) return 'Bom dia';
+  if (hora < 18) return 'Boa tarde';
+  return 'Boa noite';
+}
+
+function dataExtenso(hoje: string): string {
+  if (!hoje) return '';
+  const d = new Date(`${hoje}T12:00:00Z`);
+  const texto = new Intl.DateTimeFormat('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'UTC' }).format(d);
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
+}
+
+const plural = (n: number, um: string, varios: string) => `${n} ${n === 1 ? um : varios}`;
+
+type Tom = 'ok' | 'at' | 'er' | 'nt';
+
+// ---------- componente ----------
+export default function InicioOperadoraPremiumERN({
+  hoje, reservas, demandas, stats, plano, carregandoPlano, uso, carregando, erro,
+}: Props) {
+  const financeiroLiberado = possuiRecurso(plano, 'financeiro');
+  const empresaId = plano?.empresa_id ?? '';
+
+  const [nome, setNome] = useState('');
+  const [barcos, setBarcos] = useState<Record<string, string>>({});
+  const [guias, setGuias] = useState<number | null>(null);
+  const [rede, setRede] = useState<Rede>(null);
+  const [financeiro, setFinanceiro] = useState<RegistroFinanceiroERN[] | null>(null);
+  const [erroFinanceiro, setErroFinanceiro] = useState('');
+  const [janela, setJanela] = useState<'hoje' | '7' | '30'>('7');
+
+  // Nome do usuário, embarcações, guias e vitrine na Rede.
+  useEffect(() => {
+    let ativo = true;
+    void (async () => {
+      try {
+        const { data: auth } = await supabase.auth.getUser();
+        if (!auth.user || !ativo) return;
+        const [perfil, embarcacoes, totalGuias] = await Promise.all([
+          supabase.from('perfis').select('nome').eq('id', auth.user.id).maybeSingle(),
+          supabase.from('embarcacoes').select('id,nome').limit(200),
+          supabase.from('guias').select('id', { count: 'exact', head: true }),
+        ]);
+        if (!ativo) return;
+        const primeiro = String(perfil.data?.nome ?? '').trim().split(/\s+/)[0] ?? '';
+        setNome(primeiro);
+        setBarcos(Object.fromEntries((embarcacoes.data ?? []).map(b => [String(b.id), String(b.nome ?? '')])));
+        setGuias(totalGuias.error ? null : totalGuias.count ?? 0);
+      } catch {
+        // Complementos opcionais: o painel segue sem eles.
+      }
+    })();
+    return () => { ativo = false; };
+  }, []);
+
+  useEffect(() => {
+    if (!empresaId) return;
+    let ativo = true;
+    void (async () => {
+      try {
+        const { data: perfil } = await supabase
+          .from('perfis_publicos')
+          .select('id,slug,publicado,verificado')
+          .eq('empresa_id', empresaId)
+          .eq('origem_tipo', 'empresa')
+          .eq('categoria', 'operadora')
+          .maybeSingle();
+        if (!ativo) return;
+        if (!perfil) { setRede({ slug: null, publicado: false, verificado: false, publicadas: 0, rascunhos: 0 }); return; }
+        const [pub, ras] = await Promise.all([
+          supabase.from('publicacoes').select('id', { count: 'exact', head: true }).eq('autor_perfil_id', perfil.id).eq('status', 'publicado'),
+          supabase.from('publicacoes').select('id', { count: 'exact', head: true }).eq('autor_perfil_id', perfil.id).eq('status', 'rascunho'),
+        ]);
+        if (!ativo) return;
+        setRede({ slug: perfil.slug ?? null, publicado: !!perfil.publicado, verificado: !!perfil.verificado, publicadas: pub.count ?? 0, rascunhos: ras.count ?? 0 });
+      } catch {
+        if (ativo) setRede(null);
+      }
+    })();
+    return () => { ativo = false; };
+  }, [empresaId]);
+
+  useEffect(() => {
+    if (carregandoPlano || !financeiroLiberado || !empresaId) return;
+    let ativo = true;
+    setErroFinanceiro('');
+    consultarFinanceiroERN()
+      .then(registros => {
+        if (registros.some(r => r.empresa_id !== empresaId)) throw new Error('A empresa da consulta diverge do plano.');
+        if (ativo) setFinanceiro(registros);
+      })
+      .catch(() => { if (ativo) setErroFinanceiro('Não foi possível carregar o financeiro agora.'); });
+    return () => { ativo = false; };
+  }, [carregandoPlano, financeiroLiberado, empresaId]);
+
+  // ---------- cálculos ----------
+  const operacionais = useMemo(() => reservas.filter(r => reservaOperacionalERN(r.status)), [reservas]);
+  const dia7 = hoje ? somarDias(hoje, 6) : '';
+
+  const pagamentoPorReserva = useMemo(() => {
+    const mapa = new Map<string, { pendente: number; recebido: number }>();
+    for (const item of financeiro ?? []) {
+      if (!item.reserva_id || (item.tipo ?? '').trim().toLowerCase() !== 'receita') continue;
+      const valor = centavosValor(item.valor ?? item.Valor);
+      if (valor === null) continue;
+      const atual = mapa.get(item.reserva_id) ?? { pendente: 0, recebido: 0 };
+      const status = String(item.status ?? item.Status ?? '').trim().toLowerCase();
+      if (status === 'recebido') atual.recebido += valor; else if (status === 'pendente') atual.pendente += valor;
+      mapa.set(item.reserva_id, atual);
+    }
+    return mapa;
+  }, [financeiro]);
+
+  const resumo = useMemo(() => {
+    const hojeLista = operacionais.filter(r => r.data_reserva === hoje);
+    const semana = operacionais.filter(r => r.data_reserva >= hoje && r.data_reserva <= dia7);
+    return {
+      hoje: hojeLista,
+      semana,
+      pessoasSemana: semana.reduce((t, r) => t + Number(r.quantidade_pessoas ?? 0), 0),
+      semGuia: semana.filter(r => !r.guia?.trim()),
+      semBarco: semana.filter(r => !r.embarcacao_id),
+      semHorario: semana.filter(r => !r.horario),
+      pendentes: semana.filter(r => normalizarStatusReservaERN(r.status) === 'Pendente'),
+    };
+  }, [operacionais, hoje, dia7]);
+
+  const fin = useMemo(() => {
+    if (!financeiro || !hoje) return null;
+    try {
+      const graficos = analisarGraficosFinanceirosERN(financeiro, periodoRecenteERN(hoje, 6), hoje);
+      const pend = analisarPendenciasDashboardERN(financeiro, hoje);
+      const mesAtual = graficos.meses[graficos.meses.length - 1];
+      return { graficos, pend, mesAtual };
+    } catch {
+      return null;
+    }
+  }, [financeiro, hoje]);
+
+  const agenda = useMemo(() => {
+    const fim = janela === 'hoje' ? hoje : janela === '7' ? dia7 : somarDias(hoje, 29);
+    return operacionais.filter(r => r.data_reserva >= hoje && r.data_reserva <= fim).slice(0, 6);
+  }, [operacionais, janela, hoje, dia7]);
+
+  type Pendencia = { tom: Tom; icone: keyof typeof ICONES; titulo: string; detalhe: string; acao: string; href: string; peso: number };
+  const pendencias = useMemo<Pendencia[]>(() => {
+    const lista: Pendencia[] = [];
+    const intervalo = `inicio=${hoje}&fim=${dia7}`;
+    if (fin && fin.pend.faixas[0].qtdReceber > 0) {
+      lista.push({ tom: 'er', icone: 'dinheiro', titulo: `${plural(fin.pend.faixas[0].qtdReceber, 'recebimento vencido', 'recebimentos vencidos')}`, detalhe: `${moedaCentavos(fin.pend.faixas[0].receber)} a receber`, acao: 'Cobrar', href: '/financeiro?periodo=pendentes', peso: 100 });
+    }
+    if (resumo.semGuia.length) {
+      const r = resumo.semGuia[0];
+      lista.push({ tom: 'er', icone: 'guia', titulo: resumo.semGuia.length === 1 ? 'Saída sem guia' : `${resumo.semGuia.length} saídas sem guia`, detalhe: `${r.pacote || 'Reserva'} · ${rotuloDia(r.data_reserva, hoje).toLowerCase()}`, acao: 'Escalar guia', href: `/reservas?alerta=sem_guia&${intervalo}`, peso: 90 });
+    }
+    if (resumo.semBarco.length) {
+      lista.push({ tom: 'at', icone: 'barco', titulo: resumo.semBarco.length === 1 ? 'Saída sem embarcação' : `${resumo.semBarco.length} saídas sem embarcação`, detalhe: 'nos próximos 7 dias', acao: 'Vincular barco', href: `/reservas?alerta=sem_embarcacao&${intervalo}`, peso: 80 });
+    }
+    if (resumo.pendentes.length) {
+      lista.push({ tom: 'at', icone: 'calendario', titulo: `${plural(resumo.pendentes.length, 'reserva aguardando', 'reservas aguardando')} confirmação`, detalhe: 'nos próximos 7 dias', acao: 'Confirmar', href: `/reservas?alerta=pendentes&${intervalo}`, peso: 70 });
+    }
+    if (fin && fin.pend.faixas[0].qtdPagar > 0) {
+      lista.push({ tom: 'at', icone: 'documento', titulo: `${plural(fin.pend.faixas[0].qtdPagar, 'conta vencida', 'contas vencidas')} a pagar`, detalhe: moedaCentavos(fin.pend.faixas[0].pagar), acao: 'Ver contas', href: '/financeiro?periodo=pendentes', peso: 65 });
+    }
+    if (resumo.semHorario.length) {
+      lista.push({ tom: 'nt', icone: 'relogio', titulo: `${plural(resumo.semHorario.length, 'saída', 'saídas')} sem horário`, detalhe: 'informe o horário de embarque', acao: 'Ajustar', href: `/reservas?alerta=sem_horario&${intervalo}`, peso: 50 });
+    }
+    const rascunhos = demandas.filter(d => d.status === 'rascunho').length;
+    if (rascunhos) {
+      lista.push({ tom: 'nt', icone: 'lista', titulo: `${plural(rascunhos, 'demanda em rascunho', 'demandas em rascunho')}`, detalhe: 'ainda não abertas', acao: 'Ver demandas', href: '/demandas?status=rascunho', peso: 40 });
+    }
+    return lista.sort((a, b) => b.peso - a.peso);
+  }, [fin, resumo, demandas, hoje, dia7]);
+
+  const demandasDestaque = useMemo(() => [...demandas]
+    .sort((a, b) => (a.status === 'aberta' ? -1 : 0) - (b.status === 'aberta' ? -1 : 0) || (a.data_inicio ?? '9999').localeCompare(b.data_inicio ?? '9999'))
+    .slice(0, 4), [demandas]);
+
+  // Frase do dia.
+  const frase = useMemo(() => {
+    if (carregando) return 'Organizando o seu dia…';
+    const partes: ReactNode[] = [];
+    partes.push(<b key="s">{plural(resumo.hoje.length, 'saída', 'saídas')}</b>);
+    const extras: ReactNode[] = [];
+    if (fin && fin.pend.faixas[1].qtdReceber + fin.pend.faixas[0].qtdReceber > 0) {
+      const n = fin.pend.faixas[0].qtdReceber + fin.pend.faixas[1].qtdReceber;
+      extras.push(<span key="p"><b>{plural(n, 'recebimento', 'recebimentos')}</b> vencendo ou vencido</span>);
+    }
+    if (resumo.semGuia.length) extras.push(<span key="g"><b>{plural(resumo.semGuia.length, 'saída', 'saídas')}</b> sem guia</span>);
+    return (
+      <>Hoje: {partes} no rio{extras.length ? ', ' : '.'}{extras.map((e, i) => <span key={i}>{i > 0 ? (i === extras.length - 1 ? ' e ' : ', ') : ''}{e}</span>)}{extras.length ? '.' : ''}</>
+    );
+  }, [carregando, resumo, fin]);
+
+  const proxima = resumo.hoje.find(r => r.horario) ?? resumo.semana[0];
+
+  // Gráfico de 6 meses (centavos).
+  const meses = fin?.graficos.meses ?? [];
+  const maiorMes = Math.max(1, ...meses.flatMap(m => [m.recebido, m.pago]));
+  const spark = meses.map(m => m.recebido);
+  const maiorSpark = Math.max(1, ...spark);
+  const nomeEmpresa = plano?.empresa_nome?.trim();
+
+  return (
+    <div className="eda-inicio">
+      <header className="eda-cabeca">
+        <div>
+          <p className="eda-eb">{dataExtenso(hoje)}{nomeEmpresa ? ` · ${nomeEmpresa}` : ''}</p>
+          <h1>{saudacao()}{nome ? `, ${nome}` : ''}</h1>
+          <p className="eda-frase">{frase}</p>
+        </div>
+        <nav aria-label="Ações rápidas" className="eda-acoes">
+          <Link href="/demandas/nova" className="eda-bt eda-bt-sec"><Icone nome="lista" tamanho={16} />Nova demanda</Link>
+          {financeiroLiberado && <Link href="/financeiro/receita/novo" className="eda-bt eda-bt-sec"><Icone nome="dinheiro" tamanho={16} />Lançar receita</Link>}
+          <Link href="/reservas/nova" className="eda-bt eda-bt-ouro"><Icone nome="mais" tamanho={16} />Nova reserva</Link>
+        </nav>
+      </header>
+
+      {erro && <p role="alert" className="eda-aviso">Alguns dados não foram carregados. {erro}</p>}
+
+      <section className="eda-kpis" aria-label="Números principais">
+        <Kpi rotulo="Saídas hoje" icone="barco" valor={carregando ? '—' : String(resumo.hoje.length)}
+          etiqueta={proxima?.horario && proxima.data_reserva === hoje ? `Próxima às ${proxima.horario.slice(0, 5)}` : resumo.hoje.length ? 'Sem horário definido' : 'Nenhuma saída hoje'}
+          tom={resumo.hoje.length ? 'ok' : 'nt'} href={`/reservas?inicio=${hoje}&fim=${hoje}`} />
+        <Kpi rotulo="Próximos 7 dias" icone="calendario" valor={carregando ? '—' : String(resumo.semana.length)}
+          etiqueta={plural(resumo.pessoasSemana, 'pessoa', 'pessoas')} tom="ok" href={`/reservas?inicio=${hoje}&fim=${dia7}`} />
+        <Kpi rotulo="Recebido no mês" icone="dinheiro"
+          valor={!financeiroLiberado ? '—' : fin ? moedaCurta(fin.mesAtual?.recebido ?? 0) : '…'}
+          etiqueta={!financeiroLiberado ? 'Recurso do plano' : fin ? `Pago no mês ${moedaCurta(fin.mesAtual?.pago ?? 0)}` : 'Carregando'}
+          tom="nt" href="/financeiro"
+          extra={spark.length > 1 && <svg className="eda-spark" viewBox="0 0 110 32" aria-hidden="true"><polyline points={spark.map((v, i) => `${(i * 110) / (spark.length - 1)},${30 - (v / maiorSpark) * 26}`).join(' ')} /></svg>} />
+        <Kpi rotulo="A receber" icone="relogio"
+          valor={!financeiroLiberado ? '—' : fin ? moedaCurta(fin.pend.totais.receber) : '…'}
+          etiqueta={!financeiroLiberado ? 'Recurso do plano' : fin ? (fin.pend.faixas[0].qtdReceber ? `${moedaCurta(fin.pend.faixas[0].receber)} vencido` : `${moedaCurta(fin.pend.proximos.receber)} em 7 dias`) : 'Carregando'}
+          tom={fin && fin.pend.faixas[0].qtdReceber ? 'at' : 'nt'} href="/financeiro?periodo=pendentes" />
+      </section>
+
+      <div className="eda-linha eda-linha-a">
+        <section className="eda-card" aria-labelledby="eda-agenda">
+          <div className="eda-ct">
+            <span><p className="eda-eb eda-eb-p">Agenda do rio</p><h2 id="eda-agenda">Próximas saídas</h2></span>
+            <div className="eda-chips" role="group" aria-label="Período da agenda">
+              {([['hoje', 'Hoje'], ['7', '7 dias'], ['30', '30 dias']] as const).map(([v, r]) => (
+                <button key={v} type="button" aria-pressed={janela === v} onClick={() => setJanela(v)} className="eda-chip">{r}</button>
+              ))}
+            </div>
+          </div>
+          {carregando ? <p className="eda-vazio">Carregando agenda…</p> : agenda.length === 0 ? (
+            <div className="eda-vazio"><Icone nome="calendario" tamanho={22} /><span>Nenhuma saída neste período.</span><Link href="/reservas/nova" className="eda-lk">Registrar reserva <Icone nome="seta" tamanho={13} /></Link></div>
+          ) : (
+            <ul className="eda-lista">
+              {agenda.map(r => {
+                const pg = pagamentoPorReserva.get(r.id);
+                const st = normalizarStatusReservaERN(r.status);
+                const [tom, texto]: [Tom, string] = !r.guia?.trim() ? ['er', 'Sem guia']
+                  : pg && pg.pendente > 0 ? ['at', 'Falta pagamento']
+                  : st === 'Pendente' ? ['at', 'A confirmar'] : ['ok', 'Confirmada'];
+                const barco = r.embarcacao_id ? barcos[r.embarcacao_id] : '';
+                return (
+                  <li key={r.id}>
+                    <Link href={`/reservas/editar/${r.id}`} className="eda-item eda-item-agenda">
+                      <span className="eda-hora"><b>{r.horario ? r.horario.slice(0, 5) : '--:--'}</b><small>{rotuloDia(r.data_reserva, hoje)}</small></span>
+                      <span className="eda-txt"><b>{r.pacote || 'Reserva'}</b><small>{[r.cliente, r.quantidade_pessoas ? plural(Number(r.quantidade_pessoas), 'pessoa', 'pessoas') : '', barco, r.guia ? `Guia ${r.guia}` : ''].filter(Boolean).join(' · ')}</small></span>
+                      <span className={`eda-pill eda-${tom}`}><i />{texto}</span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          <Link href="/reservas" className="eda-lk eda-rodape">Ver todas as reservas <Icone nome="seta" tamanho={13} /></Link>
+        </section>
+
+        <section className="eda-card eda-card-ouro" aria-labelledby="eda-pend">
+          <div className="eda-ct">
+            <span><p className="eda-eb eda-eb-p">O que fazer agora</p><h2 id="eda-pend">{carregando ? 'Pendências' : pendencias.length ? plural(pendencias.length, 'pendência', 'pendências') : 'Tudo em dia'}</h2></span>
+          </div>
+          {!carregando && pendencias.length === 0 ? (
+            <div className="eda-vazio"><span className="eda-pill eda-ok eda-ic"><Icone nome="ok" tamanho={16} /></span><span>Nenhuma pendência na operação dos próximos 7 dias.</span></div>
+          ) : (
+            <ul className="eda-lista">
+              {pendencias.slice(0, 5).map(p => (
+                <li key={p.titulo}>
+                  <Link href={p.href} className="eda-item eda-item-pend">
+                    <span className={`eda-pill eda-${p.tom} eda-ic`}><Icone nome={p.icone} tamanho={16} /></span>
+                    <span className="eda-txt"><b>{p.titulo}</b><small>{p.detalhe}</small></span>
+                    <span className="eda-lk">{p.acao} <Icone nome="seta" tamanho={13} /></span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
+
+      <div className="eda-linha eda-linha-a">
+        <section className="eda-card" aria-labelledby="eda-fin">
+          <div className="eda-ct">
+            <span><p className="eda-eb eda-eb-p">Financeiro</p><h2 id="eda-fin">Recebido e pago · 6 meses</h2></span>
+            <span className="eda-legenda"><span><i className="eda-l-ouro" />Recebido</span><span><i className="eda-l-cinza" />Pago</span></span>
+          </div>
+          {!financeiroLiberado ? (
+            <div className="eda-vazio"><Icone nome="dinheiro" tamanho={22} /><span>O financeiro faz parte dos planos com o recurso Financeiro.</span><Link href="/planos" className="eda-lk">Ver planos <Icone nome="seta" tamanho={13} /></Link></div>
+          ) : erroFinanceiro ? <p className="eda-vazio" role="alert">{erroFinanceiro}</p> : !fin ? <p className="eda-vazio">Carregando lançamentos…</p> : (
+            <>
+              <div className="eda-barras" role="img" aria-label={`Recebido e pago nos últimos 6 meses. ${meses.map(m => `${m.nome}: recebido ${moedaCentavos(m.recebido)}, pago ${moedaCentavos(m.pago)}`).join('; ')}`}>
+                {meses.map(m => (
+                  <div key={m.chave} className="eda-mes">
+                    <div className="eda-par">
+                      <span className="eda-b-ouro" style={{ height: `${Math.max(2, (m.recebido / maiorMes) * 100)}%` }} />
+                      <span className="eda-b-cinza" style={{ height: `${Math.max(2, (m.pago / maiorMes) * 100)}%` }} />
+                    </div>
+                    <small>{m.nome.replace('.', '').split(' ')[0]}</small>
+                  </div>
+                ))}
+              </div>
+              <div className="eda-mini">
+                <div><small>Resultado do mês</small><b>{moedaCurta((fin.mesAtual?.recebido ?? 0) - (fin.mesAtual?.pago ?? 0))}</b></div>
+                <div><small>A receber · 7 dias</small><b>{moedaCurta(fin.pend.proximos.receber)}</b></div>
+                <div><small>A pagar · 7 dias</small><b>{moedaCurta(fin.pend.proximos.pagar)}</b></div>
+              </div>
+            </>
+          )}
+        </section>
+
+        <section className="eda-card" aria-labelledby="eda-dem">
+          <div className="eda-ct">
+            <span><p className="eda-eb eda-eb-p">Necessidades</p><h2 id="eda-dem">Demandas da operação</h2></span>
+            <Link href="/demandas" className="eda-lk">Abrir <Icone nome="seta" tamanho={13} /></Link>
+          </div>
+          {demandasDestaque.length === 0 ? (
+            <div className="eda-vazio"><Icone nome="lista" tamanho={22} /><span>Nenhuma demanda aberta.</span><Link href="/demandas/nova" className="eda-lk">Criar demanda <Icone nome="seta" tamanho={13} /></Link></div>
+          ) : (
+            <ul className="eda-lista">
+              {demandasDestaque.map(d => (
+                <li key={d.id}>
+                  <Link href={`/demandas/editar/${d.id}`} className="eda-item eda-item-dem">
+                    <span className="eda-txt"><b>{d.titulo}</b><small>{[d.localidade, d.data_inicio ? d.data_inicio.split('-').reverse().slice(0, 2).join('/') : '', d.quantidade ? `${d.quantidade} ${d.unidade}` : ''].filter(Boolean).join(' · ')}</small></span>
+                    <span className={`eda-pill eda-${d.status === 'aberta' ? 'at' : 'nt'}`}><i />{d.status === 'aberta' ? 'Aberta' : 'Rascunho'}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="eda-total"><small>Abertas</small><b>{demandas.filter(d => d.status === 'aberta').length}</b><small>Rascunhos</small><b>{demandas.filter(d => d.status === 'rascunho').length}</b></div>
+        </section>
+      </div>
+
+      <div className="eda-linha eda-linha-b">
+        <section className="eda-card eda-card-rede" aria-labelledby="eda-rede">
+          <p className="eda-eb eda-eb-p">Rede EDA</p>
+          <h2 id="eda-rede">Sua vitrine para visitantes</h2>
+          <p className="eda-sub">{rede?.publicado ? (rede.verificado ? 'Perfil verificado · aparece em Destinos e na Rede.' : 'Perfil publicado na Rede e em Destinos.') : 'Publique seu perfil para aparecer em Destinos e na Rede.'}</p>
+          <div className="eda-trio">
+            <div><b>{rede ? rede.publicadas : '—'}</b><small>publicações</small></div>
+            <div><b>{rede ? rede.rascunhos : '—'}</b><small>rascunhos</small></div>
+            <div><b className="eda-arco"><ArcoFlechaERN tamanho={18} ativo={!!rede?.verificado} /></b><small>{rede?.verificado ? 'verificado' : 'não verificado'}</small></div>
+          </div>
+          <div className="eda-acoes">
+            <Link href="/configuracoes/publicacoes" className="eda-bt eda-bt-ouro eda-bt-p">Nova publicação</Link>
+            <Link href={rede?.publicado && rede.slug ? `/rede/perfil/${rede.slug}` : '/configuracoes/perfil-publico'} className="eda-bt eda-bt-sec eda-bt-p">{rede?.publicado ? 'Ver perfil ↗' : 'Configurar perfil'}</Link>
+          </div>
+        </section>
+
+        <section className="eda-card" aria-labelledby="eda-est">
+          <div className="eda-ct"><span><p className="eda-eb eda-eb-p">Estrutura</p><h2 id="eda-est">Cadastros</h2></span></div>
+          <div className="eda-grade4">
+            {([['Clientes', stats.clientes, 'equipe', '/clientes'], ['Passeios', stats.roteiros, 'local', '/passeios'], ['Embarcações', stats.embarcacoes, 'barco', '/embarcacoes'], ['Guias', guias, 'guia', '/guias']] as const).map(([r, n, i, h]) => (
+              <Link key={r} href={h} className="eda-cad"><Icone nome={i} tamanho={16} /><b>{n ?? '—'}</b><small>{r}</small></Link>
+            ))}
+          </div>
+        </section>
+
+        <section className="eda-card" aria-labelledby="eda-plano">
+          <div className="eda-ct">
+            <span><p className="eda-eb eda-eb-p">Assinatura</p><h2 id="eda-plano">{carregandoPlano ? 'Plano' : plano?.plano_nome || 'Plano não identificado'}</h2></span>
+            {plano && <span className={`eda-pill eda-${plano.assinatura_status === 'ativo' || plano.assinatura_status === 'trial' ? 'ok' : 'at'}`}><i />{plano.assinatura_status === 'trial' ? 'Teste' : plano.assinatura_status === 'ativo' ? 'Ativo' : plano.assinatura_status}</span>}
+          </div>
+          <ul className="eda-uso">
+            {uso && ([['Usuários', uso.usuarios], ['Clientes', uso.clientes], ['Reservas no mês', uso.reservas_mes], ['Passeios', uso.passeios]] as const).map(([r, s]) => {
+              if (!s) return null;
+              const pct = s.ilimitado || !s.limite ? 0 : Math.min(100, (s.usado / s.limite) * 100);
+              return (
+                <li key={r}>
+                  <span><small>{r}</small><b>{s.dados_validos ? `${s.usado}${s.ilimitado ? '' : ` / ${s.limite ?? '—'}`}` : '—'}</b></span>
+                  <div className="eda-trilho"><div className={s.atingido || s.excedido ? 'eda-cheio' : ''} style={{ width: s.ilimitado ? '100%' : `${pct}%`, opacity: s.ilimitado ? 0.35 : 1 }} /></div>
+                </li>
+              );
+            })}
+          </ul>
+          <Link href="/planos" className="eda-lk eda-rodape">Detalhes do plano <Icone nome="seta" tamanho={13} /></Link>
+        </section>
+      </div>
+    </div>
+  );
+}
+
+function Kpi({ rotulo, valor, etiqueta, icone, tom, href, extra }: { rotulo: string; valor: string; etiqueta: string; icone: keyof typeof ICONES; tom: Tom; href: string; extra?: ReactNode }) {
+  return (
+    <Link href={href} className="eda-card eda-kpi">
+      <span className="eda-ct"><small>{rotulo}</small><span className="eda-kpi-ic"><Icone nome={icone} tamanho={16} /></span></span>
+      <b className="eda-num">{valor}</b>
+      <span className={`eda-pill eda-${tom}`}>{etiqueta}</span>
+      {extra}
+    </Link>
+  );
+}

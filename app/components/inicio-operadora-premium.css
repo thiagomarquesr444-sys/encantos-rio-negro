@@ -1,0 +1,234 @@
+/* ERN_INICIO_OPERADORA_PREMIUM_V1
+   Página inicial do painel da operadora. Tokens próprios por tema:
+   Noite (padrão) e Claro (branco/amarelo). Não depende das remapeações
+   de classes Tailwind do tema claro. */
+
+.eda-inicio {
+  --e-fundo: #07110e;
+  --e-painel: #0b1814;
+  --e-elev: #11231c;
+  --e-texto: #f2f0e6;
+  --e-sec: #93a79d;
+  --e-borda: rgb(255 255 255 / 8%);
+  --e-suave: rgb(255 255 255 / 4%);
+  --e-ouro: #f4c77e;
+  --e-verde: #5cc49a;
+  --e-verm: #f08a8a;
+  --e-amar: #f2c86b;
+  --e-grade: rgb(255 255 255 / 7%);
+  --e-sombra: 0 1px 0 rgb(255 255 255 / 3%) inset;
+  --e-rede: #123528;
+  --e-brilho: rgb(227 161 68 / 10%);
+
+  position: relative;
+  min-width: 0;
+  max-width: 1360px;
+  margin: 0 auto;
+  padding: 28px 32px 8px;
+  color: var(--e-texto);
+  font-family: var(--font-work-sans), 'Work Sans Variable', system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-inicio {
+  --e-fundo: #f5f2ea;
+  --e-painel: #ffffff;
+  --e-elev: #fbf9f3;
+  --e-texto: #13241d;
+  --e-sec: #5f7068;
+  --e-borda: rgb(19 36 29 / 10%);
+  --e-suave: rgb(19 36 29 / 4%);
+  --e-ouro: #9a5d14;
+  --e-verde: #237a57;
+  --e-verm: #b53c3c;
+  --e-amar: #94690a;
+  --e-grade: rgb(19 36 29 / 8%);
+  --e-sombra: 0 1px 2px rgb(19 36 29 / 5%), 0 8px 24px rgb(19 36 29 / 4%);
+  --e-rede: #fbf1dd;
+  --e-brilho: rgb(227 161 68 / 14%);
+}
+
+/* Fundo da página inicial e seções abaixo dela (mapa, análises). */
+.eda-inicio-fundo {
+  min-height: 100vh;
+  background: radial-gradient(60% 420px at 100% 0%, rgb(227 161 68 / 10%), transparent 70%), var(--ern-fundo, #07110e);
+  color: var(--ern-texto, #f2f0e6);
+}
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-inicio-fundo {
+  background: radial-gradient(60% 420px at 100% 0%, rgb(227 161 68 / 14%), transparent 70%), #f5f2ea;
+}
+.eda-inicio-fundo .eda-analises { background: transparent !important; }
+.eda-sec-eb { margin: 0; font-size: 10px; font-weight: 650; letter-spacing: 0.18em; text-transform: uppercase; color: #e3a144; }
+.eda-sec-titulo { margin: 4px 0 14px; font-size: 19px; font-weight: 650; letter-spacing: -0.015em; color: var(--ern-texto, #f2f0e6); font-family: var(--font-work-sans), 'Work Sans Variable', system-ui, sans-serif; }
+.eda-copa { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 18px 22px; border-radius: 20px; border: 1px solid color-mix(in srgb, #e3a144 30%, transparent); background: var(--ern-painel, #0b1814); }
+.eda-copa-titulo { margin: 4px 0 0; font-size: 16px; font-weight: 650; color: var(--ern-texto, #f2f0e6); }
+
+.eda-inicio a { color: inherit; text-decoration: none; }
+.eda-inicio h1, .eda-inicio h2 { margin: 0; color: var(--e-texto); font-family: inherit; }
+
+.eda-eb {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--e-ouro);
+}
+.eda-eb-p { font-size: 10px; }
+
+/* Cabeçalho */
+.eda-cabeca { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 18px 24px; }
+.eda-cabeca h1 { margin-top: 8px; font-size: clamp(26px, 3vw, 34px); font-weight: 650; letter-spacing: -0.035em; line-height: 1.1; }
+.eda-frase { margin: 8px 0 0; font-size: 14.5px; line-height: 1.5; color: var(--e-sec); }
+.eda-frase b { color: var(--e-texto); font-weight: 650; }
+.eda-acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.eda-bt {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  min-height: 42px; padding: 0 18px; border-radius: 999px;
+  font-size: 13.5px; font-weight: 650; white-space: nowrap;
+  transition: transform .15s ease, box-shadow .15s ease, background-color .15s ease;
+}
+.eda-bt:focus-visible, .eda-chip:focus-visible, .eda-item:focus-visible, .eda-kpi:focus-visible, .eda-cad:focus-visible, .eda-lk:focus-visible {
+  outline: 2px solid #e3a144; outline-offset: 2px;
+}
+.eda-inicio .eda-bt-ouro { color: #07110e; background: linear-gradient(180deg, #f7d595, #e3a144); box-shadow: 0 6px 18px rgb(227 161 68 / 28%); }
+.eda-bt-ouro:hover { transform: translateY(-1px); box-shadow: 0 10px 24px rgb(227 161 68 / 34%); }
+.eda-bt-sec { color: var(--e-texto); border: 1px solid var(--e-borda); background: var(--e-painel); }
+.eda-bt-sec:hover { background: var(--e-elev); }
+.eda-bt-p { min-height: 38px; padding: 0 14px; font-size: 12.5px; }
+
+.eda-aviso { margin: 18px 0 0; padding: 12px 16px; border-radius: 14px; font-size: 13px; color: var(--e-verm); background: color-mix(in srgb, var(--e-verm) 10%, transparent); border: 1px solid color-mix(in srgb, var(--e-verm) 25%, transparent); }
+
+/* Cartões */
+.eda-card {
+  position: relative;
+  min-width: 0;
+  padding: 20px 22px;
+  border-radius: 20px;
+  background: var(--e-painel);
+  border: 1px solid var(--e-borda);
+  box-shadow: var(--e-sombra);
+}
+.eda-card-ouro { border-color: color-mix(in srgb, #e3a144 32%, var(--e-borda)); }
+.eda-ct { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.eda-ct h2 { margin-top: 4px; font-size: 15.5px; font-weight: 650; letter-spacing: -0.01em; }
+
+.eda-lk { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 650; color: var(--e-ouro) !important; white-space: nowrap; }
+.eda-rodape { margin-top: 12px; }
+
+/* Números principais */
+.eda-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 24px; }
+.eda-kpi { display: flex; flex-direction: column; align-items: flex-start; min-height: 134px; padding: 18px 18px 16px; transition: border-color .15s ease, transform .15s ease; }
+.eda-kpi:hover { border-color: color-mix(in srgb, #e3a144 40%, var(--e-borda)); transform: translateY(-1px); }
+.eda-kpi .eda-ct { width: 100%; }
+.eda-kpi small { font-size: 12.5px; font-weight: 550; color: var(--e-sec); }
+.eda-kpi-ic { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 10px; background: var(--e-suave); color: var(--e-ouro); }
+.eda-num { margin-top: 14px; font-size: clamp(24px, 2.4vw, 30px); font-weight: 650; letter-spacing: -0.03em; line-height: 1; }
+.eda-kpi .eda-pill { margin-top: 12px; }
+.eda-spark { position: absolute; right: 16px; bottom: 16px; width: 110px; height: 32px; }
+.eda-spark polyline { fill: none; stroke: #e3a144; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+
+/* Pílulas de status */
+.eda-pill { display: inline-flex; align-items: center; gap: 6px; min-height: 24px; padding: 0 10px; border-radius: 999px; font-size: 11.5px; font-weight: 650; white-space: nowrap; }
+.eda-pill i { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+.eda-ok { color: var(--e-verde); background: color-mix(in srgb, var(--e-verde) 13%, transparent); }
+.eda-at { color: var(--e-amar); background: color-mix(in srgb, var(--e-amar) 14%, transparent); }
+.eda-er { color: var(--e-verm); background: color-mix(in srgb, var(--e-verm) 13%, transparent); }
+.eda-nt { color: var(--e-sec); background: var(--e-suave); }
+.eda-ic { width: 34px; height: 34px; padding: 0; justify-content: center; border-radius: 11px; }
+
+/* Linhas */
+.eda-linha { display: grid; gap: 16px; margin-top: 16px; }
+.eda-linha-a { grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr); }
+.eda-linha-b { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr) minmax(0, 1fr); }
+
+/* Agenda e pendências */
+.eda-chips { display: flex; gap: 6px; }
+.eda-chip { min-height: 32px; padding: 0 13px; border-radius: 999px; border: 1px solid var(--e-borda); background: var(--e-painel); color: var(--e-sec); font: inherit; font-size: 12.5px; font-weight: 550; cursor: pointer; }
+.eda-chip[aria-pressed="true"] { color: var(--e-texto); background: var(--e-suave); box-shadow: inset 0 0 0 1px var(--e-ouro); border-color: transparent; }
+
+.eda-lista { list-style: none; margin: 12px 0 0; padding: 0; }
+.eda-lista li + li .eda-item, .eda-lista li:first-child .eda-item { border-top: 1px solid var(--e-borda); }
+.eda-item { display: grid; align-items: center; gap: 14px; padding: 12px 6px; margin: 0 -6px; border-radius: 12px; transition: background-color .15s ease; }
+.eda-item:hover { background: var(--e-suave); }
+.eda-item-agenda { grid-template-columns: 64px minmax(0, 1fr) auto; }
+.eda-item-pend { grid-template-columns: 34px minmax(0, 1fr) auto; gap: 12px; }
+.eda-item-dem { grid-template-columns: minmax(0, 1fr) auto; }
+.eda-hora { display: grid; text-align: center; padding: 7px 0; border-radius: 12px; background: var(--e-suave); }
+.eda-hora b { font-size: 15px; }
+.eda-hora small { font-size: 9.5px; font-weight: 700; letter-spacing: 0.1em; color: var(--e-sec); }
+.eda-txt { display: grid; min-width: 0; }
+.eda-txt b { font-size: 13.5px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eda-txt small { font-size: 12px; color: var(--e-sec); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.eda-vazio { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; margin: 16px 0 6px; padding: 18px; border-radius: 16px; border: 1px dashed var(--e-borda); color: var(--e-sec); font-size: 13px; }
+
+/* Financeiro */
+.eda-legenda { display: flex; gap: 14px; font-size: 12px; color: var(--e-sec); }
+.eda-legenda i { display: inline-block; width: 9px; height: 9px; margin-right: 6px; border-radius: 3px; vertical-align: -1px; }
+.eda-l-ouro, .eda-b-ouro { background: linear-gradient(180deg, #f7d595, #e3a144); }
+.eda-l-cinza, .eda-b-cinza { background: var(--e-grade); box-shadow: inset 0 0 0 1px var(--e-borda); }
+.eda-barras { display: flex; gap: 6px; margin-top: 20px; }
+.eda-mes { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.eda-par { display: flex; align-items: flex-end; gap: 5px; height: 150px; }
+.eda-par span { width: 16px; border-radius: 6px 6px 2px 2px; }
+.eda-mes small { font-size: 11.5px; color: var(--e-sec); }
+.eda-mini { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-top: 16px; }
+.eda-mini div, .eda-total { padding: 12px 14px; border-radius: 14px; background: var(--e-suave); }
+.eda-mini small { display: block; font-size: 11.5px; color: var(--e-sec); }
+.eda-mini b { display: block; margin-top: 4px; font-size: 17px; letter-spacing: -0.01em; }
+.eda-total { display: flex; align-items: center; gap: 8px; margin-top: 14px; font-size: 13px; }
+.eda-total small { color: var(--e-sec); }
+.eda-total small:nth-of-type(2) { margin-left: auto; }
+
+/* Rede, cadastros, plano */
+.eda-inicio .eda-card-rede { background: linear-gradient(180deg, var(--e-rede), var(--e-painel)); border-color: color-mix(in srgb, #e3a144 35%, var(--e-borda)); }
+.eda-card-rede h2 { margin-top: 4px; font-size: 17px; font-weight: 650; letter-spacing: -0.01em; }
+.eda-sub { margin: 6px 0 0; font-size: 12.5px; color: var(--e-sec); }
+.eda-trio { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-top: 16px; }
+.eda-trio div { padding: 12px; border-radius: 14px; background: var(--e-suave); }
+.eda-trio b { display: block; font-size: 20px; }
+.eda-trio small { font-size: 11.5px; color: var(--e-sec); }
+.eda-arco { color: #e3a144; height: 24px; }
+.eda-card-rede .eda-acoes { margin-top: 16px; }
+
+.eda-grade4 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 14px; }
+.eda-cad { display: grid; gap: 4px; padding: 14px; border-radius: 14px; background: var(--e-suave); color: var(--e-ouro) !important; transition: background-color .15s ease; }
+.eda-cad:hover { background: var(--e-grade); }
+.eda-cad b { margin-top: 4px; font-size: 22px; letter-spacing: -0.02em; color: var(--e-texto); }
+.eda-cad small { font-size: 12px; color: var(--e-sec); }
+
+.eda-uso { list-style: none; display: grid; gap: 12px; margin: 16px 0 0; padding: 0; }
+.eda-uso span { display: flex; justify-content: space-between; font-size: 12.5px; }
+.eda-uso small { color: var(--e-sec); }
+.eda-trilho { margin-top: 6px; height: 6px; border-radius: 9px; background: var(--e-grade); overflow: hidden; }
+.eda-trilho div { height: 100%; border-radius: 9px; background: linear-gradient(90deg, #f7d595, #e3a144); }
+.eda-trilho .eda-cheio { background: var(--e-verm); }
+
+/* Responsivo */
+@media (max-width: 1180px) {
+  .eda-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .eda-linha-a, .eda-linha-b { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .eda-inicio { padding: 20px 16px 8px; }
+  .eda-acoes { width: 100%; }
+  .eda-cabeca > .eda-acoes .eda-bt-sec { display: none; }
+  .eda-cabeca > .eda-acoes .eda-bt-ouro { flex: 1; }
+  .eda-kpis { gap: 10px; margin-top: 18px; }
+  .eda-kpi { min-height: 118px; padding: 14px; }
+  .eda-spark { display: none; }
+  .eda-card { padding: 16px; border-radius: 18px; }
+  .eda-ct { flex-wrap: wrap; }
+  .eda-item-agenda { grid-template-columns: 56px minmax(0, 1fr); }
+  .eda-item-agenda .eda-pill { grid-column: 2; justify-self: start; }
+  .eda-item-pend { grid-template-columns: 34px minmax(0, 1fr); }
+  .eda-item-pend > .eda-lk { grid-column: 2; }
+  .eda-mini { grid-template-columns: minmax(0, 1fr); }
+  .eda-par span { width: 11px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .eda-bt, .eda-kpi, .eda-item, .eda-cad { transition: none; }
+  .eda-bt-ouro:hover, .eda-kpi:hover { transform: none; }
+}
