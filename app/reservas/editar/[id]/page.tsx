@@ -9,6 +9,7 @@ import VinculosReserva from '@/app/components/VinculosReserva';
 import LogisticaReserva from '@/app/components/LogisticaReserva';
 import PeriodoReservaERN, { validarPeriodoReservaERN } from '@/app/components/PeriodoReservaERN';
 import { CabecalhoEDA, PaginaEDA, PillEDA, type TomEDA } from '@/app/components/PadraoPaginaEDA';
+import { FormChegadaEDA } from '@/app/components/ChegadaReservaEDA';
 
 import {
   normalizarStatusReservaERN,
@@ -748,6 +749,11 @@ function EditarReservaConteudo({ id }: { id?: string }) {
             </div>
           </div>
         </form>
+
+        {/* ERN_RESERVA_CHEGADAS_V1: chegada e transfer, salvos à parte da reserva. */}
+        <div className="eda-pg-grade-form" style={{ marginTop: 16 }}>
+          <FormChegadaEDA reservaId={id} bloqueado={somenteConsultaERN || salvando || gravada} pessoas={form.quantidade_pessoas} />
+        </div>
       </div>
     </PaginaEDA>
   );

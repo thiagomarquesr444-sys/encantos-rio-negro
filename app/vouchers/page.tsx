@@ -13,6 +13,7 @@ import React, {
 } from 'react';
 import Link from 'next/link';
 import { baixarDocumentoPremiumERN } from '@/lib/documentosPremiumERN';
+import { carregarChegadaDaReserva, textoChegadaVoucher, textoTransferVoucher } from '@/lib/chegadasERN';
 import { consultarIdentificacaoEmpresaERN } from '@/lib/identificacaoEmpresaERN';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { reservaOperacionalERN } from '@/lib/reservasStatusERN';
@@ -804,8 +805,21 @@ export default function VouchersPage() {
           ? 'Ativo - utilização sujeita a conferência'
           : status;
 
+      // ERN_RESERVA_CHEGADAS_V1: chegada e transfer da reserva no voucher (opcional).
+      let chegadaVoucher: Awaited<ReturnType<typeof carregarChegadaDaReserva>> = null;
+      if (atual.reserva_id) {
+        try { chegadaVoucher = await carregarChegadaDaReserva(String(atual.reserva_id)); } catch { chegadaVoucher = null; }
+      }
+
       baixarDocumentoPremiumERN({
         titulo: 'Voucher Turístico',
+        destaque: chegadaVoucher ? {
+          titulo: 'Chegada e transfer',
+          linhas: [
+            { rotulo: 'Sua chegada', texto: textoChegadaVoucher(chegadaVoucher) },
+            { rotulo: 'Quem busca', texto: textoTransferVoucher(chegadaVoucher) + (chegadaVoucher.transfer_contato ? ` · contato ${chegadaVoucher.transfer_contato}` : '') },
+          ],
+        } : undefined,
         subtitulo: 'Documento operacional da viagem',
         tipo: 'Voucher',
         empresa: empresa.nome,

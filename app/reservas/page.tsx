@@ -24,6 +24,7 @@ import {
   VazioEDA,
   type TomEDA,
 } from '@/app/components/PadraoPaginaEDA';
+import { ResumoChegadaEDA } from '@/app/components/ChegadaReservaEDA';
 import SituacaoPeriodoReservaERN, {
   referenciaManausERN,
 } from '@/app/components/SituacaoPeriodoReservaERN';
@@ -942,6 +943,8 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
                   </>
                 )}
               </div>
+
+              {idSelecionado != null && <ResumoChegadaEDA reservaId={String(idSelecionado)} linkEditar={`/reservas/editar/${idURL}`} />}
 
               <div className="eda-pg-bloco">
                 <p className="eda-pg-bloco-titulo">Operação</p>

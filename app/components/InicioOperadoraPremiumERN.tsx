@@ -16,6 +16,7 @@ import { analisarPendenciasDashboardERN } from '@/lib/financeiroDashboardERN';
 import { normalizarStatusReservaERN, reservaOperacionalERN } from '@/lib/reservasStatusERN';
 import ArcoFlechaERN from './ArcoFlechaERN';
 import { BarrasAgrupadasEDA, TendenciaEDA } from './GraficosEDA';
+import { listarChegadas, temTransfer, MODOS_CHEGADA, VEICULOS_TRANSFER, type ChegadaPainel } from '@/lib/chegadasERN';
 import './inicio-operadora-premium.css';
 
 export type ReservaInicioERN = {
@@ -145,6 +146,16 @@ export default function InicioOperadoraPremiumERN({
   const [financeiro, setFinanceiro] = useState<RegistroFinanceiroERN[] | null>(null);
   const [erroFinanceiro, setErroFinanceiro] = useState('');
   const [janela, setJanela] = useState<'hoje' | '7' | '30'>('7');
+  const [chegadas, setChegadas] = useState<ChegadaPainel[] | null>(null);
+
+  // ERN_RESERVA_CHEGADAS_V1: chegadas dos próximos 7 dias (a partir de agora menos 6 horas).
+  useEffect(() => {
+    let ativo = true;
+    const inicio = new Date(Date.now() - 6 * 3600_000).toISOString();
+    const fim = new Date(Date.now() + 7 * 24 * 3600_000).toISOString();
+    listarChegadas(inicio, fim).then(l => { if (ativo) setChegadas(l); }).catch(() => { if (ativo) setChegadas([]); });
+    return () => { ativo = false; };
+  }, []);
 
   // Nome do usuário, embarcações, guias e vitrine na Rede.
   useEffect(() => {
@@ -282,12 +293,21 @@ export default function InicioOperadoraPremiumERN({
     if (resumo.semHorario.length) {
       lista.push({ tom: 'nt', icone: 'relogio', titulo: `${plural(resumo.semHorario.length, 'saída', 'saídas')} sem horário`, detalhe: 'informe o horário de embarque', acao: 'Ajustar', href: `/reservas?alerta=sem_horario&${intervalo}`, peso: 50 });
     }
+    const semTransfer = (chegadas ?? []).filter(c => !temTransfer(c));
+    if (semTransfer.length) {
+      const c = semTransfer[0];
+      lista.push({ tom: 'er', icone: 'equipe', titulo: semTransfer.length === 1 ? 'Chegada sem transfer' : `${semTransfer.length} chegadas sem transfer`, detalhe: `${c.reserva?.cliente || 'Cliente'} · ${c.chegada_em ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Manaus', weekday: 'short', hour: '2-digit', minute: '2-digit' }).format(new Date(c.chegada_em)) : 'data a definir'}`, acao: 'Combinar transfer', href: `/reservas/editar/${c.reserva_id}#chegada`, peso: 95 });
+    }
+    const aConfirmar = (chegadas ?? []).filter(c => c.situacao_horario === 'a_confirmar' && c.chegada_em && new Date(c.chegada_em).getTime() - Date.now() < 48 * 3600_000);
+    if (aConfirmar.length) {
+      lista.push({ tom: 'at', icone: 'relogio', titulo: `${plural(aConfirmar.length, 'chegada', 'chegadas')} com horário a confirmar`, detalhe: 'nas próximas 48 horas', acao: 'Confirmar', href: `/reservas/editar/${aConfirmar[0].reserva_id}#chegada`, peso: 75 });
+    }
     const rascunhos = demandas.filter(d => d.status === 'rascunho').length;
     if (rascunhos) {
       lista.push({ tom: 'nt', icone: 'lista', titulo: `${plural(rascunhos, 'demanda em rascunho', 'demandas em rascunho')}`, detalhe: 'ainda não abertas', acao: 'Ver demandas', href: '/demandas?status=rascunho', peso: 40 });
     }
     return lista.sort((a, b) => b.peso - a.peso);
-  }, [fin, resumo, demandas, hoje, dia7]);
+  }, [fin, resumo, demandas, hoje, dia7, chegadas]);
 
   const demandasDestaque = useMemo(() => [...demandas]
     .sort((a, b) => (a.status === 'aberta' ? -1 : 0) - (b.status === 'aberta' ? -1 : 0) || (a.data_inicio ?? '9999').localeCompare(b.data_inicio ?? '9999'))
@@ -409,6 +429,35 @@ export default function InicioOperadoraPremiumERN({
           )}
         </section>
       </div>
+
+      {chegadas && chegadas.length > 0 && (
+        <section className="eda-card eda-chegadas" aria-labelledby="eda-chg" style={{ marginTop: 16 }}>
+          <div className="eda-ct">
+            <span><p className="eda-eb eda-eb-p">Logística</p><h2 id="eda-chg">Chegadas e transfers · próximos 7 dias</h2></span>
+            <Link href="/reservas" className="eda-lk">Ver reservas <Icone nome="seta" tamanho={13} /></Link>
+          </div>
+          <ul className="eda-lista">
+            {chegadas.slice(0, 5).map(c => {
+              const quando = c.chegada_em ? new Date(c.chegada_em) : null;
+              const hora = quando ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Manaus', hour: '2-digit', minute: '2-digit' }).format(quando) : '--:--';
+              const dia = quando ? new Intl.DateTimeFormat('pt-BR', { timeZone: 'America/Manaus', weekday: 'short', day: 'numeric' }).format(quando).replace('.', '').toUpperCase() : '';
+              const [tom, texto]: [Tom, string] = !temTransfer(c) ? ['er', 'Sem transfer'] : c.situacao_horario === 'a_confirmar' ? ['at', 'Horário a confirmar'] : ['ok', 'Transfer combinado'];
+              return (
+                <li key={c.reserva_id}>
+                  <Link href={`/reservas/editar/${c.reserva_id}#chegada`} className="eda-item eda-item-agenda">
+                    <span className="eda-hora"><b>{hora}</b><small>{dia}</small></span>
+                    <span className="eda-txt">
+                      <b>{c.reserva?.cliente || 'Cliente'}{c.passageiros ? ` · ${plural(c.passageiros, 'pessoa', 'pessoas')}` : ''}</b>
+                      <small>{[MODOS_CHEGADA[c.modo], [c.companhia, c.numero].filter(Boolean).join(' '), [c.origem, c.destino].filter(Boolean).join(' → ')].filter(Boolean).join(' · ')}{temTransfer(c) ? ` · busca: ${c.transfer_responsavel}${c.transfer_veiculo ? ` (${VEICULOS_TRANSFER[c.transfer_veiculo]})` : ''}` : ''}</small>
+                    </span>
+                    <span className={`eda-pill eda-${tom}`}><i />{texto}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
 
       <div className="eda-linha eda-linha-a">
         <section className="eda-card" aria-labelledby="eda-fin">

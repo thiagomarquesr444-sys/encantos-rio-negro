@@ -28,6 +28,8 @@ export type DocumentoPremiumERN = {
   dataGeracao?: Date;
   /** Tipo exibido no canto do cabeçalho (ex.: Voucher, Relatório financeiro). */
   tipo?: string;
+  /** Faixa de destaque (ex.: chegada e transfer do voucher). */
+  destaque?: { titulo: string; linhas: { rotulo: string; texto: string }[] };
 };
 
 type CorERN = [number, number, number];
@@ -172,6 +174,38 @@ export function criarDocumentoPremiumERN(dados: DocumentoPremiumERN): jsPDF {
     y = inicioLinha + alturaLinha + 3;
   }
   y += 3;
+
+  if (dados.destaque && dados.destaque.linhas.length) {
+    const blocos = dados.destaque.linhas.map(l => ({
+      rotulo: l.rotulo.toUpperCase(),
+      texto: quebrar(texto(l.texto), area - 14, 9),
+    }));
+    const alturaBloco = 10 + blocos.reduce((t, b) => t + 4 + b.texto.length * 4.6 + 2, 0);
+    garantir(alturaBloco + 6);
+    pdf.setFillColor(...CORES_PDF.ouroSuave);
+    pdf.roundedRect(MARGEM, y - 2, area, alturaBloco, 3, 3, "F");
+    pdf.setFillColor(...CORES_PDF.ouro);
+    pdf.rect(MARGEM, y - 2, 1.2, alturaBloco, "F");
+    let pos = y + 5;
+    pdf.setFont("helvetica", "bold");
+    pdf.setFontSize(10);
+    pdf.setTextColor(...CORES_PDF.texto);
+    pdf.text(dados.destaque.titulo, MARGEM + 7, pos);
+    pos += 6;
+    for (const b of blocos) {
+      pdf.setFont("helvetica", "bold");
+      pdf.setFontSize(7.2);
+      pdf.setTextColor(154, 93, 20);
+      pdf.text(b.rotulo, MARGEM + 7, pos);
+      pos += 4;
+      pdf.setFont("helvetica", "normal");
+      pdf.setFontSize(9);
+      pdf.setTextColor(...CORES_PDF.texto);
+      for (const linha of b.texto) { pdf.text(linha, MARGEM + 7, pos); pos += 4.6; }
+      pos += 2;
+    }
+    y += alturaBloco + 6;
+  }
 
   if (dados.tabela) {
     const tabela = dados.tabela;
