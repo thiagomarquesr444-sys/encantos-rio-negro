@@ -1,6 +1,8 @@
 'use client';
 
-// Cabecalho Premium: sem sobreposicao de fauna. ERN_GLOBAL_V432
+// ERN_MENU_LATERAL_V1: menu lateral fixo da Encantos Gestão (computador),
+// barra superior + barra inferior de atalhos (celular). Mesma lógica de
+// acessos por função, acesso editorial e saída da conta.
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
@@ -9,6 +11,8 @@ import { usePathname } from 'next/navigation';
 import { useAppConfig } from '@/app/context/AppContext';
 import { supabase } from '@/lib/supabase';
 import LogoERN from '@/app/components/LogoERN';
+import IconeERN, { type NomeIconeERN } from '@/app/components/IconeERN';
+import TemaRapidoOperadoraERN from '@/app/components/TemaRapidoOperadoraERN';
 import {
   useModulosEquipeERN,
   permiteLinkEquipeERN,
@@ -18,6 +22,7 @@ type NavItem = {
   label: string;
   href: string;
   descricao?: string;
+  icone: NomeIconeERN;
 };
 
 type NavGroup = {
@@ -27,21 +32,9 @@ type NavGroup = {
 };
 
 const PRINCIPAIS: NavItem[] = [
-  {
-    label: 'Painel',
-    href: '/dashboard',
-    descricao: 'Visão geral da sua empresa',
-  },
-  {
-    label: 'Mapa ERN',
-    href: '/dashboard/mapa',
-    descricao: 'Território, localidades e referências do Rio Negro',
-  },
-  {
-    label: 'Demandas',
-    href: '/demandas',
-    descricao: 'Serviços que sua empresa precisa contratar',
-  },
+  { label: 'Painel', href: '/dashboard', descricao: 'Visão geral da sua empresa', icone: 'casa' },
+  { label: 'Reservas', href: '/reservas', descricao: 'Solicitações, confirmações e operação', icone: 'calendario' },
+  { label: 'Demandas', href: '/demandas', descricao: 'Serviços que sua empresa precisa contratar', icone: 'lista' },
 ];
 
 const GRUPOS: NavGroup[] = [
@@ -49,189 +42,78 @@ const GRUPOS: NavGroup[] = [
     id: 'operacao',
     label: 'Operação',
     itens: [
-      {
-        label: 'Clientes',
-        href: '/clientes',
-        descricao: 'Cadastro e relacionamento com viajantes',
-      },
-      {
-        label: 'Reservas',
-        href: '/reservas',
-        descricao: 'Solicitações, confirmações e operação',
-      },
-      {
-        label: 'Passeios',
-        href: '/passeios',
-        descricao: 'Roteiros, experiências e catálogo',
-      },
-      {
-        label: 'Vouchers',
-        href: '/vouchers',
-        descricao: 'Documentos vinculados às reservas',
-      },
-      {
-        label: 'Central de Documentos',
-        href: '/documentos',
-        descricao: 'PDFs, vouchers e demonstrativos da operadora',
-      },
+      { label: 'Clientes', href: '/clientes', descricao: 'Cadastro e relacionamento com viajantes', icone: 'equipe' },
+      { label: 'Passeios', href: '/passeios', descricao: 'Roteiros, experiências e catálogo', icone: 'rio' },
+      { label: 'Vouchers', href: '/vouchers', descricao: 'Documentos vinculados às reservas', icone: 'voucher' },
+      { label: 'Central de Documentos', href: '/documentos', descricao: 'PDFs, vouchers e demonstrativos da operadora', icone: 'documento' },
+      { label: 'Mapa operacional', href: '/dashboard/mapa', descricao: 'Território, localidades e referências', icone: 'mapa' },
     ],
   },
   {
     id: 'estrutura',
     label: 'Estrutura',
     itens: [
-      {
-        label: 'Hospedagens',
-        href: '/hospedagens',
-        descricao: 'Hotéis, pousadas e unidades',
-      },
-      {
-        label: 'Embarcações',
-        href: '/embarcacoes',
-        descricao: 'Barcos e capacidade operacional',
-      },
-      {
-        label: 'Guias',
-        href: '/guias',
-        descricao: 'Profissionais e disponibilidade',
-      },
+      { label: 'Hospedagens', href: '/hospedagens', descricao: 'Hotéis, pousadas e unidades', icone: 'cama' },
+      { label: 'Embarcações', href: '/embarcacoes', descricao: 'Barcos e capacidade operacional', icone: 'fornecedor' },
+      { label: 'Guias', href: '/guias', descricao: 'Profissionais e disponibilidade', icone: 'guia' },
+      { label: 'Parceiros', href: '/parceiros', descricao: 'Rede operacional e fornecedores', icone: 'parceria' },
     ],
   },
   {
     id: 'financeiro',
     label: 'Financeiro',
     itens: [
-      {
-        label: 'Visão geral',
-        href: '/financeiro',
-        descricao: 'Saldo, recebimentos e pagamentos',
-      },
-      {
-        label: 'Nova receita',
-        href: '/financeiro/receita/novo',
-        descricao: 'Registrar uma entrada financeira',
-      },
-      {
-        label: 'Nova despesa',
-        href: '/financeiro/despesa/novo',
-        descricao: 'Registrar uma saída financeira',
-      },
-      {
-        label: 'Exportar relatório',
-        href: '/financeiro/exportar',
-        descricao: 'Gerar relatório financeiro em CSV',
-      },
-      {
-        label: 'Painel Fiscal',
-        href: '/fiscal',
-        descricao: 'Acompanhamento de simulações fiscais',
-      },
-    ],
-  },
-  {
-    id: 'relacionamento',
-    label: 'Relacionamento',
-    itens: [
-      {
-        label: 'Parceiros',
-        href: '/parceiros',
-        descricao: 'Rede operacional e fornecedores',
-      },
-      {
-        label: 'Relatórios',
-        href: '/relatorios',
-        descricao: 'Informações consolidadas',
-      },
+      { label: 'Visão geral', href: '/financeiro', descricao: 'Saldo, recebimentos e pagamentos', icone: 'financeiro' },
+      { label: 'Nova receita', href: '/financeiro/receita/novo', descricao: 'Registrar uma entrada financeira', icone: 'mais' },
+      { label: 'Nova despesa', href: '/financeiro/despesa/novo', descricao: 'Registrar uma saída financeira', icone: 'menos' },
+      { label: 'Relatórios', href: '/relatorios', descricao: 'Informações consolidadas', icone: 'grafico' },
+      { label: 'Exportar relatório', href: '/financeiro/exportar', descricao: 'Gerar relatório financeiro em CSV', icone: 'exportar' },
+      { label: 'Painel Fiscal', href: '/fiscal', descricao: 'Acompanhamento de simulações fiscais', icone: 'documento' },
     ],
   },
 ];
 
-const CONTA: NavItem[] = [
-  {
-    label: 'Publica\u00e7\u00f5es na Rede',
-    href: '/configuracoes/publicacoes',
-    descricao: 'Criar, revisar e publicar experi\u00eancias da operadora',
-  },
-  { label: 'Perfil p\u00fablico', href: '/configuracoes/perfil-publico', descricao: 'Apresenta\u00e7\u00e3o, imagens e contatos na Rede ERN' },
-  { label: 'Configurações', href: '/configuracoes' },
-  { label: 'Planos', href: '/planos' },
-  { label: 'Ver portal público', href: '/' },
+const REDE: NavItem[] = [
+  { label: 'Publicações na Rede', href: '/configuracoes/publicacoes', descricao: 'Criar, revisar e publicar experiências da operadora', icone: 'estrela' },
+  { label: 'Perfil público', href: '/configuracoes/perfil-publico', descricao: 'Apresentação, imagens e contatos na Rede EDA', icone: 'perfil' },
 ];
+
+const CONTA: NavItem[] = [
+  { label: 'Configurações', href: '/configuracoes', icone: 'engrenagem' },
+  { label: 'Planos', href: '/planos', icone: 'diamante' },
+  { label: 'Ver portal público', href: '/', icone: 'idiomas' },
+];
+
+const normalizar = (texto: string) => texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
 
 const FOCO =
   'focus-visible:outline focus-visible:outline-2 ' +
   'focus-visible:outline-offset-2 focus-visible:outline-[#E3A144]';
 
-const BOTAO_TOPO =
-  'inline-flex min-h-11 items-center justify-center gap-2 ' +
-  'rounded-xl px-3 text-[13px] font-semibold transition-colors ' +
-  'motion-reduce:transition-none ' +
-  FOCO;
-
 function rotaAtiva(pathname: string, href: string): boolean {
-  if (
-    href === '/' ||
-    href === '/dashboard' ||
-    href === '/financeiro'
-  ) {
+  if (href === '/' || href === '/dashboard' || href === '/financeiro') {
     return pathname === href;
   }
-
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function Seta({ aberta }: { aberta: boolean }) {
-  return (
-    <svg
-      aria-hidden="true"
-      className={`h-4 w-4 shrink-0 transition-transform motion-reduce:transition-none ${
-        aberta ? 'rotate-180' : ''
-      }`}
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      viewBox="0 0 24 24"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="m6 9 6 6 6-6"
-      />
-    </svg>
-  );
-}
-
-type LinkNavegacaoProps = {
-  item: NavItem;
-  pathname: string;
-  aoNavegar: () => void;
-};
-
-function LinkNavegacao({
-  item,
-  pathname,
-  aoNavegar,
-}: LinkNavegacaoProps) {
+function LinkLateral({ item, pathname, aoNavegar, compacto = false }: { item: NavItem; pathname: string; aoNavegar: () => void; compacto?: boolean }) {
   const ativo = rotaAtiva(pathname, item.href);
-
   return (
     <Link
       href={item.href}
       onClick={aoNavegar}
       aria-current={ativo ? 'page' : undefined}
-      className={`block min-h-12 rounded-xl px-4 py-3 transition-colors motion-reduce:transition-none ${FOCO} ${
+      title={compacto ? item.label : item.descricao}
+      aria-label={compacto ? item.label : undefined}
+      className={`flex min-h-10 items-center gap-3 rounded-xl text-[13.5px] ${compacto ? 'justify-center px-0' : 'px-3'} font-semibold transition-colors motion-reduce:transition-none ${FOCO} ${
         ativo
-          ? 'bg-[#E3A144]/10 text-[#F4C77E]'
-          : 'text-[#EDEDE3] hover:bg-white/5'
+          ? 'bg-gradient-to-b from-[#F7D595] to-[#E3A144] text-[#07110E] shadow-[inset_0_1px_0_rgb(255_255_255/55%)]'
+          : 'text-[#CDD8D2] hover:bg-white/[0.06] hover:text-white'
       }`}
     >
-      <span className="block text-sm font-semibold">{item.label}</span>
-
-      {item.descricao && (
-        <span className="mt-1 block text-xs leading-5 text-[#A8BCAF]">
-          {item.descricao}
-        </span>
-      )}
+      <IconeERN nome={item.icone} tamanho={18} className="shrink-0" />
+      {!compacto && <span className="truncate">{item.label}</span>}
     </Link>
   );
 }
@@ -297,16 +179,15 @@ export default function Sidebar() {
   const [acessoEditorial, setAcessoEditorial] = useState(false);
   const [nomeContaERN, setNomeContaERN] = useState('');
   const [mobileAberto, setMobileAberto] = useState(false);
-  const [dropdown, setDropdown] = useState<string | null>(null);
   const [saindo, setSaindo] = useState(false);
   const [erroSaida, setErroSaida] = useState<string | null>(null);
 
-  const headerRef = useRef<HTMLElement>(null);
   const dialogRef = useRef<HTMLDialogElement>(null);
-  const acionadorDropdownRef = useRef<HTMLButtonElement | null>(null);
   const saidaEmAndamento = useRef(false);
 
-  const nomeSistema = config.nome_sistema || 'Encantos Gestão';
+  // A marca do painel é sempre Encantos Gestão (o nome antigo salvo no banco não se sobrepõe).
+  const nomeSistema = 'Encantos Gestão';
+  void config;
 
 
 
@@ -393,560 +274,344 @@ export default function Sidebar() {
     };
   }, [pathname]);
 
-  const itensConta: NavItem[] = acessoEditorial
+  const itensRede: NavItem[] = acessoEditorial
     ? [
-        {
-          label: 'Comando ERN',
-          href: '/comando',
-          descricao: 'Perfil oficial e publica\u00e7\u00f5es editoriais da plataforma',
-        },
-        ...CONTA,
+        ...REDE,
+        { label: 'Comando EDA', href: '/comando', descricao: 'Perfil oficial e publicações editoriais da plataforma', icone: 'estrela' },
       ]
-    : CONTA;
+    : REDE;
+  const itensConta = CONTA;
+  const [busca, setBusca] = useState('');
+  const [gruposAbertos, setGruposAbertos] = useState<string[]>(() =>
+    GRUPOS.filter(grupo => grupo.itens.some(item => rotaAtiva(pathname, item.href))).map(grupo => grupo.id));
+  const buscaRef = useRef<HTMLInputElement>(null);
+  // ERN_MENU_RECOLHIVEL_V1: menu estreito (só ícones) quando o usuário quer mais tela.
+  const [recolhido, setRecolhido] = useState(false);
+  useEffect(() => {
+    try { setRecolhido(localStorage.getItem('ern-menu-recolhido-v1') === 'sim'); } catch { /* preferência opcional */ }
+  }, []);
+  useEffect(() => {
+    document.documentElement.style.setProperty('--ern-menu-largura', recolhido ? '76px' : '264px');
+  }, [recolhido]);
+  function alternarRecolhido(): void {
+    setRecolhido(atual => {
+      const proximo = !atual;
+      try { localStorage.setItem('ern-menu-recolhido-v1', proximo ? 'sim' : 'nao'); } catch { /* preferência opcional */ }
+      return proximo;
+    });
+  }
 
   function fecharMenus(): void {
-    setDropdown(null);
     setMobileAberto(false);
+    setBusca('');
   }
 
   useEffect(() => {
-    setDropdown(null);
     setMobileAberto(false);
+    setBusca('');
+    // Abre automaticamente o grupo da página atual.
+    const atual = GRUPOS.find(grupo => grupo.itens.some(item => rotaAtiva(pathname, item.href)));
+    if (atual) setGruposAbertos(abertos => abertos.includes(atual.id) ? abertos : [...abertos, atual.id]);
   }, [pathname]);
 
+  // Ctrl+K (ou Cmd+K) leva à busca do menu.
   useEffect(() => {
     function aoPressionar(evento: KeyboardEvent): void {
-      if (evento.key !== 'Escape') return;
-
-      setDropdown(null);
-      acionadorDropdownRef.current?.focus();
-    }
-
-    function aoTocarFora(evento: PointerEvent): void {
-      if (
-        evento.target instanceof Node &&
-        !headerRef.current?.contains(evento.target)
-      ) {
-        setDropdown(null);
+      if ((evento.ctrlKey || evento.metaKey) && evento.key.toLowerCase() === 'k') {
+        evento.preventDefault();
+        if (window.matchMedia('(min-width: 1280px)').matches) {
+          setRecolhido(false);
+          setTimeout(() => buscaRef.current?.focus(), 60);
+        }
+        else setMobileAberto(true);
       }
     }
-
     document.addEventListener('keydown', aoPressionar);
-    document.addEventListener('pointerdown', aoTocarFora);
-
-    return () => {
-      document.removeEventListener('keydown', aoPressionar);
-      document.removeEventListener('pointerdown', aoTocarFora);
-    };
+    return () => document.removeEventListener('keydown', aoPressionar);
   }, []);
 
   useEffect(() => {
-    // Mesmo breakpoint usado pela navegação desktop.
     const media = window.matchMedia('(min-width: 1280px)');
-
     function ajustarMenus(): void {
-      setDropdown(null);
-
-      if (media.matches) {
-        setMobileAberto(false);
-      }
+      if (media.matches) setMobileAberto(false);
     }
-
     media.addEventListener('change', ajustarMenus);
-
-    return () => {
-      media.removeEventListener('change', ajustarMenus);
-    };
+    return () => media.removeEventListener('change', ajustarMenus);
   }, []);
 
   useEffect(() => {
     const dialog = dialogRef.current;
-
     if (!dialog) return;
-
     if (!mobileAberto) {
       if (dialog.open) dialog.close();
       return;
     }
-
     const overflowAnterior = document.body.style.overflow;
-
     document.body.style.overflow = 'hidden';
-
-    if (!dialog.open) {
-      dialog.showModal();
-    }
-
+    if (!dialog.open) dialog.showModal();
     return () => {
       document.body.style.overflow = overflowAnterior;
-
-      if (dialog.open) {
-        dialog.close();
-      }
+      if (dialog.open) dialog.close();
     };
   }, [mobileAberto]);
 
-  function alternarDropdown(
-    id: string,
-    acionador: HTMLButtonElement,
-  ): void {
-    acionadorDropdownRef.current = acionador;
-    setDropdown((atual) => (atual === id ? null : id));
-  }
-
   async function sair(): Promise<void> {
     if (saidaEmAndamento.current) return;
-
     saidaEmAndamento.current = true;
     setSaindo(true);
     setErroSaida(null);
-
     try {
       const { error } = await supabase.auth.signOut();
-
       if (error) throw error;
-
       window.location.assign('/acesso');
     } catch {
-      setErroSaida(
-        'Não foi possível sair da conta. Verifique sua conexão e tente novamente.',
-      );
+      setErroSaida('Não foi possível sair da conta. Verifique sua conexão e tente novamente.');
     } finally {
       saidaEmAndamento.current = false;
       setSaindo(false);
     }
   }
 
-  function grupoAtivo(grupo: NavGroup): boolean {
-    if (
-      grupo.id === 'financeiro' &&
-      (pathname === '/financeiro' ||
-        pathname.startsWith('/financeiro/'))
-    ) {
-      return true;
-    }
+  const termo = normalizar(busca);
+  const combina = (item: NavItem) => !termo || normalizar(`${item.label} ${item.descricao ?? ''}`).includes(termo);
+  const iniciais = (nomeContaERN || 'EDA').split(/\s+/).filter(Boolean).slice(0, 2).map(parte => parte[0]?.toUpperCase()).join('');
 
-    return grupo.itens.some((item) => rotaAtiva(pathname, item.href));
-  }
-
-  function botaoSair() {
+  function menuCompacto() {
+    const todos = [
+      ...principaisVisiveisERN,
+      ...gruposVisiveisERN.flatMap(grupo => grupo.itens),
+      ...itensRede.filter(linkPermitidoERN),
+      ...itensConta.filter(linkPermitidoERN),
+    ];
     return (
-      <button
-        type="button"
-        disabled={saindo}
-        onClick={() => void sair()}
-        className={`mt-2 min-h-12 w-full rounded-xl px-4 py-3 text-left text-sm font-semibold text-rose-300 transition-colors hover:bg-rose-400/10 disabled:cursor-wait disabled:opacity-50 motion-reduce:transition-none ${FOCO}`}
-      >
-        {saindo ? 'Saindo...' : 'Sair da conta'}
-      </button>
+      <nav aria-label="Navegação principal" className="mt-3 grid gap-1">
+        <button type="button" onClick={() => { setRecolhido(false); setTimeout(() => buscaRef.current?.focus(), 60); }} title="Buscar no menu (Ctrl K)" aria-label="Buscar no menu" className={`grid min-h-10 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-[#8FA39A] hover:text-white ${FOCO}`}>
+          <IconeERN nome="busca" tamanho={17} />
+        </button>
+        {avisoModulosERN}
+        {todos.map((item, i) => (
+          <div key={item.href} className={i === principaisVisiveisERN.length ? 'mt-1 border-t border-white/[0.07] pt-1' : undefined}>
+            <LinkLateral item={item} pathname={pathname} aoNavegar={fecharMenus} compacto />
+          </div>
+        ))}
+      </nav>
     );
   }
 
-  return (
-    <>
-      <header
-        style={{
-          /* ERN_MENU_TEMA_DIRETO_V1 */
-          backgroundColor: '#0c1112',
-          color: '#f1f4ef',
-          borderColor: 'rgba(227,161,68,.20)',
-          transitionProperty: 'box-shadow',
-        }}
-        ref={headerRef}
-        className="ern-navegacao-premium fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-[#0C1112] text-[#F1F4EF]"
-        onBlur={(evento) => {
-          const destino = evento.relatedTarget;
+  function conteudoMenu(contexto: 'lateral' | 'movel') {
+    const principais = principaisVisiveisERN.filter(combina);
+    const grupos = gruposVisiveisERN.map(grupo => ({ ...grupo, itens: grupo.itens.filter(combina) })).filter(grupo => grupo.itens.length > 0);
+    const rede = itensRede.filter(linkPermitidoERN).filter(combina);
+    const conta = itensConta.filter(linkPermitidoERN).filter(combina);
+    const nada = !principais.length && !grupos.length && !rede.length && !conta.length;
+    return (
+      <>
+        <label className="mt-3 flex min-h-10 items-center gap-2 rounded-xl border border-white/10 bg-white/[0.04] px-3 text-[#8FA39A] focus-within:border-[#E3A144]/60">
+          <IconeERN nome="busca" tamanho={16} />
+          <input
+            ref={contexto === 'lateral' ? buscaRef : undefined}
+            type="search"
+            value={busca}
+            onChange={evento => setBusca(evento.target.value)}
+            placeholder="Buscar no menu…"
+            aria-label="Buscar no menu"
+            className="min-w-0 flex-1 bg-transparent text-[13px] text-[#F0F0E8] outline-none placeholder:text-[#8FA39A]"
+          />
+          {contexto === 'lateral' && <kbd className="rounded-md border border-white/15 px-1.5 text-[10.5px] text-[#8FA39A]">Ctrl K</kbd>}
+        </label>
 
-          if (
-            !(destino instanceof Node) ||
-            !evento.currentTarget.contains(destino)
-          ) {
-            setDropdown(null);
-          }
-        }}
-      >
-        {/* Navegacao executiva ERN Premium */}
-        <div className="mx-auto flex h-[82px] max-w-[1600px] items-center justify-between gap-3 px-4 md:px-6">
-          <Link
-            href="/dashboard"
-            onClick={fecharMenus}
-            className={`flex min-w-0 items-center gap-3 rounded-xl xl:max-w-[240px] ${FOCO}`}
-          >
-            <LogoERN prioridade />
+        <nav aria-label={contexto === 'lateral' ? 'Navegação principal' : 'Navegação mobile'} className="mt-3 grid gap-0.5">
+          {avisoModulosERN}
+          {principais.map(item => <LinkLateral key={item.href} item={item} pathname={pathname} aoNavegar={fecharMenus} />)}
 
-            <span className="min-w-0">
-              <span
-                className="block truncate text-sm font-semibold text-[#F0F0E8] sm:text-base"
-                style={{
-                  fontFamily: 'var(--font-fraunces), serif',
-                }}
-              >
-                {nomeSistema}
-              </span>
-
-              <span className="mt-1 block text-[10px] uppercase tracking-widest text-[#B4C8BB]">
-                Gestão integrada
-              </span>
-            </span>
-          </Link>
-
-          <nav
-            aria-label="Navegação principal"
-            className="hidden shrink-0 items-center gap-1 xl:flex"
-          >
-            {avisoModulosERN}
-            {principaisVisiveisERN.map((item) => {
-              const ativo = rotaAtiva(pathname, item.href);
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  onClick={fecharMenus}
-                  aria-current={ativo ? 'page' : undefined}
-                  className={`${BOTAO_TOPO} ${
-                    ativo
-                      ? 'bg-[#E3A144]/10 text-[#F4C77E]'
-                      : 'text-[#B4C8BB] hover:bg-white/5 hover:text-white'
-                  }`}
+          {grupos.map(grupo => {
+            const aberto = Boolean(termo) || gruposAbertos.includes(grupo.id);
+            return (
+              <div key={grupo.id} className="mt-2">
+                <button
+                  type="button"
+                  aria-expanded={aberto}
+                  onClick={() => setGruposAbertos(abertos => abertos.includes(grupo.id) ? abertos.filter(id => id !== grupo.id) : [...abertos, grupo.id])}
+                  className={`flex min-h-8 w-full items-center justify-between rounded-lg px-3 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#7F968B] hover:text-[#CDD8D2] ${FOCO}`}
                 >
-                  {item.label}
-                </Link>
-              );
-            })}
-
-            {gruposVisiveisERN.map((grupo) => {
-              const aberto = dropdown === grupo.id;
-              const ativo = grupoAtivo(grupo);
-              const painelId = `nav-desktop-${grupo.id}`;
-
-              return (
-                <div key={grupo.id} className="relative">
-                  <button
-                    type="button"
-                    aria-expanded={aberto}
-                    aria-controls={painelId}
-                    onClick={(evento) =>
-                      alternarDropdown(grupo.id, evento.currentTarget)
-                    }
-                    className={`${BOTAO_TOPO} ${
-                      aberto || ativo
-                        ? 'bg-white/5 text-[#F4C77E]'
-                        : 'text-[#B4C8BB] hover:bg-white/5 hover:text-white'
-                    }`}
-                  >
-                    {grupo.label}
-                    <Seta aberta={aberto} />
-                  </button>
-
-                  <div
-                    id={painelId}
-                    hidden={!aberto}
-                    className="absolute right-0 top-[calc(100%+12px)] w-72 rounded-2xl border border-[#E3A144]/15 bg-[#151A1B] p-2 shadow-2xl"
-                  >
-                    {grupo.itens.map((item) => (
-                      <LinkNavegacao
-                        key={item.href}
-                        item={item}
-                        pathname={pathname}
-                        aoNavegar={fecharMenus}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
-          </nav>
-
-          <div className="hidden shrink-0 xl:block">
-            <div className="relative">
-              <button
-                type="button"
-                aria-expanded={dropdown === 'conta'}
-                aria-controls="nav-conta"
-                onClick={(evento) =>
-                  alternarDropdown('conta', evento.currentTarget)
-                }
-                className={`${BOTAO_TOPO} border border-white/10 text-[#EDEDE3] hover:bg-white/5`}
-              >
-                <span className="ern-conta-nome" title={nomeContaERN || undefined}>{nomeContaERN || 'Minha conta'}</span>
-                <Seta aberta={dropdown === 'conta'} />
-              </button>
-
-              <div
-                id="nav-conta"
-                hidden={dropdown !== 'conta'}
-                className="absolute right-0 top-[calc(100%+12px)] w-72 rounded-2xl border border-[#E3A144]/15 bg-[#151A1B] p-2 shadow-2xl"
-              >
-                <p className="px-4 py-3 text-xs font-semibold uppercase tracking-widest text-[#E3A144]">
-                  {nomeContaERN || 'Minha conta'}
-                </p>
-
-                {itensConta.filter(linkPermitidoERN).map((item) => (
-                  <LinkNavegacao
-                    key={item.href}
-                    item={item}
-                    pathname={pathname}
-                    aoNavegar={fecharMenus}
-                  />
-                ))}
-
-                {botaoSair()}
-
-                {erroSaida && (
-                  <p
-                    role="alert"
-                    className="px-4 py-3 text-sm leading-6 text-rose-300"
-                  >
-                    {erroSaida}
-                  </p>
-                )}
+                  {grupo.label}
+                  <IconeERN nome="seta" tamanho={14} className={`transition-transform motion-reduce:transition-none ${aberto ? 'rotate-180' : ''}`} />
+                </button>
+                {aberto && <div className="grid gap-0.5">{grupo.itens.map(item => <LinkLateral key={item.href} item={item} pathname={pathname} aoNavegar={fecharMenus} />)}</div>}
               </div>
-            </div>
-          </div>
+            );
+          })}
 
+          {rede.length > 0 && (
+            <div className="mt-2">
+              <p className="flex min-h-8 items-center px-3 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#7F968B]">Rede EDA</p>
+              <div className="grid gap-0.5">{rede.map(item => <LinkLateral key={item.href} item={item} pathname={pathname} aoNavegar={fecharMenus} />)}</div>
+            </div>
+          )}
+
+          {conta.length > 0 && (
+            <div className="mt-2 border-t border-white/[0.07] pt-2">
+              {conta.map(item => <LinkLateral key={item.href} item={item} pathname={pathname} aoNavegar={fecharMenus} />)}
+            </div>
+          )}
+
+          {nada && <p role="status" className="px-3 py-4 text-xs text-[#8FA39A]">Nada encontrado para “{busca}”.</p>}
+        </nav>
+      </>
+    );
+  }
+
+  function rodapeConta() {
+    return (
+      <div className="grid gap-2">
+        <TemaRapidoOperadoraERN />
+        <div className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-2.5">
+          <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-full bg-gradient-to-b from-[#F7D595] to-[#E3A144] text-xs font-extrabold text-[#07110E]">{iniciais}</span>
+          <span className="min-w-0 flex-1">
+            <span className="ern-conta-nome block truncate text-[13px] font-semibold text-[#F5F3EA]" title={nomeContaERN || undefined}>{nomeContaERN || 'Minha conta'}</span>
+            <span className="block text-[11px] text-[#8FA39A]">Encantos Gestão</span>
+          </span>
           <button
             type="button"
-            aria-label="Abrir menu de navegação"
-            aria-expanded={mobileAberto}
-            aria-controls="menu-mobile-ern"
-            aria-haspopup="dialog"
-            onClick={() => {
-              setDropdown(null);
-              acionadorDropdownRef.current = null;
-              setMobileAberto(true);
-            }}
-            className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/15 bg-white/5 text-[#EDEDE3] xl:hidden ${FOCO}`}
+            disabled={saindo}
+            onClick={() => void sair()}
+            aria-label={saindo ? 'Saindo…' : 'Sair da conta'}
+            title="Sair da conta"
+            className={`grid size-9 shrink-0 place-items-center rounded-xl text-[#F2A9A9] hover:bg-rose-400/10 disabled:cursor-wait disabled:opacity-50 ${FOCO}`}
           >
-            <svg
-              aria-hidden="true"
-              className="h-6 w-6"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={2}
-              viewBox="0 0 24 24"
-            >
-              <path strokeLinecap="round" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
+            <IconeERN nome="sair" tamanho={18} />
           </button>
         </div>
+        {erroSaida && <p role="alert" className="px-2 text-xs leading-5 text-rose-300">{erroSaida}</p>}
+      </div>
+    );
+  }
+
+  const atalhos: { label: string; href: string; icone: NomeIconeERN; destaque?: boolean }[] = [
+    { label: 'Painel', href: '/dashboard', icone: 'casa' },
+    { label: 'Reservas', href: '/reservas', icone: 'calendario' },
+    { label: 'Nova', href: '/reservas/nova', icone: 'mais', destaque: true },
+    { label: 'Financeiro', href: '/financeiro', icone: 'financeiro' },
+  ];
+
+  return (
+    <>
+      {/* Computador: menu lateral fixo */}
+      <aside
+        aria-label="Menu da Encantos Gestão"
+        data-recolhido={recolhido || undefined}
+        className={`ern-menu-lateral ern-menu-fixo fixed inset-y-0 left-0 z-50 hidden flex-col border-r border-white/[0.07] bg-[#08130F] pb-3.5 pt-4 text-[#EDEDE3] transition-[width] duration-200 motion-reduce:transition-none xl:flex ${recolhido ? 'w-[76px] px-2.5' : 'w-[264px] px-3.5'}`}
+      >
+        <div className={`flex items-center ${recolhido ? 'flex-col gap-2' : 'gap-2'}`}>
+          <Link href="/dashboard" onClick={fecharMenus} aria-label={recolhido ? nomeSistema : undefined} className={`flex min-w-0 flex-1 items-center gap-2.5 rounded-xl ${recolhido ? 'justify-center' : 'px-1.5'} ${FOCO}`}>
+            <LogoERN tamanho={38} prioridade />
+            {!recolhido && <span className="min-w-0">
+              <span className="block truncate font-[family-name:var(--font-inter)] text-base font-semibold text-[#F0F0E8]">{nomeSistema}</span>
+              <span className="block text-[9px] font-semibold uppercase tracking-[0.2em] text-[#F4C77E]">Gestão da operadora</span>
+            </span>}
+          </Link>
+          <button
+            type="button"
+            onClick={alternarRecolhido}
+            aria-expanded={!recolhido}
+            aria-label={recolhido ? 'Expandir menu' : 'Recolher menu'}
+            title={recolhido ? 'Expandir menu' : 'Recolher menu'}
+            className={`grid size-8 shrink-0 place-items-center rounded-lg border border-white/10 bg-white/[0.04] text-[#CDD8D2] hover:border-[#E3A144]/60 hover:text-[#F7D595] ${FOCO}`}
+          >
+            <IconeERN nome="seta" tamanho={16} className={`transition-transform motion-reduce:transition-none ${recolhido ? '-rotate-90' : 'rotate-90'}`} />
+          </button>
+        </div>
+        <div className="ern-menu-rolagem -mx-1 min-h-0 flex-1 overflow-y-auto px-1 pb-3">
+          {recolhido ? menuCompacto() : conteudoMenu('lateral')}
+        </div>
+        {recolhido ? (
+          <div className="grid justify-items-center gap-2">
+            <span aria-hidden="true" title={nomeContaERN || 'Minha conta'} className="grid size-9 place-items-center rounded-full bg-gradient-to-b from-[#F7D595] to-[#E3A144] text-xs font-extrabold text-[#07110E]">{iniciais}</span>
+            <button type="button" disabled={saindo} onClick={() => void sair()} aria-label="Sair da conta" title="Sair da conta" className={`grid size-9 place-items-center rounded-xl text-[#F2A9A9] hover:bg-rose-400/10 disabled:opacity-50 ${FOCO}`}>
+              <IconeERN nome="sair" tamanho={18} />
+            </button>
+          </div>
+        ) : rodapeConta()}
+      </aside>
+
+      {/* Celular e tablet: barra superior */}
+      <header className="ern-menu-fixo fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between gap-3 border-b border-white/[0.08] bg-[#08130F]/95 px-4 text-[#EDEDE3] backdrop-blur xl:hidden">
+        <Link href="/dashboard" onClick={fecharMenus} className={`flex min-w-0 items-center gap-2.5 rounded-xl ${FOCO}`}>
+          <LogoERN tamanho={36} prioridade />
+          <span className="min-w-0">
+            <span className="block truncate font-[family-name:var(--font-inter)] text-[15px] font-semibold text-[#F0F0E8]">{nomeSistema}</span>
+            <span className="block text-[9px] font-semibold uppercase tracking-[0.2em] text-[#F4C77E]">Gestão da operadora</span>
+          </span>
+        </Link>
+        <button
+          type="button"
+          aria-label="Abrir menu de navegação"
+          aria-expanded={mobileAberto}
+          aria-controls="menu-mobile-ern"
+          aria-haspopup="dialog"
+          onClick={() => setMobileAberto(true)}
+          className={`grid size-11 shrink-0 place-items-center rounded-xl border border-white/15 bg-white/5 ${FOCO}`}
+        >
+          <IconeERN nome="menu" tamanho={22} />
+        </button>
       </header>
+
+      {/* Celular: atalhos na barra inferior */}
+      <nav aria-label="Atalhos" className="ern-menu-fixo fixed inset-x-0 bottom-0 z-50 grid grid-cols-5 border-t border-white/[0.08] bg-[#08130F]/95 px-2 pt-1.5 text-[#CDD8D2] backdrop-blur md:hidden" style={{ paddingBottom: 'max(6px, env(safe-area-inset-bottom))' }}>
+        {atalhos.filter(atalho => permiteLinkEquipeERN(atalho.href, modulosEquipeERN)).map(atalho => {
+          const ativo = rotaAtiva(pathname, atalho.href);
+          return (
+            <Link key={atalho.href} href={atalho.href} aria-current={ativo ? 'page' : undefined} className={`flex flex-col items-center gap-0.5 rounded-xl py-1 text-[10.5px] font-semibold ${FOCO} ${ativo ? 'text-[#F7D595]' : ''}`}>
+              <span className={`grid place-items-center ${atalho.destaque ? 'size-9 rounded-full bg-gradient-to-b from-[#F7D595] to-[#E3A144] text-[#07110E]' : 'size-7'}`}><IconeERN nome={atalho.icone} tamanho={atalho.destaque ? 20 : 21} /></span>
+              {atalho.label}
+            </Link>
+          );
+        })}
+        <button type="button" onClick={() => setMobileAberto(true)} className={`flex flex-col items-center gap-0.5 rounded-xl py-1 text-[10.5px] font-semibold ${FOCO}`}>
+          <span className="grid size-7 place-items-center"><IconeERN nome="menu" tamanho={21} /></span>
+          Menu
+        </button>
+      </nav>
 
       <dialog
         ref={dialogRef}
         id="menu-mobile-ern"
-        style={{
-          backgroundColor: '#151a1b',
-          color: '#f1f4ef',
-          borderColor: 'rgba(227,161,68,.20)',
-        }}
         aria-labelledby="titulo-menu-mobile"
-        className="menu-mobile ern-menu-premium"
+        className="menu-mobile ern-menu-fixo"
         onCancel={(evento) => {
           evento.preventDefault();
           setMobileAberto(false);
         }}
         onClick={(evento) => {
           if (evento.target !== evento.currentTarget) return;
-
           const limites = evento.currentTarget.getBoundingClientRect();
-
-          if (
-            evento.clientX < limites.left ||
-            evento.clientX > limites.right ||
-            evento.clientY < limites.top ||
-            evento.clientY > limites.bottom
-          ) {
+          if (evento.clientX < limites.left || evento.clientX > limites.right || evento.clientY < limites.top || evento.clientY > limites.bottom) {
             setMobileAberto(false);
           }
         }}
       >
-        <div className="flex h-full flex-col">
-          <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/10 px-5 py-4">
-            <div>
-              <h2
-                id="titulo-menu-mobile"
-                className="text-lg font-semibold text-[#F0F0E8]"
-              >
-                Navegação
-              </h2>
-
-              <p className="mt-1 text-xs text-[#B4C8BB]">
-                Encantos Gestão
-              </p>
+        <div className="flex h-full flex-col px-4 pt-4" style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+          <div className="flex shrink-0 items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <LogoERN tamanho={34} />
+              <h2 id="titulo-menu-mobile" className="font-[family-name:var(--font-inter)] text-base font-semibold text-[#F0F0E8]">{nomeSistema}</h2>
             </div>
-
-            <button
-              type="button"
-              aria-label="Fechar menu de navegação"
-              onClick={() => setMobileAberto(false)}
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/15 text-[#EDEDE3] hover:bg-white/5 ${FOCO}`}
-            >
-              <svg
-                aria-hidden="true"
-                className="h-6 w-6"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth={2}
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  d="m6 6 12 12M6 18 18 6"
-                />
-              </svg>
+            <button type="button" aria-label="Fechar menu de navegação" onClick={() => setMobileAberto(false)} className={`grid size-11 place-items-center rounded-xl border border-white/15 ${FOCO}`}>
+              <IconeERN nome="fechar" tamanho={20} />
             </button>
           </div>
-
-          <nav
-            aria-label="Navegação mobile"
-            className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4"
-            style={{
-              paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
-            }}
-          >
-            <div className="space-y-1">
-              {avisoModulosERN}
-            {principaisVisiveisERN.map((item) => (
-                <LinkNavegacao
-                  key={item.href}
-                  item={item}
-                  pathname={pathname}
-                  aoNavegar={fecharMenus}
-                />
-              ))}
-            </div>
-
-            {gruposVisiveisERN.map((grupo) => (
-              <section
-                key={grupo.id}
-                aria-labelledby={`titulo-mobile-${grupo.id}`}
-                className="mt-4 border-t border-white/10 pt-4"
-              >
-                <h3
-                  id={`titulo-mobile-${grupo.id}`}
-                  className="px-4 pb-2 text-xs font-semibold uppercase tracking-widest text-[#E3A144]"
-                >
-                  {grupo.label}
-                </h3>
-
-                <div className="space-y-1">
-                  {grupo.itens.map((item) => (
-                    <LinkNavegacao
-                      key={item.href}
-                      item={item}
-                      pathname={pathname}
-                      aoNavegar={fecharMenus}
-                    />
-                  ))}
-                </div>
-              </section>
-            ))}
-
-            <section
-              aria-labelledby="titulo-mobile-conta"
-              className="mt-4 border-t border-white/10 pt-4"
-            >
-              <h3
-                id="titulo-mobile-conta"
-                className="px-4 pb-2 text-xs font-semibold uppercase tracking-widest text-[#E3A144]"
-              >
-                {nomeContaERN || 'Minha conta'}
-              </h3>
-
-              {itensConta.filter(linkPermitidoERN).map((item) => (
-                <LinkNavegacao
-                  key={item.href}
-                  item={item}
-                  pathname={pathname}
-                  aoNavegar={fecharMenus}
-                />
-              ))}
-
-              {botaoSair()}
-
-              {erroSaida && (
-                <p
-                  role="alert"
-                  className="px-4 py-3 text-sm leading-6 text-rose-300"
-                >
-                  {erroSaida}
-                </p>
-              )}
-            </section>
-          </nav>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pb-4">{conteudoMenu('movel')}</div>
+          {rodapeConta()}
         </div>
       </dialog>
 
       <style jsx>{`
-        /* ERN PREMIUM V29: navegacao executiva */
-        .ern-navegacao-premium {
-          isolation: isolate;
-          background: #0c1112 !important;
-          color: #f1f4ef !important;
-          border-bottom: 1px solid rgba(227,161,68,.16);
-          box-shadow: 0 10px 32px rgba(0,0,0,.23);
-        }
-
-        .ern-navegacao-premium::before,
-        .ern-menu-premium::before {
-          content: none !important;
-          background-image: none !important;
-        }
-
-        .ern-navegacao-premium nav a,
-        .ern-navegacao-premium nav button {
-          position: relative;
-        }
-
-        .ern-navegacao-premium nav a[aria-current="page"]::after {
-          content: '';
-          position: absolute;
-          left: 14px;
-          right: 14px;
-          bottom: 3px;
-          height: 2px;
-          border-radius: 99px;
-          background: #e3a144;
-        }
-
-        .ern-navegacao-premium [id^="nav-desktop-"],
-        .ern-navegacao-premium #nav-conta {
-          background: #151a1b;
-          border-color: rgba(227,161,68,.15);
-          box-shadow: 0 22px 70px rgba(0,0,0,.4);
-        }
-
-        .ern-menu-premium {
-          background: #151a1b !important;
-          color: #f1f4ef !important;
-          border-left: 1px solid rgba(227,161,68,.2);
-        }
-
-        .ern-menu-premium nav a[aria-current="page"] {
-          background: rgba(227,161,68,.12);
-          color: #f4c77e;
-          border-left: 3px solid #e3a144;
-        }
-
-        .ern-navegacao-premium :is(a,button):focus-visible,
-        .ern-menu-premium :is(a,button):focus-visible {
-          outline: 2px solid #e3a144;
-          outline-offset: 3px;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .ern-navegacao-premium *,
-          .ern-menu-premium * {
-            transition: none !important;
-          }
-        }
-
+        .ern-menu-rolagem { scrollbar-width: thin; scrollbar-color: #2b4038 transparent; }
         .menu-mobile {
           position: fixed;
           inset: 0 0 0 auto;
           box-sizing: border-box;
-          width: min(92vw, 400px);
+          width: min(92vw, 380px);
           max-width: none;
           height: 100dvh;
           max-height: none;
@@ -954,57 +619,28 @@ export default function Sidebar() {
           padding: 0;
           overflow: hidden;
           border: 0;
-          border-left: 1px solid rgb(255 255 255 / 10%);
-          background: #091510;
+          border-left: 1px solid rgb(227 161 68 / 20%);
+          background: #08130f;
           color: #edede3;
           box-shadow: -20px 0 80px rgb(0 0 0 / 35%);
           opacity: 0;
           transform: translateX(28px);
-          transition:
-            opacity 180ms ease,
-            transform 180ms ease,
-            display 180ms allow-discrete,
-            overlay 180ms allow-discrete;
+          transition: opacity 180ms ease, transform 180ms ease, display 180ms allow-discrete, overlay 180ms allow-discrete;
         }
-
-        .menu-mobile[open] {
-          opacity: 1;
-          transform: translateX(0);
-        }
-
+        .menu-mobile[open] { opacity: 1; transform: translateX(0); }
         .menu-mobile::backdrop {
           background: rgb(0 0 0 / 0%);
           backdrop-filter: blur(3px);
-          transition:
-            background 180ms ease,
-            display 180ms allow-discrete,
-            overlay 180ms allow-discrete;
+          transition: background 180ms ease, display 180ms allow-discrete, overlay 180ms allow-discrete;
         }
-
-        .menu-mobile[open]::backdrop {
-          background: rgb(0 0 0 / 65%);
-        }
-
+        .menu-mobile[open]::backdrop { background: rgb(0 0 0 / 65%); }
         @starting-style {
-          .menu-mobile[open] {
-            opacity: 0;
-            transform: translateX(28px);
-          }
-
-          .menu-mobile[open]::backdrop {
-            background: rgb(0 0 0 / 0%);
-          }
+          .menu-mobile[open] { opacity: 0; transform: translateX(28px); }
+          .menu-mobile[open]::backdrop { background: rgb(0 0 0 / 0%); }
         }
-
         @media (prefers-reduced-motion: reduce) {
-          .menu-mobile,
-          .menu-mobile::backdrop {
-            transition: none;
-          }
-
-          .menu-mobile {
-            transform: none;
-          }
+          .menu-mobile, .menu-mobile::backdrop { transition: none; }
+          .menu-mobile { transform: none; }
         }
       `}</style>
     </>

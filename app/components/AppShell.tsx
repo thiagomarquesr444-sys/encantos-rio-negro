@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation';
 
 import { supabase } from '@/lib/supabase';
 import Sidebar from '@/app/components/Sidebar';
-import TemaRapidoOperadoraERN from '@/app/components/TemaRapidoOperadoraERN';
 import SidebarProfissional from '@/app/components/SidebarProfissional';
 
 type Tema = 'verde' | 'azul' | 'amarelo' | 'branco' | 'grafite';
@@ -317,10 +316,10 @@ export default function AppShell({
   if (rotaGestao) {
     return (
       <div className="ern-gestao" data-ern-tema={tema}>
-        <TemaRapidoOperadoraERN />
+        {/* ERN_MENU_LATERAL_V1: menu lateral no computador; barras no celular. */}
         <Sidebar />
 
-        <div className="min-h-screen w-full min-w-0 pt-[82px]">
+        <div className="ern-gestao-conteudo min-h-screen w-full min-w-0 pb-24 pt-16 transition-[padding] duration-200 motion-reduce:transition-none md:pb-0 xl:pl-[var(--ern-menu-largura,264px)] xl:pt-0">
           <ApresentacaoPaginaERN>{children}</ApresentacaoPaginaERN>
         </div>
       </div>

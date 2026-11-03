@@ -70,7 +70,7 @@ function Resumo({
         identificador: relatorioId,
         empresa: empresa.nome,
         status: 'Análise recalculada',
-        nomeArquivo: `ERN-relatorio-gerencial-${relatorioId}.pdf`,
+        nomeArquivo: `EDA-relatorio-gerencial-${relatorioId}.pdf`,
         dados: [
           { campo: 'Operadora responsável', valor: empresa.nome },
           { campo: 'CNPJ informado', valor: empresa.cnpj ?? 'Não cadastrado' },

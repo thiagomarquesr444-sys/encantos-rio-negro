@@ -6,7 +6,9 @@ import type { ReactNode } from 'react';
 export type NomeIconeERN =
   | 'operadora' | 'guia' | 'fornecedor' | 'calendario' | 'equipe' | 'financeiro'
   | 'voucher' | 'satelite' | 'whatsapp' | 'mapa' | 'confirmado' | 'local'
-  | 'peixe' | 'idiomas' | 'celular' | 'parceria' | 'rio';
+  | 'peixe' | 'idiomas' | 'celular' | 'parceria' | 'rio'
+  | 'casa' | 'lista' | 'documento' | 'cama' | 'mais' | 'menos' | 'grafico' | 'engrenagem'
+  | 'diamante' | 'perfil' | 'estrela' | 'sair' | 'busca' | 'menu' | 'exportar' | 'seta' | 'fechar';
 
 const DESENHOS: Record<NomeIconeERN, ReactNode> = {
   operadora: <><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" /><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" /><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" /><path d="M10 6h4M10 10h4M10 14h4M10 18h4" /></>,
@@ -26,6 +28,23 @@ const DESENHOS: Record<NomeIconeERN, ReactNode> = {
   celular: <><rect x="5" y="2" width="14" height="20" rx="2" /><path d="M12 18h.01" /></>,
   parceria: <><path d="m11 17 2 2a1 1 0 1 0 3-3" /><path d="m14 14 2.5 2.5a1 1 0 1 0 3-3l-3.88-3.88a3 3 0 0 0-4.24 0l-.88.88a1 1 0 1 1-3-3l2.81-2.81a5.79 5.79 0 0 1 7.06-.87l.47.28a2 2 0 0 0 1.42.25L21 4" /><path d="m21 3 1 11h-2M3 3 2 14l6.5 6.5a1 1 0 1 0 3-3M3 4h8" /></>,
   rio: <><path d="M2 6c.6.5 1.2 1 2.5 1C7 7 7 5 9.5 5c2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" /><path d="M2 12c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" /><path d="M2 18c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.6 0 2.4 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1" /></>,
+  casa: <><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1Z" /></>,
+  lista: <><path d="M9 6h12M9 12h12M9 18h12" /><path d="m3 6 1 1 2-2M3 12l1 1 2-2M3 18l1 1 2-2" /></>,
+  documento: <><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" /><path d="M14 2v6h6M8 13h8M8 17h5" /></>,
+  cama: <><path d="M2 4v16M2 8h18a2 2 0 0 1 2 2v10M2 17h20" /><path d="M6 8v9" /></>,
+  mais: <><circle cx="12" cy="12" r="10" /><path d="M12 8v8M8 12h8" /></>,
+  menos: <><circle cx="12" cy="12" r="10" /><path d="M8 12h8" /></>,
+  grafico: <><path d="M3 3v18h18" /><path d="M7 15l4-4 3 3 5-6" /></>,
+  engrenagem: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" /></>,
+  diamante: <><path d="M6 3h12l4 6-10 12L2 9Z" /><path d="M2 9h20M12 21 8 9l4-6 4 6-4 12" /></>,
+  perfil: <><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" /></>,
+  estrela: <><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1Z" /></>,
+  sair: <><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" /></>,
+  busca: <><circle cx="11" cy="11" r="7" /><path d="m21 21-4.3-4.3" /></>,
+  menu: <><path d="M4 6h16M4 12h16M4 18h16" /></>,
+  exportar: <><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" /></>,
+  seta: <><path d="m6 9 6 6 6-6" /></>,
+  fechar: <><path d="M18 6 6 18M6 6l12 12" /></>,
 };
 
 export default function IconeERN({ nome, tamanho = 20, className }: { nome: NomeIconeERN; tamanho?: number; className?: string }) {

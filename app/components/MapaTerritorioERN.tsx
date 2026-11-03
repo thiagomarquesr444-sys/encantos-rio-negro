@@ -462,7 +462,7 @@ export default function MapaTerritorioERN({
         observador.observe(container.current);
         setEstado("pronto");
       } catch (erro) {
-        console.error("Não foi possível iniciar o mapa ERN.", erro);
+        console.error("Não foi possível iniciar o mapa EDA.", erro);
         if (!cancelado) setEstado("erro");
       }
     }
@@ -861,7 +861,7 @@ export default function MapaTerritorioERN({
       `}</style>
       <div className="border-b border-white/10 bg-gradient-to-br from-[var(--ern-fundo,#18372a)] to-[var(--ern-fundo,#0A1713)] p-4 sm:p-6">
         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--ern-destaque,#E3A144)]">
-          ERN · território, turismo e operação
+          EDA · território, turismo e operação
         </p>
         <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -1046,7 +1046,7 @@ export default function MapaTerritorioERN({
                 role="status"
                 className="absolute inset-0 z-[1000] flex items-center justify-center bg-[var(--ern-painel,#0A1713)] text-sm"
               >
-                Preparando o território ERN…
+                Preparando o território EDA…
               </div>
             )}
             {estado === "erro" && (
@@ -1138,7 +1138,7 @@ export default function MapaTerritorioERN({
               ) : null}
             </div>
             <p className="mt-2 text-[11px] leading-5 text-[color:var(--ern-secundario,#EDEDE3)]">
-              Sua posição não é salva na ERN nem compartilhada com outros
+              Sua posição não é salva na EDA nem compartilhada com outros
               usuários. A atualização depende do aparelho e do sinal e pode
               consumir bateria. No computador, a precisão pode ser baixa.
             </p>

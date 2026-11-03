@@ -316,7 +316,7 @@ export default function NovaEmbarcacaoPage() {
             </div>
 
             <span className="rounded-full border border-[var(--ern-borda)] bg-[var(--ern-suave)] px-3 py-1.5 text-[9px] uppercase tracking-[0.15em] text-[var(--ern-secundario)]">
-              ERN Gestão
+              Encantos Gestão
             </span>
           </div>
         </div>

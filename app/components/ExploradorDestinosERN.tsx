@@ -211,12 +211,12 @@ const scenes: Scene[] = [
 const marcosCidade: Partial<Record<CityId, { scene: DestinationId; imagem: string; largura: number; legenda: Record<'PT' | 'EN' | 'ES', string> }>> = {
   'sao-gabriel': {
     scene: 'sao-gabriel-da-cachoeira',
-    imagem: '/images/marcos/flecha-sao-gabriel.svg',
-    largura: 64,
+    imagem: '/images/marcos/arco-sao-gabriel.svg',
+    largura: 60,
     legenda: {
-      PT: 'São Gabriel da Cachoeira · flecha · referência regional',
-      EN: 'São Gabriel da Cachoeira · arrow · regional reference',
-      ES: 'São Gabriel da Cachoeira · flecha · referencia regional',
+      PT: 'São Gabriel da Cachoeira · arco e flecha · referência regional',
+      EN: 'São Gabriel da Cachoeira · bow and arrow · regional reference',
+      ES: 'São Gabriel da Cachoeira · arco y flecha · referencia regional',
     },
   },
   'santa-isabel': {

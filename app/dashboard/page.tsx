@@ -1017,7 +1017,7 @@ function DashboardAdministrativoERN() {
         <div className="mx-auto flex w-full max-w-[1360px] flex-wrap items-center justify-between gap-4 px-4 py-6 sm:px-5 md:px-8">
           <div className="min-w-0">
             <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#E3A144]">
-              ERN / Gestão da operadora
+              EDA / Gestão da operadora
             </p>
             <h1 className="mt-2 text-2xl font-semibold tracking-tight text-[#F1F4EF] sm:text-3xl">
               {loadingPlano
@@ -1097,7 +1097,7 @@ function DashboardAdministrativoERN() {
               <div>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#E3A144]">
-                    ERN / Agenda operacional
+                    EDA / Agenda operacional
                   </p>
                   <span className="rounded-lg border border-white/10 px-3 py-1 text-[10px] text-[#94A5A1]">
                     Hoje
@@ -1706,7 +1706,7 @@ function DashboardAdministrativoERN() {
           <section className="overflow-hidden rounded-2xl border border-[#E3A144]/15 bg-[#151A1B] sm:rounded-2xl">
             <div className="border-b border-white/[0.06] px-4 py-4 sm:px-6 sm:py-5">
               <p className="text-[9px] font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-                Rede ERN
+                Rede EDA
               </p>
 
               <h2
@@ -1837,7 +1837,7 @@ function DashboardAdministrativoERN() {
               </div>
 
               <span className="hidden rounded-full border border-white/[0.07] bg-white/[0.025] px-3 py-1 text-[9px] uppercase tracking-[0.15em] text-[#A5B4AF] sm:block">
-                ERN
+                EDA
               </span>
             </div>
 

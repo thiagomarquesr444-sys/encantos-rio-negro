@@ -1,14 +1,20 @@
 'use client';
 
+// ERN_TEMA_NOITE_CLARO_V1
+// Atalho de tema no menu lateral: apenas Noite (verde-noite) e Claro.
+// Salva em configuracoes.tema da empresa, como antes. As demais cores
+// continuam disponíveis em Configurações para quem já as usa.
+
 import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import SeletorTemaERN, {
-  OPCOES_TEMA_ERN,
-  type TemaERN,
-} from '@/app/components/SeletorTemaERN';
+import type { TemaERN } from '@/app/components/SeletorTemaERN';
 
-type Vinculo = { id: string; empresaId: string; tema: TemaERN };
+type Vinculo = { id: string; empresaId: string; tema: string };
+
+const NOITE: TemaERN = 'verde';
+const CLARO: TemaERN = 'branco';
+const ehClaro = (tema: string) => tema === 'branco' || tema === 'amarelo';
 
 export default function TemaRapidoOperadoraERN() {
   const pathname = usePathname();
@@ -19,10 +25,7 @@ export default function TemaRapidoOperadoraERN() {
 
   useEffect(() => {
     let ativo = true;
-    setVinculo(null);
     setMensagem('');
-
-    if (pathname === '/configuracoes') return;
 
     async function carregar() {
       try {
@@ -45,11 +48,7 @@ export default function TemaRapidoOperadoraERN() {
           .maybeSingle();
 
         if (error || !config || !ativo) return;
-
-        const tema = OPCOES_TEMA_ERN.find(item => item.valor === config.tema)?.valor
-          ?? 'verde';
-
-        setVinculo({ id: config.id, empresaId: perfil.empresa_id, tema });
+        setVinculo({ id: config.id, empresaId: perfil.empresa_id, tema: String(config.tema ?? NOITE) });
       } catch {
         // O atalho é opcional; Configurações mantém o fluxo principal.
       }
@@ -74,34 +73,40 @@ export default function TemaRapidoOperadoraERN() {
         .select('id,tema')
         .single();
 
-      if (error || !data || data.tema !== tema) {
-        throw new Error('Não foi possível salvar o tema. Tente novamente.');
-      }
+      if (error || !data || data.tema !== tema) throw new Error('tema');
 
       setVinculo({ ...vinculo, tema });
       window.dispatchEvent(new CustomEvent('ern:tema-salvo', {
         detail: { empresaId: vinculo.empresaId, tema },
       }));
-      setMensagem('Tema salvo.');
     } catch {
-      setMensagem('Não foi possível salvar o tema. Confira em Configurações.');
+      setMensagem('Não foi possível salvar o tema.');
     } finally {
       trava.current = false;
       setSalvando(false);
     }
   }
 
-  if (!vinculo || pathname === '/configuracoes') return null;
+  if (!vinculo) return null;
+  const claro = ehClaro(vinculo.tema);
 
   return (
-    <div className="ern-tema-rapido">
-      {(mensagem || salvando) && (
-        <p className="ern-tema-rapido-status" role="status">
-          {salvando ? 'Salvando tema…' : mensagem}
-        </p>
-      )}
-      <SeletorTemaERN valor={vinculo.tema}
-        onEscolher={salvar} bloqueado={salvando} />
+    <div className="ern-tema-lateral">
+      <div role="group" aria-label="Tema do painel" className="flex gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1">
+        {([[NOITE, 'Noite', !claro], [CLARO, 'Claro', claro]] as const).map(([valor, rotulo, ativo]) => (
+          <button
+            key={valor}
+            type="button"
+            aria-pressed={ativo}
+            disabled={salvando}
+            onClick={() => void salvar(valor)}
+            className={`min-h-9 flex-1 rounded-full text-xs font-semibold transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E3A144] disabled:cursor-wait ${ativo ? 'bg-gradient-to-b from-[#F7D595] to-[#E3A144] text-[#07110E]' : 'text-[#CDD8D2] hover:text-white'}`}
+          >
+            {rotulo}
+          </button>
+        ))}
+      </div>
+      {(mensagem || salvando) && <p role="status" className="mt-1 px-2 text-[11px] text-[#F4C77E]">{salvando ? 'Salvando tema…' : mensagem}</p>}
     </div>
   );
 }

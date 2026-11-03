@@ -5,7 +5,7 @@ import { useLanguage } from '@/app/components/LanguageProvider';
 
 const textos = {
   PT: {
-    eyebrow: 'Faça parte da ERN',
+    eyebrow: 'Faça parte da EDA',
     titulo: 'Como você atua no turismo?',
     descricao:
       'Escolha seu acesso para entrar ou iniciar seu cadastro.',
@@ -21,7 +21,7 @@ const textos = {
         id: 'guia',
         titulo: 'Sou guia de turismo',
         descricao:
-          'Tenha seu próprio cadastro profissional na ERN, com identidade independente das operadoras.',
+          'Tenha seu próprio cadastro profissional na EDA, com identidade independente das operadoras.',
         botao: 'Acesso do guia',
       },
       {
@@ -37,7 +37,7 @@ const textos = {
   },
 
   EN: {
-    eyebrow: 'Join ERN',
+    eyebrow: 'Join EDA',
     titulo: 'What is your role in tourism?',
     descricao:
       'Choose your access to sign in or start your registration.',
@@ -53,7 +53,7 @@ const textos = {
         id: 'guia',
         titulo: 'I am a tour guide',
         descricao:
-          'Create your own professional profile on ERN, with an identity independent of tour operators.',
+          'Create your own professional profile on EDA, with an identity independent of tour operators.',
         botao: 'Guide access',
       },
       {
@@ -69,7 +69,7 @@ const textos = {
   },
 
   ES: {
-    eyebrow: 'Forma parte de ERN',
+    eyebrow: 'Forma parte de EDA',
     titulo: '¿Cuál es tu actividad en el turismo?',
     descricao:
       'Elige tu acceso para iniciar sesión o comenzar tu registro.',
@@ -85,7 +85,7 @@ const textos = {
         id: 'guia',
         titulo: 'Soy guía de turismo',
         descricao:
-          'Ten tu propio perfil profesional en ERN, con una identidad independiente de los operadores.',
+          'Ten tu propio perfil profesional en EDA, con una identidad independiente de los operadores.',
         botao: 'Acceso del guía',
       },
       {

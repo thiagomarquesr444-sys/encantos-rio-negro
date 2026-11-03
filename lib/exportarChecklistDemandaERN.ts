@@ -15,7 +15,7 @@ const ESCURO: [number,number,number] = [30,38,35];
 const CINZA: [number,number,number] = [95,105,100];
 
 function salvarNomeSeguro(id:string,versao:number):string {
-  return `ERN-checklist-compras-${id.replace(/[^a-zA-Z0-9-]/g,'').slice(0,8)}-v${versao}.pdf`;
+  return `EDA-checklist-compras-${id.replace(/[^a-zA-Z0-9-]/g,'').slice(0,8)}-v${versao}.pdf`;
 }
 
 /** V41D: PDF para uso no comercio, sempre a partir da lista salva e da versao conferida. */

@@ -267,7 +267,7 @@ export default function ComandoERNPage() {
     <main className="min-h-screen bg-[#fff7db] px-4 py-8 text-[#30260d] [color-scheme:light] sm:px-8">
       <div className="mx-auto max-w-4xl">
         <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#805600]">
-          Comando ERN
+          Comando EDA
         </p>
 
         <h1
@@ -291,7 +291,7 @@ export default function ComandoERNPage() {
                 Abrir operadora
               </Link>
               <Link href="/rede" className="min-h-11 py-3 underline">
-                Abrir Rede ERN
+                Abrir Rede EDA
               </Link>
               {perfil?.publicado && (
                 <Link
@@ -407,7 +407,7 @@ export default function ComandoERNPage() {
                   className={campo}
                 />
                 <span className="mt-2 block text-xs leading-5 text-[#695727]">
-                  Opcional. Use o contato da ERN para atendimento institucional.
+                  Opcional. Use o contato da EDA para atendimento institucional.
                 </span>
               </label>
 

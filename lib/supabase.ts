@@ -11,13 +11,13 @@ export const isSupabaseConfigured =
 
 if (!supabaseUrl) {
   throw new Error(
-    'Configuração da ERN incompleta: defina NEXT_PUBLIC_SUPABASE_URL.',
+    'Configuração da EDA incompleta: defina NEXT_PUBLIC_SUPABASE_URL.',
   );
 }
 
 if (!supabaseAnonKey) {
   throw new Error(
-    'Configuração da ERN incompleta: defina NEXT_PUBLIC_SUPABASE_ANON_KEY.',
+    'Configuração da EDA incompleta: defina NEXT_PUBLIC_SUPABASE_ANON_KEY.',
   );
 }
 

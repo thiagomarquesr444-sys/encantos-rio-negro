@@ -75,7 +75,7 @@ export function MidiaVivenciaERN({ midia }: { midia: MidiaPublicacao }) {
           position: 'absolute', top: 12, right: 12, padding: '5px 9px',
           borderRadius: 8, background: '#102e25dd', color: '#ffdc93',
           fontSize: 12, fontWeight: 700, pointerEvents: 'none',
-        }}>ERN</span>
+        }}>EDA</span>
       </div>
     );
   }
@@ -200,7 +200,7 @@ export function ConfigurarVivenciaERN({
 
   return (
     <section style={panel} aria-label="Destino e capa da vivência">
-      <h4 style={{ margin: '0 0 14px', fontSize: 18 }}>Destino e capa · Vivências ERN</h4>
+      <h4 style={{ margin: '0 0 14px', fontSize: 18 }}>Destino e capa · Vivências EDA</h4>
       <fieldset disabled={disabled} style={{ border: 0, padding: 0, minWidth: 0 }}>
         <label>
           Onde esta experiência aconteceu?
@@ -254,12 +254,12 @@ export function CompartilharVivenciaERN({ post }: { post: PublicacaoPublica }) {
   const [gerando, setGerando] = useState(false);
   useEffect(() => { setBase(window.location.origin); }, []);
   const url = base + '/rede/publicacao/' + encodeURIComponent(post.slug);
-  const texto = `${post.titulo}\n${post.autor.nome_publico} · Vivências ERN\n${url}`;
+  const texto = `${post.titulo}\n${post.autor.nome_publico} · Vivências EDA\n${url}`;
 
   async function compartilhar() {
     try {
       if (navigator.share) {
-        await navigator.share({ title: post.titulo, text: `${post.autor.nome_publico} · Vivências ERN`, url });
+        await navigator.share({ title: post.titulo, text: `${post.autor.nome_publico} · Vivências EDA`, url });
       } else {
         await navigator.clipboard.writeText(texto);
         setAviso(tr('Link copiado.', 'Link copied.', 'Enlace copiado.'));
@@ -370,7 +370,7 @@ export function CompartilharVivenciaERN({ post }: { post: PublicacaoPublica }) {
               {tr('Compartilhar link', 'Share link', 'Compartir enlace')}
             </button>
             <button type="button" style={button} disabled={gerando || !base} onClick={() => void cartao()}>
-              {gerando ? '…' : tr('Cartão ERN / Instagram', 'ERN card / Instagram', 'Tarjeta ERN / Instagram')}
+              {gerando ? '…' : tr('Cartão EDA / Instagram', 'EDA card / Instagram', 'Tarjeta EDA / Instagram')}
             </button>
           </div>
           <label style={{ display: 'block', marginTop: 12 }}>
@@ -481,7 +481,7 @@ export function ListaVivenciasERN({
   }
 
   return (
-    <section style={{ marginTop: 26, minWidth: 0 }} aria-label="Vivências ERN">
+    <section style={{ marginTop: 26, minWidth: 0 }} aria-label="Vivências EDA">
       <h2 style={{ fontFamily: 'var(--font-fraunces), Georgia, serif', fontSize: 28 }}>
         {destino ? tr('Vivências neste lugar', 'Experiences here', 'Vivencias en este lugar') : 'Vivências EDA'}
       </h2>

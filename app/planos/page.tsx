@@ -591,7 +591,7 @@ export default function PlanosPage() {
                 <span className="h-px w-8 bg-[#E3A144]" />
 
                 <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[#E3A144]">
-                  ERN Gestão
+                  Encantos Gestão
                 </span>
               </div>
 
@@ -668,7 +668,7 @@ export default function PlanosPage() {
 
               <div className="relative flex items-center gap-3 rounded-[16px] border border-[#E3A144]/12 bg-[#E3A144]/[0.035] px-4 py-3">
                 <span className="flex h-8 w-8 items-center justify-center rounded-full border border-[#E3A144]/20 bg-[#E3A144]/10 text-[10px] font-bold text-[#F4C77E]">
-                  ERN
+                  EDA
                 </span>
 
                 <div>
@@ -939,7 +939,7 @@ export default function PlanosPage() {
 
                         <p className="mt-3 min-h-[40px] text-xs leading-5 text-[#EDEDE3]/38">
                           {plano.descricao ||
-                            'Plano ERN Gestão.'}
+                            'Plano Encantos Gestão.'}
                         </p>
 
                         <div className="mt-4 flex min-h-[70px] items-center justify-between border-y border-white/[0.055] py-3.5">
@@ -1069,7 +1069,7 @@ export default function PlanosPage() {
 
                     <p className="mt-2.5 max-w-[650px] text-xs leading-6 text-[#EDEDE3]/38">
                       {planoSelecionado.descricao ||
-                        'Plano ERN Gestão.'}
+                        'Plano Encantos Gestão.'}
                     </p>
                   </div>
 

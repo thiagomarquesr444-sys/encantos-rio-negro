@@ -83,7 +83,7 @@ export default function AtrativosRegionaisERN({ mapa, origem, nomeOrigem, aoExpl
   const botao="min-h-11 rounded-xl border border-white/20 px-3 py-2 text-left text-xs hover:border-[#E3A144] disabled:opacity-50";
   return <section aria-labelledby="atrativos-regionais-ern" className="mt-5 rounded-2xl border border-white/10 p-4">
     <h4 id="atrativos-regionais-ern" className="text-sm font-semibold text-[#F4C77E]">Atrativos e hospedagens na região</h4>
-    <p className="mt-2 text-xs leading-6 text-[#EDEDE3]/70">Consulte os pontos mapeados no OpenStreetMap em até 15 km da embarcação ou da localidade selecionada. A consulta envia essa coordenada ao serviço público Overpass, somente ao clicar. Os resultados não são parceiros ERN nem indicam disponibilidade ou acesso autorizado.</p>
+    <p className="mt-2 text-xs leading-6 text-[#EDEDE3]/70">Consulte os pontos mapeados no OpenStreetMap em até 15 km da embarcação ou da localidade selecionada. A consulta envia essa coordenada ao serviço público Overpass, somente ao clicar. Os resultados não são parceiros EDA nem indicam disponibilidade ou acesso autorizado.</p>
     <button type="button" onClick={()=>void consultar()} disabled={!origem || carregando || aguardando} className={botao+" mt-3"}>{carregando ? "Consultando mapa regional…" : aguardando ? "Aguarde 30 segundos entre consultas" : "Consultar atrativos e hospedagens neste ponto"}</button>
     {!origem && <p className="mt-2 text-xs">Selecione uma localidade acima ou defina a posição da embarcação.</p>}
     {origem && <p className="mt-2 text-xs text-[#EDEDE3]/65">Referência para a próxima consulta: {nomeOrigem}.</p>}

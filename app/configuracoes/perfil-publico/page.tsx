@@ -275,7 +275,7 @@ export default function PerfilPublicoPage() {
 
         <header className="mb-7 mt-3">
           <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
-            Sua operadora na Rede ERN
+            Sua operadora na Rede EDA
           </p>
           <h1
             className="mt-3 text-3xl sm:text-4xl"

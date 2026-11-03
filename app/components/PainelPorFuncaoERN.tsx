@@ -177,8 +177,8 @@ export default function PainelPorFuncaoERN({
             style={{ color: 'var(--ern-secundario, #B4C8BB)' }}
           >
             {atalhos.length > 0
-              ? 'Acesse suas ferramentas de trabalho e explore as referências do território no mapa ERN.'
-              : 'Explore o território, consulte localidades e use as referências do mapa ERN para apoiar seu trabalho.'}
+              ? 'Acesse suas ferramentas de trabalho e explore as referências do território no mapa EDA.'
+              : 'Explore o território, consulte localidades e use as referências do mapa EDA para apoiar seu trabalho.'}
           </p>
 
           {modulos.has('mapa') && (
@@ -190,7 +190,7 @@ export default function PainelPorFuncaoERN({
                 borderColor: 'var(--ern-borda, #ffffff30)',
               }}
             >
-              Abrir mapa ERN ↓
+              Abrir mapa EDA ↓
             </a>
           )}
         </header>

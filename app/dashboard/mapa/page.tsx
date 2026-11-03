@@ -30,7 +30,7 @@ type Posicao = {
 export default function MapaPage() {
   const acesso = useModulosEquipeERN();
   if (acesso.carregando) {
-    return <main className="p-6" role="status">Preparando acesso ao Mapa ERN…</main>;
+    return <main className="p-6" role="status">Preparando acesso ao Mapa EDA…</main>;
   }
   if (acesso.erro || !acesso.modulos.has('mapa')) {
     return <main className="p-6" role="alert">
@@ -497,7 +497,7 @@ function MapaOperacional() {
 
   return (
     <main ref={recipiente} className={`ern-mapa-operacional ${noturno ? "ern-mapa-noturno" : ""} ${painel ? "ern-painel-aberto" : ""}`}
-      style={{ top: topo }} aria-label="Mapa operacional ERN">
+      style={{ top: topo }} aria-label="Mapa operacional EDA">
       <div ref={canvas} className="ern-cartografia" aria-label="Mapa interativo de localidades" />
       <header className="ern-barra-mapa">
         <div className="ern-mapa-titulo"><span className="ern-mapa-emblema" aria-hidden="true">◎</span>
@@ -526,7 +526,7 @@ function MapaOperacional() {
       </div>
 
       {painel && <aside id="ern-operacao-controles" className="ern-painel-mapa">
-        <div className="ern-painel-cabecalho"><p className="ern-selo">EXPLORADOR ERN</p>
+        <div className="ern-painel-cabecalho"><p className="ern-selo">EXPLORADOR EDA</p>
           <h2>Seu próximo destino</h2>
           <p>Referências para planejar sua operação.</p></div>
         <div className="ern-mapa-abas" role="group" aria-label="Conteúdo do painel">
@@ -667,7 +667,7 @@ function MapaOperacional() {
         <span><i className="ern-legenda-grupo" />Grupo · clique para ampliar</span>
         <span><i className="ern-legenda-gps" />Aparelho</span>
       </div>
-      {!pronto && !erroMapa && <div className="ern-aviso-mapa" role="status">Abrindo o território ERN…</div>}
+      {!pronto && !erroMapa && <div className="ern-aviso-mapa" role="status">Abrindo o território EDA…</div>}
       {erroMapa && <div className="ern-aviso-mapa" role="alert">
         {erroMapa}
         {!pronto && <button onClick={() => setTentativa(v => v + 1)}>Tentar novamente</button>}

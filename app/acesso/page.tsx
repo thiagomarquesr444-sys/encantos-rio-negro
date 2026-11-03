@@ -501,7 +501,7 @@ function ConteudoAcesso() {
           ) : conflito ? (
             <p className="mt-6 text-sm leading-7 text-[#EDEDE3]/75">
               Foram encontrados vínculos incompatíveis nesta
-              conta. Solicite a revisão à equipe ERN antes
+              conta. Solicite a revisão à equipe EDA antes
               de continuar. Nenhuma modalidade será alterada
               automaticamente.
             </p>

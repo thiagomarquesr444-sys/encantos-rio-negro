@@ -133,7 +133,7 @@ export default function CadastroFiscalERN() {
       for (const chave of Object.keys(VAZIO) as (keyof Dados)[]) payload[chave] = dados[chave].trim();
       const { data, error } = await supabase.from('empresa_fiscal_ern').upsert(payload, { onConflict: 'empresa_id' }).select('empresa_id').single();
       if (error) {
-  console.error('[ERN fiscal: salvamento]', {
+  console.error('[EDA fiscal: salvamento]', {
     code: error.code,
     message: error.message,
     details: error.details,
@@ -151,7 +151,7 @@ if (!data) throw new Error('Salvamento sem confirmação do banco.');
   return (
     <section aria-label="Cadastro fiscal do prestador" className={painel}>
       <header className="flex flex-wrap items-start justify-between gap-3">
-        <div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#E3A144]">ERN / PREPARAÇÃO PARA NFS-e</p>
+        <div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#E3A144]">EDA / PREPARAÇÃO PARA NFS-e</p>
           <h2 className="mt-2 text-lg font-semibold">Cadastro fiscal da operadora</h2>
           <p className="mt-1 text-xs leading-5 text-[#94A5A1]">Dados privados do prestador. Não modificam o perfil público nem autorizam emissão oficial.</p></div>
         <button type="button" onClick={() => { if (alterado && !window.confirm('Descartar alterações não salvas?')) return; atualizar(); }} disabled={carregando || salvando}

@@ -995,7 +995,7 @@ export async function alternarSeguirPerfil(
 
   if (!user) {
     throw new ErroRedePublica(
-      'Entre na ERN para seguir perfis.',
+      'Entre na EDA para seguir perfis.',
     );
   }
 
@@ -1058,7 +1058,7 @@ export async function alternarInteracaoPublicacao(
 
   if (!user) {
     throw new ErroRedePublica(
-      'Entre na ERN para interagir com publicações.',
+      'Entre na EDA para interagir com publicações.',
     );
   }
 

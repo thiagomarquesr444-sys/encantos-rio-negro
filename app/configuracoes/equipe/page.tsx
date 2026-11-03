@@ -57,9 +57,9 @@ const DESCRICOES_PERFIS_ERN: Record<Role, string> = {
   financeiro:
     'Acessa financeiro e relatórios conforme o plano. Consulta referências de reservas para os lançamentos, sem editar a operação.',
   guia:
-    'Acessa o Painel e o mapa ERN. Este vínculo pertence à equipe da operadora e é diferente do cadastro independente de Guia ERN.',
+    'Acessa o Painel e o mapa EDA. Este vínculo pertence à equipe da operadora e é diferente do cadastro independente de Guia EDA.',
   piloteiro:
-    'Acessa o Painel e o mapa ERN. Não acessa clientes, reservas, financeiro ou gestão da equipe.',
+    'Acessa o Painel e o mapa EDA. Não acessa clientes, reservas, financeiro ou gestão da equipe.',
 };
 
 function objeto(valor: unknown): valor is Record<string, unknown> {

@@ -84,7 +84,7 @@ export const RECURSOS_PLANOS: Record<
   ConfiguracaoRecurso
 > = {
   rede_basica: {
-    nome: 'Rede ERN',
+    nome: 'Rede EDA',
     descricao:
       'Presença básica da empresa na Rede Encantos da Amazônia.',
     planoMinimo: 'Grátis',

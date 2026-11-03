@@ -200,7 +200,7 @@ export default function ImagensEditorialERN({
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
                     src={url}
-                    alt={'Capa editorial da ERN'}
+                    alt={'Capa editorial da EDA'}
                     className="h-full w-full object-contain"
                   />
                 ) : (

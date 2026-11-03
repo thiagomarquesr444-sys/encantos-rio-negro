@@ -261,7 +261,7 @@ export default function SegurancaContaERN() {
 
           <p id="ern-ajuda-senha" className="text-xs leading-6">
             Use pelo menos 8 caracteres. Prefira uma senha longa e exclusiva
-            para a ERN.
+            para a EDA.
           </p>
 
           <div className="flex flex-col gap-3 sm:flex-row">

@@ -31,7 +31,7 @@ function dataVoucherValida(valor: string): boolean {
 const moeda = (valor: number) => valor.toLocaleString("pt-BR", {minimumFractionDigits:2,maximumFractionDigits:2});
 const disponivel = (status: string | null) => reservaOperacionalERN(status);
 const mensagem = (erro: unknown, fallback: string) => erro && typeof erro === "object" && "message" in erro && typeof erro.message === "string" ? erro.message : fallback;
-const codigoNovo = () => `ERN-${crypto.randomUUID().toUpperCase()}`;
+const codigoNovo = () => `EDA-${crypto.randomUUID().toUpperCase()}`;
 const CAMPOS_RESERVA = "id,cliente,pacote,cliente_id,passeio_id,quantidade_pessoas,data_reserva,horario,valor_total,valor,status";
 async function listar<T>(tabela: "clientes" | "passeios" | "reservas", colunas: string, empresa: string): Promise<T[]> {
   const registros: T[] = [];

@@ -50,7 +50,7 @@ export default function ExportarRelatorioPage(){
     baixarDocumentoPremiumERN({
       titulo: "Demonstrativo Financeiro",
       subtitulo: "Encantos Gestão | Relatório operacional",
-      nomeArquivo: `ERN-financeiro-premium-${hoje}.pdf`,
+      nomeArquivo: `EDA-financeiro-premium-${hoje}.pdf`,
       status: "Demonstrativo gerado",
       dados: [
         { campo: "Filtro aplicado", valor: PERIODOS.find(p => p.valor === periodo)?.nome ?? periodo },
@@ -94,7 +94,7 @@ export default function ExportarRelatorioPage(){
     const linhas=filtrados.map(item=>[item.id??"",item.reserva_id??"",data(item.data_vencimento),data(item.data_liquidacao),item.tipo??"",item.descricao||item.descrição||"",item.categoria??"",valorRegistro(item).toLocaleString("pt-BR",{minimumFractionDigits:2,maximumFractionDigits:2}),statusFinanceiroERN(item)]);
     const conteudo=[cabecalho,...linhas].map(linha=>linha.map(protegerCSV).join(";")).join("\r\n");
     const blob=new Blob(["\uFEFF",conteudo],{type:"text/csv;charset=utf-8;"});const url=URL.createObjectURL(blob);
-    const link=document.createElement("a");link.href=url;link.download=`ERN-financeiro-${new Intl.DateTimeFormat("en-CA",{timeZone:"America/Manaus",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date()).replace(/[^0-9-]/g,"-")}.csv`;
+    const link=document.createElement("a");link.href=url;link.download=`EDA-financeiro-${new Intl.DateTimeFormat("en-CA",{timeZone:"America/Manaus",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date()).replace(/[^0-9-]/g,"-")}.csv`;
     document.body.appendChild(link);link.click();link.remove();URL.revokeObjectURL(url);
   }
   const campo="mt-2 min-h-12 w-full min-w-0 rounded-xl border border-white/20 bg-[#07110E] px-3 py-2 text-sm text-[#EDEDE3]";

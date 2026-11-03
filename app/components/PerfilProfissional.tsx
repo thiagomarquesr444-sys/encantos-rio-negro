@@ -333,7 +333,7 @@ function FormularioPerfilProfissional({ tipo }: Props) {
           limite: 100,
           placeholder: 'Número do registro',
           ajuda:
-            'O registro informado ainda não representa verificação pela ERN.',
+            'O registro informado ainda não representa verificação pela EDA.',
         },
       ]
     : [
@@ -411,8 +411,8 @@ function FormularioPerfilProfissional({ tipo }: Props) {
 
           <p className="mt-3 max-w-3xl text-sm leading-7 text-[#EDEDE3]/75 sm:text-base">
             {guia
-              ? 'Apresente sua atuação como guia, seus idiomas, sua região de atendimento e as informações profissionais que representarão você dentro da Rede ERN.'
-              : 'Apresente seu negócio, sua atividade principal, seus produtos ou serviços e sua região de atendimento dentro da Rede ERN.'}
+              ? 'Apresente sua atuação como guia, seus idiomas, sua região de atendimento e as informações profissionais que representarão você dentro da Rede EDA.'
+              : 'Apresente seu negócio, sua atividade principal, seus produtos ou serviços e sua região de atendimento dentro da Rede EDA.'}
           </p>
         </header>
 

@@ -44,7 +44,7 @@ export default function AcoesPublicacaoEditorialERN({
     try {
       const mensagens: Record<Acao, string> = {
         publicar:
-          `Publicar "${item.titulo}" na Rede ERN? ` +
+          `Publicar "${item.titulo}" na Rede EDA? ` +
           'O texto e as imagens ficarão visíveis aos visitantes.',
         arquivar:
           `Arquivar "${item.titulo}"? ` +

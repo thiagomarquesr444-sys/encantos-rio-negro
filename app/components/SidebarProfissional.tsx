@@ -67,7 +67,7 @@ function configuracaoNavegacao(
         {
           label: 'Início',
           href: '/guia',
-          descricao: 'Visão geral da sua atividade na Rede ERN',
+          descricao: 'Visão geral da sua atividade na Rede EDA',
         },
         {
           label: 'Oportunidades',
@@ -99,7 +99,7 @@ function configuracaoNavegacao(
         },
         {
           id: 'rede',
-          label: 'Rede ERN',
+          label: 'Rede EDA',
           itens: [
             {
               label: 'Demandas',
@@ -138,7 +138,7 @@ function configuracaoNavegacao(
       {
         label: 'Início',
         href: '/fornecedor',
-        descricao: 'Visão geral do seu negócio na Rede ERN',
+        descricao: 'Visão geral do seu negócio na Rede EDA',
       },
       {
         label: 'Demandas',
@@ -170,7 +170,7 @@ function configuracaoNavegacao(
       },
       {
         id: 'rede',
-        label: 'Rede ERN',
+        label: 'Rede EDA',
         itens: [
           {
             label: 'Oportunidades',

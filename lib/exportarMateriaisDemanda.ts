@@ -117,7 +117,7 @@ export async function exportarMateriaisDemanda(
     .slice(0, 60) || 'demanda';
 
   link.href = url;
-  link.download = `ERN-materiais-${nome}-${String(data.id).slice(0, 8)}-v${data.itens_versao}.csv`;
+  link.download = `EDA-materiais-${nome}-${String(data.id).slice(0, 8)}-v${data.itens_versao}.csv`;
 
   document.body.append(link);
 

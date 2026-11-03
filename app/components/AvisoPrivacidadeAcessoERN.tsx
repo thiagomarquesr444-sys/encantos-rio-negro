@@ -39,7 +39,7 @@ export default function AvisoPrivacidadeAcessoERN({
             Suas credenciais são utilizadas para autenticar
             a conta. O acesso aos espaços profissionais
             depende dos vínculos e das permissões
-            registrados na ERN.
+            registrados na EDA.
           </p>
         )}
 

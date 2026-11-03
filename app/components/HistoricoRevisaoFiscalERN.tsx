@@ -111,7 +111,7 @@ export default function HistoricoRevisaoFiscalERN({ reservaSelecionada }: { rese
     <section aria-label="Histórico de revisão fiscal" className={caixa}>
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#E3A144]">ERN / RASTREABILIDADE INTERNA</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#E3A144]">EDA / RASTREABILIDADE INTERNA</p>
           <h2 className="mt-2 text-lg font-semibold">Histórico de revisão fiscal</h2>
           <p className="mt-1 text-xs leading-5 text-[#94A5A1]">Acompanhamento por reserva. Revisão interna não equivale a homologação, DPS transmitida ou NFS-e autorizada.</p>
         </div>

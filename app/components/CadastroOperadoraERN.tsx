@@ -125,7 +125,7 @@ export default function CadastroOperadoraERN({ usuarioId }: Props) {
       </h2>
 
       <p className="mt-3 text-sm leading-7 text-[#EDEDE3]/80">
-        Crie o espaço da sua empresa na ERN. Você será o administrador
+        Crie o espaço da sua empresa na EDA. Você será o administrador
         e poderá convidar sua equipe conforme os limites do plano.
         O cadastro começa no plano gratuito.
       </p>

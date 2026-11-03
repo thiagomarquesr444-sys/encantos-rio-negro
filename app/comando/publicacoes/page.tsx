@@ -226,7 +226,7 @@ export default function PublicacoesEditorialPage() {
 
         <header className="mt-4 border-b border-[var(--ern-borda)] pb-6">
           <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
-            Editorial oficial da Rede ERN
+            Editorial oficial da Rede EDA
           </p>
           <h1
             className="mt-3 text-3xl sm:text-4xl"

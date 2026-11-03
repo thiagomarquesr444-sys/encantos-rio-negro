@@ -9,7 +9,7 @@ import { useLanguage } from '@/app/components/LanguageProvider';
 
 const textos = {
   PT: {
-    abrir: 'Feedback', titulo: 'Ajude a melhorar a ERN',
+    abrir: 'Feedback', titulo: 'Ajude a melhorar a EDA',
     introducao: 'Conte o que funcionou e o que podemos melhorar.',
     tipo: 'Tipo de feedback', problema: 'Relatar problema',
     sugestao: 'Sugerir melhoria', experiencia: 'Minha experiência',
@@ -23,7 +23,7 @@ const textos = {
     sessao: 'Sua sessão expirou. Entre novamente para enviar.',
   },
   EN: {
-    abrir: 'Feedback', titulo: 'Help improve ERN',
+    abrir: 'Feedback', titulo: 'Help improve EDA',
     introducao: 'Tell us what worked and what we can improve.',
     tipo: 'Feedback type', problema: 'Report a problem',
     sugestao: 'Suggest an improvement', experiencia: 'My experience',
@@ -37,7 +37,7 @@ const textos = {
     sessao: 'Your session expired. Sign in again to submit.',
   },
   ES: {
-    abrir: 'Comentarios', titulo: 'Ayuda a mejorar ERN',
+    abrir: 'Comentarios', titulo: 'Ayuda a mejorar EDA',
     introducao: 'Cuéntanos qué funcionó y qué podemos mejorar.',
     tipo: 'Tipo de comentario', problema: 'Informar un problema',
     sugestao: 'Sugerir una mejora', experiencia: 'Mi experiencia',
@@ -262,7 +262,7 @@ export default function FeedbackERN() {
           box-shadow:0 4px 18px #0003;font:600 12px sans-serif;
           cursor:pointer;
         }
-        /* ERN V44.8 - Feedback acima do convite de instalacao */
+        /* EDA V44.8 - Feedback acima do convite de instalacao */
         body:has(.instalar-ern) .ern-feedback-acesso {
           bottom: calc(88px + env(safe-area-inset-bottom, 0px));
         }
@@ -328,7 +328,7 @@ export default function FeedbackERN() {
           outline:3px solid var(--ern-destaque,#c5b595);outline-offset:3px;
         }
         @media(max-width:480px) {
-          /* ERN V44.8 - Feedback acima do convite de instalacao */
+          /* EDA V44.8 - Feedback acima do convite de instalacao */
         body:has(.instalar-ern) .ern-feedback-acesso {
           bottom: calc(88px + env(safe-area-inset-bottom, 0px));
         }

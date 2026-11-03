@@ -230,7 +230,7 @@ export default function ReferenciaEmbarcacaoERN(props: Props) {
             <p className="mt-1 text-[11px] leading-5 text-[color:var(--ern-secundario,#EDEDE3)]">
               A consulta usa uma cópia desta posição e abre o painel de imagens
               abaixo. Os resultados são do Google, sem vínculo automático com a
-              ERN e sem confirmação de disponibilidade.
+              EDA e sem confirmação de disponibilidade.
             </p>
             <div className="mt-3 flex flex-wrap gap-2">
               {["Hospedagens", "Restaurantes", "Mercados", "Combustível"].map(

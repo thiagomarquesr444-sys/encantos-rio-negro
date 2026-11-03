@@ -1147,7 +1147,7 @@ function FormularioLogin() {
                 <p className="rounded-xl border border-white/10 bg-white/[0.03] p-3 text-sm leading-6 text-[#EDEDE3]/75">
                   Este cadastro
                   pertence à Rede
-                  ERN. Depois da
+                  EDA. Depois da
                   autenticação,
                   você confirmará
                   sua modalidade e

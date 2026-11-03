@@ -808,7 +808,7 @@ export default function VouchersPage() {
         subtitulo: 'Documento operacional | Plataforma Encantos Gestão',
         empresa: empresa.nome,
         identificador: atual.codigo,
-        nomeArquivo: `ERN-voucher-${atual.id}.pdf`,
+        nomeArquivo: `EDA-voucher-${atual.id}.pdf`,
         status: situacao,
         dados: [
           { campo: 'Prestador do serviço', valor: empresa.nome },

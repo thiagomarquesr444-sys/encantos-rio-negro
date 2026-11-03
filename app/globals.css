@@ -1284,3 +1284,78 @@ html[data-ern-portal="escuro"] .ern-publico {
 @media (prefers-reduced-motion: reduce) {
   .ern-selo-trilho { animation: none; }
 }
+
+/* ===================================================================
+   ERN_TEMA_CLARO_V2 — menu lateral sempre verde-noite e tema claro
+   completo no conteúdo do painel da operadora.
+   =================================================================== */
+.ern-gestao .ern-menu-fixo {
+  --ern-fundo: #08130f;
+  --ern-painel: #0a1713;
+  --ern-elevado: #14281f;
+  --ern-texto: #f0f0e8;
+  --ern-secundario: #b8c9bf;
+  --ern-borda: rgb(255 255 255 / 12%);
+  --ern-destaque: #f4c77e;
+  --ern-botao: #e3a144;
+  --ern-sobre-botao: #07110e;
+  --ern-suave: rgb(255 255 255 / 5%);
+  --ern-hover: #193327;
+  --ern-sucesso: #a7f3d0;
+  --ern-alerta: #fde68a;
+  --ern-erro: #fecaca;
+  color-scheme: dark;
+}
+
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .ern-gestao-conteudo :is(
+  [class~="bg-[#151A1B]"], [class~="bg-[#0C1112]"], [class~="bg-[#0D1B16]"],
+  [class~="bg-[#101616]"], [class~="bg-[#08130F]"], [class~="bg-[#0D1213]"],
+  [class~="bg-[#171D1D]"], [class~="bg-[#0C211A]"], [class~="bg-[#101214]"]
+) {
+  background-color: var(--ern-painel);
+}
+
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .ern-gestao-conteudo :is(
+  [class~="bg-[#242B2B]"], [class~="bg-[#1d2526]"], [class~="bg-[#1D2526]"],
+  [class~="bg-[#242D2D]"], [class~="bg-[#202728]"], [class~="bg-[#1C2324]"],
+  [class~="bg-[#303A39]"], [class~="bg-white/[0.06]"], [class~="bg-white/[0.08]"]
+) {
+  background-color: var(--ern-elevado);
+}
+
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .ern-gestao-conteudo :is(
+  [class~="text-[#F1F4EF]"], [class~="text-[#F5F3EA]"], [class~="text-[#F4F1E9]"],
+  [class~="text-white"]
+) {
+  color: var(--ern-texto);
+}
+
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .ern-gestao-conteudo :is(
+  [class~="text-[#94A5A1]"], [class~="text-[#A5B4AF]"], [class~="text-[#B8C9BF]"],
+  [class~="text-[#8FA39A]"], [class~="text-[#D6DFD9]"], [class~="text-[#C3D9D2]"],
+  [class~="text-[#C0CFC4]"], [class~="text-[#CDD8D2]"], [class~="text-[#DBE3DE]"],
+  [class~="text-[#bbcac1]"], [class~="text-[#A9BCAE]"], [class~="text-[#A6B4AE]"],
+  [class~="text-[#A4B4AE]"], [class~="text-[#81918C]"], [class~="text-[#7F968B]"]
+) {
+  color: var(--ern-secundario);
+}
+
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .ern-gestao-conteudo :is(
+  [class~="text-[#E9B76B]"], [class~="text-[#F7D595]"]
+) {
+  color: var(--ern-destaque);
+}
+
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .ern-gestao-conteudo :is(
+  [class~="border-white/5"], [class~="border-white/[0.05]"], [class~="border-white/[0.06]"],
+  [class~="border-white/[0.07]"], [class~="border-white/[0.08]"], [class~="border-[#355043]"],
+  [class~="border-[#E3A144]/15"], [class~="border-[#E3A144]/20"]
+) {
+  border-color: var(--ern-borda);
+}
+
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .ern-gestao-conteudo :is(
+  [class~="shadow-2xl"], [class*="shadow-[0_12px_42px"]
+) {
+  box-shadow: 0 10px 30px rgb(20 39 30 / 8%);
+}

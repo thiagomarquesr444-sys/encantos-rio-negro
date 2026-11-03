@@ -319,7 +319,7 @@ export default function ImagensLocalERN({
 
             <p className={`mt-2 ${TEXTO}`}>
               Você pode continuar utilizando os demais recursos
-              da ERN sem carregar este painel do Google.
+              da EDA sem carregar este painel do Google.
             </p>
 
             <div className="mt-3 flex flex-wrap gap-3">
@@ -341,7 +341,7 @@ export default function ImagensLocalERN({
                 rel="noopener noreferrer"
                 className={`${BOTAO} border-[#E3A144]/40 text-[color:var(--ern-destaque,#F4C77E)] underline underline-offset-4`}
               >
-                Privacidade da ERN
+                Privacidade da EDA
                 <span className="sr-only">
                   {' '}(abre em nova aba)
                 </span>
