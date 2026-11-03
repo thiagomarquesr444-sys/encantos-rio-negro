@@ -1,4 +1,7 @@
 'use client';
+// ERN_PADRAO_LEGADO_EDA_V1: página no padrão Encantos Gestão (tokens do tema, Geist, painel lateral).
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
 import './hospedagens-premium.css';
 
 export const dynamic = 'force-dynamic';
@@ -900,7 +903,7 @@ export default function HospedagensPage() {
     'mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)]';
 
   return (
-    <div className="ern-hospedagens-premium min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <div className="eda-pg eda-pg-auto eda-pg-legado">
       {/* TOAST */}
 
       {mensagemSucesso && (

@@ -1397,3 +1397,30 @@ html[data-ern-portal="escuro"] .ern-publico {
 }
 .ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .ern-premium-dashboard :is(.ern-premium-day-slot) { background: var(--ern-elevado); }
 .ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .ern-premium-dashboard main :is(section,article)[class*="rounded-2xl"] { box-shadow: 0 10px 30px rgb(20 39 30 / 7%); }
+
+
+/* ERN_FONTE_GEIST_V1
+   Toda a gestão da operadora usa Geist: títulos, botões, tabelas, números e
+   formulários. As páginas antigas que pediam serifa (Fraunces) ou Work Sans
+   dentro da gestão passam a usar Geist também. O portal público não muda. */
+.ern-gestao {
+  --font-gestao: var(--font-geist), "Geist", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font-family: var(--font-gestao);
+  font-feature-settings: "ss01" 1, "cv11" 1;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+.ern-gestao :is(h1, h2, h3, h4, h5, h6, p, span, a, button, input, select, textarea, label, td, th, li, dt, dd, strong, b, small, legend, summary) {
+  font-family: inherit;
+}
+.ern-gestao [style*="font-fraunces"],
+.ern-gestao [style*="font-work-sans"],
+.ern-gestao [class*="font-serif"],
+.ern-gestao [class*="font-[var(--font-fraunces)"] {
+  font-family: var(--font-gestao) !important;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+}
+.ern-gestao :is(code, kbd, samp, pre) {
+  font-family: var(--font-geist-mono), ui-monospace, monospace;
+}

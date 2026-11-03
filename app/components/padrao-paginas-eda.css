@@ -24,7 +24,7 @@
   min-width: 0;
   color: var(--p-texto);
   background: radial-gradient(60% 380px at 100% 0%, rgb(227 161 68 / 8%), transparent 70%), var(--p-fundo);
-  font-family: var(--font-work-sans), 'Work Sans Variable', system-ui, sans-serif;
+  font-family: var(--font-gestao, var(--font-geist)), system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
 }
 
@@ -191,6 +191,40 @@
 
 @keyframes eda-pg-entra { from { transform: translateX(24px); opacity: 0; } to { transform: none; opacity: 1; } }
 @keyframes eda-pg-veu { from { opacity: 0; } to { opacity: 1; } }
+
+
+/* Números do topo das páginas */
+.eda-pg-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 22px; }
+.eda-pg-kpi { min-width: 0; padding: 16px 18px; border-radius: 18px; background: var(--p-painel); border: 1px solid var(--p-borda); box-shadow: var(--p-sombra); }
+.eda-pg-kpi small { display: block; font-size: 12.5px; font-weight: 550; color: var(--p-sec); }
+.eda-pg-kpi b { display: block; margin-top: 10px; font-size: clamp(20px, 2vw, 26px); font-weight: 650; letter-spacing: -0.03em; line-height: 1.1; overflow-wrap: anywhere; }
+.eda-pg-kpi span { display: block; margin-top: 6px; font-size: 12px; color: var(--p-sec); }
+.eda-pg-kpi-ok b { color: var(--p-verde); }
+.eda-pg-kpi-er b { color: var(--p-verm); }
+.eda-pg-kpi-at b { color: var(--p-amar); }
+.eda-pg-nota { margin: 10px 0 0; font-size: 12px; line-height: 1.55; color: var(--p-sec); }
+
+/* Formulários no painel lateral e nas páginas */
+.eda-pg-form { display: grid; gap: 14px; }
+.eda-pg-form fieldset { display: grid; gap: 14px; min-width: 0; margin: 0; padding: 0; border: 0; }
+.eda-pg-form-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.eda-pg-campo { display: grid; gap: 6px; min-width: 0; }
+.eda-pg-campo > span, .eda-pg-campo > label { font-size: 12.5px; font-weight: 600; color: var(--p-sec); }
+.eda-pg-campo :is(input, select, textarea) {
+  width: 100%; min-height: 42px; padding: 0 12px; border-radius: 12px;
+  border: 1px solid var(--p-borda); background: var(--p-campo); color: var(--p-texto);
+  font: inherit; font-size: 14px; outline: none; color-scheme: inherit;
+}
+.eda-pg-campo textarea { min-height: 96px; padding: 10px 12px; resize: vertical; line-height: 1.5; }
+.eda-pg-campo :is(input, select, textarea):focus { border-color: #e3a144; box-shadow: 0 0 0 3px rgb(227 161 68 / 18%); }
+.eda-pg-campo :is(input, select, textarea):disabled { opacity: .6; }
+.eda-pg-campo small { font-size: 12px; line-height: 1.5; color: var(--p-sec); }
+.eda-pg .eda-pg-campo input[type="date"] { color-scheme: dark; }
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-pg .eda-pg-campo input[type="date"] { color-scheme: light; }
+.eda-pg-link { padding: 0; border: 0; background: none; font: inherit; font-size: 12.5px; font-weight: 650; color: var(--p-ouro); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+
+@media (max-width: 1023px) { .eda-pg-kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .eda-pg-form-2 { grid-template-columns: minmax(0, 1fr); } .eda-pg-kpis { gap: 10px; } }
 
 /* Responsivo */
 @media (max-width: 1023px) {

@@ -1,4 +1,7 @@
 'use client';
+// ERN_PADRAO_LEGADO_EDA_V1: página no padrão Encantos Gestão (tokens do tema, Geist, painel lateral).
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
 
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
@@ -429,7 +432,7 @@ export default function ParceirosPage() {
   const possuiFiltro = Boolean(busca || filtroTipo || filtroStatus);
 
   return (
-    <div className="min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <div className="eda-pg eda-pg-auto eda-pg-legado">
       <header className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
         <div className="mx-auto flex max-w-[1360px] flex-col gap-7 px-5 py-9 md:px-8 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -437,7 +440,7 @@ export default function ParceirosPage() {
               <span className="h-px w-8 bg-[var(--ern-botao)]" />
 
               <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--ern-destaque)]">
-                Rede Operacional ERN
+                Rede Operacional EDA
               </span>
             </div>
 
@@ -537,7 +540,7 @@ export default function ParceirosPage() {
                   fontFamily: 'var(--font-fraunces), serif',
                 }}
               >
-                A base comercial que conecta a operação ERN.
+                A base comercial que conecta a operação EDA.
               </h2>
 
               <p className="mt-2 max-w-3xl text-xs leading-6 text-[var(--ern-secundario)]">

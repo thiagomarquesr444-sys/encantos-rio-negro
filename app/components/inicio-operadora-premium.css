@@ -26,7 +26,7 @@
   margin: 0 auto;
   padding: 28px 32px 8px;
   color: var(--e-texto);
-  font-family: var(--font-work-sans), 'Work Sans Variable', system-ui, sans-serif;
+  font-family: var(--font-gestao, var(--font-geist)), system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
 }
 
@@ -59,7 +59,7 @@
 }
 .eda-inicio-fundo .eda-analises { background: transparent !important; }
 .eda-sec-eb { margin: 0; font-size: 10px; font-weight: 650; letter-spacing: 0.18em; text-transform: uppercase; color: #e3a144; }
-.eda-sec-titulo { margin: 4px 0 14px; font-size: 19px; font-weight: 650; letter-spacing: -0.015em; color: var(--ern-texto, #f2f0e6); font-family: var(--font-work-sans), 'Work Sans Variable', system-ui, sans-serif; }
+.eda-sec-titulo { margin: 4px 0 14px; font-size: 19px; font-weight: 650; letter-spacing: -0.015em; color: var(--ern-texto, #f2f0e6); font-family: var(--font-gestao, var(--font-geist)), system-ui, sans-serif; }
 .eda-copa { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; padding: 18px 22px; border-radius: 20px; border: 1px solid color-mix(in srgb, #e3a144 30%, transparent); background: var(--ern-painel, #0b1814); }
 .eda-copa-titulo { margin: 4px 0 0; font-size: 16px; font-weight: 650; color: var(--ern-texto, #f2f0e6); }
 

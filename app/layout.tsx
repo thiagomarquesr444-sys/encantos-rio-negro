@@ -8,6 +8,8 @@ import '@fontsource-variable/work-sans';
 
 import './globals.css';
 
+import { Geist, Geist_Mono } from 'next/font/google';
+
 import { AppProvider } from '@/app/context/AppContext';
 import AppShell from '@/app/components/AppShell';
 import { LanguageProvider } from '@/app/components/LanguageProvider';
@@ -20,6 +22,11 @@ const fontes = {
   '--font-fraunces': '"Fraunces Variable"',
   '--font-work-sans': '"Work Sans Variable"',
 } as CSSProperties;
+
+// ERN_FONTE_GEIST_V1: fonte da gestão (Encantos Gestão). O Next.js baixa no
+// build e hospeda junto com o site; nenhum visitante acessa o Google.
+const geist = Geist({ subsets: ['latin', 'latin-ext'], variable: '--font-geist', display: 'swap' });
+const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono', display: 'swap' });
 
 export const viewport: Viewport = {
   themeColor: '#07110e',
@@ -58,7 +65,7 @@ export default function RootLayout({
     <html lang="pt-BR" suppressHydrationWarning>
       <body
         style={fontes}
-        className="bg-slate-950 text-slate-100 antialiased"
+        className={`${geist.variable} ${geistMono.variable} bg-slate-950 text-slate-100 antialiased`}
       >
         <script
           dangerouslySetInnerHTML={{

@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import VinculosReserva from '@/app/components/VinculosReserva';
 import LogisticaReserva from '@/app/components/LogisticaReserva';
 import PeriodoReservaERN, { validarPeriodoReservaERN } from '@/app/components/PeriodoReservaERN';
+import { CabecalhoEDA, PaginaEDA, PillEDA, type TomEDA } from '@/app/components/PadraoPaginaEDA';
 
 import {
   normalizarStatusReservaERN,
@@ -64,17 +65,18 @@ type Feedback = {
   mensagem: string;
 } | null;
 
-const inputClass =
-  'min-h-12 w-full min-w-0 max-w-full rounded-xl border border-white/15 bg-[#07110E] px-4 py-3 text-base text-[#EDEDE3] outline-none transition placeholder:text-[#B4C8BB]/60 focus:border-[#E3A144] disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm';
+// ERN_PADRAO_FORMULARIOS_EDA_V1: campos e botões no padrão da gestão.
+const inputClass = 'eda-pg-input w-full min-w-0 px-4 py-3';
+const labelClass = 'mb-2 block';
+const buttonClass = 'eda-pg-bt';
 
-const labelClass =
-  'mb-2 block text-sm font-medium text-[#C5D4CA]';
-
-const buttonClass =
-  'inline-flex min-h-12 items-center justify-center rounded-xl border border-white/15 px-4 py-3 text-sm font-semibold text-[#D6E2D9] transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50';
-
-const headingStyle = {
-  fontFamily: 'var(--font-fraunces), serif',
+const TOM_STATUS: Record<StatusReserva, TomEDA> = {
+  Pendente: 'at',
+  Confirmada: 'ok',
+  Cancelada: 'er',
+  Concluída: 'info',
+  'Não compareceu': 'at',
+  Desconhecido: 'nt',
 };
 
 const formInicial: ReservaForm = {
@@ -530,94 +532,68 @@ function EditarReservaConteudo({ id }: { id?: string }) {
 
   if (loading) {
     return (
-      <div
-        role="status"
-        className="flex min-h-[60dvh] items-center justify-center bg-[#07110E] px-4 text-sm text-[#C5D4CA]"
-      >
-        Carregando reserva…
-      </div>
+      <PaginaEDA className="eda-pg-auto">
+        <div className="eda-pg-miolo">
+          <p role="status" className="eda-pg-estado">Carregando reserva…</p>
+        </div>
+      </PaginaEDA>
     );
   }
 
   if (!id || reservaCarregadaId !== id || !empresaCarregada) {
     return (
-      <main className="min-h-screen bg-[#07110E] px-4 py-8 text-[#EDEDE3]">
-        <div className="mx-auto max-w-2xl rounded-2xl border border-red-400/25 bg-[#0A1713] p-5">
-          <h1 className="text-2xl" style={headingStyle}>
-            Não foi possível abrir a reserva
-          </h1>
-          <p role="alert" className="mt-4 break-words text-sm leading-7 text-red-200">
-            {feedback?.mensagem || 'Reserva indisponível.'}
-          </p>
-          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-            <button
-              type="button"
-              onClick={() => setTentativa((atual) => atual + 1)}
-              className={buttonClass}
-            >
-              Tentar novamente
-            </button>
-            <Link href="/reservas" className={buttonClass}>
-              Voltar às reservas
-            </Link>
-          </div>
+      <PaginaEDA className="eda-pg-auto">
+        <div className="eda-pg-miolo" style={{ maxWidth: 720 }}>
+          <Link href="/reservas" className="eda-pg-voltar">← Reservas</Link>
+          <section className="eda-pg-secao">
+            <h2>Não foi possível abrir a reserva</h2>
+            <p role="alert" className="eda-pg-aviso eda-pg-aviso-er">{feedback?.mensagem || 'Reserva indisponível.'}</p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 16 }}>
+              <button type="button" onClick={() => setTentativa((atual) => atual + 1)} className="eda-pg-bt">Tentar novamente</button>
+              <Link href="/reservas" className="eda-pg-bt">Voltar às reservas</Link>
+            </div>
+          </section>
         </div>
-      </main>
+      </PaginaEDA>
     );
   }
 
   const idURL = encodeURIComponent(id);
 
   return (
-    <div className="ern-reservas-premium min-h-screen bg-[#0C1112] text-[#F1F4EF]">
-      <header className="border-b border-white/10 bg-[#091510]">
-        <div className="mx-auto flex max-w-[1280px] flex-col gap-5 px-4 py-8 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-              Operação · Reservas
-            </p>
-            <h1 className="mt-3 text-3xl sm:text-4xl" style={headingStyle}>
-              {somenteConsultaERN ? 'Consultar reserva' : 'Editar reserva'}
-            </h1>
-            <p className="mt-4 max-w-2xl break-words text-sm leading-7 text-[#B4C8BB]">
-              Atualize os dados do atendimento, a logística e o status da reserva.
-            </p>
-          </div>
+    <PaginaEDA className="eda-pg-auto">
+      <div className="eda-pg-miolo" style={{ maxWidth: 1200 }}>
+        <Link href="/reservas" className="eda-pg-voltar">← Reservas</Link>
 
-          {!loading && !salvando && !gravada && (
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Link href={`/vouchers?reserva_id=${idURL}`} className={buttonClass}>
-                Consultar vouchers
-              </Link>
-              <Link href={`/financeiro?reserva_id=${idURL}`} className={buttonClass}>
-                Consultar financeiro
-              </Link>
-            </div>
-          )}
-        </div>
-      </header>
+        <CabecalhoEDA
+          etiqueta={`Reserva · ${form.dataReserva ? form.dataReserva.split('-').reverse().join('/') : 'sem data'}`}
+          titulo={somenteConsultaERN ? 'Consultar reserva' : 'Editar reserva'}
+          resumo={<>
+            <b>{form.cliente || 'Cliente não informado'}</b> · {form.pacote || 'Passeio não informado'}
+            {' '}<span style={{ display: 'inline-flex', verticalAlign: 'middle', marginLeft: 6 }}><PillEDA tom={TOM_STATUS[statusOriginal]}>{statusOriginal}</PillEDA></span>
+          </>}
+          acoes={!salvando && !gravada ? (
+            <>
+              <Link href={`/vouchers?reserva_id=${idURL}`} className="eda-pg-bt">Vouchers</Link>
+              <Link href={`/financeiro?reserva_id=${idURL}`} className="eda-pg-bt">Financeiro</Link>
+            </>
+          ) : undefined}
+        />
 
-      <main className="mx-auto max-w-[1280px] px-4 py-6 sm:px-6 lg:px-8">
         {feedback && (
           <div
             ref={feedbackRef}
             tabIndex={-1}
             role={feedback.tipo === 'erro' ? 'alert' : 'status'}
-            className={`mb-5 rounded-2xl border p-4 text-sm leading-7 outline-none ${
-              feedback.tipo === 'sucesso'
-                ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-200'
-                : 'border-red-400/25 bg-red-400/10 text-red-200'
-            }`}
+            className={`eda-pg-aviso ${feedback.tipo === 'erro' ? 'eda-pg-aviso-er' : ''}`}
+            style={feedback.tipo === 'sucesso' ? { color: 'var(--p-verde)', outline: 'none' } : { outline: 'none' }}
           >
             {feedback.mensagem}
           </div>
         )}
 
         {somenteConsultaERN && (
-          <div
-            role="status"
-            className="mb-5 rounded-xl border border-sky-400/25 bg-sky-400/10 p-4 text-sm leading-7 text-sky-100"
-          >
+          <div role="status" className="eda-pg-aviso" style={{ color: 'var(--p-azul)' }}>
             {statusOriginal === 'Desconhecido'
               ? 'Status não reconhecido. A edição foi bloqueada para preservar o registro até sua revisão.'
               : `Reserva ${statusOriginal.toLocaleLowerCase('pt-BR')}. Os dados estão disponíveis somente para consulta. O encerramento não comprova pagamento.`}
@@ -625,17 +601,14 @@ function EditarReservaConteudo({ id }: { id?: string }) {
         )}
 
         <form onSubmit={handleAtualizar} aria-busy={salvando}>
-          <fieldset
-            disabled={bloqueado}
-            className="ern-reserva-form-grid grid min-w-0 gap-5 xl:grid-cols-12"
-          >
-            <section className="min-w-0 rounded-2xl border border-white/10 bg-[#0A1713] p-4 sm:p-6">
-              <h2 className="text-2xl" style={headingStyle}>
-                Atendimento e passeio
-              </h2>
+          <fieldset disabled={bloqueado} style={{ margin: 0, padding: 0, border: 0, minWidth: 0 }}>
+            <div className="eda-pg-grade-form">
+              <section className="eda-pg-secao">
+                <p className="eda-pg-secao-eb">Atendimento</p>
+                <h2>Cliente e passeio</h2>
+                <p className="eda-pg-secao-txt">Vincule ao cadastro ou escreva o nome. Campos com * são obrigatórios.</p>
 
-              <div className="mt-5 min-w-0 space-y-5">
-                <div className="min-w-0">
+                <div style={{ display: 'grid', gap: 18 }}>
                   <VinculosReserva
                     clienteId={form.cliente_id}
                     passeioId={form.passeio_id}
@@ -648,234 +621,134 @@ function EditarReservaConteudo({ id }: { id?: string }) {
                       setForm((atual) => ({ ...atual, ...campos }));
                     }}
                   />
-                </div>
 
-                <div>
-                  <label htmlFor="reserva-cliente" className={labelClass}>
-                    Cliente *
-                  </label>
-                  <input
-                    id="reserva-cliente"
-                    type="text"
-                    required
-                    value={form.cliente}
-                    onChange={(event) => alterarCampo('cliente', event.target.value)}
-                    className={inputClass}
-                  />
-                  {form.cliente_id && (
-                    <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">
-                      Cliente vinculado ao cadastro. Alterar este nome manualmente remove o vínculo.
+                  <div>
+                    <label htmlFor="reserva-cliente" className={labelClass}>Cliente *</label>
+                    <input id="reserva-cliente" type="text" required value={form.cliente} onChange={(event) => alterarCampo('cliente', event.target.value)} className={inputClass} />
+                    {form.cliente_id && <p className="eda-pg-nota">Cliente vinculado ao cadastro. Alterar este nome manualmente remove o vínculo.</p>}
+                  </div>
+
+                  <div>
+                    <label htmlFor="reserva-pacote" className={labelClass}>Pacote / Passeio *</label>
+                    <input id="reserva-pacote" type="text" required value={form.pacote} onChange={(event) => alterarCampo('pacote', event.target.value)} className={inputClass} />
+                    {form.passeio_id && <p className="eda-pg-nota">Passeio vinculado ao cadastro. Alterar este nome manualmente remove o vínculo.</p>}
+                  </div>
+
+                  <div className="eda-pg-form-2">
+                    <div>
+                      <label htmlFor="reserva-data" className={labelClass}>Data do passeio *</label>
+                      <input id="reserva-data" type="date" required value={form.dataReserva} onChange={(event) => alterarCampo('dataReserva', event.target.value)} className={inputClass} />
+                    </div>
+                    <div>
+                      <label htmlFor="reserva-pessoas" className={labelClass}>Quantidade de pessoas *</label>
+                      <input id="reserva-pessoas" type="number" inputMode="numeric" min={1} max={2147483647} step={1} required value={form.quantidade_pessoas} onChange={(event) => alterarCampo('quantidade_pessoas', event.target.value)} className={inputClass} />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="reserva-valor" className={labelClass}>Valor comercial total (R$) *</label>
+                    <input id="reserva-valor" type="text" inputMode="decimal" required value={form.valor} onChange={(event) => alterarCampo('valor', event.target.value)} onBlur={formatarValorAoSair} placeholder="Ex.: 1.500,00" className={inputClass} />
+                    <p className="eda-pg-nota">Total da reserva, sem multiplicação automática pela quantidade de pessoas. Este valor não confirma recebimento.</p>
+                  </div>
+                </div>
+              </section>
+
+              <section className="eda-pg-secao">
+                <p className="eda-pg-secao-eb">Operação</p>
+                <h2>Período, logística e status</h2>
+                <p className="eda-pg-secao-txt">Horários de saída e retorno, embarcação e situação da reserva.</p>
+
+                <div style={{ display: 'grid', gap: 18 }}>
+                  <div>
+                    <PeriodoReservaERN
+                      inicio={form.dataReserva}
+                      horarioInicio={form.horario}
+                      fim={form.data_fim_prevista}
+                      horarioFim={form.horario_fim_previsto}
+                      status={form.status}
+                      bloqueado={bloqueado}
+                      onChange={(campos) => {
+                        if (envioReserva.current) return;
+                        setForm((atual) => ({ ...atual, ...campos }));
+                      }}
+                    />
+                    <LogisticaReserva
+                      horario={form.horario}
+                      embarcacaoId={form.embarcacao_id}
+                      bloqueado={bloqueado}
+                      onChange={(campos) => {
+                        if (envioReserva.current) return;
+                        setForm((atual) => ({ ...atual, ...campos }));
+                      }}
+                    />
+                  </div>
+
+                  <div>
+                    <label htmlFor="reserva-agencia" className={labelClass}>Agência / Parceiro</label>
+                    <input id="reserva-agencia" value={form.agencia} onChange={(event) => alterarCampo('agencia', event.target.value)} className={inputClass} />
+                  </div>
+
+                  <div>
+                    <label htmlFor="reserva-status" className={labelClass}>Status da reserva</label>
+                    <select id="reserva-status" value={form.status} onChange={(event) => alterarCampo('status', event.target.value)} className={inputClass}>
+                      <option value="Pendente">Pendente</option>
+                      <option value="Confirmada">Confirmada</option>
+                      <option value="Cancelada">Cancelada</option>
+                      {somenteConsultaERN && <option value={form.status}>{form.status}</option>}
+                    </select>
+                  </div>
+
+                  {form.status === 'Cancelada' && (
+                    <div role="status" className="eda-pg-aviso eda-pg-aviso-at" style={{ margin: 0 }}>
+                      {statusOriginal === 'Cancelada' ? 'Esta reserva está cancelada.' : 'Ao salvar, esta reserva ficará cancelada.'}
+                      {' '}O histórico será preservado. Revise separadamente os vouchers, as receitas e as despesas vinculadas.
+                    </div>
+                  )}
+
+                  {statusOriginal === 'Cancelada' && form.status !== 'Cancelada' && (
+                    <p role="status" className="eda-pg-aviso eda-pg-aviso-at" style={{ margin: 0 }}>
+                      Você está reativando uma reserva cancelada. Confira a disponibilidade operacional e os registros vinculados antes de salvar.
                     </p>
                   )}
                 </div>
+              </section>
 
-                <div>
-                  <label htmlFor="reserva-pacote" className={labelClass}>
-                    Pacote / Passeio *
-                  </label>
-                  <input
-                    id="reserva-pacote"
-                    type="text"
-                    required
-                    value={form.pacote}
-                    onChange={(event) => alterarCampo('pacote', event.target.value)}
-                    className={inputClass}
-                  />
-                  {form.passeio_id && (
-                    <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">
-                      Passeio vinculado ao cadastro. Alterar este nome manualmente remove o vínculo.
-                    </p>
-                  )}
-                </div>
+              <section className="eda-pg-secao eda-pg-largo">
+                <p className="eda-pg-secao-eb">Anotações</p>
+                <label htmlFor="reserva-observacoes" className={labelClass}>Observações</label>
+                <textarea
+                  id="reserva-observacoes"
+                  rows={5}
+                  value={form.observacoes}
+                  onChange={(event) => alterarCampo('observacoes', event.target.value)}
+                  placeholder="Informações adicionais sobre atendimento, operação ou cancelamento…"
+                  className={`${inputClass} resize-y`}
+                />
+              </section>
+            </div>
 
-                <div className="grid min-w-0 gap-5 sm:grid-cols-2">
-                  <div className="min-w-0">
-                    <label htmlFor="reserva-data" className={labelClass}>
-                      Data do passeio *
-                    </label>
-                    <input
-                      id="reserva-data"
-                      type="date"
-                      required
-                      value={form.dataReserva}
-                      onChange={(event) => alterarCampo('dataReserva', event.target.value)}
-                      className={`${inputClass} [color-scheme:dark]`}
-                    />
-                  </div>
-
-                  <div className="min-w-0">
-                    <label htmlFor="reserva-pessoas" className={labelClass}>
-                      Quantidade de pessoas *
-                    </label>
-                    <input
-                      id="reserva-pessoas"
-                      type="number"
-                      inputMode="numeric"
-                      min={1}
-                      max={2147483647}
-                      step={1}
-                      required
-                      value={form.quantidade_pessoas}
-                      onChange={(event) => alterarCampo('quantidade_pessoas', event.target.value)}
-                      className={inputClass}
-                    />
-                  </div>
-
-                  <div className="min-w-0 sm:col-span-2">
-                    <label htmlFor="reserva-valor" className={labelClass}>
-                      Valor comercial total (R$) *
-                    </label>
-                    <input
-                      id="reserva-valor"
-                      type="text"
-                      inputMode="decimal"
-                      required
-                      value={form.valor}
-                      onChange={(event) => alterarCampo('valor', event.target.value)}
-                      onBlur={formatarValorAoSair}
-                      placeholder="Ex.: 1.500,00"
-                      className={inputClass}
-                    />
-                    <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">
-                      Total da reserva, sem multiplicação automática pela quantidade
-                      de pessoas. Este valor não confirma recebimento.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </section>
-
-            <section className="min-w-0 rounded-2xl border border-white/10 bg-[#0A1713] p-4 sm:p-6">
-              <h2 className="text-2xl" style={headingStyle}>
-                Operação e status
-              </h2>
-
-              <div className="mt-5 min-w-0 space-y-5">
-                <div className="min-w-0">
-                  <PeriodoReservaERN
-                    inicio={form.dataReserva}
-                    horarioInicio={form.horario}
-                    fim={form.data_fim_prevista}
-                    horarioFim={form.horario_fim_previsto}
-                    status={form.status}
-                    bloqueado={bloqueado}
-                    onChange={(campos) => {
-                      if (envioReserva.current) return;
-                      setForm((atual) => ({ ...atual, ...campos }));
-                    }}
-                  />
-                  <LogisticaReserva
-                    horario={form.horario}
-                    embarcacaoId={form.embarcacao_id}
-                    bloqueado={bloqueado}
-                    onChange={(campos) => {
-                      if (envioReserva.current) return;
-                      setForm((atual) => ({ ...atual, ...campos }));
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="reserva-agencia" className={labelClass}>
-                    Agência / Parceiro
-                  </label>
-                  <input
-                    id="reserva-agencia"
-                    value={form.agencia}
-                    onChange={(event) => alterarCampo('agencia', event.target.value)}
-                    className={inputClass}
-                  />
-                </div>
-
-
-
-                <div>
-                  <label htmlFor="reserva-status" className={labelClass}>
-                    Status da reserva
-                  </label>
-                  <select
-                    id="reserva-status"
-                    value={form.status}
-                    onChange={(event) => alterarCampo('status', event.target.value)}
-                    className={inputClass}
-                  >
-                    <option value="Pendente">Pendente</option>
-                    <option value="Confirmada">Confirmada</option>
-                    <option value="Cancelada">Cancelada</option>
-                    {somenteConsultaERN && (
-                      <option value={form.status}>{form.status}</option>
-                    )}
-                  </select>
-                </div>
-
-                {form.status === 'Cancelada' && (
-                  <div
-                    role="status"
-                    className="rounded-xl border border-amber-400/25 bg-amber-400/10 p-4 text-sm leading-7 text-amber-200"
-                  >
-                    {statusOriginal === 'Cancelada'
-                      ? 'Esta reserva está cancelada.'
-                      : 'Ao salvar, esta reserva ficará cancelada.'}
-                    {' '}O histórico será preservado. Revise separadamente os
-                    vouchers, as receitas e as despesas vinculadas.
-                  </div>
-                )}
-
-                {statusOriginal === 'Cancelada' && form.status !== 'Cancelada' && (
-                  <p
-                    role="status"
-                    className="rounded-xl border border-amber-400/25 p-4 text-sm leading-7 text-amber-200"
-                  >
-                    Você está reativando uma reserva cancelada. Confira a
-                    disponibilidade operacional e os registros vinculados antes
-                    de salvar.
-                  </p>
-                )}
-              </div>
-            </section>
-
-            <section className="min-w-0 rounded-2xl border border-white/10 bg-[#0A1713] p-4 sm:p-6 lg:col-span-2">
-              <label htmlFor="reserva-observacoes" className={labelClass}>
-                Observações
-              </label>
-              <textarea
-                id="reserva-observacoes"
-                rows={5}
-                value={form.observacoes}
-                onChange={(event) => alterarCampo('observacoes', event.target.value)}
-                placeholder="Informações adicionais sobre atendimento, operação ou cancelamento…"
-                className={`${inputClass} resize-y leading-7`}
-              />
-            </section>
-
-            <div className="min-w-0 border-t border-white/10 pt-5 lg:col-span-2">
-              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
-                <button
-                  type="button"
-                  disabled={bloqueado}
-                  onClick={() => router.push('/reservas')}
-                  className={buttonClass}
-                >
-                  Voltar sem salvar
-                </button>
-                <button
-                  type="submit"
-                  disabled={bloqueado}
-                  className={`${buttonClass} border-[#E3A144] bg-[#E3A144] font-bold text-[#07130F] hover:bg-[#F0B35C]`}
-                >
+          </fieldset>
+          <div className="eda-pg-barra">
+            <p>{somenteConsultaERN ? 'Somente consulta.' : 'As alterações só valem depois de salvar.'}</p>
+            <div>
+              <button type="button" disabled={salvando || gravada} onClick={() => router.push('/reservas')} className="eda-pg-bt">
+                {somenteConsultaERN ? 'Voltar' : 'Voltar sem salvar'}
+              </button>
+              {!somenteConsultaERN && (
+                <button type="submit" disabled={bloqueado} className="eda-pg-bt eda-pg-bt-ouro">
                   {gravada
                     ? 'Salvo · voltando…'
                     : salvando
                       ? 'Salvando…'
                       : form.status === 'Cancelada' && statusOriginal !== 'Cancelada'
-                        ? 'Salvar reserva como cancelada'
+                        ? 'Salvar como cancelada'
                         : 'Salvar alterações'}
                 </button>
-              </div>
+              )}
             </div>
-          </fieldset>
+          </div>
         </form>
-      </main>
-    </div>
+      </div>
+    </PaginaEDA>
   );
 }

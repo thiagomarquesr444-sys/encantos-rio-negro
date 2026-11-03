@@ -1,4 +1,7 @@
 'use client';
+// ERN_PADRAO_LEGADO_EDA_V1: página no padrão Encantos Gestão (tokens do tema, Geist, painel lateral).
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
 import './vouchers-premium.css';
 
 import React, {
@@ -56,13 +59,11 @@ type ModalAberto = {
   item: Voucher;
 } | null;
 
-const buttonClass =
-  'inline-flex min-h-11 items-center justify-center rounded-xl border border-white/15 px-4 py-2 text-sm font-medium text-[#D6E2D9] transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50';
+const buttonClass = 'eda-pg-bt';
 
-const inputClass =
-  'min-h-12 w-full min-w-0 rounded-xl border border-white/15 bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none placeholder:text-[#B4C8BB]/60 focus:border-[#E3A144] disabled:opacity-60';
+const inputClass = 'w-full min-w-0 px-4 py-3';
 
-const labelClass = 'mb-2 block text-sm font-medium text-[#C5D4CA]';
+const labelClass = 'mb-2 block';
 
 const headingStyle = {
   fontFamily: 'var(--font-fraunces), serif',
@@ -942,7 +943,7 @@ export default function VouchersPage() {
   const itemModal = modal?.item;
 
   return (
-    <div className="ern-vouchers-premium ern-vouchers-listagem min-h-screen bg-[#0C1112] text-[#F1F4EF]">
+    <div className="eda-pg eda-pg-auto eda-pg-legado">
       {erroPDF && (
         <div
           role="alert"

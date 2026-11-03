@@ -1,0 +1,289 @@
+/* ERN_PADRAO_FORMULARIOS_EDA_V1
+   Camada de acabamento dos formulários da gestão (.eda-pg-auto): campos,
+   rótulos, seções e avisos herdados das telas antigas passam a usar os
+   tokens do tema (Noite e Claro) e a fonte Geist. Atua só dentro de
+   .eda-pg-auto, sem mudar a lógica das páginas. */
+
+/* Seções (cartões) */
+.eda-pg-auto :is(section, fieldset > div)[class~="rounded-2xl"],
+.eda-pg-auto .eda-pg-secao {
+  background: var(--p-painel) !important;
+  border: 1px solid var(--p-borda) !important;
+  border-radius: 20px !important;
+  box-shadow: var(--p-sombra);
+}
+.eda-pg-auto .eda-pg-secao { padding: 22px; min-width: 0; }
+.eda-pg-auto :is(section, .eda-pg-secao) > h2 {
+  margin: 0 0 4px;
+  font-size: 16px !important;
+  font-weight: 650 !important;
+  letter-spacing: -0.01em;
+  color: var(--p-texto) !important;
+}
+.eda-pg-secao-eb { margin: 0 0 6px; font-size: 10px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--p-ouro); }
+.eda-pg-secao-txt { margin: 0 0 16px; font-size: 13px; line-height: 1.5; color: var(--p-sec); }
+
+/* Caixas internas dos componentes antigos */
+.eda-pg-auto [class~="rounded-xl"][class*="border"],
+.eda-pg-auto [class~="rounded-2xl"][class*="border"]:not(section) {
+  border-color: var(--p-borda) !important;
+}
+.eda-pg-auto :is([class~="bg-[#0A1713]"], [class~="bg-[#07110E]"], [class~="bg-[#0C1112]"], [class~="bg-[#091510]"], [class~="bg-[#151A1B]"], [class~="bg-[#0D1213]"], [class~="bg-white/[0.02]"], [class~="bg-white/[0.03]"], [class~="bg-white/5"]) {
+  background: var(--p-suave) !important;
+}
+.eda-pg-auto :is([class~="bg-[#E3A144]/5"], [class~="bg-[#E3A144]/10"]) {
+  background: color-mix(in srgb, #e3a144 7%, var(--p-painel)) !important;
+  border-color: color-mix(in srgb, #e3a144 30%, var(--p-borda)) !important;
+}
+.eda-pg-auto :is([class~="bg-amber-400/10"], [class~="bg-amber-400/5"]) {
+  background: color-mix(in srgb, var(--p-amar) 9%, var(--p-painel)) !important;
+  border-color: color-mix(in srgb, var(--p-amar) 30%, transparent) !important;
+}
+.eda-pg-auto :is([class~="bg-red-400/10"], [class~="bg-red-500/10"], [class~="bg-rose-400/10"]) {
+  background: color-mix(in srgb, var(--p-verm) 9%, var(--p-painel)) !important;
+  border-color: color-mix(in srgb, var(--p-verm) 30%, transparent) !important;
+}
+.eda-pg-auto :is([class~="bg-emerald-400/10"], [class~="bg-emerald-500/10"]) {
+  background: color-mix(in srgb, var(--p-verde) 10%, var(--p-painel)) !important;
+  border-color: color-mix(in srgb, var(--p-verde) 30%, transparent) !important;
+}
+.eda-pg-auto :is([class~="bg-sky-400/10"]) {
+  background: color-mix(in srgb, var(--p-azul) 10%, var(--p-painel)) !important;
+  border-color: color-mix(in srgb, var(--p-azul) 30%, transparent) !important;
+}
+.eda-pg-auto :is([class~="border-white/10"], [class~="border-white/15"], [class~="border-white/20"], [class~="border-white/[0.08]"]) {
+  border-color: var(--p-borda) !important;
+}
+
+.eda-pg-auto :is([class~="bg-white/10"], [class~="bg-white/[0.06]"]) { background: var(--p-borda) !important; }
+
+/* Textos */
+.eda-pg-auto :is([class*="text-[#F1F4EF]"], [class*="text-[#EDEDE3]"], [class*="text-[#F0F0E8]"], [class*="text-[#F5F3EA]"], [class*="text-[#D6E2D9]"], [class~="text-white"], [class*="text-slate-100"]) {
+  color: var(--p-texto) !important;
+}
+.eda-pg-auto :is([class*="text-[#C5D4CA]"], [class*="text-[#B4C8BB]"], [class*="text-[#A5B4AF]"], [class*="text-[#94A5A1]"], [class*="text-[#8FA39A]"], [class*="text-[#C3D9D2]"], [class*="text-[#EDEDE3]/"], [class*="text-slate-300"], [class*="text-slate-400"]) {
+  color: var(--p-sec) !important;
+}
+.eda-pg-auto :is([class*="text-[#F4C77E]"], [class*="text-[#E3A144]"]) { color: var(--p-ouro) !important; }
+.eda-pg-auto :is([class*="text-amber-"], [class*="text-orange-"]) { color: var(--p-amar) !important; }
+.eda-pg-auto :is([class*="text-red-"], [class*="text-rose-"]) { color: var(--p-verm) !important; }
+.eda-pg-auto [class*="text-emerald-"] { color: var(--p-verde) !important; }
+.eda-pg-auto :is([class*="text-sky-"], [class*="text-cyan-"]) { color: var(--p-azul) !important; }
+
+/* Títulos antigos em serifa viram Geist */
+.eda-pg-auto [style*="font-fraunces"] { font-family: inherit !important; font-weight: 650 !important; letter-spacing: -0.015em; }
+
+/* Campos */
+.eda-pg-auto label { color: var(--p-sec); font-size: 12.5px; font-weight: 600; }
+.eda-pg-auto :is(input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), select, textarea) {
+  min-height: 44px !important;
+  border-radius: 12px !important;
+  border: 1px solid var(--p-borda) !important;
+  background: var(--p-campo) !important;
+  color: var(--p-texto) !important;
+  font-family: inherit !important;
+  font-size: 14px !important;
+  box-shadow: none !important;
+}
+.eda-pg-auto textarea { padding-top: 10px !important; line-height: 1.55 !important; }
+.eda-pg-auto :is(input, select, textarea)::placeholder { color: var(--p-sec) !important; opacity: .75; }
+.eda-pg-auto :is(input, select, textarea):focus {
+  border-color: #e3a144 !important;
+  box-shadow: 0 0 0 3px rgb(227 161 68 / 18%) !important;
+  outline: none !important;
+}
+.eda-pg-auto :is(input, select, textarea):disabled { opacity: .62; cursor: not-allowed; }
+.eda-pg-auto input[type="date"], .eda-pg-auto input[type="time"] { color-scheme: dark; }
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-pg-auto :is(input[type="date"], input[type="time"], select) { color-scheme: light; }
+.eda-pg-auto input:is([type="checkbox"], [type="radio"]) { accent-color: #e3a144; }
+
+/* Botões herdados (sem classe eda) */
+.eda-pg-auto button[class*="rounded-xl"]:not(.eda-pg-bt),
+.eda-pg-auto a[class*="rounded-xl"][class*="border"]:not(.eda-pg-bt) {
+  border-radius: 999px !important;
+  border-color: var(--p-borda) !important;
+  background: var(--p-painel) !important;
+  color: var(--p-texto) !important;
+  font-weight: 650 !important;
+}
+.eda-pg-auto :is(button, a)[class*="bg-[#E3A144]"]:not(.eda-pg-bt) {
+  border-color: transparent !important;
+  background: linear-gradient(180deg, #f7d595, #e3a144) !important;
+  color: #07110e !important;
+}
+
+/* Barra de ações dos formulários */
+.eda-pg-barra {
+  position: sticky; bottom: 0; z-index: 20;
+  display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px;
+  margin-top: 18px; padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px));
+  border-radius: 18px; border: 1px solid var(--p-borda);
+  background: color-mix(in srgb, var(--p-painel) 92%, transparent);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 -10px 30px rgb(0 0 0 / 12%);
+}
+.eda-pg-barra p { margin: 0; font-size: 12.5px; color: var(--p-sec); }
+.eda-pg-barra div { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.eda-pg-voltar { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 14px; font-size: 13px; font-weight: 600; color: var(--p-sec) !important; }
+.eda-pg-voltar:hover { color: var(--p-texto) !important; }
+
+.eda-pg-grade-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-top: 20px; }
+.eda-pg-grade-form > .eda-pg-largo { grid-column: 1 / -1; }
+
+@media (max-width: 1023px) {
+  .eda-pg-grade-form { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 640px) {
+  .eda-pg-auto .eda-pg-secao { padding: 16px; border-radius: 18px !important; }
+  .eda-pg-barra { margin-left: -16px; margin-right: -16px; border-radius: 0; border-left: 0; border-right: 0; bottom: 64px; }
+  .eda-pg-barra div { width: 100%; }
+  .eda-pg-barra div > * { flex: 1; }
+}
+
+/* Conteúdo das janelas antigas dentro do painel lateral */
+.eda-pg-modal-corpo > :is([class~="p-5"], [class~="p-4"], [class~="p-6"]) { padding: 0 !important; }
+.eda-pg-modal-corpo :is([class~="border-t"]) { border-top-color: var(--p-borda) !important; }
+.eda-pg-modal-corpo dl[class*="grid"] > div { background: var(--p-suave); border: 0 !important; }
+
+/* ===== ERN_PADRAO_LEGADO_EDA_V1 =====
+   Páginas antigas da gestão (.eda-pg-legado) no padrão novo: variáveis antigas
+   apontam para os tokens do tema, cabeçalho e miolo alinhados ao padrão,
+   tabelas, cartões e janelas abrindo como painel lateral. */
+.eda-pg-legado {
+  --ern-fundo: var(--p-fundo);
+  --ern-painel: var(--p-painel);
+  --ern-elevado: var(--p-elev);
+  --ern-texto: var(--p-texto);
+  --ern-secundario: var(--p-sec);
+  --ern-borda: var(--p-borda);
+  --ern-destaque: var(--p-ouro);
+  --ern-suave: var(--p-suave);
+  --ern-hover: var(--p-suave);
+  --ern-sucesso: var(--p-verde);
+  --ern-alerta: var(--p-amar);
+  --ern-erro: var(--p-verm);
+  --ern-botao: #e3a144;
+  --ern-sobre-botao: #07110e;
+}
+
+/* Cabeçalho antigo (primeiro bloco da página) */
+.eda-pg-legado > :is(header, section):first-of-type {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+.eda-pg-legado > :is(header, section):first-of-type > div {
+  max-width: 1360px !important;
+  margin: 0 auto;
+  padding: 28px 32px 0 !important;
+  gap: 16px 24px !important;
+}
+.eda-pg-legado > :is(header, section):first-of-type h1 {
+  margin-top: 8px !important;
+  font-size: clamp(26px, 3vw, 32px) !important;
+  font-weight: 650 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1.1 !important;
+  color: var(--p-texto) !important;
+}
+.eda-pg-legado > :is(header, section):first-of-type h1 + p,
+.eda-pg-legado > :is(header, section):first-of-type h1 ~ p {
+  margin-top: 6px !important;
+  max-width: 64ch;
+  font-size: 14px !important;
+  line-height: 1.5 !important;
+  color: var(--p-sec) !important;
+}
+.eda-pg-legado > :is(header, section):first-of-type :is(p, span)[class*="uppercase"] {
+  font-size: 11px !important;
+  font-weight: 650 !important;
+  letter-spacing: 0.18em !important;
+  color: var(--p-ouro) !important;
+}
+.eda-pg-legado > :is(header, section):first-of-type span[class~="h-px"] { display: none; }
+
+/* Miolo */
+.eda-pg-legado > main {
+  max-width: 1360px !important;
+  margin: 0 auto;
+  padding: 22px 32px 48px !important;
+}
+
+/* Cartões e seções */
+.eda-pg-legado :is(section, article, div)[class~="rounded-2xl"]:is([class*="bg-[var(--ern-painel)]"], [class*="bg-[#151A1B]"], [class*="bg-[#0A1713]"], [class*="bg-[#191F20]"]) {
+  background: var(--p-painel) !important;
+  border-color: var(--p-borda) !important;
+  border-radius: 20px !important;
+  box-shadow: var(--p-sombra);
+}
+.eda-pg-legado [class*="-bento"] > :is(button, div, a) {
+  border-radius: 18px !important;
+  background: var(--p-painel) !important;
+  border: 1px solid var(--p-borda) !important;
+  box-shadow: var(--p-sombra);
+  text-align: left;
+}
+.eda-pg-legado [class*="-bento"] > [aria-pressed="true"] { box-shadow: inset 0 0 0 1px var(--p-ouro), var(--p-sombra) !important; }
+.eda-pg-legado [class*="-bento"] :is(strong, b) { color: var(--p-texto) !important; font-weight: 650 !important; letter-spacing: -0.03em; }
+
+/* Tabelas */
+.eda-pg-legado table { font-size: 13.5px; border-collapse: collapse; }
+.eda-pg-legado table thead { border: 0 !important; }
+.eda-pg-legado table th {
+  font-size: 10.5px !important; font-weight: 700 !important; letter-spacing: .1em !important;
+  text-transform: uppercase; color: var(--p-sec) !important; white-space: nowrap;
+  border-bottom: 1px solid var(--p-borda) !important; background: transparent !important;
+}
+.eda-pg-legado table td { border-top: 1px solid var(--p-borda); }
+.eda-pg-legado table tbody tr:first-child td { border-top: 0; }
+.eda-pg-legado table tbody tr:hover { background: var(--p-suave) !important; }
+.eda-pg-legado :is(tbody, [class*="divide-y"]) > * { border-color: var(--p-borda) !important; }
+
+/* Pílulas de status antigas */
+.eda-pg-legado span[class~="rounded-full"]:is([class*="text-"], [class*="bg-"]) {
+  border-width: 0 !important;
+  font-size: 11.5px !important;
+  font-weight: 650 !important;
+}
+
+/* Botões antigos */
+.eda-pg-legado :is(button, a)[class*="rounded-xl"]:not(.eda-pg-bt):not([role="tab"]) { border-radius: 999px !important; }
+.eda-pg-legado :is(button, a)[class*="bg-[var(--ern-botao)]"] {
+  border-color: transparent !important;
+  background: linear-gradient(180deg, #f7d595, #e3a144) !important;
+  color: #07110e !important;
+  box-shadow: 0 6px 18px rgb(227 161 68 / 24%);
+}
+
+/* Janelas antigas viram painel lateral à direita */
+.eda-pg-legado [class*="fixed"][class*="inset-0"][class*="bg-black/"] {
+  justify-content: flex-end !important;
+  align-items: stretch !important;
+  padding: 0 !important;
+  background: var(--p-veu) !important;
+  backdrop-filter: blur(3px);
+}
+.eda-pg-legado [class*="fixed"][class*="inset-0"][class*="bg-black/"] > * {
+  width: min(480px, 100%) !important;
+  max-width: none !important;
+  height: 100% !important;
+  max-height: none !important;
+  margin: 0 !important;
+  border-radius: 0 !important;
+  border: 0 !important;
+  border-left: 1px solid var(--p-borda) !important;
+  background: var(--p-painel) !important;
+  color: var(--p-texto);
+  box-shadow: var(--p-sombra-lateral) !important;
+  overflow-y: auto !important;
+  animation: eda-pg-entra .22s cubic-bezier(.2, .8, .2, 1);
+}
+@media (max-width: 640px) {
+  .eda-pg-legado > :is(header, section):first-of-type > div { padding: 20px 16px 0 !important; }
+  .eda-pg-legado > main { padding: 18px 16px 96px !important; }
+  .eda-pg-legado [class*="fixed"][class*="inset-0"][class*="bg-black/"] > * { width: 100% !important; border-left: 0 !important; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .eda-pg-legado [class*="fixed"][class*="inset-0"][class*="bg-black/"] > * { animation: none; }
+}

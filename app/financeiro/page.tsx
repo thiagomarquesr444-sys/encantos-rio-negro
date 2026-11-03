@@ -9,6 +9,7 @@ import React, {
   useState,
 } from 'react';
 import Link from 'next/link';
+import { BuscaEDA, CabecalhoEDA, ChipsEDA, PaginaEDA, PainelLateralEDA, PillEDA, VazioEDA, type TomEDA } from '@/app/components/PadraoPaginaEDA';
 import { supabase } from '@/lib/supabase';
 import { useModulosEquipeERN } from '@/app/components/ModulosEquipeERN';
 import {
@@ -40,18 +41,10 @@ const FILTROS: {
   { chave: 'com_reserva', label: 'Com reserva' },
 ];
 
-const inputClass =
-  'min-h-12 w-full min-w-0 rounded-xl border border-white/15 bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none transition placeholder:text-[#EDEDE3]/45 focus:border-[#E3A144] disabled:opacity-60';
-
-const labelClass =
-  'mb-2 block text-sm font-medium text-[#C5D4CA]';
-
-const buttonClass =
-  'inline-flex min-h-11 items-center justify-center rounded-xl border border-white/15 px-4 py-2 text-sm font-medium text-[#D6E2D9] transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50';
-
-const headingStyle = {
-  fontFamily: 'var(--font-fraunces), serif',
-};
+// ERN_PADRAO_PAGINAS_EDA_V1: campos e botões no padrão da gestão.
+const inputClass = 'eda-pg-input w-full min-w-0 px-4 py-3';
+const labelClass = 'mb-2 block';
+const buttonClass = 'eda-pg-bt';
 
 function normalizar(valor: string): string {
   return valor
@@ -153,20 +146,12 @@ function hojeManaus(): string {
   return `${obter('year')}-${obter('month')}-${obter('day')}`;
 }
 
-function tipoClasses(tipo: TipoLancamento | null): string {
-  if (tipo === 'receita') {
-    return 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300';
-  }
-  if (tipo === 'despesa') {
-    return 'border-red-400/25 bg-red-400/10 text-red-300';
-  }
-  return 'border-white/20 bg-white/5 text-[#D6E2D9]';
+function tomTipo(tipo: TipoLancamento | null): TomEDA {
+  return tipo === 'receita' ? 'ok' : tipo === 'despesa' ? 'er' : 'nt';
 }
 
-function statusClasses(status: string): string {
-  return status === 'Pendente'
-    ? 'border-amber-400/25 bg-amber-400/10 text-amber-300'
-    : 'border-emerald-400/25 bg-emerald-400/10 text-emerald-300';
+function tomStatus(status: string): TomEDA {
+  return status === 'Pendente' ? 'at' : 'ok';
 }
 
 function rotuloTipo(tipo: TipoLancamento | null): string {
@@ -192,6 +177,7 @@ function mensagemErro(erro: unknown, padrao: string): string {
   return padrao;
 }
 
+// ERN_PADRAO_PAGINAS_EDA_V1: detalhes, edição e exclusão abrem no painel lateral.
 function Modal({
   titulo,
   aoFechar,
@@ -203,102 +189,10 @@ function Modal({
   bloqueado?: boolean;
   children: React.ReactNode;
 }) {
-  const tituloId = React.useId();
-  const container = useRef<HTMLDivElement>(null);
-  const fecharRef = useRef(aoFechar);
-  const bloqueadoRef = useRef(bloqueado);
-
-  fecharRef.current = aoFechar;
-  bloqueadoRef.current = bloqueado;
-
-  useEffect(() => {
-    const anterior = document.activeElement as HTMLElement | null;
-    const overflowAnterior = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    container.current?.focus();
-
-    const seletor =
-      'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]';
-
-    function teclado(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        if (!bloqueadoRef.current) fecharRef.current();
-      }
-
-      if (event.key !== 'Tab' || !container.current) return;
-
-      const elementos = Array.from(
-        container.current.querySelectorAll<HTMLElement>(seletor)
-      ).filter((elemento) => elemento.getClientRects().length > 0);
-
-      const primeiro = elementos[0];
-      const ultimo = elementos[elementos.length - 1];
-
-      if (!primeiro || !ultimo) {
-        event.preventDefault();
-        container.current.focus();
-        return;
-      }
-
-      if (event.shiftKey) {
-        if (
-          document.activeElement === primeiro ||
-          document.activeElement === container.current
-        ) {
-          event.preventDefault();
-          ultimo.focus();
-        }
-      } else if (
-        document.activeElement === ultimo ||
-        document.activeElement === container.current
-      ) {
-        event.preventDefault();
-        primeiro.focus();
-      }
-    }
-
-    document.addEventListener('keydown', teclado);
-
-    return () => {
-      document.body.style.overflow = overflowAnterior;
-      document.removeEventListener('keydown', teclado);
-      anterior?.focus();
-    };
-  }, []);
-
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-3 backdrop-blur-sm sm:p-5">
-      <div
-        ref={container}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={tituloId}
-        aria-busy={bloqueado}
-        tabIndex={-1}
-        className="max-h-[90dvh] w-full max-w-[680px] overflow-y-auto rounded-2xl border border-white/15 bg-[#091510] shadow-2xl outline-none"
-      >
-        <div className="flex items-start justify-between gap-4 border-b border-white/10 p-5">
-          <h2
-            id={tituloId}
-            className="text-2xl text-[#F0F0E8]"
-            style={headingStyle}
-          >
-            {titulo}
-          </h2>
-          <button
-            type="button"
-            aria-label="Fechar janela"
-            disabled={bloqueado}
-            onClick={aoFechar}
-            className={`${buttonClass} shrink-0`}
-          >
-            ✕
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
+    <PainelLateralEDA etiqueta="Lançamento" titulo={titulo} aoFechar={aoFechar} bloqueado={bloqueado}>
+      <div className="eda-pg-auto eda-pg-modal-corpo">{children}</div>
+    </PainelLateralEDA>
   );
 }
 
@@ -591,7 +485,7 @@ export default function FinanceiroPage() {
 
   function acoes(item: LancamentoFinanceiro) {
     return (
-      <div className="flex flex-wrap gap-2">
+      <div className="eda-pg-acoes-linha">
         <button
           type="button"
           disabled={ocupado}
@@ -599,7 +493,7 @@ export default function FinanceiroPage() {
             setErroModal(null);
             setItemVisualizar(item);
           }}
-          className={buttonClass}
+          className="eda-pg-bt eda-pg-bt-p"
           aria-label={`Ver ${obterDescricao(item) || 'lançamento'}`}
         >
           Ver
@@ -608,7 +502,7 @@ export default function FinanceiroPage() {
           type="button"
           disabled={ocupado || !item.id}
           onClick={() => abrirEdicao(item)}
-          className={buttonClass}
+          className="eda-pg-bt eda-pg-bt-p"
           aria-label={`Editar ${obterDescricao(item) || 'lançamento'}`}
         >
           Editar
@@ -620,7 +514,7 @@ export default function FinanceiroPage() {
             setErroModal(null);
             setItemExcluir(item);
           }}
-          className={`${buttonClass} border-red-400/25 text-red-300`}
+          className="eda-pg-bt eda-pg-bt-p eda-pg-bt-perigo"
           aria-label={`Excluir ${obterDescricao(item) || 'lançamento'}`}
         >
           Excluir
@@ -633,12 +527,12 @@ export default function FinanceiroPage() {
     if (!item.reserva_id) return null;
 
     return (
-      <div className="mt-3 space-y-2 text-xs text-[#F4C77E]">
-        <p className="break-all">Reserva: {item.reserva_id}</p>
-        <div className="flex flex-wrap gap-3">
+      <div style={{ display: 'grid', gap: 4, marginTop: 6 }}>
+        <small style={{ overflowWrap: 'anywhere' }}>Reserva vinculada</small>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12 }}>
           <button
             type="button"
-            className="min-h-11 underline underline-offset-4"
+            className="eda-pg-link"
             onClick={() => {
               setReservaFiltro(item.reserva_id!);
               setFiltroPeriodo('todos');
@@ -649,7 +543,7 @@ export default function FinanceiroPage() {
           </button>
           {podeAbrirReservaERN && (
             <Link
-              className="inline-flex min-h-11 items-center underline underline-offset-4"
+              className="eda-pg-link"
               href={`/reservas/editar/${encodeURIComponent(item.reserva_id)}`}
             >
               Abrir reserva
@@ -663,25 +557,21 @@ export default function FinanceiroPage() {
   function etiquetaTipo(item: LancamentoFinanceiro) {
     const tipo = obterTipo(item);
     return (
-      <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${tipoClasses(tipo)}`}>
-        {rotuloTipo(tipo)}
-      </span>
+      <PillEDA tom={tomTipo(tipo)}>{rotuloTipo(tipo)}</PillEDA>
     );
   }
 
   function etiquetaStatus(item: LancamentoFinanceiro) {
     const status = statusFinanceiroERN(item);
     return (
-      <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${statusClasses(status)}`}>
-        {status}
-      </span>
+      <PillEDA tom={tomStatus(status)}>{status}</PillEDA>
     );
   }
 
   function valorFormatado(item: LancamentoFinanceiro) {
     const tipo = obterTipo(item);
     return (
-      <span className={`font-semibold tabular-nums ${tipo === 'receita' ? 'text-emerald-300' : tipo === 'despesa' ? 'text-red-300' : 'text-[#EDEDE3]'}`}>
+      <span className="eda-pg-num" style={{ color: tipo === 'receita' ? 'var(--p-verde)' : tipo === 'despesa' ? 'var(--p-verm)' : undefined }}>
         {tipo === 'receita' ? '+ ' : tipo === 'despesa' ? '− ' : ''}
         {formatarMoeda(obterValor(item))}
       </span>
@@ -692,287 +582,148 @@ export default function FinanceiroPage() {
     ? statusFinanceiroERN(itemEditar)
     : 'Pendente';
 
+  const filtrosChips = FILTROS.map((filtro) => ({ valor: filtro.chave, rotulo: filtro.label }));
+
   return (
-    <div className="ern-financeiro-premium ern-financeiro-painel min-h-screen bg-[#07110E] text-[#EDEDE3]">
-      {mensagemSucesso && (
-        <div
-          role="status"
-          className="fixed left-3 right-3 top-24 z-[90] mx-auto max-w-lg rounded-2xl border border-emerald-400/25 bg-[#0B2119] px-5 py-4 text-sm text-emerald-200 shadow-2xl"
-        >
-          {mensagemSucesso}
-        </div>
-      )}
+    <PaginaEDA className="eda-pg-auto">
+      {mensagemSucesso && <div role="status" className="eda-pg-toast">{mensagemSucesso}</div>}
 
-      <section className="border-b border-white/10 bg-[#091510]">
-        <div className="mx-auto flex max-w-[1440px] flex-col gap-6 px-4 py-8 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-              Financeiro · Controle
-            </p>
-            <h1 className="mt-3 text-4xl sm:text-5xl" style={headingStyle}>
-              Financeiro
-            </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-[#B4C8BB]">
-              Controle entradas, despesas, pendências e o saldo efetivamente realizado.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <Link
-              href="/financeiro/receita/novo"
-              className={`${buttonClass} border-[#E3A144] bg-[#E3A144] font-bold text-[#07130F] hover:bg-[#F0B35C]`}
-            >
-              + Nova receita
-            </Link>
-            <Link
-              href="/financeiro/despesa/novo"
-              className={`${buttonClass} border-red-400/25 text-red-300`}
-            >
-              − Nova despesa
-            </Link>
-            <Link href={linkExportacao} className={buttonClass}>
-              Exportar
-            </Link>
-            <button
-              type="button"
-              disabled={carregando || ocupado}
-              onClick={() => void carregarFinanceiro()}
-              className={buttonClass}
-            >
+      <div className="eda-pg-miolo">
+        <CabecalhoEDA
+          etiqueta="Financeiro"
+          titulo="Financeiro"
+          resumo={carregando || erroConsulta
+            ? 'Receitas, despesas e pendências da operação.'
+            : <>Saldo realizado <b>{formatarMoeda(financeiro.saldo)}</b> · <b>{formatarMoeda(financeiro.receber)}</b> a receber · <b>{formatarMoeda(financeiro.pagar)}</b> a pagar</>}
+          acoes={<>
+            <button type="button" disabled={carregando || ocupado} onClick={() => void carregarFinanceiro()} className="eda-pg-bt">
               {carregando ? 'Atualizando…' : 'Atualizar'}
             </button>
-          </div>
-        </div>
-      </section>
+            <Link href={linkExportacao} className="eda-pg-bt">Exportar</Link>
+            <Link href="/financeiro/despesa/novo" className="eda-pg-bt">− Nova despesa</Link>
+            <Link href="/financeiro/receita/novo" className="eda-pg-bt eda-pg-bt-ouro">+ Nova receita</Link>
+          </>}
+        />
 
-      <main className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
-        <p className="mb-5 text-xs leading-6 text-[#B4C8BB]">
-          Os filtros selecionam a listagem e a exportação. O filtro Mês atual
-          considera o vencimento no calendário de Manaus. Os gráficos possuem
-          sua própria seleção de período.
+        <section className="eda-pg-kpis" aria-label="Resumo de todo o histórico">
+          {cards.slice(0, 4).map((card) => (
+            <div key={card.titulo} className={`eda-pg-kpi ${card.titulo === 'Saldo realizado' ? (financeiro.saldo >= 0 ? 'eda-pg-kpi-ok' : 'eda-pg-kpi-er') : ''}`}>
+              <small>{card.titulo}</small>
+              <b>{carregando || erroConsulta ? '—' : formatarMoeda(card.valor)}</b>
+              <span>{card.detalhe}</span>
+            </div>
+          ))}
+        </section>
+        <p className="eda-pg-nota">
+          Totais de todo o histórico acessível à sua conta. O saldo realizado é receitas recebidas menos despesas pagas; não é saldo bancário nem lucro. A pagar: <b>{carregando || erroConsulta ? '—' : formatarMoeda(financeiro.pagar)}</b>.
         </p>
 
         {reservaFiltro && (
-          <div className="mb-5 flex flex-wrap items-center gap-3 rounded-xl border border-[#E3A144]/30 p-4 text-sm">
-            <span className="min-w-0 break-all">
-              Reserva filtrada: {reservaFiltro}
-            </span>
-            <button
-              type="button"
-              className={buttonClass}
-              onClick={() => setReservaFiltro('')}
-            >
-              Limpar filtro de reserva
-            </button>
+          <div className="eda-pg-aviso eda-pg-aviso-ouro">
+            <div>
+              <b>Filtro de reserva ativo</b>
+              <p style={{ overflowWrap: 'anywhere' }}>Mostrando só os lançamentos da reserva {reservaFiltro}.</p>
+            </div>
+            <button type="button" className="eda-pg-bt eda-pg-bt-p" onClick={() => setReservaFiltro('')}>Limpar filtro</button>
           </div>
         )}
 
         {erroConsulta && (
-          <div
-            role="alert"
-            className="mb-5 rounded-2xl border border-red-400/25 bg-red-400/10 p-5 text-sm text-red-200"
-          >
-            <p>{erroConsulta}</p>
-            <button
-              type="button"
-              disabled={carregando || ocupado}
-              onClick={() => void carregarFinanceiro()}
-              className={`${buttonClass} mt-4`}
-            >
+          <div role="alert" className="eda-pg-aviso eda-pg-aviso-er">
+            <p style={{ margin: 0 }}>{erroConsulta}</p>
+            <button type="button" disabled={carregando || ocupado} onClick={() => void carregarFinanceiro()} className="eda-pg-bt eda-pg-bt-p" style={{ marginTop: 10 }}>
               Tentar novamente
             </button>
           </div>
         )}
 
-        <GraficosFinanceiros
-          registros={lancamentos}
-          carregando={carregando}
-          erro={erroConsulta || ''}
-          aoAtualizar={carregarFinanceiro}
-        />
-
-        <details className="mt-5 rounded-2xl border border-white/10 bg-[#0A1713] p-4 sm:p-5">
-          <summary className="min-h-11 cursor-pointer py-3 text-sm font-semibold text-[#F4C77E]">
-            Consultar todo o histórico financeiro
-          </summary>
-          <p className="mb-4 text-xs leading-6 text-[#B4C8BB]">
-            Estes totais abrangem todo o histórico acessível à sua conta.
-            Não seguem o período dos gráficos nem os filtros da listagem.
-            O saldo realizado representa receitas recebidas menos despesas pagas;
-            não representa saldo bancário nem lucro.
-          </p>
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-            {cards.map((card) => (
-              <div
-                key={card.titulo}
-                className="min-w-0 rounded-2xl border border-white/10 p-4"
-              >
-                <p className="text-sm text-[#B4C8BB]">{card.titulo}</p>
-                <strong className="mt-3 block break-words text-2xl tabular-nums text-[#F4C77E]">
-                  {carregando || erroConsulta ? '—' : formatarMoeda(card.valor)}
-                </strong>
-                <p className="mt-2 text-xs text-[#B4C8BB]">{card.detalhe}</p>
-              </div>
-            ))}
-          </div>
-        </details>
-
-        <section
-          aria-label="Filtros dos lançamentos"
-          className="mt-6 rounded-2xl border border-white/10 bg-[#0A1713] p-4"
-        >
-          <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
-            <div className="flex flex-wrap gap-2">
-              {FILTROS.map((filtro) => (
-                <button
-                  key={filtro.chave}
-                  type="button"
-                  aria-pressed={filtroPeriodo === filtro.chave}
-                  onClick={() => setFiltroPeriodo(filtro.chave)}
-                  className={`${buttonClass} ${
-                    filtroPeriodo === filtro.chave
-                      ? 'border-[#E3A144]/50 bg-[#E3A144]/10 text-[#F4C77E]'
-                      : ''
-                  }`}
-                >
-                  {filtro.label}
-                </button>
-              ))}
-            </div>
-            <div className="w-full xl:max-w-xs">
-              <label htmlFor="ern-busca-financeiro" className="sr-only">
-                Buscar lançamento
-              </label>
-              <input
-                id="ern-busca-financeiro"
-                type="search"
-                value={busca}
-                onChange={(event) => setBusca(event.target.value)}
-                placeholder="Buscar lançamento…"
-                className={inputClass}
-              />
-            </div>
-          </div>
+        <section aria-label="Filtros dos lançamentos" className="eda-pg-filtros">
+          <BuscaEDA id="ern-busca-financeiro" rotulo="Buscar lançamento" valor={busca} aoMudar={setBusca} placeholder="Descrição, categoria ou reserva" />
+          <ChipsEDA rotulo="Filtrar lançamentos" opcoes={filtrosChips} valor={filtroPeriodo} aoMudar={setFiltroPeriodo} />
         </section>
 
-        <section
-          aria-busy={carregando}
-          className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-[#0A1713]"
-        >
-          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-white/10 p-5">
-            <div>
-              <p className="text-xs uppercase tracking-[0.16em] text-[#E3A144]">
-                Movimentações
-              </p>
-              <h2 className="mt-2 text-2xl" style={headingStyle}>
-                Lançamentos financeiros
-              </h2>
-            </div>
-            <p className="text-sm text-[#B4C8BB]">
-              {carregando || erroConsulta
-                ? '—'
-                : `${lancamentosFiltrados.length} de ${lancamentos.length} registros`}
-            </p>
+        <section aria-busy={carregando} aria-label="Lançamentos financeiros" className="eda-pg-tabela-caixa">
+          <div className="eda-pg-tabela-topo">
+            <span>
+              {carregando || erroConsulta ? '—' : <>Mostrando <b>{lancamentosFiltrados.length}</b> de {lancamentos.length} lançamentos</>}
+            </span>
+            <span>“Mês atual” considera o vencimento no calendário de Manaus</span>
           </div>
 
           {carregando ? (
-            <p role="status" className="p-10 text-center text-sm text-[#B4C8BB]">
-              Carregando financeiro…
-            </p>
+            <p role="status" className="eda-pg-estado">Carregando financeiro…</p>
           ) : erroConsulta ? (
-            <p className="p-10 text-center text-sm text-red-200">
-              A listagem está indisponível. Tente atualizar os dados.
-            </p>
+            <p className="eda-pg-estado">A listagem está indisponível. Tente atualizar os dados.</p>
           ) : lancamentosFiltrados.length === 0 ? (
-            <div className="p-10 text-center">
-              <h3 className="text-xl" style={headingStyle}>
-                Nenhum lançamento encontrado
-              </h3>
-              <p className="mt-3 text-sm text-[#B4C8BB]">
-                Ajuste os filtros ou registre uma nova movimentação.
-              </p>
-            </div>
+            lancamentos.length === 0 ? (
+              <VazioEDA
+                titulo="Nenhum lançamento ainda"
+                texto="Registre a primeira receita ou despesa para acompanhar o caixa da operação."
+                acao={<Link href="/financeiro/receita/novo" className="eda-pg-bt eda-pg-bt-ouro">+ Nova receita</Link>}
+              />
+            ) : (
+              <VazioEDA
+                titulo="Nenhum lançamento encontrado"
+                texto="Ajuste o filtro ou a busca para ver outros lançamentos."
+                acao={<button type="button" className="eda-pg-bt" onClick={() => { setBusca(''); setFiltroPeriodo('todos'); setReservaFiltro(''); }}>Ver todos</button>}
+              />
+            )
           ) : (
             <>
-              <div className="divide-y divide-white/10 lg:hidden">
+              <div className="eda-pg-cartoes">
                 {lancamentosFiltrados.map((item, index) => (
-                  <article key={item.id || index} className="min-w-0 p-4 sm:p-5">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
+                  <button
+                    key={item.id || index}
+                    type="button"
+                    className="eda-pg-cartao"
+                    disabled={ocupado}
+                    onClick={() => { setErroModal(null); setItemVisualizar(item); }}
+                  >
+                    <span className="eda-pg-cartao-topo">
+                      <span style={{ minWidth: 0 }}>
+                        <b>{obterDescricao(item) || 'Sem descrição'}</b>
+                        <small>{item.categoria || 'Sem categoria'} · vence {formatarData(item.data_vencimento)}</small>
+                      </span>
+                      {valorFormatado(item)}
+                    </span>
+                    <span className="eda-pg-cartao-pills">
                       {etiquetaTipo(item)}
                       {etiquetaStatus(item)}
-                    </div>
-                    <h3 className="mt-4 break-words text-base font-semibold">
-                      {obterDescricao(item) || 'Sem descrição'}
-                    </h3>
-                    <p className="mt-2 text-xl">{valorFormatado(item)}</p>
-                    <dl className="mt-4 grid grid-cols-2 gap-4 text-sm">
-                      <div>
-                        <dt className="text-[#B4C8BB]">Vencimento</dt>
-                        <dd className="mt-1">{formatarData(item.data_vencimento)}</dd>
-                      </div>
-                      <div>
-                        <dt className="text-[#B4C8BB]">
-                          {obterTipo(item) === 'receita' ? 'Recebimento' : 'Pagamento'}
-                        </dt>
-                        <dd className="mt-1">
-                          {statusFinanceiroERN(item) === 'Pendente'
-                            ? 'Ainda pendente'
-                            : formatarData(item.data_liquidacao)}
-                        </dd>
-                      </div>
-                      <div className="col-span-2 min-w-0">
-                        <dt className="text-[#B4C8BB]">Categoria</dt>
-                        <dd className="mt-1 break-words">{item.categoria || '—'}</dd>
-                      </div>
-                    </dl>
-                    {vinculoReserva(item)}
-                    <div className="mt-4 border-t border-white/10 pt-4">
-                      {acoes(item)}
-                    </div>
-                  </article>
+                      {item.reserva_id && <PillEDA tom="nt" ponto={false}>Com reserva</PillEDA>}
+                    </span>
+                  </button>
                 ))}
               </div>
 
-              <div className="hidden overflow-x-auto lg:block">
-                <table className="w-full min-w-[1080px] border-collapse text-left text-sm">
-                  <thead className="border-b border-white/10 text-xs text-[#B4C8BB]">
+              <div className="eda-pg-rolagem">
+                <table className="eda-pg-tabela">
+                  <thead>
                     <tr>
-                      {['Vencimento', 'Tipo', 'Descrição', 'Categoria', 'Valor', 'Status / Liquidação', 'Ações'].map((titulo) => (
-                        <th key={titulo} scope="col" className="px-4 py-4 font-semibold">
-                          {titulo}
-                        </th>
+                      {['Vencimento', 'Descrição', 'Tipo', 'Categoria', 'Valor', 'Situação', ''].map((titulo, i) => (
+                        <th key={titulo || i} scope="col">{titulo || <span className="eda-pg-sr">Ações</span>}</th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/10">
+                  <tbody>
                     {lancamentosFiltrados.map((item, index) => (
-                      <tr key={item.id || index} className="hover:bg-white/[0.02]">
-                        <td className="whitespace-nowrap px-4 py-4 text-[#C5D4CA]">
-                          {formatarData(item.data_vencimento)}
-                        </td>
-                        <td className="px-4 py-4">{etiquetaTipo(item)}</td>
-                        <td className="min-w-[220px] max-w-sm px-4 py-4">
-                          <p className="break-words font-medium">
-                            {obterDescricao(item) || 'Sem descrição'}
-                          </p>
+                      <tr key={item.id || index} aria-selected={itemVisualizar?.id === item.id && Boolean(item.id)}>
+                        <td style={{ whiteSpace: 'nowrap' }}>{formatarData(item.data_vencimento)}</td>
+                        <td style={{ minWidth: 220, maxWidth: 360 }}>
+                          <button type="button" className="eda-pg-linha-bt" disabled={ocupado} onClick={() => { setErroModal(null); setItemVisualizar(item); }}>
+                            <b>{obterDescricao(item) || 'Sem descrição'}</b>
+                          </button>
                           {vinculoReserva(item)}
                         </td>
-                        <td className="px-4 py-4 text-[#C5D4CA]">
-                          {item.categoria || '—'}
-                        </td>
-                        <td className="whitespace-nowrap px-4 py-4">
-                          {valorFormatado(item)}
-                        </td>
-                        <td className="px-4 py-4">
+                        <td>{etiquetaTipo(item)}</td>
+                        <td className="eda-pg-mut">{item.categoria || '—'}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}>{valorFormatado(item)}</td>
+                        <td>
                           {etiquetaStatus(item)}
                           {statusFinanceiroERN(item) !== 'Pendente' && (
-                            <p className="mt-2 text-xs text-[#B4C8BB]">
-                              {obterTipo(item) === 'receita' ? 'Recebido em ' : 'Pago em '}
-                              {formatarData(item.data_liquidacao)}
-                            </p>
+                            <small>{obterTipo(item) === 'receita' ? 'Recebido em ' : 'Pago em '}{formatarData(item.data_liquidacao)}</small>
                           )}
                         </td>
-                        <td className="min-w-[240px] px-4 py-4">{acoes(item)}</td>
+                        <td>{acoes(item)}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -981,7 +732,19 @@ export default function FinanceiroPage() {
             </>
           )}
         </section>
-      </main>
+
+        <details className="eda-pg-analises">
+          <summary>Gráficos do financeiro</summary>
+          <div>
+            <GraficosFinanceiros
+              registros={lancamentos}
+              carregando={carregando}
+              erro={erroConsulta || ''}
+              aoAtualizar={carregarFinanceiro}
+            />
+          </div>
+        </details>
+      </div>
 
       {itemVisualizar && (
         <Modal
@@ -1226,6 +989,6 @@ export default function FinanceiroPage() {
           </div>
         </Modal>
       )}
-    </div>
+    </PaginaEDA>
   );
 }

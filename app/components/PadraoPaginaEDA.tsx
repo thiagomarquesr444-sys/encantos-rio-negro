@@ -7,6 +7,7 @@
 
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import './padrao-paginas-eda.css';
+import './padrao-formularios-eda.css';
 
 export type TomEDA = 'ok' | 'at' | 'er' | 'info' | 'nt';
 

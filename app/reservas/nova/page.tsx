@@ -12,6 +12,7 @@ import { supabase } from '@/lib/supabase';
 import VinculosReserva from '@/app/components/VinculosReserva';
 import LogisticaReserva from '@/app/components/LogisticaReserva';
 import PeriodoReservaERN, { validarPeriodoReservaERN } from '@/app/components/PeriodoReservaERN';
+import { CabecalhoEDA, PaginaEDA } from '@/app/components/PadraoPaginaEDA';
 
 type StatusReserva = 'Pendente' | 'Confirmada' | 'Cancelada';
 
@@ -67,18 +68,10 @@ const ESTADO_INICIAL: FormReserva = {
   observacoes: '',
 };
 
-const inputClass =
-  'min-h-12 w-full min-w-0 max-w-full rounded-xl border border-white/15 bg-[#07110E] px-4 py-3 text-base text-[#EDEDE3] outline-none transition placeholder:text-[#B4C8BB]/60 focus:border-[#E3A144] disabled:cursor-not-allowed disabled:opacity-60 sm:text-sm';
-
-const labelClass =
-  'mb-2 block text-sm font-medium text-[#C5D4CA]';
-
-const buttonClass =
-  'inline-flex min-h-12 items-center justify-center rounded-xl border border-white/15 px-4 py-3 text-sm font-semibold text-[#D6E2D9] transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50';
-
-const headingStyle = {
-  fontFamily: 'var(--font-fraunces), serif',
-};
+// ERN_PADRAO_FORMULARIOS_EDA_V1: campos e botões no padrão da gestão.
+const inputClass = 'eda-pg-input w-full min-w-0 px-4 py-3';
+const labelClass = 'mb-2 block';
+const buttonClass = 'eda-pg-bt';
 
 function converterValor(valor: string): number | null {
   let texto = valor.trim().replace(/^R\$\s*/i, '');
@@ -529,40 +522,26 @@ export default function NovaReservaPage() {
   }
 
   return (
-    <div className="ern-reservas-premium min-h-screen bg-[#0C1112] text-[#F1F4EF]">
-      <header className="border-b border-white/10 bg-[#091510]">
-        <div className="mx-auto flex max-w-[1280px] flex-col gap-5 px-4 py-8 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-              Operação · Reservas
-            </p>
-            <h1 className="mt-3 text-3xl sm:text-4xl" style={headingStyle}>
-              Nova reserva
-            </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-[#B4C8BB]">
-              Registre cliente, passeio, participantes, logística e valor
-              comercial da operação.
-            </p>
-          </div>
-          <button
-            type="button"
-            disabled={salvando || gravada}
-            onClick={() => router.push('/reservas')}
-            className={buttonClass}
-          >
-            Voltar às reservas
-          </button>
-        </div>
-      </header>
+    <PaginaEDA className="eda-pg-auto">
+      <div className="eda-pg-miolo" style={{ maxWidth: 1200 }}>
+        <button type="button" disabled={salvando || gravada} onClick={() => router.push('/reservas')} className="eda-pg-voltar" style={{ border: 0, background: 'none', padding: 0, cursor: 'pointer' }}>
+          ← Reservas
+        </button>
 
-      <main className="mx-auto max-w-[1280px] px-4 py-6 sm:px-6 lg:px-8">
-        <section className="mb-5 min-w-0 rounded-2xl border border-white/10 bg-[#0A1713] p-4 sm:p-6">
+        <CabecalhoEDA
+          etiqueta="Operação · Reservas"
+          titulo="Nova reserva"
+          resumo="Registre cliente, passeio, participantes, logística e valor comercial da operação."
+        />
+
+        <div style={{ display: 'grid', gap: 16, marginTop: 20 }}>
+        <section className="eda-pg-secao">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="min-w-0">
               <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#E3A144]">
                 Uso mensal do plano
               </p>
-              <h2 className="mt-3 break-words text-2xl" style={headingStyle}>
+              <h2 className="mt-3 break-words text-2xl" >
                 {carregandoUso
                   ? 'Consultando limite…'
                   : uso?.ilimitado
@@ -641,8 +620,8 @@ export default function NovaReservaPage() {
         </section>
 
         {limiteAtingido && (
-          <section className="mb-5 rounded-2xl border border-amber-400/25 bg-amber-400/10 p-4 sm:p-5">
-            <h2 className="text-xl text-[#F4C77E]" style={headingStyle}>
+          <section className="eda-pg-aviso eda-pg-aviso-at" style={{ margin: 0 }}>
+            <h2 className="text-xl text-[#F4C77E]" >
               Limite mensal atingido
             </h2>
             <p className="mt-3 text-sm leading-7 text-[#C5D4CA]">
@@ -665,23 +644,23 @@ export default function NovaReservaPage() {
             ref={feedbackRef}
             tabIndex={-1}
             role={feedback.tipo === 'erro' ? 'alert' : 'status'}
-            className={`mb-5 rounded-2xl border p-4 text-sm leading-7 outline-none ${
-              feedback.tipo === 'sucesso'
-                ? 'border-emerald-400/25 bg-emerald-400/10 text-emerald-200'
-                : 'border-red-400/25 bg-red-400/10 text-red-200'
-            }`}
+            className={`eda-pg-aviso ${feedback.tipo === 'erro' ? 'eda-pg-aviso-er' : ''}`}
+            style={feedback.tipo === 'sucesso' ? { color: 'var(--p-verde)', outline: 'none', margin: 0 } : { outline: 'none', margin: 0 }}
           >
             {feedback.mensagem}
           </div>
         )}
 
+        </div>
+
         <form onSubmit={handleSubmit} aria-busy={salvando}>
           <fieldset
             disabled={bloqueado}
-            className="ern-reserva-form-grid grid min-w-0 gap-5 xl:grid-cols-12"
+            style={{ margin: 0, padding: 0, border: 0, minWidth: 0 }}
           >
-            <section className="min-w-0 rounded-2xl border border-white/10 bg-[#0A1713] p-4 sm:p-6">
-              <h2 className="text-2xl" style={headingStyle}>
+            <div className="eda-pg-grade-form">
+            <section className="eda-pg-secao">
+              <h2 className="text-2xl" >
                 Atendimento e passeio
               </h2>
               <p className="mt-2 text-xs text-[#B4C8BB]">
@@ -801,8 +780,8 @@ export default function NovaReservaPage() {
               </div>
             </section>
 
-            <section className="min-w-0 rounded-2xl border border-white/10 bg-[#0A1713] p-4 sm:p-6">
-              <h2 className="text-2xl" style={headingStyle}>
+            <section className="eda-pg-secao">
+              <h2 className="text-2xl" >
                 Operação e status
               </h2>
 
@@ -874,7 +853,7 @@ export default function NovaReservaPage() {
               </div>
             </section>
 
-            <section className="min-w-0 rounded-2xl border border-white/10 bg-[#0A1713] p-4 sm:p-6 lg:col-span-2">
+            <section className="eda-pg-secao eda-pg-largo">
               <label htmlFor="nova-observacoes" className={labelClass}>
                 Observações
               </label>
@@ -888,8 +867,11 @@ export default function NovaReservaPage() {
               />
             </section>
 
-            <div className="min-w-0 border-t border-white/10 pt-5 lg:col-span-2">
-              <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+            </div>
+
+            <div className="eda-pg-barra">
+              <p>* Campos obrigatórios. A reserva só é criada ao salvar.</p>
+              <div>
                 <button
                   type="button"
                   disabled={salvando || gravada}
@@ -911,7 +893,7 @@ export default function NovaReservaPage() {
                 <button
                   type="submit"
                   disabled={bloqueadoSalvar}
-                  className={`${buttonClass} border-[#E3A144] bg-[#E3A144] font-bold text-[#07130F] hover:bg-[#F0B35C]`}
+                  className="eda-pg-bt eda-pg-bt-ouro"
                 >
                   {gravada
                     ? 'Salvo · voltando…'
@@ -927,7 +909,7 @@ export default function NovaReservaPage() {
             </div>
           </fieldset>
         </form>
-      </main>
-    </div>
+      </div>
+    </PaginaEDA>
   );
 }
