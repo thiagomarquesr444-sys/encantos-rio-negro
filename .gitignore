@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+backups-ern/
+.ern-testes-temporarios/
+public/videos/descubra-v1/
