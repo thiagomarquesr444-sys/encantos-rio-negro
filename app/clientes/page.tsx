@@ -4,6 +4,16 @@ import './clientes-premium.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import {
+  BuscaEDA,
+  CabecalhoEDA,
+  ChipsEDA,
+  DadoEDA,
+  PaginaEDA,
+  PainelLateralEDA,
+  PillEDA,
+  VazioEDA,
+} from '@/app/components/PadraoPaginaEDA';
 
 type Cliente = {
   id: string;
@@ -28,14 +38,13 @@ const normalizar = (valor: string) =>
   valor.normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .trim().toLowerCase();
 
-const painel =
-  'min-w-0 rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-4 sm:p-6';
-
-const botao =
-  'inline-flex min-h-12 items-center justify-center rounded-xl border border-[var(--ern-borda)] px-4 text-sm font-semibold transition hover:bg-[var(--ern-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ern-destaque)] disabled:cursor-not-allowed disabled:opacity-50';
-
-const campo =
-  'min-h-12 w-full min-w-0 rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-3 text-base text-[var(--ern-texto)] outline-none focus:ring-2 focus:ring-[var(--ern-destaque)]';
+// ERN_PADRAO_PAGINAS_EDA_V1: link direto para conversar com o cliente.
+function linkWhatsApp(telefone: string | null): string | null {
+  const digitos = (telefone ?? '').replace(/\D/g, '');
+  if (digitos.length < 10) return null;
+  const completo = digitos.length <= 11 ? `55${digitos}` : digitos;
+  return `https://wa.me/${completo}`;
+}
 
 async function consultarContexto(): Promise<Contexto> {
   const { data: auth, error: authError } =
@@ -82,7 +91,6 @@ export default function ClientesPage() {
   const [excluindo, setExcluindo] = useState(false);
   const [erroExclusao, setErroExclusao] = useState('');
 
-  const dialogo = useRef<HTMLDialogElement>(null);
   const travaExclusao = useRef(false);
 
   useEffect(() => {
@@ -182,12 +190,6 @@ export default function ClientesPage() {
     return () => { ativo = false; };
   }, [tentativa]);
 
-  useEffect(() => {
-    if (selecionado && !dialogo.current?.open) {
-      dialogo.current?.showModal();
-    }
-  }, [selecionado]);
-
   const filtrados = useMemo(() => {
     const termo = normalizar(busca);
 
@@ -224,7 +226,6 @@ export default function ClientesPage() {
 
   function fechar() {
     if (travaExclusao.current) return;
-    dialogo.current?.close();
     setSelecionado(null);
     setErroExclusao('');
   }
@@ -279,8 +280,7 @@ export default function ClientesPage() {
         atuais.filter((item) => item.id !== selecionado.id),
       );
       setFeedback('Cliente excluído. As reservas existentes foram preservadas.');
-      dialogo.current?.close();
-      setSelecionado(null);
+        setSelecionado(null);
     } catch (falha) {
       setErroExclusao(
         falha instanceof Error
@@ -293,369 +293,218 @@ export default function ClientesPage() {
     }
   }
 
-  function acoes(cliente: Cliente) {
-    return (
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          className={botao}
-          aria-label={`Visualizar ${cliente.nome}`}
-          onClick={() => abrir(cliente, 'detalhes')}
-        >
-          Visualizar
-        </button>
-        <Link
-          href={`/clientes/editar/${cliente.id}`}
-          className={botao}
-          aria-label={`Editar ${cliente.nome}`}
-        >
-          Editar
-        </Link>
-        <button
-          type="button"
-          className={`${botao} text-[var(--ern-erro)]`}
-          aria-label={`Excluir ${cliente.nome}`}
-          onClick={() => abrir(cliente, 'excluir')}
-        >
-          Excluir
-        </button>
-      </div>
-    );
-  }
+  const tomSituacao = (cliente: Cliente) => {
+    const valor = situacaoCliente(cliente);
+    return valor === 'Ativo' ? 'ok' : valor === 'Inativo' ? 'nt' : 'at';
+  };
 
-  function detalhes(cliente: Cliente) {
-    return [
-      ['Documento', cliente.documento],
-      ['Telefone / WhatsApp', cliente.telefone],
-      ['E-mail', cliente.email],
-      ['Cidade', cliente.cidade],
-      ['Nacionalidade', cliente.nacionalidade],
-      ['Situação', situacaoCliente(cliente)],
-    ];
-  }
+  const whatsSelecionado = selecionado ? linkWhatsApp(selecionado.telefone) : null;
 
   return (
-    <div className="ern-clientes-premium ern-clientes-carteira min-h-screen min-w-0 bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
-      <main className="mx-auto max-w-[1360px] space-y-6 px-4 py-7 sm:px-6 sm:py-10">
-        <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0">
-            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
-              Operação · Clientes
-            </p>
-            <h1
-              className="mt-2 text-4xl sm:text-5xl"
-              style={{ fontFamily: 'var(--font-fraunces), serif' }}
-            >
-              Clientes
-            </h1>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--ern-secundario)]">
-              Organize os viajantes e mantenha os dados da sua operação atualizados.
-            </p>
-          </div>
-          <Link
-            href="/clientes/novo"
-            className={`${botao} bg-[var(--ern-botao)] text-[var(--ern-sobre-botao)]`}
-          >
-            + Novo cliente
-          </Link>
-        </header>
+    <PaginaEDA>
+      {feedback && <div role="status" className="eda-pg-toast">{feedback}</div>}
 
-        <div className="ern-clientes-indicadores grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {[
-            { nome: 'Todos', valor: clientes.length, filtro: '' },
-            { nome: 'Ativos', valor: ativos, filtro: 'Ativo' },
-            { nome: 'Inativos', valor: inativos, filtro: 'Inativo' },
-          ].map((item) => (
-            <button
-              key={item.nome}
-              type="button"
-              disabled={carregando || Boolean(erro)}
-              aria-pressed={situacao === item.filtro}
-              onClick={() =>
-                setSituacao((atual) =>
-                  atual === item.filtro ? '' : item.filtro
-                )
-              }
-              className={`${painel} text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ern-destaque)] ${
-                situacao === item.filtro
-                  ? 'ring-2 ring-[var(--ern-destaque)]'
-                  : ''
-              }`}
-            >
-              <span className="text-xs sm:text-sm">{item.nome}</span>
-              <strong className="mt-2 block text-3xl">
-                {carregando || erro ? '—' : item.valor}
-              </strong>
-            </button>
-          ))}
-        </div>
-
-        {feedback && (
-          <p role="status" className={`${painel} text-[var(--ern-sucesso)]`}>
-            {feedback}
-          </p>
-        )}
-
-        <section className={`${painel} ern-clientes-listagem`} aria-labelledby="carteira-clientes">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <h2 id="carteira-clientes" className="text-xl font-semibold">
-              Carteira de clientes
-            </h2>
+      <div className="eda-pg-miolo">
+        <CabecalhoEDA
+          etiqueta="Operação"
+          titulo="Clientes"
+          resumo={carregando
+            ? 'Carregando clientes…'
+            : erro
+              ? 'Listagem indisponível no momento.'
+              : <><b>{clientes.length}</b> {clientes.length === 1 ? 'viajante cadastrado' : 'viajantes cadastrados'} · <b>{ativos}</b> {ativos === 1 ? 'ativo' : 'ativos'}</>}
+          acoes={<>
             <button
               type="button"
               disabled={carregando}
-              className={botao}
-              onClick={() => {
-                setFeedback('');
-                setTentativa((atual) => atual + 1);
-              }}
+              className="eda-pg-bt"
+              onClick={() => { setFeedback(''); setTentativa((atual) => atual + 1); }}
             >
-              Atualizar clientes
+              Atualizar
+            </button>
+            <Link href="/clientes/novo" className="eda-pg-bt eda-pg-bt-ouro">+ Novo cliente</Link>
+          </>}
+        />
+
+        {erro && (
+          <div role="alert" className="eda-pg-aviso eda-pg-aviso-er">
+            <p style={{ margin: 0 }}>{erro}</p>
+            <button type="button" className="eda-pg-bt eda-pg-bt-p" style={{ marginTop: 10 }} onClick={() => setTentativa((atual) => atual + 1)}>
+              Tentar novamente
             </button>
           </div>
+        )}
 
-          <div className="mt-5 grid min-w-0 gap-4 md:grid-cols-[minmax(0,1fr)_240px]">
-            <label className="min-w-0 space-y-2 text-sm">
-              <span className="block">Buscar cliente</span>
-              <input
-                type="search"
-                value={busca}
-                onChange={(event) => setBusca(event.target.value)}
-                placeholder="Nome, documento, telefone, e-mail ou cidade"
-                className={campo}
-              />
-            </label>
-            <label className="min-w-0 space-y-2 text-sm">
-              <span className="block">Situação</span>
-              <select
-                value={situacao}
-                onChange={(event) => setSituacao(event.target.value)}
-                className={campo}
-              >
-                <option value="">Todas as situações</option>
-                <option value="Ativo">Ativos</option>
-                <option value="Inativo">Inativos</option>
-              </select>
-            </label>
+        <section aria-label="Filtros dos clientes" className="eda-pg-filtros">
+          <BuscaEDA id="cliente-busca" rotulo="Buscar cliente" valor={busca} aoMudar={setBusca} placeholder="Nome, documento, telefone, e-mail ou cidade" />
+          <ChipsEDA
+            rotulo="Filtrar por situação"
+            valor={situacao}
+            aoMudar={setSituacao}
+            opcoes={[
+              { valor: '', rotulo: 'Todos', qtd: clientes.length },
+              { valor: 'Ativo', rotulo: 'Ativos', qtd: ativos },
+              { valor: 'Inativo', rotulo: 'Inativos', qtd: inativos },
+            ]}
+          />
+        </section>
+
+        <section aria-busy={carregando} aria-labelledby="carteira-clientes" className="eda-pg-tabela-caixa">
+          <div className="eda-pg-tabela-topo">
+            <span id="carteira-clientes" role="status">
+              {carregando || erro ? '—' : <>Mostrando <b>{filtrados.length}</b> de {clientes.length} {clientes.length === 1 ? 'cliente' : 'clientes'}</>}
+            </span>
+            <span>Clique num cliente para ver o cadastro</span>
           </div>
 
           {carregando ? (
-            <p role="status" className="py-10">
-              Carregando clientes…
-            </p>
+            <p role="status" className="eda-pg-estado">Carregando clientes…</p>
           ) : erro ? (
-            <div role="alert" className="mt-5 space-y-3">
-              <p className="text-[var(--ern-erro)]">{erro}</p>
-              <button
-                type="button"
-                className={botao}
-                onClick={() => setTentativa((atual) => atual + 1)}
-              >
-                Tentar novamente
-              </button>
-            </div>
+            <p className="eda-pg-estado">A listagem está indisponível. Atualize os dados.</p>
+          ) : filtrados.length === 0 ? (
+            clientes.length === 0 ? (
+              <VazioEDA
+                titulo="Nenhum cliente ainda"
+                texto="Cadastre o primeiro viajante para usar nas reservas, vouchers e no financeiro."
+                acao={<Link href="/clientes/novo" className="eda-pg-bt eda-pg-bt-ouro">+ Novo cliente</Link>}
+              />
+            ) : (
+              <VazioEDA
+                titulo="Nenhum cliente encontrado"
+                texto="Ajuste a busca ou a situação selecionada."
+                acao={<button type="button" className="eda-pg-bt" onClick={() => { setBusca(''); setSituacao(''); }}>Limpar filtros</button>}
+              />
+            )
           ) : (
             <>
-              <p role="status" className="mt-4 text-sm text-[var(--ern-secundario)]">
-                {filtrados.length} de {clientes.length} cliente(s).
-              </p>
+              <div className="eda-pg-cartoes">
+                {filtrados.map((cliente) => (
+                  <button key={cliente.id} type="button" className="eda-pg-cartao" onClick={() => abrir(cliente, 'detalhes')}>
+                    <span className="eda-pg-cartao-topo">
+                      <span style={{ minWidth: 0 }}>
+                        <b>{cliente.nome}</b>
+                        <small>{[cliente.cidade, cliente.nacionalidade].filter(Boolean).join(' · ') || 'Cidade não informada'}</small>
+                      </span>
+                      <PillEDA tom={tomSituacao(cliente)}>{situacaoCliente(cliente)}</PillEDA>
+                    </span>
+                    <span className="eda-pg-cartao-info">
+                      <span>{cliente.telefone || 'Sem telefone'}</span>
+                      {cliente.email && <span style={{ overflowWrap: 'anywhere' }}>{cliente.email}</span>}
+                    </span>
+                  </button>
+                ))}
+              </div>
 
-              {filtrados.length === 0 ? (
-                <div className="py-10 text-center">
-                  <h3 className="text-lg font-semibold">
-                    Nenhum cliente encontrado
-                  </h3>
-                  <p className="mt-2 text-sm text-[var(--ern-secundario)]">
-                    {clientes.length
-                      ? 'Ajuste a busca ou a situação selecionada.'
-                      : 'Cadastre o primeiro cliente da sua empresa.'}
-                  </p>
-                  {(busca || situacao) && (
-                    <button
-                      type="button"
-                      className={`${botao} mt-4`}
-                      onClick={() => { setBusca(''); setSituacao(''); }}
-                    >
-                      Limpar filtros
-                    </button>
-                  )}
-                </div>
-              ) : (
-                <>
-                  <div className="mt-5 grid gap-4 lg:hidden">
+              <div className="eda-pg-rolagem">
+                <table className="eda-pg-tabela">
+                  <caption className="eda-pg-sr">Clientes da empresa autenticada</caption>
+                  <thead>
+                    <tr>
+                      {['Cliente', 'Documento', 'Telefone', 'E-mail', 'Cidade', 'Situação', ''].map((nome, i) => (
+                        <th key={nome || i} scope="col">{nome || <span className="eda-pg-sr">Ações</span>}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
                     {filtrados.map((cliente) => (
-                      <article key={cliente.id} className={painel}>
-                        <h3 className="break-words text-lg font-semibold">
-                          {cliente.nome}
-                        </h3>
-                        <dl className="mt-4 grid min-w-0 gap-3 sm:grid-cols-2">
-                          {detalhes(cliente).map(([nome, valor]) => (
-                            <div key={nome} className="min-w-0">
-                              <dt className="text-xs text-[var(--ern-secundario)]">
-                                {nome}
-                              </dt>
-                              <dd className="mt-1 text-sm [overflow-wrap:anywhere]">
-                                {valor || 'Não informado'}
-                              </dd>
-                            </div>
-                          ))}
-                        </dl>
-                        <div className="mt-5">{acoes(cliente)}</div>
-                      </article>
+                      <tr key={cliente.id} aria-selected={selecionado?.id === cliente.id}>
+                        <td style={{ minWidth: 200, maxWidth: 280 }}>
+                          <button type="button" className="eda-pg-linha-bt" onClick={() => abrir(cliente, 'detalhes')}>
+                            <b>{cliente.nome}</b>
+                            {cliente.nacionalidade && <small>{cliente.nacionalidade}</small>}
+                          </button>
+                        </td>
+                        <td className="eda-pg-mut">{cliente.documento || '—'}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}>{cliente.telefone || '—'}</td>
+                        <td className="eda-pg-mut" style={{ maxWidth: 240, overflowWrap: 'anywhere' }}>{cliente.email || '—'}</td>
+                        <td className="eda-pg-mut">{cliente.cidade || '—'}</td>
+                        <td><PillEDA tom={tomSituacao(cliente)}>{situacaoCliente(cliente)}</PillEDA></td>
+                        <td>
+                          <div className="eda-pg-acoes-linha">
+                            <button type="button" className="eda-pg-bt eda-pg-bt-p" aria-label={`Visualizar ${cliente.nome}`} onClick={() => abrir(cliente, 'detalhes')}>Ver</button>
+                            <Link href={`/clientes/editar/${cliente.id}`} className="eda-pg-bt eda-pg-bt-p" aria-label={`Editar ${cliente.nome}`}>Editar</Link>
+                          </div>
+                        </td>
+                      </tr>
                     ))}
-                  </div>
-
-                  <div className="mt-5 hidden overflow-x-auto lg:block">
-                    <table className="w-full min-w-[1050px] text-left text-sm">
-                      <caption className="sr-only">
-                        Clientes da empresa autenticada
-                      </caption>
-                      <thead>
-                        <tr className="border-b border-[var(--ern-borda)]">
-                          {[
-                            'Cliente', 'Documento', 'Telefone',
-                            'E-mail', 'Cidade', 'Situação', 'Ações',
-                          ].map((nome) => (
-                            <th key={nome} scope="col" className="px-3 py-4">
-                              {nome}
-                            </th>
-                          ))}
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filtrados.map((cliente) => (
-                          <tr
-                            key={cliente.id}
-                            className="border-b border-[var(--ern-borda)] align-top hover:bg-[var(--ern-hover)]"
-                          >
-                            <th scope="row" className="max-w-60 break-words px-3 py-4 font-semibold">
-                              {cliente.nome}
-                              {cliente.nacionalidade && (
-                                <span className="mt-1 block text-xs font-normal text-[var(--ern-secundario)]">
-                                  {cliente.nacionalidade}
-                                </span>
-                              )}
-                            </th>
-                            {[
-                              cliente.documento,
-                              cliente.telefone,
-                              cliente.email,
-                              cliente.cidade,
-                              situacaoCliente(cliente),
-                            ].map((valor, indice) => (
-                              <td
-                                key={indice}
-                                className="max-w-60 px-3 py-4 [overflow-wrap:anywhere]"
-                              >
-                                {valor || '—'}
-                              </td>
-                            ))}
-                            <td className="px-3 py-4">{acoes(cliente)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </>
-              )}
+                  </tbody>
+                </table>
+              </div>
             </>
           )}
         </section>
-      </main>
+      </div>
 
-      <dialog
-        ref={dialogo}
-        aria-labelledby="titulo-cliente"
-        onCancel={(event) => {
-          if (travaExclusao.current) event.preventDefault();
-        }}
-        onClose={() => {
-          setSelecionado(null);
-          setErroExclusao('');
-        }}
-        className="fixed inset-0 m-auto max-h-[90dvh] w-[calc(100%-2rem)] max-w-2xl overflow-y-auto rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 text-[var(--ern-texto)] shadow-2xl backdrop:bg-black/70 sm:p-6"
-      >
-        {selecionado && (
-          <>
-            <div className="flex items-start justify-between gap-3">
-              <h2 id="titulo-cliente" className="min-w-0 break-words text-2xl font-semibold">
-                {modo === 'excluir' ? 'Excluir cliente?' : selecionado.nome}
-              </h2>
-              <button
-                type="button"
-                className={botao}
-                disabled={excluindo}
-                aria-label="Fechar janela"
-                onClick={fechar}
-              >
-                ×
+      {selecionado && (
+        <PainelLateralEDA
+          etiqueta={modo === 'excluir' ? 'Excluir cliente' : 'Cliente'}
+          titulo={modo === 'excluir' ? 'Excluir este cliente?' : selecionado.nome}
+          subtitulo={modo === 'excluir' ? selecionado.nome : [selecionado.cidade, selecionado.nacionalidade].filter(Boolean).join(' · ') || undefined}
+          bloqueado={excluindo}
+          aoFechar={fechar}
+          rodape={modo === 'detalhes' ? (
+            <>
+              <Link href={`/clientes/editar/${selecionado.id}`} className="eda-pg-bt eda-pg-bt-ouro">Editar cliente</Link>
+              <button type="button" className="eda-pg-bt eda-pg-bt-perigo" onClick={() => abrir(selecionado, 'excluir')}>Excluir</button>
+            </>
+          ) : (
+            <>
+              <button type="button" className="eda-pg-bt" disabled={excluindo} onClick={() => abrir(selecionado, 'detalhes')}>Voltar</button>
+              <button type="button" className="eda-pg-bt eda-pg-bt-perigo" disabled={excluindo} onClick={() => void excluir()}>
+                {excluindo ? 'Excluindo…' : 'Confirmar exclusão'}
               </button>
-            </div>
+            </>
+          )}
+        >
+          {modo === 'detalhes' ? (
+            <>
+              <div className="eda-pg-pills" style={{ marginTop: 0 }}>
+                <PillEDA tom={tomSituacao(selecionado)}>{situacaoCliente(selecionado)}</PillEDA>
+              </div>
 
-            {modo === 'detalhes' ? (
-              <>
-                <dl className="mt-5 grid gap-4 sm:grid-cols-2">
-                  {detalhes(selecionado).map(([nome, valor]) => (
-                    <div key={nome} className="min-w-0">
-                      <dt className="text-xs text-[var(--ern-secundario)]">{nome}</dt>
-                      <dd className="mt-1 text-sm [overflow-wrap:anywhere]">
-                        {valor || 'Não informado'}
-                      </dd>
-                    </div>
-                  ))}
+              <div className="eda-pg-bloco" style={{ marginTop: 16 }}>
+                <p className="eda-pg-bloco-titulo">Contato</p>
+                <dl className="eda-pg-dados">
+                  <DadoEDA rotulo="Telefone / WhatsApp">{selecionado.telefone || 'Não informado'}</DadoEDA>
+                  <DadoEDA rotulo="E-mail">{selecionado.email || 'Não informado'}</DadoEDA>
                 </dl>
-                <h3 className="mt-5 font-semibold">Observações</h3>
-                <p className="mt-2 whitespace-pre-wrap text-sm leading-6 [overflow-wrap:anywhere]">
-                  {selecionado.observacoes || 'Nenhuma observação registrada.'}
-                </p>
-                <div className="mt-6 flex flex-wrap gap-3">
-                  <Link href={`/clientes/editar/${selecionado.id}`} className={botao}>
-                    Editar cliente
-                  </Link>
-                  <button type="button" className={botao} onClick={fechar}>
-                    Fechar
-                  </button>
-                </div>
-              </>
-            ) : (
-              <>
-                <p className="mt-4 break-words font-semibold">
-                  {selecionado.nome}
-                </p>
-                <p className="mt-3 text-sm leading-6 text-[var(--ern-secundario)]">
-                  O cadastro será removido permanentemente. As reservas existentes
-                  serão mantidas, mas perderão o vínculo com este cliente.
-                  Para preservar o cadastro e seus vínculos, você pode editar
-                  a situação para Inativo.
-                </p>
-                {erroExclusao && (
-                  <p role="alert" className="mt-4 text-sm text-[var(--ern-erro)]">
-                    {erroExclusao}
-                  </p>
+                {(whatsSelecionado || selecionado.email) && (
+                  <div className="eda-pg-atalhos" style={{ marginTop: 12 }}>
+                    {whatsSelecionado && <a href={whatsSelecionado} target="_blank" rel="noopener noreferrer" className="eda-pg-bt eda-pg-bt-p">Abrir WhatsApp ↗</a>}
+                    {selecionado.email && <a href={`mailto:${selecionado.email}`} className="eda-pg-bt eda-pg-bt-p">Enviar e-mail</a>}
+                  </div>
                 )}
-                <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                  <button
-                    type="button"
-                    className={botao}
-                    disabled={excluindo}
-                    onClick={fechar}
-                  >
-                    Cancelar
-                  </button>
-                  <button
-                    type="button"
-                    className={`${botao} text-[var(--ern-erro)]`}
-                    disabled={excluindo}
-                    onClick={() => void excluir()}
-                  >
-                    {excluindo ? 'Excluindo…' : 'Confirmar exclusão'}
-                  </button>
+              </div>
+
+              <div className="eda-pg-bloco">
+                <p className="eda-pg-bloco-titulo">Cadastro</p>
+                <dl className="eda-pg-dados">
+                  <DadoEDA rotulo="Documento">{selecionado.documento || 'Não informado'}</DadoEDA>
+                  <DadoEDA rotulo="Nacionalidade">{selecionado.nacionalidade || 'Não informada'}</DadoEDA>
+                  <DadoEDA rotulo="Cidade">{selecionado.cidade || 'Não informada'}</DadoEDA>
+                  <DadoEDA rotulo="Cadastrado em">{selecionado.created_at ? new Date(selecionado.created_at).toLocaleDateString('pt-BR', { timeZone: 'America/Manaus' }) : '—'}</DadoEDA>
+                  <DadoEDA rotulo="Observações" largo>{selecionado.observacoes || 'Nenhuma observação registrada.'}</DadoEDA>
+                </dl>
+              </div>
+
+              <div className="eda-pg-bloco">
+                <p className="eda-pg-bloco-titulo">Atalhos</p>
+                <div className="eda-pg-atalhos">
+                  <Link href="/reservas/nova" className="eda-pg-bt eda-pg-bt-p">Nova reserva</Link>
+                  <Link href={`/reservas`} className="eda-pg-bt eda-pg-bt-p">Ver reservas</Link>
                 </div>
-              </>
-            )}
-          </>
-        )}
-      </dialog>
-    </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="eda-pg-texto-mut">
+                O cadastro será removido permanentemente. As reservas existentes serão mantidas, mas perderão o vínculo com este cliente. Para preservar o cadastro e seus vínculos, você pode editar a situação para Inativo.
+              </p>
+              {erroExclusao && <p role="alert" className="eda-pg-aviso eda-pg-aviso-er">{erroExclusao}</p>}
+            </>
+          )}
+        </PainelLateralEDA>
+      )}
+    </PaginaEDA>
   );
 }

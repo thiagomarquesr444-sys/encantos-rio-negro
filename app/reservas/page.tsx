@@ -13,6 +13,17 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import GraficosReservas from '@/app/components/GraficosReservas';
+import {
+  BuscaEDA,
+  CabecalhoEDA,
+  ChipsEDA,
+  DadoEDA,
+  PaginaEDA,
+  PainelLateralEDA,
+  PillEDA,
+  VazioEDA,
+  type TomEDA,
+} from '@/app/components/PadraoPaginaEDA';
 import SituacaoPeriodoReservaERN, {
   referenciaManausERN,
 } from '@/app/components/SituacaoPeriodoReservaERN';
@@ -75,16 +86,6 @@ type ModalAberto = {
 } | null;
 
 type BloqueioExclusao = 'voucher' | 'vinculo' | null;
-
-const buttonClass =
-  'inline-flex min-h-11 items-center justify-center rounded-xl border border-white/15 px-4 py-2 text-sm font-medium text-[#D6E2D9] transition hover:bg-white/5 disabled:cursor-not-allowed disabled:opacity-50';
-
-const inputClass =
-  'min-h-12 w-full min-w-0 rounded-xl border border-white/15 bg-[#07110E] px-4 py-3 text-sm text-[#EDEDE3] outline-none placeholder:text-[#B4C8BB]/60 focus:border-[#E3A144]';
-
-const headingStyle = {
-  fontFamily: 'var(--font-fraunces), serif',
-};
 
 const nomesAlertas: Record<string, string> = {
   pendentes: 'Reservas pendentes',
@@ -233,129 +234,20 @@ async function obterEmpresa(): Promise<string> {
   return String(perfil.empresa_id);
 }
 
+const TOM_STATUS: Record<StatusReserva, TomEDA> = {
+  Pendente: 'at',
+  Confirmada: 'ok',
+  Cancelada: 'er',
+  Concluída: 'info',
+  'Não compareceu': 'at',
+  Desconhecido: 'nt',
+};
+
 function StatusBadge({ status }: { status: StatusReserva }) {
-  const classes: Record<StatusReserva, string> = {
-    Pendente: 'border-amber-400/25 bg-amber-400/10 text-amber-200',
-    Confirmada: 'border-emerald-400/25 bg-emerald-400/10 text-emerald-200',
-    Cancelada: 'border-red-400/25 bg-red-400/10 text-red-200',
-    Concluída: 'border-sky-400/25 bg-sky-400/10 text-sky-200',
-    'Não compareceu': 'border-orange-400/25 bg-orange-400/10 text-orange-200',
-    Desconhecido: 'border-white/25 bg-white/10 text-white',
-  };
-  const classe = classes[status];
-
-  return (
-    <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${classe}`}>
-      {status}
-    </span>
-  );
+  return <PillEDA tom={TOM_STATUS[status]}>{status}</PillEDA>;
 }
 
-function Modal({
-  titulo,
-  bloqueado,
-  aoFechar,
-  children,
-}: {
-  titulo: string;
-  bloqueado: boolean;
-  aoFechar: () => void;
-  children: React.ReactNode;
-}) {
-  const tituloId = React.useId();
-  const container = useRef<HTMLDivElement>(null);
-  const fecharRef = useRef(aoFechar);
-  const bloqueadoRef = useRef(bloqueado);
-
-  fecharRef.current = aoFechar;
-  bloqueadoRef.current = bloqueado;
-
-  useEffect(() => {
-    const anterior = document.activeElement as HTMLElement | null;
-    const overflowAnterior = document.body.style.overflow;
-
-    document.body.style.overflow = 'hidden';
-    container.current?.focus();
-
-    function teclado(event: KeyboardEvent) {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        if (!bloqueadoRef.current) fecharRef.current();
-      }
-
-      if (event.key !== 'Tab' || !container.current) return;
-
-      const elementos = Array.from(
-        container.current.querySelectorAll<HTMLElement>(
-          'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), [tabindex="0"]'
-        )
-      ).filter((elemento) => elemento.getClientRects().length > 0);
-
-      const primeiro = elementos[0];
-      const ultimo = elementos[elementos.length - 1];
-
-      if (!primeiro || !ultimo) {
-        event.preventDefault();
-        container.current.focus();
-        return;
-      }
-
-      if (
-        event.shiftKey &&
-        (document.activeElement === primeiro ||
-          document.activeElement === container.current)
-      ) {
-        event.preventDefault();
-        ultimo.focus();
-      } else if (
-        !event.shiftKey &&
-        (document.activeElement === ultimo ||
-          document.activeElement === container.current)
-      ) {
-        event.preventDefault();
-        primeiro.focus();
-      }
-    }
-
-    document.addEventListener('keydown', teclado);
-
-    return () => {
-      document.body.style.overflow = overflowAnterior;
-      document.removeEventListener('keydown', teclado);
-      anterior?.focus();
-    };
-  }, []);
-
-  return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/75 p-3 backdrop-blur-sm sm:p-5">
-      <div
-        ref={container}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={tituloId}
-        aria-busy={bloqueado}
-        tabIndex={-1}
-        className="max-h-[90dvh] w-full max-w-[720px] overflow-y-auto rounded-2xl border border-white/15 bg-[#091510] shadow-2xl outline-none"
-      >
-        <div className="flex items-start justify-between gap-4 border-b border-white/10 p-5">
-          <h2 id={tituloId} className="min-w-0 break-words text-2xl" style={headingStyle}>
-            {titulo}
-          </h2>
-          <button
-            type="button"
-            aria-label="Fechar janela"
-            disabled={bloqueado}
-            onClick={aoFechar}
-            className={`${buttonClass} shrink-0`}
-          >
-            ✕
-          </button>
-        </div>
-        {children}
-      </div>
-    </div>
-  );
-}
+type PagamentoReserva = { total: number; recebido: number; pendente: number; lancamentos: number };
 
 export default function ReservasPage() {
   return (
@@ -574,38 +466,6 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
     0
   );
 
-  const indicadores: {
-    titulo: string;
-    valor: string;
-    detalhe: string;
-    filtro: StatusReserva | null;
-  }[] = [
-    {
-      titulo: 'Confirmadas',
-      valor: String(confirmadas.length),
-      detalhe: 'Reservas confirmadas',
-      filtro: 'Confirmada',
-    },
-    {
-      titulo: 'Pendentes',
-      valor: String(pendentes.length),
-      detalhe: 'Aguardando definição',
-      filtro: 'Pendente',
-    },
-    {
-      titulo: 'Canceladas',
-      valor: String(canceladas.length),
-      detalhe: 'Reservas canceladas',
-      filtro: 'Cancelada',
-    },
-    {
-      titulo: 'Valor confirmado',
-      valor: formatarMoeda(valorConfirmado),
-      detalhe: 'Valor comercial, não receita recebida',
-      filtro: null,
-    },
-  ];
-
   const reservasFiltradas = useMemo(() => {
     const termo = normalizarTexto(busca);
 
@@ -766,38 +626,61 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
     window.setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
 
-  function acoes(reserva: Reserva) {
-    return (
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          disabled={excluindo}
-          onClick={() => abrirModal('detalhes', reserva)}
-          className={buttonClass}
-        >
-          Ver
-        </button>
 
-        {reserva.id != null && (
-          <Link
-            href={`/reservas/editar/${encodeURIComponent(String(reserva.id))}`}
-            className={buttonClass}
-          >
-            {reservaEncerradaERN(reserva.status) ? 'Consultar' : 'Editar'}
-          </Link>
-        )}
+  // ERN_PADRAO_PAGINAS_EDA_V1: pagamento da reserva aberta no painel lateral.
+  const [pagamento, setPagamento] = useState<PagamentoReserva | null>(null);
+  const [erroPagamento, setErroPagamento] = useState('');
+  const idAberto = modal?.reserva.id;
 
-        <button
-          type="button"
-          disabled={excluindo || reserva.id == null || reservaEncerradaERN(reserva.status)}
-          onClick={() => abrirModal('excluir', reserva)}
-          className={`${buttonClass} border-red-400/25 text-red-300`}
-        >
-          Excluir
-        </button>
-      </div>
-    );
-  }
+  useEffect(() => {
+    setPagamento(null);
+    setErroPagamento('');
+    if (idAberto == null) return;
+    let ativo = true;
+
+    void (async () => {
+      try {
+        const empresaId = await obterEmpresa();
+        const { data, error } = await supabase
+          .from('financeiro')
+          .select('tipo,status,valor')
+          .eq('empresa_id', empresaId)
+          .eq('reserva_id', String(idAberto))
+          .limit(500);
+        if (error) throw error;
+        if (!ativo) return;
+        const resumo: PagamentoReserva = { total: 0, recebido: 0, pendente: 0, lancamentos: 0 };
+        for (const item of data ?? []) {
+          if (String(item.tipo ?? '').trim().toLowerCase() !== 'receita') continue;
+          const valor = normalizarValor(item.valor);
+          if (valor <= 0) continue;
+          const status = String(item.status ?? '').trim().toLowerCase();
+          resumo.lancamentos += 1;
+          resumo.total += valor;
+          if (status === 'recebido') resumo.recebido += valor;
+          else if (status === 'pendente') resumo.pendente += valor;
+        }
+        setPagamento(resumo);
+      } catch {
+        if (ativo) setErroPagamento('Não foi possível consultar os recebimentos desta reserva.');
+      }
+    })();
+
+    return () => { ativo = false; };
+  }, [idAberto]);
+
+  const contagem = (status: StatusReserva) =>
+    reservasDoDashboard.filter((reserva) => reserva.status === status).length;
+
+  const opcoesStatus: { valor: '' | StatusReserva; rotulo: string; qtd: number }[] = [
+    { valor: '', rotulo: 'Todas', qtd: reservasDoDashboard.length },
+    { valor: 'Confirmada', rotulo: 'Confirmadas', qtd: confirmadas.length },
+    { valor: 'Pendente', rotulo: 'Pendentes', qtd: pendentes.length },
+    { valor: 'Concluída', rotulo: 'Concluídas', qtd: contagem('Concluída') },
+    { valor: 'Cancelada', rotulo: 'Canceladas', qtd: canceladas.length },
+    ...(contagem('Não compareceu') ? [{ valor: 'Não compareceu' as const, rotulo: 'Não compareceu', qtd: contagem('Não compareceu') }] : []),
+    ...(contagem('Desconhecido') ? [{ valor: 'Desconhecido' as const, rotulo: 'Sem status', qtd: contagem('Desconhecido') }] : []),
+  ];
 
   const selecionada = modal?.reserva;
   const idSelecionado = selecionada?.id;
@@ -805,341 +688,179 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
     ? ''
     : encodeURIComponent(String(idSelecionado));
 
+  const resumoCabecalho = loading
+    ? 'Carregando reservas…'
+    : erroConsulta
+      ? 'Listagem indisponível no momento.'
+      : <><b>{reservasDoDashboard.length}</b> {reservasDoDashboard.length === 1 ? 'reserva' : 'reservas'} no recorte · <b>{formatarMoeda(valorConfirmado)}</b> em reservas confirmadas</>;
+
   return (
-    <div className="ern-reservas-premium min-h-screen bg-[#0C1112] text-[#F1F4EF]">
-      {sucesso && (
-        <div
-          role="status"
-          className="fixed left-3 right-3 top-24 z-[90] mx-auto max-w-lg rounded-2xl border border-emerald-400/25 bg-[#0B2119] p-4 text-sm text-emerald-200 shadow-2xl"
-        >
-          {sucesso}
-        </div>
-      )}
+    <PaginaEDA>
+      {sucesso && <div role="status" className="eda-pg-toast">{sucesso}</div>}
 
-      <header className="border-b border-white/10 bg-[#091510]">
-        <div className="mx-auto flex max-w-[1440px] flex-col gap-6 px-4 py-8 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-              Operação · Reservas
-            </p>
-            <h1 className="mt-3 text-4xl sm:text-5xl" style={headingStyle}>
-              Reservas
-            </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-[#B4C8BB]">
-              Acompanhe clientes, passeios, participantes, status e detalhes
-              operacionais de cada reserva.
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <button
-              type="button"
-              disabled={loading || excluindo}
-              onClick={() => void carregarReservas()}
-              className={buttonClass}
-            >
+      <div className="eda-pg-miolo">
+        <CabecalhoEDA
+          etiqueta="Operação"
+          titulo="Reservas"
+          resumo={resumoCabecalho}
+          acoes={<>
+            <button type="button" disabled={loading || excluindo} onClick={() => void carregarReservas()} className="eda-pg-bt">
               {loading ? 'Atualizando…' : 'Atualizar'}
             </button>
-            <button
-              type="button"
-              disabled={loading || Boolean(erroConsulta)}
-              onClick={exportarRelatorio}
-              className={buttonClass}
-            >
+            <button type="button" disabled={loading || Boolean(erroConsulta)} onClick={exportarRelatorio} className="eda-pg-bt">
               Exportar CSV
             </button>
-            <Link
-              href="/reservas/nova"
-              className={`${buttonClass} border-[#E3A144] bg-[#E3A144] font-bold text-[#07130F] hover:bg-[#F0B35C]`}
-            >
-              + Nova reserva
-            </Link>
-          </div>
-        </div>
-      </header>
+            <Link href="/reservas/nova" className="eda-pg-bt eda-pg-bt-ouro">+ Nova reserva</Link>
+          </>}
+        />
 
-      <main className="mx-auto max-w-[1440px] px-4 py-6 sm:px-6 lg:px-8">
         {erroConsulta && (
-          <div
-            role="alert"
-            className="mb-5 rounded-2xl border border-red-400/25 bg-red-400/10 p-4 text-sm text-red-200"
-          >
-            <p>{erroConsulta}</p>
-            <button
-              type="button"
-              disabled={loading}
-              onClick={() => void carregarReservas()}
-              className={`${buttonClass} mt-4`}
-            >
+          <div role="alert" className="eda-pg-aviso eda-pg-aviso-er">
+            <p style={{ margin: 0 }}>{erroConsulta}</p>
+            <button type="button" disabled={loading} onClick={() => void carregarReservas()} className="eda-pg-bt eda-pg-bt-p" style={{ marginTop: 10 }}>
               Tentar novamente
             </button>
           </div>
         )}
 
-        {erroExportacao && (
-          <p role="alert" className="mb-5 rounded-xl border border-amber-400/25 p-4 text-sm text-amber-200">
-            {erroExportacao}
-          </p>
-        )}
+        {erroExportacao && <p role="alert" className="eda-pg-aviso eda-pg-aviso-at">{erroExportacao}</p>}
 
         {alertaOperacional && (
-          <div className="mb-5 flex flex-col gap-4 rounded-2xl border border-[#E3A144]/25 bg-[#E3A144]/5 p-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <p className="text-sm font-semibold text-[#F4C77E]">
+          <div className="eda-pg-aviso eda-pg-aviso-ouro">
+            <div>
+              <b>
                 {filtroOperacionalValido
-                  ? `Filtro do dashboard: ${nomesAlertas[alertaOperacional]}`
+                  ? `Filtro do painel: ${nomesAlertas[alertaOperacional]}`
                   : 'O link contém um filtro operacional inválido.'}
-              </p>
+              </b>
               {filtroOperacionalValido && (
-                <p className="mt-2 text-xs leading-6 text-[#C5D4CA]">
-                  {formatarData(inicioOperacional)} até {formatarData(fimOperacional)}.
-                  {' '}Reservas canceladas ficam fora deste recorte.
-                  Indicadores, gráficos e exportação respeitam esse recorte;
-                  a busca e o status refinam a listagem e a exportação.
-                </p>
+                <p>{formatarData(inicioOperacional)} até {formatarData(fimOperacional)} · reservas canceladas ficam fora deste recorte.</p>
               )}
             </div>
-            <Link href="/reservas" className={`${buttonClass} shrink-0`}>
-              Ver todas as reservas
-            </Link>
+            <Link href="/reservas" className="eda-pg-bt eda-pg-bt-p">Ver todas as reservas</Link>
           </div>
         )}
 
-        {!erroConsulta && (
-          <>
-            <div className="min-w-0">
-              <GraficosReservas
-                reservas={reservasDoDashboard}
-                carregando={loading}
-              />
-            </div>
-
-            <div className="mt-5 grid grid-cols-2 gap-3 xl:grid-cols-4">
-              {indicadores.map((indicador) => {
-                const ativo =
-                  indicador.filtro !== null &&
-                  filtroStatus === indicador.filtro;
-
-                const conteudo = (
-                  <>
-                    <span className="block text-sm text-[#B4C8BB]">
-                      {indicador.titulo}
-                    </span>
-                    <strong className="mt-3 block break-words text-xl tabular-nums text-[#F4C77E] sm:text-2xl">
-                      {loading ? '—' : indicador.valor}
-                    </strong>
-                    <span className="mt-2 block text-xs leading-5 text-[#B4C8BB]">
-                      {indicador.detalhe}
-                    </span>
-                  </>
-                );
-
-                return indicador.filtro ? (
-                  <button
-                    key={indicador.titulo}
-                    type="button"
-                    aria-pressed={ativo}
-                    onClick={() => {
-                      const status = indicador.filtro;
-                      if (status) {
-                        setFiltroStatus((atual) => atual === status ? '' : status);
-                      }
-                    }}
-                    className={`min-w-0 rounded-2xl border p-4 text-left ${
-                      ativo
-                        ? 'border-[#E3A144]/50 bg-[#E3A144]/10'
-                        : 'border-white/10 bg-[#0A1713]'
-                    }`}
-                  >
-                    {conteudo}
-                  </button>
-                ) : (
-                  <div
-                    key={indicador.titulo}
-                    className="min-w-0 rounded-2xl border border-white/10 bg-[#0A1713] p-4"
-                  >
-                    {conteudo}
-                  </div>
-                );
-              })}
-            </div>
-
-            <p className="mt-4 text-xs leading-6 text-[#B4C8BB]">
-              Os indicadores seguem o recorte operacional do dashboard, quando
-              presente. Busca e status filtram a listagem e o CSV.
-              Valor confirmado representa o valor comercial das reservas.
-            </p>
-          </>
-        )}
-
-        <section
-          aria-label="Filtros das reservas"
-          className="mt-6 grid gap-4 rounded-2xl border border-white/10 bg-[#0A1713] p-4 sm:grid-cols-[1fr_220px]"
-        >
-          <div className="min-w-0">
-            <label htmlFor="reserva-busca" className="mb-2 block text-sm text-[#C5D4CA]">
-              Buscar
-            </label>
-            <input
-              id="reserva-busca"
-              type="search"
-              value={busca}
-              onChange={(event) => setBusca(event.target.value)}
-              placeholder="Cliente, passeio, agência ou guia"
-              className={inputClass}
-            />
-          </div>
-          <div className="min-w-0">
-            <label htmlFor="reserva-status" className="mb-2 block text-sm text-[#C5D4CA]">
-              Status
-            </label>
-            <select
-              id="reserva-status"
-              value={filtroStatus}
-              onChange={(event) => setFiltroStatus(event.target.value as '' | StatusReserva)}
-              className={inputClass}
-            >
-              <option value="">Todos os status</option>
-              <option value="Pendente">Pendentes</option>
-              <option value="Confirmada">Confirmadas</option>
-              <option value="Cancelada">Canceladas</option>
-              <option value="Concluída">Concluídas</option>
-              <option value="Não compareceu">Não compareceu</option>
-              <option value="Desconhecido">Status não reconhecido</option>
-            </select>
-          </div>
+        <section aria-label="Filtros das reservas" className="eda-pg-filtros">
+          <BuscaEDA id="reserva-busca" rotulo="Buscar reservas" valor={busca} aoMudar={setBusca} placeholder="Cliente, passeio, agência ou guia" />
+          <ChipsEDA rotulo="Filtrar por status" opcoes={opcoesStatus} valor={filtroStatus} aoMudar={setFiltroStatus} />
         </section>
 
-        <section
-          aria-busy={loading}
-          className="mt-6 overflow-hidden rounded-2xl border border-white/10 bg-[#0A1713]"
-        >
-          <div className="flex flex-wrap items-end justify-between gap-3 border-b border-white/10 p-5">
-            <div>
-              <p className="text-xs uppercase tracking-[0.16em] text-[#E3A144]">
-                Carteira operacional
-              </p>
-              <h2 className="mt-2 text-2xl" style={headingStyle}>
-                Reservas cadastradas
-              </h2>
-            </div>
-            <p className="text-sm text-[#B4C8BB]">
+        <section aria-busy={loading} aria-label="Lista de reservas" className="eda-pg-tabela-caixa">
+          <div className="eda-pg-tabela-topo">
+            <span>
               {loading || erroConsulta
                 ? '—'
-                : `${reservasFiltradas.length} de ${reservasDoDashboard.length} no recorte · ${reservas.length} no histórico`}
-            </p>
+                : <>Mostrando <b>{reservasFiltradas.length}</b> de {reservasDoDashboard.length} no recorte · {reservas.length} no histórico</>}
+            </span>
+            <span>Clique numa reserva para ver o resumo</span>
           </div>
 
           {loading ? (
-            <p role="status" className="p-10 text-center text-sm text-[#B4C8BB]">
-              Carregando reservas…
-            </p>
+            <p role="status" className="eda-pg-estado">Carregando reservas…</p>
           ) : erroConsulta ? (
-            <p className="p-10 text-center text-sm text-red-200">
-              A listagem está indisponível. Atualize os dados.
-            </p>
+            <p className="eda-pg-estado">A listagem está indisponível. Atualize os dados.</p>
           ) : reservasFiltradas.length === 0 ? (
-            <div className="p-10 text-center">
-              <h3 className="text-xl" style={headingStyle}>
-                Nenhuma reserva encontrada
-              </h3>
-              <p className="mt-3 text-sm text-[#B4C8BB]">
-                Ajuste os filtros ou registre uma nova reserva.
-              </p>
-            </div>
+            reservas.length === 0 ? (
+              <VazioEDA
+                titulo="Nenhuma reserva ainda"
+                texto="Registre a primeira reserva para acompanhar saídas, pagamentos e vouchers por aqui."
+                acao={<Link href="/reservas/nova" className="eda-pg-bt eda-pg-bt-ouro">+ Nova reserva</Link>}
+              />
+            ) : (
+              <VazioEDA
+                titulo="Nenhuma reserva encontrada"
+                texto="Ajuste a busca ou o status para ver outras reservas."
+                acao={<button type="button" className="eda-pg-bt" onClick={() => { setBusca(''); setFiltroStatus(''); }}>Limpar filtros</button>}
+              />
+            )
           ) : (
             <>
-              <div className="grid min-w-0 gap-3 p-3 sm:grid-cols-2 lg:hidden">
+              <div className="eda-pg-cartoes">
                 {reservasFiltradas.map((reserva, index) => (
-                  <article
+                  <button
                     key={reserva.id ?? index}
-                    className="min-w-0 rounded-2xl border border-white/10 bg-[#07110E] p-4"
+                    type="button"
+                    className="eda-pg-cartao"
+                    disabled={excluindo}
+                    onClick={() => abrirModal('detalhes', reserva)}
                   >
-                    <div className="flex flex-wrap items-start justify-between gap-3">
-                      <div className="min-w-0 flex-1">
-                        <h3 className="break-words text-base font-semibold">
-                          {reserva.cliente}
-                        </h3>
-                        <p className="mt-2 break-words text-sm leading-6 text-[#C5D4CA]">
-                          {reserva.pacote}
-                        </p>
-                      </div>
-                      <div className="flex min-w-0 flex-col items-start gap-2">
-                        <StatusBadge status={reserva.status} />
-                        <SituacaoPeriodoReservaERN
-                          status={reserva.statusOriginal ?? reserva.status}
-                          inicio={reserva.dataOriginal}
-                          fim={reserva.data_fim_prevista}
-                          horarioFim={reserva.horario_fim_previsto}
-                          referencia={referenciaPeriodoERN}
-                        />
-                      </div>
-                    </div>
-
-                    <dl className="mt-4 grid grid-cols-2 gap-4 text-sm">
-                      {[
-                        ['Pessoas', formatarQuantidadePessoas(reserva.quantidade_pessoas)],
-                        ['Data do passeio', reserva.data],
-                        ['Horário', reserva.horario?.slice(0, 5) || 'Não informado'],
-                        ['Valor comercial', formatarMoeda(reserva.valor)],
-                        ['Agência / Parceiro', reserva.agencia],
-                        ['Guia', reserva.guia],
-                      ].map(([label, valor]) => (
-                        <div key={label} className="min-w-0">
-                          <dt className="text-xs text-[#B4C8BB]">{label}</dt>
-                          <dd className="mt-1 break-words">{valor}</dd>
-                        </div>
-                      ))}
-                    </dl>
-
-                    <div className="mt-4 border-t border-white/10 pt-4">
-                      {acoes(reserva)}
-                    </div>
-                  </article>
+                    <span className="eda-pg-cartao-topo">
+                      <span style={{ minWidth: 0 }}>
+                        <b>{reserva.cliente}</b>
+                        <small>{reserva.pacote}</small>
+                      </span>
+                      <strong className="eda-pg-num">{formatarMoeda(reserva.valor)}</strong>
+                    </span>
+                    <span className="eda-pg-cartao-info">
+                      <span>{reserva.data}{reserva.horario ? ` · ${reserva.horario.slice(0, 5)}` : ''}</span>
+                      <span>{formatarQuantidadePessoas(reserva.quantidade_pessoas)} {reserva.quantidade_pessoas === 1 ? 'pessoa' : 'pessoas'}</span>
+                      <span>Guia: {reserva.guia}</span>
+                    </span>
+                    <span className="eda-pg-cartao-pills">
+                      <StatusBadge status={reserva.status} />
+                      <SituacaoPeriodoReservaERN
+                        status={reserva.statusOriginal ?? reserva.status}
+                        inicio={reserva.dataOriginal}
+                        fim={reserva.data_fim_prevista}
+                        horarioFim={reserva.horario_fim_previsto}
+                        referencia={referenciaPeriodoERN}
+                      />
+                    </span>
+                  </button>
                 ))}
               </div>
 
-              <div className="hidden overflow-x-auto lg:block">
-                <table className="w-full min-w-[1200px] border-collapse text-left text-sm">
-                  <thead className="border-b border-white/10 text-xs text-[#B4C8BB]">
+              <div className="eda-pg-rolagem">
+                <table className="eda-pg-tabela">
+                  <thead>
                     <tr>
-                      {['Cliente / Passeio', 'Pessoas', 'Data / Horário', 'Agência / Parceiro', 'Guia', 'Valor comercial', 'Status', 'Ações'].map((titulo) => (
-                        <th key={titulo} scope="col" className="px-4 py-4">
-                          {titulo}
-                        </th>
+                      {['Cliente / Passeio', 'Data', 'Pessoas', 'Agência', 'Guia', 'Valor', 'Status', ''].map((titulo, i) => (
+                        <th key={titulo || i} scope="col">{titulo || <span className="eda-pg-sr">Ações</span>}</th>
                       ))}
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-white/10">
+                  <tbody>
                     {reservasFiltradas.map((reserva, index) => (
-                      <tr key={reserva.id ?? index} className="hover:bg-white/[0.02]">
-                        <td className="min-w-[200px] max-w-xs px-4 py-4">
-                          <p className="break-words font-medium">{reserva.cliente}</p>
-                          <p className="mt-2 break-words text-[#B4C8BB]">{reserva.pacote}</p>
+                      <tr key={reserva.id ?? index} aria-selected={selecionada?.id === reserva.id && reserva.id != null}>
+                        <td style={{ minWidth: 220 }}>
+                          <button type="button" className="eda-pg-linha-bt" disabled={excluindo} onClick={() => abrirModal('detalhes', reserva)}>
+                            <b>{reserva.cliente}</b>
+                            <small>{reserva.pacote}</small>
+                          </button>
                         </td>
-                        <td className="px-4 py-4">{formatarQuantidadePessoas(reserva.quantidade_pessoas)}</td>
-                        <td className="whitespace-nowrap px-4 py-4">
-                          <p>{reserva.data}</p>
-                          <p className="mt-2 text-xs text-[#B4C8BB]">
-                            {reserva.horario?.slice(0, 5) || 'Sem horário'}
-                          </p>
+                        <td style={{ whiteSpace: 'nowrap' }}>
+                          {reserva.data}
+                          <small>{reserva.horario?.slice(0, 5) || 'Sem horário'}</small>
                         </td>
-                        <td className="px-4 py-4 text-[#C5D4CA]">{reserva.agencia}</td>
-                        <td className="px-4 py-4 text-[#C5D4CA]">{reserva.guia}</td>
-                        <td className="whitespace-nowrap px-4 py-4 font-semibold tabular-nums text-[#F4C77E]">
-                          {formatarMoeda(reserva.valor)}
+                        <td>{formatarQuantidadePessoas(reserva.quantidade_pessoas)}</td>
+                        <td className="eda-pg-mut">{reserva.agencia}</td>
+                        <td className={reserva.guiaInformado ? 'eda-pg-mut' : ''}>
+                          {reserva.guiaInformado ? reserva.guia : <PillEDA tom="er">Sem guia</PillEDA>}
                         </td>
-                        <td className="px-4 py-4"><div className="flex min-w-0 flex-col items-start gap-2">
-                        <StatusBadge status={reserva.status} />
-                        <SituacaoPeriodoReservaERN
-                          status={reserva.statusOriginal ?? reserva.status}
-                          inicio={reserva.dataOriginal}
-                          fim={reserva.data_fim_prevista}
-                          horarioFim={reserva.horario_fim_previsto}
-                          referencia={referenciaPeriodoERN}
-                        />
-                      </div></td>
-                        <td className="min-w-[240px] px-4 py-4">{acoes(reserva)}</td>
+                        <td className="eda-pg-num">{formatarMoeda(reserva.valor)}</td>
+                        <td>
+                          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6 }}>
+                            <StatusBadge status={reserva.status} />
+                            <SituacaoPeriodoReservaERN
+                              status={reserva.statusOriginal ?? reserva.status}
+                              inicio={reserva.dataOriginal}
+                              fim={reserva.data_fim_prevista}
+                              horarioFim={reserva.horario_fim_previsto}
+                              referencia={referenciaPeriodoERN}
+                            />
+                          </div>
+                        </td>
+                        <td>
+                          <div className="eda-pg-acoes-linha">
+                            <button type="button" className="eda-pg-bt eda-pg-bt-p" disabled={excluindo} onClick={() => abrirModal('detalhes', reserva)}>Ver</button>
+                            {reserva.id != null && (
+                              <Link href={`/reservas/editar/${encodeURIComponent(String(reserva.id))}`} className="eda-pg-bt eda-pg-bt-p">
+                                {reservaEncerradaERN(reserva.status) ? 'Consultar' : 'Editar'}
+                              </Link>
+                            )}
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -1148,42 +869,82 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
             </>
           )}
         </section>
-      </main>
+
+        {!erroConsulta && (
+          <details className="eda-pg-analises">
+            <summary>Análises das reservas</summary>
+            <div>
+              <GraficosReservas reservas={reservasDoDashboard} carregando={loading} />
+            </div>
+          </details>
+        )}
+      </div>
 
       {modal && selecionada && (
-        <Modal
-          titulo={modal.tipo === 'excluir' ? 'Excluir reserva?' : 'Detalhes da reserva'}
+        <PainelLateralEDA
+          etiqueta={modal.tipo === 'excluir' ? 'Excluir reserva' : 'Reserva'}
+          titulo={modal.tipo === 'excluir' ? 'Excluir esta reserva?' : selecionada.pacote}
+          subtitulo={`${selecionada.cliente} · ${selecionada.data}${selecionada.horario ? ` às ${selecionada.horario.slice(0, 5)}` : ''}`}
           bloqueado={excluindo}
           aoFechar={fecharModal}
+          rodape={modal.tipo === 'detalhes' ? (
+            <>
+              {idSelecionado != null && (
+                <Link href={`/reservas/editar/${idURL}`} className="eda-pg-bt eda-pg-bt-ouro">
+                  {reservaEncerradaERN(selecionada.status) ? 'Consultar reserva' : 'Editar reserva'}
+                </Link>
+              )}
+              <button
+                type="button"
+                className="eda-pg-bt eda-pg-bt-perigo"
+                disabled={excluindo || idSelecionado == null || reservaEncerradaERN(selecionada.status)}
+                onClick={() => abrirModal('excluir', selecionada)}
+              >
+                Excluir
+              </button>
+            </>
+          ) : (
+            <>
+              <button type="button" disabled={excluindo} onClick={() => abrirModal('detalhes', selecionada)} className="eda-pg-bt">Voltar</button>
+              {!bloqueioExclusao && (
+                <button type="button" disabled={excluindo} onClick={() => void executarExclusao()} className="eda-pg-bt eda-pg-bt-perigo">
+                  {excluindo ? 'Excluindo…' : 'Excluir permanentemente'}
+                </button>
+              )}
+            </>
+          )}
         >
           {modal.tipo === 'detalhes' ? (
-            <div className="p-5">
-              <h3 className="break-words text-xl font-semibold">{selecionada.cliente}</h3>
-              <p className="mt-2 break-words text-sm text-[#B4C8BB]">{selecionada.pacote}</p>
+            <>
+              <div className="eda-pg-pills" style={{ marginTop: 0 }}>
+                <StatusBadge status={selecionada.status} />
+                {pagamento && pagamento.pendente > 0 && <PillEDA tom="at">Pagamento pendente</PillEDA>}
+                {pagamento && pagamento.lancamentos > 0 && pagamento.pendente === 0 && <PillEDA tom="ok">Pago</PillEDA>}
+                {!selecionada.guiaInformado && <PillEDA tom="er">Sem guia</PillEDA>}
+              </div>
 
-              {idSelecionado != null && (
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  {reservaOperacionalERN(selecionada.status) && (
-                    <Link
-                      href={`/vouchers/novo?reserva_id=${idURL}`}
-                      className={`${buttonClass} border-[#E3A144]/40 text-[#F4C77E]`}
-                    >
-                      Emitir voucher
-                    </Link>
-                  )}
-                  <Link href={`/vouchers?reserva_id=${idURL}`} className={buttonClass}>
-                    Consultar vouchers
-                  </Link>
-                  <Link href={`/financeiro/receita/novo?reserva_id=${idURL}`} className={buttonClass}>
-                    Registrar receita
-                  </Link>
-                  <Link href={`/financeiro?reserva_id=${idURL}`} className={buttonClass}>
-                    Consultar financeiro
-                  </Link>
-                </div>
-              )}
+              <div className="eda-pg-bloco" style={{ marginTop: 16 }}>
+                <p className="eda-pg-bloco-titulo">Pagamento</p>
+                <div className="eda-pg-linha-valor"><span>Valor da reserva</span><b>{formatarMoeda(selecionada.valor)}</b></div>
+                {erroPagamento ? (
+                  <p className="eda-pg-texto-mut" style={{ marginTop: 8 }}>{erroPagamento}</p>
+                ) : !pagamento ? (
+                  <p className="eda-pg-texto-mut" style={{ marginTop: 8 }}>Consultando recebimentos…</p>
+                ) : pagamento.lancamentos === 0 ? (
+                  <p className="eda-pg-texto-mut" style={{ marginTop: 8 }}>Nenhum recebimento lançado para esta reserva.</p>
+                ) : (
+                  <>
+                    <div className="eda-pg-trilho" role="img" aria-label={`Recebido ${formatarMoeda(pagamento.recebido)} de ${formatarMoeda(pagamento.total)}`}>
+                      <div style={{ width: `${pagamento.total > 0 ? Math.min(100, (pagamento.recebido / pagamento.total) * 100) : 0}%` }} />
+                    </div>
+                    <div className="eda-pg-linha-valor"><span>Recebido</span><b style={{ color: 'var(--p-verde)' }}>{formatarMoeda(pagamento.recebido)}</b></div>
+                    <div className="eda-pg-linha-valor"><span>A receber</span><b style={{ color: pagamento.pendente > 0 ? 'var(--p-amar)' : undefined }}>{formatarMoeda(pagamento.pendente)}</b></div>
+                  </>
+                )}
+              </div>
 
-              <div className="mt-4">
+              <div className="eda-pg-bloco">
+                <p className="eda-pg-bloco-titulo">Operação</p>
                 <SituacaoPeriodoReservaERN
                   status={selecionada.statusOriginal ?? selecionada.status}
                   inicio={selecionada.dataOriginal}
@@ -1192,93 +953,53 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
                   referencia={referenciaPeriodoERN}
                   detalhado
                 />
+                <dl className="eda-pg-dados" style={{ marginTop: 12 }}>
+                  <DadoEDA rotulo="Pessoas">{formatarQuantidadePessoas(selecionada.quantidade_pessoas)}</DadoEDA>
+                  <DadoEDA rotulo="Horário">{selecionada.horario?.slice(0, 5) || 'Não informado'}</DadoEDA>
+                  <DadoEDA rotulo="Término previsto">{selecionada.data_fim_prevista ? formatarData(selecionada.data_fim_prevista) : 'Não informado'}</DadoEDA>
+                  <DadoEDA rotulo="Horário de término">{selecionada.horario_fim_previsto?.slice(0, 5) || 'Não informado'}</DadoEDA>
+                  <DadoEDA rotulo="Guia">{selecionada.guia}</DadoEDA>
+                  <DadoEDA rotulo="Embarcação">{selecionada.embarcacao_id ? 'Vinculada' : 'Não vinculada'}</DadoEDA>
+                  <DadoEDA rotulo="Agência / Parceiro" largo>{selecionada.agencia}</DadoEDA>
+                  <DadoEDA rotulo="Observações" largo>{selecionada.observacoes || 'Nenhuma observação registrada.'}</DadoEDA>
+                </dl>
               </div>
 
-              <dl className="mt-5 grid gap-3 sm:grid-cols-2">
-                {[
-                  ['Quantidade de pessoas', formatarQuantidadePessoas(selecionada.quantidade_pessoas)],
-                  ['Data do passeio', selecionada.data],
-                  ['Horário', selecionada.horario?.slice(0, 5) || 'Não informado'],
-                  ['Status', selecionada.status],
-                  ['Término previsto', selecionada.data_fim_prevista ? formatarData(selecionada.data_fim_prevista) : 'Não informado'],
-                  ['Horário de término', selecionada.horario_fim_previsto?.slice(0, 5) || 'Não informado'],
-                  ['Agência / Parceiro', selecionada.agencia],
-                  ['Guia', selecionada.guia],
-                  ['Embarcação vinculada', selecionada.embarcacao_id ? 'Sim' : 'Não'],
-                  ['Valor comercial', formatarMoeda(selecionada.valor)],
-                ].map(([label, valor]) => (
-                  <div key={label} className="min-w-0 rounded-xl border border-white/10 p-4">
-                    <dt className="text-xs text-[#B4C8BB]">{label}</dt>
-                    <dd className="mt-2 break-words text-sm">{valor}</dd>
+              {idSelecionado != null && (
+                <div className="eda-pg-bloco">
+                  <p className="eda-pg-bloco-titulo">Atalhos</p>
+                  <div className="eda-pg-atalhos">
+                    {reservaOperacionalERN(selecionada.status) && (
+                      <Link href={`/vouchers/novo?reserva_id=${idURL}`} className="eda-pg-bt eda-pg-bt-p">Emitir voucher</Link>
+                    )}
+                    <Link href={`/vouchers?reserva_id=${idURL}`} className="eda-pg-bt eda-pg-bt-p">Vouchers</Link>
+                    <Link href={`/financeiro/receita/novo?reserva_id=${idURL}`} className="eda-pg-bt eda-pg-bt-p">Registrar receita</Link>
+                    <Link href={`/financeiro?reserva_id=${idURL}`} className="eda-pg-bt eda-pg-bt-p">Ver financeiro</Link>
                   </div>
-                ))}
-                <div className="min-w-0 rounded-xl border border-white/10 p-4 sm:col-span-2">
-                  <dt className="text-xs text-[#B4C8BB]">Observações</dt>
-                  <dd className="mt-2 whitespace-pre-wrap break-words text-sm leading-7">
-                    {selecionada.observacoes || 'Nenhuma observação registrada.'}
-                  </dd>
                 </div>
-              </dl>
-
-              <div className="mt-5 flex flex-col-reverse gap-3 border-t border-white/10 pt-5 sm:flex-row sm:justify-end">
-                <button type="button" onClick={fecharModal} className={buttonClass}>Fechar</button>
-                {idSelecionado != null && (
-                  <Link href={`/reservas/editar/${idURL}`} className={buttonClass}>
-                    Editar reserva
-                  </Link>
-                )}
-              </div>
-            </div>
-          ) : (
-            <div className="p-5">
-              <p className="break-words text-sm leading-7 text-[#C5D4CA]">
-                A reserva de <strong>{selecionada.cliente}</strong>,
-                para <strong>{selecionada.pacote}</strong>,
-                será removida permanentemente.
-              </p>
-              <p className="mt-3 text-sm leading-7 text-[#B4C8BB]">
-                Reservas com vouchers ou lançamentos financeiros vinculados têm a exclusão bloqueada.
-                Use a exclusão apenas para cadastros indevidos. Uma data passada não significa cancelamento: confira o resultado da operação antes de alterar o status.
-              </p>
-
-              {erroExclusao && (
-                <p role="alert" className="mt-4 rounded-xl border border-red-400/25 bg-red-400/10 p-4 text-sm leading-7 text-red-200">
-                  {erroExclusao}
-                </p>
               )}
-
+            </>
+          ) : (
+            <>
+              <p className="eda-pg-texto-mut">
+                A reserva de <b style={{ color: 'var(--p-texto)' }}>{selecionada.cliente}</b>, para <b style={{ color: 'var(--p-texto)' }}>{selecionada.pacote}</b>, será removida permanentemente.
+              </p>
+              <p className="eda-pg-texto-mut" style={{ marginTop: 12 }}>
+                Reservas com vouchers ou lançamentos financeiros vinculados têm a exclusão bloqueada. Use a exclusão apenas para cadastros indevidos. Uma data passada não significa cancelamento: confira o resultado da operação antes de alterar o status.
+              </p>
+              {erroExclusao && <p role="alert" className="eda-pg-aviso eda-pg-aviso-er">{erroExclusao}</p>}
               {bloqueioExclusao && idSelecionado != null && (
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  <Link href={`/reservas/editar/${idURL}`} className={buttonClass}>
-                    Editar reserva
-                  </Link>
+                <div className="eda-pg-atalhos" style={{ marginTop: 14 }}>
+                  <Link href={`/reservas/editar/${idURL}`} className="eda-pg-bt eda-pg-bt-p">Editar reserva</Link>
                   {bloqueioExclusao === 'voucher' && (
-                    <Link href={`/vouchers?reserva_id=${idURL}`} className={buttonClass}>
-                      Consultar vouchers
-                    </Link>
+                    <Link href={`/vouchers?reserva_id=${idURL}`} className="eda-pg-bt eda-pg-bt-p">Consultar vouchers</Link>
                   )}
                 </div>
               )}
-
-              <div className="mt-6 flex flex-col-reverse gap-3 border-t border-white/10 pt-5 sm:flex-row sm:justify-end">
-                <button type="button" disabled={excluindo} onClick={fecharModal} className={buttonClass}>
-                  Voltar
-                </button>
-                {!bloqueioExclusao && (
-                  <button
-                    type="button"
-                    disabled={excluindo}
-                    onClick={() => void executarExclusao()}
-                    className={`${buttonClass} border-red-400/30 bg-red-400/10 text-red-200`}
-                  >
-                    {excluindo ? 'Excluindo…' : 'Excluir permanentemente'}
-                  </button>
-                )}
-              </div>
-            </div>
+            </>
           )}
-        </Modal>
+        </PainelLateralEDA>
       )}
-    </div>
+    </PaginaEDA>
   );
 }

@@ -13,6 +13,17 @@ import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import { supabase } from '@/lib/supabase';
+import {
+  BuscaEDA,
+  CabecalhoEDA,
+  ChipsEDA,
+  DadoEDA,
+  PaginaEDA,
+  PainelLateralEDA,
+  PillEDA,
+  VazioEDA,
+  type TomEDA,
+} from '@/app/components/PadraoPaginaEDA';
 
 import {
   CATEGORIAS_DEMANDA,
@@ -59,36 +70,12 @@ const CONSULTA_INICIAL: Consulta = {
   pagina: 0,
 };
 
-const ESTILOS_STATUS: Record<
-  StatusDemanda,
-  string
-> = {
-  rascunho:
-    'border-slate-400/20 bg-slate-400/10 text-[var(--ern-secundario)]',
-
-  aberta:
-    'border-emerald-400/20 bg-emerald-400/10 text-[var(--ern-sucesso)]',
-
-  encerrada:
-    'border-cyan-400/20 bg-cyan-400/10 text-[var(--ern-destaque)]',
-
-  cancelada:
-    'border-rose-400/20 bg-rose-400/10 text-[var(--ern-erro)]',
+const TOM_STATUS: Record<StatusDemanda, TomEDA> = {
+  rascunho: 'nt',
+  aberta: 'at',
+  encerrada: 'ok',
+  cancelada: 'er',
 };
-
-const CAMPO =
-  'min-h-12 w-full rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] ' +
-  'px-4 text-sm text-[var(--ern-texto)] outline-none transition-colors ' +
-  'placeholder:text-[var(--ern-secundario)] focus:border-[var(--ern-destaque)] ' +
-  'focus:ring-2 focus:ring-[var(--ern-destaque)] motion-reduce:transition-none';
-
-const BOTAO =
-  'inline-flex min-h-12 items-center justify-center rounded-xl ' +
-  'border border-[var(--ern-borda)] px-5 text-sm font-semibold text-[var(--ern-texto)] ' +
-  'transition-colors hover:bg-[var(--ern-suave)] [&:focus-visible]:[outline-style:solid] ' +
-  'focus-visible:outline-2 focus-visible:outline-offset-4 ' +
-  'focus-visible:outline-[var(--ern-destaque)] disabled:cursor-not-allowed ' +
-  'disabled:opacity-40 motion-reduce:transition-none';
 
 const formatadorQuantidade =
   new Intl.NumberFormat('pt-BR', {
@@ -161,41 +148,6 @@ function detalheEstimativa(
   }
 
   return null;
-}
-
-function SkeletonDemandas() {
-  return (
-    <div
-      role="status"
-      aria-label="Carregando demandas"
-    >
-      <span className="sr-only">
-        Carregando demandas...
-      </span>
-
-      <div
-        aria-hidden="true"
-        className="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
-      >
-        {Array.from(
-          { length: 6 },
-          (_, indice) => (
-            <div
-              key={indice}
-              className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-6 motion-safe:animate-pulse"
-            >
-              <div className="h-5 w-24 rounded bg-[var(--ern-suave)]" />
-              <div className="mt-6 h-6 w-3/4 rounded bg-[var(--ern-suave)]" />
-              <div className="mt-3 h-4 w-1/2 rounded bg-[var(--ern-suave)]" />
-              <div className="mt-6 h-4 w-full rounded bg-[var(--ern-suave)]" />
-              <div className="mt-3 h-4 w-4/5 rounded bg-[var(--ern-suave)]" />
-              <div className="mt-6 h-12 rounded-xl bg-[var(--ern-suave)]" />
-            </div>
-          ),
-        )}
-      </div>
-    </div>
-  );
 }
 
 // ERN_DEMANDAS_FILTRO_DASHBOARD
@@ -476,542 +428,244 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
     consulta.status !== '' ||
     Boolean(consulta.data_inicio_de || consulta.data_inicio_ate);
 
+  // ERN_PADRAO_PAGINAS_EDA_V1: demanda aberta no painel lateral.
+  const [aberta, setAberta] = useState<Demanda | null>(null);
+
+  const opcoesStatus: { valor: StatusDemanda | ''; rotulo: string }[] = [
+    { valor: '', rotulo: 'Todas' },
+    ...(Object.entries(STATUS_DEMANDA) as [StatusDemanda, string][]).map(([valor, rotulo]) => ({ valor, rotulo })),
+  ];
+
+  const detalheAberta = aberta ? detalheEstimativa(aberta) : null;
+
   return (
-    <main className="ern-demandas-premium min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
-      <header className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
-        <div className="mx-auto max-w-7xl px-4 py-7 sm:px-5 md:px-8 md:py-10">
-          <Link
-            href="/dashboard"
-            className="text-sm text-[var(--ern-secundario)] transition-colors hover:text-[var(--ern-texto)] [&:focus-visible]:[outline-style:solid] focus-visible:outline-2 focus-visible:outline-[var(--ern-destaque)]"
-          >
-            ← Dashboard
-          </Link>
+    <PaginaEDA>
+      <div className="eda-pg-miolo">
+        <CabecalhoEDA
+          etiqueta="Oferta e demanda"
+          titulo="Demandas"
+          resumo={resultado
+            ? <><b>{resultado.total}</b> {resultado.total === 1 ? 'demanda' : 'demandas'} nesta consulta · alimentação, combustível e recursos da operação</>
+            : 'Planeje alimentação, bebidas, combustível e os demais recursos da operação.'}
+          acoes={<>
+            <button type="button" onClick={atualizar} disabled={carregando} className="eda-pg-bt">
+              {carregando ? 'Carregando…' : 'Atualizar'}
+            </button>
+            {podeGerenciar && <Link href="/demandas/nova" className="eda-pg-bt eda-pg-bt-ouro">+ Nova demanda</Link>}
+          </>}
+        />
 
-          <div className="mt-6 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
-                Oferta e demanda
-              </p>
-
-              <h1
-                className="mt-2 text-4xl tracking-tight md:text-5xl"
-                style={{
-                  fontFamily:
-                    'var(--font-fraunces), serif',
-                }}
-              >
-                Demandas
-              </h1>
-
-              <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--ern-secundario)]">
-                Planeje alimentação,
-                bebidas, combustível e
-                os demais recursos
-                necessários para a
-                operação turística.
-              </p>
-            </div>
-
-            <div className="flex flex-col gap-2 sm:flex-row">
-              <button
-                type="button"
-                onClick={atualizar}
-                disabled={carregando}
-                className={BOTAO}
-              >
-                {carregando
-                  ? 'Carregando...'
-                  : 'Atualizar'}
-              </button>
-
-              {podeGerenciar && (
-                <Link
-                  href="/demandas/nova"
-                  className={`${BOTAO} border-[var(--ern-destaque)] bg-[var(--ern-botao)] text-[var(--ern-sobre-botao)] hover:bg-[var(--ern-botao)]`}
-                >
-                  <span
-                    aria-hidden="true"
-                    className="mr-2 text-lg leading-none"
-                  >
-                    +
-                  </span>
-                  Nova demanda
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-7xl space-y-6 px-4 py-6 sm:px-5 md:px-8 md:py-8">
         {(consulta.data_inicio_de || consulta.data_inicio_ate) && (
-          <div className="flex flex-col gap-3 rounded-2xl border border-[var(--ern-destaque)] bg-[var(--ern-suave)] p-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm leading-6 text-[var(--ern-texto)]">
-              Filtro do dashboard — início da demanda:
-              {' '}{formatarData(consulta.data_inicio_de ?? null)}
-              {' até '}
-              {formatarData(consulta.data_inicio_ate ?? null)}.
-            </p>
+          <div className="eda-pg-aviso eda-pg-aviso-ouro">
+            <div>
+              <b>Filtro do painel: início da demanda</b>
+              <p>{formatarData(consulta.data_inicio_de ?? null)} até {formatarData(consulta.data_inicio_ate ?? null)}</p>
+            </div>
             <button
               type="button"
-              className={BOTAO}
-              onClick={() => alterarConsulta({
-                ...consulta,
-                data_inicio_de: undefined,
-                data_inicio_ate: undefined,
-                pagina: 0,
-              })}
+              className="eda-pg-bt eda-pg-bt-p"
+              onClick={() => alterarConsulta({ ...consulta, data_inicio_de: undefined, data_inicio_ate: undefined, pagina: 0 })}
             >
               Remover período
             </button>
           </div>
         )}
 
-        <form
-          onSubmit={buscar}
-          aria-label="Filtrar demandas"
-          className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-4 sm:p-5"
-        >
-          <div className="grid items-end gap-4 md:grid-cols-2 xl:grid-cols-[2fr_1fr_1fr_auto]">
-            <div>
-              <label
-                htmlFor="busca-demanda"
-                className="mb-2 block text-sm text-[var(--ern-secundario)]"
-              >
-                Buscar por título
-              </label>
-
-              <input
-                id="busca-demanda"
-                type="search"
-                maxLength={160}
-                value={rascunhoBusca}
-                onChange={(
-                  evento,
-                ) =>
-                  setRascunhoBusca(
-                    evento.target
-                      .value,
-                  )
+        <form onSubmit={buscar} aria-label="Filtrar demandas" className="eda-pg-filtros">
+          <BuscaEDA id="busca-demanda" rotulo="Buscar por título" valor={rascunhoBusca} aoMudar={setRascunhoBusca} placeholder="Buscar por título e Enter" />
+          <ChipsEDA
+            rotulo="Filtrar por status"
+            opcoes={opcoesStatus}
+            valor={consulta.status}
+            aoMudar={(valor) => alterarConsulta({ ...consulta, status: valor, pagina: 0 })}
+          />
+          <div className="eda-pg-filtros-dir">
+            <label htmlFor="categoria-demanda" className="eda-pg-sr">Categoria</label>
+            <select
+              id="categoria-demanda"
+              className="eda-pg-select"
+              value={consulta.categoria}
+              onChange={(evento) => {
+                const valor = evento.target.value;
+                if (valor === '' || ehCategoriaDemanda(valor)) {
+                  alterarConsulta({ ...consulta, categoria: valor, pagina: 0 });
                 }
-                placeholder="Ex.: combustível da viagem"
-                className={CAMPO}
-              />
-            </div>
-
-            <div>
-              <label
-                htmlFor="categoria-demanda"
-                className="mb-2 block text-sm text-[var(--ern-secundario)]"
-              >
-                Categoria
-              </label>
-
-              <select
-                id="categoria-demanda"
-                value={
-                  consulta.categoria
-                }
-                onChange={(
-                  evento,
-                ) => {
-                  const valor =
-                    evento.target
-                      .value;
-
-                  if (
-                    valor === '' ||
-                    ehCategoriaDemanda(
-                      valor,
-                    )
-                  ) {
-                    alterarConsulta({
-                      ...consulta,
-                      categoria:
-                        valor,
-                      pagina: 0,
-                    });
-                  }
-                }}
-                className={CAMPO}
-              >
-                <option value="">
-                  Todas as categorias
-                </option>
-
-                {Object.entries(
-                  CATEGORIAS_DEMANDA,
-                ).map(
-                  ([valor, nome]) => (
-                    <option
-                      key={valor}
-                      value={valor}
-                    >
-                      {nome}
-                    </option>
-                  ),
-                )}
-              </select>
-            </div>
-
-            <div>
-              <label
-                htmlFor="status-demanda"
-                className="mb-2 block text-sm text-[var(--ern-secundario)]"
-              >
-                Status
-              </label>
-
-              <select
-                id="status-demanda"
-                value={consulta.status}
-                onChange={(
-                  evento,
-                ) => {
-                  const valor =
-                    evento.target
-                      .value;
-
-                  if (
-                    valor === '' ||
-                    ehStatusDemanda(
-                      valor,
-                    )
-                  ) {
-                    alterarConsulta({
-                      ...consulta,
-                      status:
-                        valor,
-                      pagina: 0,
-                    });
-                  }
-                }}
-                className={CAMPO}
-              >
-                <option value="">
-                  Todos os status
-                </option>
-
-                {Object.entries(
-                  STATUS_DEMANDA,
-                ).map(
-                  ([valor, nome]) => (
-                    <option
-                      key={valor}
-                      value={valor}
-                    >
-                      {nome}
-                    </option>
-                  ),
-                )}
-              </select>
-            </div>
-
-            <button
-              type="submit"
-              className={`${BOTAO} border-[var(--ern-destaque)] bg-[var(--ern-suave)] text-[var(--ern-destaque)] hover:bg-[var(--ern-suave)]`}
+              }}
             >
-              Buscar
-            </button>
+              <option value="">Todas as categorias</option>
+              {Object.entries(CATEGORIAS_DEMANDA).map(([valor, nome]) => (
+                <option key={valor} value={valor}>{nome}</option>
+              ))}
+            </select>
+            <button type="submit" className="eda-pg-bt eda-pg-bt-p">Buscar</button>
+            {temFiltros && <button type="button" onClick={limparFiltros} className="eda-pg-bt eda-pg-bt-p">Limpar</button>}
           </div>
-
-          {temFiltros && (
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-sm text-[var(--ern-secundario)]">
-                {consulta.busca
-                  ? `Busca aplicada: “${consulta.busca}”`
-                  : 'Filtros aplicados à consulta.'}
-              </p>
-
-              <button
-                type="button"
-                onClick={limparFiltros}
-                className="rounded px-2 py-2 text-sm font-semibold text-[var(--ern-destaque)] hover:underline"
-              >
-                Limpar filtros
-              </button>
-            </div>
-          )}
         </form>
 
-        <section
-          aria-label="Resultados da consulta"
-          aria-busy={carregando}
-        >
-          {carregando && (
-            <SkeletonDemandas />
-          )}
+        <section aria-label="Resultados da consulta" aria-busy={carregando} className="eda-pg-tabela-caixa">
+          <div className="eda-pg-tabela-topo">
+            <span>
+              {resultado
+                ? <><b>{resultado.total}</b> {resultado.total === 1 ? 'demanda encontrada' : 'demandas encontradas'}{consulta.busca ? ` · busca “${consulta.busca}”` : ''}</>
+                : '—'}
+            </span>
+            {estado.tipo === 'pronto' && !estado.contexto.pode_gerenciar
+              ? <PillEDA tom="nt" ponto={false}>Seu perfil permite apenas consulta</PillEDA>
+              : <span>Clique numa demanda para ver os detalhes</span>}
+          </div>
 
-          {estado.tipo ===
-            'erro' && (
-            <div className="rounded-2xl border border-rose-400/20 bg-[var(--ern-painel)] p-6 md:p-8">
-              <h2 className="text-xl font-semibold text-[var(--ern-erro)]">
-                Não foi possível
-                carregar as demandas
-              </h2>
+          {carregando && <p role="status" className="eda-pg-estado">Carregando demandas…</p>}
 
-              <p className="mt-3 text-sm leading-6 text-[var(--ern-secundario)]">
-                {estado.mensagem}
-              </p>
-
-              <button
-                type="button"
-                onClick={atualizar}
-                className={`${BOTAO} mt-6`}
-              >
-                Tentar novamente
-              </button>
+          {estado.tipo === 'erro' && (
+            <div role="alert" className="eda-pg-vazio">
+              <b style={{ color: 'var(--p-verm)' }}>Não foi possível carregar as demandas</b>
+              <p>{estado.mensagem}</p>
+              <button type="button" onClick={atualizar} className="eda-pg-bt">Tentar novamente</button>
             </div>
           )}
 
-          {estado.tipo ===
-            'pronto' &&
-            resultado && (
-              <div>
-                <DemandasInsightsPremium
-                  registros={resultado.registros}
-                  totalConsulta={resultado.total}
-                  pagina={resultado.pagina}
-                  totalPaginas={resultado.total_paginas}
-                />
-                <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-                  <p className="text-sm text-[var(--ern-secundario)]">
-                    <strong className="text-[var(--ern-texto)]">
-                      {resultado.total}
-                    </strong>{' '}
-                    {resultado.total ===
-                    1
-                      ? 'demanda encontrada'
-                      : 'demandas encontradas'}
-                  </p>
-
-                  {!estado.contexto
-                    .pode_gerenciar && (
-                    <span className="rounded-full border border-[var(--ern-borda)] px-3 py-1 text-xs text-[var(--ern-secundario)]">
-                      Seu perfil permite
-                      apenas consulta
-                    </span>
-                  )}
+          {estado.tipo === 'pronto' && resultado && (
+            resultado.registros.length === 0 ? (
+              <VazioEDA
+                titulo={temFiltros ? 'Nenhuma demanda encontrada' : 'Nenhuma demanda ainda'}
+                texto={temFiltros ? 'Ajuste a busca, o status ou a categoria.' : 'Registre as necessidades da próxima operação para reduzir imprevistos durante a viagem.'}
+                acao={temFiltros
+                  ? <button type="button" className="eda-pg-bt" onClick={limparFiltros}>Limpar filtros</button>
+                  : podeGerenciar ? <Link href="/demandas/nova" className="eda-pg-bt eda-pg-bt-ouro">+ Nova demanda</Link> : undefined}
+              />
+            ) : (
+              <>
+                <div className="eda-pg-cartoes">
+                  {resultado.registros.map((demanda) => (
+                    <button key={demanda.id} type="button" className="eda-pg-cartao" onClick={() => setAberta(demanda)}>
+                      <span className="eda-pg-cartao-topo">
+                        <span style={{ minWidth: 0 }}>
+                          <b>{demanda.titulo}</b>
+                          <small>{CATEGORIAS_DEMANDA[demanda.categoria]} · {demanda.localidade}</small>
+                        </span>
+                        <PillEDA tom={TOM_STATUS[demanda.status]}>{STATUS_DEMANDA[demanda.status]}</PillEDA>
+                      </span>
+                      <span className="eda-pg-cartao-info">
+                        <span>{formatadorQuantidade.format(demanda.quantidade)} {demanda.unidade}</span>
+                        <span>{demanda.data_inicio && demanda.data_fim ? `${formatarData(demanda.data_inicio)} a ${formatarData(demanda.data_fim)}` : 'Período não informado'}</span>
+                      </span>
+                    </button>
+                  ))}
                 </div>
 
-                {resultado.registros
-                  .length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-[var(--ern-borda)] bg-[var(--ern-painel)] px-6 py-14 text-center">
-                    <h2
-                      className="text-2xl text-[var(--ern-texto)]"
-                      style={{
-                        fontFamily:
-                          'var(--font-fraunces), serif',
-                      }}
-                    >
-                      Nenhuma demanda
-                      encontrada
-                    </h2>
+                <div className="eda-pg-rolagem">
+                  <table className="eda-pg-tabela">
+                    <thead>
+                      <tr>
+                        {['Demanda', 'Categoria', 'Período', 'Quantidade', 'Status', ''].map((titulo, i) => (
+                          <th key={titulo || i} scope="col">{titulo || <span className="eda-pg-sr">Ações</span>}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {resultado.registros.map((demanda) => (
+                        <tr key={demanda.id} aria-selected={aberta?.id === demanda.id}>
+                          <td style={{ minWidth: 240, maxWidth: 360 }}>
+                            <button type="button" className="eda-pg-linha-bt" onClick={() => setAberta(demanda)}>
+                              <b>{demanda.titulo}</b>
+                              <small>{demanda.localidade}</small>
+                            </button>
+                          </td>
+                          <td className="eda-pg-mut">{CATEGORIAS_DEMANDA[demanda.categoria]}</td>
+                          <td style={{ whiteSpace: 'nowrap' }}>
+                            {demanda.data_inicio ? formatarData(demanda.data_inicio) : '—'}
+                            {demanda.data_fim && <small>até {formatarData(demanda.data_fim)}</small>}
+                          </td>
+                          <td className="eda-pg-num">{formatadorQuantidade.format(demanda.quantidade)} {demanda.unidade}</td>
+                          <td><PillEDA tom={TOM_STATUS[demanda.status]}>{STATUS_DEMANDA[demanda.status]}</PillEDA></td>
+                          <td>
+                            <div className="eda-pg-acoes-linha">
+                              <button type="button" className="eda-pg-bt eda-pg-bt-p" onClick={() => setAberta(demanda)}>Ver</button>
+                              {podeGerenciar && <Link href={`/demandas/editar/${demanda.id}`} className="eda-pg-bt eda-pg-bt-p">Gerenciar</Link>}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
 
-                    <p className="mx-auto mt-3 max-w-lg text-sm leading-6 text-[var(--ern-secundario)]">
-                      Registre as
-                      necessidades da
-                      próxima operação
-                      para reduzir
-                      imprevistos durante
-                      a viagem.
-                    </p>
-                  </div>
-                ) : (
-                  <ul className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                    {resultado.registros.map(
-                      (demanda) => {
-                        const detalhe =
-                          detalheEstimativa(
-                            demanda,
-                          );
-
-                        return (
-                          <li
-                            key={
-                              demanda.id
-                            }
-                            className="min-w-0"
-                          >
-                            <article className="flex h-full flex-col rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 transition-colors hover:border-[var(--ern-destaque)] sm:p-6">
-                              <div className="flex flex-wrap items-center justify-between gap-3">
-                                <span className="text-xs font-semibold text-[var(--ern-destaque)]">
-                                  {
-                                    CATEGORIAS_DEMANDA[
-                                      demanda
-                                        .categoria
-                                    ]
-                                  }
-                                </span>
-
-                                <span
-                                  className={`rounded-full border px-3 py-1 text-xs ${
-                                    ESTILOS_STATUS[
-                                      demanda
-                                        .status
-                                    ]
-                                  }`}
-                                >
-                                  {
-                                    STATUS_DEMANDA[
-                                      demanda
-                                        .status
-                                    ]
-                                  }
-                                </span>
-                              </div>
-
-                              <h2 className="mt-5 break-words text-xl font-semibold text-[var(--ern-texto)]">
-                                {
-                                  demanda.titulo
-                                }
-                              </h2>
-
-                              <p className="mt-2 text-sm text-[var(--ern-secundario)]">
-                                {
-                                  demanda.localidade
-                                }
-                              </p>
-
-                              <p className="mt-5 line-clamp-3 text-sm leading-6 text-[var(--ern-secundario)]">
-                                {demanda.descricao ||
-                                  'Sem descrição adicional.'}
-                              </p>
-
-                              {detalhe && (
-                                <div className="mt-5 rounded-xl border border-[var(--ern-destaque)] bg-[var(--ern-suave)] p-3">
-                                  <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-[var(--ern-destaque)]">
-                                    Previsão
-                                    calculada
-                                  </p>
-
-                                  <p className="mt-2 text-xs leading-5 text-[var(--ern-secundario)]">
-                                    {
-                                      detalhe
-                                    }
-                                  </p>
-                                </div>
-                              )}
-
-                              <dl className="mt-auto space-y-3 pt-6">
-                                <div className="rounded-xl bg-[var(--ern-suave)] px-4 py-3">
-                                  <dt className="text-xs text-[var(--ern-secundario)]">
-                                    Quantidade
-                                    prevista
-                                  </dt>
-
-                                  <dd className="mt-1 text-sm font-semibold">
-                                    {formatadorQuantidade.format(
-                                      demanda.quantidade,
-                                    )}{' '}
-                                    {
-                                      demanda.unidade
-                                    }
-                                  </dd>
-                                </div>
-
-                                <div className="rounded-xl bg-[var(--ern-suave)] px-4 py-3">
-                                  <dt className="text-xs text-[var(--ern-secundario)]">
-                                    Período
-                                  </dt>
-
-                                  <dd className="mt-1 text-sm">
-                                    {demanda.data_inicio &&
-                                    demanda.data_fim
-                                      ? `${formatarData(
-                                          demanda.data_inicio,
-                                        )} a ${formatarData(
-                                          demanda.data_fim,
-                                        )}`
-                                      : 'Não informado'}
-                                  </dd>
-                                </div>
-                              </dl>
-
-                              {estado.contexto
-                                .pode_gerenciar && (
-                                <Link
-                                  href={`/demandas/editar/${demanda.id}`}
-                                  className="mt-5 inline-flex min-h-11 items-center justify-center rounded-xl border border-[var(--ern-destaque)] bg-[var(--ern-suave)] px-4 text-sm font-semibold text-[var(--ern-destaque)] transition hover:bg-[var(--ern-suave)]"
-                                >
-                                  Gerenciar
-                                  demanda →
-                                </Link>
-                              )}
-                            </article>
-                          </li>
-                        );
-                      },
-                    )}
-                  </ul>
-                )}
-
-                {resultado.total >
-                  0 && (
-                  <nav className="mt-6 flex flex-col items-center justify-between gap-4 sm:flex-row">
-                    <p className="text-sm text-[var(--ern-secundario)]">
-                      Página{' '}
-                      {resultado.pagina +
-                        1}{' '}
-                      de{' '}
-                      {
-                        resultado.total_paginas
-                      }
-                    </p>
-
-                    <div className="flex gap-3">
+                {resultado.total_paginas > 1 && (
+                  <nav aria-label="Páginas de demandas" className="eda-pg-tabela-topo" style={{ borderBottom: 0, borderTop: '1px solid var(--p-borda)' }}>
+                    <span>Página <b>{resultado.pagina + 1}</b> de {resultado.total_paginas}</span>
+                    <span style={{ display: 'flex', gap: 6 }}>
                       <button
                         type="button"
-                        disabled={
-                          resultado.pagina ===
-                          0
-                        }
-                        onClick={() =>
-                          alterarConsulta({
-                            ...consulta,
-                            pagina:
-                              Math.max(
-                                resultado.pagina -
-                                  1,
-                                0,
-                              ),
-                          })
-                        }
-                        className={
-                          BOTAO
-                        }
+                        className="eda-pg-bt eda-pg-bt-p"
+                        disabled={resultado.pagina === 0}
+                        onClick={() => alterarConsulta({ ...consulta, pagina: Math.max(resultado.pagina - 1, 0) })}
                       >
                         Anterior
                       </button>
-
                       <button
                         type="button"
-                        disabled={
-                          resultado.pagina +
-                            1 >=
-                          resultado.total_paginas
-                        }
-                        onClick={() =>
-                          alterarConsulta({
-                            ...consulta,
-                            pagina:
-                              resultado.pagina +
-                              1,
-                          })
-                        }
-                        className={
-                          BOTAO
-                        }
+                        className="eda-pg-bt eda-pg-bt-p"
+                        disabled={resultado.pagina + 1 >= resultado.total_paginas}
+                        onClick={() => alterarConsulta({ ...consulta, pagina: resultado.pagina + 1 })}
                       >
                         Próxima
                       </button>
-                    </div>
+                    </span>
                   </nav>
                 )}
-              </div>
-            )}
+              </>
+            )
+          )}
         </section>
+
+        {estado.tipo === 'pronto' && resultado && resultado.registros.length > 0 && (
+          <details className="eda-pg-analises">
+            <summary>Análises das demandas</summary>
+            <div>
+              <DemandasInsightsPremium
+                registros={resultado.registros}
+                totalConsulta={resultado.total}
+                pagina={resultado.pagina}
+                totalPaginas={resultado.total_paginas}
+              />
+            </div>
+          </details>
+        )}
       </div>
-    </main>
+
+      {aberta && (
+        <PainelLateralEDA
+          etiqueta={CATEGORIAS_DEMANDA[aberta.categoria]}
+          titulo={aberta.titulo}
+          subtitulo={aberta.localidade}
+          aoFechar={() => setAberta(null)}
+          rodape={podeGerenciar ? (
+            <Link href={`/demandas/editar/${aberta.id}`} className="eda-pg-bt eda-pg-bt-ouro">Gerenciar demanda</Link>
+          ) : (
+            <button type="button" className="eda-pg-bt" onClick={() => setAberta(null)}>Fechar</button>
+          )}
+        >
+          <div className="eda-pg-pills" style={{ marginTop: 0 }}>
+            <PillEDA tom={TOM_STATUS[aberta.status]}>{STATUS_DEMANDA[aberta.status]}</PillEDA>
+          </div>
+
+          <div className="eda-pg-bloco" style={{ marginTop: 16 }}>
+            <p className="eda-pg-bloco-titulo">Previsão</p>
+            <div className="eda-pg-linha-valor"><span>Quantidade prevista</span><b>{formatadorQuantidade.format(aberta.quantidade)} {aberta.unidade}</b></div>
+            {detalheAberta && <p className="eda-pg-texto-mut" style={{ marginTop: 10 }}>{detalheAberta}</p>}
+          </div>
+
+          <div className="eda-pg-bloco">
+            <p className="eda-pg-bloco-titulo">Detalhes</p>
+            <dl className="eda-pg-dados">
+              <DadoEDA rotulo="Início">{formatarData(aberta.data_inicio)}</DadoEDA>
+              <DadoEDA rotulo="Fim">{formatarData(aberta.data_fim)}</DadoEDA>
+              <DadoEDA rotulo="Localidade" largo>{aberta.localidade}</DadoEDA>
+              <DadoEDA rotulo="Descrição" largo>{aberta.descricao || 'Sem descrição adicional.'}</DadoEDA>
+            </dl>
+          </div>
+        </PainelLateralEDA>
+      )}
+    </PaginaEDA>
   );
 }
