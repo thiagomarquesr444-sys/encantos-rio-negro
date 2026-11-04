@@ -602,18 +602,15 @@ function ConteudoAcesso() {
             </p>
           ) : (
             <>
-              <p className="mt-6 text-sm leading-7 text-[#EDEDE3]/75">
-                Sua conta ainda não possui vínculo
-                profissional. Selecione a entrada
-                correspondente à sua atividade para
-                continuar o cadastro.
-              </p>
+              {/* ERN_CADASTRO_SEM_PARAMETRO_V1: conta nova sem ?acesso= cai
+                  direto no cadastro da operadora (caso mais comum). */}
+              <CadastroOperadoraERN usuarioId={conta.usuario_id} />
 
               <Link
                 href="/operadores#acessos-profissionais"
-                className={`mt-6 inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-[#E3A144]/40 px-5 py-3 text-center text-sm font-semibold text-[#F4C77E] ${focoClass}`}
+                className={`mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-white/15 px-5 py-3 text-center text-sm ${focoClass}`}
               >
-                Ir para a entrada profissional
+                Sou guia ou fornecedor independente
               </Link>
             </>
           )}
