@@ -1,4 +1,6 @@
 'use client';
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
 
 import Link from 'next/link';
 import {
@@ -357,7 +359,7 @@ export default function EquipePage() {
     carregando || salvando || !dados || dados.uso.limite_atingido;
 
   return (
-    <main className="min-h-screen min-w-0 bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <main className="eda-pg eda-pg-auto eda-pg-legado min-h-screen min-w-0">
       <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
@@ -366,7 +368,6 @@ export default function EquipePage() {
             </p>
             <h1
               className="mt-2 text-3xl sm:text-4xl"
-              style={{ fontFamily: 'var(--font-fraunces), serif' }}
             >
               Equipe da empresa
             </h1>

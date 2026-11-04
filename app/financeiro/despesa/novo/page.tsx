@@ -1,4 +1,6 @@
 'use client';
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
 import '../../financeiro-premium.css';
 import '../../financeiro-operacoes-v39.css';
 
@@ -105,12 +107,12 @@ export default function NovaDespesaPage() {
 
   const inputClass =
     'block min-h-12 w-full min-w-0 rounded-xl border ' +
-    'border-white/20 bg-[#07110E] px-4 py-3 text-base ' +
-    'text-[#EDEDE3] outline-none placeholder:text-[#B4C8BB]/60 ' +
-    'focus:border-[#E3A144] focus:ring-2 focus:ring-[#E3A144]/20';
+    'border-[var(--ern-borda)] bg-[var(--ern-elevado)] px-4 py-3 text-base ' +
+    'text-[var(--ern-texto)] outline-none placeholder:text-[var(--ern-secundario)]/60 ' +
+    'focus:border-[var(--ern-destaque)] focus:ring-2 focus:ring-[#E3A144]/20';
 
   const labelClass =
-    'mb-2 block text-sm font-medium text-[#EDEDE3]/85';
+    'mb-2 block text-sm font-medium text-[var(--ern-texto)]/85';
 
   function alterar(
     campo: Exclude<keyof DespesaForm, 'status'>,
@@ -239,12 +241,12 @@ export default function NovaDespesaPage() {
   }
 
   return (
-    <div className="ern-financeiro-premium ern-financeiro-cadastro ern-fin-v39-despesa min-h-screen min-w-0 bg-[#07110E] text-[#EDEDE3]">
-      <header className="border-b border-white/10 bg-[#091510]">
+    <div className="eda-pg eda-pg-auto eda-pg-legado min-h-screen min-w-0">
+      <header className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
         <div className="mx-auto max-w-[1180px] px-4 py-7 sm:px-6 md:px-8 md:py-10">
           <Link
             href="/financeiro"
-            className="inline-flex min-h-11 items-center rounded-lg text-sm font-semibold text-[#F4C77E] focus-visible:outline-2 focus-visible:outline-offset-4"
+            className="inline-flex min-h-11 items-center rounded-lg text-sm font-semibold text-[var(--ern-destaque)] focus-visible:outline-2 focus-visible:outline-offset-4"
           >
             ← Financeiro
           </Link>
@@ -254,13 +256,12 @@ export default function NovaDespesaPage() {
           </p>
 
           <h1
-            className="mt-3 text-3xl text-[#F0F0E8] sm:text-4xl"
-            style={{ fontFamily: 'var(--font-fraunces), serif' }}
+            className="mt-3 text-3xl text-[var(--ern-texto)] sm:text-4xl"
           >
             Nova despesa
           </h1>
 
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-[#B4C8BB]">
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--ern-secundario)]">
             Registre os custos da operação e mantenha os
             pagamentos realizados separados das obrigações pendentes.
           </p>
@@ -295,7 +296,7 @@ export default function NovaDespesaPage() {
               Cadastro de despesa financeira
             </legend>
 
-            <section className="min-w-0 rounded-2xl border border-white/10 bg-[#0A1713] p-5 sm:rounded-[26px] sm:p-7">
+            <section className="min-w-0 rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 sm:rounded-[26px] sm:p-7">
               <h2 className="text-xl font-semibold">
                 Dados do lançamento
               </h2>
@@ -391,12 +392,12 @@ export default function NovaDespesaPage() {
               </div>
             </section>
 
-            <section className="min-w-0 rounded-2xl border border-white/10 bg-[#0A1713] p-5 sm:rounded-[26px] sm:p-7">
+            <section className="min-w-0 rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 sm:rounded-[26px] sm:p-7">
               <h2 className="text-xl font-semibold">
                 Situação da despesa
               </h2>
 
-              <p className="mt-3 text-sm leading-7 text-[#B4C8BB]">
+              <p className="mt-3 text-sm leading-7 text-[var(--ern-secundario)]">
                 Selecione Pago somente quando o dinheiro
                 tiver efetivamente saído.
               </p>
@@ -448,33 +449,33 @@ export default function NovaDespesaPage() {
                   />
                   <p
                     id="despesa-liquidacao-ajuda"
-                    className="mt-2 text-xs leading-6 text-[#B4C8BB]"
+                    className="mt-2 text-xs leading-6 text-[var(--ern-secundario)]"
                   >
                     Informe a data real da saída do dinheiro.
                     Ela pode ser diferente do vencimento.
                   </p>
                 </div>
               ) : (
-                <p className="mt-5 rounded-xl border border-[#E3A144]/20 bg-[#E3A144]/5 p-4 text-sm leading-6 text-[#F4C77E]">
+                <p className="mt-5 rounded-xl border border-[var(--ern-destaque)] bg-[var(--ern-botao)]/5 p-4 text-sm leading-6 text-[var(--ern-destaque)]">
                   Esta despesa ficará a pagar e não será somada
                   aos pagamentos realizados.
                 </p>
               )}
             </section>
 
-            <div className="flex flex-col-reverse gap-3 border-t border-white/10 pt-5 sm:flex-row sm:justify-end lg:col-span-2">
+            <div className="flex flex-col-reverse gap-3 border-t border-[var(--ern-borda)] pt-5 sm:flex-row sm:justify-end lg:col-span-2">
               {salvando ? (
                 <button
                   type="button"
                   disabled
-                  className="min-h-12 rounded-xl border border-white/20 px-5 text-sm text-[#B4C8BB]"
+                  className="min-h-12 rounded-xl border border-[var(--ern-borda)] px-5 text-sm text-[var(--ern-secundario)]"
                 >
                   Cancelar
                 </button>
               ) : (
                 <Link
                   href="/financeiro"
-                  className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/20 px-5 text-sm font-semibold text-[#EDEDE3] focus-visible:outline-2 focus-visible:outline-offset-4"
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[var(--ern-borda)] px-5 text-sm font-semibold text-[var(--ern-texto)] focus-visible:outline-2 focus-visible:outline-offset-4"
                 >
                   Cancelar
                 </Link>

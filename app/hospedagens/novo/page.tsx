@@ -1,4 +1,6 @@
 'use client';
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
 import '../hospedagens-premium.css';
 
 import React, {
@@ -325,7 +327,7 @@ export default function NovaHospedagemPage() {
   }
 
   return (
-    <div className="ern-hospedagens-premium min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <div className="eda-pg eda-pg-auto eda-pg-legado min-h-screen">
       {/* =====================================================
           CABEÇALHO
       ====================================================== */}

@@ -10,6 +10,8 @@ import {
   type ReactNode,
 } from 'react';
 import Link from 'next/link';
+import PerfilEditorialEDA from '@/app/components/PerfilEditorialEDA';
+import { supabase } from '@/lib/supabase';
 
 import {
   carregarPerfilPublicoOperadoraERN,
@@ -102,7 +104,7 @@ function lista(texto: string): string[] {
     .filter(Boolean);
 }
 
-export default function PerfilPublicoPage() {
+function PerfilOperadoraEDA({ abas }: { abas?: ReactNode }) {
   const [formulario, setFormulario] = useState(INICIAL);
   const [contexto, setContexto] = useState<ContextoPerfilPublicoERN | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -279,10 +281,7 @@ export default function PerfilPublicoPage() {
           <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
             Sua operadora na Rede EDA
           </p>
-          <h1
-            className="mt-3 text-3xl sm:text-4xl"
-            style={{ fontFamily: 'var(--font-fraunces), serif' }}
-          >
+          <h1 className="mt-3 text-3xl sm:text-4xl">
             Perfil público
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--ern-secundario)]">
@@ -290,6 +289,8 @@ export default function PerfilPublicoPage() {
             o contato de quem deseja conhecer o Rio Negro.
           </p>
         </header>
+
+        {abas}
 
         {erro && (
           <div
@@ -681,5 +682,64 @@ export default function PerfilPublicoPage() {
         )}
       </div>
     </main>
+  );
+}
+
+// ERN_PERFIL_PUBLICO_EDITORIAL_V1
+// A aba "Perfil editorial" só aparece quando o servidor confirma o acesso
+// (RPC tem_acesso_editorial_ern). Mesmo que alguém force a aba no navegador,
+// leitura e gravação continuam barradas pela RLS de perfis_publicos.
+type AbaPerfilEDA = 'operadora' | 'editorial';
+
+function AbasPerfilEDA({ aba, aoMudar }: { aba: AbaPerfilEDA; aoMudar: (a: AbaPerfilEDA) => void }) {
+  const opcoes: { valor: AbaPerfilEDA; rotulo: string }[] = [
+    { valor: 'operadora', rotulo: 'Operadora' },
+    { valor: 'editorial', rotulo: 'Perfil editorial · Comando EDA' },
+  ];
+  return (
+    <div className="eda-pg-chips mb-6" role="tablist" aria-label="Perfis públicos da conta">
+      {opcoes.map(o => (
+        <button
+          key={o.valor}
+          type="button"
+          role="tab"
+          aria-selected={aba === o.valor}
+          aria-pressed={aba === o.valor}
+          className="eda-pg-chip"
+          onClick={() => aoMudar(o.valor)}
+        >
+          {o.valor === 'editorial' && <span aria-hidden="true">🔒</span>}
+          {o.rotulo}
+        </button>
+      ))}
+    </div>
+  );
+}
+
+export default function PerfilPublicoPage() {
+  const [editorial, setEditorial] = useState(false);
+  const [aba, setAba] = useState<AbaPerfilEDA>('operadora');
+
+  useEffect(() => {
+    let ativo = true;
+    (async () => {
+      const { data: sessao } = await supabase.auth.getUser();
+      if (!sessao.user || sessao.user.is_anonymous) return;
+      const { data, error } = await supabase.rpc('tem_acesso_editorial_ern');
+      if (ativo && !error && data === true) setEditorial(true);
+    })().catch(() => undefined);
+    return () => { ativo = false; };
+  }, []);
+
+  if (!editorial) return <PerfilOperadoraEDA />;
+
+  const abas = <AbasPerfilEDA aba={aba} aoMudar={setAba} />;
+
+  // As duas abas ficam montadas para não perder edições ao alternar.
+  return (
+    <>
+      <div hidden={aba !== 'operadora'}><PerfilOperadoraEDA abas={abas} /></div>
+      <div hidden={aba !== 'editorial'}><PerfilEditorialEDA abas={abas} /></div>
+    </>
   );
 }

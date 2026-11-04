@@ -1,4 +1,6 @@
 'use client';
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
 import '../../financeiro-premium.css';
 import '../../financeiro-operacoes-v39.css';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
@@ -95,11 +97,11 @@ export default function NovaReceitaPage() {
   const [mensagemSucesso, setMensagemSucesso] = useState('');
   const inputClass =
     'block min-h-12 w-full min-w-0 rounded-xl border ' +
-    'border-white/20 bg-[#07110E] px-4 py-3 text-base ' +
-    'text-[#EDEDE3] outline-none placeholder:text-[#B4C8BB]/60 ' +
-    'focus:border-[#E3A144] focus:ring-2 focus:ring-[#E3A144]/20';
+    'border-[var(--ern-borda)] bg-[var(--ern-elevado)] px-4 py-3 text-base ' +
+    'text-[var(--ern-texto)] outline-none placeholder:text-[var(--ern-secundario)]/60 ' +
+    'focus:border-[var(--ern-destaque)] focus:ring-2 focus:ring-[#E3A144]/20';
   const labelClass =
-    'mb-2 block text-sm font-medium text-[#EDEDE3]/85';
+    'mb-2 block text-sm font-medium text-[var(--ern-texto)]/85';
   function escolherReserva(reserva: ReservaReceita | null) {
     if (envioEmAndamento.current) return;
     setReservaId(reserva?.id ?? '');
@@ -256,25 +258,24 @@ export default function NovaReceitaPage() {
     }
   }
   return (
-    <div className="ern-financeiro-premium ern-financeiro-cadastro ern-fin-v39-receita min-h-screen min-w-0 bg-[#07110E] text-[#EDEDE3]">
-      <header className="border-b border-white/10 bg-[#091510]">
+    <div className="eda-pg eda-pg-auto eda-pg-legado min-h-screen min-w-0">
+      <header className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
         <div className="mx-auto max-w-[1180px] px-4 py-7 sm:px-6 md:px-8 md:py-10">
           <Link
             href="/financeiro"
-            className="inline-flex min-h-11 items-center rounded-lg text-sm font-semibold text-[#F4C77E] focus-visible:outline-2 focus-visible:outline-offset-4"
+            className="inline-flex min-h-11 items-center rounded-lg text-sm font-semibold text-[var(--ern-destaque)] focus-visible:outline-2 focus-visible:outline-offset-4"
           >
             ← Financeiro
           </Link>
-          <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
+          <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-[var(--ern-destaque)]">
             Financeiro • Entrada
           </p>
           <h1
-            className="mt-3 text-3xl text-[#F0F0E8] sm:text-4xl"
-            style={{ fontFamily: 'var(--font-fraunces), serif' }}
+            className="mt-3 text-3xl text-[var(--ern-texto)] sm:text-4xl"
           >
             Nova receita
           </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-[#B4C8BB]">
+          <p className="mt-3 max-w-2xl text-sm leading-7 text-[var(--ern-secundario)]">
             Registre o valor previsto ou recebido e mantenha
             vencimento e recebimento separados.
           </p>
@@ -297,17 +298,17 @@ export default function NovaReceitaPage() {
             {mensagemSucesso}
           </div>
         )}
-        <section aria-labelledby="receita-reserva-titulo" className="ern-fin-v39-vinculo mb-5 rounded-2xl border border-[#E3A144]/25 bg-[#0C211A] p-5 sm:p-7">
-          <h2 id="receita-reserva-titulo" className="text-xl font-semibold text-[#F4C77E]">Vincular receita a uma reserva</h2>
-          <p className="mt-3 text-sm leading-7 text-[#B4C8BB]">Opcional. Registre o valor desta parcela e o vencimento combinado. O total comercial da reserva não é preenchido como pagamento. Cada lançamento precisa representar uma parcela própria.</p>
+        <section aria-labelledby="receita-reserva-titulo" className="ern-fin-v39-vinculo mb-5 rounded-2xl border border-[var(--ern-destaque)] bg-[#0C211A] p-5 sm:p-7">
+          <h2 id="receita-reserva-titulo" className="text-xl font-semibold text-[var(--ern-destaque)]">Vincular receita a uma reserva</h2>
+          <p className="mt-3 text-sm leading-7 text-[var(--ern-secundario)]">Opcional. Registre o valor desta parcela e o vencimento combinado. O total comercial da reserva não é preenchido como pagamento. Cada lançamento precisa representar uma parcela própria.</p>
           {carregandoReservas && <p role="status" className="mt-3 text-sm">Carregando reservas…</p>}
-          {erroReservas && <div role="alert" className="mt-3 text-sm text-amber-200"><p>{erroReservas}</p><button type="button" disabled={salvando || carregandoReservas} onClick={()=>setTentativaReservas(t=>t+1)} className="mt-3 min-h-11 rounded-xl border border-white/20 px-4">Tentar carregar novamente</button></div>}
+          {erroReservas && <div role="alert" className="mt-3 text-sm text-amber-200"><p>{erroReservas}</p><button type="button" disabled={salvando || carregandoReservas} onClick={()=>setTentativaReservas(t=>t+1)} className="mt-3 min-h-11 rounded-xl border border-[var(--ern-borda)] px-4">Tentar carregar novamente</button></div>}
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <label className={labelClass}>Buscar reserva<input aria-label="Buscar reserva da receita" disabled={salvando || carregandoReservas || Boolean(erroReservas)} value={buscaReserva} onChange={e=>setBuscaReserva(e.target.value)} className={inputClass + ' mt-2'} placeholder="Cliente, passeio ou data" /></label>
             <label className={labelClass}>Reserva<select aria-label="Reserva vinculada à receita" disabled={salvando || carregandoReservas || Boolean(erroReservas)} value={reservaId} onChange={e=>escolherReserva(reservas.find(r=>r.id===e.target.value) ?? null)} className={inputClass + ' mt-2'}><option value="">Receita avulsa — sem reserva</option>{reservaSelecionada && !reservasEncontradas.slice(0,100).some(r=>r.id===reservaId) && <option value={reservaId}>{reservaSelecionada.cliente} · {reservaSelecionada.pacote}</option>}{reservasEncontradas.slice(0,100).map(r=><option key={r.id} value={r.id}>{r.cliente} · {r.pacote} · {r.data_reserva} · {r.status} · {r.id.slice(0,8)}</option>)}</select></label>
           </div>
-          <p className="mt-2 text-xs text-[#B4C8BB]">{reservasEncontradas.length} reservas na busca.{reservasEncontradas.length > 100 ? ' Refine a busca; o seletor mostra até 100 resultados.' : ''} Trocar a reserva limpa o valor e as datas para evitar lançar a parcela no vínculo errado.</p>
-          {reservaSelecionada && <div className="mt-4 rounded-xl border border-white/15 p-4 text-sm leading-7"><p><strong>{reservaSelecionada.cliente}</strong> · {reservaSelecionada.pacote} · {reservaSelecionada.data_reserva}</p><p>Referência da reserva: {reservaSelecionada.id}</p><p>Valor comercial: {reservaSelecionada.valor_total == null ? 'Não informado' : Number(reservaSelecionada.valor_total).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}. Esse valor não representa saldo a receber.</p>{(reservaSelecionada.status ?? '').toLowerCase().includes('cancelad') && <p className="mt-2 text-amber-200">Esta reserva está cancelada. Confira o histórico e o motivo deste lançamento antes de registrar uma receita.</p>}</div>}
+          <p className="mt-2 text-xs text-[var(--ern-secundario)]">{reservasEncontradas.length} reservas na busca.{reservasEncontradas.length > 100 ? ' Refine a busca; o seletor mostra até 100 resultados.' : ''} Trocar a reserva limpa o valor e as datas para evitar lançar a parcela no vínculo errado.</p>
+          {reservaSelecionada && <div className="mt-4 rounded-xl border border-[var(--ern-borda)] p-4 text-sm leading-7"><p><strong>{reservaSelecionada.cliente}</strong> · {reservaSelecionada.pacote} · {reservaSelecionada.data_reserva}</p><p>Referência da reserva: {reservaSelecionada.id}</p><p>Valor comercial: {reservaSelecionada.valor_total == null ? 'Não informado' : Number(reservaSelecionada.valor_total).toLocaleString('pt-BR',{style:'currency',currency:'BRL'})}. Esse valor não representa saldo a receber.</p>{(reservaSelecionada.status ?? '').toLowerCase().includes('cancelad') && <p className="mt-2 text-amber-200">Esta reserva está cancelada. Confira o histórico e o motivo deste lançamento antes de registrar uma receita.</p>}</div>}
         </section>
         <form onSubmit={salvar} aria-busy={salvando}>
           <fieldset
@@ -317,7 +318,7 @@ export default function NovaReceitaPage() {
             <legend className="sr-only">
               Cadastro de receita financeira
             </legend>
-            <section className="min-w-0 rounded-2xl border border-white/10 bg-[#0A1713] p-5 sm:rounded-[26px] sm:p-7">
+            <section className="min-w-0 rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 sm:rounded-[26px] sm:p-7">
               <h2 className="text-xl font-semibold">
                 Dados do lançamento
               </h2>
@@ -396,11 +397,11 @@ export default function NovaReceitaPage() {
                 </div>
               </div>
             </section>
-            <section className="min-w-0 rounded-2xl border border-white/10 bg-[#0A1713] p-5 sm:rounded-[26px] sm:p-7">
+            <section className="min-w-0 rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 sm:rounded-[26px] sm:p-7">
               <h2 className="text-xl font-semibold">
                 Situação da receita
               </h2>
-              <p className="mt-3 text-sm leading-7 text-[#B4C8BB]">
+              <p className="mt-3 text-sm leading-7 text-[var(--ern-secundario)]">
                 Selecione Recebido somente quando o dinheiro
                 tiver efetivamente entrado.
               </p>
@@ -444,32 +445,32 @@ export default function NovaReceitaPage() {
                   />
                   <p
                     id="receita-liquidacao-ajuda"
-                    className="mt-2 text-xs leading-6 text-[#B4C8BB]"
+                    className="mt-2 text-xs leading-6 text-[var(--ern-secundario)]"
                   >
                     Informe a data real da entrada do dinheiro.
                     Ela pode ser diferente do vencimento.
                   </p>
                 </div>
               ) : (
-                <p className="mt-5 rounded-xl border border-[#E3A144]/20 bg-[#E3A144]/5 p-4 text-sm leading-6 text-[#F4C77E]">
+                <p className="mt-5 rounded-xl border border-[var(--ern-destaque)] bg-[var(--ern-botao)]/5 p-4 text-sm leading-6 text-[var(--ern-destaque)]">
                   Esta receita ficará a receber e não será somada
                   aos recebimentos realizados.
                 </p>
               )}
             </section>
-            <div className="flex flex-col-reverse gap-3 border-t border-white/10 pt-5 sm:flex-row sm:justify-end lg:col-span-2">
+            <div className="flex flex-col-reverse gap-3 border-t border-[var(--ern-borda)] pt-5 sm:flex-row sm:justify-end lg:col-span-2">
               {salvando ? (
                 <button
                   type="button"
                   disabled
-                  className="min-h-12 rounded-xl border border-white/20 px-5 text-sm text-[#B4C8BB]"
+                  className="min-h-12 rounded-xl border border-[var(--ern-borda)] px-5 text-sm text-[var(--ern-secundario)]"
                 >
                   Cancelar
                 </button>
               ) : (
                 <Link
                   href="/financeiro"
-                  className="inline-flex min-h-12 items-center justify-center rounded-xl border border-white/20 px-5 text-sm font-semibold text-[#EDEDE3] focus-visible:outline-2 focus-visible:outline-offset-4"
+                  className="inline-flex min-h-12 items-center justify-center rounded-xl border border-[var(--ern-borda)] px-5 text-sm font-semibold text-[var(--ern-texto)] focus-visible:outline-2 focus-visible:outline-offset-4"
                 >
                   Cancelar
                 </Link>
@@ -477,7 +478,7 @@ export default function NovaReceitaPage() {
               <button
                 type="submit"
                 disabled={salvando || carregandoReservas || Boolean(erroReservas)}
-                className="min-h-12 rounded-xl bg-[#E3A144] px-6 text-sm font-bold text-[#07130F] hover:bg-[#F0B35C] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#E3A144] disabled:cursor-wait disabled:opacity-60"
+                className="min-h-12 rounded-xl bg-[var(--ern-botao)] px-6 text-sm font-bold text-[#07130F] hover:bg-[#F0B35C] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#E3A144] disabled:cursor-wait disabled:opacity-60"
               >
                 {salvando ? 'Salvando...' : 'Salvar receita'}
               </button>

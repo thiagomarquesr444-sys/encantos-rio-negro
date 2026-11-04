@@ -1,4 +1,6 @@
 'use client';
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
 import '../../clientes-premium.css';
 
 import { useEffect, useRef, useState } from 'react';
@@ -336,7 +338,7 @@ export default function EditarClientePage() {
   ];
 
   return (
-    <main className="ern-clientes-premium ern-clientes-formulario min-h-screen min-w-0 bg-[var(--ern-fundo)] px-4 py-7 text-[var(--ern-texto)] sm:px-6 sm:py-10">
+    <main className="eda-pg eda-pg-auto eda-pg-legado min-h-screen min-w-0 px-4 py-7 sm:px-6 sm:py-10">
       <div className="mx-auto max-w-5xl space-y-6">
         <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="min-w-0">
@@ -345,7 +347,6 @@ export default function EditarClientePage() {
             </p>
             <h1
               className="mt-2 text-4xl"
-              style={{ fontFamily: 'var(--font-fraunces), serif' }}
             >
               Editar cliente
             </h1>

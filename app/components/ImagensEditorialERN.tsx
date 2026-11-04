@@ -152,29 +152,29 @@ export default function ImagensEditorialERN({
   return (
     <section
       aria-labelledby="imagens-editorial"
-      className="mt-8 border-t border-[#cdba7a] pt-6"
+      className="mt-8 border-t border-[var(--ern-borda)] pt-6"
     >
       <h2 id="imagens-editorial" className="text-xl font-semibold">
         Identidade visual
       </h2>
 
-      <p className="mt-2 text-sm leading-6 text-[#695727]">
+      <p className="mt-2 text-sm leading-6 text-[var(--ern-secundario)]">
         As imagens são salvas assim que o envio termina.
         Use arquivos JPEG, PNG ou WebP de até 5 MB.
       </p>
 
       {bloqueado && !enviando && (
-        <p className="mt-3 text-sm text-[#805600]">
+        <p className="mt-3 text-sm text-[var(--ern-destaque)]">
           Salve as alterações do formulário antes de enviar imagens.
         </p>
       )}
 
       {erro && (
-        <p role="alert" className="mt-4 text-sm text-red-800">{erro}</p>
+        <p role="alert" className="mt-4 text-sm text-[var(--ern-erro)]">{erro}</p>
       )}
 
       {aviso && (
-        <p role="status" className="mt-4 text-sm text-green-800">{aviso}</p>
+        <p role="status" className="mt-4 text-sm text-[var(--ern-sucesso)]">{aviso}</p>
       )}
 
       {enviando && (
@@ -190,8 +190,8 @@ export default function ImagensEditorialERN({
               <div
                 className={
                   finalidade === 'logo'
-                    ? 'flex h-40 w-40 items-center justify-center overflow-hidden rounded-full border border-[#cdba7a] bg-[#fffcf0]'
-                    : 'flex aspect-[16/7] items-center justify-center overflow-hidden rounded-xl border border-[#cdba7a] bg-[#fffcf0]'
+                    ? 'flex h-40 w-40 items-center justify-center overflow-hidden rounded-full border border-[var(--ern-borda)] bg-[var(--ern-elevado)]'
+                    : 'flex aspect-[16/7] items-center justify-center overflow-hidden rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-elevado)]'
                 }
               >
                 {finalidade === 'logo' ? (
@@ -204,7 +204,7 @@ export default function ImagensEditorialERN({
                     className="h-full w-full object-contain"
                   />
                 ) : (
-                  <span className="px-4 text-center text-sm text-[#695727]">
+                  <span className="px-4 text-center text-sm text-[var(--ern-secundario)]">
                     {'Sem capa'}
                   </span>
                 )}
@@ -218,11 +218,11 @@ export default function ImagensEditorialERN({
                   accept="image/jpeg,image/png,image/webp"
                   disabled={bloqueado || enviando}
                   onChange={event => void enviar(event, finalidade)}
-                  className="mt-2 block min-h-12 w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-[#805600] file:px-3 file:py-3 file:text-white disabled:opacity-50"
+                  className="mt-2 block min-h-12 w-full text-xs file:mr-2 file:rounded-lg file:border-0 file:bg-[var(--ern-botao)] file:px-3 file:py-3 file:font-semibold file:text-[var(--ern-sobre-botao)] disabled:opacity-50"
                 />
               </label>
               ) : (
-                <p className="mt-4 text-sm leading-6 text-[#695727]">
+                <p className="mt-4 text-sm leading-6 text-[var(--ern-secundario)]">
                   Logo oficial 3D
                 </p>
               )}

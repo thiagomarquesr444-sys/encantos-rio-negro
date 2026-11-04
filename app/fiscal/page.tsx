@@ -1,4 +1,6 @@
 'use client';
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
@@ -53,13 +55,13 @@ const CORES: Record<StatusFiscal, string> = {
 };
 
 const painel =
-  'min-w-0 overflow-hidden rounded-2xl border border-white/[0.08] ' +
-  'bg-[#151A1B] shadow-[0_10px_35px_rgba(0,0,0,0.12)]';
+  'min-w-0 overflow-hidden rounded-2xl border border-[var(--ern-borda)] ' +
+  'bg-[var(--ern-painel)] shadow-[0_10px_35px_rgba(0,0,0,0.12)]';
 
 const legenda =
-  'text-[10px] font-bold uppercase tracking-[0.18em] text-[#E3A144]';
+  'text-[10px] font-bold uppercase tracking-[0.18em] text-[var(--ern-destaque)]';
 
-const secundario = 'text-[#94A5A1]';
+const secundario = 'text-[var(--ern-secundario)]';
 
 function formatarMoeda(valor: number | null): string {
   if (valor === null || !Number.isFinite(valor)) return 'Não informado';
@@ -148,7 +150,7 @@ function CartaoIndicador({
 }) {
   return (
     <article className={`${painel} relative p-3.5 sm:p-4`}>
-      <div className="absolute left-0 top-5 h-8 w-[2px] rounded-r bg-[#E3A144]" />
+      <div className="absolute left-0 top-5 h-8 w-[2px] rounded-r bg-[var(--ern-botao)]" />
 
       <div className="flex items-start justify-between gap-2">
         <p className={`text-xs font-medium ${secundario}`}>{rotulo}</p>
@@ -158,7 +160,7 @@ function CartaoIndicador({
       </div>
 
       <div className="mt-3 flex items-baseline gap-2">
-        <strong className="text-3xl font-semibold leading-none tracking-tight text-[#F1F4EF] tabular-nums sm:text-4xl">
+        <strong className="text-3xl font-semibold leading-none tracking-tight text-[var(--ern-texto)] tabular-nums sm:text-4xl">
           {valor.toLocaleString('pt-BR')}
         </strong>
         <span className="text-[10px] text-[#71817D]">registros</span>
@@ -332,7 +334,7 @@ export default function PainelFiscalERN() {
     : null;
 
   return (
-    <main className="min-h-screen bg-[#0C1112] px-3 pb-12 pt-5 text-[#F1F4EF] sm:px-6 lg:px-8">
+    <main className="eda-pg eda-pg-auto eda-pg-legado min-h-screen px-3 pb-12 pt-5 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1500px] space-y-3.5">
         <header className="flex flex-wrap items-start justify-between gap-4 pb-2">
           <div className="min-w-0">
@@ -354,14 +356,14 @@ export default function PainelFiscalERN() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            <span className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[#E3A144]/25 bg-[#E3A144]/[0.07] px-3 text-[10px] font-semibold uppercase tracking-wider text-[#E9B76B]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#E3A144]" />
+            <span className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--ern-destaque)] bg-[var(--ern-botao)]/[0.07] px-3 text-[10px] font-semibold uppercase tracking-wider text-[var(--ern-destaque)]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[var(--ern-botao)]" />
               Simulação
             </span>
 
             <Link
               href="/documentos"
-              className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-white/10 bg-[#171D1D] px-3 text-xs font-medium transition-colors hover:bg-[#242B2B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E3A144]"
+              className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--ern-borda)] bg-[var(--ern-painel)] px-3 text-xs font-medium transition-colors hover:bg-[var(--ern-elevado)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E3A144]"
             >
               <Icone nome="arquivo" tamanho={15} />
               Documentos
@@ -371,7 +373,7 @@ export default function PainelFiscalERN() {
               type="button"
               onClick={atualizar}
               disabled={carregando}
-              className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-white/10 bg-[#171D1D] px-3 text-xs font-medium transition-colors hover:bg-[#242B2B] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E3A144] disabled:opacity-50"
+              className="inline-flex min-h-9 items-center gap-2 rounded-lg border border-[var(--ern-borda)] bg-[var(--ern-painel)] px-3 text-xs font-medium transition-colors hover:bg-[var(--ern-elevado)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E3A144] disabled:opacity-50"
             >
               <Icone nome="atualizar" tamanho={15} />
               Atualizar
@@ -382,7 +384,7 @@ export default function PainelFiscalERN() {
         {erro ? (
           <section role="alert" className={`${painel} border-rose-400/30 p-5`}>
             <p className="text-sm font-semibold">Consulta indisponível</p>
-            <p className="mt-2 text-xs text-[#F0A6A1]">{erro}</p>
+            <p className="mt-2 text-xs text-[var(--ern-erro)]">{erro}</p>
           </section>
         ) : carregando ? (
           <section role="status" className={`${painel} p-6 text-sm ${secundario}`}>
@@ -432,7 +434,7 @@ export default function PainelFiscalERN() {
                       Composição por situação · Dados consolidados
                     </p>
                   </div>
-                  <span className="rounded-lg border border-white/10 px-2.5 py-1.5 text-[10px] text-[#AEBDB7]">
+                  <span className="rounded-lg border border-[var(--ern-borda)] px-2.5 py-1.5 text-[10px] text-[#AEBDB7]">
                     Total: {indicadores.total}
                   </span>
                 </div>
@@ -445,7 +447,7 @@ export default function PainelFiscalERN() {
                           ? 'Sem registros disponíveis para o gráfico'
                           : 'Gráfico de distribuição das solicitações'
                       }
-                      className="relative flex h-[150px] items-end overflow-hidden rounded-xl border border-white/[0.04] bg-[#101616] p-3"
+                      className="relative flex h-[150px] items-end overflow-hidden rounded-xl border border-white/[0.04] bg-[var(--ern-painel)] p-3"
                       style={{
                         backgroundImage:
                           'linear-gradient(to top, rgba(255,255,255,.055) 1px, transparent 1px)',
@@ -458,7 +460,7 @@ export default function PainelFiscalERN() {
                           <p className="mt-3 text-xs font-medium text-[#D9E0DA]">
                             Aguardando dados reais
                           </p>
-                          <p className="mt-1 text-[11px] text-[#81918C]">
+                          <p className="mt-1 text-[11px] text-[var(--ern-secundario)]">
                             Nenhuma simulação foi registrada.
                           </p>
                         </div>
@@ -516,7 +518,7 @@ export default function PainelFiscalERN() {
                                 className="h-1.5 w-1.5 shrink-0 rounded-full"
                                 style={{ backgroundColor: CORES[item.status] }}
                               />
-                              <span className="truncate text-[11px] text-[#A4B4AE]">
+                              <span className="truncate text-[11px] text-[var(--ern-secundario)]">
                                 {item.nome}
                               </span>
                             </div>
@@ -558,7 +560,7 @@ export default function PainelFiscalERN() {
                         : `conic-gradient(#E3A144 ${cobertura}%, #323D3B ${cobertura}% 100%)`,
                     }}
                   >
-                    <div className="flex h-[132px] w-[132px] flex-col items-center justify-center rounded-full bg-[#151A1B]">
+                    <div className="flex h-[132px] w-[132px] flex-col items-center justify-center rounded-full bg-[var(--ern-painel)]">
                       <span className="text-[30px] font-semibold tabular-nums tracking-tight">
                         {cobertura === null ? '—' : `${cobertura.toFixed(0)}%`}
                       </span>
@@ -567,7 +569,7 @@ export default function PainelFiscalERN() {
                       </span>
                     </div>
                   </div>
-                  <p className="mt-4 text-center text-[11px] text-[#94A5A1]">
+                  <p className="mt-4 text-center text-[11px] text-[var(--ern-secundario)]">
                     {cobertura === null
                       ? 'Sem dados suficientes para calcular'
                       : `${indicadores.simuladas} de ${indicadores.total} solicitações`}
@@ -594,18 +596,18 @@ export default function PainelFiscalERN() {
                       Solicitações recentes
                     </h2>
                   </div>
-                  <span className="rounded-lg border border-white/10 px-2.5 py-1.5 text-[10px] text-[#A4B4AE]">
+                  <span className="rounded-lg border border-[var(--ern-borda)] px-2.5 py-1.5 text-[10px] text-[var(--ern-secundario)]">
                     Últimos 12 registros
                   </span>
                 </div>
 
                 {solicitacoes.length === 0 ? (
-                  <div className="mt-4 flex min-h-[138px] flex-col items-center justify-center rounded-xl border border-dashed border-white/10 bg-[#101616] px-4 text-center">
+                  <div className="mt-4 flex min-h-[138px] flex-col items-center justify-center rounded-xl border border-dashed border-[var(--ern-borda)] bg-[var(--ern-painel)] px-4 text-center">
                     <Icone nome="arquivo" tamanho={22} />
-                    <p className="mt-3 text-xs font-medium text-[#DAE2DC]">
+                    <p className="mt-3 text-xs font-medium text-[var(--ern-texto)]">
                       Nenhuma solicitação disponível
                     </p>
-                    <p className="mt-1 text-[11px] text-[#81918C]">
+                    <p className="mt-1 text-[11px] text-[var(--ern-secundario)]">
                       Os registros fiscais simulados serão exibidos aqui.
                     </p>
                   </div>
@@ -654,7 +656,7 @@ export default function PainelFiscalERN() {
                       Ambiente fiscal
                     </h2>
                   </div>
-                  <span className="text-[#E3A144]">
+                  <span className="text-[var(--ern-destaque)]">
                     <Icone nome="escudo" tamanho={23} />
                   </span>
                 </div>
@@ -671,7 +673,7 @@ export default function PainelFiscalERN() {
                       key={nome}
                       className="flex items-center justify-between gap-3 border-b border-white/[0.07] py-3 last:border-0"
                     >
-                      <span className="text-[11px] text-[#94A5A1]">{nome}</span>
+                      <span className="text-[11px] text-[var(--ern-secundario)]">{nome}</span>
                       <span className="text-[11px] font-semibold tabular-nums">
                         {valor}
                       </span>
@@ -679,8 +681,8 @@ export default function PainelFiscalERN() {
                   ))}
                 </div>
 
-                <div className="mt-5 rounded-xl border border-[#E3A144]/20 bg-[#E3A144]/[0.05] p-3">
-                  <p className="text-[11px] font-semibold text-[#E9B76B]">
+                <div className="mt-5 rounded-xl border border-[var(--ern-destaque)] bg-[var(--ern-botao)]/[0.05] p-3">
+                  <p className="text-[11px] font-semibold text-[var(--ern-destaque)]">
                     Ambiente protegido
                   </p>
                   <p className="mt-1 text-[11px] leading-5 text-[#A6B4AE]">

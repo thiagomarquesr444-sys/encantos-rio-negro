@@ -1,4 +1,6 @@
 'use client';
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
@@ -215,7 +217,7 @@ export default function PublicacoesEditorialPage() {
   const bloqueado = carregando || salvando || enviandoMidia || alterandoStatus || !contexto;
 
   return (
-    <main data-ern-tema="amarelo" className="ern-gestao min-h-screen bg-[var(--ern-fundo)] px-4 py-6 text-[var(--ern-texto)] sm:px-8 sm:py-10">
+    <main className="eda-pg eda-pg-auto eda-pg-legado min-h-screen px-4 py-6 sm:px-8 sm:py-10">
       <div className="mx-auto max-w-6xl">
         <Link
           href="/comando"
@@ -230,7 +232,6 @@ export default function PublicacoesEditorialPage() {
           </p>
           <h1
             className="mt-3 text-3xl sm:text-4xl"
-            style={{ fontFamily: 'var(--font-fraunces), serif' }}
           >
             Histórias, roteiros e experiências
           </h1>
