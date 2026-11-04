@@ -1,5 +1,7 @@
 'use client';
 
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
 import {
   useEffect,
   useRef,
@@ -264,7 +266,7 @@ export default function PerfilPublicoPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[var(--ern-fundo)] px-4 py-7 text-[var(--ern-texto)] sm:px-6 lg:px-8">
+    <main className="eda-pg eda-pg-auto eda-pg-legado min-h-screen px-4 py-7 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-6xl">
         <Link
           href="/configuracoes"

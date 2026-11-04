@@ -1,5 +1,6 @@
 "use client";
-import "../vouchers-premium.css";
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -150,7 +151,7 @@ export default function NovoVoucherPage() {
   const campo="mt-2 min-h-12 w-full min-w-0 rounded-xl border border-white/15 bg-[#07110E] px-3 py-2 text-sm text-[#EDEDE3] disabled:opacity-50";
   const botao="min-h-12 rounded-xl border border-white/20 px-4 py-3 text-sm disabled:opacity-50";
   const candidatas=reservas.filter(r=>disponivel(r.status)&&`${r.cliente} ${r.pacote} ${r.data_reserva} ${r.id}`.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().includes(busca.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()));
-  return <main className="ern-vouchers-premium ern-voucher-cadastro min-h-screen min-w-0 bg-[#0C1112] px-4 py-8 text-[#F1F4EF] sm:px-6">
+  return <main className="eda-pg eda-pg-auto eda-pg-legado min-h-screen min-w-0 px-4 py-8 sm:px-6">
     <div className="mx-auto max-w-5xl"><Link href="/vouchers" className="inline-flex min-h-11 items-center text-sm text-[#F4C77E]">← Vouchers</Link>
       <h1 className="mt-5 text-3xl sm:text-4xl" style={{fontFamily:"var(--font-fraunces), serif"}}>Emitir voucher</h1>
       <p className="mt-3 text-sm leading-7 text-[#EDEDE3]/65">Use os dados de uma reserva ou emita um voucher avulso. A emissão não registra um pagamento.</p>

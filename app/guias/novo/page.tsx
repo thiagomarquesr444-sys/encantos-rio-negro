@@ -1,5 +1,6 @@
 'use client';
-import '../guias-premium.css';
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
 
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
@@ -299,7 +300,7 @@ export default function NovoGuiaPage() {
   }
 
   return (
-    <div className="ern-guias-premium min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <div className="eda-pg eda-pg-auto eda-pg-legado min-h-screen">
       <section className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
         <div className="mx-auto max-w-[1180px] px-5 py-10 md:px-8 md:py-12">
           <Link

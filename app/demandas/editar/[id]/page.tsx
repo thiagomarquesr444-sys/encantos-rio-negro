@@ -1,5 +1,6 @@
 'use client';
-import '../../demandas-premium.css';
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
 
 import {
   useEffect,
@@ -454,7 +455,7 @@ export default function EditarDemandaPage() {
       estado.tipo === 'erro'
     ) {
       return (
-        <main className="ern-demandas-premium min-h-screen bg-[var(--ern-fundo)] p-5 text-[var(--ern-texto)] md:p-8">
+        <main className="eda-pg eda-pg-auto eda-pg-legado min-h-screen p-5 md:p-8">
           <div className="mx-auto max-w-3xl rounded-2xl border border-rose-400/20 bg-[var(--ern-painel)] p-6 md:p-7">
             <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-erro)]">
               Demanda indisponível
@@ -487,7 +488,7 @@ export default function EditarDemandaPage() {
     }
 
     return (
-      <main className="ern-demandas-premium min-h-screen bg-[var(--ern-fundo)] p-5 text-[var(--ern-texto)] md:p-8">
+      <main className="eda-pg eda-pg-auto eda-pg-legado min-h-screen p-5 md:p-8">
         <div className="mx-auto max-w-3xl rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-6">
           <p className="text-sm text-[var(--ern-secundario)]">
             Carregando demanda...
@@ -860,7 +861,7 @@ export default function EditarDemandaPage() {
       'cancelada';
 
   return (
-    <main className="ern-demandas-premium min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <main className="eda-pg eda-pg-auto eda-pg-legado min-h-screen">
       <header className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
         <div className="mx-auto max-w-5xl px-4 py-8 md:px-8">
           <Link

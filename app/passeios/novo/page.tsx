@@ -1,5 +1,6 @@
 'use client';
-import '../passeios-premium.css';
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
 
 import React, { useEffect, useRef, useState } from 'react';
 
@@ -674,7 +675,7 @@ export default function NovoPasseioPage() {
     };
 
   return (
-    <div className="ern-passeios-premium ern-passeios-cadastro min-h-screen bg-[var(--ern-fundo)] pb-16 text-[var(--ern-texto)]">
+    <div className="eda-pg eda-pg-auto eda-pg-legado min-h-screen pb-16">
       {/* =====================================================
           CABEÇALHO
       ====================================================== */}

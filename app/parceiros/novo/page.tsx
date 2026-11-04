@@ -1,5 +1,7 @@
 'use client';
 
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -208,7 +210,7 @@ export default function NovoParceiroPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <div className="eda-pg eda-pg-auto eda-pg-legado min-h-screen">
       {/* =====================================================
           CABEÇALHO
       ====================================================== */}

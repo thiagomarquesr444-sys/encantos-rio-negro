@@ -1,5 +1,7 @@
 'use client';
-import './documentos-premium.css';
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
+import './documentos-eda.css';
 
 import Link from 'next/link';
 import { useModulosEquipeERN } from
@@ -52,7 +54,7 @@ export default function CentralDocumentosERN() {
   );
 
   return (
-    <main className="ern-documentos-premium min-h-screen bg-[#0C1112] px-4 py-8 text-[#F1F4EF] sm:px-8">
+    <main className="eda-pg eda-pg-auto eda-pg-legado min-h-screen px-4 py-8 sm:px-8">
       <div className="mx-auto max-w-7xl space-y-7">
         <header className="rounded-3xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-6 sm:p-9">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--ern-destaque)]">
@@ -98,14 +100,14 @@ export default function CentralDocumentosERN() {
         ) : (
           <section
             aria-label="Tipos de documentos disponíveis"
-            className="ern-documentos-bento grid gap-4 md:grid-cols-2 xl:grid-cols-12"
+            className="eda-doc-grade"
           >
             {permitidos.map(item => (
               <article
                 key={item.href}
-                className="flex min-w-0 flex-col rounded-3xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-6"
+                className="eda-doc-card"
               >
-                <span className="text-xs font-semibold tracking-widest text-[var(--ern-destaque)]">
+                <span className="eda-pg-eb">
                   DOCUMENTOS / {item.icone}
                 </span>
 
@@ -119,7 +121,7 @@ export default function CentralDocumentosERN() {
 
                 <Link
                   href={item.href}
-                  className="mt-7 inline-flex min-h-12 items-center justify-center rounded-xl border border-[var(--ern-borda)] px-5 text-sm font-semibold text-[var(--ern-destaque)] transition-colors hover:bg-white/5 focus-visible:outline-2 focus-visible:outline-offset-2"
+                  className="eda-pg-bt eda-doc-acao"
                 >
                   Acessar documentos
                 </Link>

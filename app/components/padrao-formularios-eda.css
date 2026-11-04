@@ -287,3 +287,15 @@
 @media (prefers-reduced-motion: reduce) {
   .eda-pg-legado [class*="fixed"][class*="inset-0"][class*="bg-black/"] > * { animation: none; }
 }
+
+/* ERN_CFG_PREMIUM_EDA_V1 — Configurações seguem os tokens do tema
+   (!important vence as variáveis --cfg-* definidas inline) */
+.eda-pg-cfg {
+  --cfg-fundo: var(--p-fundo) !important;
+  --cfg-painel: var(--p-painel) !important;
+  --cfg-texto: var(--p-texto) !important;
+  --cfg-secundario: var(--p-sec) !important;
+  --cfg-borda: var(--p-borda) !important;
+  --cfg-destaque: var(--p-ouro) !important;
+  --cfg-sobre-destaque: #07110e !important;
+}

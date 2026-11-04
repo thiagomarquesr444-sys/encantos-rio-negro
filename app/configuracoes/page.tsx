@@ -1,5 +1,7 @@
 'use client';
 
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, FormEvent } from 'react';
@@ -405,7 +407,7 @@ export default function ConfiguracoesPage() {
 
   if (carregando || erroCarga) {
     return (
-      <main className="mx-auto w-full max-w-6xl px-4 py-8 text-[#EDEDE3]">
+      <main className="eda-pg eda-pg-auto eda-pg-legado mx-auto w-full max-w-6xl px-4 py-8">
         <h1 className="text-2xl font-semibold">Configurações</h1>
 
         {carregando ? (
@@ -430,7 +432,7 @@ export default function ConfiguracoesPage() {
 
   if (!administrador) {
     return (
-      <main className="min-h-screen min-w-0 bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+      <main className="eda-pg eda-pg-auto eda-pg-legado min-h-screen min-w-0">
         <div className="mx-auto w-full max-w-3xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
           <header>
             <h1 className="text-3xl font-semibold">Minha conta</h1>
@@ -448,7 +450,7 @@ export default function ConfiguracoesPage() {
   return (
     <main
       style={estilo}
-      className="min-h-screen min-w-0 bg-[var(--cfg-fundo)] text-[var(--cfg-texto)]"
+      className="eda-pg eda-pg-auto eda-pg-legado eda-pg-cfg min-h-screen min-w-0"
     >
       <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
         <header className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">

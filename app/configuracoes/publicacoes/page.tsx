@@ -1,5 +1,7 @@
 'use client';
 
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import AcoesPublicacaoERN from '@/app/components/AcoesPublicacaoERN';
@@ -215,7 +217,7 @@ export default function PublicacoesOperadoraPage() {
   const bloqueado = carregando || salvando || enviandoMidia || alterandoStatus || !contexto;
 
   return (
-    <main className="min-h-screen bg-[var(--ern-fundo)] px-4 py-6 text-[var(--ern-texto)] sm:px-8 sm:py-10">
+    <main className="eda-pg eda-pg-auto eda-pg-legado min-h-screen px-4 py-6 sm:px-8 sm:py-10">
       <div className="mx-auto max-w-6xl">
         <Link
           href="/configuracoes/perfil-publico"

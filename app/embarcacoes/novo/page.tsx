@@ -1,5 +1,6 @@
 'use client';
-import '../embarcacoes-premium.css';
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
 
 import React, {
   useState,
@@ -275,7 +276,7 @@ export default function NovaEmbarcacaoPage() {
   }
 
   return (
-    <div className="ern-embarcacoes-premium min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <div className="eda-pg eda-pg-auto eda-pg-legado min-h-screen">
       {/* =====================================================
           CABEÇALHO
       ====================================================== */}

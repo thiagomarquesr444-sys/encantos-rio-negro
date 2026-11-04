@@ -1,5 +1,6 @@
 'use client';
-import '../demandas-premium.css';
+import '@/app/components/padrao-paginas-eda.css';
+import '@/app/components/padrao-formularios-eda.css';
 
 import {
   useEffect,
@@ -606,7 +607,7 @@ export default function NovaDemandaPage() {
       'pronto';
 
   return (
-    <main className="ern-demandas-premium min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <main className="eda-pg eda-pg-auto eda-pg-legado min-h-screen">
       <header className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
         <div className="mx-auto max-w-5xl px-4 py-8 md:px-8">
           <Link
