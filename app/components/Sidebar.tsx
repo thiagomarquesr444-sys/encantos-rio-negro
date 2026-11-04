@@ -285,22 +285,25 @@ export default function Sidebar() {
   const [gruposAbertos, setGruposAbertos] = useState<string[]>(() =>
     GRUPOS.filter(grupo => grupo.itens.some(item => rotaAtiva(pathname, item.href))).map(grupo => grupo.id));
   const buscaRef = useRef<HTMLInputElement>(null);
-  // ERN_MENU_RECOLHIVEL_V1: menu estreito (só ícones) quando o usuário quer mais tela.
-  const [recolhido, setRecolhido] = useState(false);
+  // ERN_MENU_HOVER_V2: menu fica estreito (só ícones) e se amplia sobre o conteúdo
+  // ao passar o mouse ou ao navegar pelo teclado; recolhe sozinho ao sair.
+  const [recolhido, setRecolhido] = useState(true);
+  const temporizadorMenu = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   useEffect(() => {
-    try { setRecolhido(localStorage.getItem('ern-menu-recolhido-v1') === 'sim'); } catch { /* preferência opcional */ }
+    document.documentElement.style.setProperty('--ern-menu-largura', '76px');
+    return () => clearTimeout(temporizadorMenu.current);
   }, []);
-  useEffect(() => {
-    document.documentElement.style.setProperty('--ern-menu-largura', recolhido ? '76px' : '264px');
-  }, [recolhido]);
-  function alternarRecolhido(): void {
-    setRecolhido(atual => {
-      const proximo = !atual;
-      try { localStorage.setItem('ern-menu-recolhido-v1', proximo ? 'sim' : 'nao'); } catch { /* preferência opcional */ }
-      return proximo;
-    });
+  function ampliarMenu(): void {
+    clearTimeout(temporizadorMenu.current);
+    temporizadorMenu.current = setTimeout(() => setRecolhido(false), 80);
   }
-
+  function recolherMenu(): void {
+    clearTimeout(temporizadorMenu.current);
+    temporizadorMenu.current = setTimeout(() => {
+      // Não recolhe enquanto o usuário digita na busca do menu.
+      if (document.activeElement !== buscaRef.current) setRecolhido(true);
+    }, 160);
+  }
   function fecharMenus(): void {
     setMobileAberto(false);
     setBusca('');
@@ -320,6 +323,7 @@ export default function Sidebar() {
       if ((evento.ctrlKey || evento.metaKey) && evento.key.toLowerCase() === 'k') {
         evento.preventDefault();
         if (window.matchMedia('(min-width: 1280px)').matches) {
+          clearTimeout(temporizadorMenu.current);
           setRecolhido(false);
           setTimeout(() => buscaRef.current?.focus(), 60);
         }
@@ -385,7 +389,7 @@ export default function Sidebar() {
     ];
     return (
       <nav aria-label="Navegação principal" className="mt-3 grid gap-1">
-        <button type="button" onClick={() => { setRecolhido(false); setTimeout(() => buscaRef.current?.focus(), 60); }} title="Buscar no menu (Ctrl K)" aria-label="Buscar no menu" className={`grid min-h-10 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-[#8FA39A] hover:text-white ${FOCO}`}>
+        <button type="button" onClick={() => { clearTimeout(temporizadorMenu.current); setRecolhido(false); setTimeout(() => buscaRef.current?.focus(), 60); }} title="Buscar no menu (Ctrl K)" aria-label="Buscar no menu" className={`grid min-h-10 place-items-center rounded-xl border border-white/10 bg-white/[0.04] text-[#8FA39A] hover:text-white ${FOCO}`}>
           <IconeERN nome="busca" tamanho={17} />
         </button>
         {avisoModulosERN}
@@ -500,7 +504,12 @@ export default function Sidebar() {
       <aside
         aria-label="Menu da Encantos Gestão"
         data-recolhido={recolhido || undefined}
-        className={`ern-menu-lateral ern-menu-fixo fixed inset-y-0 left-0 z-50 hidden flex-col border-r border-white/[0.07] bg-[#08130F] pb-3.5 pt-4 text-[#EDEDE3] transition-[width] duration-200 motion-reduce:transition-none xl:flex ${recolhido ? 'w-[76px] px-2.5' : 'w-[264px] px-3.5'}`}
+        onMouseEnter={ampliarMenu}
+        onMouseLeave={recolherMenu}
+        onFocus={() => { clearTimeout(temporizadorMenu.current); setRecolhido(false); }}
+        onBlur={evento => { if (!evento.currentTarget.contains(evento.relatedTarget as Node | null)) recolherMenu(); }}
+        onKeyDown={evento => { if (evento.key === 'Escape') { setBusca(''); (document.activeElement as HTMLElement | null)?.blur(); setRecolhido(true); } }}
+        className={`ern-menu-lateral ern-menu-fixo fixed inset-y-0 left-0 z-[60] hidden flex-col overflow-hidden border-r border-white/[0.07] bg-[#08130F] pb-3.5 pt-4 text-[#EDEDE3] transition-[width,box-shadow] duration-200 ease-out motion-reduce:transition-none xl:flex ${recolhido ? 'w-[76px] px-2.5' : 'w-[264px] px-3.5 shadow-[24px_0_60px_rgb(0_0_0/0.35)]'}`}
       >
         <div className={`flex items-center ${recolhido ? 'flex-col gap-2' : 'gap-2'}`}>
           <Link href="/dashboard" onClick={fecharMenus} aria-label={recolhido ? nomeSistema : undefined} className={`flex min-w-0 flex-1 items-center gap-2.5 rounded-xl ${recolhido ? 'justify-center' : 'px-1.5'} ${FOCO}`}>
@@ -510,16 +519,6 @@ export default function Sidebar() {
               <span className="block whitespace-nowrap text-[8.5px] font-semibold uppercase tracking-[0.13em] text-[#F4C77E]">Gestão da operadora</span>
             </span>}
           </Link>
-          <button
-            type="button"
-            onClick={alternarRecolhido}
-            aria-expanded={!recolhido}
-            aria-label={recolhido ? 'Expandir menu' : 'Recolher menu'}
-            title={recolhido ? 'Expandir menu' : 'Recolher menu'}
-            className={`grid size-8 shrink-0 place-items-center rounded-lg border border-white/10 bg-white/[0.04] text-[#CDD8D2] hover:border-[#E3A144]/60 hover:text-[#F7D595] ${FOCO}`}
-          >
-            <IconeERN nome="seta" tamanho={16} className={`transition-transform motion-reduce:transition-none ${recolhido ? '-rotate-90' : 'rotate-90'}`} />
-          </button>
         </div>
         <div className="ern-menu-rolagem -mx-1 min-h-0 flex-1 overflow-y-auto px-1 pb-3">
           {recolhido ? menuCompacto() : conteudoMenu('lateral')}
@@ -609,9 +608,9 @@ export default function Sidebar() {
         .ern-menu-rolagem { scrollbar-width: thin; scrollbar-color: #2b4038 transparent; }
         .menu-mobile {
           position: fixed;
-          inset: 0 0 0 auto;
+          inset: 0 auto 0 0;
           box-sizing: border-box;
-          width: min(92vw, 380px);
+          width: min(88vw, 360px);
           max-width: none;
           height: 100dvh;
           max-height: none;
@@ -619,13 +618,14 @@ export default function Sidebar() {
           padding: 0;
           overflow: hidden;
           border: 0;
-          border-left: 1px solid rgb(227 161 68 / 20%);
+          border-right: 1px solid rgb(227 161 68 / 20%);
+          border-radius: 0 22px 22px 0;
           background: #08130f;
           color: #edede3;
-          box-shadow: -20px 0 80px rgb(0 0 0 / 35%);
+          box-shadow: 20px 0 80px rgb(0 0 0 / 35%);
           opacity: 0;
-          transform: translateX(28px);
-          transition: opacity 180ms ease, transform 180ms ease, display 180ms allow-discrete, overlay 180ms allow-discrete;
+          transform: translateX(-100%);
+          transition: opacity 200ms ease, transform 240ms cubic-bezier(.2,.8,.2,1), display 180ms allow-discrete, overlay 180ms allow-discrete;
         }
         .menu-mobile[open] { opacity: 1; transform: translateX(0); }
         .menu-mobile::backdrop {
@@ -635,7 +635,7 @@ export default function Sidebar() {
         }
         .menu-mobile[open]::backdrop { background: rgb(0 0 0 / 65%); }
         @starting-style {
-          .menu-mobile[open] { opacity: 0; transform: translateX(28px); }
+          .menu-mobile[open] { opacity: 0; transform: translateX(-100%); }
           .menu-mobile[open]::backdrop { background: rgb(0 0 0 / 0%); }
         }
         @media (prefers-reduced-motion: reduce) {
