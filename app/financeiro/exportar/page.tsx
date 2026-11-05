@@ -4,6 +4,7 @@ import '@/app/components/padrao-formularios-eda.css';
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { baixarDocumentoPremiumERN } from "@/lib/documentosPremiumERN";
+import { mesValidoERN, rotuloMesERN } from "@/lib/periodoMensalERN";
 import { consultarFinanceiroERN, filtrarFinanceiroERN, periodoFinanceiroERN, statusFinanceiroERN, type RegistroFinanceiroERN, type FiltroPeriodoFinanceiroERN } from "@/lib/financeiroConsultaERN";
 const PERIODOS: {valor:FiltroPeriodoFinanceiroERN;nome:string}[]=[{valor:"todos",nome:"Histórico"},{valor:"mes_atual",nome:"Mês atual — vencimentos"},{valor:"receitas",nome:"Receitas"},{valor:"despesas",nome:"Despesas"},{valor:"pendentes",nome:"Pendentes"},{valor:"com_reserva",nome:"Com reserva"}];
 function protegerCSV(entrada: unknown): string {
@@ -24,18 +25,20 @@ export default function ExportarRelatorioPage(){
   const [periodo,setPeriodo]=useState<FiltroPeriodoFinanceiroERN>("todos");
   const [busca,setBusca]=useState("");
   const [reserva,setReserva]=useState("");
+  // ERN_PERIODO_MENSAL_V1: mês vindo da tela do financeiro (vazio = histórico).
+  const [mesRef,setMesRef]=useState("");
   const [tentativa,setTentativa]=useState(0);
   useEffect(()=>{
     const parametros=new URLSearchParams(window.location.search);
     setPeriodo(periodoFinanceiroERN(parametros.get("periodo")));
-    setBusca(parametros.get("busca")??"");setReserva(parametros.get("reserva_id")??"");
+    setBusca(parametros.get("busca")??"");setReserva(parametros.get("reserva_id")??"");const m=parametros.get("mes");setMesRef(mesValidoERN(m)?m:"");
   },[]);
   useEffect(()=>{
     let ativo=true;setCarregando(true);setErro("");setDados([]);
     void consultarFinanceiroERN<RegistroFinanceiroERN>().then(lista=>{if(ativo)setDados(lista);}).catch(falha=>{if(ativo)setErro(falha&&typeof falha==="object"&&"message"in falha?String(falha.message):"Não foi possível carregar a exportação.");}).finally(()=>{if(ativo)setCarregando(false);});
     return()=>{ativo=false;};
   },[tentativa]);
-  const filtrados=useMemo(()=>filtrarFinanceiroERN(dados,periodo,busca,reserva.trim()),[dados,periodo,busca,reserva]);
+  const filtrados=useMemo(()=>filtrarFinanceiroERN(dados,periodo,busca,reserva.trim(),new Date(),mesRef),[dados,periodo,busca,reserva,mesRef]);
   const totais=useMemo(()=>filtrados.reduce((s,item)=>{const tipo=(item.tipo??"").toLowerCase().trim();if(tipo==="receita")s.receitas+=valorRegistro(item);if(tipo==="despesa")s.despesas+=valorRegistro(item);return s;},{receitas:0,despesas:0}),[filtrados]);
   function baixarPDF() {
     if (carregando || erro || !filtrados.length) return;
@@ -107,7 +110,7 @@ export default function ExportarRelatorioPage(){
       <h1 className="mt-3 text-3xl sm:text-4xl">Exportar financeiro</h1>
       <p className="mt-3 max-w-3xl text-sm leading-7 text-[var(--ern-secundario)]">A exportação recebe os filtros da listagem e inclui a reserva vinculada e as datas de vencimento e liquidação. Os dados respeitam o acesso da sua conta.</p>
       <section className="mt-6 rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-4 sm:p-6"><h2 className="text-lg text-[var(--ern-destaque)]">Filtros da exportação</h2>
-        <div className="mt-4 grid gap-4 md:grid-cols-3"><label className="text-sm">Exibir<select aria-label="Filtro da exportação" className={campo} value={periodo} onChange={e=>setPeriodo(periodoFinanceiroERN(e.target.value))}>{PERIODOS.map(p=><option key={p.valor} value={p.valor}>{p.nome}</option>)}</select></label><label className="text-sm">Buscar lançamento<input aria-label="Busca da exportação" className={campo} value={busca} onChange={e=>setBusca(e.target.value)} placeholder="Descrição, categoria, status ou reserva"/></label><label className="text-sm">ID exato da reserva (opcional)<input aria-label="Reserva da exportação" className={campo} value={reserva} onChange={e=>setReserva(e.target.value)} placeholder="Sem preenchimento: todas"/></label></div>
+        <div className="mt-4 grid gap-4 md:grid-cols-4"><label className="text-sm">Mês de vencimento<select aria-label="Mês da exportação" className={campo} value={mesRef} onChange={e=>setMesRef(e.target.value)}><option value="">Histórico completo</option>{mesRef&&<option value={mesRef}>{rotuloMesERN(mesRef)}</option>}</select></label><label className="text-sm">Exibir<select aria-label="Filtro da exportação" className={campo} value={periodo} onChange={e=>setPeriodo(periodoFinanceiroERN(e.target.value))}>{PERIODOS.map(p=><option key={p.valor} value={p.valor}>{p.nome}</option>)}</select></label><label className="text-sm">Buscar lançamento<input aria-label="Busca da exportação" className={campo} value={busca} onChange={e=>setBusca(e.target.value)} placeholder="Descrição, categoria, status ou reserva"/></label><label className="text-sm">ID exato da reserva (opcional)<input aria-label="Reserva da exportação" className={campo} value={reserva} onChange={e=>setReserva(e.target.value)} placeholder="Sem preenchimento: todas"/></label></div>
         <p className="mt-3 text-xs leading-6 text-[var(--ern-secundario)]">Mês atual usa a data de vencimento no calendário de Manaus. Receitas e despesas lançadas incluem pendências; esses totais não representam recebimentos ou pagamentos realizados.</p>
       </section>
       {erro&&<div role="alert" className="mt-5 rounded-xl border border-red-400/30 p-4 text-sm text-red-200"><p>{erro}</p><button type="button" className={botao+" mt-3"} onClick={()=>setTentativa(t=>t+1)}>Tentar carregar novamente</button></div>}

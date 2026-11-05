@@ -13,6 +13,8 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import GraficosReservas from '@/app/components/GraficosReservas';
+import { SeletorPeriodoMensalERN } from '@/app/components/PeriodoMensalERN';
+import { HISTORICO_ERN, dataNoPeriodoERN, periodoDaURLERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
 import {
   BuscaEDA,
   CabecalhoEDA,
@@ -267,6 +269,10 @@ function ReservasComParametros() {
 function ReservasConteudo({ parametros }: { parametros: string }) {
   const urlOperacional = new URLSearchParams(parametros);
   const alertaOperacional = urlOperacional.get('alerta') ?? '';
+  // ERN_PERIODO_MENSAL_V1: abre no mês atual; alertas do painel usam o próprio intervalo.
+  const [periodo, setPeriodo] = useState<PeriodoMensalERN>(() =>
+    alertaOperacional ? HISTORICO_ERN : periodoDaURLERN(urlOperacional.get('mes'))
+  );
   const inicioOperacional = urlOperacional.get('inicio') ?? '';
   const fimOperacional = urlOperacional.get('fim') ?? '';
 
@@ -416,7 +422,9 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
   }, [sucesso]);
 
   const reservasDoDashboard = useMemo(() => {
-    if (!alertaOperacional) return reservas;
+    if (!alertaOperacional) {
+      return reservas.filter((reserva) => dataNoPeriodoERN(reserva.dataOriginal, periodo));
+    }
     if (!filtroOperacionalValido) return [];
 
     return reservas.filter((reserva) => {
@@ -446,6 +454,7 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
     });
   }, [
     reservas,
+    periodo,
     alertaOperacional,
     inicioOperacional,
     fimOperacional,
@@ -740,6 +749,10 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
             </div>
             <Link href="/reservas" className="eda-pg-bt eda-pg-bt-p">Ver todas as reservas</Link>
           </div>
+        )}
+
+        {!alertaOperacional && (
+          <SeletorPeriodoMensalERN valor={periodo} aoMudar={setPeriodo} rotulo="Período das reservas (data da reserva)" total={reservasDoDashboard.length} />
         )}
 
         <section aria-label="Filtros das reservas" className="eda-pg-filtros">

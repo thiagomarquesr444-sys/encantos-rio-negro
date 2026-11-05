@@ -12,6 +12,8 @@ import Link from 'next/link';
 import { BuscaEDA, CabecalhoEDA, ChipsEDA, PaginaEDA, PainelLateralEDA, PillEDA, VazioEDA, type TomEDA } from '@/app/components/PadraoPaginaEDA';
 import { supabase } from '@/lib/supabase';
 import { useModulosEquipeERN } from '@/app/components/ModulosEquipeERN';
+import { SeletorPeriodoMensalERN } from '@/app/components/PeriodoMensalERN';
+import { HISTORICO_ERN, dataNoPeriodoERN, mesAtualERN, periodoDaURLERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
 import {
   consultarFinanceiroERN,
   filtrarFinanceiroERN,
@@ -33,8 +35,7 @@ const FILTROS: {
   chave: FiltroPeriodoFinanceiroERN;
   label: string;
 }[] = [
-  { chave: 'mes_atual', label: 'Mês atual' },
-  { chave: 'todos', label: 'Histórico' },
+  { chave: 'todos', label: 'Todos' },
   { chave: 'receitas', label: 'Receitas' },
   { chave: 'despesas', label: 'Despesas' },
   { chave: 'pendentes', label: 'Pendentes' },
@@ -206,7 +207,9 @@ export default function FinanceiroPage() {
   const [mensagemSucesso, setMensagemSucesso] = useState<string | null>(null);
 
   const [filtroPeriodo, setFiltroPeriodo] =
-    useState<FiltroPeriodoFinanceiroERN>('mes_atual');
+    useState<FiltroPeriodoFinanceiroERN>('todos');
+  // ERN_PERIODO_MENSAL_V1: abre no mês atual (vencimento); histórico a um clique.
+  const [periodoMes, setPeriodoMes] = useState<PeriodoMensalERN>(mesAtualERN);
   const [busca, setBusca] = useState('');
   const [reservaFiltro, setReservaFiltro] = useState('');
 
@@ -251,10 +254,20 @@ export default function FinanceiroPage() {
     setReservaFiltro(reserva);
 
     if (parametros.has('periodo')) {
-      setFiltroPeriodo(periodoFinanceiroERN(parametros.get('periodo')));
+      const p = periodoFinanceiroERN(parametros.get('periodo'));
+      // Links antigos: "mes_atual" vira o seletor de mês; "todos" = histórico.
+      if (p === 'mes_atual') {
+        setFiltroPeriodo('todos');
+        setPeriodoMes(mesAtualERN());
+      } else {
+        setFiltroPeriodo(p);
+        if (!parametros.has('mes')) setPeriodoMes(HISTORICO_ERN);
+      }
     } else if (reserva) {
       setFiltroPeriodo('todos');
     }
+    if (parametros.has('mes')) setPeriodoMes(periodoDaURLERN(parametros.get('mes')));
+    else if (reserva) setPeriodoMes(HISTORICO_ERN);
 
     setBusca(parametros.get('busca') ?? '');
     void carregarFinanceiro();
@@ -270,13 +283,18 @@ export default function FinanceiroPage() {
     return () => window.clearTimeout(timer);
   }, [mensagemSucesso]);
 
+  const lancamentosDoPeriodo = useMemo(
+    () => lancamentos.filter((item) => dataNoPeriodoERN(item.data_vencimento, periodoMes)),
+    [lancamentos, periodoMes]
+  );
+
   const financeiro = useMemo(() => {
     let recebido = 0;
     let pago = 0;
     let receber = 0;
     let pagar = 0;
 
-    for (const item of lancamentos) {
+    for (const item of lancamentosDoPeriodo) {
       const tipo = obterTipo(item);
       const status = statusFinanceiroERN(item);
       const valor = obterValor(item);
@@ -296,17 +314,18 @@ export default function FinanceiroPage() {
   const lancamentosFiltrados = useMemo(
     () =>
       filtrarFinanceiroERN(
-        lancamentos,
+        lancamentosDoPeriodo,
         filtroPeriodo,
         busca,
         reservaFiltro
       ),
-    [lancamentos, filtroPeriodo, busca, reservaFiltro]
+    [lancamentosDoPeriodo, filtroPeriodo, busca, reservaFiltro]
   );
 
   const parametrosExportacao = new URLSearchParams({
     periodo: filtroPeriodo,
     busca,
+    mes: periodoMes,
   });
 
   if (reservaFiltro) {
@@ -536,6 +555,7 @@ export default function FinanceiroPage() {
             onClick={() => {
               setReservaFiltro(item.reserva_id!);
               setFiltroPeriodo('todos');
+              setPeriodoMes(HISTORICO_ERN);
               setBusca('');
             }}
           >
@@ -639,6 +659,7 @@ export default function FinanceiroPage() {
 
         <section aria-label="Filtros dos lançamentos" className="eda-pg-filtros">
           <BuscaEDA id="ern-busca-financeiro" rotulo="Buscar lançamento" valor={busca} aoMudar={setBusca} placeholder="Descrição, categoria ou reserva" />
+          <SeletorPeriodoMensalERN valor={periodoMes} aoMudar={setPeriodoMes} rotulo="Mês de vencimento" total={lancamentosDoPeriodo.length} />
           <ChipsEDA rotulo="Filtrar lançamentos" opcoes={filtrosChips} valor={filtroPeriodo} aoMudar={setFiltroPeriodo} />
         </section>
 
@@ -665,7 +686,7 @@ export default function FinanceiroPage() {
               <VazioEDA
                 titulo="Nenhum lançamento encontrado"
                 texto="Ajuste o filtro ou a busca para ver outros lançamentos."
-                acao={<button type="button" className="eda-pg-bt" onClick={() => { setBusca(''); setFiltroPeriodo('todos'); setReservaFiltro(''); }}>Ver todos</button>}
+                acao={<button type="button" className="eda-pg-bt" onClick={() => { setBusca(''); setFiltroPeriodo('todos'); setReservaFiltro(''); setPeriodoMes(HISTORICO_ERN); }}>Ver todos</button>}
               />
             )
           ) : (
