@@ -17,6 +17,8 @@ import { carregarChegadaDaReserva, textoChegadaVoucher, textoTransferVoucher } f
 import { consultarIdentificacaoEmpresaERN } from '@/lib/identificacaoEmpresaERN';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { reservaOperacionalERN } from '@/lib/reservasStatusERN';
+import { SeletorPeriodoMensalERN, SeloExpiracaoERN } from '@/app/components/PeriodoMensalERN';
+import { HISTORICO_ERN, dataNoPeriodoERN, mesAtualERN, periodoDaURLERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
 
 type StatusVoucher = 'Ativo' | 'Utilizado' | 'Cancelado';
 type StatusExibido = StatusVoucher | 'Desconhecido';
@@ -137,6 +139,13 @@ function formatarEmissao(valor: string | null): string {
     dateStyle: 'short',
     timeStyle: 'short',
   }).format(data);
+}
+
+// ERN_PERIODO_MENSAL_V1: data de expiração com selo (válido / expira em breve / expirado).
+function validadeVisual(item: Voucher) {
+  if (!item.validade) return <SeloExpiracaoERN data={null} semData="Sem validade" />;
+  if (obterStatus(item.status) !== 'Ativo') return formatarData(item.validade);
+  return <SeloExpiracaoERN data={apenasData(item.validade)} rotulo="Expira" />;
 }
 
 function expirado(item: Voucher, hoje: string): boolean {
@@ -408,6 +417,8 @@ export default function VouchersPage() {
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState<FiltroStatus>('');
   const [reservaFiltro, setReservaFiltro] = useState('');
+  // ERN_PERIODO_MENSAL_V1: abre no mês atual; histórico a um clique.
+  const [periodo, setPeriodo] = useState<PeriodoMensalERN>(mesAtualERN);
   const [hoje, setHoje] = useState(hojeManaus);
 
   const [modal, setModal] = useState<ModalAberto>(null);
@@ -489,7 +500,10 @@ export default function VouchersPage() {
 
   useEffect(() => {
     const parametros = new URLSearchParams(window.location.search);
-    setReservaFiltro(parametros.get('reserva_id') ?? '');
+    const reservaURL = parametros.get('reserva_id') ?? '';
+    setReservaFiltro(reservaURL);
+    // Vindo de uma reserva, mostra todos os vouchers dela (histórico).
+    setPeriodo(reservaURL && !parametros.has('mes') ? HISTORICO_ERN : periodoDaURLERN(parametros.get('mes')));
     void carregar();
 
     return () => {
@@ -540,7 +554,13 @@ export default function VouchersPage() {
     );
   }
 
+  const vouchersDoPeriodo = useMemo(
+    () => vouchers.filter((item) => dataNoPeriodoERN(item.data_emissao || item.created_at, periodo)),
+    [vouchers, periodo]
+  );
+
   const metricas = useMemo(() => {
+    const vouchers = vouchersDoPeriodo;
     const ativos = vouchers.filter((item) => obterStatus(item.status) === 'Ativo');
     const valores = ativos.map((item) => valorDoBanco(item.valor));
 
@@ -555,9 +575,9 @@ export default function VouchersPage() {
         ? null
         : valores.reduce<number>((total, valor) => total + (valor ?? 0), 0),
     };
-  }, [vouchers, hoje]);
+  }, [vouchersDoPeriodo, hoje]);
 
-  const filtrados = vouchers.filter((item) => {
+  const filtrados = vouchersDoPeriodo.filter((item) => {
     if (reservaFiltro && item.reserva_id !== reservaFiltro) return false;
 
     const status = obterStatus(item.status);
@@ -1050,6 +1070,10 @@ export default function VouchersPage() {
           </div>
         )}
 
+        <div className="mt-6">
+          <SeletorPeriodoMensalERN valor={periodo} aoMudar={setPeriodo} rotulo="Período de emissão dos vouchers" total={vouchersDoPeriodo.length} />
+        </div>
+
         <section aria-label="Filtros de vouchers" className="ern-vouchers-filtros mt-6 grid gap-4 rounded-2xl border border-white/10 bg-[#151A1B] p-4 sm:grid-cols-[1fr_220px]">
           <div className="min-w-0">
             <label htmlFor="voucher-busca" className={labelClass}>Buscar</label>
@@ -1107,7 +1131,7 @@ export default function VouchersPage() {
                     <p className="mt-2 break-words text-sm text-[#C5D4CA]">{nomePasseio(item)}</p>
                     <dl className="mt-4 grid grid-cols-2 gap-4 text-sm">
                       <div><dt className="text-[#B4C8BB]">Valor</dt><dd className="mt-1">{moeda(valorDoBanco(item.valor))}</dd></div>
-                      <div><dt className="text-[#B4C8BB]">Validade</dt><dd className="mt-1">{formatarData(item.validade)}</dd></div>
+                      <div><dt className="text-[#B4C8BB]">Validade</dt><dd className="mt-1">{validadeVisual(item)}</dd></div>
                       <div><dt className="text-[#B4C8BB]">Data do passeio</dt><dd className="mt-1">{formatarData(item.data_passeio)}</dd></div>
                       <div><dt className="text-[#B4C8BB]">Pessoas</dt><dd className="mt-1">{item.quantidade_pessoas ?? 'Não informado'}</dd></div>
                     </dl>
@@ -1135,7 +1159,7 @@ export default function VouchersPage() {
                           <p className="mt-2 break-words text-[#B4C8BB]">{nomePasseio(item)}</p>
                           {vinculo(item)}
                         </td>
-                        <td className="px-4 py-4">{formatarData(item.validade)}</td>
+                        <td className="px-4 py-4">{validadeVisual(item)}</td>
                         <td className="whitespace-nowrap px-4 py-4 font-semibold tabular-nums">{moeda(valorDoBanco(item.valor))}</td>
                         <td className="px-4 py-4">{etiqueta(item)}</td>
                         <td className="min-w-[240px] px-4 py-4">{acoes(item)}</td>

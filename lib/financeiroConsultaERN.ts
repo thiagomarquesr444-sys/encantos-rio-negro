@@ -15,7 +15,8 @@ export function statusFinanceiroERN(item: RegistroFinanceiroERN): "Recebido" | "
   const status = normalizar(item.status !== undefined ? item.status ?? "" : item.Status ?? "");
   return normalizar(item.tipo ?? "") === "despesa" ? status === "pago" ? "Pago" : "Pendente" : status === "recebido" ? "Recebido" : "Pendente";
 }
-export function filtrarFinanceiroERN<T extends RegistroFinanceiroERN>(dados: T[], periodo: FiltroPeriodoFinanceiroERN, busca: string, reserva: string, agora = new Date()): T[] {
+// ERN_PERIODO_MENSAL_V1: "mes" (AAAA-MM) restringe pelo mês de vencimento; "historico" ou vazio = todos.
+export function filtrarFinanceiroERN<T extends RegistroFinanceiroERN>(dados: T[], periodo: FiltroPeriodoFinanceiroERN, busca: string, reserva: string, agora = new Date(), mesRef?: string): T[] {
   const partes = new Intl.DateTimeFormat("en-CA",{timeZone:"America/Manaus",year:"numeric",month:"2-digit"}).formatToParts(agora);
   const mes = `${partes.find(p=>p.type==="year")?.value}-${partes.find(p=>p.type==="month")?.value}`;
   const termo = normalizar(busca);
@@ -24,6 +25,7 @@ export function filtrarFinanceiroERN<T extends RegistroFinanceiroERN>(dados: T[]
     const tipo = normalizar(item.tipo ?? "");
     const status = statusFinanceiroERN(item);
     if(periodo === "mes_atual" && item.data_vencimento?.slice(0,7) !== mes) return false;
+    if(mesRef && /^\d{4}-\d{2}$/.test(mesRef) && item.data_vencimento?.slice(0,7) !== mesRef) return false;
     if(periodo === "receitas" && tipo !== "receita") return false;
     if(periodo === "despesas" && tipo !== "despesa") return false;
     if(periodo === "pendentes" && status !== "Pendente") return false;

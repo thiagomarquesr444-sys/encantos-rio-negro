@@ -1,0 +1,115 @@
+/* ERN_PERIODO_MENSAL_V1 — usa os tokens do padrão EDA quando existem, com
+   valores de reserva para páginas que ainda não usam .eda-pg. */
+.ern-periodo {
+  --rp-borda: var(--p-borda, rgba(148, 163, 184, 0.28));
+  --rp-painel: var(--p-painel, rgba(15, 23, 20, 0.55));
+  --rp-suave: var(--p-suave, rgba(148, 163, 184, 0.14));
+  --rp-texto: var(--p-texto, currentColor);
+  --rp-sec: var(--p-sec, rgba(203, 213, 225, 0.85));
+  --rp-ouro: var(--p-ouro, #d4a64a);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+.ern-periodo-mes {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  border: 1px solid var(--rp-borda);
+  border-radius: 999px;
+  background: var(--rp-painel);
+  overflow: hidden;
+}
+.ern-periodo-seta {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  background: transparent;
+  color: var(--rp-texto);
+  font: inherit;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+.ern-periodo-seta:hover { background: var(--rp-suave); }
+.ern-periodo-rotulo {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  min-width: 150px;
+  justify-content: center;
+  cursor: pointer;
+}
+.ern-periodo-rotulo b {
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--rp-texto);
+  white-space: nowrap;
+  pointer-events: none;
+}
+.ern-periodo-rotulo input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  border: 0;
+}
+.ern-periodo-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 13px;
+  border-radius: 999px;
+  border: 1px solid var(--rp-borda);
+  background: var(--rp-painel);
+  color: var(--rp-sec);
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 550;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.ern-periodo-chip[aria-pressed="true"] {
+  color: var(--rp-texto);
+  border-color: transparent;
+  background: var(--rp-suave);
+  box-shadow: inset 0 0 0 1px var(--rp-ouro);
+}
+.ern-periodo :is(button, input):focus-visible {
+  outline: 2px solid var(--rp-ouro);
+  outline-offset: 2px;
+}
+.ern-periodo-total { font-size: 12px; color: var(--rp-sec); padding: 0 4px; }
+
+.ern-expira {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  border-radius: 999px;
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  border: 1px solid transparent;
+}
+.ern-expira-ok { color: #4ade80; background: rgba(34, 197, 94, 0.12); border-color: rgba(34, 197, 94, 0.3); }
+.ern-expira-at { color: #fbbf24; background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.32); }
+.ern-expira-er { color: #f87171; background: rgba(239, 68, 68, 0.12); border-color: rgba(239, 68, 68, 0.32); }
+.ern-expira-nt { color: var(--p-sec, rgba(148, 163, 184, 0.9)); background: rgba(148, 163, 184, 0.1); }
+
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .ern-periodo {
+  --rp-borda: var(--p-borda, rgba(15, 23, 42, 0.16));
+  --rp-painel: var(--p-painel, #ffffff);
+  --rp-suave: var(--p-suave, rgba(15, 23, 42, 0.06));
+  --rp-sec: var(--p-sec, #475569);
+}
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .ern-expira-ok { color: #15803d; }
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .ern-expira-at { color: #b45309; }
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .ern-expira-er { color: #b91c1c; }
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .ern-expira-nt { color: #64748b; }
+.eda-pg-miolo > .ern-periodo { margin-top: 22px; }

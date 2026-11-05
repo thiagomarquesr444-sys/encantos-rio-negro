@@ -9,6 +9,8 @@ import {
 } from 'react';
 import Link from 'next/link';
 import DemandasInsightsPremium from '@/app/components/DemandasInsightsPremium';
+import { SeletorPeriodoMensalERN, SeloExpiracaoERN } from '@/app/components/PeriodoMensalERN';
+import { HISTORICO_ERN, limitesMesERN, mesAtualERN, mesValidoERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
@@ -150,16 +152,36 @@ function detalheEstimativa(
   return null;
 }
 
+// ERN_PERIODO_MENSAL_V1: demandas em andamento mostram a data de expiração (fim).
+function expiracaoDemanda(demanda: Demanda) {
+  if (demanda.status !== 'aberta' && demanda.status !== 'rascunho') return null;
+  if (!demanda.data_fim) return null;
+  return <SeloExpiracaoERN data={demanda.data_fim} rotulo="Expira" />;
+}
+
 // ERN_DEMANDAS_FILTRO_DASHBOARD
 function consultaDaURL(parametros: string): Consulta {
   const url = new URLSearchParams(parametros);
   const status = url.get('status') ?? '';
+  const inicio = url.get('inicio') || undefined;
+  const fim = url.get('fim') || undefined;
+  const mes = url.get('mes');
+
+  // ERN_PERIODO_MENSAL_V1: sem período na URL, abre no mês atual. Atalhos do
+  // painel (status/início/fim) mantêm o comportamento anterior.
+  let periodo: { data_inicio_de?: string; data_inicio_ate?: string } = {
+    data_inicio_de: inicio,
+    data_inicio_ate: fim,
+  };
+  if (!inicio && !fim && mes !== HISTORICO_ERN && (mesValidoERN(mes) || !status)) {
+    const { inicio: i, fim: f } = limitesMesERN(mesValidoERN(mes) ? mes : mesAtualERN());
+    periodo = { data_inicio_de: i, data_inicio_ate: f };
+  }
 
   return {
     ...CONSULTA_INICIAL,
     status: ehStatusDemanda(status) ? status : '',
-    data_inicio_de: url.get('inicio') || undefined,
-    data_inicio_ate: url.get('fim') || undefined,
+    ...periodo,
   };
 }
 
@@ -422,6 +444,28 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
     estado.contexto
       .pode_gerenciar;
 
+  // ERN_PERIODO_MENSAL_V1: período atual da consulta (mês, histórico ou do painel).
+  const periodoAtual: PeriodoMensalERN = (() => {
+    const de = consulta.data_inicio_de;
+    const ate = consulta.data_inicio_ate;
+    if (!de && !ate) return HISTORICO_ERN;
+    const mes = de?.slice(0, 7) ?? '';
+    if (mesValidoERN(mes)) {
+      const limites = limitesMesERN(mes);
+      if (de === limites.inicio && ate === limites.fim) return mes;
+    }
+    return 'personalizado';
+  })();
+
+  function mudarPeriodo(proximo: PeriodoMensalERN) {
+    if (mesValidoERN(proximo)) {
+      const { inicio, fim } = limitesMesERN(proximo);
+      alterarConsulta({ ...consulta, data_inicio_de: inicio, data_inicio_ate: fim, pagina: 0 });
+    } else {
+      alterarConsulta({ ...consulta, data_inicio_de: undefined, data_inicio_ate: undefined, pagina: 0 });
+    }
+  }
+
   const temFiltros =
     consulta.busca !== '' ||
     consulta.categoria !== '' ||
@@ -455,7 +499,9 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
           </>}
         />
 
-        {(consulta.data_inicio_de || consulta.data_inicio_ate) && (
+        <SeletorPeriodoMensalERN valor={periodoAtual} aoMudar={mudarPeriodo} rotulo="Período de início das demandas" />
+
+        {periodoAtual === 'personalizado' && (
           <div className="eda-pg-aviso eda-pg-aviso-ouro">
             <div>
               <b>Filtro do painel: início da demanda</b>
@@ -548,6 +594,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
                       <span className="eda-pg-cartao-info">
                         <span>{formatadorQuantidade.format(demanda.quantidade)} {demanda.unidade}</span>
                         <span>{demanda.data_inicio && demanda.data_fim ? `${formatarData(demanda.data_inicio)} a ${formatarData(demanda.data_fim)}` : 'Período não informado'}</span>
+                        {expiracaoDemanda(demanda)}
                       </span>
                     </button>
                   ))}
@@ -575,6 +622,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
                           <td style={{ whiteSpace: 'nowrap' }}>
                             {demanda.data_inicio ? formatarData(demanda.data_inicio) : '—'}
                             {demanda.data_fim && <small>até {formatarData(demanda.data_fim)}</small>}
+                            {expiracaoDemanda(demanda) && <div style={{ marginTop: 4 }}>{expiracaoDemanda(demanda)}</div>}
                           </td>
                           <td className="eda-pg-num">{formatadorQuantidade.format(demanda.quantidade)} {demanda.unidade}</td>
                           <td><PillEDA tom={TOM_STATUS[demanda.status]}>{STATUS_DEMANDA[demanda.status]}</PillEDA></td>
@@ -659,7 +707,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
             <p className="eda-pg-bloco-titulo">Detalhes</p>
             <dl className="eda-pg-dados">
               <DadoEDA rotulo="Início">{formatarData(aberta.data_inicio)}</DadoEDA>
-              <DadoEDA rotulo="Fim">{formatarData(aberta.data_fim)}</DadoEDA>
+              <DadoEDA rotulo="Fim / expiração">{formatarData(aberta.data_fim)}{expiracaoDemanda(aberta) && <> {expiracaoDemanda(aberta)}</>}</DadoEDA>
               <DadoEDA rotulo="Localidade" largo>{aberta.localidade}</DadoEDA>
               <DadoEDA rotulo="Descrição" largo>{aberta.descricao || 'Sem descrição adicional.'}</DadoEDA>
             </dl>
