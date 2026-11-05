@@ -7,8 +7,6 @@ import './guias-premium.css';
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { SeletorPeriodoMensalERN } from '@/app/components/PeriodoMensalERN';
-import { dataNoPeriodoERN, mesAtualERN, periodoDaURLERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
 import {
   obterContextoGuias,
   validarContextoGuias,
@@ -395,15 +393,10 @@ export default function GuiasPage() {
     (guia) => normalizarStatus(guia.status) === 'Inativo'
   ).length;
 
-  // ERN_PERIODO_MENSAL_V1: abre nos cadastros do mês atual; a busca procura em todo o histórico.
-  const [periodo, setPeriodo] = useState<PeriodoMensalERN>(mesAtualERN);
-  useEffect(() => { setPeriodo(periodoDaURLERN(new URLSearchParams(window.location.search).get('mes'))); }, []);
-
   const guiasFiltrados = useMemo(() => {
     const termo = removerAcentos(busca.trim().toLowerCase());
 
     return guias.filter((guia) => {
-      if (!termo && !dataNoPeriodoERN(guia.created_at, periodo)) return false;
       const campos = [
         guia.nome,
         guia.cpf,
@@ -426,7 +419,7 @@ export default function GuiasPage() {
 
       return atendeBusca && atendeStatus;
     });
-  }, [periodo, guias, busca, filtroStatus]);
+  }, [guias, busca, filtroStatus]);
 
   function alternarStatus(status: StatusGuia) {
     setFiltroStatus((atual) =>
@@ -502,7 +495,6 @@ export default function GuiasPage() {
               registros CADASTUR e disponibilidade da equipe
               da sua operadora.
             </p>
-            <div className="mt-3"><SeletorPeriodoMensalERN valor={periodo} aoMudar={setPeriodo} rotulo="Período de cadastro" total={guias.filter((x) => dataNoPeriodoERN(x.created_at, periodo)).length} /></div>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">

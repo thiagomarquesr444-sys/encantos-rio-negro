@@ -6,8 +6,6 @@ import '@/app/components/padrao-formularios-eda.css';
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { SeletorPeriodoMensalERN } from '@/app/components/PeriodoMensalERN';
-import { dataNoPeriodoERN, mesAtualERN, periodoDaURLERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
 
 interface Parceiro {
   id: string;
@@ -272,15 +270,10 @@ export default function ParceirosPage() {
     };
   }, [parceiros]);
 
-  // ERN_PERIODO_MENSAL_V1: abre nos cadastros do mês atual; a busca procura em todo o histórico.
-  const [periodo, setPeriodo] = useState<PeriodoMensalERN>(mesAtualERN);
-  useEffect(() => { setPeriodo(periodoDaURLERN(new URLSearchParams(window.location.search).get('mes'))); }, []);
-
   const parceirosFiltrados = useMemo(() => {
     const termo = normalizarTexto(busca);
 
     return parceiros.filter((parceiro) => {
-      if (!termo && !dataNoPeriodoERN(parceiro.created_at, periodo)) return false;
       const atendeBusca =
         !termo ||
         normalizarTexto(parceiro.nome).includes(termo) ||
@@ -301,7 +294,7 @@ export default function ParceirosPage() {
 
       return atendeBusca && atendeTipo && atendeStatus;
     });
-  }, [periodo, parceiros, busca, filtroTipo, filtroStatus]);
+  }, [parceiros, busca, filtroTipo, filtroStatus]);
 
   async function salvarEdicao(event: React.FormEvent) {
     event.preventDefault();
@@ -464,7 +457,6 @@ export default function ParceirosPage() {
               Organize parceiros, prestadores e fornecedores que participam
               da operação da sua empresa.
             </p>
-            <div className="mt-3"><SeletorPeriodoMensalERN valor={periodo} aoMudar={setPeriodo} rotulo="Período de cadastro" total={parceiros.filter((x) => dataNoPeriodoERN(x.created_at, periodo)).length} /></div>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">

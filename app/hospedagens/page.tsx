@@ -15,8 +15,6 @@ import React, {
 import Link from 'next/link';
 
 import { supabase } from '@/lib/supabase';
-import { SeletorPeriodoMensalERN } from '@/app/components/PeriodoMensalERN';
-import { dataNoPeriodoERN, mesAtualERN, periodoDaURLERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
 
 type StatusHospedagem =
   | 'Disponível'
@@ -696,10 +694,6 @@ export default function HospedagensPage() {
     ============================================================
   */
 
-  // ERN_PERIODO_MENSAL_V1: abre nos cadastros do mês atual; a busca procura em todo o histórico.
-  const [periodo, setPeriodo] = useState<PeriodoMensalERN>(mesAtualERN);
-  useEffect(() => { setPeriodo(periodoDaURLERN(new URLSearchParams(window.location.search).get('mes'))); }, []);
-
   const hospedagensFiltradas =
     useMemo(() => {
       const termo = busca
@@ -708,7 +702,6 @@ export default function HospedagensPage() {
 
       return hospedagens.filter(
         (hospedagem) => {
-      if (!termo && !dataNoPeriodoERN(hospedagem.created_at, periodo)) return false;
           const nome =
             obterNome(
               hospedagem
@@ -777,7 +770,7 @@ export default function HospedagensPage() {
           );
         }
       );
-    }, [periodo, 
+    }, [
       hospedagens,
       busca,
       filtroStatus,
@@ -950,7 +943,6 @@ export default function HospedagensPage() {
               outras unidades ligadas
               à operação turística.
             </p>
-            <div className="mt-3"><SeletorPeriodoMensalERN valor={periodo} aoMudar={setPeriodo} rotulo="Período de cadastro" total={hospedagens.filter((x) => dataNoPeriodoERN(x.created_at, periodo)).length} /></div>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">

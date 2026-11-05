@@ -4,8 +4,6 @@ import './clientes-premium.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { SeletorPeriodoMensalERN } from '@/app/components/PeriodoMensalERN';
-import { dataNoPeriodoERN, mesAtualERN, periodoDaURLERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
 import {
   BuscaEDA,
   CabecalhoEDA,
@@ -192,15 +190,10 @@ export default function ClientesPage() {
     return () => { ativo = false; };
   }, [tentativa]);
 
-  // ERN_PERIODO_MENSAL_V1: abre nos cadastros do mês atual; a busca procura em todo o histórico.
-  const [periodo, setPeriodo] = useState<PeriodoMensalERN>(mesAtualERN);
-  useEffect(() => { setPeriodo(periodoDaURLERN(new URLSearchParams(window.location.search).get('mes'))); }, []);
-
   const filtrados = useMemo(() => {
     const termo = normalizar(busca);
 
     return clientes.filter((cliente) => {
-      if (!termo && !dataNoPeriodoERN(cliente.created_at, periodo)) return false;
       if (situacao && situacaoCliente(cliente) !== situacao) {
         return false;
       }
@@ -215,7 +208,7 @@ export default function ClientesPage() {
         situacaoCliente(cliente),
       ].filter(Boolean).join(' ')).includes(termo);
     });
-  }, [periodo, clientes, busca, situacao]);
+  }, [clientes, busca, situacao]);
 
   const ativos = clientes.filter(
     (item) => situacaoCliente(item) === 'Ativo',
@@ -341,8 +334,6 @@ export default function ClientesPage() {
             </button>
           </div>
         )}
-
-        <SeletorPeriodoMensalERN valor={periodo} aoMudar={setPeriodo} rotulo="Período de cadastro" total={clientes.filter((x) => dataNoPeriodoERN(x.created_at, periodo)).length} />
 
         <section aria-label="Filtros dos clientes" className="eda-pg-filtros">
           <BuscaEDA id="cliente-busca" rotulo="Buscar cliente" valor={busca} aoMudar={setBusca} placeholder="Nome, documento, telefone, e-mail ou cidade" />
