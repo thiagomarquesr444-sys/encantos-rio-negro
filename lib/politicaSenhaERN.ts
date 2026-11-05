@@ -19,3 +19,43 @@ export function validarSenhaERN(senha: string): string | null {
   if (requisitosSenhaERN(senha).some(r => !r.ok)) return MENSAGEM_SENHA_ERN;
   return null;
 }
+
+// ERN_SENHA_VAZADA_V1: consulta Have I Been Pwned por k-anonimato.
+// Só os 5 primeiros caracteres do hash SHA-1 saem do navegador; a senha
+// nunca é enviada. Falha de rede não bloqueia (retorna null).
+export async function senhaVazadaERN(senha: string): Promise<boolean | null> {
+  try {
+    if (!globalThis.crypto?.subtle) return null;
+    const bytes = new TextEncoder().encode(senha);
+    const hash = Array.from(new Uint8Array(await crypto.subtle.digest('SHA-1', bytes)))
+      .map((b) => b.toString(16).padStart(2, '0')).join('').toUpperCase();
+    const prefixo = hash.slice(0, 5);
+    const sufixo = hash.slice(5);
+    const controle = new AbortController();
+    const tempo = setTimeout(() => controle.abort(), 5000);
+    const resposta = await fetch(`https://api.pwnedpasswords.com/range/${prefixo}`, {
+      headers: { 'Add-Padding': 'true' },
+      signal: controle.signal,
+      cache: 'no-store',
+      referrerPolicy: 'no-referrer',
+    }).finally(() => clearTimeout(tempo));
+    if (!resposta.ok) return null;
+    const texto = await resposta.text();
+    return texto.split('\n').some((linha) => {
+      const [suf, qtd] = linha.trim().split(':');
+      return suf === sufixo && Number(qtd) > 0;
+    });
+  } catch {
+    return null;
+  }
+}
+
+export const MENSAGEM_SENHA_VAZADA_ERN =
+  'Esta senha já apareceu em vazamentos de dados na internet. Escolha outra senha, exclusiva para a EDA.';
+
+/** Política completa + verificação de vazamento. */
+export async function validarSenhaCompletaERN(senha: string): Promise<string | null> {
+  const basico = validarSenhaERN(senha);
+  if (basico) return basico;
+  return (await senhaVazadaERN(senha)) === true ? MENSAGEM_SENHA_VAZADA_ERN : null;
+}

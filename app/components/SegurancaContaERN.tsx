@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { supabase } from '@/lib/supabase';
+import { validarSenhaCompletaERN } from '@/lib/politicaSenhaERN';
 
 type Conta = {
   id: string;
@@ -94,13 +95,14 @@ export default function SegurancaContaERN() {
 
     if (trava.current || !conta) return;
 
-    if (senha.length < 8 || senha !== confirmacao) {
+    // ERN_SENHA_VAZADA_V1: mesma política do cadastro (12+ com símbolo) e checagem de vazamento.
+    trava.current = true;
+    const erroPolitica = await validarSenhaCompletaERN(senha);
+    trava.current = false;
+    if (erroPolitica || senha !== confirmacao) {
       setFeedback({
         tipo: 'erro',
-        texto:
-          senha.length < 8
-            ? 'Use pelo menos 8 caracteres.'
-            : 'As senhas não coincidem.',
+        texto: erroPolitica ?? 'As senhas não coincidem.',
       });
       return;
     }
@@ -226,7 +228,7 @@ export default function SegurancaContaERN() {
                 autoComplete="new-password"
                 autoCapitalize="none"
                 spellCheck={false}
-                minLength={8}
+                minLength={12}
                 required
                 value={senha}
                 onChange={(event) => {
@@ -247,7 +249,7 @@ export default function SegurancaContaERN() {
                 autoComplete="new-password"
                 autoCapitalize="none"
                 spellCheck={false}
-                minLength={8}
+                minLength={12}
                 required
                 value={confirmacao}
                 onChange={(event) => {
@@ -260,9 +262,7 @@ export default function SegurancaContaERN() {
           </fieldset>
 
           <p id="ern-ajuda-senha" className="text-xs leading-6">
-            Use pelo menos 8 caracteres. Prefira uma senha longa e exclusiva
-            para a EDA.
-          </p>
+            Use pelo menos 12 caracteres, com letra maiúscula, minúscula, número e símbolo. Senhas que já vazaram na internet são recusadas.</p>
 
           <div className="flex flex-col gap-3 sm:flex-row">
             <button

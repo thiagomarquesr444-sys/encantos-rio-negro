@@ -10,7 +10,7 @@ import Link from 'next/link';
 
 import AcessoPremiumERN from '@/app/components/AcessoPremiumERN';
 import RequisitosSenhaERN from '@/app/components/RequisitosSenhaERN';
-import { validarSenhaERN } from '@/lib/politicaSenhaERN';
+import { validarSenhaCompletaERN } from '@/lib/politicaSenhaERN';
 import { supabase } from '@/lib/supabase';
 
 interface ContaSenha {
@@ -126,7 +126,9 @@ export default function NovaSenhaPage() {
 
     setErro('');
 
-    const erroSenha = validarSenhaERN(senha);
+    ocupado.current = true;
+    const erroSenha = await validarSenhaCompletaERN(senha);
+    ocupado.current = false;
     if (erroSenha) {
       setErro(erroSenha);
       return;

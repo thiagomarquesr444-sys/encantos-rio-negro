@@ -20,7 +20,8 @@ const captchaSitekey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY?.trim() ?? '';
 import AcessoPremiumERN from '@/app/components/AcessoPremiumERN';
 import AvisoPrivacidadeAcessoERN from '@/app/components/AvisoPrivacidadeAcessoERN';
 import RequisitosSenhaERN from '@/app/components/RequisitosSenhaERN';
-import { validarSenhaERN } from '@/lib/politicaSenhaERN';
+import BotaoGoogleERN from '@/app/components/BotaoGoogleERN';
+import { validarSenhaCompletaERN } from '@/lib/politicaSenhaERN';
 import { supabase } from '@/lib/supabase';
 import {
   interpretarTipoAcesso,
@@ -428,6 +429,43 @@ function FormularioLogin() {
     }
   }
 
+  // ERN_GOOGLE_GIS_V1: com o Client ID configurado, usa o botão oficial do
+  // Google (mostra o site da EDA, não *.supabase.co). Sem ele, ou se o script
+  // do Google não carregar, volta ao fluxo anterior por redirecionamento.
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID?.trim() ?? '';
+  const [gisFalhou, setGisFalhou] = useState(false);
+  const usarBotaoOficialGoogle = Boolean(googleClientId) && !gisFalhou;
+
+  async function entrarComGoogleIdToken(token: string, nonce: string) {
+    if (!googleDisponivel || emProcessamento.current || redirecionando) return;
+    setErro('');
+    setSucesso('');
+    emProcessamento.current = true;
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token,
+        nonce,
+      });
+      if (error || !data.session) {
+        setErro(
+          error
+            ? mensagemDoErro(error, 'Não foi possível continuar com o Google. Tente novamente.')
+            : 'Não foi possível iniciar a sessão. Tente novamente.',
+        );
+        return;
+      }
+      await validarEContinuar(data.session.user.id);
+    } catch {
+      setRedirecionando(false);
+      setErro('Não foi possível continuar com o Google. Confira sua conexão e tente novamente.');
+    } finally {
+      emProcessamento.current = false;
+      setLoading(false);
+    }
+  }
+
   async function entrarComGoogle() {
     if (
       !googleDisponivel ||
@@ -521,7 +559,12 @@ function FormularioLogin() {
     }
 
     if (modo === 'cadastro') {
-      const erroSenha = validarSenhaERN(senha);
+      // Trava contra clique duplo enquanto a checagem de vazamento consulta a rede.
+      emProcessamento.current = true;
+      setLoading(true);
+      const erroSenha = await validarSenhaCompletaERN(senha);
+      emProcessamento.current = false;
+      setLoading(false);
       if (erroSenha) {
         setErro(erroSenha);
         return;
@@ -853,6 +896,15 @@ function FormularioLogin() {
 
           {googleDisponivel && (
             <div className="ern-acesso-google mt-6">
+              {usarBotaoOficialGoogle ? (
+                <BotaoGoogleERN
+                  clientId={googleClientId}
+                  texto={modo === 'cadastro' ? 'signup_with' : 'continue_with'}
+                  desabilitado={bloqueado}
+                  aoCredencial={(token, nonce) => void entrarComGoogleIdToken(token, nonce)}
+                  aoFalhar={() => setGisFalhou(true)}
+                />
+              ) : (
               <button
                 type="button"
                 disabled={
@@ -896,6 +948,7 @@ function FormularioLogin() {
                   {textoGoogle}
                 </span>
               </button>
+              )}
 
               <div
                 aria-hidden="true"
