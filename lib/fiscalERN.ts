@@ -145,3 +145,89 @@ export function pendenciasEmitenteERN(e: EmitenteFiscalERN | null): string[] {
   if (e.codigo_municipio_ibge.replace(/\D/g, '').length !== 7) p.push('Código IBGE do município');
   return p;
 }
+
+// ERN_FISCAL_REGIME_ISS_V1: estimativa de tributos por nota (sem validade fiscal).
+export type RegimeTributarioERN = '' | 'mei' | 'simples_nacional' | 'lucro_presumido' | 'lucro_real';
+
+export const REGIMES_TRIBUTARIOS_ERN: { valor: RegimeTributarioERN; rotulo: string }[] = [
+  { valor: '', rotulo: 'Não informado' },
+  { valor: 'mei', rotulo: 'MEI' },
+  { valor: 'simples_nacional', rotulo: 'Simples Nacional' },
+  { valor: 'lucro_presumido', rotulo: 'Lucro Presumido' },
+  { valor: 'lucro_real', rotulo: 'Lucro Real' },
+];
+
+export function regimeTributarioValidoERN(v: unknown): v is RegimeTributarioERN {
+  return REGIMES_TRIBUTARIOS_ERN.some((r) => r.valor === v);
+}
+
+export type ParametrosTributariosERN = {
+  regime: RegimeTributarioERN;
+  aliquotaIss: number | null;
+  aliquotaSimples: number | null;
+};
+
+export type EstimativaTributosERN = {
+  linhas: { nome: string; aliquota: number; valor: number }[];
+  total: number;
+  informativos: { nome: string; aliquota: number; valor: number }[];
+  observacoes: string[];
+  completa: boolean;
+};
+
+const centavos = (n: number) => Math.round(n * 100) / 100;
+
+/**
+ * Estimativa simples por nota. Presumido usa as presunções padrão de serviços
+ * (IRPJ 15% e CSLL 9% sobre 32%; PIS 0,65%; COFINS 3%), sem adicional de IRPJ.
+ * IBS/CBS de 2026 aparecem só como informativos (teste, não somam ao total).
+ */
+export function estimarTributosERN(valor: number, p: ParametrosTributariosERN): EstimativaTributosERN {
+  const base = Number.isFinite(valor) && valor > 0 ? valor : 0;
+  const linha = (nome: string, aliquota: number) => ({ nome, aliquota, valor: centavos(base * aliquota / 100) });
+  const obs: string[] = [];
+  const linhas: EstimativaTributosERN['linhas'] = [];
+  let completa = true;
+
+  switch (p.regime) {
+    case 'mei':
+      obs.push('MEI paga o DAS mensal fixo: não há imposto calculado por nota. Confirme se a atividade é permitida no MEI e acompanhe o limite anual de faturamento.');
+      break;
+    case 'simples_nacional':
+      if (p.aliquotaSimples === null) {
+        completa = false;
+        obs.push('Informe a alíquota efetiva do Simples (Anexo III começa em 6%).');
+      } else {
+        linhas.push(linha('Simples Nacional (DAS, já inclui ISS)', p.aliquotaSimples));
+      }
+      obs.push('No Simples, o IBS/CBS de teste de 2026 não se aplica.');
+      break;
+    case 'lucro_presumido':
+      if (p.aliquotaIss === null) { completa = false; obs.push('Informe a alíquota de ISS do município (2% a 5%).'); }
+      else linhas.push(linha('ISS', p.aliquotaIss));
+      linhas.push(linha('PIS', 0.65), linha('COFINS', 3), linha('IRPJ (15% × 32%)', 4.8), linha('CSLL (9% × 32%)', 2.88));
+      obs.push('Sem o adicional de 10% do IRPJ, que vale acima de R$ 20 mil de lucro presumido por mês.');
+      break;
+    case 'lucro_real':
+      if (p.aliquotaIss === null) { completa = false; obs.push('Informe a alíquota de ISS do município (2% a 5%).'); }
+      else linhas.push(linha('ISS', p.aliquotaIss));
+      completa = false;
+      obs.push('No Lucro Real, PIS/COFINS/IRPJ/CSLL dependem da apuração da empresa: confirme com o contador.');
+      break;
+    default:
+      completa = false;
+      obs.push('Informe o regime tributário no cadastro fiscal para estimar os impostos.');
+  }
+
+  const informativos = p.regime === 'lucro_presumido' || p.regime === 'lucro_real'
+    ? [linha('CBS (teste 2026)', 0.9), linha('IBS (teste 2026)', 0.1)]
+    : [];
+
+  return {
+    linhas,
+    total: centavos(linhas.reduce((s, l) => s + l.valor, 0)),
+    informativos,
+    observacoes: obs,
+    completa,
+  };
+}

@@ -2,7 +2,25 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { supabase } from '@/lib/supabase';
-import { cnpjValidoERN } from '@/lib/fiscalERN';
+import { cnpjValidoERN, REGIMES_TRIBUTARIOS_ERN, regimeTributarioValidoERN, type RegimeTributarioERN } from '@/lib/fiscalERN';
+
+// ERN_FISCAL_REGIME_ISS_V1: parâmetros para estimar impostos nas simulações.
+type Tributacao = { regime: RegimeTributarioERN; codigo_servico: string; aliquota_iss: string; aliquota_simples: string };
+const TRIB_VAZIA: Tributacao = { regime: '', codigo_servico: '', aliquota_iss: '', aliquota_simples: '' };
+const percentual = (s: string): number | null => {
+  const t = s.trim().replace(',', '.');
+  if (!t) return null;
+  const n = Number(t);
+  return Number.isFinite(n) ? Math.round(n * 100) / 100 : NaN;
+};
+function validarTributacao(t: Tributacao): string {
+  if (t.codigo_servico && !/^[0-9.]{1,20}$/.test(t.codigo_servico)) return 'Código do serviço: use apenas números e pontos (ex.: 09.02).';
+  const iss = percentual(t.aliquota_iss);
+  if (iss !== null && (Number.isNaN(iss) || iss < 2 || iss > 5)) return 'Alíquota de ISS deve ficar entre 2% e 5%.';
+  const sn = percentual(t.aliquota_simples);
+  if (sn !== null && (Number.isNaN(sn) || sn <= 0 || sn > 33)) return 'Alíquota do Simples deve ficar entre 0% e 33%.';
+  return '';
+}
 
 type Dados = {
   razao_social: string; cnpj: string; inscricao_municipal: string;
@@ -51,6 +69,7 @@ function obter(r: Record<string, unknown>, nomes: string[]): string {
 
 export default function CadastroFiscalERN() {
   const [dados, setDados] = useState<Dados>({ ...VAZIO });
+  const [trib, setTrib] = useState<Tributacao>({ ...TRIB_VAZIA });
   const [empresaId, setEmpresaId] = useState('');
   const [podeEditar, setPodeEditar] = useState(false);
   const [carregando, setCarregando] = useState(true);
@@ -79,7 +98,7 @@ export default function CadastroFiscalERN() {
         const id = String(p.empresa_id);
         const [{ data: empresa, error: ee }, { data: fiscal, error: fe }] = await Promise.all([
           supabase.from('empresa').select('*').eq('id', id).maybeSingle(),
-          supabase.from('empresa_fiscal_ern').select('empresa_id,razao_social,cnpj,inscricao_municipal,municipio,uf,codigo_municipio_ibge,cep,logradouro,numero,complemento,bairro,email_fiscal,telefone_fiscal').eq('empresa_id', id).maybeSingle(),
+          supabase.from('empresa_fiscal_ern').select('empresa_id,razao_social,cnpj,inscricao_municipal,municipio,uf,codigo_municipio_ibge,cep,logradouro,numero,complemento,bairro,email_fiscal,telefone_fiscal,regime_tributario,codigo_servico,aliquota_iss,aliquota_simples').eq('empresa_id', id).maybeSingle(),
         ]);
         if (ee || !empresa) throw new Error('Cadastro empresarial indisponível.');
         if (fe) throw new Error('Cadastro fiscal ainda não está disponível. Aplique a migração V47.9 no Supabase.');
@@ -97,6 +116,13 @@ export default function CadastroFiscalERN() {
         const preenchido = { ...sugestoes };
         if (registro) for (const chave of Object.keys(VAZIO) as (keyof Dados)[]) preenchido[chave] = registro[chave] ?? '';
         if (!ativo) return;
+        const bruto = (fiscal ?? {}) as Record<string, unknown>;
+        setTrib({
+          regime: regimeTributarioValidoERN(bruto.regime_tributario) ? bruto.regime_tributario : '',
+          codigo_servico: typeof bruto.codigo_servico === 'string' ? bruto.codigo_servico : '',
+          aliquota_iss: bruto.aliquota_iss == null ? '' : String(bruto.aliquota_iss).replace('.', ','),
+          aliquota_simples: bruto.aliquota_simples == null ? '' : String(bruto.aliquota_simples).replace('.', ','),
+        });
         setDados(preenchido); setAlterado(false); setEmpresaId(id); setPodeEditar(p.role === 'admin_empresa');
       } catch (e) {
         if (ativo) setErro(e instanceof Error ? e.message : 'Não foi possível carregar o cadastro fiscal.');
@@ -115,14 +141,21 @@ export default function CadastroFiscalERN() {
   async function salvar(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!empresaId || !podeEditar || salvandoRef.current) return;
-    const falha = validar(dados);
+    const falha = validar(dados) || validarTributacao(trib);
     if (falha) { setErro(falha); return; }
     salvandoRef.current = true; setSalvando(true); setErro(''); setAviso('');
     try {
       // O banco valida novamente empresa_id, papel, limites e política RLS.
       const payload: Linha = { empresa_id: empresaId };
       for (const chave of Object.keys(VAZIO) as (keyof Dados)[]) payload[chave] = dados[chave].trim();
-      const { data, error } = await supabase.from('empresa_fiscal_ern').upsert(payload, { onConflict: 'empresa_id' }).select('empresa_id').single();
+      const completo = {
+        ...payload,
+        regime_tributario: trib.regime,
+        codigo_servico: trib.codigo_servico.trim(),
+        aliquota_iss: percentual(trib.aliquota_iss),
+        aliquota_simples: percentual(trib.aliquota_simples),
+      };
+      const { data, error } = await supabase.from('empresa_fiscal_ern').upsert(completo, { onConflict: 'empresa_id' }).select('empresa_id').single();
       if (error) {
   console.error('[EDA fiscal: salvamento]', {
     code: error.code,
@@ -164,6 +197,22 @@ if (!data) throw new Error('Salvamento sem confirmação do banco.');
                 onChange={e => alterar(campo, e.target.value)} autoComplete="off" spellCheck={false} />
               {ajuda && <span className="mt-1 block text-[11px] text-[#94A5A1]">{ajuda}</span>}
             </label>)}
+          </fieldset>
+          <fieldset disabled={!podeEditar || salvando} className="grid min-w-0 gap-3 rounded-xl border border-white/10 p-3 sm:grid-cols-2 xl:grid-cols-4">
+            <legend className="px-1 text-xs font-semibold text-[#E9B76B]">Tributação (para estimar impostos nas simulações)</legend>
+            <label className="min-w-0"><span className="text-xs font-medium text-[#DFE7E0]">Regime tributário</span>
+              <select className={input} value={trib.regime} onChange={e => { if (!podeEditar) return; const v = e.target.value; if (regimeTributarioValidoERN(v)) { setTrib(t => ({ ...t, regime: v })); setAlterado(true); setAviso(''); } }}>
+                {REGIMES_TRIBUTARIOS_ERN.map(r => <option key={r.valor} value={r.valor}>{r.rotulo}</option>)}
+              </select></label>
+            <label className="min-w-0"><span className="text-xs font-medium text-[#DFE7E0]">Código do serviço (LC 116)</span>
+              <input className={input} value={trib.codigo_servico} maxLength={20} placeholder="09.02" onChange={e => { if (!podeEditar) return; setTrib(t => ({ ...t, codigo_servico: e.target.value.replace(/[^0-9.]/g, '') })); setAlterado(true); setAviso(''); }} />
+              <span className="mt-1 block text-[11px] text-[#94A5A1]">09.02 = programas de turismo e passeios. Confirme com o contador.</span></label>
+            <label className="min-w-0"><span className="text-xs font-medium text-[#DFE7E0]">ISS do município (%)</span>
+              <input className={input} inputMode="decimal" value={trib.aliquota_iss} maxLength={5} placeholder="2 a 5" onChange={e => { if (!podeEditar) return; setTrib(t => ({ ...t, aliquota_iss: e.target.value.replace(/[^0-9,.]/g, '') })); setAlterado(true); setAviso(''); }} />
+              <span className="mt-1 block text-[11px] text-[#94A5A1]">Usado no Lucro Presumido/Real.</span></label>
+            <label className="min-w-0"><span className="text-xs font-medium text-[#DFE7E0]">Alíquota efetiva do Simples (%)</span>
+              <input className={input} inputMode="decimal" value={trib.aliquota_simples} maxLength={5} placeholder="ex.: 6" onChange={e => { if (!podeEditar) return; setTrib(t => ({ ...t, aliquota_simples: e.target.value.replace(/[^0-9,.]/g, '') })); setAlterado(true); setAviso(''); }} />
+              <span className="mt-1 block text-[11px] text-[#94A5A1]">Só para Simples Nacional; já inclui o ISS.</span></label>
           </fieldset>
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-white/10 pt-4">
             <p className="text-[11px] text-[#94A5A1]">O preenchimento não comprova situação cadastral, regularidade ou habilitação no emissor nacional.</p>
