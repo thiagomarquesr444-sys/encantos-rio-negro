@@ -113,3 +113,35 @@ export function prepararChaveSimulacaoERN(
 
   return `simulacao:${empresa}:${operacao}`;
 }
+// ERN_FISCAL_EMITENTE_V1: o emitente da NFS-e é sempre a operadora
+// (cadastro fiscal privado). A plataforma EDA nunca é a emitente.
+export function cnpjValidoERN(valor: string | null | undefined): boolean {
+  const c = String(valor ?? '').replace(/\D/g, '');
+  if (c.length !== 14 || /^(\d)\1{13}$/.test(c)) return false;
+  const calc = (n: number) => {
+    const pesos = n === 12 ? [5,4,3,2,9,8,7,6,5,4,3,2] : [6,5,4,3,2,9,8,7,6,5,4,3,2];
+    let soma = 0;
+    for (let i = 0; i < n; i++) soma += Number(c[i]) * pesos[i];
+    const resto = soma % 11;
+    return resto < 2 ? 0 : 11 - resto;
+  };
+  return calc(12) === Number(c[12]) && calc(13) === Number(c[13]);
+}
+
+export type EmitenteFiscalERN = {
+  razao_social: string;
+  cnpj: string;
+  inscricao_municipal: string;
+  codigo_municipio_ibge: string;
+};
+
+/** Mesmas regras da função SQL ern_fiscal_simular_reserva_v1. */
+export function pendenciasEmitenteERN(e: EmitenteFiscalERN | null): string[] {
+  if (!e) return ['Cadastro fiscal não preenchido'];
+  const p: string[] = [];
+  if (!e.razao_social.trim()) p.push('Razão social');
+  if (!cnpjValidoERN(e.cnpj)) p.push('CNPJ válido (14 dígitos)');
+  if (!e.inscricao_municipal.trim()) p.push('Inscrição municipal');
+  if (e.codigo_municipio_ibge.replace(/\D/g, '').length !== 7) p.push('Código IBGE do município');
+  return p;
+}

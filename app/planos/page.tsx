@@ -11,6 +11,7 @@ import {
 import Link from 'next/link';
 
 import { supabase } from '@/lib/supabase';
+import CalculadoraTributosPlanosERN from '@/app/components/CalculadoraTributosPlanosERN';
 
 type Ciclo =
   | 'mensal'
@@ -1309,6 +1310,9 @@ export default function PlanosPage() {
             </div>
           </div>
         </section>
+
+        {/* ERN_CALCULADORA_TRIBUTOS_PLANOS_V1: só aparece para a conta Comando EDA. */}
+        <CalculadoraTributosPlanosERN />
       </main>
     </div>
   );

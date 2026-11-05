@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import PreviaDPSERN from '@/app/components/PreviaDPSERN';
+import { pendenciasEmitenteERN, type EmitenteFiscalERN } from '@/lib/fiscalERN';
 
 type ReservaFiscal = {
   id: string;
@@ -42,6 +43,8 @@ export default function PreparacaoFiscalERN({
   const [confirmado, setConfirmado] = useState(false);
   const [aviso, setAviso] = useState<Resultado | null>(null);
   const [parcial, setParcial] = useState(false);
+  // ERN_FISCAL_EMITENTE_V1: emitente = CNPJ da própria operadora.
+  const [emitente, setEmitente] = useState<EmitenteFiscalERN | null>(null);
   const ambienteDev = process.env.NODE_ENV === 'development';
 
   const carregar = useCallback(async () => {
@@ -69,6 +72,15 @@ export default function PreparacaoFiscalERN({
         .eq('empresa_id', empresa)
         .order('id', { ascending: true }).limit(101);
       if (error || !data) throw new Error('Não foi possível consultar as reservas desta operadora.');
+      const { data: fiscal } = await supabase.from('empresa_fiscal_ern')
+        .select('razao_social,cnpj,inscricao_municipal,codigo_municipio_ibge')
+        .eq('empresa_id', empresa).maybeSingle();
+      setEmitente(fiscal ? {
+        razao_social: String(fiscal.razao_social ?? ''),
+        cnpj: String(fiscal.cnpj ?? ''),
+        inscricao_municipal: String(fiscal.inscricao_municipal ?? ''),
+        codigo_municipio_ibge: String(fiscal.codigo_municipio_ibge ?? ''),
+      } : null);
       setEmpresaId(empresa);
       setParcial(data.length > 100);
       const lista = (data as ReservaFiscal[]).slice(0, 100);
@@ -85,6 +97,7 @@ export default function PreparacaoFiscalERN({
       }
     } catch (e) {
       setEmpresaId(null);
+      setEmitente(null);
       setReservas([]);
       setSelecionada('');
       aoSelecionarReserva('');
@@ -99,6 +112,8 @@ export default function PreparacaoFiscalERN({
   const reserva = reservas.find(r => r.id === selecionada);
   const impedimento = reserva ? motivo(reserva) : null;
   const elegiveis = reservas.filter(r => !motivo(r)).length;
+  const pendenciasEmitente = pendenciasEmitenteERN(emitente);
+  const cnpjEmitente = (emitente?.cnpj ?? '').replace(/\D/g, '');
 
   async function simular() {
     if (!ambienteDev || processando || !confirmado || !empresaId || !reserva || impedimento) return;
@@ -176,6 +191,19 @@ export default function PreparacaoFiscalERN({
         <button type="button" onClick={() => void carregar()} disabled={carregando || processando} className="min-h-10 rounded-lg border border-white/15 px-3 text-xs hover:bg-white/5 disabled:opacity-50">Atualizar reservas</button>
       </div>
       {carregando ? <p role="status" className="mt-4 text-sm text-[#94A5A1]">Consultando reservas autorizadas…</p> : empresaId ? (
+        <>
+        <div aria-label="Emitente da nota fiscal" className={`mt-4 rounded-xl border p-4 text-xs ${pendenciasEmitente.length ? 'border-amber-500/30 bg-amber-500/[0.05]' : 'border-emerald-500/30 bg-emerald-500/[0.05]'}`}>
+          <p className="font-semibold text-[#F1F4EF]">Emitente da nota: sua empresa</p>
+          <p className="mt-1 text-[#A6B4AE]">
+            {emitente?.razao_social.trim() || 'Razão social não informada'} · {cnpjEmitente.length === 14 ? `CNPJ ••${cnpjEmitente.slice(-4)}` : 'CNPJ não informado'}
+          </p>
+          <p className="mt-2 leading-5 text-[#A6B4AE]">A NFS-e do passeio sai no CNPJ da sua operadora. A plataforma EDA apenas prepara e envia; ela não é a emitente.</p>
+          {pendenciasEmitente.length ? (
+            <p className="mt-2 text-amber-300">Simulação permitida. Para emissão real faltam: {pendenciasEmitente.join(', ')}. Complete no cadastro fiscal acima.</p>
+          ) : (
+            <p className="mt-2 text-emerald-300">Cadastro do emitente completo. A emissão real ainda depende do certificado digital A1 e da integração oficial.</p>
+          )}
+        </div>
         <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(260px,1fr)]">
           <div className="space-y-2">
             <p className="text-xs text-[#94A5A1]">{reservas.length} reservas analisadas · {elegiveis} potencialmente elegíveis</p>
@@ -209,9 +237,10 @@ export default function PreparacaoFiscalERN({
               <label className="mt-4 flex items-start gap-2 text-xs"><input type="checkbox" className="mt-0.5" checked={confirmado} onChange={e => setConfirmado(e.target.checked)} /> Confirmo que esta reserva é de teste e autorizo registrar ou reutilizar uma simulação.</label>
               <button type="button" disabled={!reserva || !!impedimento || !confirmado || processando} onClick={() => void simular()} className="mt-3 min-h-11 w-full rounded-lg bg-[#E3A144] px-3 text-sm font-semibold text-[#101415] disabled:cursor-not-allowed disabled:opacity-40">{processando ? 'Validando…' : 'Simular reserva selecionada'}</button>
             </>}
-            {!ambienteDev && <p className="mt-4 text-xs font-medium text-[#E9B76B]">Emissão oficial de NFS-e: não habilitada</p>}
+            {!ambienteDev && <p className="mt-4 text-xs font-medium text-[#E9B76B]">Emissão oficial de NFS-e: não habilitada (exige CNPJ válido da operadora e certificado A1)</p>}
           </div>
         </div>
+        </>
       ) : null}
       <PreviaDPSERN reservaId={selecionada} />
       {aviso && <p role="status" className={`mt-4 rounded-lg border p-3 text-xs ${aviso.tipo === 'sucesso' ? 'border-emerald-500/40 text-emerald-300' : aviso.tipo === 'aviso' ? 'border-amber-500/40 text-amber-300' : 'border-rose-500/40 text-rose-300'}`}>{aviso.mensagem}</p>}
