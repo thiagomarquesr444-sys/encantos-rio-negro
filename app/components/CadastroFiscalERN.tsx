@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { supabase } from '@/lib/supabase';
+import { cnpjValidoERN } from '@/lib/fiscalERN';
 
 type Dados = {
   razao_social: string; cnpj: string; inscricao_municipal: string;
@@ -33,17 +34,7 @@ const campos: { campo: keyof Dados; titulo: string; largura?: boolean; ajuda?: s
 const painel = 'min-w-0 rounded-2xl border border-white/[0.08] bg-[#151A1B] p-4 text-[#F1F4EF] sm:p-5';
 const input = 'mt-2 min-h-11 w-full min-w-0 rounded-xl border border-white/15 bg-[#101616] px-3 text-sm text-[#F1F4EF] outline-none focus-visible:ring-2 focus-visible:ring-[#E3A144] disabled:opacity-50';
 const somenteDigitos = (s: string) => s.replace(/\D/g, '');
-function cnpjValido(s: string): boolean {
-  const c = somenteDigitos(s);
-  if (c.length !== 14 || /^(\d)\1{13}$/.test(c)) return false;
-  const calc = (n: number) => {
-    let soma = 0;
-    for (let i = 0; i < n; i++) soma += Number(c[i]) * (n === 12 ? [5,4,3,2,9,8,7,6,5,4,3,2][i] : [6,5,4,3,2,9,8,7,6,5,4,3,2][i]);
-    const resto = soma % 11;
-    return resto < 2 ? 0 : 11 - resto;
-  };
-  return calc(12) === Number(c[12]) && calc(13) === Number(c[13]);
-}
+const cnpjValido = cnpjValidoERN;
 function validar(d: Dados): string {
   if (d.razao_social.trim().length < 2) return 'Informe a razão social do prestador.';
   if (d.cnpj && !cnpjValido(d.cnpj)) return 'CNPJ inválido: confira os dígitos verificadores.';
