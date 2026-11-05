@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { estimarTributosERN, REGIMES_TRIBUTARIOS_ERN, regimeTributarioValidoERN } from '@/lib/fiscalERN';
 
 type Registro = Record<string, unknown>;
 type Secao = 'prestador' | 'tomador' | 'reserva' | 'tributacao';
@@ -72,7 +73,7 @@ export default function PreviaDPSERN({ reservaId }: { reservaId: string }) {
           supabase.from('reservas').select('id,cliente_id,status,valor_total')
             .eq('empresa_id', empresaId).eq('id', reservaId).maybeSingle(),
           supabase.from('empresa_fiscal_ern')
-            .select('razao_social,cnpj,inscricao_municipal,municipio,uf,codigo_municipio_ibge,cep,logradouro,numero,bairro')
+            .select('razao_social,cnpj,inscricao_municipal,municipio,uf,codigo_municipio_ibge,cep,logradouro,numero,bairro,regime_tributario,codigo_servico,aliquota_iss,aliquota_simples')
             .eq('empresa_id', empresaId).maybeSingle(),
         ]);
         if (reservaResposta.error || !reservaResposta.data) throw new Error('Reserva não disponível para sua operadora.');
@@ -143,20 +144,39 @@ export default function PreviaDPSERN({ reservaId }: { reservaId: string }) {
               'Definir e revisar a descrição do serviço efetivamente prestado',
             ],
           },
-          {
-            id: 'tributacao', titulo: '04 · Revisão tributária', descricao: 'Classificação e parâmetros a conferir com o responsável fiscal',
-            campos: [
-              campo('Código nacional de serviço', 'Não classificado', false),
-              campo('Competência', 'A confirmar', false),
-              campo('Local de incidência / ISS', 'A confirmar', false),
-              campo('Base, deduções e retenções', 'A confirmar', false),
-            ],
-            pendencias: [
-              'Classificar o serviço pelo enquadramento adequado',
-              'Confirmar competência, local de incidência e município competente',
-              'Revisar base de cálculo, deduções, alíquota e retenções aplicáveis',
-            ],
-          },
+          (() => {
+            // ERN_FISCAL_REGIME_ISS_V1: estimativa com os parâmetros do cadastro fiscal.
+            const regimeBruto = fiscal?.regime_tributario;
+            const regime = regimeTributarioValidoERN(regimeBruto) ? regimeBruto : '';
+            const pct = (v: unknown) => (v === null || v === undefined || v === '' ? null : Number(v));
+            const valorNumero = Number(reserva.valor_total);
+            const est = estimarTributosERN(valorNumero, {
+              regime,
+              aliquotaIss: pct(fiscal?.aliquota_iss),
+              aliquotaSimples: pct(fiscal?.aliquota_simples),
+            });
+            const reais = (n: number) => n.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+            const fmt = (n: number) => `${String(n).replace('.', ',')}%`;
+            const codigo = texto(fiscal, ['codigo_servico']);
+            const rotuloRegime = REGIMES_TRIBUTARIOS_ERN.find(r => r.valor === regime)?.rotulo ?? 'Não informado';
+            const grupo: Grupo = {
+              id: 'tributacao', titulo: '04 · Revisão tributária', descricao: 'Estimativa com os dados do cadastro fiscal — confira com o responsável fiscal',
+              campos: [
+                campo('Regime tributário', rotuloRegime, Boolean(regime)),
+                campo('Código do serviço (LC 116)', codigo || 'Não classificado', Boolean(codigo)),
+                ...est.linhas.map(l => campo(`${l.nome} · ${fmt(l.aliquota)}`, reais(l.valor), true)),
+                campo('Imposto estimado nesta nota', est.completa || est.total > 0 ? reais(est.total) : 'A confirmar', est.completa, regime === 'mei' ? 'MEI: sem imposto por nota.' : 'Estimativa; não define base nem retenções.'),
+                campo('Valor líquido estimado', Number.isFinite(valorNumero) && valorNumero > 0 ? reais(valorNumero - est.total) : 'Não informado', est.completa),
+                ...est.informativos.map(l => campo(`${l.nome} · ${fmt(l.aliquota)}`, reais(l.valor), true, 'Informativo em 2026: não soma ao total da nota.')),
+              ],
+              pendencias: [
+                ...est.observacoes,
+                ...(!codigo ? ['Classificar o serviço (ex.: 09.02 para turismo e passeios)'] : []),
+                'Confirmar competência, local de incidência e retenções com o contador',
+              ],
+            };
+            return grupo;
+          })(),
         ];
         if (ativo) setRevisao({ grupos, reserva: String(reserva.id).slice(0, 8) });
       } catch (falha) {
