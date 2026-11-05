@@ -112,12 +112,14 @@ export function SeloExpiracaoERN({
   rotulo = 'Expira',
   semData = 'Sem data de expiração',
   avisoDias = 7,
+  rotuloExpirado = 'Expirado em',
 }: {
   data: string | null | undefined;
   hoje?: string;
   rotulo?: string;
   semData?: string;
   avisoDias?: number;
+  rotuloExpirado?: string;
 }) {
   const dias = diasParaExpirarERN(data, hoje);
   if (dias === null || !data) {
@@ -125,15 +127,15 @@ export function SeloExpiracaoERN({
   }
   if (dias < 0) {
     return (
-      <span className="ern-expira ern-expira-er" title={`Expirou em ${dataBR(data)}`}>
-        Expirado em {dataBR(data)}
+      <span className="ern-expira ern-expira-er" title={`${rotuloExpirado} ${dataBR(data)}`}>
+        {rotuloExpirado} {dataBR(data)}
       </span>
     );
   }
   if (dias <= avisoDias) {
     return (
       <span className="ern-expira ern-expira-at">
-        {dias === 0 ? `Expira hoje (${dataBR(data)})` : `${rotulo} em ${dias} ${dias === 1 ? 'dia' : 'dias'} · ${dataBR(data)}`}
+        {dias === 0 ? `${rotulo} hoje (${dataBR(data)})` : `${rotulo} em ${dias} ${dias === 1 ? 'dia' : 'dias'} · ${dataBR(data)}`}
       </span>
     );
   }

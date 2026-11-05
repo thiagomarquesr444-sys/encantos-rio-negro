@@ -145,7 +145,7 @@ function formatarEmissao(valor: string | null): string {
 function validadeVisual(item: Voucher) {
   if (!item.validade) return <SeloExpiracaoERN data={null} semData="Sem validade" />;
   if (obterStatus(item.status) !== 'Ativo') return formatarData(item.validade);
-  return <SeloExpiracaoERN data={apenasData(item.validade)} rotulo="Válido até" />;
+  return <SeloExpiracaoERN data={apenasData(item.validade)} rotulo="Expira" />;
 }
 
 function expirado(item: Voucher, hoje: string): boolean {

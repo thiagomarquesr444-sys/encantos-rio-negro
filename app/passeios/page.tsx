@@ -13,6 +13,8 @@ import React, {
 import { useRouter } from 'next/navigation';
 
 import { supabase } from '@/lib/supabase';
+import { SeletorPeriodoMensalERN } from '@/app/components/PeriodoMensalERN';
+import { dataNoPeriodoERN, mesAtualERN, periodoDaURLERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
 import GraficoPasseios from '@/app/components/GraficoPasseios';
 
 type Passeio = {
@@ -506,6 +508,10 @@ export default function PasseiosPage() {
     ============================================================
   */
 
+  // ERN_PERIODO_MENSAL_V1: abre nos cadastros do mês atual; a busca procura em todo o histórico.
+  const [periodo, setPeriodo] = useState<PeriodoMensalERN>(mesAtualERN);
+  useEffect(() => { setPeriodo(periodoDaURLERN(new URLSearchParams(window.location.search).get('mes'))); }, []);
+
   const passeiosFiltrados =
     useMemo(() => {
       const termo =
@@ -517,6 +523,7 @@ export default function PasseiosPage() {
         (
           passeio
         ) => {
+      if (!termo && !dataNoPeriodoERN(passeio.created_at, periodo)) return false;
           const atendeBusca =
             !termo ||
             passeio.nome
@@ -554,7 +561,7 @@ export default function PasseiosPage() {
           );
         }
       );
-    }, [
+    }, [periodo, 
       passeios,
       busca,
       filtroCategoria,
@@ -960,6 +967,7 @@ export default function PasseiosPage() {
               capacidade e informações operacionais
               do catálogo da empresa.
             </p>
+            <div className="mt-3"><SeletorPeriodoMensalERN valor={periodo} aoMudar={setPeriodo} rotulo="Período de cadastro" total={passeios.filter((x) => dataNoPeriodoERN(x.created_at, periodo)).length} /></div>
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">

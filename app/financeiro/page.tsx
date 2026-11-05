@@ -12,7 +12,7 @@ import Link from 'next/link';
 import { BuscaEDA, CabecalhoEDA, ChipsEDA, PaginaEDA, PainelLateralEDA, PillEDA, VazioEDA, type TomEDA } from '@/app/components/PadraoPaginaEDA';
 import { supabase } from '@/lib/supabase';
 import { useModulosEquipeERN } from '@/app/components/ModulosEquipeERN';
-import { SeletorPeriodoMensalERN } from '@/app/components/PeriodoMensalERN';
+import { SeletorPeriodoMensalERN, SeloExpiracaoERN } from '@/app/components/PeriodoMensalERN';
 import { HISTORICO_ERN, dataNoPeriodoERN, mesAtualERN, periodoDaURLERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
 import {
   consultarFinanceiroERN,
@@ -704,6 +704,7 @@ export default function FinanceiroPage() {
                       <span style={{ minWidth: 0 }}>
                         <b>{obterDescricao(item) || 'Sem descrição'}</b>
                         <small>{item.categoria || 'Sem categoria'} · vence {formatarData(item.data_vencimento)}</small>
+                        {statusFinanceiroERN(item) === 'Pendente' && item.data_vencimento && <SeloExpiracaoERN data={apenasData(item.data_vencimento)} rotulo="Vence" rotuloExpirado="Vencido em" />}
                       </span>
                       {valorFormatado(item)}
                     </span>
@@ -728,7 +729,7 @@ export default function FinanceiroPage() {
                   <tbody>
                     {lancamentosFiltrados.map((item, index) => (
                       <tr key={item.id || index} aria-selected={itemVisualizar?.id === item.id && Boolean(item.id)}>
-                        <td style={{ whiteSpace: 'nowrap' }}>{formatarData(item.data_vencimento)}</td>
+                        <td style={{ whiteSpace: 'nowrap' }}>{formatarData(item.data_vencimento)}{statusFinanceiroERN(item) === 'Pendente' && item.data_vencimento && <div style={{ marginTop: 4 }}><SeloExpiracaoERN data={apenasData(item.data_vencimento)} rotulo="Vence" rotuloExpirado="Vencido em" /></div>}</td>
                         <td style={{ minWidth: 220, maxWidth: 360 }}>
                           <button type="button" className="eda-pg-linha-bt" disabled={ocupado} onClick={() => { setErroModal(null); setItemVisualizar(item); }}>
                             <b>{obterDescricao(item) || 'Sem descrição'}</b>

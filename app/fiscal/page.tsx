@@ -5,6 +5,8 @@ import '@/app/components/padrao-formularios-eda.css';
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import { SeletorPeriodoMensalERN } from '@/app/components/PeriodoMensalERN';
+import { deslocarMesERN, mesAtualERN, mesValidoERN, rotuloMesERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
 import PreparacaoFiscalERN from '@/app/components/PreparacaoFiscalERN';
 import CadastroFiscalERN from '@/app/components/CadastroFiscalERN';
 import HistoricoRevisaoFiscalERN from '@/app/components/HistoricoRevisaoFiscalERN';
@@ -179,6 +181,8 @@ export default function PainelFiscalERN() {
   const [indicadores, setIndicadores] = useState<Indicadores>(VAZIO);
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
   const [versao, setVersao] = useState(0);
+  // ERN_PERIODO_MENSAL_V1: solicitações do mês atual; histórico a um clique.
+  const [periodo, setPeriodo] = useState<PeriodoMensalERN>(mesAtualERN);
   const [reservaFiscalSelecionada, setReservaFiscalSelecionada] = useState('');
 
   const atualizar = useCallback(() => {
@@ -270,13 +274,22 @@ export default function PainelFiscalERN() {
           contar('validacao_pendente'),
           contar('simulada'),
           contar('erro_simulacao'),
-          supabase
-            .from('nfse_solicitacoes')
-            .select('id,reserva_id,ambiente,status,valor_servico,criado_em')
-            .eq('empresa_id', empresaId)
-            .eq('ambiente', 'simulacao')
-            .order('criado_em', { ascending: false })
-            .limit(12),
+          (() => {
+            let consulta = supabase
+              .from('nfse_solicitacoes')
+              .select('id,reserva_id,ambiente,status,valor_servico,criado_em')
+              .eq('empresa_id', empresaId)
+              .eq('ambiente', 'simulacao');
+            if (mesValidoERN(periodo)) {
+              // Mês no fuso de Manaus (UTC-04:00, sem horário de verão).
+              consulta = consulta
+                .gte('criado_em', `${periodo}-01T00:00:00-04:00`)
+                .lt('criado_em', `${deslocarMesERN(periodo, 1)}-01T00:00:00-04:00`);
+            }
+            return consulta
+              .order('criado_em', { ascending: false })
+              .limit(mesValidoERN(periodo) ? 200 : 50);
+          })(),
         ]);
 
         if (recentes.error || !recentes.data) {
@@ -312,7 +325,7 @@ export default function PainelFiscalERN() {
     return () => {
       ativo = false;
     };
-  }, [versao]);
+  }, [versao, periodo]);
 
   const distribuicao: {
     nome: string;
@@ -597,8 +610,11 @@ export default function PainelFiscalERN() {
                     </h2>
                   </div>
                   <span className="rounded-lg border border-[var(--ern-borda)] px-2.5 py-1.5 text-[10px] text-[var(--ern-secundario)]">
-                    Últimos 12 registros
+                    {mesValidoERN(periodo) ? rotuloMesERN(periodo) : 'Últimos 50 registros'}
                   </span>
+                </div>
+                <div className="mt-3">
+                  <SeletorPeriodoMensalERN valor={periodo} aoMudar={setPeriodo} rotulo="Período das solicitações fiscais" total={solicitacoes.length} />
                 </div>
 
                 {solicitacoes.length === 0 ? (
