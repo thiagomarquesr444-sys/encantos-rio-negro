@@ -567,6 +567,7 @@ function EditarReservaConteudo({ id }: { id?: string }) {
         <Link href="/reservas" className="eda-pg-voltar">← Reservas</Link>
 
         <CabecalhoEDA
+          capa
           etiqueta={`Reserva · ${form.dataReserva ? form.dataReserva.split('-').reverse().join('/') : 'sem data'}`}
           titulo={somenteConsultaERN ? 'Consultar reserva' : 'Editar reserva'}
           resumo={<>

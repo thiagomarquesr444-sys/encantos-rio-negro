@@ -1000,7 +1000,7 @@ export default function VouchersPage() {
         </div>
       )}
 
-      <header className="border-b border-white/10 bg-[#091510]">
+      <header className="border-b border-white/10 bg-[#091510] eda-capa eda-capa-auto eda-mg" data-eda-mg="">
         <div className="mx-auto flex max-w-[1440px] flex-col gap-6 px-4 py-8 sm:px-6 lg:flex-row lg:items-end lg:justify-between lg:px-8">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#E3A144]">

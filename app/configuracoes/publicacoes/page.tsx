@@ -226,7 +226,7 @@ export default function PublicacoesOperadoraPage() {
           ← Perfil público
         </Link>
 
-        <header className="mt-4 border-b border-[var(--ern-borda)] pb-6">
+        <header className="mt-4 border-b border-[var(--ern-borda)] pb-6 eda-capa eda-capa-auto eda-mg" data-eda-mg="">
           <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
             Sua operadora na Rede EDA
           </p>

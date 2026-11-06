@@ -680,7 +680,7 @@ export default function NovoPasseioPage() {
           CABEÇALHO
       ====================================================== */}
 
-      <section className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)] px-5 py-9 md:px-8 md:py-11">
+      <section className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)] px-5 py-9 md:px-8 md:py-11 eda-capa eda-capa-auto eda-mg" data-eda-mg="">
         <div className="mx-auto max-w-[1180px]">
           <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
             <div>

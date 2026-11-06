@@ -608,7 +608,7 @@ export default function NovaDemandaPage() {
 
   return (
     <main className="eda-pg eda-pg-auto eda-pg-legado min-h-screen">
-      <header className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
+      <header className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)] eda-capa eda-capa-auto eda-mg" data-eda-mg="">
         <div className="mx-auto max-w-5xl px-4 py-8 md:px-8">
           <Link
             href="/demandas"

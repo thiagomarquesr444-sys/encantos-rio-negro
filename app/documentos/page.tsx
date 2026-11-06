@@ -56,7 +56,7 @@ export default function CentralDocumentosERN() {
   return (
     <main className="eda-pg eda-pg-auto eda-pg-legado min-h-screen px-4 py-8 sm:px-8">
       <div className="mx-auto max-w-7xl space-y-7">
-        <header className="rounded-3xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-6 sm:p-9">
+        <header className="rounded-3xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-6 sm:p-9 eda-capa eda-capa-auto eda-mg" data-eda-mg="">
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-[var(--ern-destaque)]">
             Gestão da operadora
           </p>

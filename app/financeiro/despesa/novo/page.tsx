@@ -242,7 +242,7 @@ export default function NovaDespesaPage() {
 
   return (
     <div className="eda-pg eda-pg-auto eda-pg-legado min-h-screen min-w-0">
-      <header className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
+      <header className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)] eda-capa eda-capa-auto eda-mg" data-eda-mg="">
         <div className="mx-auto max-w-[1180px] px-4 py-7 sm:px-6 md:px-8 md:py-10">
           <Link
             href="/financeiro"

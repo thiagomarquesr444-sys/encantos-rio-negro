@@ -96,3 +96,50 @@
 .eda-kpi-mg > .eda-kpi { flex: 1; min-width: 0; }
 .eda-kpi-mg > .eda-mg-luz { display: none; }
 .eda-kpi-mg:hover > .eda-kpi { transform: none; }
+
+/* ---------- Capa automática das páginas antigas (ERN_CAPA_AUTO_V1) ----------
+   Basta o cabeçalho existente receber "eda-capa eda-capa-auto eda-mg".
+   !important vence o cabeçalho legado e as classes utilitárias antigas. */
+.eda-capa.eda-capa-auto {
+  display: block;
+  width: auto !important;
+  max-width: 1296px !important;
+  margin: 24px auto 4px !important;
+  padding: clamp(20px, 2.8vw, 30px) clamp(20px, 3vw, 34px) !important;
+  border-radius: 24px !important;
+  border: 1px solid rgb(244 199 126 / 20%) !important;
+  background:
+    radial-gradient(70% 140% at 100% 0%, rgb(201 135 63 / 34%), transparent 60%),
+    radial-gradient(55% 120% at 0% 100%, rgb(20 92 74 / 40%), transparent 65%),
+    linear-gradient(120deg, #06110e 0%, #0b1d18 50%, #34210f 100%) !important;
+  box-shadow: 0 24px 56px -30px rgb(6 17 14 / 70%), 0 1px 0 rgb(255 255 255 / 5%) inset !important;
+}
+.eda-pg-legado > .eda-capa.eda-capa-auto:is(header, section) { margin-left: 32px !important; margin-right: 32px !important; }
+@media (min-width: 1360px) { .eda-pg-legado > .eda-capa.eda-capa-auto:is(header, section) { margin-left: auto !important; margin-right: auto !important; } }
+.eda-capa.eda-capa-auto > div { max-width: none !important; margin: 0 !important; padding: 0 !important; }
+.eda-capa.eda-capa-auto h1 { color: var(--p-texto) !important; font-weight: 650 !important; letter-spacing: -0.035em !important; }
+.eda-capa.eda-capa-auto h1 ~ p, .eda-capa.eda-capa-auto h1 + p { color: var(--p-sec) !important; }
+.eda-capa.eda-capa-auto :is(p, span)[class*="uppercase"] { color: var(--p-ouro) !important; }
+
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-capa.eda-capa-auto {
+  border-color: rgb(154 93 20 / 20%) !important;
+  background:
+    radial-gradient(70% 140% at 100% 0%, rgb(227 161 68 / 24%), transparent 60%),
+    radial-gradient(55% 120% at 0% 100%, rgb(35 122 87 / 12%), transparent 65%),
+    linear-gradient(120deg, #fffdf8 0%, #f8f1e2 55%, #f1dfbf 100%) !important;
+  box-shadow: 0 24px 50px -30px rgb(120 80 20 / 32%), 0 1px 0 rgb(255 255 255 / 80%) inset !important;
+}
+
+.ern-gestao[data-ern-estilo="sobrio"] .eda-capa.eda-capa-auto,
+.ern-gestao[data-ern-estilo="sobrio"]:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-capa.eda-capa-auto {
+  background: var(--p-painel) !important;
+  border-color: var(--p-borda) !important;
+  box-shadow: var(--p-sombra) !important;
+  padding: clamp(18px, 2.4vw, 26px) !important;
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .eda-pg-legado > .eda-capa.eda-capa-auto:is(header, section) { margin-left: 16px !important; margin-right: 16px !important; }
+  .eda-capa.eda-capa-auto { padding: 18px !important; border-radius: 20px !important; }
+}

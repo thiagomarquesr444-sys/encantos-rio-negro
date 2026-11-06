@@ -332,7 +332,7 @@ export default function NovaHospedagemPage() {
           CABEÇALHO
       ====================================================== */}
 
-      <section className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
+      <section className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)] eda-capa eda-capa-auto eda-mg" data-eda-mg="">
         <div className="mx-auto max-w-[1180px] px-5 py-10 md:px-8 md:py-12">
           <Link
             href="/hospedagens"

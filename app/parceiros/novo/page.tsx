@@ -215,7 +215,7 @@ export default function NovoParceiroPage() {
           CABEÇALHO
       ====================================================== */}
 
-      <header className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
+      <header className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)] eda-capa eda-capa-auto eda-mg" data-eda-mg="">
         <div className="mx-auto max-w-[1100px] px-5 py-9 md:px-8">
           <Link
             href="/parceiros"

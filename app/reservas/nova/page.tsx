@@ -529,6 +529,7 @@ export default function NovaReservaPage() {
         </button>
 
         <CabecalhoEDA
+          capa
           etiqueta="Operação · Reservas"
           titulo="Nova reserva"
           resumo="Registre cliente, passeio, participantes, logística e valor comercial da operação."

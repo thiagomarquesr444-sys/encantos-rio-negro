@@ -28,8 +28,10 @@ export default function NovoRelatorioPage() {
   }
   return <main className="eda-pg eda-pg-auto eda-pg-legado ern-relatorios-premium min-h-screen px-4 py-8 sm:px-8"><div className="mx-auto max-w-4xl">
     <Link href="/relatorios" className="inline-flex min-h-11 items-center text-sm text-[var(--ern-destaque)]">← Relatórios</Link>
-    <h1 className="mt-4 text-3xl">Novo relatório</h1>
+    <header className="mt-4 eda-capa eda-capa-auto eda-mg" data-eda-mg="">
+    <h1 className="text-3xl">Novo relatório</h1>
     <p className="mt-3 text-sm leading-6 text-[var(--ern-secundario)]">Salve os critérios para consultar reservas e financeiro por período, ou mantenha um registro manual de acompanhamento.</p>
+    </header>
     {erro && <p role="alert" className="mt-5 rounded-xl border border-red-400/20 p-4 text-sm text-red-300">{erro}</p>}
     <form onSubmit={salvar} className="ern-relatorios-form mt-6 space-y-5"><fieldset disabled={salvando} className="min-w-0 space-y-5 rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-4 sm:p-6">
       <legend className="px-2 text-sm font-semibold text-[var(--ern-destaque)]">Identificação e critérios</legend>

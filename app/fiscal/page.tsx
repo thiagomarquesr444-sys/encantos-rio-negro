@@ -349,7 +349,7 @@ export default function PainelFiscalERN() {
   return (
     <main className="eda-pg eda-pg-auto eda-pg-legado min-h-screen px-3 pb-12 pt-5 sm:px-6 lg:px-8">
       <div className="mx-auto max-w-[1500px] space-y-3.5">
-        <header className="flex flex-wrap items-start justify-between gap-4 pb-2">
+        <header className="flex flex-wrap items-start justify-between gap-4 pb-2 eda-capa eda-capa-auto eda-mg" data-eda-mg="">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <span className={legenda}>EDA / PAINEL FISCAL</span>

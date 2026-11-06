@@ -153,8 +153,10 @@ export default function NovoVoucherPage() {
   const candidatas=reservas.filter(r=>disponivel(r.status)&&`${r.cliente} ${r.pacote} ${r.data_reserva} ${r.id}`.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().includes(busca.normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()));
   return <main className="eda-pg eda-pg-auto eda-pg-legado min-h-screen min-w-0 px-4 py-8 sm:px-6">
     <div className="mx-auto max-w-5xl"><Link href="/vouchers" className="inline-flex min-h-11 items-center text-sm text-[#F4C77E]">← Vouchers</Link>
-      <h1 className="mt-5 text-3xl sm:text-4xl" style={{fontFamily:"var(--font-fraunces), serif"}}>Emitir voucher</h1>
+      <header className="mt-5 eda-capa eda-capa-auto eda-mg" data-eda-mg="">
+      <h1 className="text-3xl sm:text-4xl" style={{fontFamily:"var(--font-fraunces), serif"}}>Emitir voucher</h1>
       <p className="mt-3 text-sm leading-7 text-[#EDEDE3]/65">Use os dados de uma reserva ou emita um voucher avulso. A emissão não registra um pagamento.</p>
+      </header>
       {carregando&&<p role="status" className="mt-6">Carregando cadastros…</p>}
       {erroCarga&&<div role="alert" className="mt-5 rounded-xl border border-red-400/30 p-4"><p>{erroCarga}</p><button type="button" className={botao+" mt-3"} onClick={()=>setTentativa(t=>t+1)}>Tentar carregar novamente</button></div>}
       {!carregando&&!erroCarga&&<form onSubmit={salvar} className="ern-voucher-form mt-6 space-y-5">

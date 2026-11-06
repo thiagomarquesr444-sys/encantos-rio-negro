@@ -453,7 +453,7 @@ export default function ConfiguracoesPage() {
       className="eda-pg eda-pg-auto eda-pg-legado eda-pg-cfg min-h-screen min-w-0"
     >
       <div className="mx-auto w-full max-w-6xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
-        <header className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <header className="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between eda-capa eda-capa-auto eda-mg" data-eda-mg="">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--cfg-destaque)]">
               Gestão da empresa

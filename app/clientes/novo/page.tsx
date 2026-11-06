@@ -403,7 +403,7 @@ export default function NovoClientePage() {
   return (
     <main className="eda-pg eda-pg-auto eda-pg-legado min-h-screen min-w-0 px-4 py-7 sm:px-6 sm:py-10">
       <div className="mx-auto max-w-5xl space-y-6">
-        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <header className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between eda-capa eda-capa-auto eda-mg" data-eda-mg="">
           <div>
             <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
               Clientes · Cadastro

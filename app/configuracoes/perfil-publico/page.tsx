@@ -277,7 +277,7 @@ function PerfilOperadoraEDA({ abas }: { abas?: ReactNode }) {
           ← Configurações
         </Link>
 
-        <header className="mb-7 mt-3">
+        <header className="mb-7 mt-3 eda-capa eda-capa-auto eda-mg" data-eda-mg="">
           <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
             Sua operadora na Rede EDA
           </p>

@@ -471,7 +471,7 @@ export default function GuiasPage() {
         </div>
       )}
 
-      <section className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
+      <section className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)] eda-capa eda-capa-auto eda-mg" data-eda-mg="">
         <div className="mx-auto flex max-w-[1360px] flex-col gap-8 px-5 py-10 md:px-8 md:py-12 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="flex items-center gap-3">
