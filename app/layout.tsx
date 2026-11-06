@@ -33,7 +33,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  metadataBase: new URL('https://os-rio-negro.vercel.app'),
+  metadataBase: new URL('https://encantos-rio-negro.vercel.app'),
   applicationName: 'Encantos da Amazônia',
   appleWebApp: {
     capable: true,

@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 
-const SITE = 'https://os-rio-negro.vercel.app';
+const SITE = 'https://encantos-rio-negro.vercel.app';
 
 const PAGINAS: { rota: string; prioridade: number }[] = [
   { rota: '', prioridade: 1 },

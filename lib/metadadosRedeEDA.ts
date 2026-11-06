@@ -32,6 +32,35 @@ function imagemSegura(url: string | null | undefined): string | undefined {
   return url && url.startsWith('https://') ? url : undefined;
 }
 
+// Mídias da Rede ficam no bucket privado "vivencias-ern". O RLS do Storage só
+// permite assinar arquivos de publicações publicadas; o link vale 7 dias e é
+// renovado junto com a página (revalidate).
+const PREFIXO_PRIVADO = 'vivencias-ern/';
+
+async function resolverImagem(url: string | null | undefined): Promise<string | undefined> {
+  if (!url) return undefined;
+  if (!url.startsWith(PREFIXO_PRIVADO)) return imagemSegura(url);
+  if (!URL_BASE || !CHAVE) return undefined;
+  try {
+    const caminho = url.slice(PREFIXO_PRIVADO.length).split('/').map(encodeURIComponent).join('/');
+    const resposta = await fetch(`${URL_BASE}/storage/v1/object/sign/vivencias-ern/${caminho}`, {
+      method: 'POST',
+      headers: {
+        apikey: CHAVE,
+        Authorization: `Bearer ${CHAVE}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ expiresIn: 604800 }),
+      next: { revalidate: 300 },
+    });
+    if (!resposta.ok) return undefined;
+    const { signedURL } = (await resposta.json()) as { signedURL?: string };
+    return signedURL ? `${URL_BASE}/storage/v1${signedURL}` : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function montar(
   titulo: string,
   descricao: string | undefined,
@@ -83,7 +112,7 @@ export async function metadadosPerfilRede(slug: string): Promise<Metadata> {
   return montar(
     p.nome_publico,
     descricao,
-    imagemSegura(p.capa_url) ?? imagemSegura(p.logo_url),
+    (await resolverImagem(p.capa_url)) ?? (await resolverImagem(p.logo_url)),
     `/rede/perfil/${slug}`,
     'profile',
   );
@@ -104,15 +133,16 @@ export async function metadadosPublicacaoRede(slug: string): Promise<Metadata> {
   );
   if (!p?.titulo) return { title: 'Publicação da Rede EDA' };
   const midias = [...(p.publicacao_midias ?? [])].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0));
-  const capa =
-    midias.find((m) => m.tipo === 'imagem' && imagemSegura(m.url))?.url ??
-    midias.map((m) => m.thumbnail_url).find((u) => imagemSegura(u));
+  const origem =
+    midias.find((m) => m.tipo === 'imagem' && m.url)?.url ??
+    midias.map((m) => m.thumbnail_url).find(Boolean);
+  const capa = await resolverImagem(origem);
   const autor = p.autor?.nome_publico;
   const descricao = resumir(p.resumo) ?? resumir(p.conteudo);
   return montar(
     autor ? `${p.titulo} · ${autor}` : p.titulo,
     descricao,
-    imagemSegura(capa),
+    capa,
     `/rede/publicacao/${slug}`,
     'article',
   );

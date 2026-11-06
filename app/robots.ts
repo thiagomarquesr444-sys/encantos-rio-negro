@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 
-const SITE = 'https://os-rio-negro.vercel.app';
+const SITE = 'https://encantos-rio-negro.vercel.app';
 
 // Áreas internas (gestão, login, API) ficam fora do Google.
 export default function robots(): MetadataRoute.Robots {
