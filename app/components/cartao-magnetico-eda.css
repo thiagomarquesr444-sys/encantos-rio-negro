@@ -1,0 +1,21 @@
+/* ERN_CARTAO_MAGNETICO_V1: cartão flutuante magnético (usado em toda a gestão). */
+.eda-mg {
+  position: relative; isolation: isolate; overflow: hidden;
+  transform: perspective(900px) translate3d(var(--mg-x, 0), var(--mg-y, 0), 0) rotateX(var(--mg-rx, 0)) rotateY(var(--mg-ry, 0));
+  transition: transform .35s cubic-bezier(.2, .8, .2, 1), box-shadow .35s ease, border-color .25s ease;
+  will-change: transform;
+}
+.eda-mg-luz {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: 0;
+  background: radial-gradient(260px circle at var(--mg-luz-x, 50%) var(--mg-luz-y, 50%), rgb(244 199 126 / 16%), transparent 70%);
+  transition: opacity .3s ease;
+}
+.eda-mg:hover .eda-mg-luz { opacity: 1; }
+.eda-mg:hover { transition-duration: .12s, .35s, .25s; }
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .eda-mg { transform: none !important; transition: none; }
+}
+
+/* Estilo Sóbrio: sem movimento nem brilho. */
+.ern-gestao[data-ern-estilo="sobrio"] .eda-mg { transform: none !important; transition: border-color .2s ease; will-change: auto; }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-mg-luz { display: none; }

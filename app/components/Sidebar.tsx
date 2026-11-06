@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 import LogoERN from '@/app/components/LogoERN';
 import IconeERN, { type NomeIconeERN } from '@/app/components/IconeERN';
 import TemaRapidoOperadoraERN from '@/app/components/TemaRapidoOperadoraERN';
+import EstiloPainelSeletorERN from '@/app/components/EstiloPainelERN';
 import {
   useModulosEquipeERN,
   permiteLinkEquipeERN,
@@ -469,6 +470,7 @@ export default function Sidebar() {
     return (
       <div className="grid gap-2">
         <TemaRapidoOperadoraERN />
+        <EstiloPainelSeletorERN />
         <div className="flex items-center gap-3 rounded-2xl border border-white/[0.07] bg-white/[0.03] p-2.5">
           <span aria-hidden="true" className="grid size-9 shrink-0 place-items-center rounded-full bg-gradient-to-b from-[#F7D595] to-[#E3A144] text-xs font-extrabold text-[#07110E]">{iniciais}</span>
           <span className="min-w-0 flex-1">

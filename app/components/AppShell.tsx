@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 
 import { supabase } from '@/lib/supabase';
 import Sidebar from '@/app/components/Sidebar';
+import { EVENTO_ESTILO_PAINEL, lerEstiloPainel, type EstiloPainelERN } from '@/lib/estiloPainelERN';
 import SidebarProfissional from '@/app/components/SidebarProfissional';
 // ERN_TEMA_CLARO_GERADO_V1: versão clara dos estilos próprios das páginas da gestão.
 import '@/app/tema-claro-gestao.css';
@@ -111,6 +112,19 @@ export default function AppShell({
   const pathname = usePathname();
   const [tema, setTema] = useState<Tema | null>(null);
   const [erroTema, setErroTema] = useState(false);
+  // ERN_ESTILO_PAINEL_V1: Encantos (padrão) ou Sóbrio, escolhido por cada pessoa.
+  const [estilo, setEstilo] = useState<EstiloPainelERN>('encantos');
+
+  useLayoutEffect(() => {
+    setEstilo(lerEstiloPainel());
+    const aoMudar = () => setEstilo(lerEstiloPainel());
+    window.addEventListener(EVENTO_ESTILO_PAINEL, aoMudar);
+    window.addEventListener('storage', aoMudar);
+    return () => {
+      window.removeEventListener(EVENTO_ESTILO_PAINEL, aoMudar);
+      window.removeEventListener('storage', aoMudar);
+    };
+  }, []);
 
   const rotaGestao =
     pathname !== null &&
@@ -317,7 +331,7 @@ export default function AppShell({
 
   if (rotaGestao) {
     return (
-      <div className="ern-gestao" data-ern-tema={tema}>
+      <div className="ern-gestao" data-ern-tema={tema} data-ern-estilo={estilo}>
         {/* ERN_MENU_LATERAL_V1: menu lateral no computador; barras no celular. */}
         <Sidebar />
 

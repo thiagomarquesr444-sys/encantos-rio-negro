@@ -2,24 +2,6 @@
    Topo da demanda selecionada: capa "Encontro das Águas" com grafismo
    amazônico e cartões flutuantes magnéticos. Só visual. */
 
-/* ---------- Cartão magnético (base) ---------- */
-.eda-mg {
-  position: relative; isolation: isolate; overflow: hidden;
-  transform: perspective(900px) translate3d(var(--mg-x, 0), var(--mg-y, 0), 0) rotateX(var(--mg-rx, 0)) rotateY(var(--mg-ry, 0));
-  transition: transform .35s cubic-bezier(.2, .8, .2, 1), box-shadow .35s ease, border-color .25s ease;
-  will-change: transform;
-}
-.eda-mg-luz {
-  position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: 0;
-  background: radial-gradient(260px circle at var(--mg-luz-x, 50%) var(--mg-luz-y, 50%), rgb(244 199 126 / 16%), transparent 70%);
-  transition: opacity .3s ease;
-}
-.eda-mg:hover .eda-mg-luz { opacity: 1; }
-.eda-mg:hover { transition-duration: .12s, .35s, .25s; }
-@media (hover: none), (prefers-reduced-motion: reduce) {
-  .eda-mg { transform: none !important; transition: none; }
-}
-
 /* ---------- Área ---------- */
 .eda-dx { max-width: 1088px; margin: 0 auto; padding: 24px 32px 8px; display: grid; gap: 18px; }
 .eda-dx-voltar { display: inline-flex; align-items: center; gap: 8px; width: fit-content; font-size: 13px; font-weight: 600; color: var(--p-sec); }
@@ -167,3 +149,28 @@
 .ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-dx-kpi-ouro .eda-dx-ico { color: #9a5d14; background: rgb(255 255 255 / 70%); }
 .ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-dx-comp { box-shadow: 0 18px 40px -28px rgb(19 36 29 / 28%), var(--p-sombra); }
 .ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-mg-luz { background: radial-gradient(260px circle at var(--mg-luz-x, 50%) var(--mg-luz-y, 50%), rgb(227 161 68 / 18%), transparent 70%); }
+
+/* ---------- Estilo Sóbrio (escolha de cada pessoa no menu lateral) ---------- */
+.ern-gestao[data-ern-estilo="sobrio"] .eda-dx-capa,
+.ern-gestao[data-ern-estilo="sobrio"]:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-dx-capa {
+  color: var(--p-texto); background: var(--p-painel); border-color: var(--p-borda);
+  box-shadow: var(--p-sombra); border-radius: 22px;
+}
+.ern-gestao[data-ern-estilo="sobrio"] .eda-dx-capa::before,
+.ern-gestao[data-ern-estilo="sobrio"] .eda-dx-capa::after { display: none; }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-pg .eda-dx-capa h1 { color: var(--p-texto); font-size: clamp(26px, 3.4vw, 36px); }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-dx-capa-sub { color: var(--p-sec); }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-dx-marca { color: var(--p-ouro); }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-dx-marca i { background: var(--p-ouro); }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-dx-selo:not(.eda-dx-selo-status) { color: var(--p-texto); background: var(--p-suave); border-color: var(--p-borda); box-shadow: none; backdrop-filter: none; }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-dx-selo svg { color: var(--p-ouro); }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-dx-emblema { color: var(--p-ouro); background: var(--p-suave); border-color: var(--p-borda); box-shadow: none; }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-dx-kpi-ouro,
+.ern-gestao[data-ern-estilo="sobrio"]:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-dx-kpi-ouro {
+  color: var(--p-texto); background: var(--p-painel); border-color: var(--p-borda);
+}
+.ern-gestao[data-ern-estilo="sobrio"] .eda-dx-kpi-ouro strong { color: var(--p-ouro); }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-dx-kpi-ouro :is(small, .eda-dx-kpi-cab span) { color: var(--p-sec); }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-dx-kpi-ouro .eda-dx-ico { color: var(--p-ouro); background: color-mix(in srgb, #e3a144 13%, transparent); }
+.ern-gestao[data-ern-estilo="sobrio"] :is(.eda-dx-kpi, .eda-dx-comp),
+.ern-gestao[data-ern-estilo="sobrio"] :is(.eda-dx-kpi, .eda-dx-comp):hover { box-shadow: var(--p-sombra); }

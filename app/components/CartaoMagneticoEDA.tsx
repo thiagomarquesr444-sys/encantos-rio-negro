@@ -5,6 +5,7 @@
 // brilho dourado onde o mouse passa. Sem efeito em toque ou com
 // "reduzir movimento" ativo (tratado no CSS).
 
+import './cartao-magnetico-eda.css';
 import { useRef, type CSSProperties, type ReactNode, type PointerEvent } from 'react';
 
 export default function CartaoMagneticoEDA({
