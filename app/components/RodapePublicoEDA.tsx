@@ -76,14 +76,14 @@ export default function RodapePublicoEDA() {
               {nome}
             </Link>
           ))}
-          {/* EDA_FLUTUANTES_V1: Feedback no rodapé (abre o diálogo do FeedbackERN) */}
+          {/* EDA_FLUTUANTES_V1: Feedback no rodapé, na mesma linha e estilo dos links */}
           <button
             type="button"
             aria-haspopup="dialog"
             onClick={() => window.dispatchEvent(new Event('eda:abrir-feedback'))}
-            className={`eda-rodape-feedback inline-flex min-h-11 items-center gap-2 self-center rounded-full border border-[#F4C77E]/40 px-4 text-sm font-semibold text-[#F4C77E] hover:border-[#F4C77E] hover:bg-[#F4C77E]/10 ${FOCO}`}
+            className={`eda-rodape-feedback inline-flex min-h-11 items-center text-sm font-semibold text-[#EDEDE3] hover:text-[#F4C77E] ${FOCO}`}
           >
-            <span aria-hidden="true">✎</span> {t.feedback}
+            {t.feedback}
           </button>
         </nav>
       </div>

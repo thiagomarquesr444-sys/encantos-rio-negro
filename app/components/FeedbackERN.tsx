@@ -7,50 +7,83 @@ import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useLanguage } from '@/app/components/LanguageProvider';
 
+// ERN_FEEDBACK_PERGUNTAS_V1: em vez de um campo livre, a EDA faz perguntas
+// curtas e úteis para análise (nota de recomendação, objetivo, sucesso,
+// dificuldade e sugestão). Tudo segue no mesmo formato da API atual.
 const textos = {
   PT: {
-    abrir: 'Feedback', titulo: 'Ajude a melhorar a EDA',
-    introducao: 'Conte o que funcionou e o que podemos melhorar.',
-    tipo: 'Tipo de feedback', problema: 'Relatar problema',
-    sugestao: 'Sugerir melhoria', experiencia: 'Minha experiência',
-    mensagem: 'Sua mensagem', email: 'E-mail para retorno (opcional)',
+    abrir: 'Feedback', titulo: 'A EDA quer ouvir você',
+    introducao: 'São 5 perguntas rápidas. Leva menos de um minuto e ajuda a decidir o que melhorar primeiro.',
+    nps: 'De 0 a 10, o quanto você recomendaria a EDA para alguém?',
+    npsBaixo: 'Nada provável', npsAlto: 'Com certeza',
+    objetivo: 'O que você veio fazer agora?',
+    objetivosGestao: ['Reservas e agenda', 'Financeiro', 'Demandas', 'Clientes', 'Cadastros (passeios, barcos, guias)', 'Outra coisa'],
+    objetivosPortal: ['Conhecer destinos', 'Ver experiências', 'Falar com uma operadora', 'Conhecer a plataforma', 'Outra coisa'],
+    conseguiu: 'Conseguiu fazer o que queria?', sim: 'Sim', parte: 'Em parte', nao: 'Não',
+    dificuldade: 'O que foi mais difícil, demorado ou confuso? (opcional)',
+    dificuldadeDica: 'Ex.: não achei onde editar a reserva no celular',
+    melhoria: 'Se você pudesse mudar ou criar uma coisa na EDA, o que seria?',
+    melhoriaDica: 'Ex.: avisar no WhatsApp quando um cliente confirmar',
+    email: 'E-mail para retorno (opcional)',
     privacidade: 'Não envie senhas, documentos ou dados bancários.',
-    politica: 'Política de privacidade', enviar: 'Enviar feedback',
-    enviando: 'Enviando…', fechar: 'Fechar', sucesso: 'Feedback recebido. Obrigado!',
+    politica: 'Política de privacidade', enviar: 'Enviar respostas',
+    enviando: 'Enviando…', fechar: 'Fechar', sucesso: 'Respostas recebidas. Obrigado por ajudar a EDA a crescer!',
     protocolo: 'Protocolo', erro: 'Não foi possível confirmar o envio. Tente mais tarde.',
-    tamanho: 'Escreva entre 10 e 3.000 caracteres.',
+    faltando: 'Responda a nota e se você conseguiu fazer o que queria.',
     limite: 'Limite de envios atingido. Tente novamente em até uma hora.',
     sessao: 'Sua sessão expirou. Entre novamente para enviar.',
   },
   EN: {
-    abrir: 'Feedback', titulo: 'Help improve EDA',
-    introducao: 'Tell us what worked and what we can improve.',
-    tipo: 'Feedback type', problema: 'Report a problem',
-    sugestao: 'Suggest an improvement', experiencia: 'My experience',
-    mensagem: 'Your message', email: 'Reply email (optional)',
+    abrir: 'Feedback', titulo: 'EDA wants to hear from you',
+    introducao: '5 quick questions. It takes less than a minute and helps us decide what to improve first.',
+    nps: 'From 0 to 10, how likely are you to recommend EDA?',
+    npsBaixo: 'Not likely', npsAlto: 'Definitely',
+    objetivo: 'What did you come here to do?',
+    objetivosGestao: ['Bookings and schedule', 'Finance', 'Demands', 'Customers', 'Catalog (tours, boats, guides)', 'Something else'],
+    objetivosPortal: ['Discover destinations', 'See experiences', 'Contact an operator', 'Learn about the platform', 'Something else'],
+    conseguiu: 'Were you able to do it?', sim: 'Yes', parte: 'Partly', nao: 'No',
+    dificuldade: 'What was hardest, slowest or most confusing? (optional)',
+    dificuldadeDica: 'E.g.: I could not find how to edit a booking on mobile',
+    melhoria: 'If you could change or add one thing in EDA, what would it be?',
+    melhoriaDica: 'E.g.: a WhatsApp alert when a customer confirms',
+    email: 'Reply email (optional)',
     privacidade: 'Do not send passwords, documents or banking details.',
-    politica: 'Privacy policy', enviar: 'Send feedback',
-    enviando: 'Sending…', fechar: 'Close', sucesso: 'Feedback received. Thank you!',
+    politica: 'Privacy policy', enviar: 'Send answers',
+    enviando: 'Sending…', fechar: 'Close', sucesso: 'Answers received. Thank you for helping EDA grow!',
     protocolo: 'Reference', erro: 'We could not confirm your submission. Try again later.',
-    tamanho: 'Write between 10 and 3,000 characters.',
+    faltando: 'Please answer the score and whether you could do it.',
     limite: 'Submission limit reached. Try again within an hour.',
     sessao: 'Your session expired. Sign in again to submit.',
   },
   ES: {
-    abrir: 'Comentarios', titulo: 'Ayuda a mejorar EDA',
-    introducao: 'Cuéntanos qué funcionó y qué podemos mejorar.',
-    tipo: 'Tipo de comentario', problema: 'Informar un problema',
-    sugestao: 'Sugerir una mejora', experiencia: 'Mi experiencia',
-    mensagem: 'Tu mensaje', email: 'Correo para respuesta (opcional)',
+    abrir: 'Comentarios', titulo: 'EDA quiere escucharte',
+    introducao: 'Son 5 preguntas rápidas. Toma menos de un minuto y nos ayuda a decidir qué mejorar primero.',
+    nps: 'Del 0 al 10, ¿qué tan probable es que recomiendes EDA?',
+    npsBaixo: 'Nada probable', npsAlto: 'Seguro',
+    objetivo: '¿Qué viniste a hacer ahora?',
+    objetivosGestao: ['Reservas y agenda', 'Finanzas', 'Demandas', 'Clientes', 'Catálogo (paseos, barcos, guías)', 'Otra cosa'],
+    objetivosPortal: ['Conocer destinos', 'Ver experiencias', 'Hablar con un operador', 'Conocer la plataforma', 'Otra cosa'],
+    conseguiu: '¿Lograste hacerlo?', sim: 'Sí', parte: 'En parte', nao: 'No',
+    dificuldade: '¿Qué fue lo más difícil, lento o confuso? (opcional)',
+    dificuldadeDica: 'Ej.: no encontré cómo editar una reserva en el celular',
+    melhoria: 'Si pudieras cambiar o crear una cosa en EDA, ¿qué sería?',
+    melhoriaDica: 'Ej.: aviso por WhatsApp cuando un cliente confirme',
+    email: 'Correo para respuesta (opcional)',
     privacidade: 'No envíes contraseñas, documentos ni datos bancarios.',
-    politica: 'Política de privacidad', enviar: 'Enviar comentario',
-    enviando: 'Enviando…', fechar: 'Cerrar', sucesso: 'Comentario recibido. ¡Gracias!',
+    politica: 'Política de privacidad', enviar: 'Enviar respuestas',
+    enviando: 'Enviando…', fechar: 'Cerrar', sucesso: 'Respuestas recibidas. ¡Gracias por ayudar a EDA a crecer!',
     protocolo: 'Referencia', erro: 'No pudimos confirmar el envío. Inténtalo más tarde.',
-    tamanho: 'Escribe entre 10 y 3.000 caracteres.',
+    faltando: 'Responde la nota y si lograste hacerlo.',
     limite: 'Límite de envíos alcanzado. Inténtalo de nuevo en una hora.',
     sessao: 'Tu sesión ha caducado. Inicia sesión de nuevo.',
   },
 };
+
+const ROTAS_GESTAO_FEEDBACK = [
+  '/dashboard', '/clientes', '/reservas', '/passeios', '/vouchers',
+  '/hospedagens', '/embarcacoes', '/guias', '/parceiros', '/demandas',
+  '/financeiro', '/relatorios', '/configuracoes', '/planos', '/comando',
+];
 
 const ROTAS = [
   '/destinos', '/rede', '/experiencias', '/contato', '/operadores',
@@ -69,13 +102,23 @@ export default function FeedbackERN() {
   const botao = useRef<HTMLButtonElement>(null);
   const trava = useRef(false);
   const origemFoco = useRef<HTMLElement | null>(null);
-  const [categoria, setCategoria] = useState('sugestao');
-  const [mensagem, setMensagem] = useState('');
+  const [nota, setNota] = useState<number | null>(null);
+  const [objetivo, setObjetivo] = useState('');
+  const [conseguiu, setConseguiu] = useState<'' | 'sim' | 'parte' | 'nao'>('');
+  const [dificuldade, setDificuldade] = useState('');
+  const [melhoria, setMelhoria] = useState('');
   const [email, setEmail] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [erro, setErro] = useState('');
   const [protocolo, setProtocolo] = useState('');
   const [paleta, setPaleta] = useState<CSSProperties>({});
+
+  const naGestao = ROTAS_GESTAO_FEEDBACK.some(rota => pathname === rota || pathname.startsWith(rota + '/'));
+  const objetivos = naGestao ? t.objetivosGestao : t.objetivosPortal;
+
+  function limparRespostas() {
+    setNota(null); setObjetivo(''); setConseguiu(''); setDificuldade(''); setMelhoria(''); setEmail('');
+  }
 
   const mostrar = pathname === '/' ||
     ROTAS.some(rota => pathname === rota || pathname.startsWith(rota + '/'));
@@ -84,8 +127,7 @@ export default function FeedbackERN() {
     dialogo.current?.close();
     setErro('');
     setProtocolo('');
-    setMensagem('');
-    setEmail('');
+    limparRespostas();
   }, [pathname]);
 
   function abrir() {
@@ -119,8 +161,7 @@ export default function FeedbackERN() {
     (origemFoco.current?.isConnected ? origemFoco.current : botao.current)?.focus();
 
     if (protocolo) {
-      setMensagem('');
-      setEmail('');
+      limparRespostas();
       setProtocolo('');
     }
   }
@@ -129,11 +170,24 @@ export default function FeedbackERN() {
     event.preventDefault();
     if (trava.current) return;
 
-    const conteudo = mensagem.trim();
-    if (conteudo.length < 10 || conteudo.length > 3000) {
-      setErro(t.tamanho);
+    if (nota === null || !conseguiu) {
+      setErro(t.faltando);
       return;
     }
+
+    // Respostas em linhas marcadas, fáceis de analisar depois (sempre em PT).
+    // Texto livre em uma linha só: impede que alguém forje linhas [nota] etc.
+    const umaLinha = (v: string) => v.replace(/\s+/g, ' ').trim();
+    const rotuloConseguiu = { sim: 'sim', parte: 'em parte', nao: 'não' }[conseguiu];
+    const conteudo = [
+      `[nota] ${nota}/10`,
+      `[objetivo] ${objetivo || 'não informado'}`,
+      `[conseguiu] ${rotuloConseguiu}`,
+      `[dificuldade] ${umaLinha(dificuldade) || '-'}`,
+      `[melhoria] ${umaLinha(melhoria) || '-'}`,
+      `[idioma] ${idioma}`,
+    ].join('\n').slice(0, 3000);
+    const categoria = conseguiu === 'nao' ? 'problema' : melhoria.trim() ? 'sugestao' : 'experiencia';
 
     trava.current = true;
     setEnviando(true);
@@ -228,20 +282,45 @@ export default function FeedbackERN() {
         ) : (
           <form onSubmit={enviar} aria-busy={enviando}>
             <fieldset disabled={enviando}>
-              <label htmlFor={`${id}-tipo`}>{t.tipo}</label>
-              <select id={`${id}-tipo`} value={categoria}
-                onChange={event => setCategoria(event.target.value)}>
-                <option value="problema">{t.problema}</option>
-                <option value="sugestao">{t.sugestao}</option>
-                <option value="experiencia">{t.experiencia}</option>
-              </select>
+              <fieldset className="ern-fb-grupo">
+                <legend>1. {t.nps}</legend>
+                <div className="ern-fb-escala" role="radiogroup" aria-label={t.nps}>
+                  {Array.from({ length: 11 }, (_, n) => (
+                    <button key={n} type="button" role="radio" aria-checked={nota === n}
+                      className={`ern-fb-nota ${n <= 6 ? 'baixa' : n <= 8 ? 'media' : 'alta'}`}
+                      onClick={() => setNota(n)}>{n}</button>
+                  ))}
+                </div>
+                <div className="ern-fb-extremos"><span>{t.npsBaixo}</span><span>{t.npsAlto}</span></div>
+              </fieldset>
 
-              <label htmlFor={`${id}-mensagem`}>{t.mensagem}</label>
-              <textarea id={`${id}-mensagem`} required minLength={10}
-                maxLength={3000} rows={5} value={mensagem}
-                aria-describedby={`${id}-aviso ${id}-contador`}
-                onChange={event => setMensagem(event.target.value)} />
-              <small id={`${id}-contador`}>{mensagem.length}/3000</small>
+              <fieldset className="ern-fb-grupo">
+                <legend>2. {t.objetivo}</legend>
+                <div className="ern-fb-chips">
+                  {objetivos.map(op => (
+                    <button key={op} type="button" aria-pressed={objetivo === op}
+                      className="ern-fb-chip" onClick={() => setObjetivo(objetivo === op ? '' : op)}>{op}</button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <fieldset className="ern-fb-grupo">
+                <legend>3. {t.conseguiu}</legend>
+                <div className="ern-fb-chips" role="radiogroup" aria-label={t.conseguiu}>
+                  {([['sim', t.sim], ['parte', t.parte], ['nao', t.nao]] as const).map(([v, r]) => (
+                    <button key={v} type="button" role="radio" aria-checked={conseguiu === v}
+                      className={`ern-fb-chip ern-fb-${v}`} onClick={() => setConseguiu(v)}>{r}</button>
+                  ))}
+                </div>
+              </fieldset>
+
+              <label htmlFor={`${id}-dif`}>4. {t.dificuldade}</label>
+              <textarea id={`${id}-dif`} maxLength={1200} rows={2} value={dificuldade}
+                placeholder={t.dificuldadeDica} onChange={event => setDificuldade(event.target.value)} />
+
+              <label htmlFor={`${id}-mel`}>5. {t.melhoria}</label>
+              <textarea id={`${id}-mel`} maxLength={1200} rows={2} value={melhoria}
+                placeholder={t.melhoriaDica} onChange={event => setMelhoria(event.target.value)} />
 
               <label htmlFor={`${id}-email`}>{t.email}</label>
               <input id={`${id}-email`} type="email" maxLength={254}
@@ -336,6 +415,27 @@ export default function FeedbackERN() {
         }
         .ern-feedback-sucesso p { line-height:1.7;overflow-wrap:anywhere; }
         .ern-feedback-dialogo :disabled { opacity:.6;cursor:wait; }
+        /* ERN_FEEDBACK_PERGUNTAS_V1 */
+        .ern-feedback-dialogo .ern-fb-grupo { margin:18px 0 0; }
+        .ern-feedback-dialogo .ern-fb-grupo legend { font-weight:600;line-height:1.5;margin-bottom:10px;padding:0; }
+        .ern-fb-escala { display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:4px; }
+        .ern-feedback-dialogo .ern-fb-nota {
+          min-height:40px;padding:0;border-radius:10px;cursor:pointer;font:600 14px sans-serif;
+          border:1px solid var(--ern-borda,#454b53);background:transparent;color:var(--ern-texto,#f0f1f2);
+        }
+        .ern-feedback-dialogo .ern-fb-nota[aria-checked="true"].baixa { background:#c2554f;border-color:#c2554f;color:#fff; }
+        .ern-feedback-dialogo .ern-fb-nota[aria-checked="true"].media { background:#e3a144;border-color:#e3a144;color:#07110e; }
+        .ern-feedback-dialogo .ern-fb-nota[aria-checked="true"].alta { background:#3d9b72;border-color:#3d9b72;color:#fff; }
+        .ern-fb-extremos { display:flex;justify-content:space-between;margin-top:6px;font-size:12px;opacity:.7; }
+        .ern-fb-chips { display:flex;flex-wrap:wrap;gap:6px; }
+        .ern-feedback-dialogo .ern-fb-chip {
+          min-height:38px;padding:0 14px;border-radius:999px;cursor:pointer;font:600 13px sans-serif;
+          border:1px solid var(--ern-borda,#454b53);background:transparent;color:var(--ern-texto,#f0f1f2);
+        }
+        .ern-feedback-dialogo .ern-fb-chip:is([aria-pressed="true"],[aria-checked="true"]) {
+          background:var(--ern-botao,#e3a144);border-color:var(--ern-botao,#e3a144);color:var(--ern-sobre-botao,#07110e);
+        }
+        @media (max-width:420px) { .ern-fb-escala { grid-template-columns:repeat(6,minmax(0,1fr)); } }
         .ern-feedback-acesso:focus-visible,
         .ern-feedback-dialogo :is(button,input,textarea,select,a):focus-visible {
           outline:3px solid var(--ern-destaque,#c5b595);outline-offset:3px;
