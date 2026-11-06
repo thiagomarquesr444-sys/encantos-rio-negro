@@ -64,7 +64,7 @@ async function resolverImagem(url: string | null | undefined): Promise<string | 
 // Versão leve (≈100 KB) da foto para a prévia, via otimizador de imagens.
 function imagemLeve(url: string | undefined): string | undefined {
   if (!url) return undefined;
-  return `/_next/image?url=${encodeURIComponent(url)}&w=640&q=70`;
+  return `/_next/image?url=${encodeURIComponent(url)}&w=640&q=75`;
 }
 
 function montar(
