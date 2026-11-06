@@ -64,7 +64,7 @@ async function resolverImagem(url: string | null | undefined): Promise<string | 
 // Versão leve (≈100 KB) da foto para a prévia, via otimizador de imagens.
 function imagemLeve(url: string | undefined): string | undefined {
   if (!url) return undefined;
-  return `/_next/image?url=${encodeURIComponent(url)}&w=640&q=75`;
+  return `/_next/image?url=${encodeURIComponent(url)}&w=384&q=75`;
 }
 
 function montar(
@@ -85,7 +85,7 @@ function montar(
       url: caminho,
       siteName: 'Encantos da Amazônia',
       locale: 'pt_BR',
-      images: imagem ? [{ url: imagemLeve(imagem)!, width: 640 }] : undefined,
+      images: imagem ? [{ url: imagemLeve(imagem)!, width: 384 }] : undefined,
     },
     twitter: {
       card: imagem ? 'summary_large_image' : 'summary',
