@@ -200,8 +200,8 @@ export default function FeedbackERN() {
   return (
     <>
       <button ref={botao} type="button" className="ern-feedback-acesso"
-        onClick={abrir} aria-haspopup="dialog">
-        <span aria-hidden="true">✎</span> {t.abrir}
+        onClick={abrir} aria-haspopup="dialog" aria-label={t.abrir} title={t.abrir}>
+        <span aria-hidden="true">✎</span> <span className="ern-feedback-rotulo">{t.abrir}</span>
       </button>
 
       <dialog ref={dialogo} className="ern-feedback-dialogo"

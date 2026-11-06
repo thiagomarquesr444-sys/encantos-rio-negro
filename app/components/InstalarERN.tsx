@@ -10,6 +10,23 @@ type ConviteInstalacao = Event & {
   }>;
 };
 
+// ERN_FLUTUANTES_CELULAR_V1: o convite aparece uma vez; fechado, some por 30 dias.
+const CHAVE_DISPENSA = 'ern-instalar-dispensado-v1';
+const TRINTA_DIAS = 30 * 24 * 3600 * 1000;
+
+function dispensadoRecentemente(): boolean {
+  try {
+    const em = Number(localStorage.getItem(CHAVE_DISPENSA) || 0);
+    return em > 0 && Date.now() - em < TRINTA_DIAS;
+  } catch {
+    return false;
+  }
+}
+
+function registrarDispensa(): void {
+  try { localStorage.setItem(CHAVE_DISPENSA, String(Date.now())); } catch { /* sem armazenamento */ }
+}
+
 export default function InstalarERN() {
   const convite = useRef<ConviteInstalacao | null>(null);
   const ocupado = useRef(false);
@@ -25,6 +42,7 @@ export default function InstalarERN() {
     function receberConvite(evento: Event) {
       if (modoApp.matches) return;
       evento.preventDefault();
+      if (dispensadoRecentemente()) { convite.current = evento as ConviteInstalacao; return; }
       convite.current = evento as ConviteInstalacao;
       setDisponivel(true);
     }
@@ -101,6 +119,7 @@ export default function InstalarERN() {
         aria-label="Fechar convite de instala\u00e7\u00e3o"
         disabled={instalando}
         onClick={() => {
+          registrarDispensa();
           setDisponivel(false);
           setErro('');
         }}

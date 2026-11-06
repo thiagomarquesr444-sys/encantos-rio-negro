@@ -253,3 +253,4 @@
 .eda-chg-trecho b { font-size: 14px; }
 .eda-chg-rota { position: relative; height: 2px; background: var(--p-borda); }
 .eda-chg-rota::after { content: ""; position: absolute; left: 50%; top: -5px; width: 12px; height: 12px; margin-left: -6px; border-radius: 50%; background: #e3a144; }
+

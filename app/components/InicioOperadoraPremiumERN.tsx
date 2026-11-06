@@ -325,6 +325,7 @@ export default function InicioOperadoraPremiumERN({
   const pronto = !carregando && !carregandoPlano
     && (!financeiroLiberado || financeiro !== null || Boolean(erroFinanceiro) || tempoEsgotado);
   const [saudacaoPronta, setSaudacaoPronta] = useState(false);
+  const [resumoAberto, setResumoAberto] = useState(false);
 
   const trechosSaudacao = useMemo<TrechoDigitado[]>(
     () => [{ texto: `${saudacao()}${nome ? `, ${nome}` : ''}.` }],
@@ -471,9 +472,17 @@ export default function InicioOperadoraPremiumERN({
         <div>
           <p className="eda-eb"><i className="eda-capa-traco" aria-hidden="true" />{dataExtenso(hoje)}{nomeEmpresa ? ` · ${nomeEmpresa}` : ''}</p>
           <h1><DigitacaoEDA trechos={trechosSaudacao} iniciar={pronto} velocidade={42} atraso={250} cursorEspera aoTerminar={() => setSaudacaoPronta(true)} /></h1>
-          <p className="eda-frase" aria-live="off">
-            <DigitacaoEDA trechos={trechosConversa} iniciar={pronto && saudacaoPronta} velocidade={13} atraso={380} cursorFinal pularAoClicar />
-          </p>
+          {/* ERN_FLUTUANTES_CELULAR_V1: no celular o resumo abre recolhido */}
+          <div id="eda-resumo-dia" className={`eda-frase-caixa${resumoAberto ? ' eda-frase-aberta' : ''}`}>
+            <p className="eda-frase" aria-live="off">
+              <DigitacaoEDA trechos={trechosConversa} iniciar={pronto && saudacaoPronta} velocidade={13} atraso={380} cursorFinal pularAoClicar />
+            </p>
+          </div>
+          {pronto && (
+            <button type="button" className="eda-frase-mais" aria-expanded={resumoAberto} aria-controls="eda-resumo-dia" onClick={() => setResumoAberto(v => !v)}>
+              {resumoAberto ? 'Recolher resumo' : 'Ver resumo completo'}
+            </button>
+          )}
         </div>
         <nav aria-label="Ações rápidas" className="eda-acoes">
           <Link href="/demandas/nova" className="eda-bt eda-bt-sec"><Icone nome="lista" tamanho={16} />Nova demanda</Link>

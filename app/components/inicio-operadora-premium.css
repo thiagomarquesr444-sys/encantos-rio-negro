@@ -249,3 +249,25 @@
 .eda-cabeca .eda-frase { min-height: 5.5em; max-width: 78ch; }
 .eda-dig-quebra { display: block; height: .55em; }
 .eda-dig[title] { cursor: pointer; }
+
+/* ERN_FLUTUANTES_CELULAR_V1: resumo do dia recolhido no celular */
+.eda-frase-mais { display: none; }
+@media (max-width: 640px) {
+  .eda-frase-caixa { position: relative; max-height: 11.5em; overflow: hidden; transition: max-height .35s ease; }
+  .eda-frase-caixa::after {
+    content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3.2em; pointer-events: none;
+    background: linear-gradient(to bottom, transparent, var(--eda-capa-fim, rgb(11 29 24 / 96%)));
+  }
+  .ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-frase-caixa::after { --eda-capa-fim: rgb(248 241 226 / 96%); }
+  .ern-gestao[data-ern-estilo="sobrio"] .eda-frase-caixa::after { --eda-capa-fim: var(--e-fundo, #07110e); }
+  .eda-frase-caixa.eda-frase-aberta { max-height: 60em; }
+  .eda-frase-caixa.eda-frase-aberta::after { display: none; }
+  .eda-cabeca .eda-frase-caixa .eda-frase { min-height: 0; }
+  .eda-frase-mais {
+    display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; min-height: 36px; padding: 0 14px;
+    border-radius: 999px; border: 1px solid rgb(244 199 126 / 35%); background: rgb(244 199 126 / 10%);
+    color: var(--e-ouro, #f4c77e); font: inherit; font-size: 13px; font-weight: 650; cursor: pointer;
+  }
+  .ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-frase-mais { color: #9a5d14; border-color: rgb(154 93 20 / 30%); background: rgb(255 255 255 / 60%); }
+}
+@media (max-width: 640px) and (prefers-reduced-motion: reduce) { .eda-frase-caixa { transition: none; } }
