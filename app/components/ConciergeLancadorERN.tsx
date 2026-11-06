@@ -81,10 +81,14 @@ export default function ConciergeLancadorERN({
     setPosicao(ajustado);
   }
 
+  // EDA_FLUTUANTES_V1: Concierge fica no canto superior direito, logo abaixo
+  // do cabeçalho público (Libras segue embaixo à direita; Feedback vai ao rodapé).
   function padrao(): PontoERN {
+    const cabecalho = document.querySelector('.ern-navegacao-ilustrada');
+    const topo = cabecalho ? Math.max(0, cabecalho.getBoundingClientRect().bottom) : 0;
     return {
       x: window.innerWidth - (caixaRef.current?.offsetWidth || 148) - 16,
-      y: window.innerHeight - (caixaRef.current?.offsetHeight || 52) - 104,
+      y: topo + 16,
     };
   }
 
@@ -223,9 +227,9 @@ export default function ConciergeLancadorERN({
       data-arrastando={arrastando}
       style={{
         left: posicao?.x,
-        top: posicao?.y,
         right: posicao ? 'auto' : 16,
-        bottom: posicao ? 'auto' : 104,
+        top: posicao ? posicao.y : 92,
+        bottom: 'auto',
         visibility: aberto ? 'hidden' : 'visible',
       }}
     >

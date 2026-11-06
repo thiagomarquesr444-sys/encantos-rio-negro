@@ -16,6 +16,7 @@ const FOCO =
 const textos = {
   PT: {
     lema: 'Nascida em Barcelos, no Rio Negro.',
+    feedback: 'Enviar feedback',
     aria: 'Informações e atendimento',
     links: [
       ['/', 'Voltar ao portal'],
@@ -27,6 +28,7 @@ const textos = {
   },
   EN: {
     lema: 'Born in Barcelos, on the Rio Negro.',
+    feedback: 'Send feedback',
     aria: 'Information and support',
     links: [
       ['/', 'Back to portal'],
@@ -38,6 +40,7 @@ const textos = {
   },
   ES: {
     lema: 'Nacida en Barcelos, en el Río Negro.',
+    feedback: 'Enviar comentarios',
     aria: 'Información y atención',
     links: [
       ['/', 'Volver al portal'],
@@ -73,6 +76,15 @@ export default function RodapePublicoEDA() {
               {nome}
             </Link>
           ))}
+          {/* EDA_FLUTUANTES_V1: Feedback no rodapé (abre o diálogo do FeedbackERN) */}
+          <button
+            type="button"
+            aria-haspopup="dialog"
+            onClick={() => window.dispatchEvent(new Event('eda:abrir-feedback'))}
+            className={`eda-rodape-feedback inline-flex min-h-11 items-center gap-2 self-center rounded-full border border-[#F4C77E]/40 px-4 text-sm font-semibold text-[#F4C77E] hover:border-[#F4C77E] hover:bg-[#F4C77E]/10 ${FOCO}`}
+          >
+            <span aria-hidden="true">✎</span> {t.feedback}
+          </button>
         </nav>
       </div>
     </footer>

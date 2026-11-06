@@ -68,6 +68,7 @@ export default function FeedbackERN() {
   const dialogo = useRef<HTMLDialogElement>(null);
   const botao = useRef<HTMLButtonElement>(null);
   const trava = useRef(false);
+  const origemFoco = useRef<HTMLElement | null>(null);
   const [categoria, setCategoria] = useState('sugestao');
   const [mensagem, setMensagem] = useState('');
   const [email, setEmail] = useState('');
@@ -88,6 +89,7 @@ export default function FeedbackERN() {
   }, [pathname]);
 
   function abrir() {
+    origemFoco.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const escopo =
       document.querySelector('.ern-tema-portal') ??
       document.querySelector('.ern-gestao') ??
@@ -114,7 +116,7 @@ export default function FeedbackERN() {
   function fechar() {
     if (trava.current) return;
     dialogo.current?.close();
-    botao.current?.focus();
+    (origemFoco.current?.isConnected ? origemFoco.current : botao.current)?.focus();
 
     if (protocolo) {
       setMensagem('');
@@ -183,6 +185,15 @@ export default function FeedbackERN() {
       setEnviando(false);
     }
   }
+
+  // EDA_FLUTUANTES_V1: o rodapé público abre este diálogo pelo evento 'eda:abrir-feedback'.
+  useEffect(() => {
+    if (!mostrar) return;
+    const aoPedir = () => abrir();
+    window.addEventListener('eda:abrir-feedback', aoPedir);
+    return () => window.removeEventListener('eda:abrir-feedback', aoPedir);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mostrar]);
 
   if (!mostrar) return null;
 
@@ -266,6 +277,8 @@ export default function FeedbackERN() {
         body:has(.instalar-ern) .ern-feedback-acesso {
           bottom: calc(88px + env(safe-area-inset-bottom, 0px));
         }
+        /* EDA_FLUTUANTES_V1: onde há rodapé público, o Feedback mora no rodapé */
+        body:has(.eda-rodape-feedback) .ern-feedback-acesso { display:none; }
         .ern-feedback-dialogo {
           position:fixed;inset:0;margin:auto;
           width:min(520px,calc(100vw - 28px));
