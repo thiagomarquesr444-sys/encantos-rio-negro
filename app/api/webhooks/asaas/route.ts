@@ -765,7 +765,7 @@ async function localizarOuCriarCobranca(
     throw (
       criadaError ??
       new Error(
-        'Cobrança ERN não encontrada após registro.'
+        'Cobrança EDA não encontrada após registro.'
       )
     );
   }
@@ -1007,7 +1007,7 @@ export async function POST(
 
         if (operacaoReferenciaERN) {
           throw new Error(
-            'Pagamento de uma operação ERN recebido antes da conclusão do vínculo local.'
+            'Pagamento de uma operação EDA recebido antes da conclusão do vínculo local.'
           );
         }
 
@@ -1027,7 +1027,7 @@ export async function POST(
 
         if (referenciaLegadaERN) {
           throw new Error(
-            'Pagamento ERN recebido antes da conclusão do vínculo local.'
+            'Pagamento EDA recebido antes da conclusão do vínculo local.'
           );
         }
       }
@@ -1037,7 +1037,7 @@ export async function POST(
         ok: true,
         ignorado: true,
         motivo:
-          'Cobrança não pertence a uma assinatura ERN reconhecida.',
+          'Cobrança não pertence a uma assinatura EDA reconhecida.',
       });
     }
 
@@ -1050,7 +1050,7 @@ export async function POST(
         payment.subscription
     ) {
       throw new Error(
-        'Assinatura Asaas da cobrança não corresponde ao registro ERN.'
+        'Assinatura Asaas da cobrança não corresponde ao registro EDA.'
       );
     }
 
@@ -1114,7 +1114,7 @@ export async function POST(
         titularPagamentoERN.empresa_id !== cobranca.empresa_id ||
         titularPagamentoERN.provedor_cliente_id !== pagamentoAtualERN.customer
       ) {
-        throw new Error('O cliente do pagamento diverge da assinatura ERN.');
+        throw new Error('O cliente do pagamento diverge da assinatura EDA.');
       }
 
       const {
@@ -1260,7 +1260,7 @@ export async function POST(
         .assinatura_id
     ) {
       throw new Error(
-        'Cobrança sem assinatura ERN vinculada.'
+        'Cobrança sem assinatura EDA vinculada.'
       );
     }
 
@@ -1306,7 +1306,7 @@ export async function POST(
       throw (
         assinaturaError ??
         new Error(
-          'Assinatura ERN não encontrada.'
+          'Assinatura EDA não encontrada.'
         )
       );
     }

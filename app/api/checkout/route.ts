@@ -1181,7 +1181,7 @@ async function executarCheckoutERN(
       pendenciaError
     ) {
       console.error(
-        '[ERN CHECKOUT] Falha ao registrar checkout pendente:',
+        '[EDA CHECKOUT] Falha ao registrar checkout pendente:',
         pendenciaError
       );
 
@@ -1376,7 +1376,7 @@ async function executarCheckoutERN(
       cobrancaError
     ) {
       console.error(
-        '[ERN CHECKOUT] Falha ao registrar cobrança:',
+        '[EDA CHECKOUT] Falha ao registrar cobrança:',
         cobrancaError
       );
 
@@ -1458,7 +1458,7 @@ async function executarCheckoutERN(
     error: any
   ) {
     console.error(
-      '[ERN CHECKOUT]',
+      '[EDA CHECKOUT]',
       error
     );
 

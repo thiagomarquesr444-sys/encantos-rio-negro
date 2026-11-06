@@ -43,7 +43,7 @@ function configuracao(
       etiqueta: 'Guia independente',
       titulo: 'Painel do Guia',
       introducao:
-        'Organize sua presença profissional, acompanhe oportunidades e prepare sua participação na Rede ERN.',
+        'Organize sua presença profissional, acompanhe oportunidades e prepare sua participação na Rede EDA.',
       perfilHref: '/guia/perfil',
 
       cartoes: [
@@ -74,7 +74,7 @@ function configuracao(
         {
           titulo: 'Minhas publicações',
           descricao:
-            'Gerencie viagens, experiências e conteúdos que poderão aparecer no feed público da ERN.',
+            'Gerencie viagens, experiências e conteúdos que poderão aparecer no feed público da EDA.',
           status: 'Em preparação',
         },
         {
@@ -91,7 +91,7 @@ function configuracao(
     etiqueta: 'Fornecedor independente',
     titulo: 'Painel do Fornecedor',
     introducao:
-      'Apresente seu negócio, organize sua oferta e acompanhe demandas geradas pelo turismo e pela Rede ERN.',
+      'Apresente seu negócio, organize sua oferta e acompanhe demandas geradas pelo turismo e pela Rede EDA.',
     perfilHref: '/fornecedor/perfil',
 
     cartoes: [
@@ -104,7 +104,7 @@ function configuracao(
       {
         titulo: 'Demandas',
         descricao:
-          'Acompanhe necessidades de operadoras, guias e futuros parceiros da Rede ERN.',
+          'Acompanhe necessidades de operadoras, guias e futuros parceiros da Rede EDA.',
         status: 'Próximo módulo',
       },
       {
@@ -122,7 +122,7 @@ function configuracao(
       {
         titulo: 'Minhas publicações',
         descricao:
-          'Gerencie conteúdos, produtos e serviços que poderão alimentar o feed público da ERN.',
+          'Gerencie conteúdos, produtos e serviços que poderão alimentar o feed público da EDA.',
         status: 'Em preparação',
       },
       {
@@ -297,8 +297,8 @@ export default function PainelProfissional({
     perfil?.nome?.trim() ||
     (
       tipo === 'guia'
-        ? 'Guia da Rede ERN'
-        : 'Fornecedor da Rede ERN'
+        ? 'Guia da Rede EDA'
+        : 'Fornecedor da Rede EDA'
     );
 
   return (
@@ -353,7 +353,7 @@ export default function PainelProfissional({
 
             {!perfil && (
               <p className="mt-2 max-w-2xl text-sm leading-6 text-[#F4C77E]">
-                Seu perfil profissional ainda não foi preenchido. Complete o cadastro para preparar sua presença na Rede ERN.
+                Seu perfil profissional ainda não foi preenchido. Complete o cadastro para preparar sua presença na Rede EDA.
               </p>
             )}
           </div>
@@ -373,7 +373,7 @@ export default function PainelProfissional({
                     'var(--font-fraunces), serif',
                 }}
               >
-                Sua área na Rede ERN
+                Sua área na Rede EDA
               </h2>
 
               <p className="mt-2 max-w-3xl text-sm leading-7 text-[#EDEDE3]/70">
@@ -466,7 +466,7 @@ export default function PainelProfissional({
           </h2>
 
           <p className="mt-3 max-w-4xl text-sm leading-7 text-[#EDEDE3]/75">
-            A Rede ERN está sendo preparada para aproximar quem oferece produtos, serviços e conhecimento regional de quem precisa contratar, comprar, viajar ou estruturar uma operação turística no Alto e Baixo Rio Negro.
+            A Rede EDA está sendo preparada para aproximar quem oferece produtos, serviços e conhecimento regional de quem precisa contratar, comprar, viajar ou estruturar uma operação turística no Alto e Baixo Rio Negro.
           </p>
 
           <Link

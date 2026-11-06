@@ -314,7 +314,7 @@ async function chamarAsaas(
 
   if (!response.ok) {
     console.error(
-      '[ERN CANCELAMENTO ASAAS]',
+      '[EDA CANCELAMENTO ASAAS]',
       {
         endpoint,
 
@@ -754,7 +754,7 @@ async function executarCancelamentoERN(
       assinaturaAsaasId
     ) {
       throw new Error(
-        'A assinatura retornada pelo Asaas não corresponde ao registro ERN.'
+        'A assinatura retornada pelo Asaas não corresponde ao registro EDA.'
       );
     }
 
@@ -952,7 +952,7 @@ async function executarCancelamentoERN(
     error: any
   ) {
     console.error(
-      '[ERN CANCELAMENTO]',
+      '[EDA CANCELAMENTO]',
       error
     );
 

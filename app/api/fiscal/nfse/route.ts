@@ -317,7 +317,7 @@ export async function POST(request: NextRequest) {
 
       if (reconhecida) throw reconhecida;
 
-      console.error('[ERN fiscal RPC]', {
+      console.error('[EDA fiscal RPC]', {
         codigo: erroRpc.code,
       });
 
@@ -358,7 +358,7 @@ export async function POST(request: NextRequest) {
       }, error.statusHttp);
     }
 
-    console.error('[ERN fiscal: falha inesperada]');
+    console.error('[EDA fiscal: falha inesperada]');
 
     return responder({
       ok: false,

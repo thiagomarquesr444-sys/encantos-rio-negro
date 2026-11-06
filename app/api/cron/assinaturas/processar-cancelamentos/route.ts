@@ -405,7 +405,7 @@ async function listarCobrancasAssinaturaAsaas(
 
   if (!response.ok) {
     console.error(
-      '[ERN CRON CHECKOUT] Erro ao consultar cobranças Asaas:',
+      '[EDA CRON CHECKOUT] Erro ao consultar cobranças Asaas:',
       {
         assinatura_asaas_id:
           assinaturaAsaasId,
@@ -500,7 +500,7 @@ async function removerAssinaturaAsaas(
 
   if (!response.ok) {
     console.error(
-      '[ERN CRON CHECKOUT] Erro ao remover assinatura Asaas:',
+      '[EDA CRON CHECKOUT] Erro ao remover assinatura Asaas:',
       {
         assinatura_asaas_id:
           assinaturaAsaasId,
@@ -624,7 +624,7 @@ async function limparCheckoutsAbandonados(
     checkoutsError
   ) {
     console.error(
-      '[ERN CRON CHECKOUT] Erro ao localizar checkouts expirados:',
+      '[EDA CRON CHECKOUT] Erro ao localizar checkouts expirados:',
       checkoutsError
     );
 
@@ -992,7 +992,7 @@ async function limparCheckoutsAbandonados(
       error: any
     ) {
       console.error(
-        '[ERN CRON CHECKOUT] Falha individual:',
+        '[EDA CRON CHECKOUT] Falha individual:',
         {
           assinatura_id:
             checkout.id,
@@ -1152,7 +1152,7 @@ async function processarCancelamentos(
     assinaturasError
   ) {
     console.error(
-      '[ERN CRON CANCELAMENTOS] Erro ao buscar assinaturas:',
+      '[EDA CRON CANCELAMENTOS] Erro ao buscar assinaturas:',
       assinaturasError
     );
 
@@ -1338,7 +1338,7 @@ async function processarCancelamentos(
       error: any
     ) {
       console.error(
-        '[ERN CRON CANCELAMENTOS] Falha individual:',
+        '[EDA CRON CANCELAMENTOS] Falha individual:',
         {
           assinatura_id:
             assinatura.id,
@@ -2080,7 +2080,7 @@ async function processar(
     error: any
   ) {
     console.error(
-      '[ERN CRON ASSINATURAS]',
+      '[EDA CRON ASSINATURAS]',
       error
     );
 

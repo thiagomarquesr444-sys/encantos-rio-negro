@@ -198,7 +198,7 @@ export default function PreviaDPSERN({ reservaId }: { reservaId: string }) {
     <section aria-label="Central de revisão documental DPS" className="mt-4 min-w-0 rounded-xl border border-[#E3A144]/30 bg-[#0C1112] p-3 text-[#F1F4EF] sm:p-4">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#E3A144]">ERN / Fiscal Premium</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-[#E3A144]">EDA / Fiscal Premium</p>
           <h3 className="mt-1 text-lg font-semibold">Central de revisão documental</h3>
           <p className="mt-1 max-w-2xl text-xs leading-5 text-[#94A5A1]">Prévia interna de preparação para DPS. Não é DPS, XML, NFS-e nem autorização de emissão.</p>
         </div>

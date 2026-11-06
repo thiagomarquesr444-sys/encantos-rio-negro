@@ -62,7 +62,7 @@ function tratarFalha(error: unknown) {
     );
   }
 
-  console.error('[ERN equipe: falha inesperada]', {
+  console.error('[EDA equipe: falha inesperada]', {
     tipo: error instanceof Error ? error.name : typeof error,
   });
 
@@ -169,7 +169,7 @@ async function consultarPlano(
     .maybeSingle();
 
   if (error) {
-    console.error('[ERN equipe: consulta assinatura]', {
+    console.error('[EDA equipe: consulta assinatura]', {
       codigo: error.code,
     });
 
@@ -502,7 +502,7 @@ export async function POST(request: NextRequest) {
       });
 
     if (conviteError || !convite.user) {
-      console.error('[ERN equipe: convite não concluído]', {
+      console.error('[EDA equipe: convite não concluído]', {
         codigo: conviteError?.code,
         status: conviteError?.status,
       });
@@ -573,7 +573,7 @@ export async function POST(request: NextRequest) {
       gravado.nome === nome;
 
     if (!vinculoConfirmado) {
-      console.error('[ERN equipe: vínculo não confirmado]', {
+      console.error('[EDA equipe: vínculo não confirmado]', {
         usuario_id: usuarioId,
         codigo_gravacao: perfilError?.code,
         codigo_verificacao: verificacaoError?.code,
@@ -622,7 +622,7 @@ export async function POST(request: NextRequest) {
     );
   } catch (error) {
     if (conviteIniciado) {
-      console.error('[ERN equipe: resultado pendente]', {
+      console.error('[EDA equipe: resultado pendente]', {
         usuario_id: usuarioId,
         tipo: error instanceof Error ? error.name : typeof error,
       });

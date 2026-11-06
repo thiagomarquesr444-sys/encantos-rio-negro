@@ -229,7 +229,7 @@ export default function NovoParceiroPage() {
             <span className="h-px w-8 bg-[var(--ern-botao)]" />
 
             <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--ern-destaque)]">
-              Rede Operacional ERN
+              Rede Operacional EDA
             </span>
           </div>
 
@@ -464,13 +464,13 @@ export default function NovoParceiroPage() {
 
               <div className="rounded-2xl border border-[var(--ern-destaque)] bg-[var(--ern-suave)] p-4">
                 <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-destaque)]">
-                  Evolução ERN
+                  Evolução EDA
                 </p>
 
                 <p className="mt-2 text-[10px] leading-5 text-[var(--ern-secundario)]">
                   Parceiros classificados como fornecedores poderão ser
                   conectados aos módulos de suprimentos, cotações e pedidos da
-                  operação ERN.
+                  operação EDA.
                 </p>
               </div>
 

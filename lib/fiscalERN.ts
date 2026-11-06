@@ -1,5 +1,5 @@
 /**
- * Encantos Rio Negro - Dominio Fiscal V1
+ * Encantos da Amazônia (EDA) - Dominio Fiscal V1
  *
  * Esta versao opera exclusivamente em simulacao.
  * Nao emite notas fiscais nem acessa APIs externas.
