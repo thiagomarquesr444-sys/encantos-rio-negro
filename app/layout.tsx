@@ -33,6 +33,7 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://os-rio-negro.vercel.app'),
   applicationName: 'Encantos da Amazônia',
   appleWebApp: {
     capable: true,
@@ -53,7 +54,12 @@ export const metadata: Metadata = {
     template: '%s • Encantos da Amazônia',
   },
   description:
-    'Experiências, hospedagens, roteiros e turismo receptivo no Rio Negro, em Barcelos, Amazonas.',
+    'Turismo, cultura e pesca esportiva no Amazonas, do Rio Negro a Parintins: destinos, experiências, operadores e guias locais.',
+  openGraph: {
+    type: 'website',
+    locale: 'pt_BR',
+    siteName: 'Encantos da Amazônia',
+  },
 };
 
 export default function RootLayout({
