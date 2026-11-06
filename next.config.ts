@@ -4,6 +4,18 @@ const nextConfig: NextConfig = {
   // Permite o IP da sua rede local e localhost
   allowedDevOrigins: ["192.168.100.11", "localhost:3000", "127.0.0.1:3000"],
 
+  // EDA_PREVIA_LINKS_V1: fotos da Rede reduzidas pelo otimizador da Vercel
+  // (o WhatsApp descarta prévias com imagem pesada).
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "leltgfdonsbmsstyprss.supabase.co",
+        pathname: "/storage/v1/object/**",
+      },
+    ],
+  },
+
   // EDA_PREVIA_LINKS_V1: robôs de prévia (WhatsApp, redes sociais, buscadores)
   // recebem título, descrição e foto já no <head>, sem esperar a página carregar.
   htmlLimitedBots:
