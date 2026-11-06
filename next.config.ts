@@ -16,10 +16,9 @@ const nextConfig: NextConfig = {
     ],
   },
 
-  // EDA_PREVIA_LINKS_V1: robôs de prévia (WhatsApp, redes sociais, buscadores)
-  // recebem título, descrição e foto já no <head>, sem esperar a página carregar.
-  htmlLimitedBots:
-    /WhatsApp|facebookexternalhit|facebookcatalog|Facebot|meta-externalagent|Instagram|Twitterbot|LinkedInBot|Slackbot|Discordbot|TelegramBot|Pinterest|SkypeUriPreview|redditbot|Embedly|vkShare|Googlebot|Google-InspectionTool|bingbot|BingPreview|Applebot|DuckDuckBot|YandexBot|Baiduspider/i,
+  // EDA_PREVIA_LINKS_V2: título, descrição e foto sempre no <head>, para todos.
+  // O WhatsApp de computador nem sempre se identifica como robô.
+  htmlLimitedBots: /.*/,
 
   // ERN_CABECALHOS_SEGURANCA_V1: proteções de navegador em todas as páginas.
   // - frame-ancestors/X-Frame-Options: impede abrir o site dentro de outro site (clickjacking).
