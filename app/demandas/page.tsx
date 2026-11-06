@@ -1,5 +1,6 @@
 'use client';
 import './demandas-premium.css';
+import './demandas-eda.css';
 
 import {
   useEffect,
@@ -150,6 +151,105 @@ function detalheEstimativa(
   }
 
   return null;
+}
+
+// ERN_DEMANDAS_ACOLHEDOR_V1: ícone por categoria, descrição legível e linha do tempo.
+const ICONES_CATEGORIA: Record<CategoriaDemanda, string> = {
+  alimentacao: 'M7 3v8a2 2 0 0 0 2 2v8M5 3v5M9 3v5M17 3c-1.7 1.2-2.5 3.3-2.5 6s1 3.5 2.5 4v8',
+  bebidas: 'M7 3h10l-1 7a4 4 0 0 1-8 0L7 3zM12 14v7M8.5 21h7',
+  combustivel: 'M4 21V5a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16M3 21h12M6.5 8h5M14 10h2a2 2 0 0 1 2 2v4a1.5 1.5 0 0 0 3 0V8l-3-3',
+  hospedagem: 'M3 20v-9l9-6 9 6v9M9 20v-6h6v6',
+  transporte_fluvial: 'M3 16l2 4h14l2-4H3zM6 16V9h9l3 7M10 9V5h3',
+  guiamento: 'M12 21s-6-5.4-6-11a6 6 0 0 1 12 0c0 5.6-6 11-6 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z',
+  passeios: 'M3 19l5-8 4 5 3-4 6 7H3zM16 7.5a2 2 0 1 0 0-4 2 2 0 0 0 0 4z',
+  outros: 'M4 7l8-4 8 4-8 4-8-4zM4 12l8 4 8-4M4 17l8 4 8-4',
+};
+
+function IconeCategoria({ categoria, grande = false }: { categoria: CategoriaDemanda; grande?: boolean }) {
+  return (
+    <span className={`eda-dem-icone eda-dem-cat-${categoria}${grande ? ' eda-dem-icone-g' : ''}`} aria-hidden="true">
+      <svg width={grande ? 22 : 19} height={grande ? 22 : 19} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round">
+        <path d={ICONES_CATEGORIA[categoria] ?? ICONES_CATEGORIA.outros} />
+      </svg>
+    </span>
+  );
+}
+
+function IconeLocal() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+      <path d="M12 21s-6-5.4-6-11a6 6 0 0 1 12 0c0 5.6-6 11-6 11z" /><circle cx="12" cy="10" r="2" />
+    </svg>
+  );
+}
+
+// Descrição em parágrafos (respeita as quebras de linha digitadas).
+function DescricaoDemanda({ texto }: { texto: string | null }) {
+  const paragrafos = (texto ?? '')
+    .split(/\n\s*\n|\n/)
+    .map((p) => p.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+  if (paragrafos.length === 0) {
+    return <p className="eda-dem-descricao-vazia">Sem descrição adicional.</p>;
+  }
+  return (
+    <div className="eda-dem-descricao">
+      {paragrafos.map((p, i) => <p key={i}>{p}</p>)}
+    </div>
+  );
+}
+
+function previaDescricao(texto: string | null): string {
+  return (texto ?? '').replace(/\s+/g, ' ').trim();
+}
+
+function hojeISO(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
+function diasEntre(de: string, ate: string): number {
+  const a = Date.parse(`${de}T00:00:00Z`);
+  const b = Date.parse(`${ate}T00:00:00Z`);
+  if (Number.isNaN(a) || Number.isNaN(b)) return NaN;
+  return Math.round((b - a) / 86400000);
+}
+
+function expiraEmBreve(demanda: Demanda, hoje: string): boolean {
+  if (demanda.status !== 'aberta' && demanda.status !== 'rascunho') return false;
+  if (!demanda.data_fim) return false;
+  const dias = diasEntre(hoje, demanda.data_fim);
+  return dias >= 0 && dias <= 7;
+}
+
+function LinhaTempo({ demanda }: { demanda: Demanda }) {
+  const { data_inicio: inicio, data_fim: fim } = demanda;
+  if (!inicio && !fim) {
+    return <p className="eda-pg-texto-mut">Período ainda não informado.</p>;
+  }
+  const hoje = hojeISO();
+  let progresso = 0;
+  let nota = '';
+  if (inicio && fim) {
+    const total = Math.max(diasEntre(inicio, fim), 0);
+    const decorrido = diasEntre(inicio, hoje);
+    const restante = diasEntre(hoje, fim);
+    progresso = total === 0 ? (decorrido >= 0 ? 100 : 0) : Math.min(Math.max((decorrido / total) * 100, 0), 100);
+    const duracao = total + 1;
+    if (decorrido < 0) nota = `Começa em ${-decorrido} ${-decorrido === 1 ? 'dia' : 'dias'} · ${duracao} ${duracao === 1 ? 'dia' : 'dias'} de operação`;
+    else if (restante >= 0) nota = restante === 0 ? 'Último dia da operação' : `Em andamento · faltam ${restante} ${restante === 1 ? 'dia' : 'dias'}`;
+    else nota = `Período encerrado há ${-restante} ${-restante === 1 ? 'dia' : 'dias'}`;
+  }
+  return (
+    <>
+      <div className="eda-dem-tempo">
+        <div><small>Início</small><b>{formatarData(inicio)}</b></div>
+        <div className="eda-dem-trilho" role="presentation"><i style={{ width: `${progresso}%` }} /></div>
+        <div><small>Fim</small><b>{formatarData(fim)}</b></div>
+      </div>
+      {nota && <p className="eda-dem-tempo-nota">{nota}</p>}
+    </>
+  );
 }
 
 // ERN_PERIODO_MENSAL_V1: demandas em andamento mostram a data de expiração (fim).
@@ -483,7 +583,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
   const detalheAberta = aberta ? detalheEstimativa(aberta) : null;
 
   return (
-    <PaginaEDA>
+    <PaginaEDA className="eda-dem">
       <div className="eda-pg-miolo">
         <CabecalhoEDA
           etiqueta="Oferta e demanda"
@@ -498,6 +598,38 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
             {podeGerenciar && <Link href="/demandas/nova" className="eda-pg-bt eda-pg-bt-ouro">+ Nova demanda</Link>}
           </>}
         />
+
+        {resultado && resultado.registros.length > 0 && (() => {
+          const hoje = hojeISO();
+          const regs = resultado.registros;
+          const contar = (st: StatusDemanda) => regs.filter((d) => d.status === st).length;
+          const expirando = regs.filter((d) => expiraEmBreve(d, hoje)).length;
+          const escopo = resultado.total_paginas > 1 ? 'nesta página' : 'no período';
+          const kpis: { st: StatusDemanda; classe: string; rotulo: string; texto: string }[] = [
+            { st: 'aberta', classe: 'aberta', rotulo: 'Abertas', texto: `em preparação ${escopo}` },
+            { st: 'rascunho', classe: 'rascunho', rotulo: 'Rascunhos', texto: 'aguardando revisão' },
+            { st: 'encerrada', classe: 'encerrada', rotulo: 'Encerradas', texto: 'operações atendidas' },
+          ];
+          return (
+            <div className="eda-dem-resumo" role="group" aria-label="Resumo das demandas">
+              {kpis.slice(0, 2).map((k) => (
+                <button key={k.st} type="button" className={`eda-dem-kpi eda-dem-kpi-${k.classe}`} aria-pressed={consulta.status === k.st}
+                  onClick={() => alterarConsulta({ ...consulta, status: consulta.status === k.st ? '' : k.st, pagina: 0 })}>
+                  <small>{k.rotulo}</small><b>{contar(k.st)}</b><span>{k.texto}</span>
+                </button>
+              ))}
+              <div className="eda-dem-kpi eda-dem-kpi-expira" style={{ cursor: 'default' }}>
+                <small>Expiram em 7 dias</small><b>{expirando}</b><span>{expirando ? 'confira os recursos a tempo' : 'nada vencendo agora'}</span>
+              </div>
+              {kpis.slice(2).map((k) => (
+                <button key={k.st} type="button" className={`eda-dem-kpi eda-dem-kpi-${k.classe}`} aria-pressed={consulta.status === k.st}
+                  onClick={() => alterarConsulta({ ...consulta, status: consulta.status === k.st ? '' : k.st, pagina: 0 })}>
+                  <small>{k.rotulo}</small><b>{contar(k.st)}</b><span>{k.texto}</span>
+                </button>
+              ))}
+            </div>
+          );
+        })()}
 
         <SeletorPeriodoMensalERN valor={periodoAtual} aoMudar={mudarPeriodo} rotulo="Período de início das demandas" />
 
@@ -583,14 +715,18 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
               <>
                 <div className="eda-pg-cartoes">
                   {resultado.registros.map((demanda) => (
-                    <button key={demanda.id} type="button" className="eda-pg-cartao" onClick={() => setAberta(demanda)}>
+                    <button key={demanda.id} type="button" className={`eda-pg-cartao eda-dem-cat-${demanda.categoria}`} onClick={() => setAberta(demanda)}>
                       <span className="eda-pg-cartao-topo">
-                        <span style={{ minWidth: 0 }}>
-                          <b>{demanda.titulo}</b>
-                          <small>{CATEGORIAS_DEMANDA[demanda.categoria]} · {demanda.localidade}</small>
+                        <span className="eda-dem-item">
+                          <IconeCategoria categoria={demanda.categoria} />
+                          <span className="eda-dem-item-txt">
+                            <b>{demanda.titulo}</b>
+                            <small>{CATEGORIAS_DEMANDA[demanda.categoria]} · {demanda.localidade}</small>
+                          </span>
                         </span>
                         <PillEDA tom={TOM_STATUS[demanda.status]}>{STATUS_DEMANDA[demanda.status]}</PillEDA>
                       </span>
+                      {previaDescricao(demanda.descricao) && <span className="eda-dem-previa">{previaDescricao(demanda.descricao)}</span>}
                       <span className="eda-pg-cartao-info">
                         <span>{formatadorQuantidade.format(demanda.quantidade)} {demanda.unidade}</span>
                         <span>{demanda.data_inicio && demanda.data_fim ? `${formatarData(demanda.data_inicio)} a ${formatarData(demanda.data_fim)}` : 'Período não informado'}</span>
@@ -612,10 +748,14 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
                     <tbody>
                       {resultado.registros.map((demanda) => (
                         <tr key={demanda.id} aria-selected={aberta?.id === demanda.id}>
-                          <td style={{ minWidth: 240, maxWidth: 360 }}>
-                            <button type="button" className="eda-pg-linha-bt" onClick={() => setAberta(demanda)}>
-                              <b>{demanda.titulo}</b>
-                              <small>{demanda.localidade}</small>
+                          <td className="eda-dem-col-item">
+                            <button type="button" className="eda-pg-linha-bt eda-dem-item" onClick={() => setAberta(demanda)}>
+                              <IconeCategoria categoria={demanda.categoria} />
+                              <span className="eda-dem-item-txt">
+                                <b>{demanda.titulo}</b>
+                                <span className="eda-dem-local"><IconeLocal />{demanda.localidade}</span>
+                                {previaDescricao(demanda.descricao) && <span className="eda-dem-previa">{previaDescricao(demanda.descricao)}</span>}
+                              </span>
                             </button>
                           </td>
                           <td className="eda-pg-mut">{CATEGORIAS_DEMANDA[demanda.categoria]}</td>
@@ -624,7 +764,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
                             {demanda.data_fim && <small>até {formatarData(demanda.data_fim)}</small>}
                             {expiracaoDemanda(demanda) && <div style={{ marginTop: 4 }}>{expiracaoDemanda(demanda)}</div>}
                           </td>
-                          <td className="eda-pg-num">{formatadorQuantidade.format(demanda.quantidade)} {demanda.unidade}</td>
+                          <td className="eda-dem-qtd"><b>{formatadorQuantidade.format(demanda.quantidade)}</b><small>{demanda.unidade}</small></td>
                           <td><PillEDA tom={TOM_STATUS[demanda.status]}>{STATUS_DEMANDA[demanda.status]}</PillEDA></td>
                           <td>
                             <div className="eda-pg-acoes-linha">
@@ -693,24 +833,36 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
             <button type="button" className="eda-pg-bt" onClick={() => setAberta(null)}>Fechar</button>
           )}
         >
-          <div className="eda-pg-pills" style={{ marginTop: 0 }}>
-            <PillEDA tom={TOM_STATUS[aberta.status]}>{STATUS_DEMANDA[aberta.status]}</PillEDA>
-          </div>
+          <div className={`eda-dem eda-dem-lateral eda-dem-cat-${aberta.categoria}`}>
+            <div className="eda-dem-lateral-topo">
+              <IconeCategoria categoria={aberta.categoria} grande />
+              <PillEDA tom={TOM_STATUS[aberta.status]}>{STATUS_DEMANDA[aberta.status]}</PillEDA>
+              {expiracaoDemanda(aberta)}
+            </div>
 
-          <div className="eda-pg-bloco" style={{ marginTop: 16 }}>
-            <p className="eda-pg-bloco-titulo">Previsão</p>
-            <div className="eda-pg-linha-valor"><span>Quantidade prevista</span><b>{formatadorQuantidade.format(aberta.quantidade)} {aberta.unidade}</b></div>
-            {detalheAberta && <p className="eda-pg-texto-mut" style={{ marginTop: 10 }}>{detalheAberta}</p>}
-          </div>
+            <div className="eda-dem-destaque">
+              <small>Quantidade prevista</small>
+              <strong>{formatadorQuantidade.format(aberta.quantidade)}<em>{aberta.unidade}</em></strong>
+              {detalheAberta && <p className="eda-dem-calculo">{detalheAberta}</p>}
+            </div>
 
-          <div className="eda-pg-bloco">
-            <p className="eda-pg-bloco-titulo">Detalhes</p>
-            <dl className="eda-pg-dados">
-              <DadoEDA rotulo="Início">{formatarData(aberta.data_inicio)}</DadoEDA>
-              <DadoEDA rotulo="Fim / expiração">{formatarData(aberta.data_fim)}{expiracaoDemanda(aberta) && <> {expiracaoDemanda(aberta)}</>}</DadoEDA>
-              <DadoEDA rotulo="Localidade" largo>{aberta.localidade}</DadoEDA>
-              <DadoEDA rotulo="Descrição" largo>{aberta.descricao || 'Sem descrição adicional.'}</DadoEDA>
-            </dl>
+            <div className="eda-pg-bloco">
+              <p className="eda-pg-bloco-titulo">Descrição</p>
+              <DescricaoDemanda texto={aberta.descricao} />
+            </div>
+
+            <div className="eda-pg-bloco">
+              <p className="eda-pg-bloco-titulo">Período da operação</p>
+              <LinhaTempo demanda={aberta} />
+            </div>
+
+            <div className="eda-pg-bloco">
+              <p className="eda-pg-bloco-titulo">Detalhes</p>
+              <dl className="eda-pg-dados">
+                <DadoEDA rotulo="Categoria">{CATEGORIAS_DEMANDA[aberta.categoria]}</DadoEDA>
+                <DadoEDA rotulo="Localidade">{aberta.localidade}</DadoEDA>
+              </dl>
+            </div>
           </div>
         </PainelLateralEDA>
       )}

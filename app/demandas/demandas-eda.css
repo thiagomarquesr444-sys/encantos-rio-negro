@@ -1,0 +1,105 @@
+/* ERN_DEMANDAS_ACOLHEDOR_V1
+   Demandas mais acolhedora: ícone por categoria, resumo do mês, descrição
+   com leitura confortável (entrelinha, peso normal, parágrafos) e painel
+   lateral com linha do tempo. Só visual: sem alteração de dados ou RLS. */
+
+.eda-dem { --dem-cor: var(--p-ouro); }
+.eda-dem-cat-alimentacao { --dem-cor: #e8a25a; }
+.eda-dem-cat-bebidas { --dem-cor: #7fc4d8; }
+.eda-dem-cat-combustivel { --dem-cor: #f08a6a; }
+.eda-dem-cat-hospedagem { --dem-cor: #b49ae8; }
+.eda-dem-cat-transporte_fluvial { --dem-cor: #5fb8c9; }
+.eda-dem-cat-guiamento { --dem-cor: #6cc79a; }
+.eda-dem-cat-passeios { --dem-cor: #e7c45f; }
+.eda-dem-cat-outros { --dem-cor: #9fb0a8; }
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-dem-icone { filter: saturate(1.25) brightness(.78); }
+
+/* Ícone da categoria */
+.eda-dem-icone {
+  display: grid; place-items: center; flex-shrink: 0;
+  width: 40px; height: 40px; border-radius: 12px;
+  color: var(--dem-cor);
+  background: color-mix(in srgb, var(--dem-cor) 14%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--dem-cor) 22%, transparent);
+}
+.eda-dem-icone-g { width: 48px; height: 48px; border-radius: 14px; }
+
+/* Resumo do período */
+.eda-dem-resumo { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 22px; }
+.eda-dem-kpi {
+  position: relative; min-width: 0; overflow: hidden;
+  padding: 16px 18px; border-radius: 18px; text-align: left;
+  border: 1px solid var(--p-borda); background: var(--p-painel); box-shadow: var(--p-sombra);
+  color: var(--p-texto); font: inherit; cursor: pointer;
+  transition: border-color .15s ease, transform .15s ease;
+}
+.eda-dem-kpi::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; background: var(--kpi-cor, var(--p-sec)); opacity: .9; }
+.eda-dem-kpi:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--kpi-cor, var(--p-sec)) 40%, transparent); }
+.eda-dem-kpi[aria-pressed="true"] { border-color: color-mix(in srgb, var(--kpi-cor, var(--p-sec)) 60%, transparent); background: color-mix(in srgb, var(--kpi-cor, var(--p-sec)) 7%, var(--p-painel)); }
+.eda-dem-kpi:focus-visible { outline: 2px solid #e3a144; outline-offset: 2px; }
+.eda-dem-kpi small { display: block; font-size: 12.5px; font-weight: 500; color: var(--p-sec); }
+.eda-dem-kpi b { display: block; margin-top: 8px; font-size: clamp(22px, 2.2vw, 28px); font-weight: 650; letter-spacing: -0.02em; line-height: 1.1; color: var(--kpi-cor, var(--p-texto)); }
+.eda-dem-kpi span { display: block; margin-top: 6px; font-size: 12px; line-height: 1.45; color: var(--p-sec); }
+.eda-dem-kpi-aberta { --kpi-cor: var(--p-amar); }
+.eda-dem-kpi-rascunho { --kpi-cor: var(--p-sec); }
+.eda-dem-kpi-expira { --kpi-cor: var(--p-verm); }
+.eda-dem-kpi-encerrada { --kpi-cor: var(--p-verde); }
+
+/* Linha da tabela: ícone + título + prévia da descrição */
+.eda-dem-item, .eda-pg-linha-bt.eda-dem-item { display: flex; align-items: flex-start; gap: 12px; min-width: 0; }
+.eda-dem-item-txt { display: grid; gap: 2px; min-width: 0; }
+.eda-dem-item-txt b { font-size: 14px; font-weight: 600; line-height: 1.35; letter-spacing: -0.005em; }
+.eda-dem-local { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; color: var(--p-sec); }
+.eda-dem-previa {
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  margin: 4px 0 0; max-width: 46ch;
+  font-size: 13px; font-weight: 400; line-height: 1.6; letter-spacing: 0.005em;
+  color: var(--p-sec); white-space: normal;
+}
+.eda-pg-tabela td.eda-dem-col-item { min-width: 280px; max-width: 440px; padding-top: 14px; padding-bottom: 14px; }
+.eda-pg-tabela .eda-dem-qtd b { display: block; font-size: 14px; font-weight: 650; }
+.eda-pg-tabela .eda-dem-qtd small { margin-top: 2px; }
+
+/* Cartões no celular */
+.eda-dem .eda-pg-cartao { gap: 12px; padding: 16px; border-left: 3px solid var(--dem-cor); }
+.eda-dem .eda-pg-cartao .eda-dem-previa { max-width: none; }
+
+/* Painel lateral */
+.eda-dem-lateral-topo { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.eda-dem-destaque {
+  margin-top: 16px; padding: 18px; border-radius: 16px;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--dem-cor) 12%, transparent), transparent 70%), var(--p-suave);
+  border: 1px solid color-mix(in srgb, var(--dem-cor) 22%, transparent);
+}
+.eda-dem-destaque small { display: block; font-size: 12px; font-weight: 500; color: var(--p-sec); }
+.eda-dem-destaque strong { display: block; margin-top: 6px; font-size: 30px; font-weight: 650; letter-spacing: -0.025em; line-height: 1.1; color: var(--p-texto); }
+.eda-dem-destaque strong em { font-style: normal; font-size: 16px; font-weight: 500; color: var(--p-sec); margin-left: 6px; letter-spacing: 0; }
+.eda-dem-calculo { margin: 12px 0 0; padding-top: 12px; border-top: 1px dashed var(--p-borda); font-size: 13px; line-height: 1.65; color: var(--p-sec); }
+
+.eda-dem-tempo { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; }
+.eda-dem-tempo > div small { display: block; font-size: 11.5px; color: var(--p-sec); }
+.eda-dem-tempo > div b { display: block; margin-top: 3px; font-size: 14px; font-weight: 600; }
+.eda-dem-tempo > div:last-child { text-align: right; }
+.eda-dem-trilho { position: relative; height: 6px; border-radius: 9px; background: var(--p-borda); overflow: hidden; }
+.eda-dem-trilho > i { position: absolute; inset: 0 auto 0 0; border-radius: 9px; background: linear-gradient(90deg, #f7d595, #e3a144); }
+.eda-dem-tempo-nota { margin: 10px 0 0; font-size: 12.5px; line-height: 1.5; color: var(--p-sec); }
+
+/* Descrição: leitura confortável */
+.eda-dem-descricao {
+  margin: 0; max-width: 62ch;
+  font-size: 14.5px; font-weight: 400; line-height: 1.75; letter-spacing: 0.01em; word-spacing: 0.02em;
+  color: var(--p-texto); overflow-wrap: break-word; hyphens: auto;
+}
+.eda-dem-descricao p { margin: 0; }
+.eda-dem-descricao p + p { margin-top: 0.85em; }
+.eda-dem-descricao-vazia { font-size: 13.5px; font-style: italic; color: var(--p-sec); }
+
+.eda-dem-lateral .eda-pg-dado dd { font-weight: 500; line-height: 1.5; }
+
+@media (max-width: 1023px) { .eda-dem-resumo { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) {
+  .eda-dem-resumo { gap: 10px; }
+  .eda-dem-kpi { padding: 14px; }
+  .eda-dem-descricao { font-size: 15px; }
+}
+@media (prefers-reduced-motion: reduce) { .eda-dem-kpi { transition: none; } }
