@@ -70,3 +70,29 @@
 }
 
 @media (max-width: 640px) { .eda-capa { padding: 18px; border-radius: 20px; } }
+
+/* Faixa das páginas antigas de cadastro: capa sem espaço extra embaixo */
+.eda-pg-miolo.eda-capa-faixa { padding-bottom: 0; }
+
+/* Painel da operadora (início): mesma capa com as classes da página inicial */
+.eda-inicio .eda-capa .eda-eb { display: inline-flex; align-items: center; gap: 10px; color: #f4c77e; }
+.eda-inicio .eda-capa h1 { color: #fff6e6; font-size: clamp(28px, 3.4vw, 38px); }
+.eda-inicio .eda-capa .eda-frase { color: rgb(246 239 225 / 74%); }
+.eda-inicio .eda-capa .eda-frase b { color: #fff6e6; }
+.eda-inicio .eda-capa .eda-bt-sec { color: #f6efe1; background: rgb(255 255 255 / 7%); border-color: rgb(255 255 255 / 14%); backdrop-filter: blur(6px); }
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-inicio .eda-capa .eda-eb { color: #9a5d14; }
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-inicio .eda-capa h1 { color: #13241d; }
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-inicio .eda-capa .eda-frase { color: #4f6158; }
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-inicio .eda-capa .eda-frase b { color: #13241d; }
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-inicio .eda-capa .eda-bt-sec { color: #13241d; background: rgb(255 255 255 / 72%); border-color: rgb(19 36 29 / 12%); }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-inicio .eda-capa .eda-eb { color: var(--e-ouro, #f4c77e); }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-inicio .eda-capa h1 { color: var(--e-texto); font-size: clamp(26px, 3vw, 34px); }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-inicio .eda-capa .eda-frase { color: var(--e-sec); }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-inicio .eda-capa .eda-frase b { color: var(--e-texto); }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-inicio .eda-capa .eda-bt-sec { color: var(--e-texto); background: var(--e-painel); border-color: var(--e-borda); backdrop-filter: none; }
+
+/* Cartões de números do início: o movimento fica no invólucro do link */
+.eda-mg.eda-kpi-mg { overflow: visible; display: flex; min-width: 0; border-radius: 18px; }
+.eda-kpi-mg > .eda-kpi { flex: 1; min-width: 0; }
+.eda-kpi-mg > .eda-mg-luz { display: none; }
+.eda-kpi-mg:hover > .eda-kpi { transform: none; }

@@ -610,6 +610,7 @@ export default function FinanceiroPage() {
 
       <div className="eda-pg-miolo">
         <CabecalhoEDA
+          capa
           etiqueta="Financeiro"
           titulo="Financeiro"
           resumo={carregando || erroConsulta

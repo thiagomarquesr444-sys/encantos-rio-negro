@@ -18,6 +18,8 @@ import ArcoFlechaERN from './ArcoFlechaERN';
 import { BarrasAgrupadasEDA, TendenciaEDA } from './GraficosEDA';
 import { listarChegadas, temTransfer, MODOS_CHEGADA, VEICULOS_TRANSFER, type ChegadaPainel } from '@/lib/chegadasERN';
 import './inicio-operadora-premium.css';
+import './capa-eda.css';
+import CartaoMagneticoEDA from './CartaoMagneticoEDA';
 
 export type ReservaInicioERN = {
   id: string;
@@ -340,9 +342,9 @@ export default function InicioOperadoraPremiumERN({
 
   return (
     <div className="eda-inicio">
-      <header className="eda-cabeca">
+      <CartaoMagneticoEDA as="header" forca={4} className="eda-cabeca eda-capa">
         <div>
-          <p className="eda-eb">{dataExtenso(hoje)}{nomeEmpresa ? ` · ${nomeEmpresa}` : ''}</p>
+          <p className="eda-eb"><i className="eda-capa-traco" aria-hidden="true" />{dataExtenso(hoje)}{nomeEmpresa ? ` · ${nomeEmpresa}` : ''}</p>
           <h1>{saudacao()}{nome ? `, ${nome}` : ''}</h1>
           <p className="eda-frase">{frase}</p>
         </div>
@@ -351,7 +353,7 @@ export default function InicioOperadoraPremiumERN({
           {financeiroLiberado && <Link href="/financeiro/receita/novo" className="eda-bt eda-bt-sec"><Icone nome="dinheiro" tamanho={16} />Lançar receita</Link>}
           <Link href="/reservas/nova" className="eda-bt eda-bt-ouro"><Icone nome="mais" tamanho={16} />Nova reserva</Link>
         </nav>
-      </header>
+      </CartaoMagneticoEDA>
 
       {erro && <p role="alert" className="eda-aviso">Alguns dados não foram carregados. {erro}</p>}
 
@@ -562,11 +564,13 @@ export default function InicioOperadoraPremiumERN({
 
 function Kpi({ rotulo, valor, etiqueta, icone, tom, href, extra }: { rotulo: string; valor: string; etiqueta: string; icone: keyof typeof ICONES; tom: Tom; href: string; extra?: ReactNode }) {
   return (
+    <CartaoMagneticoEDA forca={6} className="eda-kpi-mg">
     <Link href={href} className="eda-card eda-kpi">
       <span className="eda-ct"><small>{rotulo}</small><span className="eda-kpi-ic"><Icone nome={icone} tamanho={16} /></span></span>
       <b className="eda-num">{valor}</b>
       <span className={`eda-pill eda-${tom}`}>{etiqueta}</span>
       {extra}
     </Link>
+    </CartaoMagneticoEDA>
   );
 }

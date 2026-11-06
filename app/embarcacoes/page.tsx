@@ -13,6 +13,7 @@ import React, {
 import Link from 'next/link';
 
 import { supabase } from '@/lib/supabase';
+import { CabecalhoEDA } from '@/app/components/PadraoPaginaEDA';
 
 type StatusEmbarcacao =
   | 'Disponível'
@@ -873,60 +874,19 @@ export default function EmbarcacoesPage() {
           CABEÇALHO
       ====================================================== */}
 
-      <section className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
-        <div className="mx-auto flex max-w-[1360px] flex-col gap-8 px-5 py-10 md:px-8 md:py-12 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="flex items-center gap-3">
-              <span className="h-px w-8 bg-[var(--ern-botao)]" />
-
-              <span className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[var(--ern-destaque)]">
-                Estrutura • Frota
-              </span>
-            </div>
-
-            <h1
-              className="mt-4 text-4xl leading-none tracking-[-0.035em] text-[var(--ern-texto)] md:text-5xl"
-              style={{
-                fontFamily:
-                  'var(--font-fraunces), serif',
-              }}
-            >
-              Embarcações
-            </h1>
-
-            <p className="mt-4 max-w-[720px] text-sm leading-7 text-[var(--ern-secundario)]">
-              Gerencie barcos, lanchas
-              e estruturas fluviais
-              utilizadas em passeios,
-              deslocamentos e
-              expedições.
-            </p>
-          </div>
-
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <button
-              type="button"
-              onClick={
-                fetchEmbarcacoes
-              }
-              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] px-5 text-xs font-semibold text-[var(--ern-secundario)] transition hover:bg-[var(--ern-suave)]"
-            >
-              ↻ Atualizar
-            </button>
-
-            <Link
-              href="/embarcacoes/novo"
-              className="inline-flex min-h-[50px] items-center justify-center gap-2 rounded-xl bg-[var(--ern-botao)] px-6 text-sm font-bold text-[var(--ern-sobre-botao)] transition hover:-translate-y-0.5 hover:bg-[var(--ern-botao)]"
-            >
-              <span className="text-lg">
-                +
-              </span>
-
-              Nova embarcação
-            </Link>
-          </div>
-        </div>
-      </section>
+      {/* ERN_CAPA_EDA_V1 */}
+      <div className="eda-pg-miolo eda-capa-faixa">
+        <CabecalhoEDA
+          capa
+          etiqueta="Estrutura · Frota"
+          titulo="Embarcações"
+          resumo="Gerencie barcos, lanchas e estruturas fluviais usadas em passeios, deslocamentos e expedições."
+          acoes={<>
+                <button type="button" onClick={fetchEmbarcacoes} className="eda-pg-bt">Atualizar</button>
+                <Link href="/embarcacoes/novo" className="eda-pg-bt eda-pg-bt-ouro">+ Nova embarcação</Link>
+          </>}
+        />
+      </div>
 
       <main className="mx-auto max-w-[1360px] px-5 py-8 md:px-8 md:py-10">
         {error && (
