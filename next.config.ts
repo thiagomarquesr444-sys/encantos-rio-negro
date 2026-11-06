@@ -4,6 +4,11 @@ const nextConfig: NextConfig = {
   // Permite o IP da sua rede local e localhost
   allowedDevOrigins: ["192.168.100.11", "localhost:3000", "127.0.0.1:3000"],
 
+  // EDA_PREVIA_LINKS_V1: robôs de prévia (WhatsApp, redes sociais, buscadores)
+  // recebem título, descrição e foto já no <head>, sem esperar a página carregar.
+  htmlLimitedBots:
+    /WhatsApp|facebookexternalhit|facebookcatalog|Facebot|meta-externalagent|Instagram|Twitterbot|LinkedInBot|Slackbot|Discordbot|TelegramBot|Pinterest|SkypeUriPreview|redditbot|Embedly|vkShare|Googlebot|Google-InspectionTool|bingbot|BingPreview|Applebot|DuckDuckBot|YandexBot|Baiduspider/i,
+
   // ERN_CABECALHOS_SEGURANCA_V1: proteções de navegador em todas as páginas.
   // - frame-ancestors/X-Frame-Options: impede abrir o site dentro de outro site (clickjacking).
   // - nosniff: o navegador não "adivinha" o tipo de arquivo.
