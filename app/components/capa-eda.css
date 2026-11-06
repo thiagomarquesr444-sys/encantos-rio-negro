@@ -1,0 +1,72 @@
+/* ERN_CAPA_EDA_V1
+   Capa compacta das páginas de lista (Encantos da Amazônia): fundo Encontro
+   das Águas, grafismo de losangos e ondas de rio. Cores por tema; no estilo
+   Sóbrio vira o cabeçalho simples de antes. */
+
+.eda-capa {
+  align-items: flex-end;
+  padding: clamp(20px, 2.8vw, 30px) clamp(20px, 3vw, 34px);
+  border-radius: 24px;
+  background:
+    radial-gradient(70% 140% at 100% 0%, rgb(201 135 63 / 34%), transparent 60%),
+    radial-gradient(55% 120% at 0% 100%, rgb(20 92 74 / 40%), transparent 65%),
+    linear-gradient(120deg, #06110e 0%, #0b1d18 50%, #34210f 100%);
+  border: 1px solid rgb(244 199 126 / 20%);
+  box-shadow: 0 24px 56px -30px rgb(6 17 14 / 70%), 0 1px 0 rgb(255 255 255 / 5%) inset;
+}
+.eda-capa::before {
+  content: ""; position: absolute; inset: 0; z-index: -2; opacity: .14; pointer-events: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='48' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23f4c77e' stroke-width='1.2'%3E%3Cpath d='M28 4 52 28 28 52 4 28Z'/%3E%3Cpath d='M28 16 40 28 28 40 16 28Z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 48px 48px;
+  -webkit-mask-image: linear-gradient(100deg, transparent 40%, #000 90%);
+          mask-image: linear-gradient(100deg, transparent 40%, #000 90%);
+}
+.eda-capa::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 46px; z-index: -1; pointer-events: none; opacity: .45;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='46' viewBox='0 0 240 46'%3E%3Cpath d='M0 28c30-12 60-12 90 0s60 12 90 0 45-8 60-5' fill='none' stroke='%23f4c77e' stroke-opacity='.45' stroke-width='1.3'/%3E%3C/svg%3E") repeat-x bottom / 240px 46px;
+}
+.eda-capa .eda-pg-eb { display: inline-flex; align-items: center; gap: 10px; color: #f4c77e; }
+.eda-capa-traco { width: 24px; height: 1px; background: linear-gradient(90deg, #f4c77e, transparent); }
+.eda-pg .eda-capa h1 { color: #fff6e6; font-size: clamp(28px, 3.4vw, 38px); letter-spacing: -0.035em; }
+.eda-capa .eda-pg-resumo { color: rgb(246 239 225 / 74%); }
+.eda-capa .eda-pg-resumo b { color: #fff6e6; }
+.eda-capa .eda-pg-bt:not(.eda-pg-bt-ouro) { color: #f6efe1 !important; background: rgb(255 255 255 / 7%); border-color: rgb(255 255 255 / 14%); backdrop-filter: blur(6px); }
+.eda-capa .eda-pg-bt:not(.eda-pg-bt-ouro):hover { background: rgb(255 255 255 / 12%); }
+
+/* Tema claro */
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-capa {
+  background:
+    radial-gradient(70% 140% at 100% 0%, rgb(227 161 68 / 24%), transparent 60%),
+    radial-gradient(55% 120% at 0% 100%, rgb(35 122 87 / 12%), transparent 65%),
+    linear-gradient(120deg, #fffdf8 0%, #f8f1e2 55%, #f1dfbf 100%);
+  border-color: rgb(154 93 20 / 20%);
+  box-shadow: 0 24px 50px -30px rgb(120 80 20 / 32%), 0 1px 0 rgb(255 255 255 / 80%) inset;
+}
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-capa::before { opacity: .2; filter: brightness(.55) saturate(1.4); }
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-capa::after { opacity: .65; filter: brightness(.6) saturate(1.5); }
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-capa .eda-pg-eb { color: #9a5d14; }
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-capa-traco { background: linear-gradient(90deg, #9a5d14, transparent); }
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-pg .eda-capa h1 { color: #13241d; }
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-capa .eda-pg-resumo { color: #4f6158; }
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-capa .eda-pg-resumo b { color: #13241d; }
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-capa .eda-pg-bt:not(.eda-pg-bt-ouro) { color: #13241d !important; background: rgb(255 255 255 / 72%); border-color: rgb(19 36 29 / 12%); }
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-capa .eda-pg-bt:not(.eda-pg-bt-ouro):hover { background: #fff; }
+
+/* Estilo Sóbrio: cabeçalho simples, igual ao padrão anterior */
+.ern-gestao[data-ern-estilo="sobrio"] .eda-capa,
+.ern-gestao[data-ern-estilo="sobrio"]:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-capa {
+  padding: 0; border: 0; border-radius: 0; background: none; box-shadow: none; overflow: visible;
+}
+.ern-gestao[data-ern-estilo="sobrio"] .eda-capa::before,
+.ern-gestao[data-ern-estilo="sobrio"] .eda-capa::after,
+.ern-gestao[data-ern-estilo="sobrio"] .eda-capa-traco { display: none; }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-capa .eda-pg-eb { color: var(--p-ouro); }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-pg .eda-capa h1 { color: var(--p-texto); font-size: clamp(26px, 3vw, 32px); }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-capa .eda-pg-resumo { color: var(--p-sec); }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-capa .eda-pg-resumo b { color: var(--p-texto); }
+.ern-gestao[data-ern-estilo="sobrio"] .eda-capa .eda-pg-bt:not(.eda-pg-bt-ouro),
+.ern-gestao[data-ern-estilo="sobrio"]:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-capa .eda-pg-bt:not(.eda-pg-bt-ouro) {
+  color: var(--p-texto) !important; background: var(--p-painel); border-color: var(--p-borda); backdrop-filter: none;
+}
+
+@media (max-width: 640px) { .eda-capa { padding: 18px; border-radius: 20px; } }

@@ -710,6 +710,7 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
 
       <div className="eda-pg-miolo">
         <CabecalhoEDA
+          capa
           etiqueta="Operação"
           titulo="Reservas"
           resumo={resumoCabecalho}

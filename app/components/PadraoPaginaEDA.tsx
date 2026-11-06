@@ -8,6 +8,8 @@
 import { useEffect, useId, useRef, type ReactNode } from 'react';
 import './padrao-paginas-eda.css';
 import './padrao-formularios-eda.css';
+import './capa-eda.css';
+import CartaoMagneticoEDA from './CartaoMagneticoEDA';
 
 export type TomEDA = 'ok' | 'at' | 'er' | 'info' | 'nt';
 
@@ -15,17 +17,23 @@ export function PaginaEDA({ children, className = '' }: { children: ReactNode; c
   return <div className={`eda-pg ${className}`}>{children}</div>;
 }
 
-export function CabecalhoEDA({ etiqueta, titulo, resumo, acoes }: { etiqueta: string; titulo: string; resumo?: ReactNode; acoes?: ReactNode }) {
-  return (
-    <header className="eda-pg-cabeca">
+// ERN_CAPA_EDA_V1: com `capa`, o cabeçalho vira a capa Encantos da Amazônia
+// (grafismo + cartão magnético). No estilo Sóbrio volta a ser um cabeçalho simples.
+export function CabecalhoEDA({ etiqueta, titulo, resumo, acoes, capa = false }: { etiqueta: string; titulo: string; resumo?: ReactNode; acoes?: ReactNode; capa?: boolean }) {
+  const conteudo = (
+    <>
       <div className="eda-pg-cabeca-txt">
-        <p className="eda-pg-eb">{etiqueta}</p>
+        <p className="eda-pg-eb">{capa ? <><i className="eda-capa-traco" aria-hidden="true" />Encantos da Amazônia · {etiqueta}</> : etiqueta}</p>
         <h1>{titulo}</h1>
         {resumo && <p className="eda-pg-resumo">{resumo}</p>}
       </div>
       {acoes && <div className="eda-pg-acoes">{acoes}</div>}
-    </header>
+    </>
   );
+  if (capa) {
+    return <CartaoMagneticoEDA as="header" forca={4} className="eda-pg-cabeca eda-capa">{conteudo}</CartaoMagneticoEDA>;
+  }
+  return <header className="eda-pg-cabeca">{conteudo}</header>;
 }
 
 export function PillEDA({ tom, children, ponto = true }: { tom: TomEDA; children: ReactNode; ponto?: boolean }) {

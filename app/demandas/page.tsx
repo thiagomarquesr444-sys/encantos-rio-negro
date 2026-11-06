@@ -9,6 +9,7 @@ import {
   type FormEvent,
 } from 'react';
 import Link from 'next/link';
+import CartaoMagneticoEDA from '@/app/components/CartaoMagneticoEDA';
 import DemandasInsightsPremium from '@/app/components/DemandasInsightsPremium';
 import { SeletorPeriodoMensalERN, SeloExpiracaoERN } from '@/app/components/PeriodoMensalERN';
 import { HISTORICO_ERN, limitesMesERN, mesAtualERN, mesValidoERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
@@ -586,6 +587,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
     <PaginaEDA className="eda-dem">
       <div className="eda-pg-miolo">
         <CabecalhoEDA
+          capa
           etiqueta="Oferta e demanda"
           titulo="Demandas"
           resumo={resultado
@@ -613,19 +615,19 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
           return (
             <div className="eda-dem-resumo" role="group" aria-label="Resumo das demandas">
               {kpis.slice(0, 2).map((k) => (
-                <button key={k.st} type="button" className={`eda-dem-kpi eda-dem-kpi-${k.classe}`} aria-pressed={consulta.status === k.st}
+                <CartaoMagneticoEDA as="button" key={k.st} type="button" forca={6} className={`eda-dem-kpi eda-dem-kpi-${k.classe}`} aria-pressed={consulta.status === k.st}
                   onClick={() => alterarConsulta({ ...consulta, status: consulta.status === k.st ? '' : k.st, pagina: 0 })}>
                   <small>{k.rotulo}</small><b>{contar(k.st)}</b><span>{k.texto}</span>
-                </button>
+                </CartaoMagneticoEDA>
               ))}
-              <div className="eda-dem-kpi eda-dem-kpi-expira" style={{ cursor: 'default' }}>
+              <CartaoMagneticoEDA forca={6} className="eda-dem-kpi eda-dem-kpi-expira" style={{ cursor: 'default' }}>
                 <small>Expiram em 7 dias</small><b>{expirando}</b><span>{expirando ? 'confira os recursos a tempo' : 'nada vencendo agora'}</span>
-              </div>
+              </CartaoMagneticoEDA>
               {kpis.slice(2).map((k) => (
-                <button key={k.st} type="button" className={`eda-dem-kpi eda-dem-kpi-${k.classe}`} aria-pressed={consulta.status === k.st}
+                <CartaoMagneticoEDA as="button" key={k.st} type="button" forca={6} className={`eda-dem-kpi eda-dem-kpi-${k.classe}`} aria-pressed={consulta.status === k.st}
                   onClick={() => alterarConsulta({ ...consulta, status: consulta.status === k.st ? '' : k.st, pagina: 0 })}>
                   <small>{k.rotulo}</small><b>{contar(k.st)}</b><span>{k.texto}</span>
-                </button>
+                </CartaoMagneticoEDA>
               ))}
             </div>
           );

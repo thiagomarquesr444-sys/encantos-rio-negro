@@ -6,7 +6,7 @@
 // "reduzir movimento" ativo (tratado no CSS).
 
 import './cartao-magnetico-eda.css';
-import { useRef, type CSSProperties, type ReactNode, type PointerEvent } from 'react';
+import { useRef, type CSSProperties, type HTMLAttributes, type ReactNode, type PointerEvent } from 'react';
 
 export default function CartaoMagneticoEDA({
   children,
@@ -15,13 +15,13 @@ export default function CartaoMagneticoEDA({
   style,
   as: Tag = 'div',
   ...resto
-}: {
+}: Omit<HTMLAttributes<HTMLElement>, 'onPointerMove' | 'onPointerLeave'> & {
   children: ReactNode;
   className?: string;
   forca?: number;
   style?: CSSProperties;
-  as?: 'div' | 'section' | 'article';
-  'aria-label'?: string;
+  as?: 'div' | 'section' | 'article' | 'header' | 'button';
+  type?: 'button';
 }) {
   const ref = useRef<HTMLElement | null>(null);
   const quadro = useRef<number | null>(null);

@@ -306,6 +306,7 @@ export default function ClientesPage() {
 
       <div className="eda-pg-miolo">
         <CabecalhoEDA
+          capa
           etiqueta="Operação"
           titulo="Clientes"
           resumo={carregando
