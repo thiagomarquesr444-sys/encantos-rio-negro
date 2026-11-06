@@ -6,7 +6,7 @@ import PublicHeader from '@/app/components/PublicHeader';
 import BotaoCopaPescaERN from '@/app/components/BotaoCopaPescaERN';
 import ConciergePublicoERN from '@/app/components/ConciergePublicoERN';
 import FeedDescubraERN from '@/app/components/FeedDescubraERN';
-import LogoERN from '@/app/components/LogoERN';
+import RodapePublicoEDA from '@/app/components/RodapePublicoEDA';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import { HISTORIAS_MUNICIPIOS, type RegiaoHistoria } from '@/lib/historiasMunicipiosERN';
 
@@ -449,22 +449,7 @@ export default function ExperienciasPremiumERN() {
         </section>
       </main>
 
-      <footer className="ern-publico-hero border-t border-white/10 bg-[#07110E] text-[#B8C9BF]">
-        <div className="mx-auto flex max-w-[1180px] flex-col gap-5 px-5 py-8 md:flex-row md:items-center md:justify-between md:px-8">
-          <div className="flex items-center gap-3">
-            <LogoERN tamanho={36} />
-            <span className="leading-tight">
-              <span className="block font-semibold text-[#F0F0E8]">Encantos da Amazônia</span>
-              <span className="block text-xs">{t.rodape}</span>
-            </span>
-          </div>
-          <nav aria-label="Links" className="flex flex-wrap gap-x-5">
-            {t.links.map(([rotulo, href]) => (
-              <Link key={href} href={href} className={`inline-flex min-h-11 items-center text-sm font-semibold text-[#EDEDE3] hover:text-[#F4C77E] ${FOCO}`}>{rotulo}</Link>
-            ))}
-          </nav>
-        </div>
-      </footer>
+      <RodapePublicoEDA />
     </div>
   );
 }

@@ -239,10 +239,12 @@ export default function CulturaAmazonicaERN() {
           if (video !== atual) video.pause();
         });
       }}
-      className="border-t border-[#d6d2c8]/60 bg-[#ffffff] px-5 py-16 text-[#0f1c17] md:px-8 md:py-24"
+      className="relative border-t border-[#e3dfd6] bg-[#f3f1ec] px-5 py-20 text-[#0f1c17] md:px-8 md:py-28"
     >
-      <div className="mx-auto max-w-[1180px]">
-        <p className="text-xs font-semibold uppercase tracking-[0.22em] text-[#8a4b12]">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_5%_10%,rgb(71_176_135/8%),transparent_45%),radial-gradient(ellipse_at_95%_95%,rgb(227_161_68/10%),transparent_45%)]" />
+      <div className="relative mx-auto max-w-[1180px]">
+        <p className="inline-flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.22em] text-[#8a4b12]">
+          <span aria-hidden="true" className="h-px w-8 bg-gradient-to-r from-[#E3A144] to-transparent" />
           {t.eyebrow}
         </p>
 
@@ -258,7 +260,7 @@ export default function CulturaAmazonicaERN() {
           {t.description}
         </p>
 
-        <div aria-label={t.choose} role="group" className="mt-8 flex flex-wrap gap-x-6 gap-y-3 border-b border-[#d6d2c8]/70">
+        <div aria-label={t.choose} role="group" className="mt-10 inline-flex max-w-full flex-wrap gap-1 rounded-[20px] border border-[#e3dfd6] bg-white p-1.5 shadow-[0_12px_32px_rgb(15_28_23/5%)]">
           {colecoes.map(item => (
             <button
               key={item.id}
@@ -266,7 +268,7 @@ export default function CulturaAmazonicaERN() {
               aria-pressed={selecionado === item.id}
               aria-controls="cultura-colecao"
               onClick={() => { setSelecionado(item.id); setTodos(false); }}
-              className={`min-h-12 border-b-2 pb-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8a4b12] ${selecionado === item.id ? 'border-[#8a4b12] text-[#8a4b12]' : 'border-transparent text-[#4b5a53] hover:border-[#d6d2c8]'}`}
+              className={`min-h-11 rounded-2xl px-4 text-sm font-semibold transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E3A144] ${selecionado === item.id ? 'bg-[#07110E] text-[#F5F3EA] shadow-[0_8px_20px_rgb(7_17_14/18%)]' : 'text-[#4b5a53] hover:bg-[#f3f1ec] hover:text-[#0f1c17]'}`}
             >
               {item.municipio}
             </button>
@@ -276,7 +278,7 @@ export default function CulturaAmazonicaERN() {
         <div
           id="cultura-colecao"
           key={colecao.id}
-          className="cultura-entrada mt-10 grid items-start gap-x-8 gap-y-12 md:grid-cols-2 lg:grid-cols-3"
+          className="cultura-entrada mt-10 grid items-start gap-6 md:grid-cols-2 lg:grid-cols-3"
         >
           {(todos ? colecao.videos : colecao.videos.slice(0, 2)).map(item => {
             const vertical = item.altura > item.largura;
@@ -285,8 +287,9 @@ export default function CulturaAmazonicaERN() {
               <article
                 key={item.arquivo}
                 lang="pt-BR"
-                className={`min-w-0 ${vertical ? '' : 'md:col-span-2'}`}
+                className={`ern-revela-rolagem relative min-w-0 overflow-hidden rounded-[22px] border border-[#e3dfd6] bg-white p-5 shadow-[0_1px_2px_rgb(15_28_23/5%),0_12px_32px_rgb(15_28_23/5%)] sm:p-7 ${vertical ? '' : 'md:col-span-2'}`}
               >
+                <span aria-hidden="true" className="absolute left-0 top-7 h-7 w-1 rounded-r-full bg-gradient-to-b from-[#F7D595] to-[#E3A144]" />
                 <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8a4b12]">
                   {colecao.municipio} · Amazonas
                 </p>
@@ -318,7 +321,7 @@ export default function CulturaAmazonicaERN() {
             <button
               type="button"
               onClick={() => setTodos(true)}
-              className="inline-flex min-h-[48px] items-center gap-2 rounded-xl border border-[#8a4b12]/50 px-6 text-sm font-semibold text-[#8a4b12] transition hover:bg-[#8a4b12]/10 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#8a4b12]"
+              className="inline-flex min-h-12 items-center gap-2 rounded-full border border-[#E3A144]/50 bg-[#fffaf0] px-6 text-sm font-semibold text-[#6e3a0c] transition hover:border-[#E3A144] hover:bg-[#F7D595] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#E3A144]"
             >
               {idioma === 'EN' ? 'More videos' : idioma === 'ES' ? 'Más videos' : 'Ver mais vídeos'} ({colecao.videos.length - 2})
             </button>

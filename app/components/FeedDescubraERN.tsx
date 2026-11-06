@@ -97,12 +97,14 @@ export default function FeedDescubraERN() {
     <section
       id="rede"
       aria-labelledby="feed-descubra-titulo"
-      className="scroll-mt-28 border-y border-[#d6d2c8]/60 bg-[#f3f1ec] px-5 py-16 text-[#0f1c17] md:px-8 md:py-24"
+      className="relative scroll-mt-28 border-y border-[#e3dfd6] bg-[linear-gradient(180deg,#f6f4ef_0%,#f0ede5_100%)] px-5 py-20 text-[#0f1c17] md:px-8 md:py-28"
     >
-      <div className="mx-auto max-w-[1180px]">
+      <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_90%_0%,rgb(227_161_68/12%),transparent_45%)]" />
+      <div className="relative mx-auto max-w-[1180px]">
         <div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end">
           <div className="max-w-2xl">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8a4b12]">
+            <p className="inline-flex items-center gap-3 text-xs font-semibold uppercase tracking-[0.2em] text-[#8a4b12]">
+              <span aria-hidden="true" className="h-px w-8 bg-gradient-to-r from-[#E3A144] to-transparent" />
               {t.eyebrow}
             </p>
             <h2
@@ -116,7 +118,7 @@ export default function FeedDescubraERN() {
               {t.description}
             </p>
           </div>
-          <Link href="/rede" className={`inline-flex min-h-12 shrink-0 items-center gap-3 self-start border-b border-[#8a4b12]/40 text-sm font-semibold text-[#8a4b12] ${foco}`}>
+          <Link href="/rede" className={`inline-flex min-h-12 shrink-0 items-center gap-2 self-start rounded-full border border-[#E3A144]/50 bg-[#fffaf0] px-5 text-sm font-semibold text-[#6e3a0c] shadow-[0_6px_18px_rgb(227_161_68/12%)] transition hover:border-[#E3A144] hover:bg-[#F7D595] ${foco}`}>
             {t.all} <span aria-hidden="true">↗</span>
           </Link>
         </div>
@@ -131,7 +133,7 @@ export default function FeedDescubraERN() {
                   type="button"
                   aria-pressed={ativa}
                   onClick={() => setCategoriaId(opcao.id)}
-                  className={`min-h-[40px] shrink-0 rounded-full border px-4 text-sm font-semibold transition ${foco} ${ativa ? 'border-[#8a4b12] bg-[#8a4b12] text-[#ffffff]' : 'border-[#d6d2c8] text-[#0f1c17] hover:border-[#8a4b12]'}`}
+                  className={`min-h-[40px] shrink-0 rounded-full border px-4 text-sm font-semibold transition ${foco} ${ativa ? 'border-transparent bg-[#07110E] text-[#F5F3EA] shadow-[0_8px_20px_rgb(7_17_14/18%)]' : 'border-[#e3dfd6] bg-white text-[#0f1c17] hover:border-[#E3A144]'}`}
                 >
                   {opcao.nome}
                 </button>
@@ -174,7 +176,7 @@ export default function FeedDescubraERN() {
               return (
                 <article
                   key={item.id}
-                  className="ern-historia ern-revela-rolagem group flex min-w-0 flex-col overflow-hidden rounded-[22px] border border-[#d6d2c8] bg-[#ffffff] shadow-[0_1px_2px_rgb(15_28_23/6%)] transition duration-300 hover:-translate-y-1 hover:shadow-[0_24px_48px_rgb(15_28_23/12%)] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                  className="ern-historia ern-revela-rolagem group flex min-w-0 flex-col overflow-hidden rounded-[22px] border border-[#e3dfd6] bg-white shadow-[0_1px_2px_rgb(15_28_23/5%),0_12px_32px_rgb(15_28_23/5%)] transition duration-300 hover:-translate-y-1 hover:border-[#E3A144]/50 hover:shadow-[0_28px_56px_rgb(15_28_23/12%)] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                   style={{ animationDelay: `${indice * 55}ms` }}
                 >
                   {imagem && (
@@ -190,14 +192,15 @@ export default function FeedDescubraERN() {
                     </Link>
                   )}
 
-                  <div className="flex flex-1 flex-col px-5 pb-5">
+                  <div className="relative flex flex-1 flex-col px-6 pb-6">
+                  <span aria-hidden="true" className="absolute left-0 top-6 h-7 w-1 rounded-r-full bg-gradient-to-b from-[#F7D595] to-[#E3A144]" />
                   <Link
                     href={`/rede/perfil/${encodeURIComponent(item.autor.slug)}`}
                     className={`mt-4 inline-flex min-h-11 max-w-full items-center text-sm font-semibold hover:underline ${foco}`}
                   >
                     <span className="break-words">{item.autor.nome_publico}</span>
                     {item.autor.verificado && (
-                      <span title={t.verificado} aria-label={t.verificado} className="ml-2 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#13342A] text-[11px] text-[#ffffff]">✓</span>
+                      <span title={t.verificado} aria-label={t.verificado} className="ml-2 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-b from-[#F7D595] to-[#E3A144] text-[11px] font-bold text-[#07110E]">✓</span>
                     )}
                   </Link>
 
@@ -213,7 +216,7 @@ export default function FeedDescubraERN() {
                     </p>
                   )}
 
-                  <Link href={href} className={`mt-auto inline-flex min-h-11 items-center gap-2 pt-3 text-xs font-semibold text-[#8a4b12] ${foco}`}>
+                  <Link href={href} className={`mt-auto inline-flex min-h-11 items-center gap-2 pt-4 text-xs font-semibold text-[#8a4b12] transition group-hover:gap-3 ${foco}`}>
                     {t.read} <span aria-hidden="true">→</span>
                   </Link>
                   </div>

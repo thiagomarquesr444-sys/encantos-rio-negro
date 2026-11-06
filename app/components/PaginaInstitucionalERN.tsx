@@ -2,9 +2,8 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 
 import PublicHeader from '@/app/components/PublicHeader';
-import LogoERN from '@/app/components/LogoERN';
+import RodapePublicoEDA from '@/app/components/RodapePublicoEDA';
 import MenuInstitucionalERN from '@/app/components/MenuInstitucionalERN';
-import { PAGINAS_INSTITUCIONAIS } from '@/lib/paginasInstitucionaisERN';
 
 // ERN_INSTITUCIONAL_PREMIUM_V1
 // Modelo das páginas de Atendimento, Privacidade, Termos e Reembolso no
@@ -108,28 +107,7 @@ export default function PaginaInstitucionalERN({
         <div className="min-w-0 space-y-6">{children}</div>
       </main>
 
-      <footer className="ern-publico-hero border-t border-white/10 bg-[#07110E] text-[#B8C9BF]">
-        <div className="mx-auto flex max-w-[1180px] flex-col gap-6 px-5 py-10 sm:px-8 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3">
-            <LogoERN tamanho={40} />
-            <span className="leading-tight">
-              <span className="block text-lg font-semibold text-[#F0F0E8]">Encantos da Amazônia</span>
-              <span className="block text-xs">Nascida em Barcelos, no Rio Negro.</span>
-            </span>
-          </div>
-          <nav aria-label="Informações e atendimento" className="flex flex-wrap gap-x-5 gap-y-1">
-            {[{ href: '/', nome: 'Voltar ao portal' }, ...PAGINAS_INSTITUCIONAIS].map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`inline-flex min-h-11 items-center text-sm font-semibold text-[#EDEDE3] hover:text-[#F4C77E] ${FOCO}`}
-              >
-                {item.nome}
-              </Link>
-            ))}
-          </nav>
-        </div>
-      </footer>
+      <RodapePublicoEDA />
     </div>
   );
 }
