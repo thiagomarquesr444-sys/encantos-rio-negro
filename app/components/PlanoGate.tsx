@@ -8,6 +8,8 @@ import {
 
 import Link from 'next/link';
 
+import LogoERN from '@/app/components/LogoERN';
+
 import { supabase } from '@/lib/supabase';
 
 import {
@@ -32,19 +34,9 @@ type EstadoPlano =
 
 const TEMPO_LIMITE_MS = 15_000;
 
-const BOTAO_BASE =
-  'inline-flex min-h-12 items-center justify-center rounded-xl ' +
-  'px-5 py-3 text-sm font-semibold transition-colors duration-200 ' +
-  'focus-visible:outline-none focus-visible:ring-2 ' +
-  'focus-visible:ring-[#E3A144] focus-visible:ring-offset-2 ' +
-  'focus-visible:ring-offset-[#0A1713] motion-reduce:transition-none';
-
-const BOTAO_PRIMARIO =
-  `${BOTAO_BASE} bg-[#E3A144] text-[#07130F] hover:bg-[#F0B45F]`;
-
-const BOTAO_SECUNDARIO =
-  `${BOTAO_BASE} border border-white/15 text-[#EDEDE3] ` +
-  'hover:bg-white/[0.06]';
+// EDA_AVISO_PREMIUM_V1: botões e superfícies seguem os tokens --ern-* do tema da gestão.
+const BOTAO_PRIMARIO = 'eda-aviso-botao eda-aviso-botao-primario';
+const BOTAO_SECUNDARIO = 'eda-aviso-botao';
 
 function ehObjeto(
   valor: unknown,
@@ -167,24 +159,24 @@ function SkeletonPlano() {
         aria-hidden="true"
         className="space-y-7 motion-safe:animate-pulse"
       >
-        <div className="h-5 w-32 rounded bg-white/10" />
-        <div className="h-10 w-4/5 rounded-lg bg-white/10" />
+        <div className="h-5 w-32 rounded eda-aviso-esqueleto" />
+        <div className="h-10 w-4/5 rounded-lg eda-aviso-esqueleto" />
 
         <div className="space-y-3">
-          <div className="h-4 w-full rounded bg-white/[0.07]" />
-          <div className="h-4 w-2/3 rounded bg-white/[0.07]" />
+          <div className="h-4 w-full rounded eda-aviso-esqueleto" />
+          <div className="h-4 w-2/3 rounded eda-aviso-esqueleto" />
         </div>
 
         <div className="grid gap-3 sm:grid-cols-3">
           {[1, 2, 3].map((item) => (
             <div
               key={item}
-              className="h-24 rounded-2xl bg-white/[0.05]"
+              className="h-24 rounded-2xl eda-aviso-esqueleto"
             />
           ))}
         </div>
 
-        <div className="h-12 w-44 rounded-xl bg-white/10" />
+        <div className="h-12 w-44 rounded-xl eda-aviso-esqueleto" />
       </div>
     </div>
   );
@@ -370,147 +362,134 @@ export default function PlanoGate({
       break;
   }
 
+  const recursoPro = estado.tipo === 'pronto' && !assinaturaInativa;
+  const selo =
+    estado.tipo === 'erro' ? 'Verificação de acesso'
+    : estado.tipo === 'sem_sessao' ? 'Sessão encerrada'
+    : estado.tipo === 'sem_vinculo' ? 'Vínculo da conta'
+    : assinaturaInativa ? 'Assinatura'
+    : `Recurso ${configuracao.planoMinimo}`;
+
   return (
-    <section className="min-h-[calc(100vh-82px)] bg-[#07110E] px-5 py-10 text-[#EDEDE3] md:px-8 md:py-16">
-      <div className="mx-auto max-w-[980px]">
+    <section className="eda-aviso">
+      <div className="eda-aviso-largura">
         <div
           key={estado.tipo}
-          className="gate-panel relative overflow-hidden rounded-[30px] border border-white/10 bg-[#0A1713] p-6 shadow-xl md:p-10"
+          className={`eda-aviso-painel ${recursoPro ? 'eda-aviso-pro' : ''}`}
         >
           {estado.tipo === 'carregando' ? (
             <SkeletonPlano />
           ) : (
             <>
-              <div
-                aria-hidden="true"
-                className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full border border-[#E3A144]/10"
-              />
+              <div aria-hidden="true" className="eda-aviso-halo" />
 
               <div className="relative">
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#F4C77E]">
-                  Acesso aos recursos
-                </p>
+                <div className="eda-aviso-topo">
+                  <LogoERN tamanho={44} />
+                  <div>
+                    <p className="eda-aviso-kicker">Encantos da Amazônia · Gestão</p>
+                    <span className={`eda-aviso-selo ${recursoPro ? 'eda-aviso-selo-pro' : ''} ${estado.tipo === 'erro' ? 'eda-aviso-selo-erro' : ''}`}>
+                      {recursoPro && <span aria-hidden="true">✦</span>}
+                      {selo}
+                    </span>
+                  </div>
+                </div>
 
                 <div
                   role={estado.tipo === 'erro' ? 'alert' : 'status'}
-                  aria-live={
-                    estado.tipo === 'erro' ? 'assertive' : 'polite'
-                  }
+                  aria-live={estado.tipo === 'erro' ? 'assertive' : 'polite'}
                 >
-                  <h1
-                    className="mt-5 max-w-[740px] text-3xl leading-tight tracking-tight text-[#F0F0E8] md:text-5xl"
-                    style={{
-                      fontFamily: 'var(--font-fraunces), serif',
-                    }}
-                  >
-                    {titulo}
-                  </h1>
-
-                  <p className="mt-5 max-w-[680px] text-sm leading-7 text-[#BCC9C0] md:text-base">
-                    {descricao}
-                  </p>
+                  <h1 className="eda-aviso-titulo">{titulo}</h1>
+                  <p className="eda-aviso-descricao">{descricao}</p>
                 </div>
 
                 {plano && (
-                  <dl className="mt-8 grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4">
-                      <dt className="text-xs text-[#A9BCAE]">
-                        Plano atual
-                      </dt>
-                      <dd className="mt-2 text-lg font-semibold">
-                        {plano.plano_nome}
-                      </dd>
+                  <dl className="eda-aviso-cartoes">
+                    <div className="eda-aviso-cartao">
+                      <dt>Plano atual</dt>
+                      <dd>{plano.plano_nome}</dd>
                     </div>
-
-                    <div className="rounded-2xl border border-white/10 bg-white/[0.025] p-4">
-                      <dt className="text-xs text-[#A9BCAE]">
-                        Recurso
-                      </dt>
-                      <dd className="mt-2 text-lg font-semibold">
-                        {configuracao.nome}
-                      </dd>
+                    <div className="eda-aviso-cartao">
+                      <dt>Recurso</dt>
+                      <dd>{configuracao.nome}</dd>
                     </div>
-
-                    <div className="rounded-2xl border border-[#E3A144]/20 bg-[#E3A144]/[0.04] p-4">
-                      <dt className="text-xs text-[#E3A144]">
-                        {assinaturaInativa
-                          ? 'Situação do acesso'
-                          : 'Plano mínimo'}
-                      </dt>
-                      <dd className="mt-2 text-lg font-semibold text-[#F4C77E]">
-                        {assinaturaInativa
-                          ? 'Assinatura inativa'
-                          : configuracao.planoMinimo}
-                      </dd>
+                    <div className="eda-aviso-cartao eda-aviso-cartao-destaque">
+                      <dt>{assinaturaInativa ? 'Situação do acesso' : 'Disponível a partir do'}</dt>
+                      <dd>{assinaturaInativa ? 'Assinatura inativa' : configuracao.planoMinimo}</dd>
                     </div>
                   </dl>
                 )}
 
-                <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+                <div className="eda-aviso-acoes">
                   {estado.tipo === 'sem_sessao' ? (
-                    <Link href="/login" className={BOTAO_PRIMARIO}>
-                      Fazer login
-                    </Link>
+                    <Link href="/login" className={BOTAO_PRIMARIO}>Fazer login</Link>
                   ) : (
                     <button
                       type="button"
                       onClick={tentarNovamente}
-                      className={
-                        estado.tipo === 'pronto'
-                          ? BOTAO_SECUNDARIO
-                          : BOTAO_PRIMARIO
-                      }
+                      className={estado.tipo === 'pronto' ? BOTAO_SECUNDARIO : BOTAO_PRIMARIO}
                     >
-                      {estado.tipo === 'pronto'
-                        ? 'Atualizar acesso'
-                        : 'Tentar novamente'}
+                      {estado.tipo === 'pronto' ? 'Atualizar acesso' : 'Tentar novamente'}
                     </button>
                   )}
 
                   {plano && (
                     <Link href="/planos" className={BOTAO_PRIMARIO}>
-                      {assinaturaInativa
-                        ? 'Consultar planos'
-                        : 'Conhecer planos'}
+                      {assinaturaInativa ? 'Regularizar assinatura' : `Conhecer o plano ${configuracao.planoMinimo}`}
                     </Link>
                   )}
 
                   {estado.tipo !== 'sem_sessao' && (
-                    <Link
-                      href="/dashboard"
-                      className={BOTAO_SECUNDARIO}
-                    >
-                      Voltar ao Dashboard
-                    </Link>
+                    <Link href="/dashboard" className={BOTAO_SECUNDARIO}>Voltar ao início</Link>
                   )}
                 </div>
+
+                {recursoPro && (
+                  <p className="eda-aviso-rodape">
+                    Seus dados continuam salvos. Ao mudar de plano, o recurso é liberado na hora, sem perder nada do que já está cadastrado.
+                  </p>
+                )}
               </div>
             </>
           )}
         </div>
       </div>
 
-      <style jsx>{`
-        @keyframes gate-enter {
-          from {
-            opacity: 0;
-            transform: translateY(8px);
-          }
-          to {
-            opacity: 1;
-            transform: translateY(0);
-          }
-        }
-
-        .gate-panel {
-          animation: gate-enter 220ms ease-out both;
-        }
-
-        @media (prefers-reduced-motion: reduce) {
-          .gate-panel {
-            animation: none;
-          }
-        }
+      <style jsx global>{`
+        /* EDA_AVISO_PREMIUM_V1 — padrão premium da gestão (Geist + tokens do tema) */
+        .eda-aviso{--a-fundo:var(--ern-fundo,#07110e);--a-painel:var(--ern-painel,#0b1814);--a-elev:var(--ern-elevado,#10231b);--a-texto:var(--ern-texto,#edede3);--a-sec:var(--ern-secundario,#b8c9bf);--a-borda:var(--ern-borda,#355043);--a-ouro:var(--ern-destaque,#f4c77e);--a-botao:var(--ern-botao,#e3a144);--a-sobre:var(--ern-sobre-botao,#07110e);
+          min-height:calc(100vh - 82px);display:grid;place-items:center;padding:40px 20px;background:var(--a-fundo);color:var(--a-texto);font-family:var(--font-gestao,var(--font-geist)),system-ui,sans-serif}
+        .eda-aviso-largura{width:100%;max-width:880px}
+        .eda-aviso-painel{position:relative;overflow:hidden;border-radius:28px;border:1px solid color-mix(in srgb,var(--a-borda) 60%,transparent);background:var(--a-painel);padding:28px;box-shadow:0 24px 60px rgb(0 0 0/22%);animation:eda-aviso-entra 240ms ease-out both}
+        @media(min-width:768px){.eda-aviso-painel{padding:44px}}
+        .eda-aviso-pro{border-color:color-mix(in srgb,var(--a-ouro) 35%,transparent)}
+        .eda-aviso-halo{pointer-events:none;position:absolute;right:-120px;top:-120px;width:340px;height:340px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--a-ouro) 18%,transparent),transparent 65%)}
+        .eda-aviso-topo{display:flex;align-items:center;gap:14px}
+        .eda-aviso-kicker{margin:0 0 6px;font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:var(--a-sec)}
+        .eda-aviso-selo{display:inline-flex;align-items:center;gap:6px;padding:4px 11px;border-radius:999px;border:1px solid var(--a-borda);background:var(--a-elev);font-size:11px;font-weight:600;color:var(--a-texto)}
+        .eda-aviso-selo-pro{border-color:transparent;background:linear-gradient(180deg,#f7d595,#e3a144);color:#07110e}
+        .eda-aviso-selo-erro{border-color:var(--ern-erro,#fecaca);color:var(--ern-erro,#fecaca)}
+        .eda-aviso-titulo{margin:28px 0 0;max-width:720px;font-size:clamp(28px,4.4vw,44px);line-height:1.08;font-weight:650;letter-spacing:-.03em;color:var(--a-texto)}
+        .eda-aviso-descricao{margin:16px 0 0;max-width:640px;font-size:15px;line-height:1.75;color:var(--a-sec)}
+        .eda-aviso-cartoes{margin:30px 0 0;display:grid;gap:12px}
+        @media(min-width:640px){.eda-aviso-cartoes{grid-template-columns:repeat(3,1fr)}}
+        .eda-aviso-cartao{border-radius:18px;border:1px solid color-mix(in srgb,var(--a-borda) 55%,transparent);background:var(--a-elev);padding:16px}
+        .eda-aviso-cartao dt{font-size:11px;color:var(--a-sec)}
+        .eda-aviso-cartao dd{margin:6px 0 0;font-size:17px;font-weight:600;color:var(--a-texto);font-variant-numeric:tabular-nums}
+        .eda-aviso-cartao-destaque{border-color:color-mix(in srgb,var(--a-ouro) 40%,transparent);background:color-mix(in srgb,var(--a-ouro) 8%,var(--a-elev))}
+        .eda-aviso-cartao-destaque :is(dt,dd){color:var(--a-ouro)}
+        .eda-aviso-acoes{margin-top:30px;display:flex;flex-direction:column;gap:10px}
+        @media(min-width:640px){.eda-aviso-acoes{flex-direction:row;flex-wrap:wrap}}
+        .eda-aviso-botao{display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 22px;border-radius:999px;border:1px solid var(--a-borda);background:var(--a-elev);color:var(--a-texto);font-size:14px;font-weight:600;font-family:inherit;cursor:pointer;transition:border-color .15s,transform .15s,filter .15s}
+        .eda-aviso-botao:hover{border-color:var(--a-botao)}
+        .eda-aviso-botao:focus-visible{outline:2px solid var(--a-botao);outline-offset:3px}
+        .eda-aviso-botao-primario{border-color:transparent;background:var(--a-botao);color:var(--a-sobre)}
+        .ern-gestao:not([data-ern-tema="amarelo"]):not([data-ern-tema="branco"]):not([data-ern-tema="azul"]) .eda-aviso-botao-primario{background:linear-gradient(180deg,#f7d595,#e3a144);color:#07110e;box-shadow:inset 0 1px 0 rgb(255 255 255/55%)}
+        .eda-aviso-botao-primario:hover{filter:brightness(1.05);transform:translateY(-1px)}
+        .eda-aviso-rodape{margin:24px 0 0;padding-top:18px;border-top:1px solid color-mix(in srgb,var(--a-borda) 45%,transparent);font-size:12px;line-height:1.7;color:var(--a-sec)}
+        .eda-aviso-esqueleto{background:color-mix(in srgb,var(--a-texto) 9%,transparent)}
+        @keyframes eda-aviso-entra{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+        @media(prefers-reduced-motion:reduce){.eda-aviso-painel{animation:none}.eda-aviso-botao{transition:none}.eda-aviso-botao-primario:hover{transform:none}}
       `}</style>
     </section>
   );

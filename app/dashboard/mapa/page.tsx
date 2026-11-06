@@ -51,10 +51,11 @@ function MapaOperacional() {
   const pontos = useRef<LayerGroup | null>(null);
   const marcadorGPS = useRef<Marker | null>(null);
   const areaGPS = useRef<Circle | null>(null);
+  const chaveIconeGPS = useRef('');
   const alvo = useRef<LayerGroup | null>(null);
   const seguindo = useRef(false);
 
-  const [topo, setTopo] = useState(82);
+  const [topo, setTopo] = useState(0);
   const [pronto, setPronto] = useState(false);
   const [erroMapa, setErroMapa] = useState('');
   const [tentativa, setTentativa] = useState(0);
@@ -109,9 +110,10 @@ function MapaOperacional() {
   }, [seguir]);
 
   useEffect(() => {
-    const cabecalho = document.querySelector('.ern-navegacao-ilustrada');
+    // EDA_MAPA_TOPO_V2: mede o cabeçalho visível (barra superior do celular/tablet); no desktop não há cabeçalho, topo = 0
+    const cabecalho = document.querySelector('.ern-navegacao-ilustrada') ?? document.querySelector('header.ern-menu-fixo');
     const medir = () => {
-      setTopo(Math.max(0, cabecalho?.getBoundingClientRect().bottom ?? 82));
+      setTopo(Math.max(0, cabecalho?.getBoundingClientRect().bottom ?? 0));
     };
     const observador = new ResizeObserver(medir);
     if (cabecalho) observador.observe(cabecalho);
@@ -387,33 +389,45 @@ function MapaOperacional() {
       areaGPS.current?.remove();
       marcadorGPS.current = null;
       areaGPS.current = null;
+      chaveIconeGPS.current = '';
       return;
     }
 
     const coordenadas: [number, number] = [posicao.lat, posicao.lng];
-    const simbolo = bordo
-      ? '<svg viewBox="0 0 32 32" width="28" height="28" aria-hidden="true"><path d="M5 19h22l-5 8H10z" fill="#fff"/><path d="M11 17V9h10v8M16 3v6" fill="none" stroke="#fff" stroke-width="2"/></svg>'
-      : '<span aria-hidden="true">●</span>';
-
+    // EDA_BORDO_VIVO_V2: "Estou a bordo" = sintonia real — embarcação EDA pulsando (ouro/verde).
+    // Sinal fraco continua pulsando, mais lento e atenuado, para não aparentar precisão que não existe.
+    const barco = '<svg viewBox="0 0 32 32" width="22" height="22" aria-hidden="true"><path d="M4 19h24l-5 8H9z" fill="#f4c77e"/><path d="M11 17V9h10v8M16 3v6" fill="none" stroke="#f4c77e" stroke-width="2.2" stroke-linecap="round"/></svg>';
+    const html = bordo
+      ? `<div class="ern-bordo ${confiavel ? 'ern-bordo-sintonia' : 'ern-bordo-fraco'}"><span class="ern-bordo-onda"></span><span class="ern-bordo-onda ern-bordo-onda-2"></span><span class="ern-bordo-onda ern-bordo-onda-3"></span><div class="ern-bordo-nucleo">${barco}</div><span class="ern-bordo-rotulo">${confiavel ? 'EDA · A bordo' : 'EDA · Sinal fraco'}</span></div>`
+      : `<div class="ern-posicao-corpo" style="opacity:${confiavel ? 1 : .55}"><span aria-hidden="true">●</span></div>`;
     const icone = L.divIcon({
       className: 'ern-posicao-icone',
-      html: `<div class="ern-posicao-corpo ${bordo && confiavel ? 'ern-bordo-vivo' : ''}" style="opacity:${confiavel ? 1 : .55}">${simbolo}</div>`,
-      iconSize: [40, 40],
-      iconAnchor: [20, 20],
+      html,
+      iconSize: bordo ? [64, 64] : [40, 40],
+      iconAnchor: bordo ? [32, 32] : [20, 20],
     });
+    const chave = `${bordo}-${confiavel}`;
+    const corArea = bordo ? '#e3a144' : '#246bd7';
 
     if (!marcadorGPS.current) {
       marcadorGPS.current = L.marker(coordenadas, {
         icon: icone,
         zIndexOffset: 1500,
-        title: 'Posição deste aparelho',
+        title: bordo ? 'Embarcação EDA (a bordo)' : 'Posição deste aparelho',
       }).addTo(m);
       areaGPS.current = L.circle(coordenadas, {
         radius: posicao.precisao,
-        color: '#246bd7', weight: 1, fillOpacity: .08,
+        color: corArea, weight: 1, fillOpacity: .08, dashArray: bordo ? '4 6' : undefined,
       }).addTo(m);
+      chaveIconeGPS.current = chave;
     } else {
-      marcadorGPS.current.setLatLng(coordenadas).setIcon(icone);
+      marcadorGPS.current.setLatLng(coordenadas);
+      // Só troca o ícone quando o estado muda — evita reiniciar o pulso a cada leitura do GPS.
+      if (chaveIconeGPS.current !== chave) {
+        marcadorGPS.current.setIcon(icone);
+        areaGPS.current?.setStyle({ color: corArea, dashArray: bordo ? '4 6' : undefined });
+        chaveIconeGPS.current = chave;
+      }
       areaGPS.current?.setLatLng(coordenadas).setRadius(posicao.precisao);
     }
 
@@ -823,6 +837,22 @@ function MapaOperacional() {
         .ern-mapa-operacional .ern-resultados-destino button[aria-pressed=true]{box-shadow:inset 0 0 0 1px #e3a144}
         .ern-mapa-operacional :is(.ern-popup-destino-conteudo strong,.ern-popup-destino-conteudo p){font-family:inherit}
         @media (prefers-reduced-motion:reduce){.ern-mapa-operacional *{transition:none!important}}
+        /* EDA_BORDO_VIVO_V2 — marcador "Estou a bordo" com identidade EDA */
+        .ern-bordo{position:relative;width:64px;height:64px;display:grid;place-items:center}
+        .ern-bordo-nucleo{position:relative;z-index:2;display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#1b3a2f,#07110e 70%);border:2.5px solid #f4c77e;box-shadow:0 0 0 3px #07110e,0 4px 16px #0009,inset 0 1px 0 #ffffff25;animation:eda-bordo-respira 2.4s ease-in-out infinite}
+        .ern-bordo-onda{position:absolute;inset:11px;border-radius:50%;border:2px solid #f4c77e;opacity:0;animation:eda-bordo-onda 2.4s cubic-bezier(.2,.6,.3,1) infinite}
+        .ern-bordo-onda-2{animation-delay:.8s;border-color:#7fd3b4}
+        .ern-bordo-onda-3{animation-delay:1.6s}
+        .ern-bordo-rotulo{position:absolute;top:calc(100% - 2px);left:50%;transform:translateX(-50%);white-space:nowrap;padding:3px 9px;border-radius:999px;background:#07110eeb;border:1px solid #f4c77e70;color:#f4c77e;font:600 9px var(--font-gestao,var(--font-geist)),system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;box-shadow:0 2px 8px #0007}
+        .ern-bordo-fraco .ern-bordo-nucleo{border-color:#c9a26a;opacity:.8;animation-duration:3.6s}
+        .ern-bordo-fraco .ern-bordo-onda{animation-duration:3.6s;border-style:dashed;border-color:#c9a26a}
+        .ern-bordo-fraco .ern-bordo-onda-2{animation-delay:1.2s}.ern-bordo-fraco .ern-bordo-onda-3{animation-delay:2.4s}
+        .ern-bordo-fraco .ern-bordo-rotulo{color:#e8c48e;border-style:dashed}
+        @keyframes eda-bordo-onda{0%{transform:scale(.9);opacity:.9}100%{transform:scale(2.6);opacity:0}}
+        @keyframes eda-bordo-respira{0%,100%{transform:scale(1)}50%{transform:scale(1.07)}}
+        @media(prefers-reduced-motion:reduce){.ern-bordo-nucleo,.ern-bordo-onda{animation:none}.ern-bordo-onda:first-child{opacity:.6;transform:scale(1.35)}}
+        /* EDA_MAPA_SIDEBAR_V1: no desktop o mapa começa após a sidebar recolhida (76px); ao ampliar, a sidebar continua sobrepondo como overlay */
+        @media(min-width:1280px){.ern-mapa-operacional:not(:fullscreen){left:var(--ern-menu-largura,76px)}}
       `}</style>
     </main>
   );

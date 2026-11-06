@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE_ERN = 'ern-offline-base-v1';
+const CACHE_ERN = 'ern-offline-base-v2';
 const PAGINA_ERN = '/ern-offline.html';
 
 self.addEventListener('install', event => {
@@ -12,7 +12,7 @@ self.addEventListener('install', event => {
       resposta.redirected ||
       !(resposta.headers.get('content-type') || '').includes('text/html')
     ) {
-      throw new Error('A tela offline ERN nao foi carregada.');
+      throw new Error('A tela offline EDA nao foi carregada.');
     }
 
     const cache = await caches.open(CACHE_ERN);
@@ -69,7 +69,7 @@ self.addEventListener('fetch', event => {
         });
       }
 
-      return new Response('ERN: conexao indisponivel. Tente novamente.', {
+      return new Response('Encantos da Amazonia: sem conexao. Tente novamente.', {
         status: 503,
         headers: {
           'Content-Type': 'text/plain; charset=utf-8',
