@@ -7,6 +7,7 @@ import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import Sidebar from '@/app/components/Sidebar';
 import MagnetismoGlobalEDA from '@/app/components/MagnetismoGlobalEDA';
+import PerguntaEDA from '@/app/components/PerguntaEDA';
 import '@/app/components/cartao-magnetico-eda.css';
 import '@/app/components/capa-eda.css';
 import { EVENTO_ESTILO_PAINEL, lerEstiloPainel, type EstiloPainelERN } from '@/lib/estiloPainelERN';
@@ -338,6 +339,7 @@ export default function AppShell({
         {/* ERN_MENU_LATERAL_V1: menu lateral no computador; barras no celular. */}
         <Sidebar />
         <MagnetismoGlobalEDA />
+        <PerguntaEDA />
 
         <div className="ern-gestao-conteudo min-h-screen w-full min-w-0 pb-24 pt-16 transition-[padding] duration-200 motion-reduce:transition-none md:pb-0 xl:pl-[var(--ern-menu-largura,264px)] xl:pt-0">
           <ApresentacaoPaginaERN>{children}</ApresentacaoPaginaERN>

@@ -120,8 +120,9 @@ export default function FeedbackERN() {
     setNota(null); setObjetivo(''); setConseguiu(''); setDificuldade(''); setMelhoria(''); setEmail('');
   }
 
-  const mostrar = pathname === '/' ||
-    ROTAS.some(rota => pathname === rota || pathname.startsWith(rota + '/'));
+  // ERN_PERGUNTA_EDA_V1: na gestão não há botão; a própria EDA pergunta (PerguntaEDA).
+  const mostrar = !naGestao && (pathname === '/' ||
+    ROTAS.some(rota => pathname === rota || pathname.startsWith(rota + '/')));
 
   useEffect(() => {
     dialogo.current?.close();
