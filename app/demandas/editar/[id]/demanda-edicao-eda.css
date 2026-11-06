@@ -1,0 +1,133 @@
+/* ERN_DEMANDA_EDICAO_ENCANTOS_V1
+   Topo da demanda selecionada: capa "Encontro das Águas" com grafismo
+   amazônico e cartões flutuantes magnéticos. Só visual. */
+
+/* ---------- Cartão magnético (base) ---------- */
+.eda-mg {
+  position: relative; isolation: isolate; overflow: hidden;
+  transform: perspective(900px) translate3d(var(--mg-x, 0), var(--mg-y, 0), 0) rotateX(var(--mg-rx, 0)) rotateY(var(--mg-ry, 0));
+  transition: transform .35s cubic-bezier(.2, .8, .2, 1), box-shadow .35s ease, border-color .25s ease;
+  will-change: transform;
+}
+.eda-mg-luz {
+  position: absolute; inset: 0; z-index: -1; pointer-events: none; opacity: 0;
+  background: radial-gradient(260px circle at var(--mg-luz-x, 50%) var(--mg-luz-y, 50%), rgb(244 199 126 / 16%), transparent 70%);
+  transition: opacity .3s ease;
+}
+.eda-mg:hover .eda-mg-luz { opacity: 1; }
+.eda-mg:hover { transition-duration: .12s, .35s, .25s; }
+@media (hover: none), (prefers-reduced-motion: reduce) {
+  .eda-mg { transform: none !important; transition: none; }
+}
+
+/* ---------- Área ---------- */
+.eda-dx { max-width: 1088px; margin: 0 auto; padding: 24px 32px 8px; display: grid; gap: 18px; }
+.eda-dx-voltar { display: inline-flex; align-items: center; gap: 8px; width: fit-content; font-size: 13px; font-weight: 600; color: var(--p-sec); }
+.eda-dx-voltar:hover { color: var(--p-texto); }
+
+/* ---------- Capa ---------- */
+.eda-dx-capa {
+  border-radius: 28px; padding: clamp(24px, 3.4vw, 40px);
+  color: #f6efe1;
+  background:
+    radial-gradient(70% 120% at 100% 0%, rgb(201 135 63 / 38%), transparent 60%),
+    radial-gradient(60% 100% at 0% 100%, rgb(20 92 74 / 45%), transparent 65%),
+    linear-gradient(120deg, #06110e 0%, #0b1d18 46%, #3a2412 100%);
+  border: 1px solid rgb(244 199 126 / 22%);
+  box-shadow: 0 30px 70px -28px rgb(6 17 14 / 70%), 0 2px 0 rgb(255 255 255 / 6%) inset;
+}
+.eda-dx-capa::before { /* grafismo: losangos e ondas de rio */
+  content: ""; position: absolute; inset: 0; z-index: -2; opacity: .16; pointer-events: none;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='56' viewBox='0 0 56 56'%3E%3Cg fill='none' stroke='%23f4c77e' stroke-width='1.2'%3E%3Cpath d='M28 4 52 28 28 52 4 28Z'/%3E%3Cpath d='M28 16 40 28 28 40 16 28Z'/%3E%3Cpath d='M0 0 8 8M56 0 48 8M0 56 8 48M56 56 48 48'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 56px 56px;
+  -webkit-mask-image: linear-gradient(100deg, transparent 35%, #000 85%);
+          mask-image: linear-gradient(100deg, transparent 35%, #000 85%);
+}
+.eda-dx-capa::after { /* ondas do rio no rodapé */
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 70px; z-index: -1; pointer-events: none; opacity: .5;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='240' height='70' viewBox='0 0 240 70'%3E%3Cg fill='none' stroke-width='1.4'%3E%3Cpath d='M0 40c30-14 60-14 90 0s60 14 90 0 45-10 60-6' stroke='%23f4c77e' stroke-opacity='.45'/%3E%3Cpath d='M0 54c30-12 60-12 90 0s60 12 90 0 45-8 60-4' stroke='%23c9873f' stroke-opacity='.35'/%3E%3C/g%3E%3C/svg%3E") repeat-x bottom / 240px 70px;
+}
+.eda-dx-capa-topo { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 18px; }
+.eda-dx-marca { display: inline-flex; align-items: center; gap: 10px; font-size: 11px; font-weight: 700; letter-spacing: .2em; text-transform: uppercase; color: #f4c77e; }
+.eda-dx-marca i { width: 28px; height: 1px; background: linear-gradient(90deg, #f4c77e, transparent); }
+.eda-pg .eda-dx-capa h1 { margin: 14px 0 0; max-width: 22ch; font-size: clamp(30px, 4.4vw, 48px); font-weight: 650; letter-spacing: -0.035em; line-height: 1.05; color: #fff6e6; overflow-wrap: anywhere; }
+.eda-dx-capa-sub { margin: 12px 0 0; max-width: 60ch; font-size: 14.5px; font-weight: 400; line-height: 1.7; letter-spacing: .01em; color: rgb(246 239 225 / 74%); }
+.eda-dx-selos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.eda-dx-selo {
+  display: inline-flex; align-items: center; gap: 7px; min-height: 32px; padding: 0 13px; border-radius: 999px;
+  font-size: 12.5px; font-weight: 600; color: #f6efe1;
+  background: rgb(255 255 255 / 7%); border: 1px solid rgb(255 255 255 / 12%);
+  backdrop-filter: blur(6px);
+}
+.eda-dx-selo svg { color: #f4c77e; }
+.eda-dx-selo-status { color: #0b1712; background: linear-gradient(180deg, #f7d595, #e3a144); border-color: transparent; }
+.eda-dx-selo-status i { width: 7px; height: 7px; border-radius: 50%; background: #0b1712; }
+.eda-dx-selo-cancelada { color: #fff; background: #b54848; }
+.eda-dx-selo-encerrada { color: #06231a; background: linear-gradient(180deg, #8de0bb, #4fb487); }
+.eda-dx-selo-rascunho { color: #f6efe1; background: rgb(255 255 255 / 14%); }
+.eda-dx-emblema {
+  display: grid; place-items: center; width: 72px; height: 72px; flex-shrink: 0; border-radius: 22px;
+  color: #f4c77e; background: rgb(244 199 126 / 10%); border: 1px solid rgb(244 199 126 / 28%);
+  box-shadow: 0 12px 30px -10px rgb(227 161 68 / 45%);
+}
+
+/* ---------- Cartões de números ---------- */
+.eda-dx-kpis { display: grid; grid-template-columns: 1.25fr 1fr 1fr; gap: 14px; }
+.eda-dx-kpi {
+  display: grid; align-content: space-between; gap: 14px; min-width: 0; min-height: 150px;
+  padding: 20px 22px; border-radius: 22px;
+  background: var(--p-painel); border: 1px solid var(--p-borda);
+  box-shadow: 0 18px 40px -22px rgb(6 17 14 / 35%), var(--p-sombra);
+}
+.eda-dx-kpi:hover { border-color: rgb(227 161 68 / 45%); box-shadow: 0 26px 50px -20px rgb(6 17 14 / 40%), var(--p-sombra); }
+.eda-dx-kpi-cab { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.eda-dx-kpi-cab span { font-size: 12.5px; font-weight: 600; color: var(--p-sec); letter-spacing: .01em; }
+.eda-dx-ico { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; color: var(--p-ouro); background: color-mix(in srgb, #e3a144 13%, transparent); }
+.eda-dx-kpi strong { display: block; font-size: clamp(28px, 3.2vw, 40px); font-weight: 650; letter-spacing: -0.03em; line-height: 1; color: var(--p-texto); overflow-wrap: anywhere; }
+.eda-dx-kpi strong.eda-dx-kpi-txt { font-size: clamp(17px, 1.8vw, 21px); letter-spacing: -0.01em; line-height: 1.3; }
+.eda-dx-kpi small { display: block; margin-top: 6px; font-size: 13px; line-height: 1.5; color: var(--p-sec); }
+.eda-dx-kpi-ouro {
+  color: #f6efe1; border-color: rgb(244 199 126 / 30%);
+  background: radial-gradient(90% 120% at 100% 0%, rgb(227 161 68 / 30%), transparent 60%), linear-gradient(150deg, #0d211b, #07130f);
+}
+.eda-dx-kpi-ouro strong { color: #f7d595; }
+.eda-dx-kpi-ouro :is(small, .eda-dx-kpi-cab span) { color: rgb(246 239 225 / 70%); }
+.eda-dx-kpi-ouro .eda-dx-ico { color: #f7d595; background: rgb(244 199 126 / 14%); }
+
+/* ---------- Composição ---------- */
+.eda-dx-comp {
+  padding: clamp(20px, 2.6vw, 28px); border-radius: 24px;
+  background: var(--p-painel); border: 1px solid var(--p-borda);
+  box-shadow: 0 18px 40px -24px rgb(6 17 14 / 35%), var(--p-sombra);
+}
+.eda-dx-comp-cab { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 10px; }
+.eda-dx-comp-cab p { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; color: var(--p-ouro); }
+.eda-pg .eda-dx-comp-cab h2 { margin: 6px 0 0; font-size: 20px; font-weight: 650; letter-spacing: -0.02em; }
+.eda-dx-comp-cab > span { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--p-sec); }
+.eda-dx-comp-cab > span i { width: 7px; height: 7px; border-radius: 50%; background: var(--p-verde); box-shadow: 0 0 0 4px color-mix(in srgb, var(--p-verde) 18%, transparent); }
+.eda-dx-formula { display: flex; flex-wrap: wrap; align-items: stretch; gap: 10px; margin-top: 20px; }
+.eda-dx-formula > b { align-self: center; font-size: 18px; font-weight: 500; color: var(--p-ouro); }
+.eda-dx-peca {
+  flex: 1 1 130px; min-width: 0; padding: 14px 16px; border-radius: 16px;
+  background: var(--p-elev); border: 1px solid var(--p-borda);
+}
+.eda-dx-peca small { display: block; font-size: 12px; color: var(--p-sec); }
+.eda-dx-peca strong { display: block; margin-top: 6px; font-size: 22px; font-weight: 650; letter-spacing: -0.02em; overflow-wrap: anywhere; }
+.eda-dx-peca-total { border-color: rgb(227 161 68 / 40%); background: color-mix(in srgb, #e3a144 10%, var(--p-elev)); }
+.eda-dx-peca-total strong { color: var(--p-ouro); }
+.eda-dx-barra { display: flex; height: 14px; margin-top: 22px; overflow: hidden; border-radius: 99px; background: var(--p-borda); }
+.eda-dx-barra > span { height: 100%; background: linear-gradient(90deg, #c48434, #f5c779); }
+.eda-dx-barra > span.extra { background: linear-gradient(90deg, #3f9a93, #6fc2b8); }
+.eda-dx-legenda { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 12px; font-size: 13px; color: var(--p-sec); }
+.eda-dx-legenda i { display: inline-block; width: 10px; height: 10px; margin-right: 6px; border-radius: 3px; background: #e3a144; vertical-align: -1px; }
+.eda-dx-legenda i.extra { background: #4fa9a1; }
+.eda-dx-nota { margin: 14px 0 0; font-size: 13.5px; font-weight: 400; line-height: 1.7; letter-spacing: .01em; color: var(--p-sec); }
+
+@media (max-width: 900px) { .eda-dx-kpis { grid-template-columns: 1fr 1fr; } .eda-dx-kpi-ouro { grid-column: 1 / -1; } }
+@media (max-width: 560px) {
+  .eda-dx { padding: 18px 14px 4px; }
+  .eda-dx-kpis { grid-template-columns: 1fr; }
+  .eda-dx-emblema { display: none; }
+  .eda-dx-formula > b { display: none; }
+}

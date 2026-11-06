@@ -1,6 +1,8 @@
 'use client';
 import '@/app/components/padrao-paginas-eda.css';
 import '@/app/components/padrao-formularios-eda.css';
+import './demanda-edicao-eda.css';
+import CartaoMagneticoEDA from '@/app/components/CartaoMagneticoEDA';
 
 import {
   useEffect,
@@ -862,112 +864,118 @@ export default function EditarDemandaPage() {
 
   return (
     <main className="eda-pg eda-pg-auto eda-pg-legado min-h-screen">
-      <header className="border-b border-[var(--ern-borda)] bg-[var(--ern-painel)]">
-        <div className="mx-auto max-w-5xl px-4 py-8 md:px-8">
-          <Link
-            href="/demandas"
-            className="text-sm text-[var(--ern-secundario)] transition hover:text-[var(--ern-texto)]"
-          >
-            ← Demandas
-          </Link>
+      {/* ERN_DEMANDA_EDICAO_ENCANTOS_V1: capa e cartões flutuantes magnéticos */}
+      <div className="eda-dx">
+        <Link href="/demandas" className="eda-dx-voltar">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
+          Voltar para Demandas
+        </Link>
 
-          <p className="mt-6 text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
-            Gerenciamento operacional
-          </p>
-
-          <h1
-            className="mt-2 break-words text-4xl md:text-5xl"
-            style={{
-              fontFamily:
-                'var(--font-fraunces), serif',
-            }}
-          >
-            {formularioAtual.titulo}
-          </h1>
-
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <span className="rounded-full border border-[var(--ern-borda)] px-3 py-1 text-xs">
-              {
-                STATUS_DEMANDA[
-                  statusAtual
-                ]
-              }
-            </span>
-
-            <span className="text-xs text-[var(--ern-secundario)]">
-              {
-                CATEGORIAS_DEMANDA[
-                  formularioAtual
-                    .categoria
-                ]
-              }
-            </span>
-          </div>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-5xl px-4 pt-7 md:px-8">
-      <section aria-label="Inteligencia desta demanda" className="ern-dem-edicao-inteligencia mx-auto max-w-5xl px-4 pt-7 md:px-8">
-        <div className="ern-dem-edicao-hero">
-          <div className="ern-dem-edicao-topo">
-            <div>
-              <p className="ern-dem-edicao-eyebrow">ANALISE OPERACIONAL · DEMANDA SELECIONADA</p>
-              <h2>Dimensionamento da operacao</h2>
-              <p>Leitura dinamica da estimativa desta demanda; nao representa todas as demandas da empresa.</p>
+        <CartaoMagneticoEDA as="section" forca={5} className="eda-dx-capa" aria-label="Demanda selecionada">
+          <div className="eda-dx-capa-topo">
+            <div style={{ minWidth: 0 }}>
+              <p className="eda-dx-marca"><i aria-hidden="true" />Encantos da Amazônia · Gerenciamento operacional</p>
+              <h1>{formularioAtual.titulo}</h1>
+              <p className="eda-dx-capa-sub">Dimensionamento desta operação, atualizado enquanto você ajusta os campos abaixo. Os números valem só para esta demanda.</p>
             </div>
-            <span className="ern-dem-edicao-situacao">{STATUS_DEMANDA[statusAtual]}</span>
+            <span className="eda-dx-emblema" aria-hidden="true">
+              <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 16l2 4h14l2-4H3z" /><path d="M6 16V9h9l3 7" /><path d="M10 9V5h3" /><path d="M2 12c2-1 3-1 5 0s3 1 5 0" opacity=".55" /></svg>
+            </span>
           </div>
-          <div className="ern-dem-edicao-kpis">
-            <div className="ern-dem-edicao-kpi ern-dem-edicao-kpi-principal">
+          <div className="eda-dx-selos">
+            <span className={`eda-dx-selo eda-dx-selo-status eda-dx-selo-${statusAtual}`}><i aria-hidden="true" />{STATUS_DEMANDA[statusAtual]}</span>
+            <span className="eda-dx-selo">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M4 7l8-4 8 4-8 4-8-4zM4 12l8 4 8-4" /></svg>
+              {CATEGORIAS_DEMANDA[formularioAtual.categoria]}
+            </span>
+            {formularioAtual.localidade && (
+              <span className="eda-dx-selo">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M12 21s-6-5.4-6-11a6 6 0 0 1 12 0c0 5.6-6 11-6 11z" /><circle cx="12" cy="10" r="2" /></svg>
+                {formularioAtual.localidade}
+              </span>
+            )}
+          </div>
+        </CartaoMagneticoEDA>
+
+        <div className="eda-dx-kpis">
+          <CartaoMagneticoEDA className="eda-dx-kpi eda-dx-kpi-ouro">
+            <div className="eda-dx-kpi-cab">
               <span>Quantidade estimada</span>
-              <strong>{previsao !== null && Number.isFinite(previsao) ? previsao.toLocaleString('pt-BR',{maximumFractionDigits:2}) : '—'}</strong>
-              <small>{formularioAtual.unidade || 'Unidade nao definida'}</small>
+              <span className="eda-dx-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7l8-4 8 4v10l-8 4-8-4z" /><path d="M4 7l8 4 8-4M12 11v10" /></svg></span>
             </div>
-            <div className="ern-dem-edicao-kpi">
-              <span>Modelo de calculo</span>
-              <strong className="ern-dem-edicao-kpi-texto">{metodoEstimativa==='pessoa_dia'?'Pessoa / dia':metodoEstimativa==='combustivel_hora'?'Motor / hora':'Manual'}</strong>
+            <div>
+              <strong>{previsao !== null && Number.isFinite(previsao) ? previsao.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : '—'}</strong>
+              <small>{formularioAtual.unidade || 'Unidade não definida'}</small>
+            </div>
+          </CartaoMagneticoEDA>
+          <CartaoMagneticoEDA className="eda-dx-kpi">
+            <div className="eda-dx-kpi-cab">
+              <span>Modelo de cálculo</span>
+              <span className="eda-dx-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2" /></svg></span>
+            </div>
+            <div>
+              <strong className="eda-dx-kpi-txt">{metodoEstimativa === 'pessoa_dia' ? 'Pessoa por dia' : metodoEstimativa === 'combustivel_hora' ? 'Motor por hora' : 'Quantidade manual'}</strong>
               <small>{CATEGORIAS_DEMANDA[formularioAtual.categoria]}</small>
             </div>
-            <div className="ern-dem-edicao-kpi">
-              <span>Periodo informado</span>
-              <strong className="ern-dem-edicao-kpi-texto">{formularioAtual.data_inicio && formularioAtual.data_fim ? `${formularioAtual.data_inicio.split('-').reverse().join('/')} — ${formularioAtual.data_fim.split('-').reverse().join('/')}` : 'Nao definido'}</strong>
-              <small>{formularioAtual.localidade || 'Localidade nao informada'}</small>
+          </CartaoMagneticoEDA>
+          <CartaoMagneticoEDA className="eda-dx-kpi">
+            <div className="eda-dx-kpi-cab">
+              <span>Período da operação</span>
+              <span className="eda-dx-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg></span>
             </div>
-          </div>
-          <div className="ern-dem-edicao-grafico" aria-label="Composicao da estimativa">
-            <div className="ern-dem-edicao-grafico-topo">
-              <h3>Composicao do planejamento</h3>
-              <span>Atualizacao conforme os campos</span>
+            <div>
+              <strong className="eda-dx-kpi-txt">{formularioAtual.data_inicio && formularioAtual.data_fim ? `${formularioAtual.data_inicio.split('-').reverse().join('/')} — ${formularioAtual.data_fim.split('-').reverse().join('/')}` : 'Não definido'}</strong>
+              <small>{formularioAtual.localidade || 'Localidade não informada'}</small>
             </div>
-            {metodoEstimativa==='combustivel_hora' ? (()=>{
-              const dias=numeroFormulario(formularioAtual.dias_estimados);
-              const horas=numeroFormulario(formularioAtual.horas_motor_dia);
-              const litros=numeroFormulario(formularioAtual.consumo_litros_hora);
-              const margem=numeroFormulario(formularioAtual.margem_percentual);
-              const base=dias!==null&&horas!==null&&litros!==null&&dias>0&&horas>0&&litros>0 ? dias*horas*litros : null;
-              const extra=base!==null&&margem!==null&&margem>=0?base*margem/100:null;
-              const total=base!==null&&extra!==null?base+extra:null;
-              return total!==null&&total>0 ? <>
-                <div className="ern-dem-edicao-barra" role="img" aria-label={`Consumo base ${base!.toLocaleString('pt-BR',{maximumFractionDigits:2})} litros; margem adicional ${extra!.toLocaleString('pt-BR',{maximumFractionDigits:2})} litros`}>
-                  <span style={{width:`${base!/total*100}%`}}/><span className="ern-dem-edicao-barra-extra" style={{width:`${extra!/total*100}%`}}/>
-                </div>
-                <div className="ern-dem-edicao-legenda"><span><i/> Base: {base!.toLocaleString('pt-BR',{maximumFractionDigits:2})} L</span><span><i className="extra"/> Margem: {extra!.toLocaleString('pt-BR',{maximumFractionDigits:2})} L</span></div>
-              </> : <p className="ern-dem-edicao-vazio">Informe dias, horas de motor, consumo e margem para visualizar a composicao.</p>;
-            })() : metodoEstimativa==='pessoa_dia' ? <>
-              <div className="ern-dem-edicao-formula">
-                <div><small>Pessoas</small><strong>{formularioAtual.pessoas_estimadas || '—'}</strong></div><b aria-hidden="true">×</b>
-                <div><small>Dias</small><strong>{formularioAtual.dias_estimados || '—'}</strong></div><b aria-hidden="true">×</b>
-                <div><small>Consumo / pessoa / dia</small><strong>{formularioAtual.consumo_pessoa_dia || '—'}</strong></div><b aria-hidden="true">=</b>
-                <div className="ern-dem-edicao-formula-total"><small>Previsao</small><strong>{previsao!==null?previsao.toLocaleString('pt-BR',{maximumFractionDigits:2}):'—'}</strong></div>
-              </div>
-              <p className="ern-dem-edicao-nota">Os valores refletem a formula de consumo da categoria selecionada.</p>
-            </> : <>
-              <div className="ern-dem-edicao-formula"><div className="ern-dem-edicao-formula-total"><small>Quantidade definida manualmente</small><strong>{previsao!==null?previsao.toLocaleString('pt-BR',{maximumFractionDigits:2}):'—'}</strong></div></div>
-              <p className="ern-dem-edicao-nota">Esta categoria usa quantidade manual; nao ha distribuicao calculada para representar.</p>
-            </>}
-          </div>
+          </CartaoMagneticoEDA>
         </div>
-      </section>
+
+        <CartaoMagneticoEDA as="section" forca={4} className="eda-dx-comp" aria-label="Composição da estimativa">
+          <div className="eda-dx-comp-cab">
+            <div>
+              <p>Análise operacional</p>
+              <h2>Composição do planejamento</h2>
+            </div>
+            <span><i aria-hidden="true" />Atualiza conforme os campos</span>
+          </div>
+          {metodoEstimativa === 'combustivel_hora' ? (() => {
+            const dias = numeroFormulario(formularioAtual.dias_estimados);
+            const horas = numeroFormulario(formularioAtual.horas_motor_dia);
+            const litros = numeroFormulario(formularioAtual.consumo_litros_hora);
+            const margem = numeroFormulario(formularioAtual.margem_percentual);
+            const base = dias !== null && horas !== null && litros !== null && dias > 0 && horas > 0 && litros > 0 ? dias * horas * litros : null;
+            const extra = base !== null && margem !== null && margem >= 0 ? base * margem / 100 : null;
+            const total = base !== null && extra !== null ? base + extra : null;
+            const fmt = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
+            return total !== null && total > 0 && base !== null && extra !== null ? <>
+              <div className="eda-dx-formula">
+                <div className="eda-dx-peca"><small>Dias</small><strong>{fmt(dias!)}</strong></div><b aria-hidden="true">×</b>
+                <div className="eda-dx-peca"><small>Horas de motor/dia</small><strong>{fmt(horas!)}</strong></div><b aria-hidden="true">×</b>
+                <div className="eda-dx-peca"><small>Litros/hora</small><strong>{fmt(litros!)}</strong></div><b aria-hidden="true">+</b>
+                <div className="eda-dx-peca"><small>Margem</small><strong>{fmt(margem!)}%</strong></div><b aria-hidden="true">=</b>
+                <div className="eda-dx-peca eda-dx-peca-total"><small>Previsão</small><strong>{fmt(total)} L</strong></div>
+              </div>
+              <div className="eda-dx-barra" role="img" aria-label={`Consumo base ${fmt(base)} litros; margem adicional ${fmt(extra)} litros`}>
+                <span style={{ width: `${base / total * 100}%` }} /><span className="extra" style={{ width: `${extra / total * 100}%` }} />
+              </div>
+              <div className="eda-dx-legenda"><span><i />Base: {fmt(base)} L</span><span><i className="extra" />Margem: {fmt(extra)} L</span></div>
+            </> : <p className="eda-dx-nota">Informe dias, horas de motor, consumo e margem para ver a composição do combustível.</p>;
+          })() : metodoEstimativa === 'pessoa_dia' ? <>
+            <div className="eda-dx-formula">
+              <div className="eda-dx-peca"><small>Pessoas</small><strong>{formularioAtual.pessoas_estimadas || '—'}</strong></div><b aria-hidden="true">×</b>
+              <div className="eda-dx-peca"><small>Dias</small><strong>{formularioAtual.dias_estimados || '—'}</strong></div><b aria-hidden="true">×</b>
+              <div className="eda-dx-peca"><small>Consumo por pessoa/dia</small><strong>{formularioAtual.consumo_pessoa_dia || '—'}</strong></div><b aria-hidden="true">=</b>
+              <div className="eda-dx-peca eda-dx-peca-total"><small>Previsão</small><strong>{previsao !== null ? previsao.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : '—'}</strong></div>
+            </div>
+            <p className="eda-dx-nota">Os valores seguem a fórmula de consumo da categoria escolhida.</p>
+          </> : <>
+            <div className="eda-dx-formula">
+              <div className="eda-dx-peca eda-dx-peca-total"><small>Quantidade definida manualmente</small><strong>{previsao !== null ? previsao.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : '—'} {formularioAtual.unidade}</strong></div>
+            </div>
+            <p className="eda-dx-nota">Esta categoria usa quantidade manual, por isso não há cálculo para distribuir. Ajuste a quantidade no formulário abaixo.</p>
+          </>}
+        </CartaoMagneticoEDA>
+
         <ItensDemanda
           key={id}
           demandaId={id}
