@@ -20,6 +20,7 @@ import { listarChegadas, temTransfer, MODOS_CHEGADA, VEICULOS_TRANSFER, type Che
 import './inicio-operadora-premium.css';
 import './capa-eda.css';
 import CartaoMagneticoEDA from './CartaoMagneticoEDA';
+import DigitacaoEDA, { type TrechoDigitado } from './DigitacaoEDA';
 
 export type ReservaInicioERN = {
   id: string;
@@ -315,21 +316,75 @@ export default function InicioOperadoraPremiumERN({
     .sort((a, b) => (a.status === 'aberta' ? -1 : 0) - (b.status === 'aberta' ? -1 : 0) || (a.data_inicio ?? '9999').localeCompare(b.data_inicio ?? '9999'))
     .slice(0, 4), [demandas]);
 
-  // Frase do dia.
-  const frase = useMemo(() => {
-    if (carregando) return 'Organizando o seu dia…';
-    const partes: ReactNode[] = [];
-    partes.push(<b key="s">{plural(resumo.hoje.length, 'saída', 'saídas')}</b>);
-    const extras: ReactNode[] = [];
-    if (fin && fin.pend.faixas[1].qtdReceber + fin.pend.faixas[0].qtdReceber > 0) {
-      const n = fin.pend.faixas[0].qtdReceber + fin.pend.faixas[1].qtdReceber;
-      extras.push(<span key="p"><b>{plural(n, 'recebimento', 'recebimentos')}</b> vencendo ou vencido</span>);
+  // ERN_DIGITACAO_V1: a plataforma "conversa" com a operadora ao abrir o dia.
+  const [tempoEsgotado, setTempoEsgotado] = useState(false);
+  useEffect(() => {
+    const t = window.setTimeout(() => setTempoEsgotado(true), 3500);
+    return () => window.clearTimeout(t);
+  }, []);
+  const pronto = !carregando && !carregandoPlano
+    && (!financeiroLiberado || financeiro !== null || Boolean(erroFinanceiro) || tempoEsgotado);
+  const [saudacaoPronta, setSaudacaoPronta] = useState(false);
+
+  const trechosSaudacao = useMemo<TrechoDigitado[]>(
+    () => [{ texto: `${saudacao()}${nome ? `, ${nome}` : ''}.` }],
+    [nome],
+  );
+
+  const trechosConversa = useMemo<TrechoDigitado[]>(() => {
+    if (!pronto) return [];
+    const t: TrechoDigitado[] = [];
+    const add = (texto: string, forte = false) => t.push({ texto, forte });
+    const hora = Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: 'America/Manaus' }).format(new Date())) % 24;
+    const diaMes = Number((hoje || '').slice(8, 10)) || 0;
+
+    const qtdHoje = resumo.hoje.length;
+    const primeira = resumo.hoje.find(r => r.horario);
+    if (qtdHoje === 0) {
+      add(['Hoje o rio está tranquilo: ', 'Dia calmo por aqui: ', 'Nenhuma correria hoje: '][diaMes % 3]);
+      add('nenhuma saída marcada', true);
+      add('.');
+    } else {
+      add('Hoje vocês têm ');
+      add(plural(qtdHoje, 'saída', 'saídas'), true);
+      add(' no rio');
+      if (primeira?.horario) { add(', a primeira às '); add(primeira.horario.slice(0, 5), true); }
+      add('.');
     }
-    if (resumo.semGuia.length) extras.push(<span key="g"><b>{plural(resumo.semGuia.length, 'saída', 'saídas')}</b> sem guia</span>);
-    return (
-      <>Hoje: {partes} no rio{extras.length ? ', ' : '.'}{extras.map((e, i) => <span key={i}>{i > 0 ? (i === extras.length - 1 ? ' e ' : ', ') : ''}{e}</span>)}{extras.length ? '.' : ''}</>
-    );
-  }, [carregando, resumo, fin]);
+
+    const avisos: { forte: string; resto: string }[] = [];
+    if (fin) {
+      const n = fin.pend.faixas[0].qtdReceber + fin.pend.faixas[1].qtdReceber;
+      if (n > 0) avisos.push({ forte: plural(n, 'recebimento', 'recebimentos'), resto: ' vencendo ou vencido' + (n > 1 ? 's' : '') });
+    }
+    if (resumo.semGuia.length) avisos.push({ forte: plural(resumo.semGuia.length, 'saída', 'saídas'), resto: ' sem guia' });
+
+    if (avisos.length) {
+      add(' Fiquei de olho e separei ');
+      avisos.forEach((a, i) => {
+        if (i > 0) add(i === avisos.length - 1 ? ' e ' : ', ');
+        add(a.forte, true);
+        add(a.resto);
+      });
+      add('.');
+    } else if (qtdHoje > 0) {
+      add(' Está tudo em ordem com a equipe.');
+    }
+
+    if (resumo.semana.length > qtdHoje) {
+      add(' Nos próximos 7 dias, ');
+      add(plural(resumo.pessoasSemana, 'pessoa', 'pessoas'), true);
+      add(' vão viver a Amazônia com vocês.');
+    }
+
+    const fechos = hora < 12
+      ? ['Bora começar?', 'Vamos juntos neste dia.', 'Estou aqui com você desde cedo.']
+      : hora < 18
+        ? ['Sigo acompanhando com você.', 'Qualquer novidade, eu aviso.', 'A tarde está nas suas mãos — e eu ajudo.']
+        : ['Amanhã eu te lembro do que vier.', 'Bom descanso quando der.', 'Deixo tudo organizado para amanhã.'];
+    add(' ' + fechos[diaMes % fechos.length]);
+    return t;
+  }, [pronto, resumo, fin, hoje]);
 
   const proxima = resumo.hoje.find(r => r.horario) ?? resumo.semana[0];
 
@@ -345,8 +400,10 @@ export default function InicioOperadoraPremiumERN({
       <CartaoMagneticoEDA as="header" forca={4} className="eda-cabeca eda-capa">
         <div>
           <p className="eda-eb"><i className="eda-capa-traco" aria-hidden="true" />{dataExtenso(hoje)}{nomeEmpresa ? ` · ${nomeEmpresa}` : ''}</p>
-          <h1>{saudacao()}{nome ? `, ${nome}` : ''}</h1>
-          <p className="eda-frase">{frase}</p>
+          <h1><DigitacaoEDA trechos={trechosSaudacao} iniciar={pronto} velocidade={42} atraso={250} cursorEspera aoTerminar={() => setSaudacaoPronta(true)} /></h1>
+          <p className="eda-frase" aria-live="off">
+            <DigitacaoEDA trechos={trechosConversa} iniciar={pronto && saudacaoPronta} velocidade={20} atraso={380} cursorFinal />
+          </p>
         </div>
         <nav aria-label="Ações rápidas" className="eda-acoes">
           <Link href="/demandas/nova" className="eda-bt eda-bt-sec"><Icone nome="lista" tamanho={16} />Nova demanda</Link>
