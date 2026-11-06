@@ -245,3 +245,7 @@
 @keyframes eda-dig-pisca { 50% { opacity: 0; } }
 @keyframes eda-dig-some { to { opacity: 0; } }
 @media (prefers-reduced-motion: reduce) { .eda-dig-cursor { display: none; } }
+/* ERN_BRIEFING_DIA_V1: um parágrafo por assunto */
+.eda-cabeca .eda-frase { min-height: 5.5em; max-width: 78ch; }
+.eda-dig-quebra { display: block; height: .55em; }
+.eda-dig[title] { cursor: pointer; }

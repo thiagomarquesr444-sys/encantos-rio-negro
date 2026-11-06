@@ -331,13 +331,17 @@ export default function InicioOperadoraPremiumERN({
     [nome],
   );
 
+  // ERN_BRIEFING_DIA_V1: resumo completo do dia, em conversa, um parágrafo por assunto.
   const trechosConversa = useMemo<TrechoDigitado[]>(() => {
     if (!pronto) return [];
     const t: TrechoDigitado[] = [];
     const add = (texto: string, forte = false) => t.push({ texto, forte });
+    const linha = () => { if (t.length) add('\n'); };
     const hora = Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: 'America/Manaus' }).format(new Date())) % 24;
     const diaMes = Number((hoje || '').slice(8, 10)) || 0;
+    const dataCurta = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 
+    // 1. Agenda do rio
     const qtdHoje = resumo.hoje.length;
     const primeira = resumo.hoje.find(r => r.horario);
     if (qtdHoje === 0) {
@@ -351,32 +355,98 @@ export default function InicioOperadoraPremiumERN({
       if (primeira?.horario) { add(', a primeira às '); add(primeira.horario.slice(0, 5), true); }
       add('.');
     }
-
-    const avisos: { forte: string; resto: string }[] = [];
-    if (fin) {
-      const n = fin.pend.faixas[0].qtdReceber + fin.pend.faixas[1].qtdReceber;
-      if (n > 0) avisos.push({ forte: plural(n, 'recebimento', 'recebimentos'), resto: ' vencendo ou vencido' + (n > 1 ? 's' : '') });
-    }
-    if (resumo.semGuia.length) avisos.push({ forte: plural(resumo.semGuia.length, 'saída', 'saídas'), resto: ' sem guia' });
-
-    if (avisos.length) {
-      add(' Fiquei de olho e separei ');
-      avisos.forEach((a, i) => {
-        if (i > 0) add(i === avisos.length - 1 ? ' e ' : ', ');
-        add(a.forte, true);
-        add(a.resto);
-      });
-      add('.');
-    } else if (qtdHoje > 0) {
-      add(' Está tudo em ordem com a equipe.');
-    }
-
-    if (resumo.semana.length > qtdHoje) {
-      add(' Nos próximos 7 dias, ');
+    const futuras = resumo.semana.length - qtdHoje;
+    if (futuras > 0) {
+      add(' Nos próximos 7 dias são mais ');
+      add(plural(futuras, 'saída', 'saídas'), true);
+      add(' com ');
       add(plural(resumo.pessoasSemana, 'pessoa', 'pessoas'), true);
-      add(' vão viver a Amazônia com vocês.');
+      add(' para viver a Amazônia com vocês.');
+    } else {
+      add(' A semana também está livre — um bom momento para divulgar seus passeios.');
     }
 
+    // 2. Caixa
+    if (financeiroLiberado && fin) {
+      linha();
+      add('No caixa: ');
+      add(moedaCentavos(fin.mesAtual?.recebido ?? 0), true);
+      add(' recebidos e ');
+      add(moedaCentavos(fin.mesAtual?.pago ?? 0), true);
+      add(' pagos neste mês.');
+      const vencidos = fin.pend.faixas[0].qtdReceber;
+      if (vencidos > 0) {
+        add(' Há ');
+        add(plural(vencidos, 'recebimento vencido', 'recebimentos vencidos'), true);
+        add(` (${moedaCentavos(fin.pend.faixas[0].receber)}) esperando cobrança.`);
+      } else if (fin.pend.totais.receber > 0) {
+        add(' Ainda faltam ');
+        add(moedaCentavos(fin.pend.totais.receber), true);
+        add(' a receber, nada vencido.');
+      } else {
+        add(' Nada pendente para receber.');
+      }
+      if (fin.pend.faixas[0].qtdPagar > 0) {
+        add(' Atenção: ');
+        add(plural(fin.pend.faixas[0].qtdPagar, 'conta vencida', 'contas vencidas'), true);
+        add(' a pagar.');
+      }
+    } else if (!financeiroLiberado) {
+      linha();
+      add('O financeiro completo fica disponível no plano profissional — é só me chamar em ');
+      add('Planos', true);
+      add('.');
+    }
+
+    // 3. Demandas
+    const abertas = demandas.filter(d => d.status === 'aberta');
+    const rascunhos = demandas.filter(d => d.status === 'rascunho').length;
+    if (abertas.length || rascunhos) {
+      linha();
+      add('Nas demandas: ');
+      if (abertas.length) {
+        add(plural(abertas.length, 'aberta', 'abertas'), true);
+        const proximaDem = [...abertas].filter(d => d.data_inicio && d.data_inicio >= hoje)
+          .sort((x, y) => (x.data_inicio ?? '').localeCompare(y.data_inicio ?? ''))[0];
+        if (proximaDem?.data_inicio) {
+          add(', a próxima começa em ');
+          add(dataCurta(proximaDem.data_inicio), true);
+          add(proximaDem.localidade ? ` (${proximaDem.titulo}, ${proximaDem.localidade})` : ` (${proximaDem.titulo})`);
+        }
+      }
+      if (rascunhos) {
+        add(abertas.length ? ' e ' : '');
+        add(plural(rascunhos, 'rascunho', 'rascunhos'), true);
+        add(' esperando você abrir');
+      }
+      add('.');
+    }
+
+    // 4. Pendências
+    linha();
+    if (pendencias.length) {
+      add('Separei ');
+      add(plural(pendencias.length, 'pendência', 'pendências'), true);
+      add(' em “O que fazer agora”. A mais importante: ');
+      add(pendencias[0].titulo.charAt(0).toLowerCase() + pendencias[0].titulo.slice(1), true);
+      add('.');
+    } else {
+      add('Nenhuma pendência — a operação está em dia.');
+    }
+
+    // 5. Plano
+    if (uso) {
+      const perto = ([['clientes', uso.clientes], ['reservas do mês', uso.reservas_mes], ['passeios', uso.passeios], ['usuários', uso.usuarios]] as const)
+        .find(([, sit]) => sit && sit.dados_validos && !sit.ilimitado && sit.limite && sit.usado / sit.limite >= 0.8);
+      if (perto) {
+        const [rotulo, sit] = perto;
+        add(' Seu plano já usa ');
+        add(`${sit.usado} de ${sit.limite} ${rotulo}`, true);
+        add('.');
+      }
+    }
+
+    // 6. Fecho
     const fechos = hora < 12
       ? ['Bora começar?', 'Vamos juntos neste dia.', 'Estou aqui com você desde cedo.']
       : hora < 18
@@ -384,7 +454,7 @@ export default function InicioOperadoraPremiumERN({
         : ['Amanhã eu te lembro do que vier.', 'Bom descanso quando der.', 'Deixo tudo organizado para amanhã.'];
     add(' ' + fechos[diaMes % fechos.length]);
     return t;
-  }, [pronto, resumo, fin, hoje]);
+  }, [pronto, resumo, fin, hoje, demandas, pendencias, uso, financeiroLiberado]);
 
   const proxima = resumo.hoje.find(r => r.horario) ?? resumo.semana[0];
 
@@ -402,7 +472,7 @@ export default function InicioOperadoraPremiumERN({
           <p className="eda-eb"><i className="eda-capa-traco" aria-hidden="true" />{dataExtenso(hoje)}{nomeEmpresa ? ` · ${nomeEmpresa}` : ''}</p>
           <h1><DigitacaoEDA trechos={trechosSaudacao} iniciar={pronto} velocidade={42} atraso={250} cursorEspera aoTerminar={() => setSaudacaoPronta(true)} /></h1>
           <p className="eda-frase" aria-live="off">
-            <DigitacaoEDA trechos={trechosConversa} iniciar={pronto && saudacaoPronta} velocidade={20} atraso={380} cursorFinal />
+            <DigitacaoEDA trechos={trechosConversa} iniciar={pronto && saudacaoPronta} velocidade={13} atraso={380} cursorFinal pularAoClicar />
           </p>
         </div>
         <nav aria-label="Ações rápidas" className="eda-acoes">
