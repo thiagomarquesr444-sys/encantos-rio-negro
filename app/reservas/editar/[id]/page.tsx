@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import VinculosReserva from '@/app/components/VinculosReserva';
 import SeletorSaidaEDA from '@/app/components/SeletorSaidaEDA';
 import ParticipantesReservaEDA from '@/app/components/ParticipantesReservaEDA';
+import HospedagemReservaEDA from '@/app/components/HospedagemReservaEDA';
 import { mensagemSaidaEDA } from '@/lib/saidasGestaoEDA';
 import LogisticaReserva from '@/app/components/LogisticaReserva';
 import PeriodoReservaERN, { validarPeriodoReservaERN } from '@/app/components/PeriodoReservaERN';
@@ -792,6 +793,12 @@ function EditarReservaConteudo({ id }: { id?: string }) {
         {/* EDA_FICHA_SAUDE_V1: participantes e ficha de saúde, salvos à parte. */}
         <div className="eda-pg-grade-form" style={{ marginTop: 16 }}>
           <ParticipantesReservaEDA reservaId={id} bloqueado={somenteConsultaERN || salvando || gravada} pessoas={form.quantidade_pessoas} />
+        </div>
+
+        {/* EDA_HOSPEDAGENS_PREMIUM_V1: noites reservadas, salvas à parte. */}
+        <div className="eda-pg-grade-form" style={{ marginTop: 16 }}>
+          <HospedagemReservaEDA reservaId={id} bloqueado={somenteConsultaERN || salvando || gravada}
+            pessoas={form.quantidade_pessoas} dataInicio={form.dataReserva} dataFim={form.data_fim_prevista} />
         </div>
       </div>
     </PaginaEDA>

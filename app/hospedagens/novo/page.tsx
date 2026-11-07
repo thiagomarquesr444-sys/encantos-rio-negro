@@ -599,45 +599,9 @@ export default function NovaHospedagemPage() {
                 hospedagem.
               </p>
 
-              <div className="mt-6">
-                <label
-                  className={
-                    labelClass
-                  }
-                >
-                  Status inicial
-                </label>
-
-                <select
-                  value={
-                    form.status
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    alterarCampo(
-                      'status',
-                      event.target
-                        .value
-                    )
-                  }
-                  className={
-                    inputClass
-                  }
-                >
-                  <option value="Disponível">
-                    Disponível
-                  </option>
-
-                  <option value="Reservada">
-                    Reservada
-                  </option>
-
-                  <option value="Ocupada">
-                    Ocupada
-                  </option>
-                </select>
-              </div>
+              <p className="mt-6 text-sm text-[var(--ern-secundario)]">
+                Depois de salvar, cadastre as acomodações (quartos, suítes, cabines, redário) na edição da hospedagem — a ocupação passa a ser calculada pelas reservas.
+              </p>
             </section>
 
             <section className="rounded-[26px] border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-6">
