@@ -67,3 +67,11 @@ export const TIPOS_RELATORIO: readonly OpcaoEDA[] = [
   ['Temporada de pesca', 'Temporada de pesca'], ['Prestação de contas', 'Prestação de contas'],
   ['Qualidade e satisfação', 'Qualidade e satisfação'], ['Segurança', 'Segurança'],
 ];
+
+export const ESPECIALIDADES_OPERADORA: readonly OpcaoEDA[] = [
+  ['Pesca esportiva', 'Pesca esportiva'], ['Passeios fluviais', 'Passeios fluviais'], ['Ecoturismo', 'Ecoturismo'],
+  ['Turismo de base comunitária', 'Turismo de base comunitária'], ['Observação de fauna', 'Observação de fauna'],
+  ['Trilhas na floresta', 'Trilhas na floresta'], ['Gastronomia regional', 'Gastronomia regional'],
+  ['Hospedagem / lodge', 'Hospedagem / lodge'], ['Barco-hotel', 'Barco-hotel'], ['Fotografia de natureza', 'Fotografia de natureza'],
+  ['Cultura e festivais', 'Cultura e festivais'], ['Transfer fluvial', 'Transfer fluvial'],
+];

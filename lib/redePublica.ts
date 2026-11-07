@@ -108,6 +108,8 @@ export type PublicacaoPublica = {
 
   publicado_em: string;
 
+  passeio_id?: string | null;
+
   autor: PerfilPublico;
 
   categoria: CategoriaPublicacao | null;
@@ -185,6 +187,8 @@ type PublicacaoBanco = {
   permitir_interacoes: boolean;
 
   publicado_em: string | null;
+
+  passeio_id: string | null;
 };
 
 type TraducaoBanco = {
@@ -637,6 +641,7 @@ function lerPublicacaoFeedERN(valor: unknown): PublicacaoBanco {
     destaque: booleano('destaque'),
     permitir_interacoes: booleano('permitir_interacoes'),
     publicado_em: texto('publicado_em'),
+    passeio_id: opcional('passeio_id'),
   };
 }
 
@@ -797,6 +802,7 @@ export async function listarFeedPublico(
       destaque: item.destaque,
       permitir_interacoes: item.permitir_interacoes,
       publicado_em: item.publicado_em,
+      passeio_id: item.passeio_id,
       autor,
       categoria: item.categoria_id
         ? categorias.get(item.categoria_id) ?? null

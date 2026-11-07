@@ -24,6 +24,10 @@ import {
   type DadosPerfilPublicoERN,
   type PerfilPublicoOperadoraERN,
 } from '@/lib/perfilPublicoOperadoraERN';
+import CampoLocalEDA from '@/app/components/CampoLocalEDA';
+import { CampoChipsEDA } from '@/app/components/CampoOpcoesEDA';
+import { ESPECIALIDADES_OPERADORA, IDIOMAS } from '@/lib/opcoesEDA';
+import ForcaPerfilEDA from '@/app/components/ForcaPerfilEDA';
 
 const INICIAL: DadosPerfilPublicoERN = {
   slug: '',
@@ -373,13 +377,17 @@ function PerfilOperadoraEDA({ abas }: { abas?: ReactNode }) {
                     </div>
 
                     <Campo titulo="Cidade de origem">
-                      <input
+                      <CampoLocalEDA
+                        modo="cidade"
                         required
-                        maxLength={120}
-                        autoComplete="address-level2"
-                        value={formulario.cidade}
-                        onChange={e => atualizar('cidade', e.target.value)}
+                        valor={{ texto: formulario.cidade }}
                         className={CAMPO}
+                        onChange={(l) => {
+                          // "Barcelos - AM" → cidade + UF
+                          const m = l.texto.match(/^(.*?)\s*-\s*([A-Za-z]{2})$/);
+                          atualizar('cidade', m ? m[1].trim() : l.texto);
+                          if (m) atualizar('uf', m[2].toUpperCase());
+                        }}
                       />
                     </Campo>
 
@@ -427,33 +435,31 @@ function PerfilOperadoraEDA({ abas }: { abas?: ReactNode }) {
 
                     <Campo
                       titulo="Idiomas de atendimento"
-                      ajuda="Separe por vírgulas. Ex.: Português, Inglês, Espanhol."
+                      ajuda="Toque para marcar. Use “+ outro” e Enter para incluir um idioma fora da lista."
                     >
-                      <input
-                        value={idiomas}
-                        maxLength={2000}
-                        onChange={e => {
-                          setIdiomas(e.target.value);
+                      <CampoChipsEDA
+                        valor={idiomas}
+                        opcoes={IDIOMAS}
+                        onChange={(v) => {
+                          setIdiomas(v);
                           setAlterado(true);
                           setAviso('');
                         }}
-                        className={CAMPO}
                       />
                     </Campo>
 
                     <Campo
                       titulo="Especialidades"
-                      ajuda="Separe por vírgulas. Ex.: Pesca esportiva, Passeios fluviais, Gastronomia regional."
+                      ajuda="Toque para marcar. Elas aparecem como selos no seu perfil e ajudam o visitante a encontrar você."
                     >
-                      <input
-                        value={especialidades}
-                        maxLength={2000}
-                        onChange={e => {
-                          setEspecialidades(e.target.value);
+                      <CampoChipsEDA
+                        valor={especialidades}
+                        opcoes={ESPECIALIDADES_OPERADORA}
+                        onChange={(v) => {
+                          setEspecialidades(v);
                           setAlterado(true);
                           setAviso('');
                         }}
-                        className={CAMPO}
                       />
                     </Campo>
                   </div>
@@ -545,6 +551,9 @@ function PerfilOperadoraEDA({ abas }: { abas?: ReactNode }) {
                     )}
                   </div>
                 </section>
+
+                {/* EDA_PERFIL_PUBLICO_V1 */}
+                <ForcaPerfilEDA dados={formulario} idiomas={idiomas} especialidades={especialidades} />
 
                 <section className={PAINEL}>
                   <h2 className="text-lg font-semibold">Prévia da apresentação</h2>

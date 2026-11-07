@@ -19,6 +19,7 @@ import {
   type PublicacaoOperadoraERN,
 } from '@/lib/publicacoesOperadoraERN';
 import CampoLocalEDA from '@/app/components/CampoLocalEDA';
+import { supabase } from '@/lib/supabase';
 
 const INICIAL: DadosPublicacaoOperadoraERN = {
   titulo: '',
@@ -28,6 +29,7 @@ const INICIAL: DadosPublicacaoOperadoraERN = {
   idioma_original: 'pt',
   localidade_texto: '',
   permitir_interacoes: true,
+  passeio_id: null,
 };
 
 const campo =
@@ -58,6 +60,11 @@ export default function PublicacoesOperadoraPage() {
     useState<ContextoPerfilPublicoERN | null>(null);
   const [itens, setItens] = useState<PublicacaoOperadoraERN[]>([]);
   const [formulario, setFormulario] = useState({ ...INICIAL });
+  const [passeiosOferta, setPasseiosOferta] = useState<{ id: string; nome: string }[]>([]);
+  useEffect(() => {
+    supabase.from('passeios').select('id,nome').eq('publicado_portal', true).order('nome')
+      .then(({ data }) => setPasseiosOferta((data ?? []) as { id: string; nome: string }[]));
+  }, []);
   const [editando, setEditando] = useState<string | null>(null);
   const [pagina, setPagina] = useState(0);
   const [temProxima, setTemProxima] = useState(false);
@@ -155,6 +162,7 @@ export default function PublicacoesOperadoraPage() {
       idioma_original: item.idioma_original,
       localidade_texto: item.localidade_texto ?? '',
       permitir_interacoes: item.permitir_interacoes,
+      passeio_id: item.passeio_id ?? null,
     });
     setErro('');
     setAviso('');
@@ -320,6 +328,25 @@ export default function PublicacoesOperadoraPage() {
                       ))}
                     </select>
                   </label>
+
+                  {formulario.tipo === 'oferta' && (
+                    <label className="block min-w-0 text-sm sm:col-span-2">
+                      Passeio desta oferta
+                      <select
+                        value={formulario.passeio_id ?? ''}
+                        onChange={e => atualizar('passeio_id', e.target.value || null)}
+                        className={campo}
+                      >
+                        <option value="">Sem passeio vinculado</option>
+                        {passeiosOferta.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+                      </select>
+                      <span className="mt-1 block text-xs text-[var(--ern-secundario)]">
+                        {passeiosOferta.length
+                          ? 'No feed, o visitante vê preço, próximas datas e vagas reais deste passeio.'
+                          : 'Publique um passeio no portal (página Passeios) para vinculá-lo à oferta.'}
+                      </span>
+                    </label>
+                  )}
 
                   <label className="block min-w-0 text-sm">
                     Idioma do texto
