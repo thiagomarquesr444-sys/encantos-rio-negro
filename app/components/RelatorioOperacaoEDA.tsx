@@ -23,6 +23,7 @@ type Op = {
 
 // EDA_RELATORIO_COMPLEMENTOS_V1
 type Extra = {
+  status: { confirmadas: number; pendentes: number; outras: number };
   familias: { pessoas: number; adultos: number; criancas: number; colo: number };
   formas_pagamento: { forma: string; valor: number; n: number }[];
   documentos: { vencidos: number; vencendo_30: number; cadastrados: number };
@@ -56,7 +57,9 @@ export default function RelatorioOperacaoEDA({ inicio, fim, titulo }: { inicio: 
 
   const fichaPct = op.seguranca.participantes ? Math.round((op.seguranca.fichas / op.seguranca.participantes) * 100) : 0;
   const blocos: { t: string; itens: [string, string][] }[] = [
-    { t: 'Vendas', itens: [['Reservas ativas', String(op.reservas.ativas)], ['Canceladas', String(op.reservas.canceladas)], ['Pessoas', String(op.reservas.pessoas)], ['Valor vendido', moeda(op.reservas.valor)], ['Ticket médio', moeda(op.reservas.ticket_medio)]] },
+    { t: 'Vendas', itens: [['Reservas (não canceladas)', String(op.reservas.ativas)],
+      ...(ex ? [['Confirmadas', String(ex.status.confirmadas)], ['Pendentes', String(ex.status.pendentes)]] as [string, string][] : []),
+      ['Canceladas', String(op.reservas.canceladas)], ['Pessoas', String(op.reservas.pessoas)], ['Valor vendido', moeda(op.reservas.valor)], ['Ticket médio', moeda(op.reservas.ticket_medio)]] },
     { t: 'Caixa das viagens', itens: [['Recebido', moeda(op.recebimentos.recebido)], ['A receber', moeda(op.recebimentos.a_receber)]] },
     { t: 'Saídas', itens: [['Saídas', String(op.saidas.total)], ['Ocupação', `${op.saidas.ocupacao_pct}% (${op.saidas.ocupadas}/${op.saidas.vagas})`]] },
     { t: 'Resultado das saídas', itens: [['Receita', moeda(op.resultado.receita_saidas)], ['Custos', moeda(op.resultado.custos)], ['Comissões', moeda(op.resultado.comissoes)], ['Margem', moeda(op.resultado.margem_saidas)]] },
@@ -74,6 +77,7 @@ export default function RelatorioOperacaoEDA({ inicio, fim, titulo }: { inicio: 
   const avisos = [
     op.reservas.sem_cliente_vinculado > 0 && `${op.reservas.sem_cliente_vinculado} reserva(s) sem cadastro de cliente vinculado.`,
     op.saidas.total === 0 && 'Nenhuma saída aberta no período: ocupação e margem por saída ficam zeradas.',
+    ex && ex.status.pendentes > 0 && `${ex.status.pendentes} reserva(s) ainda pendente(s) de confirmação.`,
     op.seguranca.participantes > 0 && fichaPct < 100 && `${100 - fichaPct}% dos participantes ainda sem ficha de saúde.`,
     ex && ex.documentos.vencidos > 0 && `${ex.documentos.vencidos} documento(s) da operação vencido(s).`,
     ex && ex.documentos.cadastrados === 0 && 'Nenhum documento da operação cadastrado (Cadastur, TIE, seguro).',
@@ -89,7 +93,7 @@ export default function RelatorioOperacaoEDA({ inicio, fim, titulo }: { inicio: 
       tabela: { titulo: 'Passeios que mais venderam', colunas: ['Passeio', 'Reservas', 'Pessoas', 'Valor'], linhas: op!.top_passeios.map((p) => [p.passeio, p.reservas, p.pessoas, moeda(p.valor)]) },
       observacoes: [
         ...avisos,
-        'Datas pela viagem (saída) ou pela data da reserva quando não há saída.',
+        'Datas pela viagem (saída) ou pela data da reserva quando não há saída. Reservas contam pela data da viagem, não pela data da venda.',
         'Margem = receita das reservas da saída − custos (realizado ou estimado nas demandas) − comissões. Não é lucro contábil.',
         'Dados de saúde aparecem apenas em contagem.',
         'Forma de pagamento vem da descrição do recebimento (ex.: "Sinal 30% · Pix"); lançamentos antigos aparecem como "Não informada".',

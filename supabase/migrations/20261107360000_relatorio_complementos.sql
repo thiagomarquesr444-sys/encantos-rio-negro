@@ -35,6 +35,10 @@ begin
        where pa.categoria ilike '%pesca%' or pa.nome ilike '%pesca%'
     )
     select jsonb_build_object(
+      'status', jsonb_build_object(
+        'confirmadas', (select count(*) from ativas where lower(coalesce(status, '')) in ('confirmada','confirmado','concluida','concluída','realizada')),
+        'pendentes', (select count(*) from ativas where lower(coalesce(status, '')) in ('pendente','', 'aguardando')),
+        'outras', (select count(*) from ativas where lower(coalesce(status, '')) not in ('confirmada','confirmado','concluida','concluída','realizada','pendente','','aguardando'))),
       'familias', jsonb_build_object(
         'pessoas', (select coalesce(sum(pessoas), 0) from ativas),
         'criancas', (select coalesce(sum(qtd_criancas), 0) from ativas),

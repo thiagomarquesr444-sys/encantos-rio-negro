@@ -25,7 +25,7 @@ function tituloAutomatico(inicio: string, fim: string) {
 }
 function periodoAtalho(chave: 'mes' | 'anterior' | '90' | 'temporada'): [string, string] {
   const hoje = hojeGraficoManaus(); const [a, m] = hoje.split('-').map(Number);
-  if (chave === 'mes') return [iso(a, m, 1), hoje];
+  if (chave === 'mes') return [iso(a, m, 1), iso(a, m, ultimoDia(a, m))];
   if (chave === 'anterior') { const pa = m === 1 ? a - 1 : a; const pm = m === 1 ? 12 : m - 1; return [iso(pa, pm, 1), iso(pa, pm, ultimoDia(pa, pm))]; }
   if (chave === '90') { const d = new Date(`${hoje}T12:00:00Z`); d.setUTCDate(d.getUTCDate() - 89); return [d.toISOString().slice(0, 10), hoje]; }
   // Temporada de pesca no Rio Negro: setembro a março.
@@ -41,7 +41,7 @@ export default function NovoRelatorioPage() {
   const [salvando, setSalvando] = useState(false); const [erro, setErro] = useState('');
   const [tituloTocado, setTituloTocado] = useState(false);
   const [equipe, setEquipe] = useState<string[]>([]);
-  useEffect(() => { const hoje = hojeGraficoManaus(); setData(hoje); setInicio(hoje.slice(0, 7) + '-01'); setFim(hoje); }, []);
+  useEffect(() => { const hoje = hojeGraficoManaus(); const [i, f] = periodoAtalho('mes'); setData(hoje); setInicio(i); setFim(f); }, []);
   useEffect(() => { if (!tituloTocado && modo !== 'manual') setTitulo(tituloAutomatico(inicio, fim)); }, [inicio, fim, modo, tituloTocado]);
   useEffect(() => {
     // Responsável: o próprio usuário já marcado; administradores veem a equipe toda.
@@ -58,7 +58,7 @@ export default function NovoRelatorioPage() {
       setEquipe([...nomes]); setResponsavel((atual) => atual || meu);
     })();
   }, []);
-  function limpar() { if (trava.current) return; const hoje = hojeGraficoManaus(); setTitulo(''); setTituloTocado(false); setTipo('Operacional'); setResponsavel(equipe[0] ?? ''); setData(hoje); setStatus('Pendente'); setIntegrado(true); setInicio(hoje.slice(0, 7) + '-01'); setFim(hoje); setErro(''); }
+  function limpar() { if (trava.current) return; const hoje = hojeGraficoManaus(); setTitulo(''); setTituloTocado(false); setTipo('Operacional'); setResponsavel(equipe[0] ?? ''); setData(hoje); setStatus('Pendente'); setIntegrado(true); { const [i, f] = periodoAtalho('mes'); setInicio(i); setFim(f); } setErro(''); }
   async function salvar(event: FormEvent) {
     event.preventDefault(); if (trava.current) return; setErro('');
     if (integrado && !periodoGraficoValido({ inicio, fim })) { setErro('Informe início e fim válidos, abrangendo até 24 meses.'); return; }
