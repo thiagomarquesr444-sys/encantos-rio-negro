@@ -213,6 +213,20 @@ export default function FinanceiroPage() {
   const [periodoMes, setPeriodoMes] = useState<PeriodoMensalERN>(mesAtualERN);
   const [busca, setBusca] = useState('');
   const [reservaFiltro, setReservaFiltro] = useState('');
+  // Nome legível da reserva filtrada (cliente · passeio · data) no lugar do código.
+  const [rotuloReserva, setRotuloReserva] = useState('');
+  useEffect(() => {
+    let ativo = true;
+    setRotuloReserva('');
+    if (!reservaFiltro) return;
+    supabase.from('reservas').select('cliente,pacote,data_reserva').eq('id', reservaFiltro).maybeSingle()
+      .then(({ data }) => {
+        if (!ativo || !data) return;
+        const dataBR = data.data_reserva ? String(data.data_reserva).slice(0, 10).split('-').reverse().join('/') : '';
+        setRotuloReserva([data.cliente, data.pacote, dataBR].filter(Boolean).join(' · '));
+      });
+    return () => { ativo = false; };
+  }, [reservaFiltro]);
 
   const [itemVisualizar, setItemVisualizar] =
     useState<LancamentoFinanceiro | null>(null);
@@ -647,7 +661,7 @@ export default function FinanceiroPage() {
           <div className="eda-pg-aviso eda-pg-aviso-ouro">
             <div>
               <b>Filtro de reserva ativo</b>
-              <p style={{ overflowWrap: 'anywhere' }}>Mostrando só os lançamentos da reserva {reservaFiltro}.</p>
+              <p style={{ overflowWrap: 'anywhere' }}>Mostrando só os lançamentos da reserva {rotuloReserva || 'selecionada'}. <a href={`/reservas/editar/${reservaFiltro}`} style={{ textDecoration: 'underline' }}>Abrir reserva</a></p>
             </div>
             <button type="button" className="eda-pg-bt eda-pg-bt-p" onClick={() => setReservaFiltro('')}>Limpar filtro</button>
           </div>
