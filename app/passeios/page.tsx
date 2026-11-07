@@ -16,6 +16,7 @@ import { supabase } from '@/lib/supabase';
 import GraficoPasseios from '@/app/components/GraficoPasseios';
 import { CabecalhoEDA } from '@/app/components/PadraoPaginaEDA';
 import SaidasPasseioEDA from '@/app/components/SaidasPasseioEDA';
+import PoliticaPrecoPasseioEDA from '@/app/components/PoliticaPrecoPasseioEDA';
 import CampoOpcoesEDA, { CampoDuracaoEDA } from '@/app/components/CampoOpcoesEDA';
 import CampoLocalEDA from '@/app/components/CampoLocalEDA';
 import { CATEGORIAS_PASSEIO } from '@/lib/opcoesEDA';
@@ -1488,10 +1489,13 @@ export default function PasseiosPage() {
             </div>
 
             {passeioSelecionado.id && (
-              <SaidasPasseioEDA
-                passeioId={passeioSelecionado.id}
-                vagasPadrao={Number(passeioSelecionado.vagas) || null}
-              />
+              <>
+                <SaidasPasseioEDA
+                  passeioId={passeioSelecionado.id}
+                  vagasPadrao={Number(passeioSelecionado.vagas) || null}
+                />
+                <PoliticaPrecoPasseioEDA passeioId={passeioSelecionado.id} />
+              </>
             )}
 
 {feedback?.tipo === 'erro' && (
@@ -1619,7 +1623,7 @@ export default function PasseiosPage() {
 
                   <div>
                     <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)]">
-                      Vagas
+                      Capacidade por saída
                     </label>
 
                     <input
@@ -1828,7 +1832,7 @@ export default function PasseiosPage() {
                   />
 
                   <Detalhe
-                    label="Vagas"
+                    label="Capacidade por saída"
                     valor={String(
                       Number(
                         passeioSelecionado.vagas

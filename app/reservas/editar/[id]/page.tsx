@@ -17,6 +17,7 @@ import LogisticaReserva from '@/app/components/LogisticaReserva';
 import PeriodoReservaERN, { validarPeriodoReservaERN } from '@/app/components/PeriodoReservaERN';
 import { CabecalhoEDA, PaginaEDA, PillEDA, type TomEDA } from '@/app/components/PadraoPaginaEDA';
 import { FormChegadaEDA } from '@/app/components/ChegadaReservaEDA';
+import type { PoliticaCriancasEDA } from '@/lib/opcoesEDA';
 
 import {
   normalizarStatusReservaERN,
@@ -33,6 +34,8 @@ interface ReservaForm {
   horario_fim_previsto: string;
   embarcacao_id: string;
   quantidade_pessoas: string;
+  qtd_criancas: string;
+  qtd_colo: string;
   cliente: string;
   pacote: string;
   dataReserva: string;
@@ -47,6 +50,8 @@ interface ReservaBanco {
   id: string;
   empresa_id: string | null;
   quantidade_pessoas?: number | null;
+  qtd_criancas?: number | null;
+  qtd_colo?: number | null;
   cliente_id?: string | null;
   passeio_id?: string | null;
   saida_id?: string | null;
@@ -98,6 +103,8 @@ const formInicial: ReservaForm = {
   horario_fim_previsto: '',
   embarcacao_id: '',
   quantidade_pessoas: '',
+  qtd_criancas: '0',
+  qtd_colo: '0',
   cliente: '',
   pacote: '',
   dataReserva: '',
@@ -219,6 +226,19 @@ function EditarReservaConteudo({ id }: { id?: string }) {
   const router = useRouter();
 
   const [form, setForm] = useState<ReservaForm>(formInicial);
+  // EDA_FAMILIA_RESERVA_V1: política de crianças do passeio vinculado.
+  const [politicaEdicao, setPoliticaEdicao] = useState<PoliticaCriancasEDA | null>(null);
+  useEffect(() => {
+    let ativo = true;
+    setPoliticaEdicao(null);
+    if (!form.passeio_id) return;
+    supabase.from('passeios').select('preco_modalidade,crianca_idade_max,crianca_percentual,colo_idade_max').eq('id', form.passeio_id).maybeSingle()
+      .then(({ data }) => {
+        if (!ativo || !data || data.preco_modalidade !== 'por_pessoa') return;
+        if (data.crianca_idade_max != null || data.colo_idade_max != null) setPoliticaEdicao(data as PoliticaCriancasEDA);
+      });
+    return () => { ativo = false; };
+  }, [form.passeio_id]);
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
   const [gravada, setGravada] = useState(false);
@@ -321,6 +341,8 @@ function EditarReservaConteudo({ id }: { id?: string }) {
           quantidade_pessoas: reserva.quantidade_pessoas == null
             ? ''
             : String(reserva.quantidade_pessoas),
+          qtd_criancas: String(reserva.qtd_criancas ?? 0),
+          qtd_colo: String(reserva.qtd_colo ?? 0),
           cliente: reserva.cliente || reserva.nome_cliente || '',
           pacote: reserva.pacote || reserva.passeio || '',
           dataReserva: dataBruta.split('T')[0],
@@ -417,6 +439,11 @@ function EditarReservaConteudo({ id }: { id?: string }) {
       return;
     }
 
+    if ((Number(form.qtd_criancas) || 0) + (Number(form.qtd_colo) || 0) > (Number(form.quantidade_pessoas) || 0)) {
+      setFeedback({ tipo: 'erro', mensagem: 'Crianças e colo não podem passar do total de pessoas.' });
+      return;
+    }
+
     if (!dataISOValida(form.dataReserva)) {
       setFeedback({
         tipo: 'erro',
@@ -482,6 +509,8 @@ function EditarReservaConteudo({ id }: { id?: string }) {
 
       const payload = {
         quantidade_pessoas: Number(form.quantidade_pessoas),
+        qtd_criancas: Math.max(0, Number(form.qtd_criancas) || 0),
+        qtd_colo: Math.max(0, Number(form.qtd_colo) || 0),
         cliente_id: form.cliente_id || null,
         passeio_id: form.passeio_id || null,
         saida_id: (form.passeio_id && form.saida_id) || null,
@@ -677,11 +706,26 @@ function EditarReservaConteudo({ id }: { id?: string }) {
                   <div className="eda-pg-form-2">
                     <div>
                       <label htmlFor="reserva-data" className={labelClass}>Data do passeio *</label>
-                      <input id="reserva-data" type="date" required value={form.dataReserva} onChange={(event) => alterarCampo('dataReserva', event.target.value)} className={inputClass} />
+                      <input id="reserva-data" type="date" required value={form.dataReserva} readOnly={!!form.saida_id} onChange={(event) => alterarCampo('dataReserva', event.target.value)} className={`${inputClass} ${form.saida_id ? 'opacity-70' : ''}`} />
+                      {form.saida_id && <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">Definida pela saída escolhida.</p>}
                     </div>
                     <div>
                       <label htmlFor="reserva-pessoas" className={labelClass}>Quantidade de pessoas *</label>
                       <input id="reserva-pessoas" type="number" inputMode="numeric" min={1} max={2147483647} step={1} required value={form.quantidade_pessoas} onChange={(event) => alterarCampo('quantidade_pessoas', event.target.value)} className={inputClass} />
+                      {politicaEdicao && (
+                        <div className="mt-3 grid grid-cols-2 gap-3">
+                          {politicaEdicao.crianca_idade_max != null && (
+                            <label className="text-xs text-[#B4C8BB]">Crianças (até {politicaEdicao.crianca_idade_max} anos, {Number(politicaEdicao.crianca_percentual)}%)
+                              <input type="number" min={0} value={form.qtd_criancas} onChange={(event) => alterarCampo('qtd_criancas', event.target.value)} className={`${inputClass} mt-1`} />
+                            </label>
+                          )}
+                          {politicaEdicao.colo_idade_max != null && (
+                            <label className="text-xs text-[#B4C8BB]">De colo (até {politicaEdicao.colo_idade_max} anos, sem custo)
+                              <input type="number" min={0} value={form.qtd_colo} onChange={(event) => alterarCampo('qtd_colo', event.target.value)} className={`${inputClass} mt-1`} />
+                            </label>
+                          )}
+                        </div>
+                      )}
                     </div>
                   </div>
 
@@ -706,7 +750,7 @@ function EditarReservaConteudo({ id }: { id?: string }) {
                       fim={form.data_fim_prevista}
                       horarioFim={form.horario_fim_previsto}
                       status={form.status}
-                      bloqueado={bloqueado}
+                      bloqueado={bloqueado || !!form.saida_id}
                       onChange={(campos) => {
                         if (envioReserva.current) return;
                         setForm((atual) => ({ ...atual, ...campos }));
@@ -714,6 +758,7 @@ function EditarReservaConteudo({ id }: { id?: string }) {
                     />
                     <LogisticaReserva
                       horario={form.horario}
+                      horarioDaSaida={!!form.saida_id}
                       embarcacaoId={form.embarcacao_id}
                       bloqueado={bloqueado}
                       onChange={(campos) => {

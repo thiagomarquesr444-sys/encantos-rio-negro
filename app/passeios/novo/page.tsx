@@ -1113,7 +1113,7 @@ export default function NovoPasseioPage() {
                 htmlFor="vagas"
                 className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--ern-secundario)]"
               >
-                Vagas
+                Capacidade por saída
               </label>
 
               <input

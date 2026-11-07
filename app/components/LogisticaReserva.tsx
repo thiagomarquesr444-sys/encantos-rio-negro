@@ -14,6 +14,8 @@ type Props = {
   horario: string;
   embarcacaoId: string;
   bloqueado: boolean;
+  // EDA_RESERVA_COESA_V1: com saída escolhida, o horário vem dela.
+  horarioDaSaida?: boolean;
   onChange: (campos: {
     horario?: string;
     embarcacao_id?: string;
@@ -24,6 +26,7 @@ export default function LogisticaReserva({
   horario,
   embarcacaoId,
   bloqueado,
+  horarioDaSaida = false,
   onChange,
 }: Props) {
   const [embarcacoes, setEmbarcacoes] = useState<Embarcacao[]>([]);
@@ -136,9 +139,10 @@ export default function LogisticaReserva({
           Horário de saída
           <HorarioReserva
             value={horario}
-            disabled={bloqueado}
+            disabled={bloqueado || horarioDaSaida}
             onChange={(valor) => onChange({ horario: valor })}
           />
+          {horarioDaSaida && <span className="mt-1 block text-[11px] text-[#EDEDE3]/60">Definido pela saída escolhida.</span>}
         </label>
 
         <label className="min-w-0 text-xs text-[#EDEDE3]/80">
@@ -194,8 +198,8 @@ export default function LogisticaReserva({
       )}
 
       <p className="mt-3 text-xs leading-6 text-[#EDEDE3]/65">
-        A seleção vincula a embarcação. Ainda não verifica conflitos de
-        agenda, lotação ou disponibilidade operacional.
+        Ao salvar, a EDA avisa se a embarcação ou o guia já estão em outra
+        viagem no mesmo período e se a lotação do barco foi ultrapassada.
       </p>
     </section>
   );

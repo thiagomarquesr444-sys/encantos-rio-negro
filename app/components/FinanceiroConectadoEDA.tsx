@@ -28,7 +28,9 @@ type Lancamento = { id: string; descricao: string | null; valor: number; status:
 export function FinanceiroReservaEDA({ reservaId, bloqueado }: { reservaId?: string; bloqueado: boolean }) {
   const [valor, setValor] = useState(0);
   const [lancs, setLancs] = useState<Lancamento[] | null>(null);
-  const [form, setForm] = useState({ valor: '', data: hojeManausEDA(), recebido: true, descricao: '' });
+  // EDA_PAGAMENTO_PADRAO_V1: descrição montada por opções (tipo · forma), sem texto livre.
+  const [form, setForm] = useState({ valor: '', data: hojeManausEDA(), recebido: true, tipo: '', forma: 'Pix' });
+  const descricaoForm = [form.tipo, form.forma].filter(Boolean).join(' · ');
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [sinalPct, setSinalPct] = useState(0);
@@ -54,7 +56,7 @@ export function FinanceiroReservaEDA({ reservaId, bloqueado }: { reservaId?: str
     const tel = ((Array.isArray(cli) ? cli[0]?.telefone : cli?.telefone) ?? '').replace(/\D/g, '');
     try {
       const codigo = pixCopiaECola({ chave: pixCfg.chave, nome: pixCfg.nome, cidade: pixCfg.cidade, valor: v, txid: `EDA${reservaId.replace(/-/g, '').slice(0, 20)}` });
-      const desc = form.descricao || (v >= saldo - 0.01 ? 'saldo' : 'pagamento');
+      const desc = (form.tipo || (v >= saldo - 0.01 ? 'saldo' : 'pagamento')).toLowerCase();
       const texto = `Olá${r?.cliente ? `, ${r.cliente.split(' ')[0]}` : ''}! Segue o Pix (${desc}) da sua reserva${r?.pacote ? ` — ${r.pacote}` : ''}: ${moeda(v)}.\n\nPix copia e cola:\n${codigo}\n\nRecebedor: ${pixCfg.nome}. Assim que o pagamento cair, confirmamos por aqui.`;
       setCobranca({ codigo, valor: v, texto, telefone: tel ? (tel.length <= 11 ? `55${tel}` : tel) : null });
       setErro('');
@@ -86,11 +88,11 @@ export function FinanceiroReservaEDA({ reservaId, bloqueado }: { reservaId?: str
     if (!Number.isFinite(v) || v <= 0) { setErro('Informe um valor válido.'); return; }
     setSalvando(true); setErro('');
     const { error } = await supabase.rpc('registrar_recebimento_eda', {
-      p_reserva_id: reservaId, p_valor: v, p_data: form.data, p_descricao: form.descricao || null, p_recebido: form.recebido,
+      p_reserva_id: reservaId, p_valor: v, p_data: form.data, p_descricao: descricaoForm || null, p_recebido: form.recebido,
     });
     setSalvando(false);
     if (error) { setErro(mensagem(error)); return; }
-    setForm({ ...form, valor: '', descricao: '' });
+    setForm({ ...form, valor: '', tipo: '' });
     void carregar();
   }
 
@@ -123,18 +125,26 @@ export function FinanceiroReservaEDA({ reservaId, bloqueado }: { reservaId?: str
           <label>Valor<input inputMode="decimal" placeholder={saldo.toFixed(2).replace('.', ',')} value={form.valor}
             onChange={(e) => setForm({ ...form, valor: e.target.value })} disabled={bloqueado || salvando} /></label>
           <label>Data<input type="date" value={form.data} onChange={(e) => setForm({ ...form, data: e.target.value })} disabled={bloqueado || salvando} /></label>
-          <label>Descrição<input maxLength={120} placeholder="Ex.: Sinal 30% · Pix" value={form.descricao}
-            onChange={(e) => setForm({ ...form, descricao: e.target.value })} disabled={bloqueado || salvando} /></label>
+          <label>Tipo<select value={form.tipo} onChange={(e) => setForm({ ...form, tipo: e.target.value })} disabled={bloqueado || salvando}>
+            <option value="">Pagamento</option>
+            {sinalPct > 0 && <option value={`Sinal ${sinalPct}%`}>Sinal {sinalPct}%</option>}
+            <option value="Parcela">Parcela</option>
+            <option value="Saldo">Saldo</option>
+            <option value="Pagamento integral">Pagamento integral</option>
+          </select></label>
+          <label>Forma<select value={form.forma} onChange={(e) => setForm({ ...form, forma: e.target.value })} disabled={bloqueado || salvando}>
+            {['Pix', 'Dinheiro', 'Cartão de crédito', 'Cartão de débito', 'Transferência', 'Outro'].map((f) => <option key={f} value={f}>{f}</option>)}
+          </select></label>
           <label className="fr-check"><input type="checkbox" checked={form.recebido} onChange={(e) => setForm({ ...form, recebido: e.target.checked })} disabled={bloqueado || salvando} />Já recebido</label>
           <button type="submit" className="eda-pg-bt eda-pg-bt-ouro" disabled={bloqueado || salvando}>{salvando ? 'Lançando…' : form.recebido ? 'Registrar recebimento' : 'Lançar a receber'}</button>
           {sinalPct > 0 && recebido === 0 && (
             <button type="button" className="eda-pg-bt" disabled={bloqueado || salvando}
-              onClick={() => setForm({ ...form, valor: (valor * sinalPct / 100).toFixed(2).replace('.', ','), descricao: form.descricao || `Sinal ${sinalPct}%` })}>
+              onClick={() => setForm({ ...form, valor: (valor * sinalPct / 100).toFixed(2).replace('.', ','), tipo: `Sinal ${sinalPct}%` })}>
               Sinal {sinalPct}%
             </button>
           )}
           <button type="button" className="eda-pg-bt" disabled={bloqueado || salvando}
-            onClick={() => setForm({ ...form, valor: saldo.toFixed(2).replace('.', ',') })}>Quitar saldo</button>
+            onClick={() => setForm({ ...form, valor: saldo.toFixed(2).replace('.', ','), tipo: recebido === 0 ? 'Pagamento integral' : 'Saldo' })}>Quitar saldo</button>
         </form>
       )}
       {saldo > 0 && (
@@ -177,7 +187,7 @@ export function FinanceiroReservaEDA({ reservaId, bloqueado }: { reservaId?: str
         .fr-lista li b { grid-column: 2; grid-row: 1 / span 2; align-self: center; }
         .fr-form { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
         .fr-form label { display: grid; gap: 4px; font-size: 11px; color: var(--ern-secundario, #b4c8bb); }
-        .fr-form input:not([type='checkbox']) { min-height: 40px; padding: 0 10px; border-radius: 12px; border: 1px solid var(--ern-borda); background: transparent; color: inherit; }
+        .fr-form select, .fr-form input:not([type='checkbox']) { min-height: 40px; padding: 0 10px; border-radius: 12px; border: 1px solid var(--ern-borda); background: transparent; color: inherit; }
         .fr-check { display: flex !important; align-items: center; gap: 6px; min-height: 40px; color: inherit !important; font-size: 13px !important; }
         .fr-erro { color: var(--ern-erro, #f87171); font-size: 13px; }
         .fr-pix { margin-top: 12px; display: grid; gap: 8px; }

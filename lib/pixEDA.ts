@@ -3,19 +3,67 @@
 
 export type TipoChavePix = 'email' | 'telefone' | 'cpf' | 'cnpj' | 'aleatoria';
 
-export function normalizarChavePix(bruta: string): { chave: string; tipo: TipoChavePix } | null {
+export const TIPOS_CHAVE_PIX: [TipoChavePix, string][] = [
+  ['telefone', 'Celular'], ['cpf', 'CPF'], ['cnpj', 'CNPJ'], ['email', 'E-mail'], ['aleatoria', 'Chave aleatória'],
+];
+
+export function cpfValido(d: string) {
+  if (!/^\d{11}$/.test(d) || /^(\d)\1{10}$/.test(d)) return false;
+  const dv = (n: number) => {
+    let soma = 0;
+    for (let i = 0; i < n; i++) soma += Number(d[i]) * (n + 1 - i);
+    const r = (soma * 10) % 11;
+    return r === 10 ? 0 : r;
+  };
+  return dv(9) === Number(d[9]) && dv(10) === Number(d[10]);
+}
+
+function cnpjValido(d: string) {
+  if (!/^\d{14}$/.test(d) || /^(\d)\1{13}$/.test(d)) return false;
+  const calc = (n: number) => {
+    const pesos = n === 12 ? [5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2] : [6, 5, 4, 3, 2, 9, 8, 7, 6, 5, 4, 3, 2];
+    const r = pesos.reduce((s, p, i) => s + Number(d[i]) * p, 0) % 11;
+    return r < 2 ? 0 : 11 - r;
+  };
+  return calc(12) === Number(d[12]) && calc(13) === Number(d[13]);
+}
+
+// Celular: DDD válido (11-99) + 9 dígitos começando por 9.
+const pareceCelular = (d: string) => /^[1-9][1-9]9\d{8}$/.test(d);
+
+// tipo: quando informado, a chave é validada nesse formato (11 dígitos podem ser CPF ou celular).
+export function normalizarChavePix(bruta: string, tipo?: TipoChavePix | ''): { chave: string; tipo: TipoChavePix } | null {
   const t = bruta.trim();
   if (!t) return null;
+  const d = t.replace(/\D/g, '');
+  const nac = d.length >= 12 && d.startsWith('55') ? d.slice(2) : d;
+  const tel = () => (nac.length === 10 || nac.length === 11) && /^[1-9][1-9]/.test(nac) ? { chave: `+55${nac}`, tipo: 'telefone' as const } : null;
+  if (tipo === 'email') return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(t) ? { chave: t.toLowerCase(), tipo } : null;
+  if (tipo === 'aleatoria') return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t) ? { chave: t.toLowerCase(), tipo } : null;
+  if (tipo === 'telefone') return tel();
+  if (tipo === 'cpf') return cpfValido(d) ? { chave: d, tipo } : null;
+  if (tipo === 'cnpj') return cnpjValido(d) ? { chave: d, tipo } : null;
+
+  // Automático
   if (/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(t)) return { chave: t.toLowerCase(), tipo: 'email' };
   if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t)) return { chave: t.toLowerCase(), tipo: 'aleatoria' };
-  const d = t.replace(/\D/g, '');
-  if (t.startsWith('+') || /\(\d{2}\)/.test(t) || (d.length >= 12 && d.startsWith('55'))) {
-    const nac = d.startsWith('55') ? d.slice(2) : d;
-    if (nac.length === 10 || nac.length === 11) return { chave: `+55${nac}`, tipo: 'telefone' };
+  if (t.startsWith('+') || /\(\d{2}\)/.test(t) || (d.length >= 12 && d.startsWith('55'))) return tel();
+  if (d.length === 11) {
+    // CPF só quando os dígitos verificadores batem; senão, celular.
+    if (cpfValido(d) && !pareceCelular(d)) return { chave: d, tipo: 'cpf' };
+    if (pareceCelular(d) && !cpfValido(d)) return tel();
+    if (cpfValido(d)) return { chave: d, tipo: 'cpf' }; // ambíguo: o operador escolhe o tipo
+    return null;
   }
-  if (d.length === 11) return { chave: d, tipo: 'cpf' };
-  if (d.length === 14) return { chave: d, tipo: 'cnpj' };
+  if (d.length === 10) return tel();
+  if (d.length === 14 && cnpjValido(d)) return { chave: d, tipo: 'cnpj' };
   return null;
+}
+
+// Ambíguo = 11 dígitos que são CPF válido e também têm formato de celular.
+export function chavePixAmbigua(bruta: string) {
+  const d = bruta.replace(/\D/g, '');
+  return !bruta.trim().startsWith('+') && d.length === 11 && cpfValido(d) && pareceCelular(d);
 }
 
 function semAcento(s: string) {

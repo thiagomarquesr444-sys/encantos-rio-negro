@@ -8,7 +8,7 @@ import type { CSSProperties, FormEvent } from 'react';
 import { supabase } from '@/lib/supabase';
 import SegurancaContaERN from '@/app/components/SegurancaContaERN';
 import SeletorTemaERN from '@/app/components/SeletorTemaERN';
-import { normalizarChavePix } from '@/lib/pixEDA';
+import { chavePixAmbigua, normalizarChavePix, TIPOS_CHAVE_PIX, type TipoChavePix } from '@/lib/pixEDA';
 
 type Tema = 'verde' | 'azul' | 'amarelo' | 'branco' | 'grafite';
 
@@ -132,6 +132,8 @@ function mensagemErro(falha: unknown, padrao: string) {
 
 export default function ConfiguracoesPage() {
   const [config, setConfig] = useState<Configuracao>(PADRAO);
+  // Tipo escolhido pelo operador ('' = automático). Resolve 11 dígitos: CPF x celular.
+  const [tipoPix, setTipoPix] = useState<TipoChavePix | ''>('');
   const [empresaId, setEmpresaId] = useState('');
   const [administrador, setAdministrador] = useState(false);
   const [carregando, setCarregando] = useState(true);
@@ -334,10 +336,10 @@ export default function ConfiguracoesPage() {
     }
 
     // EDA_PIX_RECEBIMENTO_V1: só aceita chave Pix em formato válido.
-    if (config.chave_pix.trim() && !normalizarChavePix(config.chave_pix)) {
+    if (config.chave_pix.trim() && !normalizarChavePix(config.chave_pix, tipoPix)) {
       setFeedback({
         tipo: 'erro',
-        texto: 'Chave Pix inválida. Use e-mail, celular com DDD, CPF, CNPJ ou chave aleatória.',
+        texto: tipoPix ? 'Chave Pix inválida para o tipo escolhido.' : 'Chave Pix inválida. Escolha o tipo da chave e confira os números.',
       });
       return;
     }
@@ -357,7 +359,7 @@ export default function ConfiguracoesPage() {
         porcentagem_sinal: config.porcentagem_sinal,
         enviar_email_confirmacao: config.enviar_email_confirmacao,
         enviar_whatsapp_confirmacao: config.enviar_whatsapp_confirmacao,
-        chave_pix: normalizarChavePix(config.chave_pix)?.chave ?? null,
+        chave_pix: normalizarChavePix(config.chave_pix, tipoPix)?.chave ?? null,
         pix_nome_recebedor: config.pix_nome_recebedor.trim().slice(0, 25) || null,
         pix_cidade: config.pix_cidade.trim().slice(0, 15) || null,
         updated_at: new Date().toISOString(),
@@ -396,7 +398,7 @@ export default function ConfiguracoesPage() {
       setConfig((atual) => ({
         ...atual,
         nome_sistema: nome,
-        chave_pix: normalizarChavePix(atual.chave_pix)?.chave ?? '',
+        chave_pix: normalizarChavePix(atual.chave_pix, tipoPix)?.chave ?? '',
       }));
 
       window.dispatchEvent(
@@ -675,6 +677,13 @@ export default function ConfiguracoesPage() {
                 O dinheiro cai direto na conta da operadora, sem intermediário e sem taxa da EDA.
               </p>
               <label className="mt-4 block min-w-0 text-sm">
+                Tipo da chave
+                <select value={tipoPix} onChange={(event) => setTipoPix(event.target.value as TipoChavePix | '')} className={campo}>
+                  <option value="">Reconhecer automaticamente</option>
+                  {TIPOS_CHAVE_PIX.map(([v, r]) => <option key={v} value={v}>{r}</option>)}
+                </select>
+              </label>
+              <label className="mt-4 block min-w-0 text-sm">
                 Chave Pix para receber dos turistas
                 <input name="chave_pix"
                   type="text"
@@ -689,9 +698,12 @@ export default function ConfiguracoesPage() {
               </label>
               {config.chave_pix.trim() && (
                 <p className="mt-2 text-xs text-[var(--cfg-secundario)]">
-                  {normalizarChavePix(config.chave_pix)
-                    ? `Chave reconhecida: ${normalizarChavePix(config.chave_pix)!.tipo}`
-                    : 'Formato não reconhecido.'}
+                  {(() => {
+                    const r = normalizarChavePix(config.chave_pix, tipoPix);
+                    if (!r) return tipoPix ? 'Chave inválida para o tipo escolhido.' : 'Formato não reconhecido. Escolha o tipo da chave acima.';
+                    const rotulo = TIPOS_CHAVE_PIX.find(([v]) => v === r.tipo)?.[1] ?? r.tipo;
+                    return `Chave reconhecida: ${rotulo}${r.tipo === 'telefone' ? ` (${r.chave})` : ''}${!tipoPix && chavePixAmbigua(config.chave_pix) ? ' — estes números também podem ser um celular; escolha o tipo acima se for o caso.' : ''}`;
+                  })()}
                 </p>
               )}
               <div className="mt-4 grid min-w-0 gap-4 sm:grid-cols-2">

@@ -15,6 +15,7 @@ import { mensagemSaidaEDA } from '@/lib/saidasGestaoEDA';
 import LogisticaReserva from '@/app/components/LogisticaReserva';
 import PeriodoReservaERN, { validarPeriodoReservaERN } from '@/app/components/PeriodoReservaERN';
 import { CabecalhoEDA, PaginaEDA } from '@/app/components/PadraoPaginaEDA';
+import { valorPorFaixasEDA, type PoliticaCriancasEDA } from '@/lib/opcoesEDA';
 
 type StatusReserva = 'Pendente' | 'Confirmada' | 'Cancelada';
 
@@ -43,6 +44,8 @@ type FormReserva = {
   horario_fim_previsto: string;
   embarcacao_id: string;
   quantidade_pessoas: string;
+  qtd_criancas: string;
+  qtd_colo: string;
   cliente: string;
   pacote: string;
   data_reserva: string;
@@ -62,6 +65,8 @@ const ESTADO_INICIAL: FormReserva = {
   horario_fim_previsto: '',
   embarcacao_id: '',
   quantidade_pessoas: '1',
+  qtd_criancas: '0',
+  qtd_colo: '0',
   cliente: '',
   pacote: '',
   data_reserva: '',
@@ -180,6 +185,61 @@ export default function NovaReservaPage() {
   const router = useRouter();
 
   const [form, setForm] = useState<FormReserva>(ESTADO_INICIAL);
+
+  // EDA_RESERVA_COESA_V1: preço do passeio sugere o valor (por pessoa x quantidade, ou por grupo).
+  const [precoPasseio, setPrecoPasseio] = useState<{ preco: number; modalidade: string } | null>(null);
+  const [politica, setPolitica] = useState<PoliticaCriancasEDA | null>(null);
+  const ultimaSugestao = useRef('');
+  const [minimoPessoas, setMinimoPessoas] = useState(0);
+  useEffect(() => {
+    let ativo = true;
+    setPrecoPasseio(null);
+    setPolitica(null);
+    setMinimoPessoas(0);
+    if (!form.passeio_id) return;
+    supabase.from('passeios').select('preco,valor,preco_modalidade,capacidade_minima,crianca_idade_max,crianca_percentual,colo_idade_max').eq('id', form.passeio_id).maybeSingle()
+      .then(({ data }) => {
+        if (!ativo || !data) return;
+        // Mínimo de pessoas do passeio entra como quantidade inicial.
+        const minimo = Number(data.capacidade_minima) || 0;
+        if (minimo > 1) setForm((atual) => (Number(atual.quantidade_pessoas) || 0) < minimo ? { ...atual, quantidade_pessoas: String(minimo) } : atual);
+        setMinimoPessoas(minimo > 1 ? minimo : 0);
+        const pol = { crianca_idade_max: data.crianca_idade_max, crianca_percentual: data.crianca_percentual, colo_idade_max: data.colo_idade_max };
+        setPolitica(data.preco_modalidade === 'por_pessoa' && (pol.crianca_idade_max != null || pol.colo_idade_max != null) ? pol : null);
+        if (pol.crianca_idade_max == null && pol.colo_idade_max == null) setForm((atual) => ({ ...atual, qtd_criancas: '0', qtd_colo: '0' }));
+        const preco = Number(data.valor ?? data.preco) || 0;
+        if (preco > 0 && data.preco_modalidade !== 'sob_consulta') setPrecoPasseio({ preco, modalidade: data.preco_modalidade ?? 'por_pessoa' });
+      });
+    return () => { ativo = false; };
+  }, [form.passeio_id]);
+  const pessoasNum = Math.max(1, Number(form.quantidade_pessoas) || 1);
+  // EDA_FAMILIA_RESERVA_V1: adultos pagam cheio, crianças o % do passeio, colo não paga.
+  const criancasNum = politica?.crianca_idade_max != null ? Math.max(0, Number(form.qtd_criancas) || 0) : 0;
+  const coloNum = politica?.colo_idade_max != null ? Math.max(0, Number(form.qtd_colo) || 0) : 0;
+  const adultosNum = Math.max(0, pessoasNum - criancasNum - coloNum);
+  const faixasInvalidas = criancasNum + coloNum > pessoasNum;
+  const valorSugerido = precoPasseio && !faixasInvalidas
+    ? precoPasseio.modalidade === 'por_grupo'
+      ? { total: precoPasseio.preco, regra: 'preço por grupo' }
+      : politica && (criancasNum || coloNum)
+        ? {
+            total: valorPorFaixasEDA(precoPasseio.preco, adultosNum, criancasNum, politica),
+            regra: [`${adultosNum} adulto(s) × ${formatarValorCampo(precoPasseio.preco)}`,
+              criancasNum ? `${criancasNum} criança(s) a ${Number(politica.crianca_percentual)}%` : '',
+              coloNum ? `${coloNum} de colo sem custo` : ''].filter(Boolean).join(' + '),
+          }
+        : { total: precoPasseio.preco * pessoasNum, regra: `${pessoasNum} × ${formatarValorCampo(precoPasseio.preco)}` }
+    : null;
+  useEffect(() => {
+    if (!valorSugerido) return;
+    const novo = formatarValorCampo(valorSugerido.total);
+    // Só preenche se o campo está vazio ou ainda com a sugestão anterior (não sobrescreve valor negociado).
+    // A sugestão anterior é capturada antes: o setForm roda depois e veria o ref já atualizado.
+    const anterior = ultimaSugestao.current;
+    ultimaSugestao.current = novo;
+    setForm((atual) => (!atual.valor || atual.valor === anterior) ? { ...atual, valor: novo } : atual);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [valorSugerido?.total]);
   const [salvando, setSalvando] = useState(false);
   const [gravada, setGravada] = useState(false);
   const [carregandoUso, setCarregandoUso] = useState(true);
@@ -384,6 +444,11 @@ export default function NovaReservaPage() {
       return;
     }
 
+    if (faixasInvalidas) {
+      setFeedback({ tipo: 'erro', mensagem: 'Crianças e colo não podem passar do total de pessoas.' });
+      return;
+    }
+
     if (!dataISOValida(form.data_reserva)) {
       setFeedback({
         tipo: 'erro',
@@ -464,6 +529,8 @@ export default function NovaReservaPage() {
           cliente: form.cliente.trim(),
           pacote: form.pacote.trim(),
           quantidade_pessoas: Number(form.quantidade_pessoas),
+          qtd_criancas: criancasNum,
+          qtd_colo: coloNum,
           data_reserva: form.data_reserva,
           agencia: form.agencia.trim() || null,
           guia: form.guia.trim() || null,
@@ -700,6 +767,7 @@ export default function NovaReservaPage() {
                 </div>
 
                 <SeletorSaidaEDA
+                  autoSelecionar
                   passeioId={form.passeio_id}
                   saidaId={form.saida_id}
                   pessoas={Number(form.quantidade_pessoas) || 1}
@@ -718,7 +786,8 @@ export default function NovaReservaPage() {
                   }}
                 />
 
-                <div>
+                {/* EDA_RESERVA_COESA_V1: escolhido no cadastro, não se digita de novo. */}
+                {!form.cliente_id && <div>
                   <label htmlFor="nova-cliente" className={labelClass}>
                     Cliente *
                   </label>
@@ -730,15 +799,12 @@ export default function NovaReservaPage() {
                     placeholder="Nome do cliente"
                     className={inputClass}
                   />
-                  {form.cliente_id && (
-                    <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">
-                      Cliente vinculado ao cadastro. Alterar o nome manualmente
-                      remove esse vínculo.
-                    </p>
-                  )}
-                </div>
+                  <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">
+                    Cliente sem cadastro. Para histórico e fichas, escolha um cliente cadastrado acima.
+                  </p>
+                </div>}
 
-                <div>
+                {!form.passeio_id && <div>
                   <label htmlFor="nova-pacote" className={labelClass}>
                     Pacote / Passeio *
                   </label>
@@ -750,13 +816,10 @@ export default function NovaReservaPage() {
                     placeholder="Experiência ou pacote contratado"
                     className={inputClass}
                   />
-                  {form.passeio_id && (
-                    <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">
-                      Passeio vinculado ao cadastro. Alterar o nome manualmente
-                      remove esse vínculo.
-                    </p>
-                  )}
-                </div>
+                  <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">
+                    Pacote sem cadastro (sem agenda de saídas nem controle de vagas).
+                  </p>
+                </div>}
 
                 <div className="grid min-w-0 gap-5 sm:grid-cols-2">
                   <div className="min-w-0">
@@ -768,9 +831,11 @@ export default function NovaReservaPage() {
                       type="date"
                       required
                       value={form.data_reserva}
+                      readOnly={!!form.saida_id}
                       onChange={(event) => alterarCampo('data_reserva', event.target.value)}
-                      className={`${inputClass} [color-scheme:dark]`}
+                      className={`${inputClass} [color-scheme:dark] ${form.saida_id ? 'opacity-70' : ''}`}
                     />
+                    {form.saida_id && <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">Definida pela saída escolhida.</p>}
                   </div>
 
                   <div className="min-w-0">
@@ -789,6 +854,30 @@ export default function NovaReservaPage() {
                       onChange={(event) => alterarCampo('quantidade_pessoas', event.target.value)}
                       className={inputClass}
                     />
+                    {politica && (
+                      <div className="mt-3 grid grid-cols-2 gap-3">
+                        {politica.crianca_idade_max != null && (
+                          <label className="text-xs text-[#B4C8BB]">Crianças (até {politica.crianca_idade_max} anos)
+                            <input type="number" min={0} max={pessoasNum} value={form.qtd_criancas}
+                              onChange={(event) => alterarCampo('qtd_criancas', event.target.value)} className={`${inputClass} mt-1`} />
+                          </label>
+                        )}
+                        {politica.colo_idade_max != null && (
+                          <label className="text-xs text-[#B4C8BB]">De colo (até {politica.colo_idade_max} anos)
+                            <input type="number" min={0} max={pessoasNum} value={form.qtd_colo}
+                              onChange={(event) => alterarCampo('qtd_colo', event.target.value)} className={`${inputClass} mt-1`} />
+                          </label>
+                        )}
+                        <p className={`col-span-2 text-xs leading-6 ${faixasInvalidas ? 'text-[#F87171]' : 'text-[#B4C8BB]'}`}>
+                          {faixasInvalidas ? 'Crianças e colo não podem passar do total de pessoas.' : `Do total: ${adultosNum} adulto(s), ${criancasNum} criança(s), ${coloNum} de colo. Todos ocupam vaga.`}
+                        </p>
+                      </div>
+                    )}
+                    {minimoPessoas > 0 && (
+                      <p className={`mt-2 text-xs leading-6 ${pessoasNum < minimoPessoas ? 'text-[#F4C77E]' : 'text-[#B4C8BB]'}`}>
+                        Este passeio sai com no mínimo {minimoPessoas} pessoas.
+                      </p>
+                    )}
                   </div>
 
                   <div className="min-w-0 sm:col-span-2">
@@ -807,8 +896,9 @@ export default function NovaReservaPage() {
                       className={inputClass}
                     />
                     <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">
-                      Total da reserva, sem multiplicação automática pela
-                      quantidade de pessoas. Não confirma recebimento.
+                      {valorSugerido
+                        ? `Sugerido pelo preço do passeio (${valorSugerido.regra}). Pode ajustar; não confirma recebimento.`
+                        : 'Total da reserva. Não confirma recebimento.'}
                     </p>
                   </div>
                 </div>
@@ -828,7 +918,7 @@ export default function NovaReservaPage() {
                     fim={form.data_fim_prevista}
                     horarioFim={form.horario_fim_previsto}
                     status={form.status}
-                    bloqueado={bloqueado}
+                    bloqueado={bloqueado || !!form.saida_id}
                     onChange={(campos) => {
                       if (envioReserva.current) return;
                       setForm((atual) => ({ ...atual, ...campos }));
@@ -836,6 +926,7 @@ export default function NovaReservaPage() {
                   />
                   <LogisticaReserva
                     horario={form.horario}
+                    horarioDaSaida={!!form.saida_id}
                     embarcacaoId={form.embarcacao_id}
                     bloqueado={bloqueado}
                     onChange={(campos) => {
