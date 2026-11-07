@@ -75,3 +75,11 @@ export const ESPECIALIDADES_OPERADORA: readonly OpcaoEDA[] = [
   ['Hospedagem / lodge', 'Hospedagem / lodge'], ['Barco-hotel', 'Barco-hotel'], ['Fotografia de natureza', 'Fotografia de natureza'],
   ['Cultura e festivais', 'Cultura e festivais'], ['Transfer fluvial', 'Transfer fluvial'],
 ];
+
+export const ATIVIDADES_FORNECEDOR: readonly OpcaoEDA[] = [
+  ['Alimentação / refeições', 'Alimentação / refeições'], ['Mercado / suprimentos', 'Mercado / suprimentos'],
+  ['Combustível', 'Combustível'], ['Transporte fluvial', 'Transporte fluvial'], ['Transporte terrestre', 'Transporte terrestre'],
+  ['Iscas e equipamentos de pesca', 'Iscas e equipamentos de pesca'], ['Gelo', 'Gelo'], ['Artesanato', 'Artesanato'],
+  ['Manutenção de barcos e motores', 'Manutenção de barcos e motores'], ['Lavanderia', 'Lavanderia'],
+  ['Comunicação / internet', 'Comunicação / internet'], ['Saúde e primeiros socorros', 'Saúde e primeiros socorros'],
+];

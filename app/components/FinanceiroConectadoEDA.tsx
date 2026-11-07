@@ -30,6 +30,12 @@ export function FinanceiroReservaEDA({ reservaId, bloqueado }: { reservaId?: str
   const [form, setForm] = useState({ valor: '', data: hojeManausEDA(), recebido: true, descricao: '' });
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
+  const [sinalPct, setSinalPct] = useState(0);
+
+  // EDA_CONFIGURACOES_CONECTADAS_V1: % de sinal definido em Configurações.
+  useEffect(() => {
+    supabase.rpc('config_operacao_eda').then(({ data }) => setSinalPct(Number((data as { porcentagem_sinal?: number } | null)?.porcentagem_sinal) || 0));
+  }, []);
 
   const carregar = useCallback(async () => {
     if (!reservaId) return;
@@ -97,6 +103,12 @@ export function FinanceiroReservaEDA({ reservaId, bloqueado }: { reservaId?: str
             onChange={(e) => setForm({ ...form, descricao: e.target.value })} disabled={bloqueado || salvando} /></label>
           <label className="fr-check"><input type="checkbox" checked={form.recebido} onChange={(e) => setForm({ ...form, recebido: e.target.checked })} disabled={bloqueado || salvando} />Já recebido</label>
           <button type="submit" className="eda-pg-bt eda-pg-bt-ouro" disabled={bloqueado || salvando}>{salvando ? 'Lançando…' : form.recebido ? 'Registrar recebimento' : 'Lançar a receber'}</button>
+          {sinalPct > 0 && recebido === 0 && (
+            <button type="button" className="eda-pg-bt" disabled={bloqueado || salvando}
+              onClick={() => setForm({ ...form, valor: (valor * sinalPct / 100).toFixed(2).replace('.', ','), descricao: form.descricao || `Sinal ${sinalPct}%` })}>
+              Sinal {sinalPct}%
+            </button>
+          )}
           <button type="button" className="eda-pg-bt" disabled={bloqueado || salvando}
             onClick={() => setForm({ ...form, valor: saldo.toFixed(2).replace('.', ',') })}>Quitar saldo</button>
         </form>

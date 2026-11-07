@@ -53,11 +53,11 @@ const PERFIS: Record<Role, string> = {
 
 const DESCRICOES_PERFIS_ERN: Record<Role, string> = {
   admin_empresa:
-    'Administra a própria empresa, incluindo equipe e configurações. Os recursos continuam sujeitos ao plano contratado.',
+    'Administra a própria empresa, incluindo equipe, configurações, fichas de saúde (com registro de acesso) e lançamento de comissões. Os recursos continuam sujeitos ao plano contratado.',
   operador_empresa:
-    'Acessa clientes, reservas, passeios, vouchers, demandas e estrutura operacional. Não acessa os lançamentos financeiros.',
+    'Acessa clientes, reservas, passeios, saídas, hospedagens, vouchers, demandas e fichas de saúde dos participantes (com registro de acesso). Registra recebimentos da reserva, mas não acessa os lançamentos financeiros.',
   financeiro:
-    'Acessa financeiro e relatórios conforme o plano. Consulta referências de reservas para os lançamentos, sem editar a operação.',
+    'Acessa financeiro, comissões e relatórios conforme o plano. Consulta referências de reservas para os lançamentos, sem editar a operação. Não vê fichas de saúde.',
   guia:
     'Acessa o Painel e o mapa EDA. Este vínculo pertence à equipe da operadora e é diferente do cadastro independente de Guia EDA.',
   piloteiro:

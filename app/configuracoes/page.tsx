@@ -544,8 +544,9 @@ export default function ConfiguracoesPage() {
                 Preferências de reservas
               </h2>
               <p className="mt-2 text-sm leading-6 text-[var(--cfg-secundario)]">
-                Valores de referência cadastrados para a operação.
-                Salvar aqui não modifica reservas existentes.
+                Estas regras agem na operação: a antecedência mínima e as reservas no mesmo dia
+                definem quais saídas o portal e o Concierge oferecem ao turista, e o % de sinal
+                aparece como atalho nos pagamentos da reserva. Reservas existentes não mudam.
               </p>
 
               <div className="mt-5 grid min-w-0 gap-5 sm:grid-cols-2">
