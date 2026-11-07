@@ -45,12 +45,11 @@ const textos = {
 };
 
 export default function ConciergeLancadorERN({
-  idioma, aberto, pausado, aoAbrir, aoPausar,
+  idioma, aberto, pausado, aoAbrir,
 }: Props) {
   const t = textos[idioma === 'EN' ? 'EN' : idioma === 'ES' ? 'ES' : 'PT'];
   const [montado, setMontado] = useState(false);
   const [posicao, setPosicao] = useState<PontoERN | null>(null);
-  const [menu, setMenu] = useState(false);
   const [arrastando, setArrastando] = useState(false);
 
   const caixaRef = useRef<HTMLDivElement>(null);
@@ -62,8 +61,8 @@ export default function ConciergeLancadorERN({
   } | null>(null);
 
   function limitar(ponto: PontoERN): PontoERN {
-    const largura = caixaRef.current?.offsetWidth || 148;
-    const altura = caixaRef.current?.offsetHeight || 52;
+    const largura = caixaRef.current?.offsetWidth || 58;
+    const altura = caixaRef.current?.offsetHeight || 58;
 
     return {
       x: Math.max(12, Math.min(
@@ -87,7 +86,7 @@ export default function ConciergeLancadorERN({
     const cabecalho = document.querySelector('.ern-navegacao-ilustrada');
     const topo = cabecalho ? Math.max(0, cabecalho.getBoundingClientRect().bottom) : 0;
     return {
-      x: window.innerWidth - (caixaRef.current?.offsetWidth || 148) - 16,
+      x: window.innerWidth - (caixaRef.current?.offsetWidth || 58) - 16,
       y: topo + 16,
     };
   }
@@ -105,7 +104,7 @@ export default function ConciergeLancadorERN({
       const anterior = posicaoRef.current;
       if (!anterior) return;
 
-      const largura = caixaRef.current?.offsetWidth || 148;
+      const largura = caixaRef.current?.offsetWidth || 58;
       const direita = anterior.x + largura / 2 > window.innerWidth / 2;
 
       posicionar({
@@ -119,32 +118,6 @@ export default function ConciergeLancadorERN({
     // A posição inicial é definida somente ao montar.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [montado]);
-
-  useEffect(() => {
-    if (!menu) return;
-
-    function fecharFora(evento: Event) {
-      if (
-        evento.target instanceof Node &&
-        !caixaRef.current?.contains(evento.target)
-      ) setMenu(false);
-    }
-
-    function teclado(evento: KeyboardEvent) {
-      if (evento.key === 'Escape') {
-        setMenu(false);
-        document.getElementById('ern-opcoes-concierge')?.focus();
-      }
-    }
-
-    document.addEventListener('pointerdown', fecharFora);
-    document.addEventListener('keydown', teclado);
-
-    return () => {
-      document.removeEventListener('pointerdown', fecharFora);
-      document.removeEventListener('keydown', teclado);
-    };
-  }, [menu]);
 
   function iniciar(evento: ReactPointerEvent<HTMLButtonElement>) {
     if (!evento.isPrimary || evento.button !== 0) return;
@@ -175,7 +148,6 @@ export default function ConciergeLancadorERN({
 
     movidoRef.current = true;
     setArrastando(true);
-    setMenu(false);
 
     posicionar({
       x: inicio.origem.x + dx,
@@ -191,7 +163,7 @@ export default function ConciergeLancadorERN({
 
     if (movidoRef.current && posicaoRef.current) {
       const atual = posicaoRef.current;
-      const largura = caixaRef.current?.offsetWidth || 148;
+      const largura = caixaRef.current?.offsetWidth || 58;
 
       posicionar({
         x: atual.x + largura / 2 < window.innerWidth / 2
@@ -205,19 +177,7 @@ export default function ConciergeLancadorERN({
     setArrastando(false);
   }
 
-  function moverLateral(direita: boolean) {
-    const largura = caixaRef.current?.offsetWidth || 148;
-    posicionar({
-      x: direita ? window.innerWidth - largura - 16 : 16,
-      y: posicaoRef.current?.y ?? padrao().y,
-    });
-    setMenu(false);
-  }
-
   if (!montado) return null;
-
-  const menuDireita = !posicao || posicao.x > window.innerWidth / 2;
-  const menuAbaixo = posicao !== null && posicao.y < 230;
 
   return createPortal(
     <div
@@ -258,182 +218,72 @@ export default function ConciergeLancadorERN({
             suprimirCliqueRef.current = false;
             return;
           }
-          setMenu(false);
           aoAbrir();
         }}
       >
-        <span className="orbe" aria-hidden="true">✦</span>
-        <span>EDA</span>
+        <span className="estrela" aria-hidden="true">✦</span>
       </button>
-
-      <button
-        id="ern-opcoes-concierge"
-        type="button"
-        className="opcoes"
-        aria-label={t.opcoes}
-        aria-expanded={menu}
-        aria-controls="ern-posicao-concierge"
-        onClick={() => setMenu(valor => !valor)}
-      >
-        <span aria-hidden="true">⋮</span>
-      </button>
-
-      {menu && (
-        <div
-          id="ern-posicao-concierge"
-          className="painel"
-          role="group"
-          aria-label={t.opcoes}
-          style={{
-            right: menuDireita ? 0 : 'auto',
-            left: menuDireita ? 'auto' : 0,
-            top: menuAbaixo ? 'calc(100% + 10px)' : 'auto',
-            bottom: menuAbaixo ? 'auto' : 'calc(100% + 10px)',
-          }}
-        >
-          <button type="button" onClick={() => moverLateral(false)}>
-            {t.esquerda}
-          </button>
-          <button type="button" onClick={() => moverLateral(true)}>
-            {t.direita}
-          </button>
-          <button type="button" onClick={() => {
-            posicionar(padrao());
-            setMenu(false);
-          }}>
-            {t.restaurar}
-          </button>
-          <button type="button" onClick={aoPausar}>
-            {pausado ? t.retomar : t.pausar}
-          </button>
-        </div>
-      )}
 
       <style jsx>{`
         .ern-lancador {
           position: fixed;
           z-index: 90;
-          display: flex;
-          align-items: center;
-          gap: 2px;
-          padding: 4px;
-          border: 1px solid #c4ae72;
-          border-radius: 999px;
-          background: #ffffff;
-          color: #0f1c17;
-          box-shadow: 0 5px 22px rgb(0 0 0 / 22%);
-          font-family: var(--font-work-sans), sans-serif;
+          width: 58px;
+          height: 58px;
           user-select: none;
         }
-        .ern-lancador::before {
+        .abrir {
+          position: relative;
+          display: grid;
+          place-items: center;
+          width: 58px;
+          height: 58px;
+          padding: 0;
+          border: 3px solid #ffffff;
+          border-radius: 50%;
+          background: radial-gradient(circle at 32% 28%, #2f8f84, #123c3f 70%, #0d2a30);
+          color: #ffffff;
+          box-shadow: 0 6px 20px rgb(0 0 0 / 28%);
+          cursor: grab;
+          touch-action: none;
+        }
+        .abrir::after {
           content: '';
           position: absolute;
-          inset: 0;
-          padding: 2px;
-          border-radius: inherit;
+          inset: -3px;
+          border: 2px solid #ffffff;
+          border-radius: 50%;
+          opacity: 0;
           pointer-events: none;
-          background: conic-gradient(
-            from var(--ern-lancador-angulo, 0deg),
-            #e3a144, #35d4c4, #4b8fff, #f4c77e, #e3a144
-          );
-          -webkit-mask:
-            linear-gradient(#fff 0 0) content-box,
-            linear-gradient(#fff 0 0);
-          -webkit-mask-composite: xor;
-          mask:
-            linear-gradient(#fff 0 0) content-box,
-            linear-gradient(#fff 0 0);
-          mask-composite: exclude;
-        }
-        button {
-          font: inherit;
-          color: inherit;
-          cursor: pointer;
-        }
-        .abrir {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 10px;
-          min-height: 44px;
-          padding: 4px 12px 4px 4px;
-          border: 0;
-          border-radius: 999px;
-          background: transparent;
-          font-size: 14px;
-          font-weight: 700;
-          touch-action: none;
-          cursor: grab;
         }
         [data-arrastando='true'] .abrir { cursor: grabbing; }
-        .orbe {
-          display: grid;
-          place-items: center;
-          width: 34px;
-          height: 34px;
-          border: 1px solid #c4ae72;
-          border-radius: 50%;
-          background: radial-gradient(circle at 30% 25%, #287b72, #102b35);
-          color: #fff3cf;
-          font-size: 23px;
+        .estrela {
+          font-size: 26px;
+          line-height: 1;
+          text-shadow: 0 0 8px rgb(255 255 255 / 45%);
         }
-        .opcoes {
-          display: grid;
-          place-items: center;
-          width: 44px;
-          height: 44px;
-          padding: 0;
-          border: 0;
-          border-left: 1px solid #dfcf9e;
-          border-radius: 0 999px 999px 0;
-          background: transparent;
-          font-size: 24px;
-        }
-        button:focus-visible {
+        .abrir:focus-visible {
           outline: 3px solid #287b72;
-          outline-offset: 2px;
-        }
-        .painel {
-          position: absolute;
-          width: min(220px, calc(100vw - 24px));
-          max-height: calc(100dvh - 90px);
-          overflow-y: auto;
-          box-sizing: border-box;
-          padding: 6px;
-          border: 1px solid #c4ae72;
-          border-radius: 14px;
-          background: #ffffff;
-          box-shadow: 0 8px 24px rgb(0 0 0 / 20%);
-        }
-        .painel button {
-          display: block;
-          width: 100%;
-          min-height: 44px;
-          padding: 9px 12px;
-          border: 0;
-          border-radius: 8px;
-          background: transparent;
-          font-size: 13px;
-          text-align: left;
-        }
-        .painel button:hover { background: #f5ecd2; }
-        @keyframes ern-lancador-girar {
-          to { --ern-lancador-angulo: 360deg; }
+          outline-offset: 3px;
         }
         @keyframes ern-lancador-pulsar {
           0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.08); }
+          50% { transform: scale(1.07); }
+        }
+        @keyframes ern-lancador-onda {
+          0% { transform: scale(1); opacity: 0.8; }
+          100% { transform: scale(1.55); opacity: 0; }
         }
         @media (prefers-reduced-motion: no-preference) {
-          .ern-lancador::before {
-            animation: ern-lancador-girar 5s linear infinite;
+          .abrir {
+            animation: ern-lancador-pulsar 2.4s ease-in-out infinite;
           }
-          .orbe {
-            animation: ern-lancador-pulsar 2.8s ease-in-out infinite;
+          .abrir::after {
+            animation: ern-lancador-onda 2.4s ease-out infinite;
           }
         }
-        [data-pausado='true']::before,
-        [data-pausado='true'] .orbe {
+        [data-pausado='true'] .abrir,
+        [data-pausado='true'] .abrir::after {
           animation-play-state: paused;
         }
       `}</style>
