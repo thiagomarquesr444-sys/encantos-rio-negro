@@ -7,6 +7,7 @@ import BotaoCopaPescaERN from '@/app/components/BotaoCopaPescaERN';
 import ConciergePublicoERN from '@/app/components/ConciergePublicoERN';
 import FeedDescubraERN from '@/app/components/FeedDescubraERN';
 import RodapePublicoEDA from '@/app/components/RodapePublicoEDA';
+import VitrinePasseiosEDA from '@/app/components/VitrinePasseiosEDA';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import { HISTORIAS_MUNICIPIOS, type RegiaoHistoria } from '@/lib/historiasMunicipiosERN';
 
@@ -298,6 +299,16 @@ export default function ExperienciasPremiumERN() {
         </section>
 
         {/* 2. Interesses em mosaico */}
+        {/* EDA_PASSEIOS_PORTAL_V1: passeios publicados pelas operadoras */}
+        <section id="passeios" className="scroll-mt-24 bg-[#07110E] py-16 md:py-20">
+          <div className="mx-auto max-w-[1180px] px-5 md:px-8">
+            <VitrinePasseiosEDA
+              titulo="Passeios para reservar agora"
+              subtitulo="Publicados pelas operadoras da Rede EDA, com preço e contato direto."
+            />
+          </div>
+        </section>
+
         <section id="interesses" className="mx-auto max-w-[1180px] scroll-mt-24 px-5 py-20 md:px-8 md:py-24">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8a4b12]">{t.interessesEyebrow}</p>
           <h2 className="mt-3 text-[clamp(2rem,4vw,3rem)] leading-[1.08] tracking-[-0.035em]">{t.interessesTitulo}</h2>

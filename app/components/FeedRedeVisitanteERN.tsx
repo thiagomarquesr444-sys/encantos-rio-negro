@@ -1,5 +1,6 @@
 'use client';
 import { CompartilharVivenciaERN, ListaVivenciasERN } from './VivenciasERN';
+import VitrinePasseiosEDA from './VitrinePasseiosEDA';
 
 // ERN_REDE_VISITANTE_V1
 
@@ -237,11 +238,13 @@ function PostCard({ post, order, total, state, busy, ui, tr, lang, onFollow, onI
   </article>;
 }
 
+type AbaRedeEDA = 'rede' | 'vivencias' | 'passeios';
+
 export default function FeedRedeVisitanteERN() {
   const { idioma } = useLanguage();
   const ui = copy[idioma];
   const tr = redeTranslations[idioma] as RedeTranslation;
-  const [abaERN, setAbaERN] = useState<'rede' | 'vivencias'>('rede');
+  const [abaERN, setAbaERN] = useState<AbaRedeEDA>('rede');
 
   useEffect(() => {
     function sincronizarAba() {
@@ -250,7 +253,7 @@ export default function FeedRedeVisitanteERN() {
       const parametro = new URL(window.location.href)
         .searchParams.get('aba');
 
-      setAbaERN(parametro === 'vivencias' ? 'vivencias' : 'rede');
+      setAbaERN(parametro === 'vivencias' || parametro === 'passeios' ? parametro : 'rede');
     }
 
     sincronizarAba();
@@ -261,14 +264,14 @@ export default function FeedRedeVisitanteERN() {
     };
   }, []);
 
-  function selecionarAbaERN(aba: 'rede' | 'vivencias') {
+  function selecionarAbaERN(aba: AbaRedeEDA) {
     document.querySelectorAll('video').forEach(video => video.pause());
     setAbaERN(aba);
 
     const url = new URL(window.location.href);
 
-    if (aba === 'vivencias') {
-      url.searchParams.set('aba', 'vivencias');
+    if (aba !== 'rede') {
+      url.searchParams.set('aba', aba);
     } else {
       url.searchParams.delete('aba');
     }
@@ -492,12 +495,13 @@ export default function FeedRedeVisitanteERN() {
   return <div className="ern-r-root">
     <a className="ern-r-skip" href="#ern-r-feed-title">{ui.feed}</a>
     <div className="ern-r-layout">
-      <aside className="ern-r-left" aria-label="EDA"><div className="ern-r-sticky"><Link className="ern-r-brand" href="/rede"><LogoERN tamanho={44} /><span>Rede EDA<small>Encantos da Amazônia</small></span></Link><nav className="ern-r-nav"><button type="button" aria-current={abaERN === 'rede' && !filtered ? 'page' : undefined} onClick={() => { selecionarAbaERN('rede'); clear(); beforeFeed.current?.focus(); }}><Icon name="compass" />{ui.feed}</button><button type="button" aria-current={abaERN === 'vivencias' ? 'page' : undefined} onClick={() => selecionarAbaERN('vivencias')}><span aria-hidden="true">▶</span>Vivências EDA</button><Link href="/destinos"><Icon name="map" />{ui.map}</Link><Link href="/experiencias"><Icon name="go" />{ui.experiences}</Link></nav><div className="ern-r-left-note"><strong>{ui.opsTitle}</strong><p>{ui.opsText}</p><Link className="ern-r-ouro" href="/acesso?acesso=operadora">{ui.opsCta} →</Link><span className="ern-r-left-links"><Link href="/acesso?acesso=guia">{ui.guide} ↗</Link><Link href="/acesso?acesso=fornecedor">{ui.supplier} ↗</Link></span></div><div className="ern-r-legal"><Link href="/privacidade">{ui.privacy}</Link><Link href="/termos">{ui.terms}</Link></div></div></aside>
+      <aside className="ern-r-left" aria-label="EDA"><div className="ern-r-sticky"><Link className="ern-r-brand" href="/rede"><LogoERN tamanho={44} /><span>Rede EDA<small>Encantos da Amazônia</small></span></Link><nav className="ern-r-nav"><button type="button" aria-current={abaERN === 'rede' && !filtered ? 'page' : undefined} onClick={() => { selecionarAbaERN('rede'); clear(); beforeFeed.current?.focus(); }}><Icon name="compass" />{ui.feed}</button><button type="button" aria-current={abaERN === 'vivencias' ? 'page' : undefined} onClick={() => selecionarAbaERN('vivencias')}><span aria-hidden="true">▶</span>Vivências EDA</button><button type="button" aria-current={abaERN === 'passeios' ? 'page' : undefined} onClick={() => selecionarAbaERN('passeios')}><span aria-hidden="true">✦</span>Passeios</button><Link href="/destinos"><Icon name="map" />{ui.map}</Link><Link href="/experiencias"><Icon name="go" />{ui.experiences}</Link></nav><div className="ern-r-left-note"><strong>{ui.opsTitle}</strong><p>{ui.opsText}</p><Link className="ern-r-ouro" href="/acesso?acesso=operadora">{ui.opsCta} →</Link><span className="ern-r-left-links"><Link href="/acesso?acesso=guia">{ui.guide} ↗</Link><Link href="/acesso?acesso=fornecedor">{ui.supplier} ↗</Link></span></div><div className="ern-r-legal"><Link href="/privacidade">{ui.privacy}</Link><Link href="/termos">{ui.terms}</Link></div></div></aside>
       <div className="ern-r-main">
         <header className="ern-r-intro"><p>REDE EDA</p><h1 ref={beforeFeed} tabIndex={-1} id="ern-r-feed-title" aria-label={ui.title}><span aria-hidden="true">{ui.titleParts[0]} <span className="ern-r-dourado">{ui.titleParts[1]}</span>{ui.titleParts[2]}</span></h1><span>{ui.sub}</span><nav className="ern-r-mobile-nav"><Link href="/destinos"><Icon name="map" />{ui.map}</Link><Link href="/experiencias">{ui.experiences} ↗</Link></nav></header>
         <div className="ern-r-abas" role="group" aria-label={ui.feed}>
           <button type="button" aria-pressed={abaERN === 'rede'} onClick={() => selecionarAbaERN('rede')}>{ui.feed}</button>
           <button type="button" aria-pressed={abaERN === 'vivencias'} onClick={() => selecionarAbaERN('vivencias')}><span aria-hidden="true">▶ </span>Vivências EDA</button>
+          <button type="button" aria-pressed={abaERN === 'passeios'} onClick={() => selecionarAbaERN('passeios')}><span aria-hidden="true">✦ </span>Passeios</button>
           <Link href="/destinos"><Icon name="map" />{ui.map}</Link>
         </div>
 
@@ -532,6 +536,15 @@ export default function FeedRedeVisitanteERN() {
         {abaERN === 'vivencias' && (
           <ListaVivenciasERN />
         )}
+
+        {abaERN === 'passeios' && (
+          <div style={{ marginTop: 18 }}>
+            <VitrinePasseiosEDA
+              titulo="Passeios das operadoras"
+              subtitulo="Experiências publicadas por quem opera no Rio Negro e na Amazônia."
+            />
+          </div>
+        )}
       </div>
       <aside className="ern-r-right"><div className="ern-r-sticky">
         <Link className="ern-r-destaque" href="/destinos?lugar=encontro-das-aguas">
@@ -542,6 +555,7 @@ export default function FeedRedeVisitanteERN() {
           <h2 id="ern-r-verificados-titulo">{ui.verifiedTitle}</h2>
           {authors.filter(author => author.verificado).slice(0, 4).map(author => <Link key={author.id} href={profileHref(author)}><Avatar author={author} /><span><strong>{author.nome_publico}</strong><small>{[author.cidade, author.uf].filter(Boolean).join(' · ') || 'Amazonas'}</small></span><em>{ui.viewProfile}</em></Link>)}
         </section>}
+        {abaERN !== 'passeios' && <div style={{ marginBottom: 16 }}><VitrinePasseiosEDA compacta limite={2} titulo="Passeios em alta" onVerTodos={() => { selecionarAbaERN('passeios'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} /></div>}
         <section className="ern-r-plan-card"><span className="ern-r-plan-mark" aria-hidden="true">✦</span><h2>EDA Concierge</h2><p>{ui.conciergeText}</p><Link href="/#concierge">{ui.conciergeCta} →</Link></section>
         <p className="ern-r-right-footer">{ui.footer}</p>
       </div></aside>

@@ -8,6 +8,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { supabase } from '@/lib/supabase';
+import PortalPasseioEDA, { type FotoLocalEDA } from '@/app/components/PortalPasseioEDA';
+import { enviarFotosPasseioEDA } from '@/lib/passeiosPublicosEDA';
 
 type Mensagem = {
   tipo: 'sucesso' | 'erro';
@@ -135,6 +137,33 @@ export default function NovoPasseioPage() {
     useState<Mensagem | null>(
       null
     );
+
+  // EDA_PASSEIOS_PORTAL_V1
+  const [fotos, setFotos] = useState<FotoLocalEDA[]>([]);
+  const [publicarPortal, setPublicarPortal] = useState(true);
+  const [nomeOperadora, setNomeOperadora] = useState<string | null>(null);
+  const [perfilPublicado, setPerfilPublicado] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let ativo = true;
+    (async () => {
+      const { data: auth } = await supabase.auth.getUser();
+      if (!auth.user) return;
+      const { data: perfil } = await supabase
+        .from('perfis').select('empresa_id').eq('id', auth.user.id).maybeSingle();
+      if (!perfil?.empresa_id) return;
+      const { data: publico } = await supabase
+        .from('perfis_publicos')
+        .select('nome_publico,publicado')
+        .eq('empresa_id', perfil.empresa_id)
+        .eq('categoria', 'operadora')
+        .maybeSingle();
+      if (!ativo) return;
+      setNomeOperadora(publico?.nome_publico ?? null);
+      setPerfilPublicado(publico ? !!publico.publicado : false);
+    })().catch(() => undefined);
+    return () => { ativo = false; };
+  }, []);
 
   /*
     ============================================================
@@ -324,6 +353,9 @@ export default function NovoPasseioPage() {
         ESTADO_INICIAL
       );
 
+      fotos.forEach((foto) => URL.revokeObjectURL(foto.url));
+      setFotos([]);
+
       setMensagem(null);
     };
 
@@ -477,19 +509,6 @@ export default function NovoPasseioPage() {
         return;
       }
 
-      if (formData.foto_url.trim()) {
-        try {
-          const url = new URL(formData.foto_url.trim());
-          if (url.protocol !== 'https:') throw new Error();
-        } catch {
-          setMensagem({
-            tipo: 'erro',
-            texto: 'Informe uma URL completa de imagem com HTTPS ou deixe o campo vazio.',
-          });
-          return;
-        }
-      }
-
       if (vagasTratadas > 2147483647) {
         setMensagem({
           tipo: 'erro',
@@ -518,6 +537,11 @@ export default function NovoPasseioPage() {
         if (erroPerfil || !perfil?.empresa_id) {
           throw new Error('Não foi possível identificar sua empresa.');
         }
+
+        const fotosEnviadas = await enviarFotosPasseioEDA(
+          perfil.empresa_id,
+          fotos.map((foto) => foto.arquivo),
+        );
 
         const { error } = await supabase
           .from('passeios')
@@ -559,8 +583,13 @@ export default function NovoPasseioPage() {
                   formData.categoria,
 
                 foto_url:
-                  formData.foto_url.trim() ||
-                  null,
+                  fotosEnviadas[0] ?? null,
+
+                fotos:
+                  fotosEnviadas,
+
+                publicado_portal:
+                  publicarPortal,
 
                 destaque:
                   formData.destaque,
@@ -1223,39 +1252,6 @@ export default function NovoPasseioPage() {
               </label>
             </div>
 
-            {/* FOTO */}
-
-            <div className="md:col-span-2">
-              <label
-                htmlFor="foto_url"
-                className="mb-2 block text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--ern-secundario)]"
-              >
-                URL da foto
-              </label>
-
-              <input
-                id="foto_url"
-                type="url"
-                name="foto_url"
-                value={
-                  formData.foto_url
-                }
-                onChange={
-                  handleChange
-                }
-                placeholder="https://..."
-                disabled={
-                  salvando ||
-                  limiteAtingido
-                }
-                className="min-h-[48px] w-full rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 text-sm text-[var(--ern-texto)] outline-none transition placeholder:text-[var(--ern-secundario)] focus:border-[var(--ern-borda)] focus:ring-1 focus:ring-[var(--ern-destaque)] disabled:cursor-not-allowed disabled:opacity-45"
-              />
-
-              <p className="mt-1.5 text-[9px] leading-4 text-[var(--ern-secundario)]">
-                Opcional. Use uma imagem real da experiência ou deixe o campo vazio.
-              </p>
-            </div>
-
             {/* DESCRIÇÃO */}
 
             <div className="md:col-span-2">
@@ -1282,6 +1278,36 @@ export default function NovoPasseioPage() {
                 }
                 placeholder="Descrição completa da experiência, operação e principais características..."
                 className="w-full resize-none rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 py-3 text-sm leading-6 text-[var(--ern-texto)] outline-none transition placeholder:text-[var(--ern-secundario)] focus:border-[var(--ern-borda)] focus:ring-1 focus:ring-[var(--ern-destaque)] disabled:cursor-not-allowed disabled:opacity-45"
+              />
+            </div>
+
+            {/* PORTAL PÚBLICO — EDA_PASSEIOS_PORTAL_V1 */}
+            <div className="md:col-span-2 border-t border-[var(--ern-borda)] pt-6">
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--ern-destaque)]">
+                Portal público
+              </p>
+              <h3 className="mb-5 text-lg font-semibold text-[var(--ern-texto)]">
+                Fotos e vitrine para o visitante
+              </h3>
+              <PortalPasseioEDA
+                dados={{
+                  nome: formData.nome,
+                  categoria: formData.categoria,
+                  cidade: formData.cidade,
+                  duracao: formData.duracao,
+                  preco: converterValor(formData.valor),
+                  vagas: formData.vagas,
+                  descricao: formData.descricao,
+                  destaque: formData.destaque,
+                  situacao: formData.situacao,
+                }}
+                fotos={fotos}
+                onFotos={setFotos}
+                publicar={publicarPortal}
+                onPublicar={setPublicarPortal}
+                nomeOperadora={nomeOperadora}
+                perfilPublicado={perfilPublicado}
+                disabled={salvando || limiteAtingido}
               />
             </div>
           </div>

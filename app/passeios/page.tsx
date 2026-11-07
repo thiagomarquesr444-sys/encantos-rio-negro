@@ -28,6 +28,7 @@ type Passeio = {
   cidade?: string | null;
   foto_url?: string | null;
   destaque?: boolean | null;
+  publicado_portal?: boolean | null;
   situacao?: string | null;
   created_at?: string;
 };
@@ -737,6 +738,11 @@ export default function PasseiosPage() {
             passeioSelecionado.destaque
           ),
 
+        publicado_portal:
+          Boolean(
+            passeioSelecionado.publicado_portal
+          ),
+
         situacao:
           passeioSelecionado.situacao ||
           'Ativo',
@@ -1317,6 +1323,15 @@ export default function PasseiosPage() {
                                     ★
                                   </span>
                                 )}
+
+                                {passeio.publicado_portal && (
+                                  <span
+                                    title="Exposto no portal público"
+                                    className="rounded-full border border-[var(--ern-destaque)] px-1.5 text-[9px] font-semibold text-[var(--ern-destaque)]"
+                                  >
+                                    Portal
+                                  </span>
+                                )}
                               </div>
 
                               {passeio.cidade && (
@@ -1742,6 +1757,29 @@ export default function PasseiosPage() {
                     disabled={
                       salvando
                     }
+                    className="h-4 w-4 accent-[var(--ern-destaque)]"
+                  />
+                </label>
+
+                <label className="flex cursor-pointer items-center justify-between rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 py-3">
+                  <div>
+                    <p className="text-xs font-semibold text-[var(--ern-secundario)]">
+                      Expor no portal público
+                    </p>
+                    <p className="mt-1 text-[9px] text-[var(--ern-secundario)]">
+                      Aparece em Experiências, na Rede e no perfil da operadora.
+                    </p>
+                  </div>
+                  <input
+                    type="checkbox"
+                    checked={Boolean(passeioSelecionado.publicado_portal)}
+                    onChange={(event) =>
+                      setPasseioSelecionado({
+                        ...passeioSelecionado,
+                        publicado_portal: event.target.checked,
+                      })
+                    }
+                    disabled={salvando}
                     className="h-4 w-4 accent-[var(--ern-destaque)]"
                   />
                 </label>

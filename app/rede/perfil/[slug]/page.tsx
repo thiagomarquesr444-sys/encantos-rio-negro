@@ -8,6 +8,7 @@ import PublicHeader from '@/app/components/PublicHeader';
 import TemaPortalERN from '@/app/components/TemaPortalERN';
 import LogoERN from '@/app/components/LogoERN';
 import PublicacoesPerfilERN from '@/app/components/PublicacoesPerfilERN';
+import VitrinePasseiosEDA from '@/app/components/VitrinePasseiosEDA';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import { supabase } from '@/lib/supabase';
 
@@ -510,6 +511,16 @@ export default function PerfilRedePage() {
                 </p>
               </aside>
             </div>
+
+            {estado.perfil.categoria === 'operadora' && (
+              <div className="mt-10 rounded-[28px] bg-[#07110E] p-5 md:p-7">
+                <VitrinePasseiosEDA
+                  slug={estado.perfil.slug}
+                  titulo={`Passeios de ${estado.perfil.nome_publico}`}
+                  ocultarOperadora
+                />
+              </div>
+            )}
 
             <PublicacoesPerfilERN
               key={estado.perfil.id + '-' + idioma}
