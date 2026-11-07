@@ -2,6 +2,7 @@
 import { ListaVivenciasERN } from './VivenciasERN';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import PasseiosDestinoEDA from '@/app/components/PasseiosDestinoEDA';
 import Link from 'next/link';
 import VideoDestinoERN from './VideoDestinoERN';
 import AnavilhanasDestinoERN from './AnavilhanasDestinoERN';
@@ -704,6 +705,8 @@ export default function ExploradorDestinosERN() {
             </section>}
             {aba === 'geral' && <>
             <p>{content?.descricao ?? u.regionalIntro}</p>
+            {/* EDA_DESTINOS_CONECTADOS_V1 */}
+            <PasseiosDestinoEDA key={city.id + interest} cidade={city.name} lang={lang} somentePesca={interest === 'fishing'} />
             {/* ERN_BARCELOS_VIDEO_V1 */}
             {active?.id === 'barcelos' && <BarcelosDestinoERN />}
             {/* ERN_PRAIA_GRANDE_VIDEO_V1 */}
