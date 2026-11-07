@@ -7,6 +7,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import VinculosReserva from '@/app/components/VinculosReserva';
 import SeletorSaidaEDA from '@/app/components/SeletorSaidaEDA';
+import ParticipantesReservaEDA from '@/app/components/ParticipantesReservaEDA';
 import { mensagemSaidaEDA } from '@/lib/saidasGestaoEDA';
 import LogisticaReserva from '@/app/components/LogisticaReserva';
 import PeriodoReservaERN, { validarPeriodoReservaERN } from '@/app/components/PeriodoReservaERN';
@@ -786,6 +787,11 @@ function EditarReservaConteudo({ id }: { id?: string }) {
         {/* ERN_RESERVA_CHEGADAS_V1: chegada e transfer, salvos à parte da reserva. */}
         <div className="eda-pg-grade-form" style={{ marginTop: 16 }}>
           <FormChegadaEDA reservaId={id} bloqueado={somenteConsultaERN || salvando || gravada} pessoas={form.quantidade_pessoas} />
+        </div>
+
+        {/* EDA_FICHA_SAUDE_V1: participantes e ficha de saúde, salvos à parte. */}
+        <div className="eda-pg-grade-form" style={{ marginTop: 16 }}>
+          <ParticipantesReservaEDA reservaId={id} bloqueado={somenteConsultaERN || salvando || gravada} pessoas={form.quantidade_pessoas} />
         </div>
       </div>
     </PaginaEDA>

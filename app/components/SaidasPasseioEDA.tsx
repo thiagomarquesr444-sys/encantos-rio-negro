@@ -7,15 +7,50 @@
 import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { supabase } from '@/lib/supabase';
 import { dataCurtaEDA } from '@/lib/passeiosPublicosEDA';
+import { mensagemFichaEDA, resumoSegurancaEDA, type LinhaResumoEDA } from '@/lib/fichaSaudeEDA';
 import { hojeManausEDA, listarSaidasGestaoEDA, type SaidaGestaoEDA } from '@/lib/saidasGestaoEDA';
 
 type Saida = SaidaGestaoEDA;
+
+// EDA_FICHA_SAUDE_V1: o que a equipe precisa saber antes de embarcar.
+function ResumoSeguranca({ saidaId }: { saidaId: string }) {
+  const [linhas, setLinhas] = useState<LinhaResumoEDA[] | null>(null);
+  const [erro, setErro] = useState('');
+  useEffect(() => {
+    resumoSegurancaEDA({ saidaId }).then(setLinhas).catch((e) => { setErro(mensagemFichaEDA(e)); setLinhas([]); });
+  }, [saidaId]);
+  if (erro) return <p className="rs-nota">{erro}</p>;
+  if (!linhas) return <p className="rs-nota">Analisando fichas…</p>;
+  if (!linhas.length) return <p className="rs-nota">Nenhuma reserva nesta saída.</p>;
+  const graves = linhas.filter((l) => l.nivel === 'grave').length;
+  const pend = linhas.filter((l) => l.nivel === 'pendente').length;
+  const atencao = linhas.filter((l) => l.nivel === 'atencao');
+  return (
+    <div className="rs">
+      <p className="rs-cab">
+        {graves > 0 && <b data-n="grave">{graves} alerta{graves > 1 ? 's' : ''} grave{graves > 1 ? 's' : ''}</b>}
+        {atencao.length > 0 && <b data-n="atencao">{atencao.length} com atenção</b>}
+        {pend > 0 && <b data-n="pendente">{pend} pendência{pend > 1 ? 's' : ''}</b>}
+        {!graves && !atencao.length && !pend && <b data-n="ok">Todas as fichas sem alertas</b>}
+      </p>
+      <ul>
+        {linhas.filter((l) => l.nivel !== 'ok').map((l, i) => (
+          <li key={`${l.reserva_id}-${l.participante_id ?? i}`} data-n={l.nivel}>
+            <strong>{l.participante_nome ?? `Reserva de ${l.reserva_cliente ?? 'cliente'}`}</strong>
+            <span>{l.alertas.join(' · ')}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
 const hojeManaus = hojeManausEDA;
 
 export default function SaidasPasseioEDA({ passeioId, vagasPadrao }: { passeioId: string; vagasPadrao?: number | null }) {
   const [saidas, setSaidas] = useState<Saida[] | null>(null);
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
+  const [resumo, setResumo] = useState<string | null>(null);
   const [data, setData] = useState('');
   const [horario, setHorario] = useState('');
   const [vagas, setVagas] = useState(String(vagasPadrao && vagasPadrao > 0 ? vagasPadrao : 10));
@@ -92,10 +127,16 @@ export default function SaidasPasseioEDA({ passeioId, vagasPadrao }: { passeioId
                   <i aria-hidden="true"><b style={{ width: `${pct}%` }} /></i>
                 </div>
                 <div className="eda-saidas-acoes">
+                  {s.ocupadas > 0 && (
+                    <button type="button" aria-expanded={resumo === s.id} onClick={() => setResumo(resumo === s.id ? null : s.id)}>
+                      Segurança
+                    </button>
+                  )}
                   {s.status === 'aberta' && <button type="button" onClick={() => alterarStatus(s, 'fechada')}>Fechar</button>}
                   {s.status === 'fechada' && <button type="button" onClick={() => alterarStatus(s, 'aberta')}>Reabrir</button>}
                   {s.status !== 'cancelada' && <button type="button" data-perigo onClick={() => alterarStatus(s, 'cancelada')}>Cancelar</button>}
                 </div>
+                {resumo === s.id && <div className="eda-saidas-resumo"><ResumoSeguranca saidaId={s.id} /></div>}
               </li>
             );
           })}
@@ -115,13 +156,25 @@ export default function SaidasPasseioEDA({ passeioId, vagasPadrao }: { passeioId
         header span, .eda-saidas-nota { display: block; margin-top: 4px; font-size: 12px; color: var(--ern-secundario); }
         .eda-saidas-erro { margin-top: 10px; font-size: 13px; color: var(--ern-erro); }
         ul { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
-        li { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--ern-borda); background: var(--ern-painel); }
+        li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--ern-borda); background: var(--ern-painel); }
         li[data-status='cancelada'] { opacity: .5; }
         li strong { display: block; font-size: 14px; }
         li small { display: block; font-size: 12px; color: var(--ern-secundario); }
         li i { display: block; width: 160px; max-width: 100%; height: 4px; margin-top: 6px; border-radius: 4px; background: var(--ern-borda); overflow: hidden; }
         li i b { display: block; height: 100%; background: var(--ern-destaque); }
         .eda-saidas-acoes { display: flex; gap: 6px; }
+        .eda-saidas-resumo { flex-basis: 100%; }
+        :global(.rs-nota) { margin: 6px 0 0; font-size: 12px; color: var(--ern-secundario); }
+        :global(.rs-cab) { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+        :global(.rs-cab b) { padding: 3px 10px; border-radius: 999px; font-size: 12px; border: 1px solid var(--ern-borda); }
+        :global(.rs-cab b[data-n='grave']) { border-color: #ef4444; color: #f87171; }
+        :global(.rs-cab b[data-n='atencao']) { border-color: var(--ern-destaque); color: var(--ern-destaque); }
+        :global(.rs-cab b[data-n='ok']) { border-color: #22c55e; color: #4ade80; }
+        :global(.rs ul) { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+        :global(.rs li) { display: grid !important; gap: 2px; padding: 8px 10px !important; border-left: 3px solid var(--ern-borda) !important; background: transparent !important; }
+        :global(.rs li[data-n='grave']) { border-left-color: #ef4444 !important; }
+        :global(.rs li[data-n='atencao']) { border-left-color: var(--ern-destaque) !important; }
+        :global(.rs li span) { font-size: 12px; color: var(--ern-secundario); }
         button { min-height: 34px; padding: 0 12px; border-radius: 10px; border: 1px solid var(--ern-borda); background: transparent; color: var(--ern-texto); font-size: 12px; cursor: pointer; }
         button[data-perigo] { color: var(--ern-erro); }
         form { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 8px; margin-top: 14px; }
