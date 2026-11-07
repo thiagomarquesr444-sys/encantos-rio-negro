@@ -10,6 +10,8 @@ import {
 } from 'react';
 import Link from 'next/link';
 import ItensDemanda from '@/app/components/ItensDemanda';
+import VinculoSaidaDemandaEDA from '@/app/components/VinculoSaidaDemandaEDA';
+import { supabase } from '@/lib/supabase';
 import { criarDemandaComItens } from '@/lib/criarDemandaComItens';
 import type { ItemDemanda } from '@/lib/itensDemanda';
 import { useRouter } from 'next/navigation';
@@ -177,6 +179,9 @@ function arredondar(
 export default function NovaDemandaPage() {
   const router = useRouter();
   const [itensMateriais, setItensMateriais] = useState<ItemDemanda[]>([]);
+  // EDA_DEMANDA_SAIDA_V1
+  const [saidaVinculada, setSaidaVinculada] = useState('');
+  const [sugestao, setSugestao] = useState<{ chave: string; itens: ItemDemanda[] } | null>(null);
 
   const [
     formulario,
@@ -588,6 +593,14 @@ export default function NovaDemandaPage() {
         itensMateriais,
       );
 
+      if (saidaVinculada) {
+        // A demanda já existe; se o vínculo falhar, ele pode ser refeito na edição.
+        await supabase.rpc('vincular_demanda_saida_eda', {
+          p_demanda_id: demandaCriada.id,
+          p_saida_id: saidaVinculada,
+        });
+      }
+
       router.push(
         `/demandas/editar/${encodeURIComponent(demandaCriada.id)}`,
       );
@@ -662,9 +675,26 @@ export default function NovaDemandaPage() {
             onSubmit={salvar}
             className="ern-dem-form space-y-6"
           >
+            <VinculoSaidaDemandaEDA
+              bloqueado={bloqueado}
+              onAcrescentar={(itens) => setSugestao({ chave: crypto.randomUUID(), itens })}
+              onSaida={(saida, nec) => {
+                setSaidaVinculada(saida?.saida_id ?? '');
+                if (!saida || !nec) return;
+                setFormulario((a) => ({
+                  ...a,
+                  titulo: a.titulo || `${nec.passeio} · ${nec.data_inicio.split('-').reverse().slice(0, 2).join('/')}`,
+                  data_inicio: nec.data_inicio,
+                  data_fim: nec.data_fim,
+                  pessoas_estimadas: nec.pessoas > 0 ? String(nec.pessoas) : a.pessoas_estimadas,
+                  dias_estimados: String(nec.dias),
+                }));
+              }}
+            />
             <ItensDemanda
               bloqueado={bloqueado}
               onItensChange={setItensMateriais}
+              acrescentar={sugestao}
             />
             <section className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7">
               <h2 className="text-2xl">

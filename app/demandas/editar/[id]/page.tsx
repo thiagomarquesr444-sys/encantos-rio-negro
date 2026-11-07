@@ -14,6 +14,8 @@ import {
 import Link from 'next/link';
 import { confirmarERN } from '@/lib/confirmarERN';
 import ItensDemanda from '@/app/components/ItensDemanda';
+import VinculoSaidaDemandaEDA from '@/app/components/VinculoSaidaDemandaEDA';
+import type { ItemDemanda } from '@/lib/itensDemanda';
 
 import {
   useParams,
@@ -241,6 +243,8 @@ export default function EditarDemandaPage() {
 
   const id = params.id;
 
+  // EDA_DEMANDA_SAIDA_V1: itens sugeridos pela saída vinculada.
+  const [sugestaoSaida, setSugestaoSaida] = useState<{ chave: string; itens: ItemDemanda[] } | null>(null);
   const [estado, setEstado] =
     useState<Estado>({
       tipo: 'carregando',
@@ -976,10 +980,19 @@ export default function EditarDemandaPage() {
           </>}
         </CartaoMagneticoEDA>
 
+        <div style={{ marginTop: 16 }}>
+          <VinculoSaidaDemandaEDA
+            demandaId={id}
+            bloqueado={terminal || salvando || excluindo}
+            onAcrescentar={(itens) => setSugestaoSaida({ chave: crypto.randomUUID(), itens })}
+          />
+        </div>
+
         <ItensDemanda
           key={id}
           demandaId={id}
           bloqueado={terminal || salvando || excluindo}
+          acrescentar={sugestaoSaida}
         />
       </div>
 

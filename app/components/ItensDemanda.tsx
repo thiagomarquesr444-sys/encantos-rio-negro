@@ -27,6 +27,8 @@ type Props = {
   demandaId?: string;
   bloqueado: boolean;
   onItensChange?: (itens: ItemDemanda[]) => void;
+  // EDA_DEMANDA_SAIDA_V1: itens sugeridos pela saída (uma vez por chave).
+  acrescentar?: { chave: string; itens: ItemDemanda[] } | null;
 };
 
 const campo =
@@ -48,7 +50,7 @@ const situacoes = Object.entries(SITUACOES_ITEM).map(([value, label]) => ({
   value, label,
 }));
 
-export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Props) {
+export default function ItensDemanda({ demandaId, bloqueado, onItensChange, acrescentar }: Props) {
   const [itens, setItens] = useState<Linha[]>([]);
   const [versao, setVersao] = useState<number | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -112,6 +114,20 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
     window.addEventListener('beforeunload', avisar);
     return () => window.removeEventListener('beforeunload', avisar);
   }, [alterado]);
+
+  const ultimaSugestao = useRef('');
+  useEffect(() => {
+    if (!acrescentar || carregando || acrescentar.chave === ultimaSugestao.current) return;
+    ultimaSugestao.current = acrescentar.chave;
+    setItens((atuais) => [
+      ...atuais,
+      ...acrescentar.itens
+        // não duplica um item já presente com a mesma descrição
+        .filter((n) => !atuais.some((a) => a.descricao.trim().toLowerCase() === n.descricao.trim().toLowerCase()))
+        .map((item) => ({ ...item, chave: crypto.randomUUID() })),
+    ]);
+    setAlterado(true);
+  }, [acrescentar, carregando]);
 
   useEffect(() => {
     if (!demandaId) onItensChange?.(itens);

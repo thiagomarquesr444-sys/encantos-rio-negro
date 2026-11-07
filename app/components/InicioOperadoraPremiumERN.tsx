@@ -58,6 +58,7 @@ type Props = {
   erro: string | null;
 };
 
+type AlertaViagemEDA = { data_inicio: string; passeio: string | null; saida_id: string | null; reserva_id: string | null; pessoas: number; graves: number; atencao: number; pendentes: number };
 type Rede = { slug: string | null; publicado: boolean; verificado: boolean; publicadas: number; rascunhos: number } | null;
 
 // ---------- utilidades ----------
@@ -150,6 +151,14 @@ export default function InicioOperadoraPremiumERN({
   const [erroFinanceiro, setErroFinanceiro] = useState('');
   const [janela, setJanela] = useState<'hoje' | '7' | '30'>('7');
   const [chegadas, setChegadas] = useState<ChegadaPainel[] | null>(null);
+  // EDA_FICHA_SAUDE_V1: alertas de saúde/segurança das próximas viagens (só contagens).
+  const [saude, setSaude] = useState<AlertaViagemEDA[] | null>(null);
+  useEffect(() => {
+    let ativo = true;
+    supabase.rpc('alertas_proximas_viagens_eda', { p_dias: 7 })
+      .then(({ data, error }) => { if (ativo) setSaude(error ? [] : (data ?? []) as AlertaViagemEDA[]); });
+    return () => { ativo = false; };
+  }, []);
 
   // ERN_RESERVA_CHEGADAS_V1: chegadas dos próximos 7 dias (a partir de agora menos 6 horas).
   useEffect(() => {
@@ -305,12 +314,19 @@ export default function InicioOperadoraPremiumERN({
     if (aConfirmar.length) {
       lista.push({ tom: 'at', icone: 'relogio', titulo: `${plural(aConfirmar.length, 'chegada', 'chegadas')} com horário a confirmar`, detalhe: 'nas próximas 48 horas', acao: 'Confirmar', href: `/reservas/editar/${aConfirmar[0].reserva_id}#chegada`, peso: 75 });
     }
+    for (const v of saude ?? []) {
+      if (!v.graves && !v.pendentes) continue;
+      const quando = `${v.passeio || 'Viagem'} · ${rotuloDia(v.data_inicio, hoje).toLowerCase()}`;
+      const href = v.reserva_id ? `/reservas/editar/${v.reserva_id}` : '/passeios';
+      if (v.graves) lista.push({ tom: 'er', icone: 'equipe', titulo: `${plural(v.graves, 'alerta grave', 'alertas graves')} de saúde`, detalhe: quando, acao: 'Ver resumo de segurança', href, peso: 98 });
+      if (v.pendentes) lista.push({ tom: 'at', icone: 'equipe', titulo: `${plural(v.pendentes, 'ficha de saúde pendente', 'fichas de saúde pendentes')}`, detalhe: quando, acao: 'Enviar link ao turista', href, peso: 85 });
+    }
     const rascunhos = demandas.filter(d => d.status === 'rascunho').length;
     if (rascunhos) {
       lista.push({ tom: 'nt', icone: 'lista', titulo: `${plural(rascunhos, 'demanda em rascunho', 'demandas em rascunho')}`, detalhe: 'ainda não abertas', acao: 'Ver demandas', href: '/demandas?status=rascunho', peso: 40 });
     }
     return lista.sort((a, b) => b.peso - a.peso);
-  }, [fin, resumo, demandas, hoje, dia7, chegadas]);
+  }, [fin, resumo, demandas, hoje, dia7, chegadas, saude]);
 
   const demandasDestaque = useMemo(() => [...demandas]
     .sort((a, b) => (a.status === 'aberta' ? -1 : 0) - (b.status === 'aberta' ? -1 : 0) || (a.data_inicio ?? '9999').localeCompare(b.data_inicio ?? '9999'))
@@ -323,7 +339,8 @@ export default function InicioOperadoraPremiumERN({
     return () => window.clearTimeout(t);
   }, []);
   const pronto = !carregando && !carregandoPlano
-    && (!financeiroLiberado || financeiro !== null || Boolean(erroFinanceiro) || tempoEsgotado);
+    && (!financeiroLiberado || financeiro !== null || Boolean(erroFinanceiro) || tempoEsgotado)
+    && (saude !== null || tempoEsgotado);
   const [saudacaoPronta, setSaudacaoPronta] = useState(false);
   const [resumoAberto, setResumoAberto] = useState(false);
 
@@ -447,6 +464,23 @@ export default function InicioOperadoraPremiumERN({
       }
     }
 
+    // 5b. Saúde e segurança dos viajantes (EDA_FICHA_SAUDE_V1)
+    const graves = (saude ?? []).reduce((n, v) => n + v.graves, 0);
+    const pendFichas = (saude ?? []).reduce((n, v) => n + v.pendentes, 0);
+    if (graves || pendFichas) {
+      linha();
+      if (graves) {
+        add('Atenção à segurança: ');
+        add(plural(graves, 'viajante com alerta grave', 'viajantes com alerta grave'), true);
+        add(' nas viagens dos próximos 7 dias — alergia grave, condição de saúde ou quem não sabe nadar.');
+      }
+      if (pendFichas) {
+        add(graves ? ' Ainda faltam ' : 'Faltam ');
+        add(plural(pendFichas, 'ficha de saúde', 'fichas de saúde'), true);
+        add(' para fechar a preparação. Envie o link ao turista pela reserva.');
+      }
+    }
+
     // 6. Fecho
     const fechos = hora < 12
       ? ['Bora começar?', 'Vamos juntos neste dia.', 'Estou aqui com você desde cedo.']
@@ -455,7 +489,7 @@ export default function InicioOperadoraPremiumERN({
         : ['Amanhã eu te lembro do que vier.', 'Bom descanso quando der.', 'Deixo tudo organizado para amanhã.'];
     add(' ' + fechos[diaMes % fechos.length]);
     return t;
-  }, [pronto, resumo, fin, hoje, demandas, pendencias, uso, financeiroLiberado]);
+  }, [pronto, resumo, fin, hoje, demandas, pendencias, uso, financeiroLiberado, saude]);
 
   const proxima = resumo.hoje.find(r => r.horario) ?? resumo.semana[0];
 
