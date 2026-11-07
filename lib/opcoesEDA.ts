@@ -61,3 +61,9 @@ export const PREFERENCIAS_CLIENTE: readonly OpcaoEDA[] = [
   ['Observação de fauna', 'Observação de fauna'], ['Fotografia', 'Fotografia'], ['Aventura', 'Aventura'],
   ['Família / crianças', 'Família / crianças'], ['Conforto premium', 'Conforto premium'], ['Grupo grande', 'Grupo grande'],
 ];
+
+export const TIPOS_RELATORIO: readonly OpcaoEDA[] = [
+  ['Operacional', 'Operacional'], ['Financeiro', 'Financeiro'], ['Comercial', 'Comercial'],
+  ['Temporada de pesca', 'Temporada de pesca'], ['Prestação de contas', 'Prestação de contas'],
+  ['Qualidade e satisfação', 'Qualidade e satisfação'], ['Segurança', 'Segurança'],
+];

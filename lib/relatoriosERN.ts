@@ -118,3 +118,13 @@ export function baixarCsvRelatorioERN(nome: string, linhas: unknown[][]): void {
   const url = URL.createObjectURL(new Blob(['\uFEFF', csv], { type: 'text/csv;charset=utf-8;' }));
   const a = document.createElement('a'); a.href = url; a.download = nome; document.body.appendChild(a); a.click(); a.remove(); window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
+// EDA_RELATORIO_OPERACAO_V1: relatório completo da operação (lê a estrutura nova).
+export type CriteriosOperacaoEDA = { versao: 2; origem: 'operacao_eda'; inicio: string; fim: string };
+export function criteriosOperacaoEDA(valor: unknown): CriteriosOperacaoEDA | null {
+  if (!valor || typeof valor !== 'object') return null;
+  const p = valor as Record<string, unknown>;
+  return p.versao === 2 && p.origem === 'operacao_eda' && typeof p.inicio === 'string' && typeof p.fim === 'string'
+    && periodoGraficoValido({ inicio: p.inicio, fim: p.fim })
+    ? { versao: 2, origem: 'operacao_eda', inicio: p.inicio, fim: p.fim } : null;
+}

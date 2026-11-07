@@ -1,0 +1,131 @@
+'use client';
+
+// EDA_RELATORIO_OPERACAO_V1: relatório completo da operação no período.
+
+import { useCallback, useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabase';
+import { baixarDocumentoPremiumERN } from '@/lib/documentosPremiumERN';
+import { baixarCsvRelatorioERN } from '@/lib/relatoriosERN';
+
+type Op = {
+  periodo: { inicio: string; fim: string };
+  reservas: { ativas: number; canceladas: number; pessoas: number; valor: number; ticket_medio: number; sem_cliente_vinculado: number };
+  recebimentos: { recebido: number; a_receber: number };
+  saidas: { total: number; vagas: number; ocupadas: number; ocupacao_pct: number };
+  resultado: { receita_saidas: number; custos: number; comissoes: number; margem_saidas: number };
+  hospedagem: { noites_ocupadas: number; noites_disponiveis: number; ocupacao_pct: number };
+  clientes: { atendidos: number; retorno: number; novos: number; origens: { origem: string; n: number }[] };
+  top_passeios: { passeio: string; reservas: number; pessoas: number; valor: number }[];
+  top_parceiros: { parceiro: string; reservas: number; vendido: number; comissao: number }[];
+  seguranca: { participantes: number; fichas: number };
+  vouchers: { emitidos: number; utilizados: number };
+};
+
+const moeda = (v: number) => (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+const dt = (d: string) => d.split('-').reverse().join('/');
+
+export default function RelatorioOperacaoEDA({ inicio, fim, titulo }: { inicio: string; fim: string; titulo: string }) {
+  const [op, setOp] = useState<Op | null>(null);
+  const [erro, setErro] = useState('');
+
+  const carregar = useCallback(async () => {
+    setOp(null); setErro('');
+    const { data, error } = await supabase.rpc('relatorio_operacao_eda', { p_de: inicio, p_ate: fim });
+    if (error) setErro('Não foi possível calcular o relatório.'); else setOp(data as Op);
+  }, [inicio, fim]);
+
+  useEffect(() => { void carregar(); }, [carregar]);
+
+  if (erro) return <p role="alert" className="mt-4 text-sm text-red-300">{erro}</p>;
+  if (!op) return <p role="status" className="mt-4 text-sm">Lendo saídas, reservas, financeiro, hospedagem e clientes…</p>;
+
+  const fichaPct = op.seguranca.participantes ? Math.round((op.seguranca.fichas / op.seguranca.participantes) * 100) : 0;
+  const blocos: { t: string; itens: [string, string][] }[] = [
+    { t: 'Vendas', itens: [['Reservas ativas', String(op.reservas.ativas)], ['Canceladas', String(op.reservas.canceladas)], ['Pessoas', String(op.reservas.pessoas)], ['Valor vendido', moeda(op.reservas.valor)], ['Ticket médio', moeda(op.reservas.ticket_medio)]] },
+    { t: 'Caixa das viagens', itens: [['Recebido', moeda(op.recebimentos.recebido)], ['A receber', moeda(op.recebimentos.a_receber)]] },
+    { t: 'Saídas', itens: [['Saídas', String(op.saidas.total)], ['Ocupação', `${op.saidas.ocupacao_pct}% (${op.saidas.ocupadas}/${op.saidas.vagas})`]] },
+    { t: 'Resultado das saídas', itens: [['Receita', moeda(op.resultado.receita_saidas)], ['Custos', moeda(op.resultado.custos)], ['Comissões', moeda(op.resultado.comissoes)], ['Margem', moeda(op.resultado.margem_saidas)]] },
+    { t: 'Hospedagem', itens: [['Noites ocupadas', String(op.hospedagem.noites_ocupadas)], ['Ocupação', `${op.hospedagem.ocupacao_pct}%`]] },
+    { t: 'Clientes', itens: [['Atendidos', String(op.clientes.atendidos)], ['Novos', String(op.clientes.novos)], ['De retorno', String(op.clientes.retorno)]] },
+    { t: 'Segurança e embarque', itens: [['Fichas de saúde', `${op.seguranca.fichas}/${op.seguranca.participantes} (${fichaPct}%)`], ['Vouchers utilizados', `${op.vouchers.utilizados}/${op.vouchers.emitidos}`]] },
+  ];
+  const avisos = [
+    op.reservas.sem_cliente_vinculado > 0 && `${op.reservas.sem_cliente_vinculado} reserva(s) sem cadastro de cliente vinculado.`,
+    op.saidas.total === 0 && 'Nenhuma saída aberta no período: ocupação e margem por saída ficam zeradas.',
+    op.seguranca.participantes > 0 && fichaPct < 100 && `${100 - fichaPct}% dos participantes ainda sem ficha de saúde.`,
+  ].filter(Boolean) as string[];
+
+  function pdf() {
+    baixarDocumentoPremiumERN({
+      titulo, subtitulo: `Operação de ${dt(op!.periodo.inicio)} a ${dt(op!.periodo.fim)}`, tipo: 'Relatório',
+      nomeArquivo: `EDA-relatorio-operacao-${op!.periodo.inicio}.pdf`,
+      dados: blocos.flatMap((b) => b.itens.map(([c, v]) => ({ campo: `${b.t} · ${c}`, valor: v }))),
+      tabela: { titulo: 'Passeios que mais venderam', colunas: ['Passeio', 'Reservas', 'Pessoas', 'Valor'], linhas: op!.top_passeios.map((p) => [p.passeio, p.reservas, p.pessoas, moeda(p.valor)]) },
+      observacoes: [
+        ...avisos,
+        'Datas pela viagem (saída) ou pela data da reserva quando não há saída.',
+        'Margem = receita das reservas da saída − custos (realizado ou estimado nas demandas) − comissões. Não é lucro contábil.',
+        'Dados de saúde aparecem apenas em contagem.',
+      ],
+    });
+  }
+
+  function csv() {
+    baixarCsvRelatorioERN(`relatorio-operacao-${op!.periodo.inicio}.csv`, [
+      ['Relatório', titulo], ['Início', op!.periodo.inicio], ['Fim', op!.periodo.fim], [],
+      ['Grupo', 'Indicador', 'Valor'], ...blocos.flatMap((b) => b.itens.map(([c, v]) => [b.t, c, v])), [],
+      ['Passeio', 'Reservas', 'Pessoas', 'Valor'], ...op!.top_passeios.map((p) => [p.passeio, p.reservas, p.pessoas, Number(p.valor).toFixed(2)]), [],
+      ['Parceiro', 'Reservas', 'Vendido', 'Comissão'], ...op!.top_parceiros.map((p) => [p.parceiro, p.reservas, Number(p.vendido).toFixed(2), Number(p.comissao).toFixed(2)]), [],
+      ['Origem do cliente', 'Clientes'], ...op!.clientes.origens.map((o) => [o.origem, o.n]),
+    ]);
+  }
+
+  return (
+    <section className="ro">
+      <div className="ro-acoes">
+        <button type="button" onClick={pdf}>Baixar PDF</button>
+        <button type="button" onClick={csv}>Exportar CSV</button>
+        <button type="button" onClick={() => void carregar()}>Recalcular</button>
+      </div>
+      {avisos.length > 0 && <ul className="ro-avisos">{avisos.map((a) => <li key={a}>{a}</li>)}</ul>}
+      <div className="ro-grade">
+        {blocos.map((b) => (
+          <div key={b.t} className="ro-bloco">
+            <p>{b.t}</p>
+            {b.itens.map(([c, v]) => <div key={c}><span>{c}</span><b>{v}</b></div>)}
+          </div>
+        ))}
+      </div>
+      {op.top_passeios.length > 0 && (
+        <div className="ro-bloco">
+          <p>Passeios que mais venderam</p>
+          {op.top_passeios.map((p) => <div key={p.passeio}><span>{p.passeio} · {p.reservas} res. · {p.pessoas} pess.</span><b>{moeda(p.valor)}</b></div>)}
+        </div>
+      )}
+      {op.top_parceiros.length > 0 && (
+        <div className="ro-bloco">
+          <p>Parceiros</p>
+          {op.top_parceiros.map((p) => <div key={p.parceiro}><span>{p.parceiro} · vendido {moeda(p.vendido)}</span><b>{moeda(p.comissao)}</b></div>)}
+        </div>
+      )}
+      {op.clientes.origens.length > 0 && (
+        <div className="ro-bloco">
+          <p>Como os clientes chegaram</p>
+          {op.clientes.origens.map((o) => <div key={o.origem}><span>{o.origem}</span><b>{o.n}</b></div>)}
+        </div>
+      )}
+      <style jsx>{`
+        .ro { margin-top: 16px; display: grid; gap: 12px; }
+        .ro-acoes { display: flex; flex-wrap: wrap; gap: 8px; }
+        .ro-acoes button { min-height: 40px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--ern-borda); background: transparent; color: inherit; cursor: pointer; }
+        .ro-acoes button:first-child { background: var(--ern-destaque); border-color: var(--ern-destaque); color: #10140f; font-weight: 700; }
+        .ro-avisos { margin: 0; padding: 10px 14px 10px 28px; border-radius: 12px; border: 1px solid var(--ern-destaque); font-size: 13px; }
+        .ro-grade { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; }
+        .ro-bloco { display: grid; gap: 6px; padding: 14px; border-radius: 14px; border: 1px solid var(--ern-borda); }
+        .ro-bloco > p { margin: 0 0 4px; font-size: 10px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ern-destaque); }
+        .ro-bloco > div { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; }
+        .ro-bloco span { color: var(--ern-secundario); }
+      `}</style>
+    </section>
+  );
+}
