@@ -871,7 +871,7 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
                             <button type="button" className="eda-pg-bt eda-pg-bt-p" disabled={excluindo} onClick={() => abrirModal('detalhes', reserva)}>Ver</button>
                             {reserva.id != null && (
                               <Link href={`/reservas/editar/${encodeURIComponent(String(reserva.id))}`} className="eda-pg-bt eda-pg-bt-p">
-                                {reservaEncerradaERN(reserva.status) ? 'Consultar' : 'Editar'}
+                                {reservaEncerradaERN(reserva.status) ? 'Consultar' : 'Gerenciar'}
                               </Link>
                             )}
                           </div>
@@ -906,7 +906,7 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
             <>
               {idSelecionado != null && (
                 <Link href={`/reservas/editar/${idURL}`} className="eda-pg-bt eda-pg-bt-ouro">
-                  {reservaEncerradaERN(selecionada.status) ? 'Consultar reserva' : 'Editar reserva'}
+                  {reservaEncerradaERN(selecionada.status) ? 'Consultar reserva' : 'Gerenciar reserva'}
                 </Link>
               )}
               <button
@@ -1007,7 +1007,7 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
               {erroExclusao && <p role="alert" className="eda-pg-aviso eda-pg-aviso-er">{erroExclusao}</p>}
               {bloqueioExclusao && idSelecionado != null && (
                 <div className="eda-pg-atalhos" style={{ marginTop: 14 }}>
-                  <Link href={`/reservas/editar/${idURL}`} className="eda-pg-bt eda-pg-bt-p">Editar reserva</Link>
+                  <Link href={`/reservas/editar/${idURL}`} className="eda-pg-bt eda-pg-bt-p">Gerenciar reserva</Link>
                   {bloqueioExclusao === 'voucher' && (
                     <Link href={`/vouchers?reserva_id=${idURL}`} className="eda-pg-bt eda-pg-bt-p">Consultar vouchers</Link>
                   )}
