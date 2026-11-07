@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { listarPasseiosPublicosEDA, passeioCombinaInteresseEDA } from '@/lib/passeiosPublicosEDA';
 import Link from 'next/link';
 import PublicHeader from '@/app/components/PublicHeader';
 import BotaoCopaPescaERN from '@/app/components/BotaoCopaPescaERN';
@@ -224,6 +225,19 @@ export default function ExperienciasPremiumERN() {
   const { idioma } = useLanguage();
   const t = textos[idioma];
   const [regiao, setRegiao] = useState<'todos' | RegiaoHistoria>('todos');
+  // EDA_EXPERIENCIAS_CONECTADAS_V1: cada interesse sabe quantos passeios reais tem.
+  const [interesse, setInteresse] = useState<string | null>(null);
+  const [contagem, setContagem] = useState<Record<string, number>>({});
+  useEffect(() => {
+    let ativo = true;
+    listarPasseiosPublicosEDA().then(lista => {
+      if (!ativo) return;
+      const ids = ['pesca', 'rios', 'natureza', 'cultura', 'praias', 'sabores'];
+      setContagem(Object.fromEntries(ids.map(id => [id, lista.filter(p => passeioCombinaInteresseEDA(p, id)).length])));
+    }).catch(() => undefined);
+    return () => { ativo = false; };
+  }, []);
+  const interesseAtual = t.interesses.find(i => i.id === interesse);
   const historias = HISTORIAS_MUNICIPIOS.filter((h) => regiao === 'todos' || h.regiao === regiao);
 
   return (
@@ -303,6 +317,9 @@ export default function ExperienciasPremiumERN() {
         <section id="passeios" className="scroll-mt-24 bg-[#07110E] py-16 md:py-20">
           <div className="mx-auto max-w-[1180px] px-5 md:px-8">
             <VitrinePasseiosEDA
+              interesse={interesse}
+              rotuloInteresse={interesseAtual?.nome}
+              onLimparInteresse={() => setInteresse(null)}
               titulo="Passeios para reservar agora"
               subtitulo="Publicados pelas operadoras da Rede EDA, com preço e contato direto."
             />
@@ -318,7 +335,13 @@ export default function ExperienciasPremiumERN() {
               const grande = indice === 0;
               return (
                 <li key={item.id} className={`ern-revela-rolagem ${grande ? 'sm:col-span-2 sm:row-span-2' : ''}`}>
-                  <Link href={item.href} className={`group relative block h-full overflow-hidden rounded-[24px] ${FOCO}`}>
+                  <Link href={item.href} onClick={(e) => {
+                    // Com passeios publicados, o card filtra a vitrine em vez de sair da página.
+                    if (!contagem[item.id]) return;
+                    e.preventDefault();
+                    setInteresse(item.id);
+                    document.getElementById('passeios')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }} className={`group relative block h-full overflow-hidden rounded-[24px] ${FOCO}`}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={item.imagem} alt={item.alt} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.05] motion-reduce:transition-none" />
                     <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-[#05100C]/90 via-[#05100C]/30 to-transparent" />
@@ -329,6 +352,7 @@ export default function ExperienciasPremiumERN() {
                     <span className="ern-publico-hero absolute inset-x-5 bottom-5">
                       <span className={`block font-semibold tracking-[-0.02em] text-[#F5F3EA] ${grande ? 'text-3xl md:text-4xl' : 'text-xl'}`}>{item.nome}</span>
                       <span className="mt-1.5 block text-sm text-[#D6DFD9]">{item.texto}</span>
+                      {contagem[item.id] > 0 && <span className="mt-2 inline-block rounded-full bg-[#E3A144] px-3 py-1 text-xs font-semibold text-[#07110E]">{contagem[item.id]} {contagem[item.id] === 1 ? 'passeio' : 'passeios'}</span>}
                     </span>
                   </Link>
                 </li>

@@ -7,6 +7,7 @@ import Link from 'next/link';
 import {
   dataCurtaEDA,
   listarPasseiosPublicosEDA,
+  passeioCombinaInteresseEDA,
   listarSaidasPasseioEDA,
   precoPasseioEDA,
   rotuloModalidadeEDA,
@@ -16,6 +17,10 @@ import {
 } from '@/lib/passeiosPublicosEDA';
 
 type Props = {
+  // EDA_EXPERIENCIAS_CONECTADAS_V1: filtro vindo dos cards de interesse.
+  interesse?: string | null;
+  rotuloInteresse?: string;
+  onLimparInteresse?: () => void;
   slug?: string;
   titulo?: string;
   subtitulo?: string;
@@ -138,6 +143,7 @@ function Fotos({ passeio, grande }: { passeio: PasseioPublicoEDA; grande?: boole
 
 export default function VitrinePasseiosEDA({
   slug, titulo = 'Passeios das operadoras', subtitulo, compacta, limite, ocultarOperadora, onVerTodos,
+  interesse, rotuloInteresse, onLimparInteresse,
 }: Props) {
   const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' });
   const [categoria, setCategoria] = useState('');
@@ -166,6 +172,7 @@ export default function VitrinePasseiosEDA({
   );
   const visiveis = itens
     .filter((p) => !categoria || p.categoria === categoria)
+    .filter((p) => !interesse || passeioCombinaInteresseEDA(p, interesse))
     .slice(0, limite ?? itens.length);
 
   if (estado.tipo === 'pronto' && !itens.length && (slug || compacta)) return null;
@@ -183,6 +190,12 @@ export default function VitrinePasseiosEDA({
           : <Link className="vp-ver" href="/rede?aba=passeios">Ver todos →</Link>)}
       </header>
 
+      {interesse && (
+        <p className="vp-interesse" role="status">
+          Mostrando: <strong>{rotuloInteresse ?? interesse}</strong> ({visiveis.length})
+          {onLimparInteresse && <button type="button" onClick={onLimparInteresse}>Ver todos</button>}
+        </p>
+      )}
       {!compacta && categorias.length > 1 && (
         <div className="vp-filtros" role="group" aria-label="Filtrar por categoria">
           <button type="button" aria-pressed={!categoria} onClick={() => setCategoria('')}>Todos</button>
@@ -291,6 +304,8 @@ export default function VitrinePasseiosEDA({
         .vp-cabeca h2 { color: inherit; margin: 4px 0 0; font-size: clamp(20px, 3vw, 28px); font-weight: 700; }
         .vp-cabeca span { display: block; margin-top: 4px; font-size: 14px; color: inherit; opacity: .72; }
         .vp-ver { flex: none; background: none; border: 0; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--vp-ouro); }
+        .vp-interesse { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 12px; font-size: 14px; }
+        .vp-interesse button { min-height: 34px; padding: 0 12px; border-radius: 999px; border: 1px solid currentColor; background: transparent; color: inherit; font-size: 12px; cursor: pointer; }
         .vp-filtros { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 14px; scrollbar-width: none; }
         .vp-filtros button { flex: none; min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid currentColor; background: transparent; color: inherit; font-size: 13px; cursor: pointer; }
         .vp-filtros button[aria-pressed='true'] { background: var(--vp-ouro); border-color: var(--vp-ouro); color: #10140f; font-weight: 700; }

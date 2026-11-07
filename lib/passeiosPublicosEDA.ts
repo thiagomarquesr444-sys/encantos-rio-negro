@@ -63,12 +63,36 @@ export function rotuloModalidadeEDA(m: PasseioPublicoEDA['preco_modalidade']) {
   return m === 'por_grupo' ? 'por grupo' : m === 'sob_consulta' ? '' : 'por pessoa';
 }
 
+// Cache curto (60s) por slug: Vitrine, Destinos e Experiências reutilizam a mesma consulta.
+const cachePublico = new Map<string, { em: number; p: Promise<PasseioPublicoEDA[]> }>();
 export async function listarPasseiosPublicosEDA(slug?: string) {
-  const { data, error } = await supabase.rpc('passeios_publicos_eda', {
-    p_slug: slug ?? null,
-  });
-  if (error) throw error;
-  return (data ?? []) as PasseioPublicoEDA[];
+  const chave = slug ?? '';
+  const atual = cachePublico.get(chave);
+  if (atual && Date.now() - atual.em < 60_000) return atual.p;
+  const p = (async () => {
+    const { data, error } = await supabase.rpc('passeios_publicos_eda', { p_slug: slug ?? null });
+    if (error) throw error;
+    return (data ?? []) as PasseioPublicoEDA[];
+  })();
+  cachePublico.set(chave, { em: Date.now(), p });
+  p.catch(() => cachePublico.delete(chave));
+  return p;
+}
+
+// EDA_EXPERIENCIAS_CONECTADAS_V1: interesse do portal -> passeios que combinam.
+const INTERESSES_PASSEIO: Record<string, RegExp> = {
+  pesca: /pesca|tucunar/,
+  rios: /barco|naveg|cruzeiro|travessia|rio|expedi/,
+  natureza: /ecoturismo|natureza|trilha|fauna|floresta|anavilhanas|igapo|boto|observa/,
+  cultura: /cultura|festival|comunidade|indigena|artesanato|historia/,
+  praias: /praia/,
+  sabores: /gastronom|culinari|sabor|comida|almoco|jantar/,
+};
+export function passeioCombinaInteresseEDA(p: PasseioPublicoEDA, interesse: string) {
+  const re = INTERESSES_PASSEIO[interesse];
+  if (!re) return false;
+  const texto = `${p.categoria ?? ''} ${p.nome} ${p.descricao ?? ''}`.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  return re.test(texto);
 }
 
 export function precoPasseioEDA(valor: number | null) {
