@@ -184,13 +184,19 @@ export default function NovaReservaPage() {
   // EDA_RESERVA_COESA_V1: preço do passeio sugere o valor (por pessoa x quantidade, ou por grupo).
   const [precoPasseio, setPrecoPasseio] = useState<{ preco: number; modalidade: string } | null>(null);
   const ultimaSugestao = useRef('');
+  const [minimoPessoas, setMinimoPessoas] = useState(0);
   useEffect(() => {
     let ativo = true;
     setPrecoPasseio(null);
+    setMinimoPessoas(0);
     if (!form.passeio_id) return;
-    supabase.from('passeios').select('preco,valor,preco_modalidade').eq('id', form.passeio_id).maybeSingle()
+    supabase.from('passeios').select('preco,valor,preco_modalidade,capacidade_minima').eq('id', form.passeio_id).maybeSingle()
       .then(({ data }) => {
         if (!ativo || !data) return;
+        // Mínimo de pessoas do passeio entra como quantidade inicial.
+        const minimo = Number(data.capacidade_minima) || 0;
+        if (minimo > 1) setForm((atual) => (Number(atual.quantidade_pessoas) || 0) < minimo ? { ...atual, quantidade_pessoas: String(minimo) } : atual);
+        setMinimoPessoas(minimo > 1 ? minimo : 0);
         const preco = Number(data.valor ?? data.preco) || 0;
         if (preco > 0 && data.preco_modalidade !== 'sob_consulta') setPrecoPasseio({ preco, modalidade: data.preco_modalidade ?? 'por_pessoa' });
       });
@@ -206,8 +212,10 @@ export default function NovaReservaPage() {
     if (!valorSugerido) return;
     const novo = formatarValorCampo(valorSugerido.total);
     // Só preenche se o campo está vazio ou ainda com a sugestão anterior (não sobrescreve valor negociado).
-    setForm((atual) => (!atual.valor || atual.valor === ultimaSugestao.current) ? { ...atual, valor: novo } : atual);
+    // A sugestão anterior é capturada antes: o setForm roda depois e veria o ref já atualizado.
+    const anterior = ultimaSugestao.current;
     ultimaSugestao.current = novo;
+    setForm((atual) => (!atual.valor || atual.valor === anterior) ? { ...atual, valor: novo } : atual);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [valorSugerido?.total]);
   const [salvando, setSalvando] = useState(false);
@@ -817,6 +825,11 @@ export default function NovaReservaPage() {
                       onChange={(event) => alterarCampo('quantidade_pessoas', event.target.value)}
                       className={inputClass}
                     />
+                    {minimoPessoas > 0 && (
+                      <p className={`mt-2 text-xs leading-6 ${pessoasNum < minimoPessoas ? 'text-[#F4C77E]' : 'text-[#B4C8BB]'}`}>
+                        Este passeio sai com no mínimo {minimoPessoas} pessoas.
+                      </p>
+                    )}
                   </div>
 
                   <div className="min-w-0 sm:col-span-2">
