@@ -157,6 +157,8 @@ export default function NovoClientePage() {
   const [carregando, setCarregando] = useState(true);
   const [erroConsulta, setErroConsulta] = useState('');
   const [erro, setErro] = useState('');
+  const [semelhantes, setSemelhantes] = useState<{ id: string; nome: string; motivo: string }[]>([]);
+  const ignorarSemelhantes = useRef(false);
   const [salvando, setSalvando] = useState(false);
   const [sucesso, setSucesso] = useState(false);
   const [resultadoIncerto, setResultadoIncerto] = useState(false);
@@ -268,6 +270,17 @@ export default function NovoClientePage() {
       return;
     }
 
+    // EDA_CLIENTES_RELACIONAMENTO_V1: avisa antes de duplicar um cliente.
+    if (!ignorarSemelhantes.current) {
+      const { data: parecidos } = await supabase.rpc('cliente_semelhante_eda', {
+        p_nome: form.nome, p_email: form.email, p_documento: form.documento, p_telefone: form.telefone,
+      });
+      if (parecidos && parecidos.length > 0) {
+        setSemelhantes(parecidos as { id: string; nome: string; motivo: string }[]);
+        return;
+      }
+    }
+
     trava.current = true;
     setSalvando(true);
     let gravacaoIniciada = false;
@@ -335,6 +348,12 @@ export default function NovoClientePage() {
               ? 'O limite foi atingido durante o cadastro. Atualize a consulta do plano.'
               : 'Não foi possível validar sua empresa ou assinatura. Atualize a página.',
           );
+        }
+
+        // EDA_CLIENTES_RELACIONAMENTO_V1: e-mail/documento já cadastrados.
+        if (error.code === '23505') {
+          gravacaoIniciada = false;
+          throw new Error('Já existe um cliente desta operadora com o mesmo e-mail ou documento. Abra o cadastro existente.');
         }
 
         throw new Error('Não foi possível confirmar o cadastro.');
@@ -477,6 +496,27 @@ export default function NovoClientePage() {
           ) : null}
         </section>
 
+        {semelhantes.length > 0 && (
+          <div role="alert" className={painel}>
+            <p className="font-semibold">Este cliente pode já estar cadastrado:</p>
+            <ul className="mt-2 space-y-1 text-sm">
+              {semelhantes.map((c) => (
+                <li key={c.id}>
+                  <Link href={`/clientes/editar/${c.id}`} className="font-semibold text-[var(--ern-destaque)]">{c.nome}</Link>
+                  <span className="text-[var(--ern-secundario)]"> · {c.motivo}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button type="button" className={botao} onClick={() => setSemelhantes([])}>Revisar dados</button>
+              <button type="submit" form="form-cliente-novo" className={botao}
+                onClick={() => { ignorarSemelhantes.current = true; setSemelhantes([]); }}>
+                Cadastrar mesmo assim
+              </button>
+            </div>
+          </div>
+        )}
+
         {erro && (
           <div role="alert" className={`${painel} text-[var(--ern-erro)]`}>
             <p>{erro}</p>
@@ -494,7 +534,7 @@ export default function NovoClientePage() {
           </p>
         )}
 
-        <form onSubmit={salvar} className={`${painel} ern-cliente-form-card`}>
+        <form id="form-cliente-novo" onSubmit={salvar} className={`${painel} ern-cliente-form-card`}>
           <h2 className="text-xl font-semibold">Dados do viajante</h2>
 
           <aside

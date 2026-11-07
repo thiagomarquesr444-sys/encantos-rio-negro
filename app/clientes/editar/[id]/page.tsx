@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase';
 import CampoLocalEDA from '@/app/components/CampoLocalEDA';
 import CampoOpcoesEDA from '@/app/components/CampoOpcoesEDA';
 import { NACIONALIDADES } from '@/lib/opcoesEDA';
+import RelacionamentoClienteEDA from '@/app/components/RelacionamentoClienteEDA';
 
 type Formulario = {
   nome: string;
@@ -530,6 +531,10 @@ export default function EditarClientePage() {
                 </button>
               </div>
             </form>
+
+            {contexto?.clienteId && (
+              <RelacionamentoClienteEDA clienteId={contexto.clienteId} bloqueado={salvando} />
+            )}
           </>
         )}
       </div>

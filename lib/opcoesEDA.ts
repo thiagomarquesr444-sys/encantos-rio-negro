@@ -49,3 +49,15 @@ export const CATEGORIAS_PASSEIO: readonly OpcaoEDA[] = [
   ['Ecoturismo', 'Ecoturismo'], ['Passeios Fluviais', 'Passeios Fluviais'],
   ['Pesca Esportiva', 'Pesca Esportiva'], ['Imersão Cultural', 'Imersão Cultural'],
 ];
+
+export const ORIGENS_CLIENTE: readonly OpcaoEDA[] = [
+  ['Indicação', 'Indicação'], ['Instagram', 'Instagram'], ['Facebook', 'Facebook'], ['Google', 'Google'],
+  ['Portal Encantos', 'Portal Encantos'], ['WhatsApp', 'WhatsApp'], ['Agência parceira', 'Agência parceira'],
+  ['Feira / evento', 'Feira / evento'], ['Cliente que retornou', 'Cliente que retornou'],
+];
+
+export const PREFERENCIAS_CLIENTE: readonly OpcaoEDA[] = [
+  ['Pesca esportiva', 'Pesca esportiva'], ['Ecoturismo', 'Ecoturismo'], ['Cultura e comunidades', 'Cultura e comunidades'],
+  ['Observação de fauna', 'Observação de fauna'], ['Fotografia', 'Fotografia'], ['Aventura', 'Aventura'],
+  ['Família / crianças', 'Família / crianças'], ['Conforto premium', 'Conforto premium'], ['Grupo grande', 'Grupo grande'],
+];
