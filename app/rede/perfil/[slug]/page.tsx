@@ -513,7 +513,7 @@ export default function PerfilRedePage() {
             </div>
 
             {estado.perfil.categoria === 'operadora' && (
-              <div className="mt-10 rounded-[28px] bg-[#07110E] p-5 md:p-7">
+              <div className="mt-10 rounded-[28px] bg-[#07110E] p-5 text-[#EDEDE3] md:p-7">
                 <VitrinePasseiosEDA
                   slug={estado.perfil.slug}
                   titulo={`Passeios de ${estado.perfil.nome_publico}`}

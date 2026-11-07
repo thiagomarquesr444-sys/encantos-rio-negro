@@ -206,14 +206,15 @@ export default function VitrinePasseiosEDA({
       </dialog>
 
       <style jsx global>{`
-        .vp { --vp-ouro: #e3a144; --vp-texto: #edede3; --vp-sec: #a9bdb2; --vp-borda: rgb(237 237 227 / 12%); --vp-painel: #0e1c17; color: var(--vp-texto); }
+        .vp { --vp-ouro: #e3a144; --vp-texto: #edede3; --vp-sec: #a9bdb2; --vp-borda: rgb(237 237 227 / 12%); --vp-painel: #0e1c17; color: inherit; }
+        .vp-card, .vp-dialogo, .vp-vazio { color: var(--vp-texto); }
         .vp-cabeca { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
         .vp-sobre { margin: 0; font-size: 11px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; color: var(--vp-ouro); }
-        .vp-cabeca h2 { margin: 4px 0 0; font-size: clamp(20px, 3vw, 28px); font-weight: 700; }
-        .vp-cabeca span { display: block; margin-top: 4px; font-size: 14px; color: var(--vp-sec); }
+        .vp-cabeca h2 { color: inherit; margin: 4px 0 0; font-size: clamp(20px, 3vw, 28px); font-weight: 700; }
+        .vp-cabeca span { display: block; margin-top: 4px; font-size: 14px; color: inherit; opacity: .72; }
         .vp-ver { flex: none; background: none; border: 0; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--vp-ouro); }
         .vp-filtros { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; margin-bottom: 14px; scrollbar-width: none; }
-        .vp-filtros button { flex: none; min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid var(--vp-borda); background: transparent; color: var(--vp-texto); font-size: 13px; cursor: pointer; }
+        .vp-filtros button { flex: none; min-height: 38px; padding: 0 14px; border-radius: 999px; border: 1px solid currentColor; background: transparent; color: inherit; font-size: 13px; cursor: pointer; }
         .vp-filtros button[aria-pressed='true'] { background: var(--vp-ouro); border-color: var(--vp-ouro); color: #10140f; font-weight: 700; }
         .vp-grade { display: grid; gap: 18px; grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr)); }
         .vp[data-compacta] .vp-grade { grid-template-columns: 1fr; gap: 12px; }
