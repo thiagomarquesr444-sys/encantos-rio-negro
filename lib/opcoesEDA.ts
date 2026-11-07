@@ -83,3 +83,38 @@ export const ATIVIDADES_FORNECEDOR: readonly OpcaoEDA[] = [
   ['Manutenção de barcos e motores', 'Manutenção de barcos e motores'], ['Lavanderia', 'Lavanderia'],
   ['Comunicação / internet', 'Comunicação / internet'], ['Saúde e primeiros socorros', 'Saúde e primeiros socorros'],
 ];
+
+// EDA_FAMILIA_RESERVA_V1: relação do acompanhante com o titular da reserva.
+export const RELACOES_PARTICIPANTE: readonly OpcaoEDA[] = [
+  ['conjuge', 'Cônjuge'], ['filho', 'Filho(a)'], ['pai_mae', 'Pai / mãe'], ['irmao', 'Irmão(ã)'],
+  ['parente', 'Outro parente'], ['amigo', 'Amigo(a)'], ['colega', 'Colega'], ['outro', 'Outro'],
+];
+
+export type PoliticaCriancasEDA = {
+  crianca_idade_max: number | null;
+  crianca_percentual: number | null;
+  colo_idade_max: number | null;
+};
+export type FaixaEtariaEDA = 'adulto' | 'crianca' | 'colo';
+
+// Idade completa na data da viagem (quem faz aniversário na viagem já conta a nova idade).
+export function idadeNaDataEDA(nascimento: string | null | undefined, data: string | null | undefined): number | null {
+  if (!nascimento || !data) return null;
+  const [an, mn, dn] = nascimento.slice(0, 10).split('-').map(Number);
+  const [ad, md, dd] = data.slice(0, 10).split('-').map(Number);
+  if (!an || !ad) return null;
+  return ad - an - (md < mn || (md === mn && dd < dn) ? 1 : 0);
+}
+
+export function faixaEtariaEDA(idade: number | null, p: PoliticaCriancasEDA | null): FaixaEtariaEDA | null {
+  if (idade === null) return null;
+  if (p?.colo_idade_max != null && idade <= p.colo_idade_max) return 'colo';
+  if (p?.crianca_idade_max != null && idade <= p.crianca_idade_max) return 'crianca';
+  return 'adulto';
+}
+
+// Total sugerido: adultos pagam cheio, crianças o percentual, colo não paga.
+export function valorPorFaixasEDA(preco: number, adultos: number, criancas: number, p: PoliticaCriancasEDA | null) {
+  const pct = p?.crianca_percentual != null ? Number(p.crianca_percentual) / 100 : 1;
+  return Math.round((preco * adultos + preco * pct * criancas) * 100) / 100;
+}

@@ -16,6 +16,7 @@ import { supabase } from '@/lib/supabase';
 import GraficoPasseios from '@/app/components/GraficoPasseios';
 import { CabecalhoEDA } from '@/app/components/PadraoPaginaEDA';
 import SaidasPasseioEDA from '@/app/components/SaidasPasseioEDA';
+import PoliticaPrecoPasseioEDA from '@/app/components/PoliticaPrecoPasseioEDA';
 import CampoOpcoesEDA, { CampoDuracaoEDA } from '@/app/components/CampoOpcoesEDA';
 import CampoLocalEDA from '@/app/components/CampoLocalEDA';
 import { CATEGORIAS_PASSEIO } from '@/lib/opcoesEDA';
@@ -1492,6 +1493,7 @@ export default function PasseiosPage() {
                 passeioId={passeioSelecionado.id}
                 vagasPadrao={Number(passeioSelecionado.vagas) || null}
               />
+              <PoliticaPrecoPasseioEDA passeioId={passeioSelecionado.id} />
             )}
 
 {feedback?.tipo === 'erro' && (
