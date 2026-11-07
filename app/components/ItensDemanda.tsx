@@ -13,6 +13,8 @@ import {
   carregarItensDemanda,
   salvarItensDemanda,
   novoItemDemanda,
+  UNIDADES_ITEM,
+  normalizarUnidade,
 
   type ItemDemanda,
   type CategoriaItem,
@@ -33,6 +35,14 @@ const campo =
 const categorias = Object.entries(CATEGORIAS_ITEM).map(([value, label]) => ({
   value, label,
 }));
+
+const unidades = UNIDADES_ITEM.map((value) => ({ value, label: value }));
+
+function opcoesUnidade(atual: string) {
+  return atual && !UNIDADES_ITEM.some((u) => u === atual)
+    ? [{ value: atual, label: atual }, ...unidades]
+    : unidades;
+}
 
 const situacoes = Object.entries(SITUACOES_ITEM).map(([value, label]) => ({
   value, label,
@@ -373,17 +383,13 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
                           className={campo}
                         />
                       </label>
-                      <label className="min-w-0 text-xs">
-                        <span className="mb-2 block">Unidade</span>
-                        <input
-                          value={item.unidade}
-                          maxLength={40}
-                          disabled={desabilitado}
-                          placeholder="kg, litro, saco..."
-                          onChange={(event) => editar(item.chave, { unidade: event.target.value })}
-                          className={campo}
-                        />
-                      </label>
+                      <SeletorERN
+                        label="Unidade"
+                        value={normalizarUnidade(item.unidade)}
+                        options={opcoesUnidade(normalizarUnidade(item.unidade))}
+                        disabled={desabilitado}
+                        onChange={(unidade) => editar(item.chave, { unidade })}
+                      />
                     </div>
 
                     <label className="min-w-0 text-xs">

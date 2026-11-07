@@ -39,6 +39,28 @@ type ItemBanco = {
   ordem: number;
 };
 
+// EDA_UNIDADES_V1: unidades padronizadas — o usuário só escolhe.
+export const UNIDADES_ITEM = [
+  'unidade', 'kg', 'g', 'litro', 'ml', 'caixa', 'pacote', 'fardo',
+  'saco', 'garrafa', 'lata', 'galão', 'dúzia', 'par', 'metro',
+  'rolo', 'bandeja', 'peça', 'kit', 'diária', 'hora', 'serviço',
+] as const;
+
+// Converte valores antigos digitados livremente (ex.: "KG", "Kg") para a lista.
+export function normalizarUnidade(valor: string) {
+  const limpo = valor.trim().toLocaleLowerCase('pt-BR');
+  const igual = UNIDADES_ITEM.find((u) => u === limpo);
+  if (igual) return igual;
+  const apelidos: Record<string, string> = {
+    un: 'unidade', und: 'unidade', unid: 'unidade', unidades: 'unidade',
+    quilo: 'kg', kilo: 'kg', kgs: 'kg', l: 'litro', lt: 'litro', litros: 'litro',
+    cx: 'caixa', caixas: 'caixa', pct: 'pacote', pacotes: 'pacote', sacos: 'saco',
+    garrafas: 'garrafa', latas: 'lata', galao: 'galão', duzia: 'dúzia', m: 'metro',
+    metros: 'metro', peca: 'peça', pecas: 'peça', diaria: 'diária', servico: 'serviço',
+  };
+  return apelidos[limpo] ?? valor.trim();
+}
+
 export function novoItemDemanda(): ItemDemanda {
   return {
     descricao: '',
@@ -67,7 +89,7 @@ export function numeroItem(
 export function prepararItem(item: ItemDemanda, indice: number) {
   const prefixo = `Item ${indice + 1}`;
   const descricao = item.descricao.trim();
-  const unidade = item.unidade.trim();
+  const unidade = normalizarUnidade(item.unidade);
   const quantidade = numeroItem(item.quantidade, 3);
   const precoTexto = item.preco_unitario_estimado.trim();
   const preco = precoTexto ? numeroItem(precoTexto, 2) : null;

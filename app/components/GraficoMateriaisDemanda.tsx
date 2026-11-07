@@ -22,29 +22,51 @@ const cores: Record<CategoriaItem, string> = {
 };
 
 export default function GraficoMateriaisDemanda({ itens, previa }: Props) {
-  const grupos = Object.entries(CATEGORIAS_ITEM).map(([chave, nome]) => ({
-    chave: chave as CategoriaItem,
-    nome,
-    valor: BigInt(0),
-  }));
+  // EDA_GRAFICO_OUTROS_V1: itens em "Outros" aparecem pelo próprio nome.
+  type Grupo = { chave: string; nome: string; cor: string; valor: bigint };
+  const grupos = new Map<string, Grupo>();
+  const coresOutros = ['#9BB6A6', '#E7C873', '#7FA8F0', '#E59AC8', '#8FD3C7', '#C9A27E', '#A7B4C2'];
+  let indiceOutros = 0;
 
   let semEstimativa = 0;
   let total = BigInt(0);
 
   for (const item of itens) {
     const valor = subtotal(item);
-    const grupo = grupos.find((atual) => atual.chave === item.categoria);
+    const categoria = item.categoria as CategoriaItem;
 
-    if (valor === null || !grupo) {
+    if (valor === null || !(categoria in CATEGORIAS_ITEM)) {
       semEstimativa += 1;
       continue;
+    }
+
+    let chave: string = categoria;
+    let nome: string = CATEGORIAS_ITEM[categoria];
+    let cor = cores[categoria];
+
+    if (categoria === 'outros') {
+      const descricao = item.descricao.trim().replace(/\s+/g, ' ');
+      if (descricao) {
+        chave = `outros:${descricao.toLocaleLowerCase('pt-BR')}`;
+        nome = descricao.charAt(0).toLocaleUpperCase('pt-BR') + descricao.slice(1).toLocaleLowerCase('pt-BR');
+      }
+    }
+
+    let grupo = grupos.get(chave);
+    if (!grupo) {
+      if (categoria === 'outros') {
+        cor = coresOutros[indiceOutros % coresOutros.length];
+        indiceOutros += 1;
+      }
+      grupo = { chave, nome, cor, valor: BigInt(0) };
+      grupos.set(chave, grupo);
     }
 
     grupo.valor += valor;
     total += valor;
   }
 
-  const positivos = grupos
+  const positivos = [...grupos.values()]
     .filter((grupo) => grupo.valor > BigInt(0))
     .sort((a, b) => a.valor === b.valor ? 0 : a.valor > b.valor ? -1 : 1);
 
@@ -60,7 +82,7 @@ export default function GraficoMateriaisDemanda({ itens, previa }: Props) {
       ? 100
       : acumulado + percentual;
 
-    return `${cores[grupo.chave]} ${inicio}% ${acumulado}%`;
+    return `${grupo.cor} ${inicio}% ${acumulado}%`;
   });
 
   const maior = positivos[0];
@@ -93,7 +115,7 @@ export default function GraficoMateriaisDemanda({ itens, previa }: Props) {
             <div className="absolute inset-5 flex flex-col items-center justify-center rounded-full bg-[var(--ern-painel)] text-center">
               <span className="text-2xl font-semibold">{positivos.length}</span>
               <span className="mt-1 text-[10px] text-[var(--ern-secundario)]">
-                categorias com custo
+                grupos com custo
               </span>
             </div>
           </div>
@@ -110,7 +132,7 @@ export default function GraficoMateriaisDemanda({ itens, previa }: Props) {
                     <span
                       aria-hidden="true"
                       className="h-2.5 w-2.5 shrink-0 rounded-full"
-                      style={{ backgroundColor: cores[grupo.chave] }}
+                      style={{ backgroundColor: grupo.cor }}
                     />
                     <span>{grupo.nome}</span>
                   </span>
