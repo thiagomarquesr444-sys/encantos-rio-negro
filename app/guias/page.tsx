@@ -14,6 +14,8 @@ import {
 } from '@/lib/guiasOperacionais';
 import { CampoChipsEDA } from '@/app/components/CampoOpcoesEDA';
 import { IDIOMAS } from '@/lib/opcoesEDA';
+import AgendaRecursoEDA from '@/app/components/AgendaRecursoEDA';
+import { usoRecursosHojeEDA } from '@/lib/recursosEDA';
 
 type StatusGuia = 'Ativo' | 'Em Tour' | 'Férias' | 'Inativo';
 
@@ -209,6 +211,12 @@ export default function GuiasPage() {
 
       if (consulta !== consultaGuiasERN.current) return;
 
+      // EDA_RECURSOS_AGENDA_V1: "Em Tour" vem da agenda real de hoje.
+      let emTour = new Set<string>();
+      try {
+        emTour = new Set((await usoRecursosHojeEDA()).filter((u) => u.recurso === 'guia' && u.em_uso_hoje).map((u) => u.recurso_id));
+      } catch { /* mantém a situação cadastral */ }
+      if (consulta !== consultaGuiasERN.current) return;
       setGuias(lista.map(item => ({
         ...item,
         nome: item.nome || '',
@@ -216,7 +224,9 @@ export default function GuiasPage() {
         telefone: item.telefone || '',
         idiomas: item.idiomas || '',
         cadastur: item.cadastur || '',
-        status: normalizarStatus(item.status),
+        status: item.id && emTour.has(item.id) && normalizarStatus(item.status) === 'Ativo'
+          ? 'Em Tour'
+          : normalizarStatus(item.status),
       })));
 
       setContexto(confirmado);
@@ -1245,7 +1255,7 @@ export default function GuiasPage() {
                   className={inputClass}
                 >
                   <option value="Ativo">Ativo</option>
-                  <option value="Em Tour">Em Tour</option>
+                  <option value="Em Tour">Em tour (automático)</option>
                   <option value="Férias">Férias</option>
                   <option value="Inativo">Inativo</option>
                 </select>
@@ -1275,6 +1285,7 @@ export default function GuiasPage() {
                 </button>
               </div>
             </form>
+            {itemEditar.id && <AgendaRecursoEDA tipo="guia" id={itemEditar.id} />}
           </div>
         </div>
       )}

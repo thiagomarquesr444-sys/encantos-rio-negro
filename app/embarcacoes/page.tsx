@@ -16,6 +16,8 @@ import { supabase } from '@/lib/supabase';
 import { CabecalhoEDA } from '@/app/components/PadraoPaginaEDA';
 import CampoOpcoesEDA from '@/app/components/CampoOpcoesEDA';
 import { CONDICAO_EMBARCACAO } from '@/lib/opcoesEDA';
+import AgendaRecursoEDA from '@/app/components/AgendaRecursoEDA';
+import { usoRecursosHojeEDA } from '@/lib/recursosEDA';
 
 type StatusEmbarcacao =
   | 'Disponível'
@@ -352,6 +354,12 @@ export default function EmbarcacoesPage() {
 
       if (consulta !== consultaFrotaERN.current) return;
       contextoFrotaERN.current = contexto;
+      // EDA_RECURSOS_AGENDA_V1: "Reservada" vem da agenda real de hoje.
+      try {
+        const uso = new Set((await usoRecursosHojeEDA()).filter((u) => u.recurso === 'embarcacao' && u.em_uso_hoje).map((u) => u.recurso_id));
+        for (const e of lista) if (e.id && uso.has(e.id) && normalizarStatus(e.status) === 'Disponível') e.status = 'Reservada';
+      } catch { /* mantém a situação cadastral */ }
+      if (consulta !== consultaFrotaERN.current) return;
       setEmbarcacoes(lista);
     } catch (falha) {
       if (consulta !== consultaFrotaERN.current) return;
@@ -1823,7 +1831,7 @@ export default function EmbarcacoesPage() {
                     </option>
 
                     <option value="Reservada">
-                      Reservada
+                      Em uso (automático)
                     </option>
 
                     <option value="Manutenção">
@@ -1863,6 +1871,7 @@ export default function EmbarcacoesPage() {
                 </button>
               </div>
             </form>
+            {embarcacaoEditando.id && <AgendaRecursoEDA tipo="embarcacao" id={embarcacaoEditando.id} capacidade={Number(embarcacaoEditando.capacidade) || null} />}
           </div>
         </div>
       )}

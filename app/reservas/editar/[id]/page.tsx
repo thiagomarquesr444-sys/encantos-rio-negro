@@ -9,6 +9,7 @@ import VinculosReserva from '@/app/components/VinculosReserva';
 import SeletorSaidaEDA from '@/app/components/SeletorSaidaEDA';
 import ParticipantesReservaEDA from '@/app/components/ParticipantesReservaEDA';
 import HospedagemReservaEDA from '@/app/components/HospedagemReservaEDA';
+import { AlertaRecursosReservaEDA } from '@/app/components/AgendaRecursoEDA';
 import { mensagemSaidaEDA } from '@/lib/saidasGestaoEDA';
 import LogisticaReserva from '@/app/components/LogisticaReserva';
 import PeriodoReservaERN, { validarPeriodoReservaERN } from '@/app/components/PeriodoReservaERN';
@@ -638,6 +639,7 @@ function EditarReservaConteudo({ id }: { id?: string }) {
                     }}
                   />
 
+                <AlertaRecursosReservaEDA reservaId={id} embarcacaoId={form.embarcacao_id || undefined} />
                 <SeletorSaidaEDA
                   passeioId={form.passeio_id}
                   saidaId={form.saida_id}

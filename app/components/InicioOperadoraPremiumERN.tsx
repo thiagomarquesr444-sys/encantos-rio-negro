@@ -21,6 +21,7 @@ import './inicio-operadora-premium.css';
 import './capa-eda.css';
 import CartaoMagneticoEDA from './CartaoMagneticoEDA';
 import DigitacaoEDA, { type TrechoDigitado } from './DigitacaoEDA';
+import { conflitosEDA, lotacaoEDA, type ConflitoEDA, type LotacaoEDA } from '@/lib/recursosEDA';
 
 export type ReservaInicioERN = {
   id: string;
@@ -153,6 +154,16 @@ export default function InicioOperadoraPremiumERN({
   const [chegadas, setChegadas] = useState<ChegadaPainel[] | null>(null);
   // EDA_FICHA_SAUDE_V1: alertas de saúde/segurança das próximas viagens (só contagens).
   const [saude, setSaude] = useState<AlertaViagemEDA[] | null>(null);
+  // EDA_RECURSOS_AGENDA_V1: barco/guia em duas viagens e barco acima da lotação.
+  const [conflitos, setConflitos] = useState<ConflitoEDA[]>([]);
+  const [lotacao, setLotacao] = useState<LotacaoEDA[]>([]);
+  useEffect(() => {
+    let ativo = true;
+    Promise.all([conflitosEDA(undefined, 7), lotacaoEDA(7)])
+      .then(([c, l]) => { if (ativo) { setConflitos(c); setLotacao(l); } })
+      .catch(() => { /* sem permissão */ });
+    return () => { ativo = false; };
+  }, []);
   useEffect(() => {
     let ativo = true;
     supabase.rpc('alertas_proximas_viagens_eda', { p_dias: 7 })
@@ -314,6 +325,14 @@ export default function InicioOperadoraPremiumERN({
     if (aConfirmar.length) {
       lista.push({ tom: 'at', icone: 'relogio', titulo: `${plural(aConfirmar.length, 'chegada', 'chegadas')} com horário a confirmar`, detalhe: 'nas próximas 48 horas', acao: 'Confirmar', href: `/reservas/editar/${aConfirmar[0].reserva_id}#chegada`, peso: 75 });
     }
+    if (conflitos.length) {
+      const c = conflitos[0];
+      lista.push({ tom: 'er', icone: c.recurso === 'guia' ? 'guia' : 'barco', titulo: conflitos.length === 1 ? `${c.recurso === 'guia' ? 'Guia' : 'Embarcação'} em duas viagens` : `${conflitos.length} conflitos de barco/guia`, detalhe: `${c.recurso_nome} · ${rotuloDia(c.inicio, hoje).toLowerCase()}`, acao: 'Resolver', href: `/reservas/editar/${c.reserva_id}`, peso: 97 });
+    }
+    if (lotacao.length) {
+      const l = lotacao[0];
+      lista.push({ tom: 'er', icone: 'barco', titulo: 'Embarcação acima da lotação', detalhe: `${l.nome} · ${l.pessoas}/${l.capacidade} · ${rotuloDia(l.dia, hoje).toLowerCase()}`, acao: 'Ver agenda', href: '/embarcacoes', peso: 96 });
+    }
     for (const v of saude ?? []) {
       if (!v.graves && !v.pendentes) continue;
       const quando = `${v.passeio || 'Viagem'} · ${rotuloDia(v.data_inicio, hoje).toLowerCase()}`;
@@ -326,7 +345,7 @@ export default function InicioOperadoraPremiumERN({
       lista.push({ tom: 'nt', icone: 'lista', titulo: `${plural(rascunhos, 'demanda em rascunho', 'demandas em rascunho')}`, detalhe: 'ainda não abertas', acao: 'Ver demandas', href: '/demandas?status=rascunho', peso: 40 });
     }
     return lista.sort((a, b) => b.peso - a.peso);
-  }, [fin, resumo, demandas, hoje, dia7, chegadas, saude]);
+  }, [fin, resumo, demandas, hoje, dia7, chegadas, saude, conflitos, lotacao]);
 
   const demandasDestaque = useMemo(() => [...demandas]
     .sort((a, b) => (a.status === 'aberta' ? -1 : 0) - (b.status === 'aberta' ? -1 : 0) || (a.data_inicio ?? '9999').localeCompare(b.data_inicio ?? '9999'))
@@ -481,6 +500,16 @@ export default function InicioOperadoraPremiumERN({
       }
     }
 
+    // 5c. Barcos e guias (EDA_RECURSOS_AGENDA_V1)
+    if (conflitos.length || lotacao.length) {
+      linha();
+      add('Logística: ');
+      if (conflitos.length) add(plural(conflitos.length, 'conflito de barco ou guia', 'conflitos de barco ou guia'), true);
+      if (conflitos.length && lotacao.length) add(' e ');
+      if (lotacao.length) add(`${lotacao[0].nome} acima da lotação`, true);
+      add(' nos próximos 7 dias. Vale ajustar antes de confirmar com os clientes.');
+    }
+
     // 6. Fecho
     const fechos = hora < 12
       ? ['Bora começar?', 'Vamos juntos neste dia.', 'Estou aqui com você desde cedo.']
@@ -489,7 +518,7 @@ export default function InicioOperadoraPremiumERN({
         : ['Amanhã eu te lembro do que vier.', 'Bom descanso quando der.', 'Deixo tudo organizado para amanhã.'];
     add(' ' + fechos[diaMes % fechos.length]);
     return t;
-  }, [pronto, resumo, fin, hoje, demandas, pendencias, uso, financeiroLiberado, saude]);
+  }, [pronto, resumo, fin, hoje, demandas, pendencias, uso, financeiroLiberado, saude, conflitos, lotacao]);
 
   const proxima = resumo.hoje.find(r => r.horario) ?? resumo.semana[0];
 

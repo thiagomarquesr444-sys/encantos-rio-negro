@@ -530,7 +530,6 @@ export default function NovoGuiaPage() {
                   className={inputClass}
                 >
                   <option value="Ativo">Ativo</option>
-                  <option value="Em Tour">Em Tour</option>
                   <option value="Férias">Férias</option>
                   <option value="Inativo">Inativo</option>
                 </select>

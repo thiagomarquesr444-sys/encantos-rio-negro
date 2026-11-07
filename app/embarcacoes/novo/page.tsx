@@ -600,10 +600,6 @@ export default function NovaEmbarcacaoPage() {
                     Disponível
                   </option>
 
-                  <option value="Reservada">
-                    Reservada
-                  </option>
-
                   <option value="Manutenção">
                     Manutenção
                   </option>
