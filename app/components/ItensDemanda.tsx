@@ -61,6 +61,7 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
   // ERN_V42_CONFERENCIA: filtro local; gravacao permanece em Salvar lista.
   const [filtroConferencia, setFiltroConferencia] = useState<'todos' | 'nao_atendidos' | SituacaoItem>('nao_atendidos');
   const trava = useRef(false);
+  const [novaChave, setNovaChave] = useState('');
 
   useEffect(() => {
     if (!demandaId) {
@@ -347,6 +348,7 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
                       <span className="mb-2 block">Produto ou material</span>
                       <input
                         value={item.descricao}
+                        autoFocus={item.chave === novaChave}
                         maxLength={200}
                         disabled={desabilitado}
                         onChange={(event) => editar(item.chave, { descricao: event.target.value })}
@@ -439,31 +441,27 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
             </p>
           )}
 
-          <div className="mt-4 grid gap-3 sm:flex sm:flex-wrap">
+          {/* EDA_ADICIONAR_V1: só o "+"; o nome do material é digitado no item novo. */}
+          <div className="mt-4 flex justify-center">
             <button
               type="button"
+              aria-label="Adicionar material"
+              title="Adicionar material"
               disabled={desabilitado || itens.length >= 200}
               onClick={async () => {
                 if (trava.current) return;
+                const chaveNova = crypto.randomUUID();
+                setNovaChave(chaveNova);
                 setItens((atuais) => [
                   ...atuais,
-                  { ...novoItemDemanda(), chave: crypto.randomUUID() },
+                  { ...novoItemDemanda(), chave: chaveNova },
                 ]);
                 setAlterado(true);
                 setAviso('');
               }}
-              className="min-h-12 rounded-xl border border-[var(--ern-destaque)] px-4 text-sm font-semibold text-[var(--ern-destaque)] disabled:opacity-50"
+              className="grid h-12 w-12 place-items-center rounded-full border border-[var(--ern-destaque)] text-2xl font-semibold leading-none text-[var(--ern-destaque)] transition hover:bg-[var(--ern-destaque)]/10 disabled:opacity-50"
             >
-              + Adicionar material
-            </button>
-            <button
-              hidden={!demandaId}
-              type="button"
-              disabled={desabilitado || !alterado}
-              onClick={() => void salvar()}
-              className="min-h-12 rounded-xl bg-[var(--ern-botao)] px-5 text-sm font-semibold text-[var(--ern-sobre-botao)] disabled:opacity-50"
-            >
-              {salvando ? 'Salvando lista…' : 'Salvar lista'}
+              <span aria-hidden="true">+</span>
             </button>
           </div>
         </>
@@ -516,6 +514,19 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange }: Pr
         >
           Recarregar lista salva
         </button>
+      )}
+
+      {demandaId && versao !== null && (
+        <div className="mt-5 flex justify-end border-t border-[var(--ern-borda)] pt-4">
+          <button
+            type="button"
+            disabled={desabilitado || !alterado}
+            onClick={() => void salvar()}
+            className="min-h-12 w-full rounded-xl bg-[var(--ern-botao)] px-6 text-sm font-semibold text-[var(--ern-sobre-botao)] disabled:opacity-50 sm:w-auto"
+          >
+            {salvando ? 'Salvando lista…' : 'Salvar lista'}
+          </button>
+        </div>
       )}
 
       {aviso && <p role="status" className="mt-3 text-sm text-[var(--ern-sucesso)]">{aviso}</p>}
