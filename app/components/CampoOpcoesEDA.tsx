@@ -115,7 +115,7 @@ export function CampoDuracaoEDA({ valor, onChange, className, disabled }: {
   const atualizar = (n: string, u: 'horas' | 'dias') => { setNumero(n); setUnidade(u); onChange(montarDuracao(n, u)); };
   return (
     <div style={{ display: 'grid', gridTemplateColumns: 'minmax(80px, 1fr) minmax(110px, 1fr)', gap: 8 }}>
-      <input className={className} type="number" min={0.5} max={unidade === 'horas' ? 24 : 60} step={unidade === 'horas' ? 0.5 : 1}
+      <input className={className} type="number" min={unidade === 'horas' ? 0.5 : 1} max={unidade === 'horas' ? 24 : 60} step={unidade === 'horas' ? 0.5 : 1}
         inputMode="decimal" value={numero} disabled={disabled} placeholder="Ex.: 3" aria-label="Duração"
         onChange={(e) => atualizar(e.target.value, unidade)} />
       <select className={className} value={unidade} disabled={disabled} aria-label="Unidade da duração"
