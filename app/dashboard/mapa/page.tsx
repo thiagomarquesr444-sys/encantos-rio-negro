@@ -5,6 +5,34 @@ import type { Map as Mapa, LayerGroup, Marker, Circle } from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { LOCALIDADES_RIO_NEGRO } from '@/app/components/territorioRioNegroERN';
 import { useModulosEquipeERN } from '@/app/components/ModulosEquipeERN';
+import { supabase } from '@/lib/supabase';
+
+// EDA_MAPA_OPERACAO_V1: cadastros da operadora + movimento dos próximos dias.
+type PontoOperacao = {
+  tipo: 'passeio' | 'hospedagem' | 'parceiro' | 'demanda';
+  id: string; nome: string; local: string | null; cidade: string | null;
+  lat: number | null; lng: number | null; href: string;
+  saidas?: number; pessoas?: number; proxima?: string | null; hospedes?: number;
+  categoria?: string | null; inicio?: string | null; status?: string | null;
+};
+type PontoPosicionado = PontoOperacao & { coordenadas: [number, number]; aproximado: boolean };
+const TIPOS_OPERACAO = {
+  passeio: { rotulo: 'Passeios', cor: '#e3a144', letra: 'P' },
+  hospedagem: { rotulo: 'Hospedagens', cor: '#8fb8ff', letra: 'H' },
+  parceiro: { rotulo: 'Parceiros', cor: '#c59cff', letra: 'C' },
+  demanda: { rotulo: 'Demandas abertas', cor: '#f07c6c', letra: 'D' },
+} as const;
+const dataCurta = (d?: string | null) => (d ? d.slice(0, 10).split('-').reverse().slice(0, 2).join('/') : '');
+
+function detalheOperacao(p: PontoOperacao): string {
+  if (p.tipo === 'passeio') {
+    const n = Number(p.saidas) || 0;
+    return n ? `${n} saída(s) · ${Number(p.pessoas) || 0} pessoa(s)` : p.proxima ? `Próxima saída ${dataCurta(p.proxima)}` : 'Sem saídas programadas';
+  }
+  if (p.tipo === 'hospedagem') return Number(p.hospedes) ? `${p.hospedes} hóspede(s) no período` : 'Sem hóspedes no período';
+  if (p.tipo === 'demanda') return [p.status, p.inicio && `início ${dataCurta(p.inicio)}`].filter(Boolean).join(' · ') || 'Demanda aberta';
+  return p.categoria || 'Parceiro';
+}
 
 const normalizar = (texto: string) =>
   texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
@@ -19,6 +47,24 @@ const locais = Array.from(new Map(
       p,
     ])
 ).values()).sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+// Sem coordenada própria: posiciona pela localidade/cidade do catálogo (aproximado).
+function resolverCoordenadas(p: PontoOperacao): { coordenadas: [number, number]; aproximado: boolean } | null {
+  if (Number.isFinite(p.lat) && Number.isFinite(p.lng) && p.lat !== null && p.lng !== null) {
+    return { coordenadas: [p.lat, p.lng], aproximado: false };
+  }
+  const limpar = (t: string | null) => normalizar(t ?? '').replace(/\s*-\s*am\b/g, '').replace(/[,/].*$/, '').trim();
+  for (const texto of [p.local, p.cidade]) {
+    const alvo = limpar(texto);
+    if (!alvo) continue;
+    const exato = locais.find(l => normalizar(l.nome) === alvo && l.categoria === 'Cidade')
+      ?? locais.find(l => normalizar(l.nome) === alvo);
+    if (exato) return { coordenadas: exato.coordenadas, aproximado: true };
+    const sede = locais.find(l => l.categoria === 'Cidade' && normalizar(l.municipio) === alvo);
+    if (sede) return { coordenadas: sede.coordenadas, aproximado: true };
+  }
+  return null;
+}
 
 type Posicao = {
   lat: number;
@@ -54,13 +100,20 @@ function MapaOperacional() {
   const chaveIconeGPS = useRef('');
   const alvo = useRef<LayerGroup | null>(null);
   const seguindo = useRef(false);
+  const opCamada = useRef<LayerGroup | null>(null);
+  const [operacao, setOperacao] = useState<PontoOperacao[] | null>(null);
+  const [erroOperacao, setErroOperacao] = useState('');
+  const [diasOperacao, setDiasOperacao] = useState(7);
+  const [tiposVisiveis, setTiposVisiveis] = useState<Record<PontoOperacao['tipo'], boolean>>({
+    passeio: true, hospedagem: true, parceiro: true, demanda: true,
+  });
 
   const [topo, setTopo] = useState(0);
   const [pronto, setPronto] = useState(false);
   const [erroMapa, setErroMapa] = useState('');
   const [tentativa, setTentativa] = useState(0);
   // ERN_MAPA_COMPOSICAO_V51_1
-  const [aba, setAba] = useState<'territorio' | 'localizacao'>('territorio');
+  const [aba, setAba] = useState<'territorio' | 'operacao' | 'localizacao'>('territorio');
   const [somenteSedes, setSomenteSedes] = useState(false);
   const [busca, setBusca] = useState('');
   const [municipio, setMunicipio] = useState('');
@@ -168,6 +221,7 @@ function MapaOperacional() {
 
         pontos.current = L.layerGroup().addTo(instancia);
         alvo.current = L.layerGroup().addTo(instancia);
+        opCamada.current = L.layerGroup().addTo(instancia);
 
         if (locais.length) instancia.fitBounds(
           L.latLngBounds(locais.map(p => p.coordenadas)),
@@ -195,10 +249,79 @@ function MapaOperacional() {
       mapa.current = null;
       pontos.current = null;
       alvo.current = null;
+      opCamada.current = null;
       marcadorGPS.current = null;
       areaGPS.current = null;
     };
   }, [tentativa]);
+
+  useEffect(() => {
+    let ativo = true;
+    supabase.rpc('mapa_operacao_eda', { p_dias: diasOperacao }).then(({ data, error }) => {
+      if (!ativo) return;
+      if (error) { setErroOperacao('Não foi possível carregar sua operação no mapa.'); return; }
+      setErroOperacao('');
+      setOperacao(((data as { pontos?: PontoOperacao[] } | null)?.pontos ?? []));
+    });
+    return () => { ativo = false; };
+  }, [diasOperacao]);
+
+  const operacaoPosicionada = useMemo(() => {
+    const lista: PontoPosicionado[] = [];
+    const semLocal: PontoOperacao[] = [];
+    for (const p of operacao ?? []) {
+      const r = resolverCoordenadas(p);
+      if (r) lista.push({ ...p, ...r }); else semLocal.push(p);
+    }
+    return { lista, semLocal };
+  }, [operacao]);
+
+  useEffect(() => {
+    const L = biblioteca.current;
+    const camada = opCamada.current;
+    const m = mapa.current;
+    if (!pronto || !L || !camada || !m) return;
+    camada.clearLayers();
+    // Pontos no mesmo lugar (ex.: vários na sede) abrem em leque para não sobrepor.
+    const ocupados = new Map<string, number>();
+    for (const p of operacaoPosicionada.lista) {
+      if (!tiposVisiveis[p.tipo]) continue;
+      const chave = p.coordenadas.map(n => n.toFixed(4)).join(',');
+      const i = ocupados.get(chave) ?? 0;
+      ocupados.set(chave, i + 1);
+      const ang = i * 2.399;
+      const raio = i ? 0.0018 * Math.sqrt(i) : 0;
+      const pos: [number, number] = [p.coordenadas[0] + raio * Math.sin(ang), p.coordenadas[1] + raio * Math.cos(ang)];
+      const t = TIPOS_OPERACAO[p.tipo];
+      const icone = document.createElement('span');
+      icone.className = 'eda-op-pino';
+      icone.style.setProperty('--cor', t.cor);
+      icone.textContent = t.letra;
+      const conteudo = document.createElement('div');
+      conteudo.className = 'ern-popup-destino-conteudo';
+      const titulo = document.createElement('strong');
+      titulo.textContent = p.nome;
+      const tipo = document.createElement('p');
+      tipo.textContent = `${t.rotulo.replace(/s$/, '').replace(/ abertas$/, ' aberta')} · ${detalheOperacao(p)}`;
+      const local = document.createElement('p');
+      local.textContent = `${p.local ?? p.cidade ?? ''}${p.aproximado ? ' (posição aproximada)' : ''}`;
+      const link = document.createElement('a');
+      link.href = p.href;
+      link.textContent = 'Abrir cadastro';
+      conteudo.append(titulo, tipo, local, link);
+      L.marker(pos, {
+        icon: L.divIcon({ className: 'eda-op-marcador', html: icone, iconSize: [26, 26], iconAnchor: [13, 13] }),
+        title: p.nome, zIndexOffset: 500,
+      }).bindPopup(conteudo, { className: 'ern-popup-destino', maxWidth: 260 }).addTo(camada);
+    }
+    return () => { camada.clearLayers(); };
+  }, [operacaoPosicionada, tiposVisiveis, pronto]);
+
+  function focarOperacao(p: PontoPosicionado) {
+    setSeguir(false);
+    seguindo.current = false;
+    mapa.current?.setView(p.coordenadas, Math.max(13, mapa.current.getZoom()), { animate: false });
+  }
 
   useEffect(() => {
     const L = biblioteca.current;
@@ -545,6 +668,7 @@ function MapaOperacional() {
           <p>Referências para planejar sua operação.</p></div>
         <div className="ern-mapa-abas" role="group" aria-label="Conteúdo do painel">
           <button aria-pressed={aba === 'territorio'} onClick={() => setAba('territorio')}>Território</button>
+          <button aria-pressed={aba === 'operacao'} onClick={() => setAba('operacao')}>Operação</button>
           <button aria-pressed={aba === 'localizacao'} onClick={() => setAba('localizacao')}>Localização {gps && '●'}</button>
         </div>
         <div ref={painelConteudo} className="ern-painel-conteudo">
@@ -611,6 +735,42 @@ function MapaOperacional() {
 
 
 
+        </div>
+        <div hidden={aba !== 'operacao'} className="eda-op-painel">
+          <label htmlFor="eda-op-dias">Movimento dos próximos</label>
+          <select id="eda-op-dias" value={diasOperacao} onChange={e => setDiasOperacao(Number(e.target.value))}>
+            <option value={1}>Hoje</option>
+            <option value={7}>7 dias</option>
+            <option value={15}>15 dias</option>
+            <option value={30}>30 dias</option>
+          </select>
+          <div className="eda-op-tipos" role="group" aria-label="Camadas da operação">
+            {(Object.keys(TIPOS_OPERACAO) as PontoOperacao['tipo'][]).map(k => (
+              <button key={k} aria-pressed={tiposVisiveis[k]} style={{ ['--cor' as string]: TIPOS_OPERACAO[k].cor }}
+                onClick={() => setTiposVisiveis(v => ({ ...v, [k]: !v[k] }))}>
+                <i aria-hidden="true" />{TIPOS_OPERACAO[k].rotulo} {(operacao ?? []).filter(p => p.tipo === k).length}
+              </button>
+            ))}
+          </div>
+          {erroOperacao && <p role="alert" className="eda-op-aviso">{erroOperacao}</p>}
+          {operacao === null && !erroOperacao && <p role="status">Carregando sua operação…</p>}
+          {operacao && operacao.length === 0 && <p>Nenhum passeio, hospedagem, parceiro ou demanda aberta cadastrados.</p>}
+          <ul className="ern-resultados-destino" aria-label="Pontos da operação">
+            {operacaoPosicionada.lista.filter(p => tiposVisiveis[p.tipo]).map(p => (
+              <li key={`${p.tipo}-${p.id}`}>
+                <button onClick={() => focarOperacao(p)}>
+                  <span className="ern-local-indicador" aria-hidden="true" style={{ color: TIPOS_OPERACAO[p.tipo].cor }}>{TIPOS_OPERACAO[p.tipo].letra}</span>
+                  <span><strong>{p.nome}</strong><small>{detalheOperacao(p)}{p.aproximado ? ' · posição aproximada' : ''}</small></span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          {operacaoPosicionada.semLocal.length > 0 && (
+            <p className="eda-op-aviso">
+              {operacaoPosicionada.semLocal.length} cadastro(s) sem localização reconhecida: {operacaoPosicionada.semLocal.slice(0, 4).map(p => p.nome).join(', ')}.
+              {' '}Preencha o endereço com o mapa no cadastro.
+            </p>
+          )}
         </div>
         <div hidden={aba !== 'localizacao'}>
         <div className="ern-gps-apresentacao"><span aria-hidden="true">⌖</span>
@@ -839,6 +999,14 @@ function MapaOperacional() {
         @media (prefers-reduced-motion:reduce){.ern-mapa-operacional *{transition:none!important}}
         /* EDA_BORDO_VIVO_V2 — marcador "Estou a bordo" com identidade EDA */
         .ern-bordo{position:relative;width:64px;height:64px;display:grid;place-items:center}
+        .eda-op-marcador{background:none;border:0}
+        .eda-op-pino{display:grid;place-items:center;width:26px;height:26px;border-radius:8px;background:var(--cor);color:#07110e;font:800 12px system-ui,sans-serif;border:2px solid #07110e;box-shadow:0 0 0 2px var(--cor),0 4px 12px #0008}
+        .eda-op-painel{display:grid;gap:10px}
+        .eda-op-tipos{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+        .eda-op-tipos button{display:flex;align-items:center;gap:6px;padding:8px;border-radius:10px;border:1px solid #ffffff1f;background:transparent;color:inherit;font-size:11px;text-align:left}
+        .eda-op-tipos button[aria-pressed="false"]{opacity:.45}
+        .eda-op-tipos i{width:10px;height:10px;border-radius:3px;background:var(--cor);flex:none}
+        .eda-op-aviso{font-size:11px;color:#f4c77e}
         .ern-bordo-nucleo{position:relative;z-index:2;display:grid;place-items:center;width:42px;height:42px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#1b3a2f,#07110e 70%);border:2.5px solid #f4c77e;box-shadow:0 0 0 3px #07110e,0 4px 16px #0009,inset 0 1px 0 #ffffff25;animation:eda-bordo-respira 2.4s ease-in-out infinite}
         .ern-bordo-onda{position:absolute;inset:11px;border-radius:50%;border:2px solid #f4c77e;opacity:0;animation:eda-bordo-onda 2.4s cubic-bezier(.2,.6,.3,1) infinite}
         .ern-bordo-onda-2{animation-delay:.8s;border-color:#7fd3b4}
