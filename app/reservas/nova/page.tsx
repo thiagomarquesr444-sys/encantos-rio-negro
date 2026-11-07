@@ -180,6 +180,36 @@ export default function NovaReservaPage() {
   const router = useRouter();
 
   const [form, setForm] = useState<FormReserva>(ESTADO_INICIAL);
+
+  // EDA_RESERVA_COESA_V1: preço do passeio sugere o valor (por pessoa x quantidade, ou por grupo).
+  const [precoPasseio, setPrecoPasseio] = useState<{ preco: number; modalidade: string } | null>(null);
+  const ultimaSugestao = useRef('');
+  useEffect(() => {
+    let ativo = true;
+    setPrecoPasseio(null);
+    if (!form.passeio_id) return;
+    supabase.from('passeios').select('preco,valor,preco_modalidade').eq('id', form.passeio_id).maybeSingle()
+      .then(({ data }) => {
+        if (!ativo || !data) return;
+        const preco = Number(data.valor ?? data.preco) || 0;
+        if (preco > 0 && data.preco_modalidade !== 'sob_consulta') setPrecoPasseio({ preco, modalidade: data.preco_modalidade ?? 'por_pessoa' });
+      });
+    return () => { ativo = false; };
+  }, [form.passeio_id]);
+  const pessoasNum = Math.max(1, Number(form.quantidade_pessoas) || 1);
+  const valorSugerido = precoPasseio
+    ? precoPasseio.modalidade === 'por_grupo'
+      ? { total: precoPasseio.preco, regra: 'preço por grupo' }
+      : { total: precoPasseio.preco * pessoasNum, regra: `${pessoasNum} × ${formatarValorCampo(precoPasseio.preco)}` }
+    : null;
+  useEffect(() => {
+    if (!valorSugerido) return;
+    const novo = formatarValorCampo(valorSugerido.total);
+    // Só preenche se o campo está vazio ou ainda com a sugestão anterior (não sobrescreve valor negociado).
+    setForm((atual) => (!atual.valor || atual.valor === ultimaSugestao.current) ? { ...atual, valor: novo } : atual);
+    ultimaSugestao.current = novo;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [valorSugerido?.total]);
   const [salvando, setSalvando] = useState(false);
   const [gravada, setGravada] = useState(false);
   const [carregandoUso, setCarregandoUso] = useState(true);
@@ -700,6 +730,7 @@ export default function NovaReservaPage() {
                 </div>
 
                 <SeletorSaidaEDA
+                  autoSelecionar
                   passeioId={form.passeio_id}
                   saidaId={form.saida_id}
                   pessoas={Number(form.quantidade_pessoas) || 1}
@@ -718,7 +749,8 @@ export default function NovaReservaPage() {
                   }}
                 />
 
-                <div>
+                {/* EDA_RESERVA_COESA_V1: escolhido no cadastro, não se digita de novo. */}
+                {!form.cliente_id && <div>
                   <label htmlFor="nova-cliente" className={labelClass}>
                     Cliente *
                   </label>
@@ -730,15 +762,12 @@ export default function NovaReservaPage() {
                     placeholder="Nome do cliente"
                     className={inputClass}
                   />
-                  {form.cliente_id && (
-                    <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">
-                      Cliente vinculado ao cadastro. Alterar o nome manualmente
-                      remove esse vínculo.
-                    </p>
-                  )}
-                </div>
+                  <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">
+                    Cliente sem cadastro. Para histórico e fichas, escolha um cliente cadastrado acima.
+                  </p>
+                </div>}
 
-                <div>
+                {!form.passeio_id && <div>
                   <label htmlFor="nova-pacote" className={labelClass}>
                     Pacote / Passeio *
                   </label>
@@ -750,13 +779,10 @@ export default function NovaReservaPage() {
                     placeholder="Experiência ou pacote contratado"
                     className={inputClass}
                   />
-                  {form.passeio_id && (
-                    <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">
-                      Passeio vinculado ao cadastro. Alterar o nome manualmente
-                      remove esse vínculo.
-                    </p>
-                  )}
-                </div>
+                  <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">
+                    Pacote sem cadastro (sem agenda de saídas nem controle de vagas).
+                  </p>
+                </div>}
 
                 <div className="grid min-w-0 gap-5 sm:grid-cols-2">
                   <div className="min-w-0">
@@ -768,9 +794,11 @@ export default function NovaReservaPage() {
                       type="date"
                       required
                       value={form.data_reserva}
+                      readOnly={!!form.saida_id}
                       onChange={(event) => alterarCampo('data_reserva', event.target.value)}
-                      className={`${inputClass} [color-scheme:dark]`}
+                      className={`${inputClass} [color-scheme:dark] ${form.saida_id ? 'opacity-70' : ''}`}
                     />
+                    {form.saida_id && <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">Definida pela saída escolhida.</p>}
                   </div>
 
                   <div className="min-w-0">
@@ -807,8 +835,9 @@ export default function NovaReservaPage() {
                       className={inputClass}
                     />
                     <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">
-                      Total da reserva, sem multiplicação automática pela
-                      quantidade de pessoas. Não confirma recebimento.
+                      {valorSugerido
+                        ? `Sugerido pelo preço do passeio (${valorSugerido.regra}). Pode ajustar; não confirma recebimento.`
+                        : 'Total da reserva. Não confirma recebimento.'}
                     </p>
                   </div>
                 </div>
@@ -828,7 +857,7 @@ export default function NovaReservaPage() {
                     fim={form.data_fim_prevista}
                     horarioFim={form.horario_fim_previsto}
                     status={form.status}
-                    bloqueado={bloqueado}
+                    bloqueado={bloqueado || !!form.saida_id}
                     onChange={(campos) => {
                       if (envioReserva.current) return;
                       setForm((atual) => ({ ...atual, ...campos }));
@@ -836,6 +865,7 @@ export default function NovaReservaPage() {
                   />
                   <LogisticaReserva
                     horario={form.horario}
+                    horarioDaSaida={!!form.saida_id}
                     embarcacaoId={form.embarcacao_id}
                     bloqueado={bloqueado}
                     onChange={(campos) => {

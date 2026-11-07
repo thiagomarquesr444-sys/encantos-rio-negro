@@ -677,7 +677,8 @@ function EditarReservaConteudo({ id }: { id?: string }) {
                   <div className="eda-pg-form-2">
                     <div>
                       <label htmlFor="reserva-data" className={labelClass}>Data do passeio *</label>
-                      <input id="reserva-data" type="date" required value={form.dataReserva} onChange={(event) => alterarCampo('dataReserva', event.target.value)} className={inputClass} />
+                      <input id="reserva-data" type="date" required value={form.dataReserva} readOnly={!!form.saida_id} onChange={(event) => alterarCampo('dataReserva', event.target.value)} className={`${inputClass} ${form.saida_id ? 'opacity-70' : ''}`} />
+                      {form.saida_id && <p className="mt-2 text-xs leading-6 text-[#B4C8BB]">Definida pela saída escolhida.</p>}
                     </div>
                     <div>
                       <label htmlFor="reserva-pessoas" className={labelClass}>Quantidade de pessoas *</label>
@@ -706,7 +707,7 @@ function EditarReservaConteudo({ id }: { id?: string }) {
                       fim={form.data_fim_prevista}
                       horarioFim={form.horario_fim_previsto}
                       status={form.status}
-                      bloqueado={bloqueado}
+                      bloqueado={bloqueado || !!form.saida_id}
                       onChange={(campos) => {
                         if (envioReserva.current) return;
                         setForm((atual) => ({ ...atual, ...campos }));
@@ -714,6 +715,7 @@ function EditarReservaConteudo({ id }: { id?: string }) {
                     />
                     <LogisticaReserva
                       horario={form.horario}
+                      horarioDaSaida={!!form.saida_id}
                       embarcacaoId={form.embarcacao_id}
                       bloqueado={bloqueado}
                       onChange={(campos) => {
