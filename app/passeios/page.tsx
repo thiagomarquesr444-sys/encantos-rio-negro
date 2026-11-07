@@ -1489,11 +1489,13 @@ export default function PasseiosPage() {
             </div>
 
             {passeioSelecionado.id && (
-              <SaidasPasseioEDA
-                passeioId={passeioSelecionado.id}
-                vagasPadrao={Number(passeioSelecionado.vagas) || null}
-              />
-              <PoliticaPrecoPasseioEDA passeioId={passeioSelecionado.id} />
+              <>
+                <SaidasPasseioEDA
+                  passeioId={passeioSelecionado.id}
+                  vagasPadrao={Number(passeioSelecionado.vagas) || null}
+                />
+                <PoliticaPrecoPasseioEDA passeioId={passeioSelecionado.id} />
+              </>
             )}
 
 {feedback?.tipo === 'erro' && (
