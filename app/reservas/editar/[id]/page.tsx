@@ -6,6 +6,8 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import VinculosReserva from '@/app/components/VinculosReserva';
+import SeletorSaidaEDA from '@/app/components/SeletorSaidaEDA';
+import { mensagemSaidaEDA } from '@/lib/saidasGestaoEDA';
 import LogisticaReserva from '@/app/components/LogisticaReserva';
 import PeriodoReservaERN, { validarPeriodoReservaERN } from '@/app/components/PeriodoReservaERN';
 import { CabecalhoEDA, PaginaEDA, PillEDA, type TomEDA } from '@/app/components/PadraoPaginaEDA';
@@ -20,6 +22,7 @@ import {
 interface ReservaForm {
   cliente_id: string;
   passeio_id: string;
+  saida_id: string;
   horario: string;
   data_fim_prevista: string;
   horario_fim_previsto: string;
@@ -41,6 +44,7 @@ interface ReservaBanco {
   quantidade_pessoas?: number | null;
   cliente_id?: string | null;
   passeio_id?: string | null;
+  saida_id?: string | null;
   horario?: string | null;
   data_fim_prevista?: string | null;
   horario_fim_previsto?: string | null;
@@ -83,6 +87,7 @@ const TOM_STATUS: Record<StatusReserva, TomEDA> = {
 const formInicial: ReservaForm = {
   cliente_id: '',
   passeio_id: '',
+  saida_id: '',
   horario: '',
   data_fim_prevista: '',
   horario_fim_previsto: '',
@@ -303,6 +308,7 @@ function EditarReservaConteudo({ id }: { id?: string }) {
         setForm({
           cliente_id: reserva.cliente_id ?? '',
           passeio_id: reserva.passeio_id ?? '',
+          saida_id: reserva.saida_id ?? '',
           horario: reserva.horario?.slice(0, 5) ?? '',
           data_fim_prevista: reserva.data_fim_prevista ?? '',
           horario_fim_previsto: reserva.horario_fim_previsto?.slice(0, 5) ?? '',
@@ -352,7 +358,8 @@ function EditarReservaConteudo({ id }: { id?: string }) {
       ...atual,
       [campo]: valor,
       ...(campo === 'cliente' ? { cliente_id: '' } : {}),
-      ...(campo === 'pacote' ? { passeio_id: '' } : {}),
+      ...(campo === 'pacote' ? { passeio_id: '', saida_id: '' } : {}),
+      ...(campo === 'dataReserva' || campo === 'horario' ? { saida_id: '' } : {}),
     }));
   }
 
@@ -472,6 +479,7 @@ function EditarReservaConteudo({ id }: { id?: string }) {
         quantidade_pessoas: Number(form.quantidade_pessoas),
         cliente_id: form.cliente_id || null,
         passeio_id: form.passeio_id || null,
+        saida_id: (form.passeio_id && form.saida_id) || null,
         horario: form.horario.trim() || null,
         data_fim_prevista: form.data_fim_prevista || null,
         horario_fim_previsto: form.horario_fim_previsto || null,
@@ -518,7 +526,7 @@ function EditarReservaConteudo({ id }: { id?: string }) {
 
       setFeedback({
         tipo: 'erro',
-        mensagem: mensagemDoErro(
+        mensagem: mensagemSaidaEDA(mensagemDoErro(erro, '')) ?? mensagemDoErro(
           erro,
           'Não foi possível atualizar a reserva.'
         ),
@@ -620,9 +628,33 @@ function EditarReservaConteudo({ id }: { id?: string }) {
                     bloqueado={bloqueado}
                     onChange={(campos) => {
                       if (envioReserva.current) return;
-                      setForm((atual) => ({ ...atual, ...campos }));
+                      setForm((atual) => ({
+                        ...atual,
+                        ...campos,
+                        ...('passeio_id' in campos && campos.passeio_id !== atual.passeio_id ? { saida_id: '' } : {}),
+                      }));
                     }}
                   />
+
+                <SeletorSaidaEDA
+                  passeioId={form.passeio_id}
+                  saidaId={form.saida_id}
+                  pessoas={Number(form.quantidade_pessoas) || 1}
+                  reservaId={id}
+                  bloqueado={bloqueado}
+                  onEscolher={(saida) => {
+                    if (envioReserva.current) return;
+                    setForm((atual) => saida
+                      ? {
+                          ...atual,
+                          saida_id: saida.id,
+                          dataReserva: saida.data_inicio,
+                          horario: saida.horario?.slice(0, 5) ?? atual.horario,
+                          data_fim_prevista: saida.data_fim ?? atual.data_fim_prevista,
+                        }
+                      : { ...atual, saida_id: '' });
+                  }}
+                />
 
                   <div>
                     <label htmlFor="reserva-cliente" className={labelClass}>Cliente *</label>

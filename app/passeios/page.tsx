@@ -15,6 +15,7 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import GraficoPasseios from '@/app/components/GraficoPasseios';
 import { CabecalhoEDA } from '@/app/components/PadraoPaginaEDA';
+import SaidasPasseioEDA from '@/app/components/SaidasPasseioEDA';
 
 type Passeio = {
   id?: string;
@@ -1483,7 +1484,13 @@ export default function PasseiosPage() {
               </button>
             </div>
 
-            
+            {passeioSelecionado.id && (
+              <SaidasPasseioEDA
+                passeioId={passeioSelecionado.id}
+                vagasPadrao={Number(passeioSelecionado.vagas) || null}
+              />
+            )}
+
 {feedback?.tipo === 'erro' && (
   <div
     role="alert"

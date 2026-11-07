@@ -5,10 +5,14 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
+  dataCurtaEDA,
   listarPasseiosPublicosEDA,
+  listarSaidasPasseioEDA,
   precoPasseioEDA,
+  rotuloModalidadeEDA,
   whatsappPasseioEDA,
   type PasseioPublicoEDA,
+  type SaidaPublicaEDA,
 } from '@/lib/passeiosPublicosEDA';
 
 type Props = {
@@ -20,6 +24,70 @@ type Props = {
   ocultarOperadora?: boolean;
   onVerTodos?: () => void;
 };
+
+// EDA_PASSEIOS_PREMIUM_V2: agenda real + pedido estruturado para a operadora.
+function Agenda({ passeio }: { passeio: PasseioPublicoEDA }) {
+  const [saidas, setSaidas] = useState<SaidaPublicaEDA[] | null>(null);
+  const [erro, setErro] = useState(false);
+  const [escolhida, setEscolhida] = useState<string>('');
+  const [pessoas, setPessoas] = useState(Math.max(passeio.capacidade_minima || 1, 1));
+
+  useEffect(() => {
+    let ativo = true;
+    setSaidas(null); setErro(false); setEscolhida('');
+    listarSaidasPasseioEDA(passeio.id)
+      .then((lista) => { if (ativo) setSaidas(lista); })
+      .catch(() => { if (ativo) setErro(true); });
+    return () => { ativo = false; };
+  }, [passeio.id]);
+
+  const saida = saidas?.find((s) => s.saida_id === escolhida) ?? null;
+  const maximo = saida ? saida.vagas_restantes : 50;
+  const qtd = Math.min(Math.max(pessoas, 1), Math.max(maximo, 1));
+  const zap = whatsappPasseioEDA(passeio, saida, qtd);
+  const lotadas = saidas?.length ? saidas.every((s) => s.vagas_restantes <= 0) : false;
+
+  return (
+    <div className="vp-agenda">
+      <p className="vp-agenda-tit">Próximas saídas</p>
+      {erro && <span className="vp-nota">Não foi possível carregar a agenda agora.</span>}
+      {!saidas && !erro && <span className="vp-nota">Consultando agenda…</span>}
+      {saidas && saidas.length === 0 && (
+        <span className="vp-nota">A operadora informa as datas sob consulta. Envie seu pedido e ela responde com as opções.</span>
+      )}
+      {saidas && saidas.length > 0 && (
+        <div className="vp-saidas" role="radiogroup" aria-label="Escolha a data">
+          {saidas.map((s) => {
+            const esgotada = s.vagas_restantes <= 0;
+            return (
+              <button key={s.saida_id} type="button" role="radio" aria-checked={escolhida === s.saida_id}
+                disabled={esgotada} onClick={() => setEscolhida(escolhida === s.saida_id ? '' : s.saida_id)}>
+                <strong>{dataCurtaEDA(s.data_inicio)}{s.data_fim && s.data_fim !== s.data_inicio ? ` – ${dataCurtaEDA(s.data_fim)}` : ''}</strong>
+                <small>{esgotada ? 'Esgotada' : `${s.vagas_restantes} vaga${s.vagas_restantes === 1 ? '' : 's'}`}{s.horario ? ` · ${s.horario.slice(0, 5)}` : ''}</small>
+              </button>
+            );
+          })}
+        </div>
+      )}
+      {!lotadas && (
+        <label className="vp-pessoas">
+          Pessoas
+          <input type="number" min={1} max={maximo} value={qtd}
+            onChange={(e) => setPessoas(Number(e.target.value) || 1)} />
+        </label>
+      )}
+      <div className="vp-acoes">
+        {zap && !lotadas && (
+          <a className="vp-zap" href={zap} target="_blank" rel="noopener noreferrer">
+            {saida ? 'Solicitar esta data no WhatsApp' : 'Consultar datas no WhatsApp'}
+          </a>
+        )}
+        {lotadas && <span className="vp-nota">Todas as saídas abertas estão esgotadas.</span>}
+        <Link className="vp-perfil" href={`/rede/perfil/${passeio.operadora_slug}`}>Ver {passeio.operadora_nome}</Link>
+      </div>
+    </div>
+  );
+}
 
 type Estado =
   | { tipo: 'carregando' }
@@ -158,8 +226,12 @@ export default function VitrinePasseiosEDA({
                   <h3>{p.nome}</h3>
                   {!compacta && p.descricao && <p>{p.descricao}</p>}
                   <div className="vp-rodape">
-                    <span>{preco ? <><small>a partir de</small><strong>{preco}</strong></> : <strong>Consultar valor</strong>}</span>
-                    {p.situacao === 'Em Breve' && <em>Em breve</em>}
+                    <span>{preco ? <><small>a partir de</small><strong>{preco}</strong> <small>{rotuloModalidadeEDA(p.preco_modalidade)}</small></> : <strong>Consultar valor</strong>}</span>
+                    {p.situacao === 'Em Breve'
+                      ? <em>Em breve</em>
+                      : p.proxima_saida
+                        ? <em title="Próxima saída com vagas">{dataCurtaEDA(p.proxima_saida)} · {p.proxima_saida_vagas} vaga{p.proxima_saida_vagas === 1 ? '' : 's'}</em>
+                        : null}
                   </div>
                   {!ocultarOperadora && (
                     <Link className="vp-oper" href={`/rede/perfil/${p.operadora_slug}`}>
@@ -179,7 +251,6 @@ export default function VitrinePasseiosEDA({
 
       <dialog ref={dialogo} className="vp-dialogo" onClose={() => setAberto(null)} onClick={(e) => { if (e.target === dialogo.current) setAberto(null); }}>
         {aberto && (() => {
-          const zap = whatsappPasseioEDA(aberto);
           const preco = precoPasseioEDA(aberto.preco);
           return (
             <div className="vp-detalhe">
@@ -190,14 +261,21 @@ export default function VitrinePasseiosEDA({
                 <h3>{aberto.nome}</h3>
                 {aberto.descricao && <p>{aberto.descricao}</p>}
                 <dl>
-                  <div><dt>Valor</dt><dd>{preco ?? 'Consultar'}</dd></div>
-                  {!!aberto.vagas && <div><dt>Vagas</dt><dd>até {aberto.vagas} pessoas</dd></div>}
+                  <div><dt>Valor</dt><dd>{preco ? `${preco} ${rotuloModalidadeEDA(aberto.preco_modalidade)}` : 'Consultar'}</dd></div>
                   {aberto.duracao && <div><dt>Duração</dt><dd>{aberto.duracao}</dd></div>}
+                  {aberto.capacidade_minima > 1 && <div><dt>Mínimo</dt><dd>{aberto.capacidade_minima} pessoas</dd></div>}
+                  {aberto.idiomas?.length > 0 && <div><dt>Idiomas</dt><dd>{aberto.idiomas.map((i) => i.toUpperCase()).join(' · ')}</dd></div>}
+                  {aberto.ponto_embarque && <div><dt>Embarque</dt><dd>{aberto.ponto_embarque}</dd></div>}
                 </dl>
-                <div className="vp-acoes">
-                  {zap && <a className="vp-zap" href={zap} target="_blank" rel="noopener noreferrer">Reservar pelo WhatsApp</a>}
-                  <Link className="vp-perfil" href={`/rede/perfil/${aberto.operadora_slug}`}>Ver {aberto.operadora_nome}</Link>
-                </div>
+                {(aberto.inclui?.length > 0 || aberto.nao_inclui?.length > 0) && (
+                  <div className="vp-inclui">
+                    {aberto.inclui?.length > 0 && <ul aria-label="Inclui">{aberto.inclui.map((i) => <li key={i}>✓ {i}</li>)}</ul>}
+                    {aberto.nao_inclui?.length > 0 && <ul aria-label="Não inclui" data-nao>{aberto.nao_inclui.map((i) => <li key={i}>× {i}</li>)}</ul>}
+                  </div>
+                )}
+                {aberto.situacao === 'Em Breve'
+                  ? <span className="vp-nota">Passeio em preparação — em breve com datas abertas.</span>
+                  : <Agenda passeio={aberto} />}
                 <span className="vp-nota">A reserva e o pagamento são combinados diretamente com a operadora.</span>
               </div>
             </div>
@@ -274,6 +352,18 @@ export default function VitrinePasseiosEDA({
         .vp-zap, .vp-perfil { display: inline-flex; align-items: center; min-height: 46px; padding: 0 20px; border-radius: 999px; font-size: 14px; font-weight: 700; }
         .vp-zap { background: #1f9d55; color: #fff; } .vp-perfil { border: 1px solid var(--vp-borda); color: var(--vp-texto); }
         .vp-nota { display: block; margin-top: 12px; font-size: 12px; color: var(--vp-sec); }
+        .vp-agenda { margin-top: 4px; }
+        .vp-agenda-tit { margin: 0 0 8px; font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--vp-sec); }
+        .vp-saidas { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: none; }
+        .vp-saidas button { flex: none; display: grid; gap: 2px; min-width: 104px; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--vp-borda); background: transparent; color: var(--vp-texto); text-align: left; cursor: pointer; }
+        .vp-saidas button strong { font-size: 14px; } .vp-saidas button small { font-size: 11px; color: var(--vp-sec); }
+        .vp-saidas button[aria-checked='true'] { border-color: var(--vp-ouro); background: rgb(227 161 68 / 12%); }
+        .vp-saidas button:disabled { opacity: .45; cursor: not-allowed; }
+        .vp-pessoas { display: inline-flex; align-items: center; gap: 10px; margin: 12px 0; font-size: 13px; color: var(--vp-sec); }
+        .vp-pessoas input { width: 72px; min-height: 40px; padding: 0 10px; border-radius: 12px; border: 1px solid var(--vp-borda); background: transparent; color: var(--vp-texto); font-size: 15px; }
+        .vp-inclui { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin: 0 0 18px; }
+        .vp-inclui ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 14px; color: var(--vp-texto); }
+        .vp-inclui ul[data-nao] { color: var(--vp-sec); }
         @media (prefers-reduced-motion: reduce) { .vp-card, .vp-esqueleto { transition: none; animation: none; } }
       `}</style>
     </section>
