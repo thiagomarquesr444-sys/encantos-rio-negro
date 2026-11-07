@@ -11,6 +11,7 @@ import ParticipantesReservaEDA from '@/app/components/ParticipantesReservaEDA';
 import HospedagemReservaEDA from '@/app/components/HospedagemReservaEDA';
 import { AlertaRecursosReservaEDA } from '@/app/components/AgendaRecursoEDA';
 import { ParceiroReservaEDA } from '@/app/components/ParceirosComissaoEDA';
+import { FinanceiroReservaEDA } from '@/app/components/FinanceiroConectadoEDA';
 import { mensagemSaidaEDA } from '@/lib/saidasGestaoEDA';
 import LogisticaReserva from '@/app/components/LogisticaReserva';
 import PeriodoReservaERN, { validarPeriodoReservaERN } from '@/app/components/PeriodoReservaERN';
@@ -807,6 +808,11 @@ function EditarReservaConteudo({ id }: { id?: string }) {
         {/* EDA_VOUCHERS_PARCEIROS_V1: parceiro e comissão, salvos à parte. */}
         <div className="eda-pg-grade-form" style={{ marginTop: 16 }}>
           <ParceiroReservaEDA reservaId={id} bloqueado={somenteConsultaERN || salvando || gravada} />
+        </div>
+
+        {/* EDA_FINANCEIRO_CONECTADO_V1: pagamentos da reserva. */}
+        <div className="eda-pg-grade-form" style={{ marginTop: 16 }}>
+          <FinanceiroReservaEDA reservaId={id} bloqueado={somenteConsultaERN || salvando || gravada} />
         </div>
       </div>
     </PaginaEDA>
