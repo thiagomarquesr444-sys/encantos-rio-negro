@@ -7,6 +7,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import CampoLocalEDA from '@/app/components/CampoLocalEDA';
+import { ComissoesParceirosEDA } from '@/app/components/ParceirosComissaoEDA';
 
 interface Parceiro {
   id: string;
@@ -486,6 +487,9 @@ export default function ParceirosPage() {
       </header>
 
       <main className="mx-auto max-w-[1360px] space-y-6 px-5 py-8 md:px-8">
+        {/* EDA_VOUCHERS_PARCEIROS_V1 */}
+        <ComissoesParceirosEDA />
+
         {feedback && (
           <div
             className={`flex items-start justify-between gap-4 rounded-2xl border px-5 py-4 text-xs ${
