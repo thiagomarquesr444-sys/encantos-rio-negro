@@ -8,6 +8,10 @@ import type { FormEvent } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import CampoLocalEDA from '@/app/components/CampoLocalEDA';
+import CampoOpcoesEDA from '@/app/components/CampoOpcoesEDA';
+import { NACIONALIDADES } from '@/lib/opcoesEDA';
+import RelacionamentoClienteEDA from '@/app/components/RelacionamentoClienteEDA';
 
 type Formulario = {
   nome: string;
@@ -440,19 +444,27 @@ export default function EditarClientePage() {
                       >
                         {item.titulo}
                       </label>
+                      {item.chave === 'cidade' ? (
+                        <CampoLocalEDA id="cidade" modo="cidade" valor={{ texto: form.cidade }} className={campo}
+                          placeholder="Cidade de origem do cliente" onChange={(l) => alterar('cidade', l.texto)} />
+                      ) : item.chave === 'nacionalidade' ? (
+                        <CampoOpcoesEDA id="nacionalidade" valor={form.nacionalidade} opcoes={NACIONALIDADES}
+                          placeholder="Selecione" className={campo} onChange={(v) => alterar('nacionalidade', v)} />
+                      ) : (
                       <input
-                        id={item.chave}
-                        name={item.chave}
-                        type={item.tipo}
-                        autoComplete={item.autocomplete}
-                        required={item.chave === 'nome'}
-                        minLength={item.chave === 'nome' ? 3 : undefined}
-                        value={form[item.chave]}
-                        onChange={(event) =>
-                          alterar(item.chave, event.target.value)
-                        }
-                        className={campo}
-                      />
+                          id={item.chave}
+                          name={item.chave}
+                          type={item.tipo}
+                          autoComplete={item.autocomplete}
+                          required={item.chave === 'nome'}
+                          minLength={item.chave === 'nome' ? 3 : undefined}
+                          value={form[item.chave]}
+                          onChange={(event) =>
+                            alterar(item.chave, event.target.value)
+                          }
+                          className={campo}
+                        />
+                      )}
                     </div>
                   ))}
 
@@ -519,6 +531,10 @@ export default function EditarClientePage() {
                 </button>
               </div>
             </form>
+
+            {contexto?.clienteId && (
+              <RelacionamentoClienteEDA clienteId={contexto.clienteId} bloqueado={salvando} />
+            )}
           </>
         )}
       </div>

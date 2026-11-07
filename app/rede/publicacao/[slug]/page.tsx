@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import PublicHeader from '@/app/components/PublicHeader';
+import OfertaPasseioEDA from '@/app/components/OfertaPasseioEDA';
 import TemaPortalERN from '@/app/components/TemaPortalERN';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import {
@@ -198,6 +199,8 @@ export default function PublicacaoRedePage() {
                 {item.conteudo}
               </div>
             )}
+
+            {item.passeio_id && <OfertaPasseioEDA passeioId={item.passeio_id} operadoraSlug={item.autor.slug} />}
 
             <footer className="mt-12 flex flex-wrap items-center justify-between gap-5 border-t border-[#d6d2c8] pt-7">
               <p className="break-words font-semibold">{item.autor.nome_publico}</p>

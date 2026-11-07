@@ -7,6 +7,9 @@ import type { FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import CampoLocalEDA from '@/app/components/CampoLocalEDA';
+import CampoOpcoesEDA from '@/app/components/CampoOpcoesEDA';
+import { NACIONALIDADES } from '@/lib/opcoesEDA';
 
 type Formulario = {
   nome: string;
@@ -154,6 +157,8 @@ export default function NovoClientePage() {
   const [carregando, setCarregando] = useState(true);
   const [erroConsulta, setErroConsulta] = useState('');
   const [erro, setErro] = useState('');
+  const [semelhantes, setSemelhantes] = useState<{ id: string; nome: string; motivo: string }[]>([]);
+  const ignorarSemelhantes = useRef(false);
   const [salvando, setSalvando] = useState(false);
   const [sucesso, setSucesso] = useState(false);
   const [resultadoIncerto, setResultadoIncerto] = useState(false);
@@ -265,6 +270,17 @@ export default function NovoClientePage() {
       return;
     }
 
+    // EDA_CLIENTES_RELACIONAMENTO_V1: avisa antes de duplicar um cliente.
+    if (!ignorarSemelhantes.current) {
+      const { data: parecidos } = await supabase.rpc('cliente_semelhante_eda', {
+        p_nome: form.nome, p_email: form.email, p_documento: form.documento, p_telefone: form.telefone,
+      });
+      if (parecidos && parecidos.length > 0) {
+        setSemelhantes(parecidos as { id: string; nome: string; motivo: string }[]);
+        return;
+      }
+    }
+
     trava.current = true;
     setSalvando(true);
     let gravacaoIniciada = false;
@@ -332,6 +348,12 @@ export default function NovoClientePage() {
               ? 'O limite foi atingido durante o cadastro. Atualize a consulta do plano.'
               : 'Não foi possível validar sua empresa ou assinatura. Atualize a página.',
           );
+        }
+
+        // EDA_CLIENTES_RELACIONAMENTO_V1: e-mail/documento já cadastrados.
+        if (error.code === '23505') {
+          gravacaoIniciada = false;
+          throw new Error('Já existe um cliente desta operadora com o mesmo e-mail ou documento. Abra o cadastro existente.');
         }
 
         throw new Error('Não foi possível confirmar o cadastro.');
@@ -474,6 +496,27 @@ export default function NovoClientePage() {
           ) : null}
         </section>
 
+        {semelhantes.length > 0 && (
+          <div role="alert" className={painel}>
+            <p className="font-semibold">Este cliente pode já estar cadastrado:</p>
+            <ul className="mt-2 space-y-1 text-sm">
+              {semelhantes.map((c) => (
+                <li key={c.id}>
+                  <Link href={`/clientes/editar/${c.id}`} className="font-semibold text-[var(--ern-destaque)]">{c.nome}</Link>
+                  <span className="text-[var(--ern-secundario)]"> · {c.motivo}</span>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button type="button" className={botao} onClick={() => setSemelhantes([])}>Revisar dados</button>
+              <button type="submit" form="form-cliente-novo" className={botao}
+                onClick={() => { ignorarSemelhantes.current = true; setSemelhantes([]); }}>
+                Cadastrar mesmo assim
+              </button>
+            </div>
+          </div>
+        )}
+
         {erro && (
           <div role="alert" className={`${painel} text-[var(--ern-erro)]`}>
             <p>{erro}</p>
@@ -491,7 +534,7 @@ export default function NovoClientePage() {
           </p>
         )}
 
-        <form onSubmit={salvar} className={`${painel} ern-cliente-form-card`}>
+        <form id="form-cliente-novo" onSubmit={salvar} className={`${painel} ern-cliente-form-card`}>
           <h2 className="text-xl font-semibold">Dados do viajante</h2>
 
           <aside
@@ -535,18 +578,26 @@ export default function NovoClientePage() {
                   <label htmlFor={item.chave} className="mb-2 block text-sm">
                     {item.titulo}{item.obrigatorio ? ' *' : ''}
                   </label>
+                  {item.chave === 'cidade' ? (
+                    <CampoLocalEDA id="cidade" modo="cidade" valor={{ texto: form.cidade }} className={campo}
+                      placeholder="Cidade de origem do cliente" onChange={(l) => alterar('cidade', l.texto)} />
+                  ) : item.chave === 'nacionalidade' ? (
+                    <CampoOpcoesEDA id="nacionalidade" valor={form.nacionalidade} opcoes={NACIONALIDADES}
+                      placeholder="Selecione" className={campo} onChange={(v) => alterar('nacionalidade', v)} />
+                  ) : (
                   <input
-                    id={item.chave}
-                    name={item.chave}
-                    type={item.tipo}
-                    required={item.obrigatorio}
-                    minLength={item.chave === 'nome' ? 3 : undefined}
-                    maxLength={item.maximo}
-                    autoComplete={item.autocomplete}
-                    value={form[item.chave]}
-                    onChange={(event) => alterar(item.chave, event.target.value)}
-                    className={campo}
-                  />
+                      id={item.chave}
+                      name={item.chave}
+                      type={item.tipo}
+                      required={item.obrigatorio}
+                      minLength={item.chave === 'nome' ? 3 : undefined}
+                      maxLength={item.maximo}
+                      autoComplete={item.autocomplete}
+                      value={form[item.chave]}
+                      onChange={(event) => alterar(item.chave, event.target.value)}
+                      className={campo}
+                    />
+                  )}
                   {item.chave === 'documento' && (
                     <p className="mt-2 text-xs leading-5 text-[var(--ern-secundario)]">
                       Aceita CPF, passaporte e documentos internacionais.

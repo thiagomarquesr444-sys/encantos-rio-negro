@@ -4,6 +4,7 @@ import '@/app/components/padrao-formularios-eda.css';
 import './documentos-eda.css';
 
 import Link from 'next/link';
+import DocumentosOperacaoEDA from '@/app/components/DocumentosOperacaoEDA';
 import { useModulosEquipeERN } from
   '@/app/components/ModulosEquipeERN';
 
@@ -129,6 +130,8 @@ export default function CentralDocumentosERN() {
             ))}
           </section>
         )}
+
+        {!carregando && !erro && permitidos.length > 0 && <DocumentosOperacaoEDA />}
 
         <section className="rounded-2xl border border-[var(--ern-borda)] p-5">
           <h2 className="font-semibold">Sobre os documentos</h2>

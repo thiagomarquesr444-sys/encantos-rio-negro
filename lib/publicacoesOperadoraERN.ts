@@ -34,6 +34,7 @@ export type PublicacaoOperadoraERN = {
   publicado_em: string | null;
   created_at: string;
   updated_at: string;
+  passeio_id: string | null;
 };
 
 export type DadosPublicacaoOperadoraERN = {
@@ -44,10 +45,12 @@ export type DadosPublicacaoOperadoraERN = {
   idioma_original: 'pt' | 'en' | 'es';
   localidade_texto: string;
   permitir_interacoes: boolean;
+  // EDA_PUBLICACAO_OFERTA_V1: oferta ligada a um passeio publicado.
+  passeio_id?: string | null;
 };
 
 const COLUNAS =
-  'id,autor_perfil_id,slug,tipo,titulo,resumo,conteudo,idioma_original,localidade_texto,status,permitir_interacoes,publicado_em,created_at,updated_at' as const;
+  'id,autor_perfil_id,slug,tipo,titulo,resumo,conteudo,idioma_original,localidade_texto,status,permitir_interacoes,publicado_em,created_at,updated_at,passeio_id' as const;
 
 const TIPOS: TipoPublicacaoERN[] = [
   'conteudo', 'oferta', 'roteiro', 'evento', 'aviso', 'dica',
@@ -155,6 +158,7 @@ export async function salvarRascunhoOperadoraERN(
     tipo: dados.tipo,
     idioma_original: dados.idioma_original,
     permitir_interacoes: dados.permitir_interacoes,
+    passeio_id: dados.tipo === 'oferta' ? dados.passeio_id || null : null,
     status: 'rascunho',
   };
 

@@ -27,6 +27,8 @@ type Cliente = {
   situacao: string | null;
   observacoes: string | null;
   created_at: string | null;
+  _viagens?: number;
+  _proxima?: string | null;
 };
 
 type Contexto = {
@@ -168,6 +170,13 @@ export default function ClientesPage() {
         ) {
           throw new Error('A sessão mudou. Atualize a página.');
         }
+
+        // EDA_CLIENTES_RELACIONAMENTO_V1: retorno e próxima viagem.
+        try {
+          const { data: resumo } = await supabase.rpc('resumo_clientes_eda');
+          const mapa = new Map(((resumo ?? []) as { cliente_id: string; viagens: number; proxima: string | null }[]).map((r) => [r.cliente_id, r]));
+          for (const c of lista) { const r = mapa.get(c.id); if (r) { c._viagens = r.viagens; c._proxima = r.proxima; } }
+        } catch { /* listagem segue sem indicadores */ }
 
         if (ativo) {
           setClientes(lista);
@@ -385,6 +394,11 @@ export default function ClientesPage() {
                       <span style={{ minWidth: 0 }}>
                         <b>{cliente.nome}</b>
                         <small>{[cliente.cidade, cliente.nacionalidade].filter(Boolean).join(' · ') || 'Cidade não informada'}</small>
+                        {(Boolean(cliente._viagens) || cliente._proxima) && (
+                          <small style={{ color: 'var(--ern-destaque)' }}>
+                            {[cliente._viagens ? `${cliente._viagens} viagem(ns)` : '', cliente._proxima ? `próxima ${cliente._proxima.split('-').reverse().slice(0, 2).join('/')}` : ''].filter(Boolean).join(' · ')}
+                          </small>
+                        )}
                       </span>
                       <PillEDA tom={tomSituacao(cliente)}>{situacaoCliente(cliente)}</PillEDA>
                     </span>

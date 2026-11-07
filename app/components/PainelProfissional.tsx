@@ -14,6 +14,7 @@ import {
 } from '@/lib/acessos';
 
 import { supabase } from '@/lib/supabase';
+import MinhasViagensGuiaEDA from '@/app/components/MinhasViagensGuiaEDA';
 
 type PainelProfissionalProps = {
   tipo: TipoAcessoProfissional;
@@ -449,6 +450,8 @@ export default function PainelProfissional({
             )}
           </div>
         </section>
+
+        {tipo === 'guia' && <MinhasViagensGuiaEDA />}
 
         <section className="mt-8 rounded-3xl border border-[#E3A144]/20 bg-[#E3A144]/[0.05] p-6 sm:p-8">
           <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#E3A144]">

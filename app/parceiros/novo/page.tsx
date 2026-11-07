@@ -6,6 +6,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import CampoLocalEDA from '@/app/components/CampoLocalEDA';
 
 type FormParceiro = {
   nome: string;
@@ -17,6 +18,8 @@ type FormParceiro = {
   email: string;
   cidade: string;
   endereco: string;
+  latitude: number | null;
+  longitude: number | null;
   comissao_porcentagem: string;
   status: string;
   observacoes: string;
@@ -67,6 +70,8 @@ export default function NovoParceiroPage() {
     email: '',
     cidade: '',
     endereco: '',
+    latitude: null,
+    longitude: null,
     comissao_porcentagem: '0',
     status: 'ativo',
     observacoes: '',
@@ -171,6 +176,8 @@ export default function NovoParceiroPage() {
           email: form.email.trim() || null,
           cidade: form.cidade.trim() || null,
           endereco: form.endereco.trim() || null,
+          latitude: form.latitude,
+          longitude: form.longitude,
           comissao_porcentagem: comissao,
           status: form.status || 'ativo',
           observacoes: form.observacoes.trim() || null,
@@ -408,27 +415,26 @@ export default function NovoParceiroPage() {
             titulo="Endereço operacional"
             descricao="Localização do parceiro para organização logística e operacional."
           >
-            <div className="grid gap-5 md:grid-cols-2">
-              <FormField label="Cidade">
-                <input
-                  type="text"
-                  value={form.cidade}
-                  onChange={(event) =>
-                    alterarCampo('cidade', event.target.value)
-                  }
-                  placeholder="Ex: Barcelos - AM"
+            <div className="grid gap-5">
+              <FormField label="Endereço">
+                <CampoLocalEDA
+                  valor={{ texto: form.endereco, lat: form.latitude, lng: form.longitude }}
+                  onChange={(l) => setForm((atual) => ({
+                    ...atual,
+                    endereco: l.texto,
+                    latitude: l.lat ?? null,
+                    longitude: l.lng ?? null,
+                    cidade: l.cidade && !atual.cidade ? `${l.cidade}` : atual.cidade,
+                  }))}
                   className={inputClass}
                 />
               </FormField>
 
-              <FormField label="Endereço">
-                <input
-                  type="text"
-                  value={form.endereco}
-                  onChange={(event) =>
-                    alterarCampo('endereco', event.target.value)
-                  }
-                  placeholder="Rua, bairro ou referência"
+              <FormField label="Cidade">
+                <CampoLocalEDA
+                  modo="cidade"
+                  valor={{ texto: form.cidade }}
+                  onChange={(l) => alterarCampo('cidade', l.texto)}
                   className={inputClass}
                 />
               </FormField>

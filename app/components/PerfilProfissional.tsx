@@ -14,6 +14,9 @@ import {
   type AcessosConta,
   type TipoAcessoProfissional,
 } from '@/lib/acessos';
+import CampoLocalEDA from '@/app/components/CampoLocalEDA';
+import CampoOpcoesEDA, { CampoChipsEDA } from '@/app/components/CampoOpcoesEDA';
+import { ATIVIDADES_FORNECEDOR, IDIOMAS } from '@/lib/opcoesEDA';
 
 interface DadosPerfil {
   nome: string;
@@ -355,21 +358,31 @@ function FormularioPerfilProfissional({ tipo }: Props) {
           {campo.label}
         </label>
 
+        {campo.campo === 'cidade' ? (
+          <CampoLocalEDA id={id} modo="cidade" valor={{ texto: dados.cidade }} className={INPUT}
+            placeholder="Digite a cidade (ex.: Barcelos)" onChange={(l) => alterar('cidade', l.texto)} />
+        ) : campo.campo === 'idiomas' ? (
+          <CampoChipsEDA valor={dados.idiomas} opcoes={IDIOMAS} onChange={(v) => alterar('idiomas', v)} />
+        ) : campo.campo === 'categoria' ? (
+          <CampoOpcoesEDA id={id} valor={dados.categoria} opcoes={ATIVIDADES_FORNECEDOR} className={INPUT}
+            placeholder="Selecione a atividade" onChange={(v) => alterar('categoria', v)} />
+        ) : (
         <input
-          id={id}
-          name={campo.campo}
-          type={campo.tipo ?? 'text'}
-          inputMode={campo.tipo === 'tel' ? 'tel' : undefined}
-          autoComplete={campo.autoComplete}
-          maxLength={campo.limite}
-          value={dados[campo.campo]}
-          onChange={(event) =>
-            alterar(campo.campo, event.target.value)
-          }
-          placeholder={campo.placeholder}
-          aria-describedby={campo.ajuda ? `${id}-ajuda` : undefined}
-          className={INPUT}
-        />
+            id={id}
+            name={campo.campo}
+            type={campo.tipo ?? 'text'}
+            inputMode={campo.tipo === 'tel' ? 'tel' : undefined}
+            autoComplete={campo.autoComplete}
+            maxLength={campo.limite}
+            value={dados[campo.campo]}
+            onChange={(event) =>
+              alterar(campo.campo, event.target.value)
+            }
+            placeholder={campo.placeholder}
+            aria-describedby={campo.ajuda ? `${id}-ajuda` : undefined}
+            className={INPUT}
+          />
+        )}
 
         {campo.ajuda && (
           <p

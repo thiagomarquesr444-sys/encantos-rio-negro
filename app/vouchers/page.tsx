@@ -24,7 +24,16 @@ type StatusVoucher = 'Ativo' | 'Utilizado' | 'Cancelado';
 type StatusExibido = StatusVoucher | 'Desconhecido';
 type FiltroStatus = '' | StatusExibido | 'Expirado';
 
+type DetalheVoucherEDA = {
+  token: string; saida_inicio: string | null; saida_fim: string | null; ponto_embarque: string | null;
+  inclui: string[] | null; nao_inclui: string[] | null; duracao: string | null; guia: string | null; embarcacao: string | null;
+  participantes: { nome: string; titular: boolean; nascimento: string | null }[];
+  hospedagens: { hospedagem: string; acomodacao: string; checkin: string; checkout: string; check_in_hora: string | null; check_out_hora: string | null; endereco: string | null; hospedes: number }[];
+};
+
 interface Voucher {
+  token_verificacao?: string | null;
+  utilizado_em?: string | null;
   id: string;
   empresa_id: string | null;
   created_at: string | null;
@@ -831,8 +840,22 @@ export default function VouchersPage() {
         try { chegadaVoucher = await carregarChegadaDaReserva(String(atual.reserva_id)); } catch { chegadaVoucher = null; }
       }
 
+      // EDA_VOUCHERS_PARCEIROS_V1: viagem completa + link de verificação.
+      let det: DetalheVoucherEDA | null = null;
+      try {
+        const { data: d } = await supabase.rpc('detalhes_voucher_eda', { p_voucher_id: atual.id });
+        det = (d ?? null) as DetalheVoucherEDA | null;
+      } catch { det = null; }
+      const linkVerificacao = det?.token ? `${window.location.origin}/voucher/${det.token}` : null;
+      const fmt = (d?: string | null) => (d ? d.split('-').reverse().join('/') : '');
+
       baixarDocumentoPremiumERN({
         titulo: 'Voucher Turístico',
+        tabela: det && det.participantes.length > 0 ? {
+          titulo: 'Participantes',
+          colunas: ['Nome', 'Nascimento', ''],
+          linhas: det.participantes.map((p) => [p.nome, fmt(p.nascimento) || '—', p.titular ? 'Titular' : '']),
+        } : undefined,
         destaque: chegadaVoucher ? {
           titulo: 'Chegada e transfer',
           linhas: [
@@ -870,6 +893,18 @@ export default function VouchersPage() {
             campo: 'Data de emissão',
             valor: formatarEmissao(atual.data_emissao || atual.created_at)
           },
+          ...(det?.saida_inicio ? [{ campo: 'Período da viagem', valor: det.saida_fim && det.saida_fim !== det.saida_inicio ? `${fmt(det.saida_inicio)} a ${fmt(det.saida_fim)}` : fmt(det.saida_inicio) }] : []),
+          ...(det?.ponto_embarque ? [{ campo: 'Ponto de embarque', valor: det.ponto_embarque }] : []),
+          ...(det?.guia ? [{ campo: 'Guia', valor: det.guia }] : []),
+          ...(det?.embarcacao ? [{ campo: 'Embarcação', valor: det.embarcacao }] : []),
+          ...(det?.inclui?.length ? [{ campo: 'Inclui', valor: det.inclui.join(' · ') }] : []),
+          ...(det?.nao_inclui?.length ? [{ campo: 'Não inclui', valor: det.nao_inclui.join(' · ') }] : []),
+          ...(det?.hospedagens ?? []).map((h) => ({
+            campo: 'Hospedagem',
+            valor: `${h.hospedagem} · ${h.acomodacao} · check-in ${fmt(h.checkin)}${h.check_in_hora ? ` ${h.check_in_hora.slice(0, 5)}` : ''} · check-out ${fmt(h.checkout)}${h.check_out_hora ? ` ${h.check_out_hora.slice(0, 5)}` : ''}${h.endereco ? ` · ${h.endereco}` : ''}`,
+          })),
+          ...(atual.utilizado_em ? [{ campo: 'Utilizado em', valor: formatarEmissao(atual.utilizado_em) }] : []),
+          ...(linkVerificacao ? [{ campo: 'Verificar autenticidade', valor: linkVerificacao }] : []),
         ],
         observacoes: [
           'Os dados do passeio representam o histórico registrado na emissão do voucher.',
@@ -890,6 +925,19 @@ export default function VouchersPage() {
       setGerandoPDFId(null);
     }
   }
+  // EDA_VOUCHERS_PARCEIROS_V1: baixa de utilização (embarque/check-in).
+  async function marcarUtilizado(item: Voucher) {
+    if (!window.confirm(`Registrar o embarque do voucher ${item.codigo}? Depois disso ele não pode ser usado de novo.`)) return;
+    const { error } = await supabase.rpc('marcar_voucher_utilizado_eda', { p_voucher_id: item.id });
+    if (error) {
+      setErroPDF(error.message.includes('EDA_VOUCHER_JA_UTILIZADO') ? 'Este voucher já foi utilizado.'
+        : error.message.includes('EDA_VOUCHER_CANCELADO') ? 'Voucher cancelado não pode ser utilizado.'
+        : 'Não foi possível registrar o embarque.');
+      return;
+    }
+    void carregar();
+  }
+
   function etiqueta(item: Voucher) {
     const status = obterStatus(item.status);
     const classe =
@@ -927,6 +975,16 @@ export default function VouchersPage() {
         >
           {gerandoPDFId === item.id ? 'Gerando PDF...' : 'Baixar PDF Premium'}
         </button>
+        {obterStatus(item.status) === 'Ativo' && (
+          <button type="button" disabled={ocupado} onClick={() => void marcarUtilizado(item)} className={buttonClass}>
+            Registrar embarque
+          </button>
+        )}
+        {item.token_verificacao && (
+          <button type="button" onClick={() => void navigator.clipboard?.writeText(`${window.location.origin}/voucher/${item.token_verificacao}`)} className={buttonClass}>
+            Copiar link de verificação
+          </button>
+        )}
         <button
           type="button"
           disabled={ocupado || (!item.reserva_id && Boolean(erroAuxiliares))}

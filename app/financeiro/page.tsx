@@ -23,6 +23,7 @@ import {
   type RegistroFinanceiroERN,
 } from '@/lib/financeiroConsultaERN';
 import GraficosFinanceiros from '@/app/components/GraficosFinanceiros';
+import { PainelOperacaoFinanceiraEDA } from '@/app/components/FinanceiroConectadoEDA';
 
 type LancamentoFinanceiro = RegistroFinanceiroERN & {
   user_id?: string | null;
@@ -638,6 +639,9 @@ export default function FinanceiroPage() {
         <p className="eda-pg-nota">
           Totais de todo o histórico acessível à sua conta. O saldo realizado é receitas recebidas menos despesas pagas; não é saldo bancário nem lucro. A pagar: <b>{carregando || erroConsulta ? '—' : formatarMoeda(financeiro.pagar)}</b>.
         </p>
+
+        {/* EDA_FINANCEIRO_CONECTADO_V1: o que as viagens do mês geram e custam. */}
+        <PainelOperacaoFinanceiraEDA />
 
         {reservaFiltro && (
           <div className="eda-pg-aviso eda-pg-aviso-ouro">

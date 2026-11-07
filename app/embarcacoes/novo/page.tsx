@@ -10,6 +10,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { supabase } from '@/lib/supabase';
+import CampoOpcoesEDA from '@/app/components/CampoOpcoesEDA';
+import { CONDICAO_EMBARCACAO } from '@/lib/opcoesEDA';
 
 type StatusEmbarcacao =
   | 'Disponível'
@@ -540,20 +542,8 @@ export default function NovaEmbarcacaoPage() {
                     Situação
                   </label>
 
-                  <input
-                    type="text"
-                    name="situacao"
-                    value={
-                      formData.situacao
-                    }
-                    onChange={
-                      handleChange
-                    }
-                    placeholder="Ex.: Regular"
-                    className={
-                      inputClass
-                    }
-                  />
+                  <CampoOpcoesEDA valor={formData.situacao} opcoes={CONDICAO_EMBARCACAO} placeholder="Selecione a condição" className={inputClass}
+                    onChange={(v) => handleChange({ target: { name: 'situacao', value: v } } as React.ChangeEvent<HTMLInputElement>)} />
                 </div>
               </div>
             </div>
@@ -608,10 +598,6 @@ export default function NovaEmbarcacaoPage() {
                 >
                   <option value="Disponível">
                     Disponível
-                  </option>
-
-                  <option value="Reservada">
-                    Reservada
                   </option>
 
                   <option value="Manutenção">

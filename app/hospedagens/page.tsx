@@ -16,6 +16,11 @@ import Link from 'next/link';
 
 import { supabase } from '@/lib/supabase';
 import { CabecalhoEDA } from '@/app/components/PadraoPaginaEDA';
+import AcomodacoesHospedagemEDA from '@/app/components/AcomodacoesHospedagemEDA';
+import CampoOpcoesEDA from '@/app/components/CampoOpcoesEDA';
+import CampoLocalEDA from '@/app/components/CampoLocalEDA';
+import { TIPOS_HOSPEDAGEM } from '@/lib/opcoesEDA';
+import { listarOcupacaoHospedagensEDA, type OcupacaoHospedagemEDA } from '@/lib/hospedagensEDA';
 
 type StatusHospedagem =
   | 'Disponível'
@@ -44,6 +49,12 @@ interface Hospedagem {
   Status?: string | null;
 
   created_at?: string | null;
+
+  // EDA_HOSPEDAGENS_PREMIUM_V1: ocupação real de hoje.
+  _ocup?: OcupacaoHospedagemEDA;
+  cidade?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 function removerAcentos(
@@ -85,7 +96,14 @@ function normalizarStatus(
 
 function obterStatus(
   hospedagem: Hospedagem
-) {
+): StatusHospedagem {
+  // Situação calculada pelas estadias de hoje (não é mais marcada à mão).
+  const o = hospedagem._ocup;
+  if (o) {
+    if (o.unidades > 0 && o.ocupadas >= o.unidades) return 'Ocupada';
+    if (o.ocupadas > 0) return 'Reservada';
+    return 'Disponível';
+  }
   return normalizarStatus(
     hospedagem.status ||
       hospedagem.Status
@@ -392,6 +410,11 @@ export default function HospedagensPage() {
 
       if (consulta !== consultaHospedagensERN.current) return;
       contextoHospedagensERN.current = contexto;
+      try {
+        const ocup = new Map((await listarOcupacaoHospedagensEDA()).map((o) => [o.hospedagem_id, o]));
+        for (const h of lista) if (h.id && ocup.has(h.id)) h._ocup = ocup.get(h.id);
+      } catch { /* sem ocupação: mantém a listagem */ }
+      if (consulta !== consultaHospedagensERN.current) return;
       setHospedagens(lista);
     } catch (falha) {
       if (consulta !== consultaHospedagensERN.current) return;
@@ -520,6 +543,10 @@ export default function HospedagensPage() {
             itemEditar
           ).trim() || null,
 
+        cidade: itemEditar.cidade ?? null,
+        latitude: itemEditar.latitude ?? null,
+        longitude: itemEditar.longitude ?? null,
+
         telefone:
           itemEditar.telefone?.trim() ||
           null,
@@ -545,7 +572,7 @@ export default function HospedagensPage() {
       const empresa = await validarEmpresaHospedagensERN(itemEditar.id);
       const resultado = await supabase
         .from('hospedagens')
-        .update({ ...payloadBase, status: statusEdicao })
+        .update(payloadBase)
         .eq('id', itemEditar.id)
         .eq('empresa_id', empresa)
         .select('id')
@@ -1648,27 +1675,13 @@ export default function HospedagensPage() {
                     Tipo
                   </label>
 
-                  <input
-                    type="text"
-                    value={
-                      itemEditar.tipo ||
-                      ''
-                    }
-                    onChange={(
-                      event
-                    ) =>
-                      setItemEditar({
-                        ...itemEditar,
-
-                        tipo:
-                          event.target
-                            .value,
-                      })
-                    }
-                    placeholder="Ex.: Pousada"
-                    className={
-                      inputClass
-                    }
+                  <CampoOpcoesEDA
+                    key={itemEditar.id}
+                    valor={itemEditar.tipo || ''}
+                    opcoes={TIPOS_HOSPEDAGEM}
+                    onChange={(v) => setItemEditar({ ...itemEditar, tipo: v })}
+                    placeholder="Selecione o tipo"
+                    className={inputClass}
                   />
                 </div>
 
@@ -1713,26 +1726,11 @@ export default function HospedagensPage() {
                   Localização / Endereço
                 </label>
 
-                <input
-                  type="text"
-                  value={
-                    itemEditar.endereco ||
-                    ''
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    setItemEditar({
-                      ...itemEditar,
-
-                      endereco:
-                        event.target
-                          .value,
-                    })
-                  }
-                  className={
-                    inputClass
-                  }
+                <CampoLocalEDA
+                  key={itemEditar.id}
+                  valor={{ texto: itemEditar.endereco || '', cidade: itemEditar.cidade, lat: itemEditar.latitude, lng: itemEditar.longitude }}
+                  onChange={(l) => setItemEditar({ ...itemEditar, endereco: l.texto, cidade: l.cidade ?? null, latitude: l.lat ?? null, longitude: l.lng ?? null })}
+                  className={inputClass}
                 />
               </div>
 
@@ -1770,42 +1768,10 @@ export default function HospedagensPage() {
                 </div>
 
                 <div>
-                  <label
-                    className={
-                      labelClass
-                    }
-                  >
-                    Status
-                  </label>
-
-                  <select
-                    value={
-                      statusEdicao
-                    }
-                    onChange={(
-                      event
-                    ) =>
-                      setStatusEdicao(
-                        event.target
-                          .value as StatusHospedagem
-                      )
-                    }
-                    className={
-                      inputClass
-                    }
-                  >
-                    <option value="Disponível">
-                      Disponível
-                    </option>
-
-                    <option value="Reservada">
-                      Reservada
-                    </option>
-
-                    <option value="Ocupada">
-                      Ocupada
-                    </option>
-                  </select>
+                  <span className={labelClass}>Situação</span>
+                  <p className="text-sm text-[var(--ern-secundario)]">
+                    Calculada pela ocupação real das acomodações (abaixo).
+                  </p>
                 </div>
               </div>
 
@@ -1835,6 +1801,7 @@ export default function HospedagensPage() {
                 </button>
               </div>
             </form>
+            {itemEditar.id && <AcomodacoesHospedagemEDA hospedagemId={itemEditar.id} />}
           </div>
         </div>
       )}

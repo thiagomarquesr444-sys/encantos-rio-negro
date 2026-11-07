@@ -1,6 +1,7 @@
 'use client';
 import { CompartilharVivenciaERN, ListaVivenciasERN } from './VivenciasERN';
 import VitrinePasseiosEDA from './VitrinePasseiosEDA';
+import OfertaChipEDA from './OfertaChipEDA';
 
 // ERN_REDE_VISITANTE_V1
 
@@ -223,6 +224,7 @@ function PostCard({ post, order, total, state, busy, ui, tr, lang, onFollow, onI
     <div className="ern-r-post-body"><div className="ern-r-post-tags">{category && <span>{category}</span>}{post.destaque && <span>{tr.feed.featured}</span>}<Link className="ern-r-no-mapa" href={mapHref(post)} aria-label={`${ui.seeOnMap}: ${placeName(post)}`}><Icon name="go" />{placeName(post)} <span aria-hidden="true">· {ui.seeOnMap}</span></Link></div>
       <h2 id={`ern-r-title-${post.id}`}><Link href={postHref(post)}>{post.titulo}</Link></h2>
       {caption && <><p id={`ern-r-caption-${post.id}`} className={expanded ? 'ern-r-caption' : 'ern-r-caption ern-r-clamp'}>{caption}</p>{caption.length > 220 && <button type="button" className="ern-r-read-more" aria-expanded={expanded} onClick={() => setExpanded(value => !value)}>{expanded ? ui.collapse : ui.expand}</button>}</>}
+      {post.passeio_id && <OfertaChipEDA passeioId={post.passeio_id} href={postHref(post)} />}
       <Link className="ern-r-read-post" href={postHref(post)}>{ui.read} <Icon name="arrow" /></Link>
     </div>
     <CompartilharVivenciaERN post={post} />

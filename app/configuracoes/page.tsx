@@ -8,6 +8,7 @@ import type { CSSProperties, FormEvent } from 'react';
 import { supabase } from '@/lib/supabase';
 import SegurancaContaERN from '@/app/components/SegurancaContaERN';
 import SeletorTemaERN from '@/app/components/SeletorTemaERN';
+import { normalizarChavePix } from '@/lib/pixEDA';
 
 type Tema = 'verde' | 'azul' | 'amarelo' | 'branco' | 'grafite';
 
@@ -22,7 +23,9 @@ type Configuracao = {
   porcentagem_sinal: number;
   enviar_email_confirmacao: boolean;
   enviar_whatsapp_confirmacao: boolean;
-  chave_api_pix: string;
+  chave_pix: string;
+  pix_nome_recebedor: string;
+  pix_cidade: string;
 };
 
 type Feedback = {
@@ -111,7 +114,9 @@ const PADRAO: Configuracao = {
   porcentagem_sinal: 50,
   enviar_email_confirmacao: true,
   enviar_whatsapp_confirmacao: false,
-  chave_api_pix: '',
+  chave_pix: '',
+  pix_nome_recebedor: '',
+  pix_cidade: '',
 };
 
 function temaValido(valor: unknown): Tema {
@@ -182,7 +187,7 @@ export default function ConfiguracoesPage() {
             'id,nome_sistema,tema,moeda,fuso_horario,' +
             'permitir_reservas_mesmo_dia,antecedencia_minima_horas,' +
             'porcentagem_sinal,enviar_email_confirmacao,' +
-            'enviar_whatsapp_confirmacao,chave_api_pix',
+            'enviar_whatsapp_confirmacao,chave_pix,pix_nome_recebedor,pix_cidade',
           )
           .eq('empresa_id', empresa)
           .maybeSingle();
@@ -227,7 +232,9 @@ export default function ConfiguracoesPage() {
           enviar_whatsapp_confirmacao:
             registro.enviar_whatsapp_confirmacao ??
             PADRAO.enviar_whatsapp_confirmacao,
-          chave_api_pix: registro.chave_api_pix ?? '',
+          chave_pix: registro.chave_pix ?? '',
+          pix_nome_recebedor: registro.pix_nome_recebedor ?? '',
+          pix_cidade: registro.pix_cidade ?? '',
         });
       } catch (falha) {
         if (ativo) {
@@ -326,6 +333,15 @@ export default function ConfiguracoesPage() {
       return;
     }
 
+    // EDA_PIX_RECEBIMENTO_V1: só aceita chave Pix em formato válido.
+    if (config.chave_pix.trim() && !normalizarChavePix(config.chave_pix)) {
+      setFeedback({
+        tipo: 'erro',
+        texto: 'Chave Pix inválida. Use e-mail, celular com DDD, CPF, CNPJ ou chave aleatória.',
+      });
+      return;
+    }
+
     travaSalvar.current = true;
     setSalvando(true);
     setFeedback(null);
@@ -341,7 +357,9 @@ export default function ConfiguracoesPage() {
         porcentagem_sinal: config.porcentagem_sinal,
         enviar_email_confirmacao: config.enviar_email_confirmacao,
         enviar_whatsapp_confirmacao: config.enviar_whatsapp_confirmacao,
-        chave_api_pix: config.chave_api_pix.trim() || null,
+        chave_pix: normalizarChavePix(config.chave_pix)?.chave ?? null,
+        pix_nome_recebedor: config.pix_nome_recebedor.trim().slice(0, 25) || null,
+        pix_cidade: config.pix_cidade.trim().slice(0, 15) || null,
         updated_at: new Date().toISOString(),
       };
 
@@ -378,7 +396,7 @@ export default function ConfiguracoesPage() {
       setConfig((atual) => ({
         ...atual,
         nome_sistema: nome,
-        chave_api_pix: atual.chave_api_pix.trim(),
+        chave_pix: normalizarChavePix(atual.chave_pix)?.chave ?? '',
       }));
 
       window.dispatchEvent(
@@ -544,8 +562,9 @@ export default function ConfiguracoesPage() {
                 Preferências de reservas
               </h2>
               <p className="mt-2 text-sm leading-6 text-[var(--cfg-secundario)]">
-                Valores de referência cadastrados para a operação.
-                Salvar aqui não modifica reservas existentes.
+                Estas regras agem na operação: a antecedência mínima e as reservas no mesmo dia
+                definem quais saídas o portal e o Concierge oferecem ao turista, e o % de sinal
+                aparece como atalho nos pagamentos da reserva. Reservas existentes não mudam.
               </p>
 
               <div className="mt-5 grid min-w-0 gap-5 sm:grid-cols-2">
@@ -651,23 +670,45 @@ export default function ConfiguracoesPage() {
               <h2 id="titulo-pix" className="text-lg font-semibold">
                 Recebimento por Pix
               </h2>
+              <p className="mt-2 text-sm leading-6 text-[var(--cfg-secundario)]">
+                Usada para gerar o Pix copia-e-cola com o valor certo nos pagamentos da reserva.
+                O dinheiro cai direto na conta da operadora, sem intermediário e sem taxa da EDA.
+              </p>
               <label className="mt-4 block min-w-0 text-sm">
-                Chave Pix de recebimento
-                <input name="chave_api_pix"
+                Chave Pix para receber dos turistas
+                <input name="chave_pix"
                   type="text"
                   autoComplete="off"
                   spellCheck={false}
-                  maxLength={200}
-                  value={config.chave_api_pix}
-                  onChange={(event) =>
-                    alterar('chave_api_pix', event.target.value)
-                  }
+                  maxLength={120}
+                  placeholder="E-mail, celular com DDD, CPF, CNPJ ou chave aleatória"
+                  value={config.chave_pix}
+                  onChange={(event) => alterar('chave_pix', event.target.value)}
                   className={campo}
                 />
               </label>
+              {config.chave_pix.trim() && (
+                <p className="mt-2 text-xs text-[var(--cfg-secundario)]">
+                  {normalizarChavePix(config.chave_pix)
+                    ? `Chave reconhecida: ${normalizarChavePix(config.chave_pix)!.tipo}`
+                    : 'Formato não reconhecido.'}
+                </p>
+              )}
+              <div className="mt-4 grid min-w-0 gap-4 sm:grid-cols-2">
+                <label className="min-w-0 text-sm">
+                  Nome do recebedor (como no banco)
+                  <input name="pix_nome_recebedor" maxLength={25} value={config.pix_nome_recebedor}
+                    onChange={(event) => alterar('pix_nome_recebedor', event.target.value)} className={campo} />
+                </label>
+                <label className="min-w-0 text-sm">
+                  Cidade do recebedor
+                  <input name="pix_cidade" maxLength={15} value={config.pix_cidade} placeholder="Barcelos"
+                    onChange={(event) => alterar('pix_cidade', event.target.value)} className={campo} />
+                </label>
+              </div>
               <p className="mt-3 text-xs leading-6 text-[var(--cfg-secundario)]">
-                Informe a chave de recebimento. Credenciais de APIs de pagamento
-                devem ser configuradas no servidor.
+                Chave Pix não é senha: é o endereço público para receber. Chaves secretas de APIs de pagamento
+                nunca são guardadas aqui — ficam protegidas no servidor.
               </p>
             </section>
           </fieldset>

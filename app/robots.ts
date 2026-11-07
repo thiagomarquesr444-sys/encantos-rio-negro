@@ -13,7 +13,7 @@ export default function robots(): MetadataRoute.Robots {
         '/clientes', '/reservas', '/hospedagens', '/passeios', '/configuracoes',
         '/embarcacoes', '/guias', '/parceiros', '/relatorios', '/vouchers',
         '/documentos', '/fiscal', '/planos', '/demandas', '/comando',
-        '/guia', '/fornecedor',
+        '/guia', '/fornecedor', '/ficha/', '/voucher/',
       ],
     },
     sitemap: `${SITE}/sitemap.xml`,

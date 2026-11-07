@@ -11,6 +11,7 @@ import {
 import Link from 'next/link';
 
 import { supabase } from '@/lib/supabase';
+import UsoPlanoEDA from '@/app/components/UsoPlanoEDA';
 import CalculadoraTributosPlanosERN from '@/app/components/CalculadoraTributosPlanosERN';
 
 type Ciclo =
@@ -687,6 +688,10 @@ export default function PlanosPage() {
               </div>
             </div>
           </section>
+        )}
+
+        {!carregando && planos.length > 0 && (
+          <UsoPlanoEDA planos={planos} atual={codigoAtual} />
         )}
 
         {/* =====================================================

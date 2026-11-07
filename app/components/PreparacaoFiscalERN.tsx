@@ -10,7 +10,20 @@ type ReservaFiscal = {
   cliente_id: string | null;
   status: string | null;
   valor_total: number | string | null;
+  cliente?: string | null;
+  passeio?: string | null;
+  inicio?: string | null;
+  recebido?: number | string | null;
+  tem_solicitacao?: boolean;
 };
+// EDA_PAINEL_FISCAL_V1: reservas do período vindas de painel_fiscal_eda.
+export type ReservaFiscalEDA = ReservaFiscal;
+
+const dataBR = (d?: string | null) => (d ? d.slice(0, 10).split('-').reverse().join('/') : '');
+function rotuloReserva(r: ReservaFiscal) {
+  const partes = [dataBR(r.inicio), r.cliente, r.passeio].filter(Boolean);
+  return partes.length ? partes.join(' · ') : `Reserva ${r.id.slice(0, 8)}`;
+}
 
 type Resultado = { tipo: 'sucesso' | 'aviso' | 'erro'; mensagem: string };
 
@@ -31,9 +44,11 @@ function motivo(reserva: ReservaFiscal): string | null {
 export default function PreparacaoFiscalERN({
   aoAtualizar,
   aoSelecionarReserva,
+  reservasPeriodo = null,
 }: {
   aoAtualizar: () => void;
   aoSelecionarReserva: (reservaId: string) => void;
+  reservasPeriodo?: ReservaFiscal[] | null;
 }) {
   const [empresaId, setEmpresaId] = useState<string | null>(null);
   const [reservas, setReservas] = useState<ReservaFiscal[]>([]);
@@ -67,11 +82,18 @@ export default function PreparacaoFiscalERN({
         throw new Error('Módulo Financeiro ou Relatórios indisponível.');
       }
       const empresa = String(perfil.empresa_id);
-      const { data, error } = await supabase.from('reservas')
-        .select('id,cliente_id,status,valor_total')
-        .eq('empresa_id', empresa)
-        .order('id', { ascending: true }).limit(101);
-      if (error || !data) throw new Error('Não foi possível consultar as reservas desta operadora.');
+      let data: ReservaFiscal[];
+      if (reservasPeriodo) {
+        data = reservasPeriodo;
+      } else {
+        const consulta = await supabase.from('reservas')
+          .select('id,cliente_id,status,valor_total,cliente,pacote,data_reserva')
+          .eq('empresa_id', empresa)
+          .order('data_reserva', { ascending: false }).limit(101);
+        if (consulta.error || !consulta.data) throw new Error('Não foi possível consultar as reservas desta operadora.');
+        data = (consulta.data as (ReservaFiscal & { pacote?: string | null; data_reserva?: string | null })[])
+          .map(r => ({ ...r, passeio: r.pacote ?? null, inicio: r.data_reserva ?? null }));
+      }
       const { data: fiscal } = await supabase.from('empresa_fiscal_ern')
         .select('razao_social,cnpj,inscricao_municipal,codigo_municipio_ibge')
         .eq('empresa_id', empresa).maybeSingle();
@@ -82,7 +104,7 @@ export default function PreparacaoFiscalERN({
         codigo_municipio_ibge: String(fiscal.codigo_municipio_ibge ?? ''),
       } : null);
       setEmpresaId(empresa);
-      setParcial(data.length > 100);
+      setParcial(!reservasPeriodo && data.length > 100);
       const lista = (data as ReservaFiscal[]).slice(0, 100);
       setReservas(lista);
       // A URL guarda apenas a referencia; o banco valida a posse da reserva.
@@ -105,7 +127,7 @@ export default function PreparacaoFiscalERN({
     } finally {
       setCarregando(false);
     }
-  }, [aoSelecionarReserva]);
+  }, [aoSelecionarReserva, reservasPeriodo]);
 
   useEffect(() => { void carregar(); }, [carregar]);
 
@@ -206,7 +228,7 @@ export default function PreparacaoFiscalERN({
         </div>
         <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1.2fr)_minmax(260px,1fr)]">
           <div className="space-y-2">
-            <p className="text-xs text-[#94A5A1]">{reservas.length} reservas analisadas · {elegiveis} potencialmente elegíveis</p>
+            <p className="text-xs text-[#94A5A1]">{reservas.length} reservas {reservasPeriodo ? 'no período' : 'analisadas'} · {elegiveis} potencialmente elegíveis</p>
             {parcial && <p className="text-xs text-amber-300">Amostra limitada a 100 reservas. Refine a seleção em uma próxima versão.</p>}
             <label htmlFor="ern-reserva-fiscal" className="block text-xs font-medium">Selecione a reserva</label>
             <select id="ern-reserva-fiscal" disabled={processando || carregando} value={selecionada} onChange={e => {
@@ -222,11 +244,11 @@ export default function PreparacaoFiscalERN({
               window.history.replaceState(window.history.state, '', url.pathname + url.search + url.hash);
             }} className="min-h-11 w-full rounded-lg border border-white/20 bg-[#202728] px-3 text-sm text-white">
               <option value="">Escolha uma reserva</option>
-              {reservas.map(r => <option key={r.id} value={r.id}>{r.id.slice(0,8)} · {r.status ?? 'sem status'} · {moeda(Number(r.valor_total ?? 0))}{motivo(r) ? ' · PENDENTE' : ''}</option>)}
+              {reservas.map(r => <option key={r.id} value={r.id}>{rotuloReserva(r)} · {moeda(Number(r.valor_total ?? 0))}{r.tem_solicitacao ? ' · já solicitada' : Number(r.recebido ?? 0) > 0 ? ' · RECEBIDA SEM NOTA' : ''}{motivo(r) ? ' · PENDENTE' : ''}</option>)}
             </select>
             {reserva && <div className="rounded-xl border border-white/10 bg-[#101616] p-3 text-xs">
-              <p>Reserva <strong>{reserva.id.slice(0,8)}</strong> · {reserva.status ?? 'sem status'}</p>
-              <p className="mt-1">Valor comercial: {moeda(Number(reserva.valor_total ?? 0))}</p>
+              <p><strong>{rotuloReserva(reserva)}</strong> · {reserva.status ?? 'sem status'}</p>
+              <p className="mt-1">Valor comercial: {moeda(Number(reserva.valor_total ?? 0))}{reserva.recebido !== undefined ? ` · Recebido: ${moeda(Number(reserva.recebido ?? 0))}` : ''}</p>
               <p className={`mt-2 ${impedimento ? 'text-amber-300' : 'text-emerald-300'}`}>{impedimento ?? 'Potencialmente elegível — sujeita às validações fiscais do servidor'}</p>
             </div>}
           </div>

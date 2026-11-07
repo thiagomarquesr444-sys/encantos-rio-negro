@@ -11,6 +11,7 @@ import LogoERN from '@/app/components/LogoERN';
 import ArcoFlechaERN from '@/app/components/ArcoFlechaERN';
 import IconeERN, { type NomeIconeERN } from '@/app/components/IconeERN';
 import { useLanguage } from '@/app/components/LanguageProvider';
+import NumerosRedeEDA from '@/app/components/NumerosRedeEDA';
 
 type Texto = {
   skip: string; eyebrow: string; title: [string, string, string]; intro: string;
@@ -47,12 +48,12 @@ const textos: Record<'PT' | 'EN' | 'ES', Texto> = {
     ],
     featEyebrow: 'Tudo que a operação precisa', featTitle: 'Organize por dentro. Apareça por fora.',
     fishingTag: 'Pesca esportiva', fishingTitle: 'Temporada, barcos-hotel e grupos',
-    fishingText: 'Saídas, pescadores, embarcações e guias organizados por expedição.',
+    fishingText: 'Prontidão de cada expedição: barco, guia, fichas de saúde, pagamento e apoio.',
     feats: [
-      ['calendario', 'Reservas e agenda', 'Saídas, lotação e status de cada viagem.'],
-      ['equipe', 'Clientes', 'Histórico, documentos e preferências.'],
-      ['financeiro', 'Financeiro e NFS-e', 'Receitas, despesas e nota fiscal conforme o plano.'],
-      ['voucher', 'Vouchers em PDF', 'Em três idiomas, com a sua marca.'],
+      ['calendario', 'Reservas e agenda', 'Saídas com vagas reais, bloqueio de lotação e conflito de barco e guia.'],
+      ['equipe', 'Clientes e fichas', 'Histórico, preferências e ficha de saúde com consentimento (LGPD).'],
+      ['financeiro', 'Financeiro e Pix', 'Sinal, saldo, cobrança por Pix copia e cola e comissões de parceiros.'],
+      ['voucher', 'Vouchers em PDF', 'Em três idiomas, com a sua marca e verificação online.'],
     ],
     mapTitle: 'Mapa operacional por satélite', mapText: 'Embarques, praias e pontos da sua operação vistos de cima.',
     profileTitle: 'Perfil público + Rede EDA', profileText: 'Página com selo verificado, publicações e botão de WhatsApp para os visitantes.',
@@ -89,12 +90,12 @@ const textos: Record<'PT' | 'EN' | 'ES', Texto> = {
     ],
     featEyebrow: 'Everything your operation needs', featTitle: 'Organized inside. Visible outside.',
     fishingTag: 'Sport fishing', fishingTitle: 'Seasons, boat hotels and groups',
-    fishingText: 'Departures, anglers, boats and guides organized by expedition.',
+    fishingText: 'Readiness for each expedition: boat, guide, health forms, payment and supplies.',
     feats: [
-      ['calendario', 'Bookings and schedule', 'Departures, capacity and status of each trip.'],
-      ['equipe', 'Clients', 'History, documents and preferences.'],
-      ['financeiro', 'Finance and invoices', 'Income, expenses and service invoices depending on the plan.'],
-      ['voucher', 'PDF vouchers', 'In three languages, with your brand.'],
+      ['calendario', 'Bookings and schedule', 'Departures with real seats, overbooking protection and boat/guide conflicts.'],
+      ['equipe', 'Clients and forms', 'History, preferences and health forms with consent (LGPD).'],
+      ['financeiro', 'Finance and Pix', 'Deposit, balance, Pix copy-and-paste charges and partner commissions.'],
+      ['voucher', 'PDF vouchers', 'In three languages, with your brand and online verification.'],
     ],
     mapTitle: 'Satellite operations map', mapText: 'Boarding points, beaches and spots of your operation seen from above.',
     profileTitle: 'Public profile + EDA Network', profileText: 'A verified page with posts and a WhatsApp button for visitors.',
@@ -131,12 +132,12 @@ const textos: Record<'PT' | 'EN' | 'ES', Texto> = {
     ],
     featEyebrow: 'Todo lo que la operación necesita', featTitle: 'Organiza por dentro. Aparece por fuera.',
     fishingTag: 'Pesca deportiva', fishingTitle: 'Temporada, barcos-hotel y grupos',
-    fishingText: 'Salidas, pescadores, embarcaciones y guías organizados por expedición.',
+    fishingText: 'Preparación de cada expedición: barco, guía, fichas de salud, pago y apoyo.',
     feats: [
-      ['calendario', 'Reservas y agenda', 'Salidas, cupos y estado de cada viaje.'],
-      ['equipe', 'Clientes', 'Historial, documentos y preferencias.'],
-      ['financeiro', 'Finanzas y facturas', 'Ingresos, gastos y factura según el plan.'],
-      ['voucher', 'Vouchers en PDF', 'En tres idiomas, con tu marca.'],
+      ['calendario', 'Reservas y agenda', 'Salidas con cupos reales, bloqueo de sobreventa y conflictos de barco y guía.'],
+      ['equipe', 'Clientes y fichas', 'Historial, preferencias y ficha de salud con consentimiento (LGPD).'],
+      ['financeiro', 'Finanzas y Pix', 'Seña, saldo, cobro por Pix copia y pega y comisiones de socios.'],
+      ['voucher', 'Vouchers en PDF', 'En tres idiomas, con tu marca y verificación en línea.'],
     ],
     mapTitle: 'Mapa operativo satelital', mapText: 'Embarques, playas y puntos de tu operación vistos desde arriba.',
     profileTitle: 'Perfil público + Red EDA', profileText: 'Página con sello verificado, publicaciones y botón de WhatsApp para los visitantes.',
@@ -220,6 +221,8 @@ export default function OperadoresPage() {
             <PainelExemplo t={t} />
           </div>
         </section>
+
+        <NumerosRedeEDA lang={idioma === 'EN' || idioma === 'ES' ? idioma : 'PT'} />
 
         <section className="border-y border-white/[0.06] bg-[#08130F] px-5 py-20 sm:px-8">
           <div className="mx-auto max-w-[1280px]">
