@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { SeletorPeriodoMensalERN } from '@/app/components/PeriodoMensalERN';
-import { deslocarMesERN, mesAtualERN, mesValidoERN, rotuloMesERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
+import { mesAtualERN, mesValidoERN, rotuloMesERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
 import PreparacaoFiscalERN, { type ReservaFiscalEDA } from '@/app/components/PreparacaoFiscalERN';
 import CadastroFiscalERN from '@/app/components/CadastroFiscalERN';
 import HistoricoRevisaoFiscalERN from '@/app/components/HistoricoRevisaoFiscalERN';
