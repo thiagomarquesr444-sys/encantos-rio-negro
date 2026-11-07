@@ -11,6 +11,8 @@ import {
   validarContextoGuias,
   type ContextoGuias,
 } from '@/lib/guiasOperacionais';
+import { CampoChipsEDA } from '@/app/components/CampoOpcoesEDA';
+import { IDIOMAS } from '@/lib/opcoesEDA';
 
 type StatusGuia = 'Ativo' | 'Em Tour' | 'Férias' | 'Inativo';
 
@@ -459,16 +461,8 @@ export default function NovoGuiaPage() {
                   Idiomas
                 </label>
 
-                <input
-                  id="guia-idiomas"
-                  type="text"
-                  name="idiomas"
-                  disabled={bloqueado}
-                  value={formData.idiomas}
-                  onChange={handleChange}
-                  placeholder="Ex.: Português, Inglês, Espanhol"
-                  className={inputClass}
-                />
+                <CampoChipsEDA valor={formData.idiomas} opcoes={IDIOMAS} disabled={bloqueado}
+                  onChange={(v) => handleChange({ target: { name: 'idiomas', value: v } } as React.ChangeEvent<HTMLInputElement>)} />
 
                 <p className="mt-2 text-[9px] leading-4 text-[var(--ern-secundario)]">
                   Separe mais de um idioma por vírgula.

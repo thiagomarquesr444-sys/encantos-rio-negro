@@ -18,6 +18,7 @@ import {
   type DadosPublicacaoOperadoraERN,
   type PublicacaoOperadoraERN,
 } from '@/lib/publicacoesOperadoraERN';
+import CampoLocalEDA from '@/app/components/CampoLocalEDA';
 
 const INICIAL: DadosPublicacaoOperadoraERN = {
   titulo: '',
@@ -341,13 +342,9 @@ export default function PublicacoesOperadoraPage() {
 
                 <label className="block text-sm">
                   Localidade
-                  <input
-                    maxLength={300}
-                    value={formulario.localidade_texto}
-                    onChange={e => atualizar('localidade_texto', e.target.value)}
-                    className={campo}
+                  <CampoLocalEDA modo="cidade" valor={{ texto: formulario.localidade_texto }} className={campo}
                     placeholder="Ex.: Barcelos, Rio Negro — AM"
-                  />
+                    onChange={(l) => atualizar('localidade_texto', l.texto)} />
                 </label>
 
                 <label className="block text-sm">

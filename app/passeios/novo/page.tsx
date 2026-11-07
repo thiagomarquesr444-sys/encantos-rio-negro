@@ -10,6 +10,8 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import PortalPasseioEDA, { type FotoLocalEDA } from '@/app/components/PortalPasseioEDA';
 import { enviarFotosPasseioEDA } from '@/lib/passeiosPublicosEDA';
+import CampoLocalEDA from '@/app/components/CampoLocalEDA';
+import { CampoDuracaoEDA } from '@/app/components/CampoOpcoesEDA';
 
 type Mensagem = {
   tipo: 'sucesso' | 'erro';
@@ -1050,23 +1052,9 @@ export default function NovoPasseioPage() {
                 Cidade / Destino *
               </label>
 
-              <input
-                id="cidade"
-                type="text"
-                name="cidade"
-                value={
-                  formData.cidade
-                }
-                onChange={
-                  handleChange
-                }
-                disabled={
-                  salvando ||
-                  limiteAtingido
-                }
-                placeholder="Ex.: Barcelos - AM"
-                className="min-h-[48px] w-full rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 text-sm text-[var(--ern-texto)] outline-none transition placeholder:text-[var(--ern-secundario)] focus:border-[var(--ern-borda)] focus:ring-1 focus:ring-[var(--ern-destaque)] disabled:cursor-not-allowed disabled:opacity-45"
-              />
+              <CampoLocalEDA modo="cidade" valor={{ texto: formData.cidade }} disabled={salvando || limiteAtingido}
+                className="min-h-[48px] w-full rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 text-sm text-[var(--ern-texto)] outline-none"
+                onChange={(l) => handleChange({ target: { name: 'cidade', value: l.texto } } as React.ChangeEvent<HTMLInputElement>)} />
             </div>
 
             {/* DURAÇÃO */}
@@ -1079,23 +1067,9 @@ export default function NovoPasseioPage() {
                 Duração *
               </label>
 
-              <input
-                id="duracao"
-                type="text"
-                name="duracao"
-                value={
-                  formData.duracao
-                }
-                onChange={
-                  handleChange
-                }
-                placeholder="Ex.: 4 horas, 1 dia, 3 dias"
-                disabled={
-                  salvando ||
-                  limiteAtingido
-                }
-                className="min-h-[48px] w-full rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 text-sm text-[var(--ern-texto)] outline-none transition placeholder:text-[var(--ern-secundario)] focus:border-[var(--ern-borda)] focus:ring-1 focus:ring-[var(--ern-destaque)] disabled:cursor-not-allowed disabled:opacity-45"
-              />
+              <CampoDuracaoEDA valor={formData.duracao} disabled={salvando || limiteAtingido}
+                className="min-h-[48px] w-full rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 text-sm text-[var(--ern-texto)] outline-none"
+                onChange={(v) => handleChange({ target: { name: 'duracao', value: v } } as React.ChangeEvent<HTMLInputElement>)} />
             </div>
 
             {/* PREÇO */}

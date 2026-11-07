@@ -12,6 +12,8 @@ import {
   validarContextoGuias,
   type ContextoGuias,
 } from '@/lib/guiasOperacionais';
+import { CampoChipsEDA } from '@/app/components/CampoOpcoesEDA';
+import { IDIOMAS } from '@/lib/opcoesEDA';
 
 type StatusGuia = 'Ativo' | 'Em Tour' | 'Férias' | 'Inativo';
 
@@ -1198,19 +1200,8 @@ export default function GuiasPage() {
                   >
                     Idiomas
                   </label>
-                  <input
-                    id="guia-editar-idiomas"
-                    type="text"
-                    value={itemEditar.idiomas || ''}
-                    onChange={(event) =>
-                      setItemEditar({
-                        ...itemEditar,
-                        idiomas: event.target.value,
-                      })
-                    }
-                    placeholder="Ex.: Português, Inglês"
-                    className={inputClass}
-                  />
+                  <CampoChipsEDA valor={itemEditar.idiomas || ''} opcoes={IDIOMAS}
+                    onChange={(v) => setItemEditar({ ...itemEditar, idiomas: v })} />
                 </div>
 
                 <div>

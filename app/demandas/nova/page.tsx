@@ -30,6 +30,7 @@ import {
   type PublicoAlvo,
   type TipoCombustivel,
 } from '@/lib/demandas';
+import CampoLocalEDA from '@/app/components/CampoLocalEDA';
 
 type Formulario = {
   titulo: string;
@@ -766,25 +767,9 @@ export default function NovaDemandaPage() {
                     Localidade
                   </label>
 
-                  <input
-                    required
-                    minLength={2}
-                    maxLength={200}
-                    value={
-                      formulario.localidade
-                    }
-                    onChange={(
-                      evento,
-                    ) =>
-                      atualizarCampo(
-                        'localidade',
-                        evento.target
-                          .value,
-                      )
-                    }
-                    placeholder="Ex.: Barcelos - AM"
-                    className={CAMPO}
-                  />
+                  <CampoLocalEDA modo="cidade" required valor={{ texto: formulario.localidade }} className={CAMPO}
+                    placeholder="Ex.: Barcelos - AM, comunidade, lago…"
+                    onChange={(l) => atualizarCampo('localidade', l.texto)} />
                 </div>
 
                 <div className="md:col-span-2">

@@ -65,7 +65,7 @@ const ESTILO_RIO_NEGRO = [
 
 let carregamentoGoogle: Promise<any> | null = null;
 
-function carregarGoogle(chave: string, aoFalharAutenticacao: () => void): Promise<any> {
+export function carregarGoogle(chave: string, aoFalharAutenticacao: () => void): Promise<any> {
   const janela = window as any;
   janela.gm_authFailure = aoFalharAutenticacao;
   if (janela.google?.maps?.importLibrary) return Promise.resolve(janela.google);

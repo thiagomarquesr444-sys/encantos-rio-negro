@@ -16,6 +16,9 @@ import { supabase } from '@/lib/supabase';
 import GraficoPasseios from '@/app/components/GraficoPasseios';
 import { CabecalhoEDA } from '@/app/components/PadraoPaginaEDA';
 import SaidasPasseioEDA from '@/app/components/SaidasPasseioEDA';
+import CampoOpcoesEDA, { CampoDuracaoEDA } from '@/app/components/CampoOpcoesEDA';
+import CampoLocalEDA from '@/app/components/CampoLocalEDA';
+import { CATEGORIAS_PASSEIO } from '@/lib/opcoesEDA';
 
 type Passeio = {
   id?: string;
@@ -1529,70 +1532,13 @@ export default function PasseiosPage() {
                 />
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <CampoTexto
-                    label="Categoria"
-                    value={
-                      passeioSelecionado.categoria ||
-                      ''
-                    }
-                    disabled={
-                      salvando
-                    }
-                    onChange={(
-                      valor
-                    ) =>
-                      setPasseioSelecionado({
-                        ...passeioSelecionado,
+                  <div><label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)]">Categoria</label><CampoOpcoesEDA valor={passeioSelecionado.categoria || ''} opcoes={CATEGORIAS_PASSEIO} disabled={salvando} className="w-full rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 py-3 text-sm text-[var(--ern-texto)] outline-none focus:border-[var(--ern-borda)] disabled:opacity-50" onChange={(valor) => setPasseioSelecionado({ ...passeioSelecionado, categoria: valor })} /></div>
 
-                        categoria:
-                          valor,
-                      })
-                    }
-                  />
-
-                  <CampoTexto
-                    label="Duração"
-                    value={
-                      passeioSelecionado.duracao ||
-                      ''
-                    }
-                    disabled={
-                      salvando
-                    }
-                    onChange={(
-                      valor
-                    ) =>
-                      setPasseioSelecionado({
-                        ...passeioSelecionado,
-
-                        duracao:
-                          valor,
-                      })
-                    }
-                  />
+                  <div><label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)]">Duração</label><CampoDuracaoEDA key={passeioSelecionado.id} valor={passeioSelecionado.duracao || ''} disabled={salvando} className="w-full rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 py-3 text-sm text-[var(--ern-texto)] outline-none focus:border-[var(--ern-borda)] disabled:opacity-50" onChange={(valor) => setPasseioSelecionado({ ...passeioSelecionado, duracao: valor })} /></div>
                 </div>
 
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <CampoTexto
-                    label="Cidade"
-                    value={
-                      passeioSelecionado.cidade ||
-                      ''
-                    }
-                    disabled={
-                      salvando
-                    }
-                    onChange={(
-                      valor
-                    ) =>
-                      setPasseioSelecionado({
-                        ...passeioSelecionado,
-
-                        cidade:
-                          valor,
-                      })
-                    }
-                  />
+                  <div><label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)]">Cidade</label><CampoLocalEDA modo="cidade" valor={{ texto: passeioSelecionado.cidade || '' }} disabled={salvando} className="w-full rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 py-3 text-sm text-[var(--ern-texto)] outline-none focus:border-[var(--ern-borda)] disabled:opacity-50" onChange={(l) => setPasseioSelecionado({ ...passeioSelecionado, cidade: l.texto })} /></div>
 
                   <div>
                     <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)]">

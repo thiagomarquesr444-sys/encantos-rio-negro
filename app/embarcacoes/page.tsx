@@ -14,6 +14,8 @@ import Link from 'next/link';
 
 import { supabase } from '@/lib/supabase';
 import { CabecalhoEDA } from '@/app/components/PadraoPaginaEDA';
+import CampoOpcoesEDA from '@/app/components/CampoOpcoesEDA';
+import { CONDICAO_EMBARCACAO } from '@/lib/opcoesEDA';
 
 type StatusEmbarcacao =
   | 'Disponível'
@@ -1787,28 +1789,8 @@ export default function EmbarcacoesPage() {
                     Situação
                   </label>
 
-                  <input
-                    type="text"
-                    value={
-                      embarcacaoEditando.situacao ||
-                      ''
-                    }
-                    onChange={(
-                      event
-                    ) =>
-                      setEmbarcacaoEditando({
-                        ...embarcacaoEditando,
-
-                        situacao:
-                          event.target
-                            .value,
-                      })
-                    }
-                    placeholder="Ex.: Regular"
-                    className={
-                      inputClass
-                    }
-                  />
+                  <CampoOpcoesEDA key={embarcacaoEditando.id} valor={embarcacaoEditando.situacao || ''} opcoes={CONDICAO_EMBARCACAO} placeholder="Selecione a condição" className={inputClass}
+                    onChange={(v) => setEmbarcacaoEditando({ ...embarcacaoEditando, situacao: v })} />
                 </div>
 
                 <div>

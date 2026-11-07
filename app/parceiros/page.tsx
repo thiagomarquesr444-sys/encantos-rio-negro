@@ -6,6 +6,7 @@ import '@/app/components/padrao-formularios-eda.css';
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import CampoLocalEDA from '@/app/components/CampoLocalEDA';
 
 interface Parceiro {
   id: string;
@@ -22,6 +23,8 @@ interface Parceiro {
   whatsapp: string | null;
   cidade: string | null;
   endereco: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   observacoes: string | null;
   updated_at: string | null;
 }
@@ -343,6 +346,8 @@ export default function ParceirosPage() {
           email: editando.email?.trim() || null,
           cidade: editando.cidade?.trim() || null,
           endereco: editando.endereco?.trim() || null,
+          latitude: editando.latitude ?? null,
+          longitude: editando.longitude ?? null,
           comissao_porcentagem: comissao,
           status: editando.status || 'ativo',
           observacoes: editando.observacoes?.trim() || null,
@@ -1014,16 +1019,8 @@ export default function ParceirosPage() {
               </FormField>
 
               <FormField label="Cidade">
-                <input
-                  value={editando.cidade || ''}
-                  onChange={(event) =>
-                    setEditando({
-                      ...editando,
-                      cidade: event.target.value,
-                    })
-                  }
-                  className={inputClass}
-                />
+                <CampoLocalEDA modo="cidade" valor={{ texto: editando.cidade || '' }} className={inputClass}
+                  onChange={(l) => setEditando({ ...editando, cidade: l.texto })} />
               </FormField>
 
               <FormField label="Telefone">
@@ -1100,16 +1097,8 @@ export default function ParceirosPage() {
               </FormField>
 
               <FormField label="Endereço" span>
-                <input
-                  value={editando.endereco || ''}
-                  onChange={(event) =>
-                    setEditando({
-                      ...editando,
-                      endereco: event.target.value,
-                    })
-                  }
-                  className={inputClass}
-                />
+                <CampoLocalEDA key={editando.id} valor={{ texto: editando.endereco || '', lat: editando.latitude, lng: editando.longitude }} className={inputClass}
+                  onChange={(l) => setEditando({ ...editando, endereco: l.texto, latitude: l.lat ?? null, longitude: l.lng ?? null })} />
               </FormField>
 
               <FormField label="Observações" span>

@@ -11,6 +11,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 import { supabase } from '@/lib/supabase';
+import CampoOpcoesEDA from '@/app/components/CampoOpcoesEDA';
+import CampoLocalEDA, { type LocalEDA } from '@/app/components/CampoLocalEDA';
+import { TIPOS_HOSPEDAGEM } from '@/lib/opcoesEDA';
 
 type StatusHospedagem =
   | 'Disponível'
@@ -24,6 +27,7 @@ interface HospedagemForm {
   telefone: string;
   valorDiaria: string;
   status: StatusHospedagem;
+  local: LocalEDA;
 }
 
 const estadoInicial: HospedagemForm = {
@@ -33,6 +37,7 @@ const estadoInicial: HospedagemForm = {
   telefone: '',
   valorDiaria: '',
   status: 'Disponível',
+  local: { texto: '' },
 };
 
 /*
@@ -209,8 +214,12 @@ export default function NovaHospedagemPage() {
           null,
 
         endereco:
-          form.endereco.trim() ||
+          form.local.texto.trim() ||
           null,
+
+        cidade: form.local.cidade ?? null,
+        latitude: form.local.lat ?? null,
+        longitude: form.local.lng ?? null,
 
         telefone:
           form.telefone.trim() ||
@@ -453,22 +462,12 @@ export default function NovaHospedagemPage() {
                     Tipo
                   </label>
 
-                  <input
-                    type="text"
-                    value={form.tipo}
-                    onChange={(
-                      event
-                    ) =>
-                      alterarCampo(
-                        'tipo',
-                        event.target
-                          .value
-                      )
-                    }
-                    placeholder="Ex.: Pousada, hotel, barco-hotel"
-                    className={
-                      inputClass
-                    }
+                  <CampoOpcoesEDA
+                    valor={form.tipo}
+                    opcoes={TIPOS_HOSPEDAGEM}
+                    onChange={(v) => alterarCampo('tipo', v)}
+                    placeholder="Selecione o tipo"
+                    className={inputClass}
                   />
                 </div>
 
@@ -520,24 +519,10 @@ export default function NovaHospedagemPage() {
                   Localização / Endereço
                 </label>
 
-                <input
-                  type="text"
-                  value={
-                    form.endereco
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    alterarCampo(
-                      'endereco',
-                      event.target
-                        .value
-                    )
-                  }
-                  placeholder="Endereço ou localização da unidade"
-                  className={
-                    inputClass
-                  }
+                <CampoLocalEDA
+                  valor={form.local}
+                  onChange={(local) => setForm((atual) => ({ ...atual, local }))}
+                  className={inputClass}
                 />
               </div>
 
@@ -590,14 +575,8 @@ export default function NovaHospedagemPage() {
                     'var(--font-fraunces), serif',
                 }}
               >
-                Disponibilidade
+                Acomodações e ocupação
               </h2>
-
-              <p className="mt-4 text-xs leading-6 text-[var(--ern-secundario)]">
-                Defina a situação
-                operacional atual da
-                hospedagem.
-              </p>
 
               <p className="mt-6 text-sm text-[var(--ern-secundario)]">
                 Depois de salvar, cadastre as acomodações (quartos, suítes, cabines, redário) na edição da hospedagem — a ocupação passa a ser calculada pelas reservas.
@@ -626,7 +605,7 @@ export default function NovaHospedagemPage() {
                   'Valor da diária',
                   'Localização',
                   'Contato',
-                  'Status operacional',
+                  'Acomodações (após salvar)',
                 ].map((item) => (
                   <div
                     key={item}

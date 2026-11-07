@@ -17,6 +17,9 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { CabecalhoEDA } from '@/app/components/PadraoPaginaEDA';
 import AcomodacoesHospedagemEDA from '@/app/components/AcomodacoesHospedagemEDA';
+import CampoOpcoesEDA from '@/app/components/CampoOpcoesEDA';
+import CampoLocalEDA from '@/app/components/CampoLocalEDA';
+import { TIPOS_HOSPEDAGEM } from '@/lib/opcoesEDA';
 import { listarOcupacaoHospedagensEDA, type OcupacaoHospedagemEDA } from '@/lib/hospedagensEDA';
 
 type StatusHospedagem =
@@ -49,6 +52,9 @@ interface Hospedagem {
 
   // EDA_HOSPEDAGENS_PREMIUM_V1: ocupação real de hoje.
   _ocup?: OcupacaoHospedagemEDA;
+  cidade?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 function removerAcentos(
@@ -536,6 +542,10 @@ export default function HospedagensPage() {
           obterEndereco(
             itemEditar
           ).trim() || null,
+
+        cidade: itemEditar.cidade ?? null,
+        latitude: itemEditar.latitude ?? null,
+        longitude: itemEditar.longitude ?? null,
 
         telefone:
           itemEditar.telefone?.trim() ||
@@ -1665,27 +1675,13 @@ export default function HospedagensPage() {
                     Tipo
                   </label>
 
-                  <input
-                    type="text"
-                    value={
-                      itemEditar.tipo ||
-                      ''
-                    }
-                    onChange={(
-                      event
-                    ) =>
-                      setItemEditar({
-                        ...itemEditar,
-
-                        tipo:
-                          event.target
-                            .value,
-                      })
-                    }
-                    placeholder="Ex.: Pousada"
-                    className={
-                      inputClass
-                    }
+                  <CampoOpcoesEDA
+                    key={itemEditar.id}
+                    valor={itemEditar.tipo || ''}
+                    opcoes={TIPOS_HOSPEDAGEM}
+                    onChange={(v) => setItemEditar({ ...itemEditar, tipo: v })}
+                    placeholder="Selecione o tipo"
+                    className={inputClass}
                   />
                 </div>
 
@@ -1730,26 +1726,11 @@ export default function HospedagensPage() {
                   Localização / Endereço
                 </label>
 
-                <input
-                  type="text"
-                  value={
-                    itemEditar.endereco ||
-                    ''
-                  }
-                  onChange={(
-                    event
-                  ) =>
-                    setItemEditar({
-                      ...itemEditar,
-
-                      endereco:
-                        event.target
-                          .value,
-                    })
-                  }
-                  className={
-                    inputClass
-                  }
+                <CampoLocalEDA
+                  key={itemEditar.id}
+                  valor={{ texto: itemEditar.endereco || '', cidade: itemEditar.cidade, lat: itemEditar.latitude, lng: itemEditar.longitude }}
+                  onChange={(l) => setItemEditar({ ...itemEditar, endereco: l.texto, cidade: l.cidade ?? null, latitude: l.lat ?? null, longitude: l.lng ?? null })}
+                  className={inputClass}
                 />
               </div>
 

@@ -7,6 +7,9 @@ import type { FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import CampoLocalEDA from '@/app/components/CampoLocalEDA';
+import CampoOpcoesEDA from '@/app/components/CampoOpcoesEDA';
+import { NACIONALIDADES } from '@/lib/opcoesEDA';
 
 type Formulario = {
   nome: string;
@@ -535,18 +538,26 @@ export default function NovoClientePage() {
                   <label htmlFor={item.chave} className="mb-2 block text-sm">
                     {item.titulo}{item.obrigatorio ? ' *' : ''}
                   </label>
+                  {item.chave === 'cidade' ? (
+                    <CampoLocalEDA id="cidade" modo="cidade" valor={{ texto: form.cidade }} className={campo}
+                      placeholder="Cidade de origem do cliente" onChange={(l) => alterar('cidade', l.texto)} />
+                  ) : item.chave === 'nacionalidade' ? (
+                    <CampoOpcoesEDA id="nacionalidade" valor={form.nacionalidade} opcoes={NACIONALIDADES}
+                      placeholder="Selecione" className={campo} onChange={(v) => alterar('nacionalidade', v)} />
+                  ) : (
                   <input
-                    id={item.chave}
-                    name={item.chave}
-                    type={item.tipo}
-                    required={item.obrigatorio}
-                    minLength={item.chave === 'nome' ? 3 : undefined}
-                    maxLength={item.maximo}
-                    autoComplete={item.autocomplete}
-                    value={form[item.chave]}
-                    onChange={(event) => alterar(item.chave, event.target.value)}
-                    className={campo}
-                  />
+                      id={item.chave}
+                      name={item.chave}
+                      type={item.tipo}
+                      required={item.obrigatorio}
+                      minLength={item.chave === 'nome' ? 3 : undefined}
+                      maxLength={item.maximo}
+                      autoComplete={item.autocomplete}
+                      value={form[item.chave]}
+                      onChange={(event) => alterar(item.chave, event.target.value)}
+                      className={campo}
+                    />
+                  )}
                   {item.chave === 'documento' && (
                     <p className="mt-2 text-xs leading-5 text-[var(--ern-secundario)]">
                       Aceita CPF, passaporte e documentos internacionais.
