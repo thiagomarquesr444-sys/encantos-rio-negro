@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { dataCurtaEDA } from '@/lib/passeiosPublicosEDA';
 import { hojeManausEDA } from '@/lib/saidasGestaoEDA';
+import { pixCopiaECola } from '@/lib/pixEDA';
 
 const moeda = (v: number) => (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -31,11 +32,34 @@ export function FinanceiroReservaEDA({ reservaId, bloqueado }: { reservaId?: str
   const [erro, setErro] = useState('');
   const [salvando, setSalvando] = useState(false);
   const [sinalPct, setSinalPct] = useState(0);
+  const [pixCfg, setPixCfg] = useState<{ chave: string; nome: string; cidade: string } | null>(null);
+  const [cobranca, setCobranca] = useState<{ codigo: string; valor: number; texto: string; telefone: string | null } | null>(null);
 
-  // EDA_CONFIGURACOES_CONECTADAS_V1: % de sinal definido em Configurações.
+  // EDA_CONFIGURACOES_CONECTADAS_V1 / EDA_PIX_RECEBIMENTO_V1: sinal e Pix da operadora.
   useEffect(() => {
-    supabase.rpc('config_operacao_eda').then(({ data }) => setSinalPct(Number((data as { porcentagem_sinal?: number } | null)?.porcentagem_sinal) || 0));
+    supabase.rpc('config_operacao_eda').then(({ data }) => {
+      const c = (data ?? {}) as { porcentagem_sinal?: number; chave_pix?: string | null; pix_nome_recebedor?: string | null; pix_cidade?: string | null };
+      setSinalPct(Number(c.porcentagem_sinal) || 0);
+      if (c.chave_pix) setPixCfg({ chave: c.chave_pix, nome: c.pix_nome_recebedor || 'Operadora', cidade: c.pix_cidade || 'Barcelos' });
+    });
   }, []);
+
+  async function gerarPix() {
+    if (!pixCfg || !reservaId) return;
+    const v = Number(form.valor.replace(/\./g, '').replace(',', '.')) || saldo;
+    if (!(v > 0)) { setErro('Informe o valor a cobrar.'); return; }
+    const { data: r } = await supabase.from('reservas')
+      .select('cliente,pacote,cliente_id,clientes(telefone)').eq('id', reservaId).maybeSingle();
+    const cli = (r as { clientes?: unknown } | null)?.clientes as { telefone?: string | null } | { telefone?: string | null }[] | null | undefined;
+    const tel = ((Array.isArray(cli) ? cli[0]?.telefone : cli?.telefone) ?? '').replace(/\D/g, '');
+    try {
+      const codigo = pixCopiaECola({ chave: pixCfg.chave, nome: pixCfg.nome, cidade: pixCfg.cidade, valor: v, txid: `EDA${reservaId.replace(/-/g, '').slice(0, 20)}` });
+      const desc = form.descricao || (v >= saldo - 0.01 ? 'saldo' : 'pagamento');
+      const texto = `Olá${r?.cliente ? `, ${r.cliente.split(' ')[0]}` : ''}! Segue o Pix (${desc}) da sua reserva${r?.pacote ? ` — ${r.pacote}` : ''}: ${moeda(v)}.\n\nPix copia e cola:\n${codigo}\n\nRecebedor: ${pixCfg.nome}. Assim que o pagamento cair, confirmamos por aqui.`;
+      setCobranca({ codigo, valor: v, texto, telefone: tel ? (tel.length <= 11 ? `55${tel}` : tel) : null });
+      setErro('');
+    } catch { setErro('A chave Pix das Configurações é inválida.'); }
+  }
 
   const carregar = useCallback(async () => {
     if (!reservaId) return;
@@ -113,6 +137,31 @@ export function FinanceiroReservaEDA({ reservaId, bloqueado }: { reservaId?: str
             onClick={() => setForm({ ...form, valor: saldo.toFixed(2).replace('.', ',') })}>Quitar saldo</button>
         </form>
       )}
+      {saldo > 0 && (
+        <div className="fr-pix">
+          {pixCfg ? (
+            <button type="button" className="eda-pg-bt" disabled={bloqueado} onClick={() => void gerarPix()}>
+              Cobrar por Pix {form.valor ? '(valor informado)' : '(saldo)'}
+            </button>
+          ) : (
+            <span className="fr-nota">Cadastre a chave Pix em Configurações para gerar cobranças com o valor certo.</span>
+          )}
+          {cobranca && (
+            <div className="fr-pix-box">
+              <span>Pix copia e cola · {moeda(cobranca.valor)}</span>
+              <textarea readOnly rows={3} value={cobranca.codigo} onFocus={(e) => e.target.select()} aria-label="Pix copia e cola" />
+              <div>
+                <button type="button" className="eda-pg-bt" onClick={() => void navigator.clipboard?.writeText(cobranca.codigo)}>Copiar código</button>
+                <a className="eda-pg-bt eda-pg-bt-ouro" target="_blank" rel="noopener noreferrer"
+                  href={`https://wa.me/${cobranca.telefone ?? ''}?text=${encodeURIComponent(cobranca.texto)}`}>
+                  Enviar ao cliente no WhatsApp
+                </a>
+              </div>
+              <span className="fr-nota">Quando o dinheiro cair, use “Registrar recebimento” acima.</span>
+            </div>
+          )}
+        </div>
+      )}
       {erro && <p role="alert" className="fr-erro">{erro}</p>}
 
       <style jsx>{`
@@ -131,6 +180,13 @@ export function FinanceiroReservaEDA({ reservaId, bloqueado }: { reservaId?: str
         .fr-form input:not([type='checkbox']) { min-height: 40px; padding: 0 10px; border-radius: 12px; border: 1px solid var(--ern-borda); background: transparent; color: inherit; }
         .fr-check { display: flex !important; align-items: center; gap: 6px; min-height: 40px; color: inherit !important; font-size: 13px !important; }
         .fr-erro { color: var(--ern-erro, #f87171); font-size: 13px; }
+        .fr-pix { margin-top: 12px; display: grid; gap: 8px; }
+        .fr-pix > button { justify-self: start; }
+        .fr-nota { font-size: 12px; color: var(--ern-secundario, #b4c8bb); }
+        .fr-pix-box { display: grid; gap: 8px; padding: 12px; border-radius: 14px; border: 1px solid #22c55e; }
+        .fr-pix-box > span:first-child { font-weight: 700; }
+        .fr-pix-box textarea { width: 100%; padding: 10px; border-radius: 10px; border: 1px solid var(--ern-borda); background: transparent; color: inherit; font-family: monospace; font-size: 12px; word-break: break-all; }
+        .fr-pix-box div { display: flex; flex-wrap: wrap; gap: 8px; }
       `}</style>
     </section>
   );
