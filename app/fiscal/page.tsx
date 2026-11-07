@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { SeletorPeriodoMensalERN } from '@/app/components/PeriodoMensalERN';
 import { deslocarMesERN, mesAtualERN, mesValidoERN, rotuloMesERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
-import PreparacaoFiscalERN from '@/app/components/PreparacaoFiscalERN';
+import PreparacaoFiscalERN, { type ReservaFiscalEDA } from '@/app/components/PreparacaoFiscalERN';
 import CadastroFiscalERN from '@/app/components/CadastroFiscalERN';
 import HistoricoRevisaoFiscalERN from '@/app/components/HistoricoRevisaoFiscalERN';
 
@@ -24,6 +24,8 @@ type Solicitacao = {
   status: StatusFiscal;
   valor_servico: number | null;
   criado_em: string;
+  cliente?: string | null;
+  passeio?: string | null;
 };
 
 type Indicadores = {
@@ -32,6 +34,10 @@ type Indicadores = {
   pendentes: number;
   simuladas: number;
   erros: number;
+  valor_solicitado: number;
+  recebido: number;
+  recebido_sem_nota: number;
+  reservas_sem_nota: number;
 };
 
 const VAZIO: Indicadores = {
@@ -40,6 +46,10 @@ const VAZIO: Indicadores = {
   pendentes: 0,
   simuladas: 0,
   erros: 0,
+  valor_solicitado: 0,
+  recebido: 0,
+  recebido_sem_nota: 0,
+  reservas_sem_nota: 0,
 };
 
 const STATUS: Record<StatusFiscal, string> = {
@@ -184,6 +194,7 @@ export default function PainelFiscalERN() {
   // ERN_PERIODO_MENSAL_V1: solicitações do mês atual; histórico a um clique.
   const [periodo, setPeriodo] = useState<PeriodoMensalERN>(mesAtualERN);
   const [reservaFiscalSelecionada, setReservaFiscalSelecionada] = useState('');
+  const [reservasFiscais, setReservasFiscais] = useState<ReservaFiscalEDA[] | null>(null);
 
   const atualizar = useCallback(() => {
     setVersao(atual => atual + 1);
@@ -197,6 +208,7 @@ export default function PainelFiscalERN() {
       setErro('');
       setIndicadores(VAZIO);
       setSolicitacoes([]);
+      setReservasFiscais(null);
 
       try {
         const { data: autenticacao, error: erroAuth } =
@@ -224,89 +236,40 @@ export default function PainelFiscalERN() {
           throw new Error('Seu perfil não possui acesso à área fiscal.');
         }
 
-        const [financeiro, relatorios] = await Promise.all([
-          supabase.rpc('ern_pode_acessar_modulo', {
-            p_modulo: 'financeiro',
-          }),
-          supabase.rpc('ern_pode_acessar_modulo', {
-            p_modulo: 'relatorios',
-          }),
-        ]);
+        // EDA_PAINEL_FISCAL_V1: uma consulta, já filtrada pelo mês e com permissão validada no banco.
+        const { data: painelFiscal, error: erroPainel } = await supabase.rpc('painel_fiscal_eda', {
+          p_mes: mesValidoERN(periodo) ? `${periodo}-01` : null,
+        });
 
-        if (financeiro.error || relatorios.error) {
-          throw new Error('Não foi possível validar suas permissões.');
-        }
-
-        if (financeiro.data !== true && relatorios.data !== true) {
-          throw new Error('Módulo fiscal indisponível para seu perfil.');
-        }
-
-        const empresaId = String(perfil.empresa_id);
-
-        async function contar(status?: StatusFiscal): Promise<number> {
-          let consulta = supabase
-            .from('nfse_solicitacoes')
-            .select('id', { count: 'exact', head: true })
-            .eq('empresa_id', empresaId)
-            .eq('ambiente', 'simulacao');
-
-          if (status) consulta = consulta.eq('status', status);
-
-          const { count, error } = await consulta;
-
-          if (error || count === null) {
-            throw new Error('Não foi possível consultar os indicadores fiscais.');
-          }
-
-          return count;
-        }
-
-        const [
-          total,
-          rascunho,
-          pendentes,
-          simuladas,
-          erros,
-          recentes,
-        ] = await Promise.all([
-          contar(),
-          contar('rascunho'),
-          contar('validacao_pendente'),
-          contar('simulada'),
-          contar('erro_simulacao'),
-          (() => {
-            let consulta = supabase
-              .from('nfse_solicitacoes')
-              .select('id,reserva_id,ambiente,status,valor_servico,criado_em')
-              .eq('empresa_id', empresaId)
-              .eq('ambiente', 'simulacao');
-            if (mesValidoERN(periodo)) {
-              // Mês no fuso de Manaus (UTC-04:00, sem horário de verão).
-              consulta = consulta
-                .gte('criado_em', `${periodo}-01T00:00:00-04:00`)
-                .lt('criado_em', `${deslocarMesERN(periodo, 1)}-01T00:00:00-04:00`);
-            }
-            return consulta
-              .order('criado_em', { ascending: false })
-              .limit(mesValidoERN(periodo) ? 200 : 50);
-          })(),
-        ]);
-
-        if (recentes.error || !recentes.data) {
-          throw new Error('Não foi possível carregar as solicitações fiscais.');
+        if (erroPainel || !painelFiscal) {
+          throw new Error(
+            erroPainel?.message?.includes('SEM_PERMISSAO')
+              ? 'Módulo fiscal indisponível para seu perfil.'
+              : 'Não foi possível consultar os indicadores fiscais.',
+          );
         }
 
         if (!ativo) return;
 
+        const dados = painelFiscal as unknown as {
+          indicadores: Indicadores;
+          solicitacoes: Solicitacao[];
+          reservas: ReservaFiscalEDA[];
+        };
+        const num = (v: unknown) => Number(v) || 0;
         setIndicadores({
-          total,
-          rascunho,
-          pendentes,
-          simuladas,
-          erros,
+          total: num(dados.indicadores.total),
+          rascunho: num(dados.indicadores.rascunho),
+          pendentes: num(dados.indicadores.pendentes),
+          simuladas: num(dados.indicadores.simuladas),
+          erros: num(dados.indicadores.erros),
+          valor_solicitado: num(dados.indicadores.valor_solicitado),
+          recebido: num(dados.indicadores.recebido),
+          recebido_sem_nota: num(dados.indicadores.recebido_sem_nota),
+          reservas_sem_nota: num(dados.indicadores.reservas_sem_nota),
         });
-
-        setSolicitacoes(recentes.data as Solicitacao[]);
+        setSolicitacoes(dados.solicitacoes ?? []);
+        setReservasFiscais(dados.reservas ?? []);
       } catch (falha) {
         if (!ativo) return;
 
@@ -410,7 +373,7 @@ export default function PainelFiscalERN() {
                 indice="01"
                 rotulo="Total de simulações"
                 valor={indicadores.total}
-                detalhe="Solicitações da operadora"
+                detalhe={mesValidoERN(periodo) ? `Em ${rotuloMesERN(periodo)}` : "Histórico da operadora"}
               />
               <CartaoIndicador
                 indice="02"
@@ -593,7 +556,26 @@ export default function PainelFiscalERN() {
 
             <CadastroFiscalERN />
 
-            <PreparacaoFiscalERN aoAtualizar={atualizar} aoSelecionarReserva={setReservaFiscalSelecionada} />
+            <section aria-label="Conciliação fiscal do período" className={`${painel} p-4 sm:p-5`}>
+              <p className={legenda}>Conciliação · {mesValidoERN(periodo) ? rotuloMesERN(periodo) : 'Histórico'}</p>
+              <h2 className="mt-2 text-lg font-semibold tracking-tight">Recebido x nota solicitada</h2>
+              <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+                {[
+                  ['Recebido no período', formatarMoeda(indicadores.recebido), 'Receitas pagas no Financeiro'],
+                  ['Valor com solicitação', formatarMoeda(indicadores.valor_solicitado), 'Solicitações do período'],
+                  ['Recebido sem nota', formatarMoeda(indicadores.recebido_sem_nota), 'Inclui receitas sem reserva'],
+                  ['Reservas sem nota', String(indicadores.reservas_sem_nota), 'Com pagamento e sem solicitação'],
+                ].map(([rotulo, valor, detalhe], i) => (
+                  <div key={rotulo} className={`rounded-xl border p-3 ${i >= 2 && (i === 2 ? indicadores.recebido_sem_nota : indicadores.reservas_sem_nota) > 0 ? 'border-[#E3A144]/50' : 'border-[var(--ern-borda)]'}`}>
+                    <p className="text-[11px] text-[var(--ern-secundario)]">{rotulo}</p>
+                    <p className="mt-1 text-lg font-semibold tabular-nums">{valor}</p>
+                    <p className="mt-1 text-[10px] text-[var(--ern-secundario)]">{detalhe}</p>
+                  </div>
+                ))}
+              </div>
+            </section>
+
+            <PreparacaoFiscalERN aoAtualizar={atualizar} aoSelecionarReserva={setReservaFiscalSelecionada} reservasPeriodo={reservasFiscais} />
 
             <HistoricoRevisaoFiscalERN reservaSelecionada={reservaFiscalSelecionada} />
 
@@ -647,7 +629,9 @@ export default function PainelFiscalERN() {
                           <p className="mt-1 truncate text-[10px] text-[#8D9D97]">
                             {formatarData(item.criado_em)}
                             {' · '}
-                            Reserva {item.reserva_id?.slice(0, 8) ?? 'não vinculada'}
+                            {item.reserva_id
+                              ? [item.cliente, item.passeio].filter(Boolean).join(' · ') || 'Reserva vinculada'
+                              : 'Sem reserva vinculada'}
                           </p>
                         </div>
                         <div className="text-right">
