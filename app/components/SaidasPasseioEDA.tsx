@@ -53,7 +53,10 @@ export default function SaidasPasseioEDA({ passeioId, vagasPadrao }: { passeioId
   const [resumo, setResumo] = useState<string | null>(null);
   const [data, setData] = useState('');
   const [horario, setHorario] = useState('');
-  const [vagas, setVagas] = useState(String(vagasPadrao && vagasPadrao > 0 ? vagasPadrao : 10));
+  const capacidade = vagasPadrao && vagasPadrao > 0 ? vagasPadrao : null;
+  // EDA_VAGAS_UNICAS_V1: a capacidade do passeio é a fonte; cada saída já nasce com ela.
+  const [vagas, setVagas] = useState(String(capacidade ?? 10));
+  useEffect(() => { if (capacidade) setVagas(String(capacidade)); }, [capacidade]);
 
   const carregar = useCallback(async () => {
     setErro('');
@@ -103,7 +106,7 @@ export default function SaidasPasseioEDA({ passeioId, vagasPadrao }: { passeioId
     <section className="eda-saidas" aria-label="Agenda de saídas">
       <header>
         <p>Agenda de saídas</p>
-        <span>Datas reais com vagas. É isso que o portal e o Concierge mostram ao turista.</span>
+        <span>Datas reais com vagas. É isso que o portal e o Concierge mostram ao turista.{capacidade ? ` Cada saída nasce com a capacidade do passeio (${capacidade}); ajuste só se aquela data tiver menos lugares.` : ''}</span>
       </header>
 
       {erro && <div role="alert" className="eda-saidas-erro">{erro}</div>}
@@ -146,7 +149,8 @@ export default function SaidasPasseioEDA({ passeioId, vagasPadrao }: { passeioId
       <form onSubmit={adicionar}>
         <label>Data<input type="date" required min={hojeManaus()} value={data} onChange={(e) => setData(e.target.value)} /></label>
         <label>Horário<input type="time" value={horario} onChange={(e) => setHorario(e.target.value)} /></label>
-        <label>Vagas<input type="number" min={1} max={1000} required value={vagas} onChange={(e) => setVagas(e.target.value)} /></label>
+        <label>Vagas desta saída<input type="number" min={1} max={capacidade ?? 1000} required value={vagas} onChange={(e) => setVagas(e.target.value)}
+          title={capacidade ? `Até ${capacidade} (capacidade do passeio)` : undefined} /></label>
         <button type="submit" disabled={salvando}>{salvando ? 'Abrindo…' : '+ Abrir saída'}</button>
       </form>
 

@@ -1619,7 +1619,7 @@ export default function PasseiosPage() {
 
                   <div>
                     <label className="mb-2 block text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-secundario)]">
-                      Vagas
+                      Capacidade por saída
                     </label>
 
                     <input
@@ -1828,7 +1828,7 @@ export default function PasseiosPage() {
                   />
 
                   <Detalhe
-                    label="Vagas"
+                    label="Capacidade por saída"
                     valor={String(
                       Number(
                         passeioSelecionado.vagas
