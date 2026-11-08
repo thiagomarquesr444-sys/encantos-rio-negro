@@ -3,7 +3,14 @@ import { isIP } from 'node:net';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-type SupabaseClient = ReturnType<typeof createClient>;
+// Tipo concreto do cliente (sem genéricos abertos).
+function novoCliente(url: string, chave: string, token?: string) {
+  return createClient(url, chave, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+    ...(token ? { global: { headers: { Authorization: `Bearer ${token}` } } } : {}),
+  });
+}
+type SupabaseClient = ReturnType<typeof novoCliente>;
 import { responderComIA, horaManaus, hojeManaus, periodoDoDia, type MensagemIA } from '@/lib/edaIAServidor';
 
 // EDA_IA_CONVERSA_V1
@@ -46,9 +53,10 @@ async function lerJSON(req: NextRequest): Promise<Record<string, unknown>> {
 function lerMensagens(valor: unknown): MensagemIA[] {
   if (!Array.isArray(valor) || valor.length < 1 || valor.length > 12) throw new Falha(400, 'Conversa inválida.');
   const lista: MensagemIA[] = valor.map(m => {
-    const papel = (m as Record<string, unknown>)?.papel;
+    const papelBruto = (m as Record<string, unknown>)?.papel;
     const texto = (m as Record<string, unknown>)?.texto;
-    if ((papel !== 'usuario' && papel !== 'eda') || typeof texto !== 'string') throw new Falha(400, 'Conversa inválida.');
+    if ((papelBruto !== 'usuario' && papelBruto !== 'eda') || typeof texto !== 'string') throw new Falha(400, 'Conversa inválida.');
+    const papel: MensagemIA['papel'] = papelBruto === 'usuario' ? 'usuario' : 'eda';
     const limpo = texto.replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g, '').trim().slice(0, 1200);
     return { papel, texto: limpo };
   }).filter(m => m.texto);
@@ -113,9 +121,10 @@ async function contextoOperadora(db: SupabaseClient, empresaId: string, hoje: st
     }
   }
   if (!saude.error && Array.isArray(saude.data)) {
-    const graves = saude.data.reduce((t: number, a: { graves?: number }) => t + Number(a.graves ?? 0), 0);
-    const atencao = saude.data.reduce((t: number, a: { atencao?: number }) => t + Number(a.atencao ?? 0), 0);
-    const pend = saude.data.reduce((t: number, a: { pendentes?: number }) => t + Number(a.pendentes ?? 0), 0);
+    const lista = saude.data as { graves?: number; atencao?: number; pendentes?: number }[];
+    const graves = lista.reduce((t, a) => t + Number(a.graves ?? 0), 0);
+    const atencao = lista.reduce((t, a) => t + Number(a.atencao ?? 0), 0);
+    const pend = lista.reduce((t, a) => t + Number(a.pendentes ?? 0), 0);
     linhas.push(`\nFICHAS DE SAÚDE (próx. 7 dias, só contagem): ${graves} alerta(s) grave(s), ${atencao} de atenção, ${pend} ficha(s) pendente(s). Detalhes só dentro de cada reserva.`);
   }
   if (!demandas.error) {
@@ -148,7 +157,7 @@ async function contextoOperadora(db: SupabaseClient, empresaId: string, hoje: st
   if (!passeios.error) {
     const p = passeios.data ?? [];
     linhas.push(`\nPASSEIOS CADASTRADOS (${p.length}): nome | categoria | preço | situação | vagas | cidade | duração | no portal`);
-    for (const x of p) linhas.push(`- ${x.nome} | ${x.categoria ?? '—'} | ${x.preco ?? x.valor ? reais(Number(x.preco ?? x.valor)) : '—'} | ${x.situacao ?? '—'} | ${x.vagas ?? '—'} | ${x.cidade ?? '—'} | ${x.duracao ?? '—'} | ${x.publicado_portal ? 'sim' : 'não'}`);
+    for (const x of p) linhas.push(`- ${x.nome} | ${x.categoria ?? '—'} | ${(x.preco ?? x.valor) != null ? reais(Number(x.preco ?? x.valor)) : '—'} | ${x.situacao ?? '—'} | ${x.vagas ?? '—'} | ${x.cidade ?? '—'} | ${x.duracao ?? '—'} | ${x.publicado_portal ? 'sim' : 'não'}`);
   }
   return linhas.join('\n').slice(0, 14_000);
 }
@@ -177,7 +186,7 @@ ${dados}
 async function contextoPublico(db: SupabaseClient) {
   const { data, error } = await db.rpc('passeios_publicos_eda', { p_slug: null });
   if (error || !Array.isArray(data)) return 'Catálogo indisponível no momento.';
-  return data.slice(0, 40).map((p: Record<string, unknown>) =>
+  return (data as Record<string, unknown>[]).slice(0, 40).map(p =>
     `- ${p.nome} | ${p.categoria ?? '—'} | ${p.cidade ?? '—'} | ${p.duracao ?? '—'} | ${p.preco != null ? `a partir de ${reais(Number(p.preco))}${p.preco_modalidade ? ` (${p.preco_modalidade})` : ''}` : 'preço sob consulta'} | operadora: ${p.operadora_nome ?? '—'} | próxima saída: ${p.proxima_saida ? dm(String(p.proxima_saida)) : 'a combinar'} | link: /experiencias${p.slug ? `/${p.slug}` : ''}`,
   ).join('\n').slice(0, 9000) || 'Ainda não há passeios publicados.';
 }
@@ -220,8 +229,7 @@ export async function POST(req: NextRequest) {
     if (modo !== 'operadora' && modo !== 'publico') throw new Falha(400, 'Modo inválido.');
     const mensagens = lerMensagens(dados.mensagens);
 
-    const opcoes = { auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false } };
-    const admin = createClient(url, servico, opcoes);
+    const admin = novoCliente(url, servico);
     const agora = new Date();
     const periodo = periodoDoDia(horaManaus(agora));
     const hoje = hojeManaus(agora);
@@ -235,11 +243,11 @@ export async function POST(req: NextRequest) {
     if (modo === 'operadora') {
       const m = /^Bearer ([^\s]+)$/i.exec(req.headers.get('authorization') ?? '');
       if (!m || m[1].length > 8192) throw new Falha(401, 'Entre novamente.');
-      const { data: auth, error: erroAuth } = await createClient(url, anon, opcoes).auth.getUser(m[1]);
+      const { data: auth, error: erroAuth } = await novoCliente(url, anon).auth.getUser(m[1]);
       if (erroAuth || !auth.user) throw new Falha(401, 'Entre novamente.');
 
       // Cliente com o token do próprio usuário: RLS do banco continua valendo.
-      const db = createClient(url, anon, { ...opcoes, global: { headers: { Authorization: `Bearer ${m[1]}` } } });
+      const db = novoCliente(url, anon, m[1]);
       const { data: perfil } = await db.from('perfis').select('nome,empresa_id').eq('id', auth.user.id).maybeSingle();
       if (!perfil?.empresa_id) throw new Falha(403, 'Vínculo com a operadora não encontrado.');
 
@@ -264,7 +272,7 @@ export async function POST(req: NextRequest) {
       const prefs = Array.isArray(dados.preferencias)
         ? dados.preferencias.filter((p): p is string => typeof p === 'string').slice(0, 5).map(p => p.slice(0, 120)).join(' | ')
         : '';
-      const catalogo = await contextoPublico(createClient(url, anon, opcoes));
+      const catalogo = await contextoPublico(novoCliente(url, anon));
       sistema = sistemaPublico(idioma, periodo, prefs, catalogo);
     }
 
