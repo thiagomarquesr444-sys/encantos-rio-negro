@@ -11,7 +11,7 @@ function novoCliente(url: string, chave: string, token?: string) {
   });
 }
 type SupabaseClient = ReturnType<typeof novoCliente>;
-import { falhasIA, responderComIA, horaManaus, hojeManaus, periodoDoDia, type MensagemIA } from '@/lib/edaIAServidor';
+import { falhasIA, modelosEmUso, responderComIA, horaManaus, hojeManaus, periodoDoDia, type MensagemIA } from '@/lib/edaIAServidor';
 
 // EDA_IA_CONVERSA_V1
 // Conversa com IA real (texto livre) para a gestão da operadora e para o
@@ -277,7 +277,7 @@ export async function POST(req: NextRequest) {
     }
 
     const texto = await responderComIA(sistema, mensagens.slice(-10));
-    if (!texto) return resposta(503, { ok: false, erro: 'A EDA não conseguiu responder agora. Tente de novo em instantes.', diagnostico: falhasIA.map(f => f.split(':')[0]) });
+    if (!texto) return resposta(503, { ok: false, erro: 'A EDA não conseguiu responder agora. Tente de novo em instantes.', diagnostico: falhasIA.map(f => f.split(':')[0]), modelos: { ...modelosEmUso } });
     return resposta(200, { ok: true, resposta: texto, periodo });
   } catch (erro) {
     if (erro instanceof Falha) return resposta(erro.status, { ok: false, erro: erro.message });

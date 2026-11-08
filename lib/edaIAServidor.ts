@@ -13,10 +13,41 @@ function comTempo(): AbortSignal {
   return AbortSignal.timeout(TEMPO_LIMITE_MS);
 }
 
+// Descoberta automática do modelo (os provedores trocam nomes com frequência).
+const cacheModelo: { groq?: string; gemini?: string } = {};
+export const modelosEmUso = cacheModelo;
+
+async function modeloGroq(chave: string): Promise<string | undefined> {
+  if (cacheModelo.groq) return cacheModelo.groq;
+  const r = await fetch('https://api.groq.com/openai/v1/models', { signal: comTempo(), headers: { Authorization: `Bearer ${chave}` } });
+  if (!r.ok) throw new Error(`groq lista-${r.status}`);
+  const ids = ((await r.json()) as { data?: { id: string; active?: boolean }[] }).data
+    ?.filter(m => m.active !== false).map(m => m.id)
+    .filter(id => !/whisper|guard|tts|playai|orpheus|prompt|compound|distil/i.test(id)) ?? [];
+  const pref = [/llama.*70b.*versatile/i, /gpt-oss-120b/i, /llama.*70b/i, /llama-4.*maverick/i, /llama-4/i, /gpt-oss/i, /qwen/i, /llama/i];
+  cacheModelo.groq = pref.map(re => ids.find(id => re.test(id))).find(Boolean) ?? ids[0];
+  return cacheModelo.groq;
+}
+
+async function modeloGemini(chave: string): Promise<string | undefined> {
+  if (cacheModelo.gemini) return cacheModelo.gemini;
+  const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models?pageSize=200', { signal: comTempo(), headers: { 'x-goog-api-key': chave } });
+  if (!r.ok) throw new Error(`gemini lista-${r.status}`);
+  const nomes = ((await r.json()) as { models?: { name: string; supportedGenerationMethods?: string[] }[] }).models
+    ?.filter(m => m.supportedGenerationMethods?.includes('generateContent'))
+    .map(m => m.name.replace(/^models\//, ''))
+    .filter(n => /^gemini/i.test(n) && !/image|tts|audio|live|embedding|vision|exp|computer|robotics/i.test(n)) ?? [];
+  const versao = (n: string) => Number(/gemini-(\d+(?:\.\d+)?)/.exec(n)?.[1] ?? 0);
+  const flash = nomes.filter(n => /flash/i.test(n) && !/preview/i.test(n)).sort((a, b) => versao(b) - versao(a) || a.length - b.length);
+  cacheModelo.gemini = nomes.find(n => n === 'gemini-flash-latest') ?? flash.find(n => !/lite/i.test(n)) ?? flash[0] ?? nomes[0];
+  return cacheModelo.gemini;
+}
+
 async function chamarGroq(sistema: string, mensagens: MensagemIA[]): Promise<string | null> {
   const chave = process.env.GROQ_API_KEY?.trim();
   if (!chave) return null;
-  const modelo = process.env.GROQ_MODELO?.trim() || 'llama-3.3-70b-versatile';
+  const modelo = process.env.GROQ_MODELO?.trim() || await modeloGroq(chave);
+  if (!modelo) throw new Error('groq sem-modelo');
 
   const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
@@ -32,6 +63,7 @@ async function chamarGroq(sistema: string, mensagens: MensagemIA[]): Promise<str
       ],
     }),
   });
+  if (r.status === 404) cacheModelo.groq = undefined;
   if (!r.ok) throw new Error(`groq ${r.status}: ${(await r.text()).slice(0, 160)}`);
   const dados = await r.json() as { choices?: { message?: { content?: string } }[] };
   const texto = dados.choices?.[0]?.message?.content?.trim();
@@ -41,8 +73,9 @@ async function chamarGroq(sistema: string, mensagens: MensagemIA[]): Promise<str
 async function chamarGemini(sistema: string, mensagens: MensagemIA[]): Promise<string | null> {
   const chave = process.env.GEMINI_API_KEY?.trim();
   if (!chave) return null;
-  const modelo = process.env.GEMINI_MODELO?.trim() || 'gemini-2.5-flash';
-  if (!/^[a-z0-9.\-]+$/i.test(modelo)) throw new Error('modelo inválido');
+  const modelo = process.env.GEMINI_MODELO?.trim() || await modeloGemini(chave);
+  if (!modelo) throw new Error('gemini sem-modelo');
+  if (!/^[a-z0-9.\-]+$/i.test(modelo)) throw new Error('gemini modelo-invalido');
 
   const r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
     method: 'POST',
@@ -51,9 +84,10 @@ async function chamarGemini(sistema: string, mensagens: MensagemIA[]): Promise<s
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: sistema }] },
       contents: mensagens.map(m => ({ role: m.papel === 'usuario' ? 'user' : 'model', parts: [{ text: m.texto }] })),
-      generationConfig: { temperature: 0.6, maxOutputTokens: MAX_SAIDA, thinkingConfig: { thinkingBudget: 0 } },
+      generationConfig: { temperature: 0.6, maxOutputTokens: MAX_SAIDA * 3 },
     }),
   });
+  if (r.status === 404) cacheModelo.gemini = undefined;
   if (!r.ok) throw new Error(`gemini ${r.status}: ${(await r.text()).slice(0, 160)}`);
   const dados = await r.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
   const texto = dados.candidates?.[0]?.content?.parts?.map(p => p.text ?? '').join('').trim();
