@@ -32,7 +32,7 @@ async function chamarGroq(sistema: string, mensagens: MensagemIA[]): Promise<str
       ],
     }),
   });
-  if (!r.ok) throw new Error(`groq ${r.status}`);
+  if (!r.ok) throw new Error(`groq ${r.status}: ${(await r.text()).slice(0, 160)}`);
   const dados = await r.json() as { choices?: { message?: { content?: string } }[] };
   const texto = dados.choices?.[0]?.message?.content?.trim();
   return texto || null;
@@ -54,14 +54,17 @@ async function chamarGemini(sistema: string, mensagens: MensagemIA[]): Promise<s
       generationConfig: { temperature: 0.6, maxOutputTokens: MAX_SAIDA, thinkingConfig: { thinkingBudget: 0 } },
     }),
   });
-  if (!r.ok) throw new Error(`gemini ${r.status}`);
+  if (!r.ok) throw new Error(`gemini ${r.status}: ${(await r.text()).slice(0, 160)}`);
   const dados = await r.json() as { candidates?: { content?: { parts?: { text?: string }[] } }[] };
   const texto = dados.candidates?.[0]?.content?.parts?.map(p => p.text ?? '').join('').trim();
   return texto || null;
 }
 
+export const falhasIA: string[] = [];
+
 /** Tenta os provedores na ordem configurada; devolve null se nenhum responder. */
 export async function responderComIA(sistema: string, mensagens: MensagemIA[]): Promise<string | null> {
+  falhasIA.length = 0;
   const ordem = (process.env.EDA_IA_ORDEM?.trim() || 'groq,gemini').split(',').map(s => s.trim());
   for (const nome of ordem) {
     try {
@@ -69,8 +72,11 @@ export async function responderComIA(sistema: string, mensagens: MensagemIA[]): 
         : nome === 'gemini' ? await chamarGemini(sistema, mensagens)
         : null;
       if (texto) return texto.slice(0, 4000);
-    } catch {
-      // Tenta o próximo provedor.
+    } catch (e) {
+      // Tenta o próximo provedor; a causa fica no log da Vercel.
+      const msg = e instanceof Error ? e.message : String(e);
+      console.error('[eda-ia]', msg);
+      falhasIA.push(msg.replace(/(gsk_|AIza)[\w-]+/g, '***'));
     }
   }
   return null;
