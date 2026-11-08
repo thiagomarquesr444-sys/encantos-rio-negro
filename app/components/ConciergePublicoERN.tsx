@@ -477,7 +477,8 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
       .then(r => r.json())
       .then((j: { resposta?: string }) => {
         if (!j.resposta) throw new Error('sem resposta');
-        responder(etapa < 4 ? `${j.resposta}\n\n${perguntas[etapa]}` : j.resposta);
+        const texto = j.resposta.replace(/\*\*/g, "");
+        responder(etapa < 4 ? `${texto}\n\n${perguntas[etapa]}` : texto);
       })
       .catch(() => responder(resposta));
   }
