@@ -729,6 +729,7 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
             <button type="button" disabled={loading || Boolean(erroConsulta)} onClick={exportarRelatorio} className="eda-pg-bt">
               Exportar CSV
             </button>
+            <Link href="/reservas/pos-venda" className="eda-pg-bt">Pós-venda</Link>
             <Link href="/reservas/pedidos" className="eda-pg-bt">
               Pedidos do portal{pedidosPortal ? <span className="eda-pg-num" style={{ marginLeft: 6 }}>{pedidosPortal}</span> : null}
             </Link>

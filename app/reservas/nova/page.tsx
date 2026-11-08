@@ -247,6 +247,44 @@ export default function NovaReservaPage() {
   const [erroUso, setErroUso] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
 
+  // EDA_FASE_C_V1 (agente de reservas): ?pedido=ID preenche a reserva com o
+  // pedido que veio da Iara. A leitura passa pelo RLS (só pedidos da operadora).
+  const [pedidoOrigem, setPedidoOrigem] = useState<string | null>(null);
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get('pedido');
+    if (!id || !/^[0-9a-f-]{36}$/i.test(id)) return;
+    let ativo = true;
+    supabase.from('pedidos_visitante')
+      .select('id,nome,passeio_id,passeio_nome,adultos,criancas,periodo,mensagem,contato_whatsapp,contato_email')
+      .eq('id', id).maybeSingle()
+      .then(({ data }) => {
+        if (!ativo || !data) return;
+        setPedidoOrigem(data.id);
+        const obs = [
+          'Pedido do portal (Iara).',
+          data.periodo ? `Período desejado: ${data.periodo}.` : '',
+          data.contato_whatsapp ? `WhatsApp: ${data.contato_whatsapp}.` : '',
+          data.contato_email ? `E-mail: ${data.contato_email}.` : '',
+          data.mensagem ? `Mensagem: ${data.mensagem}` : '',
+        ].filter(Boolean).join(' ');
+        setForm(atual => ({
+          ...atual,
+          cliente: data.nome ?? atual.cliente,
+          cliente_id: '',
+          ...(data.passeio_id ? { passeio_id: data.passeio_id, pacote: data.passeio_nome ?? atual.pacote } : {}),
+          quantidade_pessoas: String(Math.max(1, Number(data.adultos ?? 1) + Number(data.criancas ?? 0))),
+          qtd_criancas: String(Number(data.criancas ?? 0)),
+          status: 'Pendente',
+          observacoes: obs.slice(0, 1000),
+        }));
+      });
+    return () => { ativo = false; };
+  }, []);
+  useEffect(() => {
+    if (!gravada || !pedidoOrigem) return;
+    void supabase.from('pedidos_visitante').update({ status: 'convertido', atualizado_em: new Date().toISOString() }).eq('id', pedidoOrigem);
+  }, [gravada, pedidoOrigem]);
+
   const envioReserva = useRef(false);
   const montado = useRef(true);
   const empresaDoUso = useRef<string | null>(null);

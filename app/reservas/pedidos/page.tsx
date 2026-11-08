@@ -128,7 +128,7 @@ export default function PedidosVisitantePage() {
                     <a className="eda-pg-bt eda-pg-bt-p" href={`mailto:${encodeURIComponent(p.contato_email)}`} onClick={() => p.status === 'novo' && void mudarStatus(p.id, 'em_contato')}>E-mail</a>
                   )}
                   <button type="button" className="eda-pg-bt eda-pg-bt-p" onClick={() => void copiarResumo(p)}>{copiado === p.id ? 'Copiado!' : 'Copiar resumo'}</button>
-                  <Link className="eda-pg-bt eda-pg-bt-p" href="/reservas/nova" onClick={() => void copiarResumo(p)}>Criar reserva</Link>
+                  {p.status !== 'convertido' && <Link className="eda-pg-bt eda-pg-bt-p eda-pg-bt-ouro" href={`/reservas/nova?pedido=${p.id}`}>Criar reserva</Link>}
                   {p.status !== 'convertido' && <button type="button" className="eda-pg-bt eda-pg-bt-p" disabled={salvando === p.id} onClick={() => void mudarStatus(p.id, 'convertido')}>Marcar como reserva</button>}
                   {p.status !== 'descartado' && <button type="button" className="eda-pg-bt eda-pg-bt-p eda-pg-bt-perigo" disabled={salvando === p.id} onClick={() => void mudarStatus(p.id, 'descartado')}>Descartar</button>}
                 </div>
