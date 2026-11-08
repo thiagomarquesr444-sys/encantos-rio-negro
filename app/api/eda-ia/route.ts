@@ -598,7 +598,7 @@ TAREFA ESPECIAL: escreva a RECEPÇÃO de quem acabou de abrir o painel. Devolva 
       const n = (v?: string, min = 0) => { const k = Number(v); return Number.isInteger(k) && k >= min && k <= 99 ? k : null; };
       pedido = { passeio_slug: item?.slug ?? null, passeio_nome: item?.nome ?? null, adultos: n(a, 1), criancas: n(c), periodo: per ? mascararDados(per).slice(0, 40) : null };
       return '';
-    }).trim();
+    }).replace(/\n{3,}/g, '\n\n').trim();
     return resposta(200, { ok: true, resposta: final, links, sugestoes: comSugestoes.sugestoes, pedido, periodo });
   } catch (erro) {
     if (erro instanceof Falha) return resposta(erro.status, { ok: false, erro: erro.message });
