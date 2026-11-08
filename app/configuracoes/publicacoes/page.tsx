@@ -246,7 +246,7 @@ export default function PublicacoesOperadoraPage() {
             Histórias, roteiros e experiências
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--ern-secundario)]">
-            Prepare conteúdos sobre sua operação e os destinos do Rio Negro.
+            Prepare conteúdos sobre sua operação e os destinos da Amazônia.
             Nesta etapa, os textos ficam salvos como rascunho.
           </p>
         </header>

@@ -171,10 +171,28 @@ export default function InicioOperadoraPremiumERN({
   const [aoVivo, setAoVivo] = useState<ViagemAoVivoEDA[]>([]);
   // EDA_FASE_B_V1: pedidos novos vindos da Iara (portal).
   const [pedidosNovos, setPedidosNovos] = useState(0);
+  const [pedidosParados, setPedidosParados] = useState(0);
+  const [posVendaPendente, setPosVendaPendente] = useState(0);
   useEffect(() => {
     let ativo = true;
-    supabase.from('pedidos_visitante').select('id', { count: 'exact', head: true }).eq('status', 'novo')
-      .then(({ count, error }) => { if (ativo && !error) setPedidosNovos(count ?? 0); });
+    supabase.from('pedidos_visitante').select('criado_em').eq('status', 'novo').limit(200)
+      .then(({ data, error }) => {
+        if (!ativo || error) return;
+        const lista = (data ?? []) as { criado_em: string }[];
+        setPedidosNovos(lista.length);
+        setPedidosParados(lista.filter(p => Date.now() - new Date(p.criado_em).getTime() > 24 * 3600_000).length);
+      });
+    // EDA_FASE_C_V1 (agente de operação): pós-venda de ontem (agradecimento) e de amanhã (véspera) ainda não enviados.
+    void (async () => {
+      const dia = (d: number) => { const x = new Date(); x.setUTCHours(12); x.setUTCDate(x.getUTCDate() + d); return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Manaus' }).format(x); };
+      const ontem = dia(-1), amanha = dia(1);
+      const { data: rs } = await supabase.from('reservas').select('id,data_reserva,status').in('data_reserva', [ontem, amanha]).limit(200);
+      const alvo = ((rs ?? []) as { id: string; data_reserva: string; status: string | null }[]).filter(r => !/cancel/i.test(r.status ?? ''));
+      if (!alvo.length) { if (ativo) setPosVendaPendente(0); return; }
+      const { data: envs } = await supabase.from('posvenda_envios').select('reserva_id,tipo').in('reserva_id', alvo.map(r => r.id));
+      const feitos = new Set(((envs ?? []) as { reserva_id: string; tipo: string }[]).map(e => `${e.reserva_id}:${e.tipo}`));
+      if (ativo) setPosVendaPendente(alvo.filter(r => !feitos.has(`${r.id}:${r.data_reserva === ontem ? 'pos' : 'vespera'}`)).length);
+    })().catch(() => { /* sem permissão */ });
     return () => { ativo = false; };
   }, []);
   useEffect(() => {
@@ -355,7 +373,8 @@ export default function InicioOperadoraPremiumERN({
       const critico = alertasViagem(v).find(a => a.tom === 'er');
       if (critico) lista.push({ tom: 'er', icone: 'barco', titulo: `${v.passeio || 'Viagem'}: alerta na operação`, detalhe: critico.texto.length > 70 ? `${critico.texto.slice(0, 68)}…` : critico.texto, acao: 'Acompanhar ao vivo', href: '/reservas/ao-vivo', peso: 99 });
     }
-    if (pedidosNovos) lista.push({ tom: 'at', icone: 'equipe', titulo: pedidosNovos === 1 ? 'Novo pedido do portal' : `${pedidosNovos} novos pedidos do portal`, detalhe: 'visitantes que falaram com a Iara e pediram contato', acao: 'Responder', href: '/reservas/pedidos', peso: 97 });
+    if (pedidosNovos) lista.push({ tom: pedidosParados ? 'er' : 'at', icone: 'equipe', titulo: pedidosNovos === 1 ? 'Novo pedido do portal' : `${pedidosNovos} novos pedidos do portal`, detalhe: pedidosParados ? `${pedidosParados} aguardando há mais de 24 horas` : 'visitantes que falaram com a Iara e pediram contato', acao: 'Responder', href: '/reservas/pedidos', peso: pedidosParados ? 99 : 97 });
+    if (posVendaPendente) lista.push({ tom: 'nt', icone: 'calendario', titulo: posVendaPendente === 1 ? 'Mensagem de pós-venda para enviar' : `${posVendaPendente} mensagens de pós-venda para enviar`, detalhe: 'lembrete de véspera ou agradecimento pós-viagem', acao: 'Enviar', href: '/reservas/pos-venda', peso: 60 });
     for (const v of saude ?? []) {
       if (!v.graves && !v.pendentes) continue;
       const quando = `${v.passeio || 'Viagem'} · ${rotuloDia(v.data_inicio, hoje).toLowerCase()}`;
@@ -369,7 +388,7 @@ export default function InicioOperadoraPremiumERN({
       lista.push({ tom: 'nt', icone: 'lista', titulo: `${plural(rascunhos, 'demanda em rascunho', 'demandas em rascunho')}`, detalhe: 'ainda não abertas', acao: 'Ver demandas', href: '/demandas?status=rascunho', peso: 40 });
     }
     return lista.sort((a, b) => b.peso - a.peso);
-  }, [fin, resumo, demandas, hoje, dia7, chegadas, saude, conflitos, lotacao, aoVivo, pedidosNovos]);
+  }, [fin, resumo, demandas, hoje, dia7, chegadas, saude, conflitos, lotacao, aoVivo, pedidosNovos, pedidosParados, posVendaPendente]);
 
   const demandasDestaque = useMemo(() => [...demandas]
     .sort((a, b) => (a.status === 'aberta' ? -1 : 0) - (b.status === 'aberta' ? -1 : 0) || (a.data_inicio ?? '9999').localeCompare(b.data_inicio ?? '9999'))

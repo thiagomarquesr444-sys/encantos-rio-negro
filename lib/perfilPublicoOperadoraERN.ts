@@ -340,7 +340,7 @@ export function linkWhatsAppPerfilERN(
 
   const mensagem =
     `Olá! Encontrei a ${nomeOperadora} na Rede EDA ` +
-    'e gostaria de informações sobre suas experiências no Rio Negro.';
+    'e gostaria de informações sobre suas experiências na Amazônia.';
 
   return `https://wa.me/${normalizado}?text=${encodeURIComponent(mensagem)}`;
 }

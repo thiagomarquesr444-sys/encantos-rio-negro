@@ -260,7 +260,8 @@ async function contextoOperadora(db: SupabaseClient, empresaId: string, hoje: st
   if (!pedidos.error) {
     const pv = pedidos.data ?? [];
     const novos = pv.filter(x => x.status === 'novo').length;
-    linhas.push(`\nPEDIDOS DO PORTAL (vindos da Iara, com consentimento; sem dados pessoais aqui): ${novos} novo(s), ${pv.length - novos} em contato.`);
+    const parados = pv.filter(x => x.status === 'novo' && Date.now() - new Date(String(x.criado_em)).getTime() > 24 * 3600_000).length;
+    linhas.push(`\nPEDIDOS DO PORTAL (vindos da Iara, com consentimento; sem dados pessoais aqui): ${novos} novo(s)${parados ? ` — ${parados} AGUARDANDO HÁ MAIS DE 24H (urgente: o visitante pode desistir)` : ''}, ${pv.length - novos} em contato.`);
     for (const x of pv.slice(0, 10)) linhas.push(`- ${x.passeio_nome ?? 'interesse geral'} | ${x.adultos} adulto(s)${x.criancas ? ` + ${x.criancas} criança(s)` : ''} | período: ${x.periodo ?? '—'} | ${x.status} | recebido ${dm(String(x.criado_em).slice(0, 10))}`);
   }
 

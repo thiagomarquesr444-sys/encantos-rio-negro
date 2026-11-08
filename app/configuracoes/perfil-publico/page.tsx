@@ -290,7 +290,7 @@ function PerfilOperadoraEDA({ abas }: { abas?: ReactNode }) {
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--ern-secundario)]">
             Apresente sua empresa, valorize suas experiências e facilite
-            o contato de quem deseja conhecer o Rio Negro.
+            o contato de quem deseja conhecer a Amazônia.
           </p>
         </header>
 

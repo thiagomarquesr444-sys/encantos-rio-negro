@@ -52,15 +52,16 @@ export default function PosVendaPage() {
   const [textos, setTextos] = useState<Record<string, string>>({});
   const [enviados, setEnviados] = useState<Record<string, boolean>>({});
   const [erro, setErro] = useState('');
+  const [empresaId, setEmpresaId] = useState<string | null>(null);
 
   useEffect(() => {
-    try { setEnviados(JSON.parse(localStorage.getItem('eda.posvenda.enviados') || '{}')); } catch {}
     let ativo = true;
     void (async () => {
       const hoje = hojeManaus();
       const { data: auth } = await supabase.auth.getUser();
       const { data: perfil } = auth.user ? await supabase.from('perfis').select('empresa_id').eq('id', auth.user.id).maybeSingle() : { data: null };
       if (perfil?.empresa_id) {
+        setEmpresaId(perfil.empresa_id);
         const { data: emp } = await supabase.from('empresa').select('nome').eq('id', perfil.empresa_id).maybeSingle();
         if (ativo && emp?.nome) setEmpresa(emp.nome);
       }
@@ -86,6 +87,12 @@ export default function PosVendaPage() {
         const p = r.passeio_id ? pmap.get(r.passeio_id) : undefined;
         return { ...r, tipo, telefone: r.cliente_id ? tel.get(r.cliente_id) ?? null : null, ponto: p?.ponto_embarque ?? null, inclui: Array.isArray(p?.inclui) ? p!.inclui! : [] };
       });
+      // Registro compartilhado com a equipe (qualquer aparelho).
+      const rids = lista.map(i => i.id);
+      if (rids.length) {
+        const { data: envs } = await supabase.from('posvenda_envios').select('reserva_id,tipo').in('reserva_id', rids);
+        if (ativo) setEnviados(Object.fromEntries(((envs ?? []) as { reserva_id: string; tipo: string }[]).map(e => [`${e.reserva_id}:${e.tipo}`, true])));
+      }
       if (ativo) setItens(lista);
     })();
     return () => { ativo = false; };
@@ -99,9 +106,11 @@ export default function PosVendaPage() {
   const chave = (i: Item) => `${i.id}:${i.tipo}`;
   const texto = (i: Item) => textos[chave(i)] ?? mensagem(i, empresa);
   function marcar(i: Item) {
-    const novo = { ...enviados, [chave(i)]: true };
-    setEnviados(novo);
-    try { localStorage.setItem('eda.posvenda.enviados', JSON.stringify(novo)); } catch {}
+    if (enviados[chave(i)]) return;
+    setEnviados(e => ({ ...e, [chave(i)]: true }));
+    if (empresaId) {
+      void supabase.from('posvenda_envios').upsert({ reserva_id: i.id, tipo: i.tipo, empresa_id: empresaId }, { onConflict: 'reserva_id,tipo', ignoreDuplicates: true });
+    }
   }
 
   const cartao = (i: Item) => {
