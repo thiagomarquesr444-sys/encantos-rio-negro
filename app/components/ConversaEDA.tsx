@@ -9,10 +9,11 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import TextoDigitadoIA from './TextoDigitadoIA';
 import './conversa-eda.css';
 
 type LinkEDA = { href: string; rotulo: string };
-type Msg = { papel: 'usuario' | 'eda'; texto: string; links?: LinkEDA[] };
+type Msg = { papel: 'usuario' | 'eda'; texto: string; links?: LinkEDA[]; sugestoes?: string[] };
 
 // Só caminhos internos da plataforma.
 const linkSeguro = (l: LinkEDA) => typeof l?.href === 'string' && /^\/[a-z]/.test(l.href) && !l.href.startsWith('//') && typeof l.rotulo === 'string';
@@ -60,7 +61,12 @@ function boasVindas(): string {
     return op[new Date().getDate() % op.length];
   }
   const s = p === 'manha' ? 'Bom dia' : p === 'tarde' ? 'Boa tarde' : 'Boa noite';
-  return `${s}! Sou a EDA. Pergunte do seu jeito sobre reservas, passeios, demandas ou o financeiro — eu olho os dados da sua operadora e respondo.`;
+  const op = [
+    `${s}! Aqui é a EDA, sua parceira na operação. Pode perguntar do seu jeito — eu olho os dados da sua operadora e te respondo rapidinho.`,
+    `${s}! EDA na área. Quer saber como está o dia, o caixa ou alguma reserva? É só me chamar.`,
+    `${s}! Que bom te ver por aqui. Me diz o que você precisa que eu procuro na plataforma para você.`,
+  ];
+  return op[new Date().getMinutes() % op.length];
 }
 
 // Negrito simples (**texto**) sem HTML: o React escapa todo o conteúdo.
@@ -81,6 +87,7 @@ export default function ConversaEDA() {
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [entrada, setEntrada] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const [animando, setAnimando] = useState<number | null>(null);
   const fimRef = useRef<HTMLDivElement>(null);
   const campoRef = useRef<HTMLTextAreaElement>(null);
 
@@ -110,11 +117,13 @@ export default function ConversaEDA() {
       const r = await fetch('/api/eda-ia', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ modo: 'operadora', pagina, mensagens: historico.slice(-10).map(({ papel, texto }) => ({ papel, texto })) }),
+        body: JSON.stringify({ modo: 'operadora', pagina, mensagens: historico.slice(-12).map(({ papel, texto }) => ({ papel, texto })) }),
       });
-      const j = await r.json().catch(() => ({})) as { resposta?: string; erro?: string; links?: LinkEDA[] };
+      const j = await r.json().catch(() => ({})) as { resposta?: string; erro?: string; links?: LinkEDA[]; sugestoes?: string[] };
       const links = Array.isArray(j.links) ? j.links.filter(linkSeguro).slice(0, 3) : [];
-      setMsgs(m => [...m, { papel: 'eda', texto: j.resposta || j.erro || 'Não consegui responder agora. Tente de novo em instantes.', links }]);
+      const sugestoes = Array.isArray(j.sugestoes) ? j.sugestoes.filter((x): x is string => typeof x === 'string').map(x => x.slice(0, 80)).slice(0, 3) : [];
+      setAnimando(historico.length);
+      setMsgs(m => [...m, { papel: 'eda', texto: j.resposta || j.erro || 'Não consegui responder agora. Tente de novo em instantes.', links, sugestoes }]);
     } catch (e) {
       setMsgs(m => [...m, { papel: 'eda', texto: e instanceof Error && e.message.includes('sessão') ? e.message : 'Sem conexão com a EDA agora. Confira a internet e tente de novo.' }]);
     } finally {
@@ -141,8 +150,12 @@ export default function ConversaEDA() {
           <div className="cv-eda-lista" aria-live="polite">
             {msgs.map((m, i) => (
               <div key={i} className={`cv-eda-bloco cv-eda-bloco-${m.papel}`}>
-                <p className={`cv-eda-msg cv-eda-${m.papel}`}>{formatar(m.texto)}</p>
-                {!!m.links?.length && (
+                <p className={`cv-eda-msg cv-eda-${m.papel}`}>
+                  {m.papel === 'eda'
+                    ? <TextoDigitadoIA texto={m.texto} animar={animando === i} render={formatar} aoTerminar={() => setAnimando(a => (a === i ? null : a))} />
+                    : formatar(m.texto)}
+                </p>
+                {animando !== i && !!m.links?.length && (
                   <div className="cv-eda-links">
                     {m.links.map(l => <Link key={l.href} href={l.href} onClick={() => setAberto(false)}>{l.rotulo} →</Link>)}
                   </div>
@@ -150,11 +163,15 @@ export default function ConversaEDA() {
               </div>
             ))}
             {enviando && <p className="cv-eda-msg cv-eda-eda cv-eda-pensando" aria-label="EDA pensando"><i /><i /><i /></p>}
-            {soBoasVindas && !enviando && (
-              <div className="cv-eda-sugestoes">
-                {sugestoes.map(s => <button key={s} type="button" onClick={() => enviar(s)}>{s}</button>)}
-              </div>
-            )}
+            {!enviando && animando === null && (() => {
+              const ultima = msgs[msgs.length - 1];
+              const lista = soBoasVindas ? sugestoes : (ultima?.papel === 'eda' ? ultima.sugestoes ?? [] : []);
+              return lista.length ? (
+                <div className="cv-eda-sugestoes">
+                  {lista.map(s => <button key={s} type="button" onClick={() => enviar(s)}>{s}</button>)}
+                </div>
+              ) : null;
+            })()}
             <div ref={fimRef} />
           </div>
 

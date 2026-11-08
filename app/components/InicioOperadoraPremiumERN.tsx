@@ -376,6 +376,37 @@ export default function InicioOperadoraPremiumERN({
     && (!financeiroLiberado || financeiro !== null || Boolean(erroFinanceiro) || tempoEsgotado)
     && (saude !== null || tempoEsgotado);
   const [saudacaoPronta, setSaudacaoPronta] = useState(false);
+
+  // EDA_FASE_A_V1: recepção escrita pela IA. O servidor só gera um texto novo
+  // quando os dados mudam; nas recargas alternamos entre as variações guardadas.
+  const [recepcao, setRecepcao] = useState('');
+  const [recepcaoPronta, setRecepcaoPronta] = useState(false);
+  useEffect(() => {
+    let ativo = true;
+    const limite = window.setTimeout(() => { if (ativo) setRecepcaoPronta(true); }, 3500);
+    void (async () => {
+      try {
+        const { data } = await supabase.auth.getSession();
+        const token = data.session?.access_token;
+        if (!token) return;
+        const r = await fetch('/api/eda-ia', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ modo: 'recepcao' }) });
+        const j = await r.json().catch(() => ({})) as { variacoes?: unknown };
+        const lista = Array.isArray(j.variacoes) ? j.variacoes.filter((x): x is string => typeof x === 'string' && x.length > 0) : [];
+        if (!ativo || !lista.length) return;
+        let indice = 0;
+        try {
+          indice = (Number(localStorage.getItem('eda.recepcao.indice')) || 0) + 1;
+          localStorage.setItem('eda.recepcao.indice', String(indice));
+        } catch {}
+        setRecepcao(lista[indice % lista.length]);
+      } catch {
+        // Sem IA: segue só o resumo do dia.
+      } finally {
+        if (ativo) { window.clearTimeout(limite); setRecepcaoPronta(true); }
+      }
+    })();
+    return () => { ativo = false; window.clearTimeout(limite); };
+  }, []);
   const [resumoAberto, setResumoAberto] = useState(false);
 
   const trechosSaudacao = useMemo<TrechoDigitado[]>(
@@ -393,8 +424,10 @@ export default function InicioOperadoraPremiumERN({
     const diaMes = Number((hoje || '').slice(8, 10)) || 0;
     const dataCurta = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 
+    if (recepcao) { add(recepcao); add('\n'); }
+
     // EDA_MADRUGADA_V1: abertura especial para quem entra entre 00h e 05h.
-    if (hora < 5) {
+    if (hora < 5 && !recepcao) {
       add(['O rio está quieto e Barcelos dorme, mas eu sigo de vigia com você. ', 'Madrugada de trabalho? Fico aqui do seu lado. ', 'A esta hora só a lua e a gente acordados no Rio Negro. '][diaMes % 3]);
       add('Deixo tudo mastigado para quando o dia clarear.\n');
     }
@@ -541,7 +574,7 @@ export default function InicioOperadoraPremiumERN({
         : ['Amanhã eu te lembro do que vier.', 'Bom descanso quando der.', 'Deixo tudo organizado para amanhã.'];
     add(' ' + fechos[diaMes % fechos.length]);
     return t;
-  }, [pronto, resumo, fin, hoje, demandas, pendencias, uso, financeiroLiberado, saude, conflitos, lotacao]);
+  }, [pronto, resumo, fin, hoje, demandas, pendencias, uso, financeiroLiberado, saude, conflitos, lotacao, recepcao]);
 
   const proxima = resumo.hoje.find(r => r.horario) ?? resumo.semana[0];
 
@@ -561,7 +594,7 @@ export default function InicioOperadoraPremiumERN({
           {/* ERN_FLUTUANTES_CELULAR_V1: no celular o resumo abre recolhido */}
           <div id="eda-resumo-dia" className={`eda-frase-caixa${resumoAberto ? ' eda-frase-aberta' : ''}`}>
             <p className="eda-frase" aria-live="off">
-              <DigitacaoEDA trechos={trechosConversa} iniciar={pronto && saudacaoPronta} velocidade={13} atraso={380} cursorFinal pularAoClicar />
+              <DigitacaoEDA trechos={trechosConversa} iniciar={pronto && saudacaoPronta && recepcaoPronta} velocidade={13} atraso={380} cursorFinal pularAoClicar />
             </p>
           </div>
           {pronto && (

@@ -3,12 +3,13 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import ConciergeLancadorERN from './ConciergeLancadorERN';
+import TextoDigitadoIA from './TextoDigitadoIA';
 import { useLanguage } from '@/app/components/LanguageProvider';
 
 const textos = {
   PT: {
-    title: 'EDA Concierge',
-    status: 'Assistente virtual · descoberta guiada',
+    title: 'Iara',
+    status: 'Guardiã das águas · Encantos da Amazônia',
     welcome: 'Vamos descobrir sua próxima viagem?',
     intro: 'A Encantos da Amazônia conecta você ao território e aos profissionais da região. Nossa rede está em formação.',
     notice: 'Preços, acesso, disponibilidade e reservas precisam de confirmação com cada prestador.',
@@ -53,8 +54,8 @@ const textos = {
     ],
   },
   EN: {
-    title: 'EDA Concierge',
-    status: 'Virtual assistant · guided discovery',
+    title: 'Iara',
+    status: 'Guardian of the waters · Encantos da Amazônia',
     welcome: 'Where could your next trip take you?',
     intro: 'Encantos da Amazônia connects you with the region and local professionals. Our network is taking shape.',
     notice: 'Prices, access, availability and bookings require confirmation with each provider.',
@@ -99,8 +100,8 @@ const textos = {
     ],
   },
   ES: {
-    title: 'EDA Concierge',
-    status: 'Asistente virtual · descubrimiento guiado',
+    title: 'Iara',
+    status: 'Guardiana de las aguas · Encantos da Amazônia',
     welcome: '¿Descubrimos su próximo viaje?',
     intro: 'Encantos da Amazônia le conecta con el territorio y los profesionales locales. Nuestra red está en formación.',
     notice: 'Precios, acceso, disponibilidad y reservas requieren confirmación con cada prestador.',
@@ -149,17 +150,17 @@ const textos = {
 // ERN_CHAT_COMPACTO_V1
 
 type IdiomaERN = 'PT' | 'EN' | 'ES';
-type MensagemERN = { autor: 'ern' | 'visitante'; texto: string };
+type MensagemERN = { autor: 'ern' | 'visitante'; texto: string; sugestoes?: string[] };
 
 const conversaTextos = {
   PT: {
-    badge: 'Assistente virtual · respostas guiadas',
+    badge: 'Guardiã das águas · assistente com IA',
     open: 'Conversar',
     close: 'Fechar conversa',
     send: 'Enviar',
     input: 'Sua mensagem',
     placeholder: 'Escreva sua mensagem...',
-    hello: 'Olá! Sou o assistente virtual da Encantos da Amazônia. Nossa rede está em formação. Vamos descobrir o que combina com sua viagem? Você procura pesca, natureza, cultura, hospedagem ou ainda está explorando?',
+    hello: 'Oi! Eu sou a Iara, a guardiã das águas da Encantos da Amazônia. 🌊 Conheço os segredos do Rio Negro e adoro ajudar a planejar viagens. Me conta: o que te trouxe até aqui — pesca, natureza, cultura ou só curiosidade?',
     destination: 'Qual lugar você gostaria de conhecer? Pode ser Manaus, Novo Airão, Barcelos, Santa Isabel, São Gabriel ou um destino ainda a definir.',
     period: 'Em qual mês ou período você pensa em viajar? Se ainda não sabe, pode dizer “a definir”.',
     group: 'Quantas pessoas vão e por quantos dias? Pode responder, por exemplo, “2 pessoas, 5 dias”, ou deixar a definir.',
@@ -172,7 +173,7 @@ const conversaTextos = {
     price: 'Ainda não consulto preços nem disponibilidade. Esses dados dependem do prestador, do período e da operação. Posso organizar suas preferências para um pedido de informações.',
     contact: 'O contato da EDA é contato.encantosrionegro@gmail.com. O botão de e-mail prepara uma mensagem; ela só é enviada quando você envia no seu aplicativo.',
     pending: 'Vamos completar suas preferências primeiro.',
-    privacy: 'A conversa fica apenas nesta página e se perde ao recarregar. Evite documentos, senhas e dados sensíveis.',
+    privacy: 'A Iara usa inteligência artificial para responder. A conversa não fica gravada e se perde ao recarregar; CPF, telefone e e-mail digitados são ocultados automaticamente. Não envie documentos, senhas ou dados sensíveis.',
     emailHelp: 'O e-mail abre no seu aplicativo para revisão e envio.',
     restart: 'Nova conversa',
     visitor: 'Você',
@@ -182,13 +183,13 @@ const conversaTextos = {
     language: 'Português',
   },
   EN: {
-    badge: 'Virtual assistant · guided replies',
+    badge: 'Guardian of the waters · AI assistant',
     open: 'Start a conversation',
     close: 'Close conversation',
     send: 'Send',
     input: 'Your message',
     placeholder: 'Write your message...',
-    hello: 'Hello! I am the Encantos da Amazônia virtual assistant. Our network is taking shape. What would you like to explore: fishing, nature, culture, accommodation, or possibilities?',
+    hello: 'Hi! I am Iara, guardian of the waters at Encantos da Amazônia. 🌊 I know the secrets of the Rio Negro and love helping plan trips. Tell me: what brought you here — fishing, nature, culture or just curiosity?',
     destination: 'Which place would you like to visit? Manaus, Novo Airão, Barcelos, Santa Isabel, São Gabriel, or a destination still to be decided?',
     period: 'Which month or period are you considering? You can also say “not decided”.',
     group: 'How many people and how many days? For example, “2 people, 5 days”, or leave it undecided.',
@@ -201,7 +202,7 @@ const conversaTextos = {
     price: 'I do not check prices or availability yet. They depend on the provider, period and operation. I can organize preferences for an enquiry.',
     contact: 'Contact EDA at contato.encantosrionegro@gmail.com. The email button prepares a message; it is sent only when you send it in your email app.',
     pending: 'Let us complete your preferences first.',
-    privacy: 'This conversation stays only on this page and resets on reload. Avoid documents, passwords and sensitive information.',
+    privacy: 'Iara uses artificial intelligence to reply. The chat is not saved and resets on reload; IDs, phone numbers and emails you type are hidden automatically. Do not send documents, passwords or sensitive data.',
     emailHelp: 'Email opens in your app for review and sending.',
     restart: 'New conversation',
     visitor: 'You',
@@ -211,13 +212,13 @@ const conversaTextos = {
     language: 'English',
   },
   ES: {
-    badge: 'Asistente virtual · respuestas guiadas',
+    badge: 'Guardiana de las aguas · asistente con IA',
     open: 'Conversar',
     close: 'Cerrar conversación',
     send: 'Enviar',
     input: 'Su mensaje',
     placeholder: 'Escriba su mensaje...',
-    hello: '¡Hola! Soy el asistente virtual de Encantos da Amazônia. Nuestra red está en formación. ¿Busca pesca, naturaleza, cultura, alojamiento o desea explorar posibilidades?',
+    hello: '¡Hola! Soy Iara, la guardiana de las aguas de Encantos da Amazônia. 🌊 Conozco los secretos del Río Negro y me encanta ayudar a planear viajes. Cuéntame: ¿qué te trajo aquí — pesca, naturaleza, cultura o pura curiosidad?',
     destination: '¿Qué lugar le gustaría conocer? Manaus, Novo Airão, Barcelos, Santa Isabel, São Gabriel, o un destino por definir.',
     period: '¿En qué mes o período piensa viajar? Si todavía no sabe, puede decir “por definir”.',
     group: '¿Cuántas personas y cuántos días? Por ejemplo, “2 personas, 5 días”, o déjelo por definir.',
@@ -230,7 +231,7 @@ const conversaTextos = {
     price: 'Todavía no consulto precios ni disponibilidad. Dependen del prestador, período y operación. Puedo organizar preferencias para una consulta.',
     contact: 'El contacto es contato.encantosrionegro@gmail.com. El botón prepara un correo; solo se envía cuando usted lo envía desde su aplicación.',
     pending: 'Primero completemos sus preferencias.',
-    privacy: 'La conversación permanece solo en esta página y se pierde al recargar. Evite documentos, contraseñas y datos sensibles.',
+    privacy: 'Iara usa inteligencia artificial para responder. La conversación no se guarda y se pierde al recargar; documentos, teléfonos y correos escritos se ocultan automáticamente. No envíe documentos, contraseñas ni datos sensibles.',
     emailHelp: 'El correo abre en su aplicación para revisar y enviar.',
     restart: 'Nueva conversación',
     visitor: 'Usted',
@@ -309,6 +310,32 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
     };
   }, []);
   const listaRef = useRef<HTMLDivElement>(null);
+  const [animandoIara, setAnimandoIara] = useState<number | null>(null);
+
+  // EDA_FASE_A_V1: iniciativa única da Iara — oferece ajuda uma vez por visita,
+  // depois de ~40 s na página (ou ~8 s para quem está voltando). Fechou, não volta.
+  const [ofertaIara, setOfertaIara] = useState<string | null>(null);
+  useEffect(() => {
+    let voltou = false;
+    try {
+      if (sessionStorage.getItem('iara.oferta.v1')) return;
+      voltou = !!localStorage.getItem('iara.visitou.v1');
+      localStorage.setItem('iara.visitou.v1', '1');
+    } catch { return; }
+    const textos = {
+      PT: voltou ? 'Que bom te ver de volta! Quer continuar planejando sua viagem comigo?' : 'Oi, eu sou a Iara 🌊 Posso te ajudar a escolher a experiência ideal?',
+      EN: voltou ? 'Welcome back! Shall we keep planning your trip?' : 'Hi, I am Iara 🌊 Can I help you find the perfect experience?',
+      ES: voltou ? '¡Qué bueno verte de nuevo! ¿Seguimos planeando tu viaje?' : 'Hola, soy Iara 🌊 ¿Te ayudo a elegir la experiencia ideal?',
+    };
+    const id = window.setTimeout(() => {
+      try { sessionStorage.setItem('iara.oferta.v1', '1'); } catch {}
+      setOfertaIara(textos[idioma]);
+    }, voltou ? 8000 : 40000);
+    return () => window.clearTimeout(id);
+    // Uma vez por montagem; o idioma inicial basta.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  useEffect(() => { if (aberto) setOfertaIara(null); }, [aberto]);
 
   const [vidaPausadaERN, setVidaPausadaERN] = useState(false);
   const legendaVidaERN = idioma === 'EN'
@@ -402,90 +429,64 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
     const normalizado = texto.normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
-    let resposta: string;
-    const preco = /\b(preco|precos|price|prices|precio|precios|valor|custa|cost|disponibilidade|availability|disponibilidad)\b/.test(normalizado);
-    const contato = /\b(contato|contact|contacto|email|e-mail|humano|human|atendente)\b/.test(normalizado);
+    // Atalhos de uma palavra continuam com resposta pronta; o resto vai para a Iara (IA).
     const mapa = /^(mapa|map|destinos|destinations)$/.test(normalizado);
     const rede = /^(rede|network|red)$/.test(normalizado);
-    const querResumo = /^(resumo|summary|resumen)$/.test(normalizado);
-
-    if (preco || contato || mapa || rede || querResumo) {
-      resposta = preco ? c.price
-        : contato ? c.contact
-        : mapa ? c.map
-        : rede ? c.network
-        : preferencias.length === 4 ? `${c.summary}\n\n${resumo}`
-        : c.pending;
-
-      if (etapa < 4) {
-        const perguntas = [c.hello, c.destination, c.period, c.group];
-        resposta += `\n\n${perguntas[etapa]}`;
-      }
-    } else if (etapa < 4) {
-      const proximas = [...preferencias, texto];
-      setPreferencias(proximas);
-      setEtapa(etapa + 1);
-
-      resposta = etapa === 0 ? c.destination
-        : etapa === 1 ? c.period
-        : etapa === 2 ? c.group
-        : `${c.summary}\n\n${proximas.map((item, indice) => `${c.details[indice]}: ${item}`).join('\n')}\n\n${c.finish}`;
-    } else {
-      resposta = c.fallback;
-    }
+    const respostaPronta = mapa ? c.map : rede ? c.network : null;
 
     enviandoERN.current = true;
     setDigitandoERN(true);
 
-    // EDA_IA_CONVERSA_V1: perguntas livres (ou depois do roteiro guiado) vão
-    // para a IA real; as respostas de regra continuam como reserva.
-    const usarIA = etapa >= 4 || preco || contato || texto.includes('?') || texto.length > 60;
     const historico = [...mensagens, { autor: 'visitante' as const, texto }]
-      .slice(-10)
+      .slice(-12)
       .map(m => ({ papel: m.autor === 'visitante' ? 'usuario' : 'eda', texto: m.texto }));
-    const perguntas = [c.hello, c.destination, c.period, c.group];
-    if (usarIA && etapa < 4 && !(preco || contato || mapa || rede || querResumo)) {
-      // Pergunta livre no meio do roteiro: não conta como resposta da etapa.
-      setPreferencias(preferencias);
-      setEtapa(etapa);
-      resposta = `${c.fallback}\n\n${perguntas[etapa]}`;
-    }
 
-    setMensagens((atuais) => [
-      ...atuais,
-      { autor: 'visitante', texto },
-    ]);
+    setMensagens((atuais) => [...atuais, { autor: 'visitante', texto }]);
     setEntrada('');
 
-    const responder = (final: string) => {
-      setMensagens((atuais) => [...atuais, { autor: 'ern', texto: final }]);
+    const indiceResposta = mensagens.length + 1;
+    const responder = (final: string, sugestoes: string[] = []) => {
+      setAnimandoIara(indiceResposta);
+      setMensagens((atuais) => [...atuais, { autor: 'ern', texto: final, sugestoes }]);
       setDigitandoERN(false);
       enviandoERN.current = false;
       respostaTimerERN.current = null;
     };
 
-    if (!usarIA) {
-      respostaTimerERN.current = setTimeout(() => responder(resposta), 800);
+    if (respostaPronta) {
+      respostaTimerERN.current = setTimeout(() => responder(respostaPronta), 700);
       return;
     }
 
     fetch('/api/eda-ia', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ modo: 'publico', idioma, preferencias, mensagens: historico }),
+      body: JSON.stringify({ modo: 'publico', idioma, mensagens: historico }),
     })
       .then(r => r.json())
-      .then((j: { resposta?: string }) => {
-        if (!j.resposta) throw new Error('sem resposta');
-        const texto = j.resposta.replace(/\*\*/g, "");
-        responder(etapa < 4 ? `${texto}\n\n${perguntas[etapa]}` : texto);
+      .then((j: { resposta?: string; erro?: string; sugestoes?: unknown }) => {
+        if (!j.resposta) throw new Error(j.erro || 'sem resposta');
+        const sugestoes = Array.isArray(j.sugestoes)
+          ? j.sugestoes.filter((x): x is string => typeof x === 'string').map(x => x.slice(0, 80)).slice(0, 3)
+          : [];
+        responder(j.resposta.replace(/\*\*/g, ''), sugestoes);
       })
-      .catch(() => responder(resposta));
+      .catch((e: unknown) => responder(e instanceof Error && /limite|Volte amanh/i.test(e.message) ? e.message : c.fallback));
   }
 
   return (
     <section className="ern-chat-compacto" aria-label={t.title} data-ern-vida-pausada={vidaPausadaERN}>
       {/* ERN_CONCIERGE_VISUAL_V2 */}
+      {ofertaIara && !aberto && (
+        <div role="status" style={{ position: 'fixed', right: 20, bottom: 104, zIndex: 60, maxWidth: 'min(320px, calc(100vw - 40px))', display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 14px', borderRadius: 16, color: '#f2f0e6', background: 'rgb(9 22 18 / 94%)', border: '1px solid rgb(244 199 126 / 30%)', boxShadow: '0 16px 40px rgb(0 0 0 / 35%)', backdropFilter: 'blur(10px)', fontSize: 14, lineHeight: 1.45 }}>
+          <span aria-hidden="true" style={{ flex: 'none', display: 'grid', placeItems: 'center', width: 30, height: 30, borderRadius: '50%', color: '#1a1205', background: 'linear-gradient(135deg,#f4c77e,#c98a3a)' }}>✦</span>
+          <div style={{ flex: 1 }}>
+            <p style={{ margin: 0 }}>{ofertaIara}</p>
+            <button type="button" onClick={() => { setOfertaIara(null); setAberto(true); }} style={{ marginTop: 8, padding: '6px 12px', borderRadius: 999, border: 0, fontWeight: 600, color: '#1a1205', background: '#f4c77e', cursor: 'pointer' }}>{c.open}</button>
+          </div>
+          <button type="button" aria-label={c.close} onClick={() => setOfertaIara(null)} style={{ flex: 'none', border: 0, background: 'transparent', color: '#93a79d', fontSize: 18, lineHeight: 1, cursor: 'pointer' }}>×</button>
+        </div>
+      )}
       <ConciergeLancadorERN
         idioma={idioma}
         aberto={aberto}
@@ -570,10 +571,24 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
                   <span className="autor">
                     {mensagem.autor === 'visitante' ? c.visitor : t.title}
                   </span>
-                  <p>{mensagem.texto}</p>
+                  <p>
+                    {mensagem.autor === 'ern'
+                      ? <TextoDigitadoIA texto={mensagem.texto} animar={animandoIara === indice} render={(t2) => t2} aoTerminar={() => setAnimandoIara(a => (a === indice ? null : a))} />
+                      : mensagem.texto}
+                  </p>
                 </div>
               </div>
             ))}
+            {!digitandoERN && animandoIara === null && !limite && mensagens.length > 1 && (() => {
+              const ultima = mensagens[mensagens.length - 1];
+              return ultima?.autor === 'ern' && ultima.sugestoes?.length ? (
+                <div className="sugestoes iara-sugestoes">
+                  {ultima.sugestoes.map((s2) => (
+                    <button key={s2} type="button" onClick={() => enviar(s2)}>{s2}</button>
+                  ))}
+                </div>
+              ) : null;
+            })()}
             {digitandoERN && (
               <div className="linha assistente">
                 <div className="balao ern-digitando" role="status">
@@ -588,7 +603,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
             {limite && <p className="limite" role="status">{c.limit}</p>}
           </div>
 
-          {etapa === 0 && !limite && !digitandoERN && (
+          {mensagens.length <= 1 && !limite && !digitandoERN && (
             <div className="sugestoes" aria-label={t.questions[0]}>
               {t.interests.map((interesse) => (
                 <button
@@ -600,7 +615,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
             </div>
           )}
 
-          {etapa === 4 && !digitandoERN && (
+          {mensagens.length >= 5 && !digitandoERN && animandoIara === null && (
             <nav className="atalhos" aria-label={t.explore}>
               <Link href="/destinos">{t.explore} ↗</Link>
               <Link href="/rede">{t.network} ↗</Link>
