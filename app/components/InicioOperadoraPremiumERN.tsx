@@ -169,6 +169,14 @@ export default function InicioOperadoraPremiumERN({
   }, []);
   // EDA_OPERACAO_AO_VIVO_V1: alertas críticos das viagens em curso entram nas pendências.
   const [aoVivo, setAoVivo] = useState<ViagemAoVivoEDA[]>([]);
+  // EDA_FASE_B_V1: pedidos novos vindos da Iara (portal).
+  const [pedidosNovos, setPedidosNovos] = useState(0);
+  useEffect(() => {
+    let ativo = true;
+    supabase.from('pedidos_visitante').select('id', { count: 'exact', head: true }).eq('status', 'novo')
+      .then(({ count, error }) => { if (ativo && !error) setPedidosNovos(count ?? 0); });
+    return () => { ativo = false; };
+  }, []);
   useEffect(() => {
     let ativo = true;
     supabase.rpc('operacao_ao_vivo_eda').then(({ data, error }) => { if (ativo && !error) setAoVivo((data ?? []) as ViagemAoVivoEDA[]); });
@@ -347,6 +355,7 @@ export default function InicioOperadoraPremiumERN({
       const critico = alertasViagem(v).find(a => a.tom === 'er');
       if (critico) lista.push({ tom: 'er', icone: 'barco', titulo: `${v.passeio || 'Viagem'}: alerta na operação`, detalhe: critico.texto.length > 70 ? `${critico.texto.slice(0, 68)}…` : critico.texto, acao: 'Acompanhar ao vivo', href: '/reservas/ao-vivo', peso: 99 });
     }
+    if (pedidosNovos) lista.push({ tom: 'at', icone: 'equipe', titulo: pedidosNovos === 1 ? 'Novo pedido do portal' : `${pedidosNovos} novos pedidos do portal`, detalhe: 'visitantes que falaram com a Iara e pediram contato', acao: 'Responder', href: '/reservas/pedidos', peso: 97 });
     for (const v of saude ?? []) {
       if (!v.graves && !v.pendentes) continue;
       const quando = `${v.passeio || 'Viagem'} · ${rotuloDia(v.data_inicio, hoje).toLowerCase()}`;
@@ -360,7 +369,7 @@ export default function InicioOperadoraPremiumERN({
       lista.push({ tom: 'nt', icone: 'lista', titulo: `${plural(rascunhos, 'demanda em rascunho', 'demandas em rascunho')}`, detalhe: 'ainda não abertas', acao: 'Ver demandas', href: '/demandas?status=rascunho', peso: 40 });
     }
     return lista.sort((a, b) => b.peso - a.peso);
-  }, [fin, resumo, demandas, hoje, dia7, chegadas, saude, conflitos, lotacao, aoVivo]);
+  }, [fin, resumo, demandas, hoje, dia7, chegadas, saude, conflitos, lotacao, aoVivo, pedidosNovos]);
 
   const demandasDestaque = useMemo(() => [...demandas]
     .sort((a, b) => (a.status === 'aberta' ? -1 : 0) - (b.status === 'aberta' ? -1 : 0) || (a.data_inicio ?? '9999').localeCompare(b.data_inicio ?? '9999'))

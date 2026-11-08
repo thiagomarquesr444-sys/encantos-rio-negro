@@ -312,6 +312,46 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   const listaRef = useRef<HTMLDivElement>(null);
   const [animandoIara, setAnimandoIara] = useState<number | null>(null);
 
+  // EDA_FASE_B_V1: pedido com consentimento (LGPD) — o visitante preenche os próprios dados.
+  type PedidoIara = { passeio_slug: string | null; passeio_nome: string | null; adultos: number | null; criancas: number | null; periodo: string | null };
+  const [pedidoIara, setPedidoIara] = useState<PedidoIara | null>(null);
+  const [formPedido, setFormPedido] = useState({ nome: '', whatsapp: '', email: '', adultos: '2', criancas: '0', periodo: '', mensagem: '', aceite: false });
+  const [enviandoPedido, setEnviandoPedido] = useState(false);
+  const [erroPedido, setErroPedido] = useState('');
+  const tp = {
+    PT: { titulo: 'Levar meu pedido à operadora', nome: 'Seu nome', zap: 'WhatsApp (com DDD)', email: 'ou e-mail', adultos: 'Adultos', criancas: 'Crianças', periodo: 'Quando pretende ir', msg: 'Algo mais? (opcional)', aceite: 'Aceito que a Encantos da Amazônia e a operadora do passeio usem estes dados para entrar em contato sobre este pedido. Os dados são apagados em até 90 dias.', priv: 'Privacidade', enviar: 'Enviar pedido', cancelar: 'Agora não', ok: (n: string) => `Pronto, ${n}! 🌊 Seu pedido já está com a operadora. Ela vai te responder com valores e datas confirmados. Enquanto isso, posso te contar mais sobre a região?`, okGeral: (n: string) => `Pronto, ${n}! 🌊 Recebemos seu pedido e vamos indicar a operadora ideal para você. Quer continuar explorando enquanto isso?` },
+    EN: { titulo: 'Send my request to the operator', nome: 'Your name', zap: 'WhatsApp (with country code)', email: 'or email', adultos: 'Adults', criancas: 'Children', periodo: 'When do you plan to go', msg: 'Anything else? (optional)', aceite: 'I agree that Encantos da Amazônia and the tour operator may use this data to contact me about this request. Data is deleted within 90 days.', priv: 'Privacy', enviar: 'Send request', cancelar: 'Not now', ok: (n: string) => `Done, ${n}! 🌊 Your request is with the operator, who will reply with confirmed prices and dates. Shall I tell you more about the region meanwhile?`, okGeral: (n: string) => `Done, ${n}! 🌊 We received your request and will point you to the right operator. Want to keep exploring?` },
+    ES: { titulo: 'Llevar mi pedido a la operadora', nome: 'Tu nombre', zap: 'WhatsApp (con código)', email: 'o correo', adultos: 'Adultos', criancas: 'Niños', periodo: 'Cuándo piensas ir', msg: '¿Algo más? (opcional)', aceite: 'Acepto que Encantos da Amazônia y la operadora del paseo usen estos datos para contactarme sobre este pedido. Los datos se eliminan en hasta 90 días.', priv: 'Privacidad', enviar: 'Enviar pedido', cancelar: 'Ahora no', ok: (n: string) => `¡Listo, ${n}! 🌊 Tu pedido ya está con la operadora, que responderá con precios y fechas confirmados. ¿Te cuento más de la región mientras tanto?`, okGeral: (n: string) => `¡Listo, ${n}! 🌊 Recibimos tu pedido y te indicaremos la operadora ideal. ¿Seguimos explorando?` },
+  }[idioma];
+
+  async function enviarPedido() {
+    if (enviandoPedido || !pedidoIara) return;
+    setErroPedido('');
+    if (!formPedido.aceite) { setErroPedido(tp.aceite.split('.')[0] + '.'); return; }
+    setEnviandoPedido(true);
+    try {
+      const r = await fetch('/api/pedido-visitante', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          nome: formPedido.nome, whatsapp: formPedido.whatsapp || null, email: formPedido.email || null, idioma,
+          periodo: formPedido.periodo || null, adultos: Number(formPedido.adultos) || 1, criancas: Number(formPedido.criancas) || 0,
+          mensagem: formPedido.mensagem || null, passeio_slug: pedidoIara.passeio_slug, consentimento: true,
+        }),
+      });
+      const j = await r.json().catch(() => ({})) as { ok?: boolean; erro?: string; operadora?: boolean };
+      if (!r.ok || !j.ok) { setErroPedido(j.erro || 'Não foi possível enviar agora.'); return; }
+      const nome = formPedido.nome.trim().split(' ')[0];
+      setPedidoIara(null);
+      setAnimandoIara(mensagens.length);
+      setMensagens(m => [...m, { autor: 'ern', texto: j.operadora ? tp.ok(nome) : tp.okGeral(nome) }]);
+      setFormPedido(f => ({ ...f, mensagem: '', aceite: false }));
+    } catch {
+      setErroPedido('Sem conexão agora. Tente de novo.');
+    } finally {
+      setEnviandoPedido(false);
+    }
+  }
+
   // EDA_FASE_A_V1: iniciativa única da Iara — oferece ajuda uma vez por visita,
   // depois de ~40 s na página (ou ~8 s para quem está voltando). Fechou, não volta.
   const [ofertaIara, setOfertaIara] = useState<string | null>(null);
@@ -464,8 +504,13 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
       body: JSON.stringify({ modo: 'publico', idioma, mensagens: historico }),
     })
       .then(r => r.json())
-      .then((j: { resposta?: string; erro?: string; sugestoes?: unknown }) => {
+      .then((j: { resposta?: string; erro?: string; sugestoes?: unknown; pedido?: PedidoIara | null }) => {
         if (!j.resposta) throw new Error(j.erro || 'sem resposta');
+        if (j.pedido && typeof j.pedido === 'object') {
+          const pd = j.pedido;
+          setPedidoIara({ passeio_slug: typeof pd.passeio_slug === 'string' ? pd.passeio_slug : null, passeio_nome: typeof pd.passeio_nome === 'string' ? pd.passeio_nome : null, adultos: pd.adultos ?? null, criancas: pd.criancas ?? null, periodo: typeof pd.periodo === 'string' ? pd.periodo : null });
+          setFormPedido(f => ({ ...f, adultos: pd.adultos ? String(pd.adultos) : f.adultos, criancas: pd.criancas != null ? String(pd.criancas) : f.criancas, periodo: typeof pd.periodo === 'string' ? pd.periodo : f.periodo }));
+        }
         const sugestoes = Array.isArray(j.sugestoes)
           ? j.sugestoes.filter((x): x is string => typeof x === 'string').map(x => x.slice(0, 80)).slice(0, 3)
           : [];
@@ -599,6 +644,33 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
                   </span>
                 </div>
               </div>
+            )}
+            {pedidoIara && !digitandoERN && animandoIara === null && (
+              <form
+                className="iara-pedido"
+                onSubmit={(e) => { e.preventDefault(); void enviarPedido(); }}
+                style={{ display: 'grid', gap: 8, margin: '6px 0', padding: 12, borderRadius: 14, border: '1px solid rgb(244 199 126 / 35%)', background: 'rgb(244 199 126 / 7%)' }}
+              >
+                <strong style={{ fontSize: 14 }}>{tp.titulo}{pedidoIara.passeio_nome ? ` · ${pedidoIara.passeio_nome}` : ''}</strong>
+                <input required maxLength={80} autoComplete="name" placeholder={tp.nome} aria-label={tp.nome} value={formPedido.nome} onChange={e => setFormPedido(f => ({ ...f, nome: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid rgb(244 199 126 / 30%)', background: 'rgb(0 0 0 / 18%)', color: 'inherit', font: 'inherit', fontSize: 13.5 }} />
+                <input type="tel" maxLength={25} autoComplete="tel" placeholder={tp.zap} aria-label={tp.zap} value={formPedido.whatsapp} onChange={e => setFormPedido(f => ({ ...f, whatsapp: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid rgb(244 199 126 / 30%)', background: 'rgb(0 0 0 / 18%)', color: 'inherit', font: 'inherit', fontSize: 13.5 }} />
+                <input type="email" maxLength={254} autoComplete="email" placeholder={tp.email} aria-label={tp.email} value={formPedido.email} onChange={e => setFormPedido(f => ({ ...f, email: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid rgb(244 199 126 / 30%)', background: 'rgb(0 0 0 / 18%)', color: 'inherit', font: 'inherit', fontSize: 13.5 }} />
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                  <label style={{ fontSize: 12 }}>{tp.adultos}<input type="number" min={1} max={99} value={formPedido.adultos} onChange={e => setFormPedido(f => ({ ...f, adultos: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid rgb(244 199 126 / 30%)', background: 'rgb(0 0 0 / 18%)', color: 'inherit', font: 'inherit', fontSize: 13.5 }} /></label>
+                  <label style={{ fontSize: 12 }}>{tp.criancas}<input type="number" min={0} max={99} value={formPedido.criancas} onChange={e => setFormPedido(f => ({ ...f, criancas: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid rgb(244 199 126 / 30%)', background: 'rgb(0 0 0 / 18%)', color: 'inherit', font: 'inherit', fontSize: 13.5 }} /></label>
+                </div>
+                <input maxLength={60} placeholder={tp.periodo} aria-label={tp.periodo} value={formPedido.periodo} onChange={e => setFormPedido(f => ({ ...f, periodo: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid rgb(244 199 126 / 30%)', background: 'rgb(0 0 0 / 18%)', color: 'inherit', font: 'inherit', fontSize: 13.5 }} />
+                <textarea rows={2} maxLength={800} placeholder={tp.msg} aria-label={tp.msg} value={formPedido.mensagem} onChange={e => setFormPedido(f => ({ ...f, mensagem: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid rgb(244 199 126 / 30%)', background: 'rgb(0 0 0 / 18%)', color: 'inherit', font: 'inherit', fontSize: 13.5, resize: 'vertical' }} />
+                <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 12, lineHeight: 1.4 }}>
+                  <input type="checkbox" checked={formPedido.aceite} onChange={e => setFormPedido(f => ({ ...f, aceite: e.target.checked }))} style={{ marginTop: 2 }} />
+                  <span>{tp.aceite} <Link href="/privacidade" target="_blank">{tp.priv}</Link></span>
+                </label>
+                {erroPedido && <p role="alert" style={{ margin: 0, fontSize: 12.5, color: '#f08a8a' }}>{erroPedido}</p>}
+                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                  <button type="submit" disabled={enviandoPedido || !formPedido.nome.trim() || (!formPedido.whatsapp.trim() && !formPedido.email.trim()) || !formPedido.aceite} style={{ padding: '8px 14px', borderRadius: 999, border: 0, fontWeight: 600, color: '#1a1205', background: '#f4c77e', cursor: 'pointer' }}>{tp.enviar}</button>
+                  <button type="button" onClick={() => setPedidoIara(null)} style={{ padding: '8px 14px', borderRadius: 999, border: '1px solid rgb(244 199 126 / 35%)', background: 'transparent', color: 'inherit', cursor: 'pointer' }}>{tp.cancelar}</button>
+                </div>
+              </form>
             )}
             {limite && <p className="limite" role="status">{c.limit}</p>}
           </div>
