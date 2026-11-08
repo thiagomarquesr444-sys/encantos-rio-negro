@@ -1,0 +1,100 @@
+/* EDA_IA_CONVERSA_V1 — "Pergunte à EDA" (gestão). Tema Noite por padrão;
+   tema Claro/Amarelo ajustado no fim do arquivo. */
+
+.cv-eda {
+  --cv-fundo: rgb(9 22 18 / 94%);
+  --cv-elev: #11231c;
+  --cv-texto: #f2f0e6;
+  --cv-sec: #93a79d;
+  --cv-borda: rgb(244 199 126 / 22%);
+  --cv-ouro: #f4c77e;
+  --cv-usuario: rgb(244 199 126 / 14%);
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 72;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  font-family: var(--font-gestao, var(--font-geist)), system-ui, sans-serif;
+}
+
+.cv-eda-botao {
+  display: inline-flex; align-items: center; gap: 8px;
+  padding: 10px 16px; border-radius: 999px;
+  font-size: 13.5px; font-weight: 600; color: var(--cv-texto);
+  background: var(--cv-fundo); border: 1px solid var(--cv-borda);
+  box-shadow: 0 12px 32px rgb(0 0 0 / 30%); backdrop-filter: blur(10px);
+  cursor: pointer; transition: transform .18s ease, border-color .18s ease;
+}
+.cv-eda-botao span { color: var(--cv-ouro); }
+.cv-eda-botao:hover { transform: translateY(-2px); border-color: var(--cv-ouro); }
+.cv-eda-botao:focus-visible, .cv-eda-sugestoes button:focus-visible, .cv-eda-form button:focus-visible, .cv-eda-x:focus-visible { outline: 2px solid var(--cv-ouro); outline-offset: 2px; }
+
+.cv-eda-painel {
+  width: min(380px, calc(100vw - 24px));
+  height: min(540px, calc(100vh - 120px));
+  display: flex; flex-direction: column;
+  color: var(--cv-texto); background: var(--cv-fundo);
+  border: 1px solid var(--cv-borda); border-radius: 20px;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 40%); backdrop-filter: blur(14px);
+  overflow: hidden; animation: cv-eda-entra .2s ease;
+}
+@keyframes cv-eda-entra { from { opacity: 0; transform: translateY(8px) scale(.98); } }
+
+.cv-eda-topo { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--cv-borda); }
+.cv-eda-avatar { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: #1a1205; background: linear-gradient(135deg, #f4c77e, #c98a3a); font-size: 15px; }
+.cv-eda-nome { margin: 0; font-weight: 700; font-size: 14px; }
+.cv-eda-status { margin: 0; font-size: 11.5px; color: var(--cv-sec); }
+.cv-eda-x { margin-left: auto; width: 30px; height: 30px; border-radius: 50%; font-size: 20px; line-height: 1; color: var(--cv-sec); background: transparent; border: 0; cursor: pointer; }
+.cv-eda-x:hover { color: var(--cv-texto); background: rgb(255 255 255 / 6%); }
+
+.cv-eda-lista { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; overscroll-behavior: contain; }
+.cv-eda-msg { margin: 0; max-width: 88%; padding: 10px 13px; border-radius: 14px; font-size: 13.5px; line-height: 1.5; overflow-wrap: anywhere; }
+.cv-eda-linha { display: block; min-height: .6em; }
+.cv-eda-eda { align-self: flex-start; background: var(--cv-elev); border-bottom-left-radius: 4px; }
+.cv-eda-usuario { align-self: flex-end; background: var(--cv-usuario); border: 1px solid var(--cv-borda); border-bottom-right-radius: 4px; }
+.cv-eda-pensando { display: flex; gap: 4px; }
+.cv-eda-pensando i { width: 6px; height: 6px; border-radius: 50%; background: var(--cv-ouro); animation: cv-eda-ponto 1s infinite ease-in-out; }
+.cv-eda-pensando i:nth-child(2) { animation-delay: .15s; }
+.cv-eda-pensando i:nth-child(3) { animation-delay: .3s; }
+@keyframes cv-eda-ponto { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+
+.cv-eda-sugestoes { display: flex; flex-wrap: wrap; gap: 6px; }
+.cv-eda-sugestoes button { padding: 7px 11px; border-radius: 999px; font-size: 12.5px; color: var(--cv-texto); background: transparent; border: 1px solid var(--cv-borda); cursor: pointer; }
+.cv-eda-sugestoes button:hover { border-color: var(--cv-ouro); color: var(--cv-ouro); }
+
+.cv-eda-form { display: flex; gap: 8px; align-items: flex-end; padding: 10px 12px; border-top: 1px solid var(--cv-borda); }
+.cv-eda-form textarea { flex: 1; resize: none; max-height: 110px; padding: 9px 12px; border-radius: 12px; font: inherit; font-size: 13.5px; color: var(--cv-texto); background: rgb(0 0 0 / 18%); border: 1px solid var(--cv-borda); }
+.cv-eda-form textarea:focus { outline: none; border-color: var(--cv-ouro); }
+.cv-eda-form button { width: 38px; height: 38px; border-radius: 50%; border: 0; color: #1a1205; background: var(--cv-ouro); cursor: pointer; }
+.cv-eda-form button:disabled { opacity: .4; cursor: default; }
+.cv-eda-nota { margin: 0; padding: 0 14px 10px; font-size: 10.5px; color: var(--cv-sec); }
+
+/* O aviso de feedback (PerguntaEDA) sobe para não cobrir o botão. */
+.ern-gestao:has(.cv-eda) .eda-perg.eda-perg { bottom: 76px; }
+
+@media (max-width: 767px) {
+  .cv-eda { right: 12px; bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
+  .cv-eda[data-aberto] { left: 12px; }
+  .cv-eda-painel { width: 100%; height: min(70vh, 520px); }
+  .cv-eda-botao { padding: 9px 14px; font-size: 13px; }
+  .ern-gestao:has(.cv-eda) .eda-perg.eda-perg { bottom: calc(146px + env(safe-area-inset-bottom, 0px)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cv-eda-painel, .cv-eda-pensando i { animation: none; }
+  .cv-eda-botao { transition: none; }
+}
+
+/* Tema Claro / Amarelo da gestão */
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda {
+  --cv-fundo: rgb(255 255 255 / 96%);
+  --cv-elev: #f1f3ef;
+  --cv-texto: #14271e;
+  --cv-sec: #5b6b63;
+  --cv-borda: rgb(150 105 40 / 25%);
+  --cv-ouro: #a8691e;
+  --cv-usuario: rgb(168 105 30 / 10%);
+}

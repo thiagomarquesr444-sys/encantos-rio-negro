@@ -437,21 +437,49 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
     enviandoERN.current = true;
     setDigitandoERN(true);
 
+    // EDA_IA_CONVERSA_V1: perguntas livres (ou depois do roteiro guiado) vão
+    // para a IA real; as respostas de regra continuam como reserva.
+    const usarIA = etapa >= 4 || preco || contato || texto.includes('?') || texto.length > 60;
+    const historico = [...mensagens, { autor: 'visitante' as const, texto }]
+      .slice(-10)
+      .map(m => ({ papel: m.autor === 'visitante' ? 'usuario' : 'eda', texto: m.texto }));
+    const perguntas = [c.hello, c.destination, c.period, c.group];
+    if (usarIA && etapa < 4 && !(preco || contato || mapa || rede || querResumo)) {
+      // Pergunta livre no meio do roteiro: não conta como resposta da etapa.
+      setPreferencias(preferencias);
+      setEtapa(etapa);
+      resposta = `${c.fallback}\n\n${perguntas[etapa]}`;
+    }
+
     setMensagens((atuais) => [
       ...atuais,
       { autor: 'visitante', texto },
     ]);
     setEntrada('');
 
-    respostaTimerERN.current = setTimeout(() => {
-      setMensagens((atuais) => [
-        ...atuais,
-        { autor: 'ern', texto: resposta },
-      ]);
+    const responder = (final: string) => {
+      setMensagens((atuais) => [...atuais, { autor: 'ern', texto: final }]);
       setDigitandoERN(false);
       enviandoERN.current = false;
       respostaTimerERN.current = null;
-    }, 800);
+    };
+
+    if (!usarIA) {
+      respostaTimerERN.current = setTimeout(() => responder(resposta), 800);
+      return;
+    }
+
+    fetch('/api/eda-ia', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ modo: 'publico', idioma, preferencias, mensagens: historico }),
+    })
+      .then(r => r.json())
+      .then((j: { resposta?: string }) => {
+        if (!j.resposta) throw new Error('sem resposta');
+        responder(etapa < 4 ? `${j.resposta}\n\n${perguntas[etapa]}` : j.resposta);
+      })
+      .catch(() => responder(resposta));
   }
 
   return (

@@ -122,6 +122,8 @@ function centavosValor(valor: unknown): number | null {
 
 function saudacao(): string {
   const hora = Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: 'America/Manaus' }).format(new Date())) % 24;
+  // EDA_IA_CONVERSA_V1: 00h–04h59 é madrugada → "Boa noite" (antes dava "Bom dia").
+  if (hora < 5) return 'Boa noite';
   if (hora < 12) return 'Bom dia';
   if (hora < 18) return 'Boa tarde';
   return 'Boa noite';
@@ -391,6 +393,12 @@ export default function InicioOperadoraPremiumERN({
     const diaMes = Number((hoje || '').slice(8, 10)) || 0;
     const dataCurta = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
 
+    // EDA_MADRUGADA_V1: abertura especial para quem entra entre 00h e 05h.
+    if (hora < 5) {
+      add(['O rio está quieto e Barcelos dorme, mas eu sigo de vigia com você. ', 'Madrugada de trabalho? Fico aqui do seu lado. ', 'A esta hora só a lua e a gente acordados no Rio Negro. '][diaMes % 3]);
+      add('Deixo tudo mastigado para quando o dia clarear.\n');
+    }
+
     // 1. Agenda do rio
     const qtdHoje = resumo.hoje.length;
     const primeira = resumo.hoje.find(r => r.horario);
@@ -524,7 +532,9 @@ export default function InicioOperadoraPremiumERN({
     }
 
     // 6. Fecho
-    const fechos = hora < 12
+    const fechos = hora < 5
+      ? ['Agora, se der, descanse — eu fico de olho.', 'Quando quiser, é só perguntar à EDA aqui no canto.', 'Amanhã cedo eu te lembro do que importa.']
+      : hora < 12
       ? ['Bora começar?', 'Vamos juntos neste dia.', 'Estou aqui com você desde cedo.']
       : hora < 18
         ? ['Sigo acompanhando com você.', 'Qualquer novidade, eu aviso.', 'A tarde está nas suas mãos — e eu ajudo.']
