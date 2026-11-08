@@ -676,31 +676,11 @@ export default function NovaDemandaPage() {
             onSubmit={salvar}
             className="ern-dem-form space-y-6"
           >
-            <VinculoSaidaDemandaEDA
-              bloqueado={bloqueado}
-              onAcrescentar={(itens) => setSugestao({ chave: crypto.randomUUID(), itens })}
-              onSaida={(saida, nec) => {
-                setSaidaVinculada(saida?.saida_id ?? '');
-                if (!saida || !nec) return;
-                setFormulario((a) => ({
-                  ...a,
-                  titulo: a.titulo || `${nec.passeio} · ${nec.data_inicio.split('-').reverse().slice(0, 2).join('/')}`,
-                  data_inicio: nec.data_inicio,
-                  data_fim: nec.data_fim,
-                  pessoas_estimadas: nec.pessoas > 0 ? String(nec.pessoas) : a.pessoas_estimadas,
-                  dias_estimados: String(nec.dias),
-                }));
-              }}
-            />
-            <ItensDemanda
-              bloqueado={bloqueado}
-              onItensChange={setItensMateriais}
-              acrescentar={sugestao}
-            />
             <section className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7">
               <h2 className="text-2xl">
-                Identificação
+                1. Identificação
               </h2>
+              <p className="mt-1 text-sm text-[var(--ern-secundario)]">Dê um nome fácil para achar depois.</p>
 
               <div className="mt-6 grid gap-5 md:grid-cols-2">
                 <div className="md:col-span-2">
@@ -712,6 +692,7 @@ export default function NovaDemandaPage() {
                     required
                     minLength={3}
                     maxLength={160}
+                    placeholder="Ex.: Alimentação para viagem de pesca"
                     value={
                       formulario.titulo
                     }
@@ -800,7 +781,7 @@ export default function NovaDemandaPage() {
 
             <section className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7">
               <h2 className="text-2xl">
-                Período da viagem
+                2. Período da viagem
               </h2>
 
               <div className="mt-6 grid gap-5 sm:grid-cols-2">
@@ -852,16 +833,32 @@ export default function NovaDemandaPage() {
               </div>
             </section>
 
+            <VinculoSaidaDemandaEDA
+              bloqueado={bloqueado}
+              onAcrescentar={(itens) => setSugestao({ chave: crypto.randomUUID(), itens })}
+              onSaida={(saida, nec) => {
+                setSaidaVinculada(saida?.saida_id ?? '');
+                if (!saida || !nec) return;
+                setFormulario((a) => ({
+                  ...a,
+                  titulo: a.titulo || `${nec.passeio} · ${nec.data_inicio.split('-').reverse().slice(0, 2).join('/')}`,
+                  data_inicio: nec.data_inicio,
+                  data_fim: nec.data_fim,
+                  pessoas_estimadas: nec.pessoas > 0 ? String(nec.pessoas) : a.pessoas_estimadas,
+                  dias_estimados: String(nec.dias),
+                }));
+              }}
+            />
+
             {metodoEstimativa ===
               'pessoa_dia' && (
               <section className="rounded-2xl border border-[var(--ern-destaque)] bg-[var(--ern-painel)] p-5 md:p-7">
                 <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
-                  Previsão automática
+                  Cálculo automático
                 </p>
 
                 <h2 className="mt-2 text-2xl">
-                  Consumo por pessoa
-                  e por dia
+                  3. Quanto cada pessoa usa por dia?
                 </h2>
 
                 <div className="mt-6 grid gap-5 md:grid-cols-2">
@@ -967,8 +964,7 @@ export default function NovaDemandaPage() {
 
                   <div>
                     <label className="mb-2 block text-sm">
-                      Consumo por
-                      pessoa/dia
+                      Quanto cada pessoa usa por dia
                     </label>
 
                     <input
@@ -1022,13 +1018,11 @@ export default function NovaDemandaPage() {
               'combustivel_hora' && (
               <section className="rounded-2xl border border-[var(--ern-destaque)] bg-[var(--ern-painel)] p-5 md:p-7">
                 <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
-                  Previsão de
-                  combustível
+                  Combustível
                 </p>
 
                 <h2 className="mt-2 text-2xl">
-                  Consumo estimado da
-                  embarcação
+                  3. Quanto combustível levar?
                 </h2>
 
                 <div className="mt-6 grid gap-5 md:grid-cols-2">
@@ -1126,8 +1120,7 @@ export default function NovaDemandaPage() {
 
                   <div>
                     <label className="mb-2 block text-sm">
-                      Consumo médio
-                      (L/h)
+                      Litros por hora de motor
                     </label>
 
                     <input
@@ -1153,8 +1146,7 @@ export default function NovaDemandaPage() {
 
                   <div>
                     <label className="mb-2 block text-sm">
-                      Margem de
-                      segurança (%)
+                      Reserva extra (%)
                     </label>
 
                     <input
@@ -1186,15 +1178,18 @@ export default function NovaDemandaPage() {
               'manual' && (
               <section className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7">
                 <h2 className="text-2xl">
-                  Quantidade necessária
+                  3. Quanto vai precisar?
                 </h2>
 
                 <div className="mt-6 grid gap-5 sm:grid-cols-2">
+                  <label className="block text-sm">
+                    <span className="mb-2 block">Quantidade</span>
                   <input
                     type="number"
                     min="0.01"
                     step="0.01"
                     required
+                    placeholder="Ex.: 2"
                     value={
                       formulario.quantidade
                     }
@@ -1209,9 +1204,13 @@ export default function NovaDemandaPage() {
                     }
                     className={CAMPO}
                   />
+                  </label>
 
+                  <label className="block text-sm">
+                    <span className="mb-2 block">Unidade</span>
                   <input
                     required
+                    placeholder="Ex.: fardos, caixas, kg"
                     value={
                       formulario.unidade
                     }
@@ -1226,26 +1225,36 @@ export default function NovaDemandaPage() {
                     }
                     className={CAMPO}
                   />
+                  </label>
                 </div>
               </section>
             )}
 
-            <section className="rounded-2xl border border-[var(--ern-destaque)] bg-[var(--ern-painel)] p-5 md:p-7">
-              <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
-                Quantidade prevista
-              </p>
 
-              <strong className="mt-3 block text-4xl text-[var(--ern-texto)]">
-                {previsao !== null
-                  ? `${previsao.toLocaleString(
-                      'pt-BR',
-                      {
-                        maximumFractionDigits: 2,
-                      },
-                    )} ${formulario.unidade}`
-                  : 'Preencha os dados'}
-              </strong>
-            </section>
+            {/* EDA_DEMANDA_SIMPLES_V1: resultado em linguagem simples */}
+            {metodoEstimativa !== 'manual' && (
+              <section className="rounded-2xl border border-[var(--ern-destaque)] bg-[var(--ern-painel)] p-5 md:p-7">
+                <p className="text-sm text-[var(--ern-secundario)]">
+                  {metodoEstimativa === 'combustivel_hora' ? 'Combustível para levar' : 'Total para levar'}
+                </p>
+                <strong className="mt-1 block text-4xl text-[var(--ern-texto)]">
+                  {previsao !== null ? `${previsao.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} ${formulario.unidade}` : '—'}
+                </strong>
+                <p className="mt-2 text-sm leading-6 text-[var(--ern-secundario)]">
+                  {previsao === null
+                    ? 'Preencha os campos acima e o sistema calcula sozinho.'
+                    : metodoEstimativa === 'combustivel_hora'
+                      ? `${formulario.dias_estimados} dia(s) × ${formulario.horas_motor_dia} h de motor × ${formulario.consumo_litros_hora} L por hora, com ${formulario.margem_percentual}% a mais de reserva.`
+                      : `${formulario.pessoas_estimadas} pessoa(s) × ${formulario.dias_estimados} dia(s) × ${formulario.consumo_pessoa_dia} ${formulario.unidade} por pessoa ao dia.`}
+                </p>
+              </section>
+            )}
+
+            <ItensDemanda
+              bloqueado={bloqueado}
+              onItensChange={setItensMateriais}
+              acrescentar={sugestao}
+            />
 
             <section className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7">
               <h2 className="text-2xl">

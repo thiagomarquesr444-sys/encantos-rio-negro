@@ -880,7 +880,7 @@ export default function EditarDemandaPage() {
             <div style={{ minWidth: 0 }}>
               <p className="eda-dx-marca"><i aria-hidden="true" />Encantos da Amazônia · Gerenciamento operacional</p>
               <h1>{formularioAtual.titulo}</h1>
-              <p className="eda-dx-capa-sub">Dimensionamento desta operação, atualizado enquanto você ajusta os campos abaixo. Os números valem só para esta demanda.</p>
+              <p className="eda-dx-capa-sub">Siga de cima para baixo: nome da demanda, datas, quantidade e, por fim, a lista de materiais.</p>
             </div>
             <span className="eda-dx-emblema" aria-hidden="true">
               <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M3 16l2 4h14l2-4H3z" /><path d="M6 16V9h9l3 7" /><path d="M10 9V5h3" /><path d="M2 12c2-1 3-1 5 0s3 1 5 0" opacity=".55" /></svg>
@@ -900,103 +900,10 @@ export default function EditarDemandaPage() {
             )}
           </div>
         </CartaoMagneticoEDA>
-
-        <div className="eda-dx-kpis">
-          <CartaoMagneticoEDA className="eda-dx-kpi eda-dx-kpi-ouro">
-            <div className="eda-dx-kpi-cab">
-              <span>Quantidade estimada</span>
-              <span className="eda-dx-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7l8-4 8 4v10l-8 4-8-4z" /><path d="M4 7l8 4 8-4M12 11v10" /></svg></span>
-            </div>
-            <div>
-              <strong>{previsao !== null && Number.isFinite(previsao) ? previsao.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : '—'}</strong>
-              <small>{formularioAtual.unidade || 'Unidade não definida'}</small>
-            </div>
-          </CartaoMagneticoEDA>
-          <CartaoMagneticoEDA className="eda-dx-kpi">
-            <div className="eda-dx-kpi-cab">
-              <span>Modelo de cálculo</span>
-              <span className="eda-dx-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="5" y="3" width="14" height="18" rx="2" /><path d="M8 7h8M8 12h2M14 12h2M8 16h2M14 16h2" /></svg></span>
-            </div>
-            <div>
-              <strong className="eda-dx-kpi-txt">{metodoEstimativa === 'pessoa_dia' ? 'Pessoa por dia' : metodoEstimativa === 'combustivel_hora' ? 'Motor por hora' : 'Quantidade manual'}</strong>
-              <small>{CATEGORIAS_DEMANDA[formularioAtual.categoria]}</small>
-            </div>
-          </CartaoMagneticoEDA>
-          <CartaoMagneticoEDA className="eda-dx-kpi">
-            <div className="eda-dx-kpi-cab">
-              <span>Período da operação</span>
-              <span className="eda-dx-ico" aria-hidden="true"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"><rect x="3" y="5" width="18" height="16" rx="2" /><path d="M3 10h18M8 3v4M16 3v4" /></svg></span>
-            </div>
-            <div>
-              <strong className="eda-dx-kpi-txt">{formularioAtual.data_inicio && formularioAtual.data_fim ? `${formularioAtual.data_inicio.split('-').reverse().join('/')} — ${formularioAtual.data_fim.split('-').reverse().join('/')}` : 'Não definido'}</strong>
-              <small>{formularioAtual.localidade || 'Localidade não informada'}</small>
-            </div>
-          </CartaoMagneticoEDA>
-        </div>
-
-        <CartaoMagneticoEDA as="section" forca={4} className="eda-dx-comp" aria-label="Composição da estimativa">
-          <div className="eda-dx-comp-cab">
-            <div>
-              <p>Análise operacional</p>
-              <h2>Composição do planejamento</h2>
-            </div>
-            <span><i aria-hidden="true" />Atualiza conforme os campos</span>
-          </div>
-          {metodoEstimativa === 'combustivel_hora' ? (() => {
-            const dias = numeroFormulario(formularioAtual.dias_estimados);
-            const horas = numeroFormulario(formularioAtual.horas_motor_dia);
-            const litros = numeroFormulario(formularioAtual.consumo_litros_hora);
-            const margem = numeroFormulario(formularioAtual.margem_percentual);
-            const base = dias !== null && horas !== null && litros !== null && dias > 0 && horas > 0 && litros > 0 ? dias * horas * litros : null;
-            const extra = base !== null && margem !== null && margem >= 0 ? base * margem / 100 : null;
-            const total = base !== null && extra !== null ? base + extra : null;
-            const fmt = (n: number) => n.toLocaleString('pt-BR', { maximumFractionDigits: 2 });
-            return total !== null && total > 0 && base !== null && extra !== null ? <>
-              <div className="eda-dx-formula">
-                <div className="eda-dx-peca"><small>Dias</small><strong>{fmt(dias!)}</strong></div><b aria-hidden="true">×</b>
-                <div className="eda-dx-peca"><small>Horas de motor/dia</small><strong>{fmt(horas!)}</strong></div><b aria-hidden="true">×</b>
-                <div className="eda-dx-peca"><small>Litros/hora</small><strong>{fmt(litros!)}</strong></div><b aria-hidden="true">+</b>
-                <div className="eda-dx-peca"><small>Margem</small><strong>{fmt(margem!)}%</strong></div><b aria-hidden="true">=</b>
-                <div className="eda-dx-peca eda-dx-peca-total"><small>Previsão</small><strong>{fmt(total)} L</strong></div>
-              </div>
-              <div className="eda-dx-barra" role="img" aria-label={`Consumo base ${fmt(base)} litros; margem adicional ${fmt(extra)} litros`}>
-                <span style={{ width: `${base / total * 100}%` }} /><span className="extra" style={{ width: `${extra / total * 100}%` }} />
-              </div>
-              <div className="eda-dx-legenda"><span><i />Base: {fmt(base)} L</span><span><i className="extra" />Margem: {fmt(extra)} L</span></div>
-            </> : <p className="eda-dx-nota">Informe dias, horas de motor, consumo e margem para ver a composição do combustível.</p>;
-          })() : metodoEstimativa === 'pessoa_dia' ? <>
-            <div className="eda-dx-formula">
-              <div className="eda-dx-peca"><small>Pessoas</small><strong>{formularioAtual.pessoas_estimadas || '—'}</strong></div><b aria-hidden="true">×</b>
-              <div className="eda-dx-peca"><small>Dias</small><strong>{formularioAtual.dias_estimados || '—'}</strong></div><b aria-hidden="true">×</b>
-              <div className="eda-dx-peca"><small>Consumo por pessoa/dia</small><strong>{formularioAtual.consumo_pessoa_dia || '—'}</strong></div><b aria-hidden="true">=</b>
-              <div className="eda-dx-peca eda-dx-peca-total"><small>Previsão</small><strong>{previsao !== null ? previsao.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : '—'}</strong></div>
-            </div>
-            <p className="eda-dx-nota">Os valores seguem a fórmula de consumo da categoria escolhida.</p>
-          </> : <>
-            <div className="eda-dx-formula">
-              <div className="eda-dx-peca eda-dx-peca-total"><small>Quantidade definida manualmente</small><strong>{previsao !== null ? previsao.toLocaleString('pt-BR', { maximumFractionDigits: 2 }) : '—'} {formularioAtual.unidade}</strong></div>
-            </div>
-            <p className="eda-dx-nota">Esta categoria usa quantidade manual, por isso não há cálculo para distribuir. Ajuste a quantidade no formulário abaixo.</p>
-          </>}
-        </CartaoMagneticoEDA>
-
-        <div style={{ marginTop: 16 }}>
-          <VinculoSaidaDemandaEDA
-            demandaId={id}
-            bloqueado={terminal || salvando || excluindo}
-            onAcrescentar={(itens) => setSugestaoSaida({ chave: crypto.randomUUID(), itens })}
-          />
-        </div>
-
-        <ItensDemanda
-          key={id}
-          demandaId={id}
-          bloqueado={terminal || salvando || excluindo}
-          acrescentar={sugestaoSaida}
-        />
       </div>
 
       <form
+        id="form-demanda"
         onSubmit={salvar}
         className="ern-dem-edicao mx-auto max-w-5xl space-y-6 px-4 py-7 md:px-8"
       >
@@ -1203,10 +1110,8 @@ export default function EditarDemandaPage() {
           </div>
 
           <p className="mt-4 text-xs leading-5 text-[var(--ern-secundario)]">
-            Para demandas com cálculo
-            automático, o sistema usa o
-            período para atualizar a quantidade
-            prevista de dias.
+            O sistema conta os dias da
+            viagem sozinho a partir dessas datas.
           </p>
         </section>
 
@@ -1214,7 +1119,7 @@ export default function EditarDemandaPage() {
           'pessoa_dia' && (
           <section className="rounded-2xl border border-[var(--ern-destaque)] bg-[var(--ern-painel)] p-5 md:p-7">
             <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
-              Previsão automática
+              Cálculo automático
             </p>
 
             <h2
@@ -1224,8 +1129,7 @@ export default function EditarDemandaPage() {
                   'var(--font-fraunces), serif',
               }}
             >
-              Consumo por pessoa e
-              por dia
+              Quanto cada pessoa usa por dia?
             </h2>
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
@@ -1332,7 +1236,7 @@ export default function EditarDemandaPage() {
                   htmlFor="consumo-pessoa"
                   className="mb-2 block text-sm"
                 >
-                  Consumo por pessoa/dia
+                  Quanto cada pessoa usa por dia
                 </label>
 
                 <input
@@ -1387,8 +1291,7 @@ export default function EditarDemandaPage() {
           'combustivel_hora' && (
           <section className="rounded-2xl border border-[var(--ern-destaque)] bg-[var(--ern-painel)] p-5 md:p-7">
             <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
-              Planejamento de
-              combustível
+              Combustível
             </p>
 
             <h2
@@ -1398,7 +1301,7 @@ export default function EditarDemandaPage() {
                   'var(--font-fraunces), serif',
               }}
             >
-              Previsão da embarcação
+              Quanto combustível levar?
             </h2>
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
@@ -1500,7 +1403,7 @@ export default function EditarDemandaPage() {
                   htmlFor="consumo-motor"
                   className="mb-2 block text-sm"
                 >
-                  Consumo médio (L/h)
+                  Litros por hora de motor
                 </label>
 
                 <input
@@ -1527,7 +1430,7 @@ export default function EditarDemandaPage() {
                   htmlFor="margem"
                   className="mb-2 block text-sm"
                 >
-                  Margem de segurança (%)
+                  Reserva extra (%)
                 </label>
 
                 <input
@@ -1568,7 +1471,7 @@ export default function EditarDemandaPage() {
           'manual' && (
           <section className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7">
             <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-secundario)]">
-              Dimensionamento
+              Quantidade
             </p>
 
             <h2
@@ -1578,7 +1481,7 @@ export default function EditarDemandaPage() {
                   'var(--font-fraunces), serif',
               }}
             >
-              Quantidade necessária
+              Quanto vai precisar?
             </h2>
 
             <div className="mt-6 grid gap-5 sm:grid-cols-2">
@@ -1619,6 +1522,7 @@ export default function EditarDemandaPage() {
 
                 <input
                   id="unidade-manual"
+                  placeholder="Ex.: fardos, caixas, kg"
                   disabled={terminal}
                   maxLength={40}
                   value={
@@ -1637,49 +1541,44 @@ export default function EditarDemandaPage() {
           </section>
         )}
 
-        <section className="rounded-2xl border border-[var(--ern-destaque)] bg-[var(--ern-painel)] p-5 md:p-7">
-          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-destaque)]">
-            Planejamento
-          </p>
+        {/* EDA_DEMANDA_SIMPLES_V1: resultado em linguagem simples */}
+        {metodoEstimativa !== 'manual' && (
+          <section className="rounded-2xl border border-[var(--ern-destaque)] bg-[var(--ern-painel)] p-5 md:p-7">
+            <p className="text-sm text-[var(--ern-secundario)]">
+              {metodoEstimativa === 'combustivel_hora' ? 'Combustível para levar' : 'Total para levar'}
+            </p>
+            <strong className="mt-1 block text-4xl text-[var(--ern-texto)]" style={{ fontFamily: 'var(--font-fraunces), serif' }}>
+              {previsao !== null ? `${previsao.toLocaleString('pt-BR', { maximumFractionDigits: 2 })} ${formularioAtual.unidade}` : '—'}
+            </strong>
+            <p className="mt-2 text-sm leading-6 text-[var(--ern-secundario)]">
+              {previsao === null
+                ? 'Preencha os campos acima e o sistema calcula sozinho.'
+                : metodoEstimativa === 'combustivel_hora'
+                  ? `${formularioAtual.dias_estimados} dia(s) × ${formularioAtual.horas_motor_dia} h de motor × ${formularioAtual.consumo_litros_hora} L por hora, com ${formularioAtual.margem_percentual}% a mais de reserva.`
+                  : `${formularioAtual.pessoas_estimadas} pessoa(s) × ${formularioAtual.dias_estimados} dia(s) × ${formularioAtual.consumo_pessoa_dia} ${formularioAtual.unidade} por pessoa ao dia.`}
+            </p>
+          </section>
+        )}
+      </form>
 
-          <h2
-            className="mt-2 text-2xl text-[var(--ern-texto)]"
-            style={{
-              fontFamily:
-                'var(--font-fraunces), serif',
-            }}
-          >
-            Quantidade prevista
-          </h2>
+      <div className="eda-dx">
+        <div style={{ marginTop: 16 }}>
+          <VinculoSaidaDemandaEDA
+            demandaId={id}
+            bloqueado={terminal || salvando || excluindo}
+            onAcrescentar={(itens) => setSugestaoSaida({ chave: crypto.randomUUID(), itens })}
+          />
+        </div>
 
-          <strong
-            className="mt-4 block text-4xl text-[var(--ern-texto)]"
-            style={{
-              fontFamily:
-                'var(--font-fraunces), serif',
-            }}
-          >
-            {previsao !== null
-              ? `${previsao.toLocaleString(
-                  'pt-BR',
-                  {
-                    maximumFractionDigits:
-                      2,
-                  },
-                )} ${formularioAtual.unidade}`
-              : 'Preencha os dados'}
-          </strong>
+        <ItensDemanda
+          key={id}
+          demandaId={id}
+          bloqueado={terminal || salvando || excluindo}
+          acrescentar={sugestaoSaida}
+        />
+      </div>
 
-          {metodoEstimativa ===
-            'combustivel_hora' &&
-            previsao !== null && (
-              <p className="mt-3 text-sm text-[var(--ern-secundario)]">
-                Previsão total já incluindo a
-                margem operacional informada.
-              </p>
-            )}
-        </section>
-
+      <div className="ern-dem-edicao mx-auto max-w-5xl space-y-6 px-4 py-7 md:px-8">
         {erroFormulario && (
           <div
             role="alert"
@@ -1715,6 +1614,7 @@ export default function EditarDemandaPage() {
             {!terminal && (
               <button
                 type="submit"
+                form="form-demanda"
                 disabled={salvando}
                 className={`${BOTAO} border-[var(--ern-destaque)] bg-[var(--ern-suave)] text-[var(--ern-destaque)]`}
               >
@@ -1840,7 +1740,7 @@ export default function EditarDemandaPage() {
             </div>
           )}
         </section>
-      </form>
+      </div>
     </main>
   );
 }
