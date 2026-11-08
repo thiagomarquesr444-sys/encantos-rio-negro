@@ -10,6 +10,7 @@ import {
 } from 'react';
 import Link from 'next/link';
 import ItensDemanda from '@/app/components/ItensDemanda';
+import QuantidadeManualEDA from '@/app/components/QuantidadeManualEDA';
 import VinculoSaidaDemandaEDA from '@/app/components/VinculoSaidaDemandaEDA';
 import { supabase } from '@/lib/supabase';
 import { criarDemandaComItens } from '@/lib/criarDemandaComItens';
@@ -1024,6 +1025,9 @@ export default function NovaDemandaPage() {
                 <h2 className="mt-2 text-2xl">
                   3. Quanto combustível levar?
                 </h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--ern-secundario)]">
+              Informe quantos dias de viagem, quantas horas o motor fica ligado por dia e quantos litros ele gasta por hora. O sistema calcula o total de litros da viagem inteira.
+            </p>
 
                 <div className="mt-6 grid gap-5 md:grid-cols-2">
                   <div>
@@ -1177,57 +1181,16 @@ export default function NovaDemandaPage() {
             {metodoEstimativa ===
               'manual' && (
               <section className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7">
-                <h2 className="text-2xl">
-                  3. Quanto vai precisar?
-                </h2>
-
-                <div className="mt-6 grid gap-5 sm:grid-cols-2">
-                  <label className="block text-sm">
-                    <span className="mb-2 block">Quantidade</span>
-                  <input
-                    type="number"
-                    min="0.01"
-                    step="0.01"
-                    required
-                    placeholder="Ex.: 2"
-                    value={
-                      formulario.quantidade
-                    }
-                    onChange={(
-                      evento,
-                    ) =>
-                      atualizarCampo(
-                        'quantidade',
-                        evento.target
-                          .value,
-                      )
-                    }
-                    className={CAMPO}
-                  />
-                  </label>
-
-                  <label className="block text-sm">
-                    <span className="mb-2 block">Unidade</span>
-                  <input
-                    required
-                    placeholder="Ex.: fardos, caixas, kg"
-                    value={
-                      formulario.unidade
-                    }
-                    onChange={(
-                      evento,
-                    ) =>
-                      atualizarCampo(
-                        'unidade',
-                        evento.target
-                          .value,
-                      )
-                    }
-                    className={CAMPO}
-                  />
-                  </label>
-                </div>
-              </section>
+            <QuantidadeManualEDA
+              categoria={formulario.categoria}
+              quantidade={formulario.quantidade}
+              unidade={formulario.unidade}
+              
+              campoClasse={CAMPO}
+              onQuantidade={(v) => atualizarCampo('quantidade', v)}
+              onUnidade={(v) => atualizarCampo('unidade', v)}
+            />
+          </section>
             )}
 
 

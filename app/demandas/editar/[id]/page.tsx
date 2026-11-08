@@ -14,6 +14,7 @@ import {
 import Link from 'next/link';
 import { confirmarERN } from '@/lib/confirmarERN';
 import ItensDemanda from '@/app/components/ItensDemanda';
+import QuantidadeManualEDA from '@/app/components/QuantidadeManualEDA';
 import VinculoSaidaDemandaEDA from '@/app/components/VinculoSaidaDemandaEDA';
 import type { ItemDemanda } from '@/lib/itensDemanda';
 
@@ -1303,6 +1304,9 @@ export default function EditarDemandaPage() {
             >
               Quanto combustível levar?
             </h2>
+            <p className="mt-2 text-sm leading-6 text-[var(--ern-secundario)]">
+              Informe quantos dias de viagem, quantas horas o motor fica ligado por dia e quantos litros ele gasta por hora. O sistema calcula o total de litros da viagem inteira.
+            </p>
 
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               <div>
@@ -1470,74 +1474,15 @@ export default function EditarDemandaPage() {
         {metodoEstimativa ===
           'manual' && (
           <section className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7">
-            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--ern-secundario)]">
-              Quantidade
-            </p>
-
-            <h2
-              className="mt-2 text-2xl text-[var(--ern-texto)]"
-              style={{
-                fontFamily:
-                  'var(--font-fraunces), serif',
-              }}
-            >
-              Quanto vai precisar?
-            </h2>
-
-            <div className="mt-6 grid gap-5 sm:grid-cols-2">
-              <div>
-                <label
-                  htmlFor="quantidade"
-                  className="mb-2 block text-sm"
-                >
-                  Quantidade
-                </label>
-
-                <input
-                  id="quantidade"
-                  disabled={terminal}
-                  type="number"
-                  min="0.01"
-                  step="0.01"
-                  value={
-                    formularioAtual.quantidade
-                  }
-                  onChange={(evento) =>
-                    atualizarCampo(
-                      'quantidade',
-                      evento.target.value,
-                    )
-                  }
-                  className={CAMPO}
-                />
-              </div>
-
-              <div>
-                <label
-                  htmlFor="unidade-manual"
-                  className="mb-2 block text-sm"
-                >
-                  Unidade
-                </label>
-
-                <input
-                  id="unidade-manual"
-                  placeholder="Ex.: fardos, caixas, kg"
-                  disabled={terminal}
-                  maxLength={40}
-                  value={
-                    formularioAtual.unidade
-                  }
-                  onChange={(evento) =>
-                    atualizarCampo(
-                      'unidade',
-                      evento.target.value,
-                    )
-                  }
-                  className={CAMPO}
-                />
-              </div>
-            </div>
+            <QuantidadeManualEDA
+              categoria={formularioAtual.categoria}
+              quantidade={formularioAtual.quantidade}
+              unidade={formularioAtual.unidade}
+              disabled={terminal}
+              campoClasse={CAMPO}
+              onQuantidade={(v) => atualizarCampo('quantidade', v)}
+              onUnidade={(v) => atualizarCampo('unidade', v)}
+            />
           </section>
         )}
 
