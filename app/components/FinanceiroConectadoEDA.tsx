@@ -8,6 +8,8 @@ import { supabase } from '@/lib/supabase';
 import { dataCurtaEDA } from '@/lib/passeiosPublicosEDA';
 import { hojeManausEDA } from '@/lib/saidasGestaoEDA';
 import { pixCopiaECola } from '@/lib/pixEDA';
+import { copiarEDA } from '@/lib/copiarEDA';
+import QrCodeEDA from '@/app/components/QrCodeEDA';
 
 const moeda = (v: number) => (Number(v) || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 const iso = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
@@ -158,10 +160,11 @@ export function FinanceiroReservaEDA({ reservaId, bloqueado }: { reservaId?: str
           )}
           {cobranca && (
             <div className="fr-pix-box">
-              <span>Pix copia e cola · {moeda(cobranca.valor)}</span>
+              <span>Pix · {moeda(cobranca.valor)} · QR Code e copia e cola</span>
+              <QrCodeEDA codigo={cobranca.codigo} titulo={`Pix · ${moeda(cobranca.valor)}`} legenda={`Recebedor: ${pixCfg?.nome ?? 'Operadora'}`} arquivo={`pix-reserva-${moeda(cobranca.valor).replace(/\D/g, '')}.png`} />
               <textarea readOnly rows={3} value={cobranca.codigo} onFocus={(e) => e.target.select()} aria-label="Pix copia e cola" />
               <div>
-                <button type="button" className="eda-pg-bt" onClick={() => void navigator.clipboard?.writeText(cobranca.codigo)}>Copiar código</button>
+                <button type="button" className="eda-pg-bt" onClick={() => void copiarEDA(cobranca.codigo, 'Pix copia e cola copiado')}>Copiar código</button>
                 <a className="eda-pg-bt eda-pg-bt-ouro" target="_blank" rel="noopener noreferrer"
                   href={`https://wa.me/${cobranca.telefone ?? ''}?text=${encodeURIComponent(cobranca.texto)}`}>
                   Enviar ao cliente no WhatsApp

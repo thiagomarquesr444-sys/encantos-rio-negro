@@ -1,5 +1,6 @@
 import PularConteudoEDA from './components/PularConteudoEDA';
 import FeedbackERN from '@/app/components/FeedbackERN';
+import AvisoCopiaEDA from '@/app/components/AvisoCopiaEDA';
 import type { Metadata, Viewport } from 'next';
 import type { CSSProperties, ReactNode } from 'react';
 
@@ -87,6 +88,7 @@ export default function RootLayout({
           <AppProvider>
             <AppShell>{children}</AppShell>
             <FeedbackERN />
+            <AvisoCopiaEDA />
           </AppProvider>
         </LanguageProvider>
       </body>

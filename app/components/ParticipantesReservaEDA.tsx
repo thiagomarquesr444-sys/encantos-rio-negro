@@ -15,6 +15,7 @@ import { dataCurtaEDA } from '@/lib/passeiosPublicosEDA';
 import {
   faixaEtariaEDA, idadeNaDataEDA, RELACOES_PARTICIPANTE, type FaixaEtariaEDA, type PoliticaCriancasEDA,
 } from '@/lib/opcoesEDA';
+import { copiarEDA } from '@/lib/copiarEDA';
 
 const ROTULO_FAIXA: Record<FaixaEtariaEDA, string> = { adulto: 'Adulto', crianca: 'Criança', colo: 'Colo' };
 type ContextoReserva = {
@@ -65,7 +66,7 @@ export default function ParticipantesReservaEDA({ reservaId, bloqueado, pessoas 
 
   if (!reservaId) return null;
   if (semPermissao) {
-    return <section className="eda-pg-secao"><p className="eda-pg-secao-eb">Participantes e saúde</p>
+    return <section className="eda-pg-secao" id="participantes"><p className="eda-pg-secao-eb">Participantes e saúde</p>
       <p className="eda-pg-secao-txt">Somente administradores e operadores acessam as fichas de saúde.</p></section>;
   }
 
@@ -122,7 +123,7 @@ export default function ParticipantesReservaEDA({ reservaId, bloqueado, pessoas 
     `Olá! Para cuidarmos bem de vocês na viagem, preencha a ficha de saúde e segurança de cada participante (leva 2 minutos): ${link}`);
 
   return (
-    <section className="eda-pg-secao eda-pg-largo pr">
+    <section className="eda-pg-secao eda-pg-largo pr" id="participantes">
       <p className="eda-pg-secao-eb">Participantes e saúde</p>
       <h2>Quem viaja nesta reserva</h2>
       <p className="eda-pg-secao-txt">
@@ -221,7 +222,7 @@ export default function ParticipantesReservaEDA({ reservaId, bloqueado, pessoas 
         {link && (
           <>
             <input readOnly value={link} onFocus={(e) => e.target.select()} aria-label="Link da ficha" />
-            <button type="button" className="eda-pg-bt" onClick={() => navigator.clipboard?.writeText(link)}>Copiar</button>
+            <button type="button" className="eda-pg-bt" onClick={() => void copiarEDA(link, 'Link da ficha copiado')}>Copiar</button>
             <a className="eda-pg-bt eda-pg-bt-ouro" href={`https://wa.me/?text=${textoZap}`} target="_blank" rel="noopener noreferrer">Enviar no WhatsApp</a>
             <span className="pr-nota">Gerar um novo link desativa o anterior.</span>
           </>

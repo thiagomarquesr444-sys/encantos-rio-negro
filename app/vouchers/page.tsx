@@ -19,6 +19,7 @@ import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { reservaOperacionalERN } from '@/lib/reservasStatusERN';
 import { SeletorPeriodoMensalERN, SeloExpiracaoERN } from '@/app/components/PeriodoMensalERN';
 import { HISTORICO_ERN, dataNoPeriodoERN, mesAtualERN, periodoDaURLERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
+import { copiarEDA } from '@/lib/copiarEDA';
 
 type StatusVoucher = 'Ativo' | 'Utilizado' | 'Cancelado';
 type StatusExibido = StatusVoucher | 'Desconhecido';
@@ -981,7 +982,7 @@ export default function VouchersPage() {
           </button>
         )}
         {item.token_verificacao && (
-          <button type="button" onClick={() => void navigator.clipboard?.writeText(`${window.location.origin}/voucher/${item.token_verificacao}`)} className={buttonClass}>
+          <button type="button" onClick={() => void copiarEDA(`${window.location.origin}/voucher/${item.token_verificacao}`, 'Link de verificação copiado')} className={buttonClass}>
             Copiar link de verificação
           </button>
         )}

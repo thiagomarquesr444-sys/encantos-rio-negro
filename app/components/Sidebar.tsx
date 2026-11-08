@@ -35,6 +35,7 @@ type NavGroup = {
 const PRINCIPAIS: NavItem[] = [
   { label: 'Painel', href: '/dashboard', descricao: 'Visão geral da sua empresa', icone: 'casa' },
   { label: 'Reservas', href: '/reservas', descricao: 'Solicitações, confirmações e operação', icone: 'calendario' },
+  { label: 'Operação ao vivo', href: '/reservas/ao-vivo', descricao: 'Embarcação em tempo real, ocorrências e suprimentos', icone: 'satelite' },
   { label: 'Demandas', href: '/demandas', descricao: 'Serviços que sua empresa precisa contratar', icone: 'lista' },
 ];
 
@@ -95,6 +96,7 @@ function rotaAtiva(pathname: string, href: string): boolean {
   if (href === '/' || href === '/dashboard' || href === '/financeiro') {
     return pathname === href;
   }
+  if (href === '/reservas' && pathname.startsWith('/reservas/ao-vivo')) return false;
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 

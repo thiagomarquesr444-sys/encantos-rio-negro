@@ -222,7 +222,25 @@ export default function EditarReservaPage() {
   return <EditarReservaConteudo key={id ?? 'sem-id'} id={id} />;
 }
 
+
+// EDA_ANCORA_RESERVA_V1: os cards (#participantes, #chegada) carregam depois da
+// página; tenta rolar até eles por alguns segundos quando o link traz âncora.
+function useAncoraReservaEDA() {
+  useEffect(() => {
+    const alvo = window.location.hash.slice(1);
+    if (!/^[a-z-]{2,30}$/.test(alvo)) return;
+    let tentativas = 0;
+    const t = window.setInterval(() => {
+      const el = document.getElementById(alvo);
+      if (el) { el.scrollIntoView({ behavior: 'smooth', block: 'start' }); window.clearInterval(t); }
+      else if (++tentativas > 40) window.clearInterval(t);
+    }, 150);
+    return () => window.clearInterval(t);
+  }, []);
+}
+
 function EditarReservaConteudo({ id }: { id?: string }) {
+  useAncoraReservaEDA();
   const router = useRouter();
 
   const [form, setForm] = useState<ReservaForm>(formInicial);

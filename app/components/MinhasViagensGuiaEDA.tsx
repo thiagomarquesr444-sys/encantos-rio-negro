@@ -4,12 +4,17 @@
 
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
+import BordoEDA from '@/app/components/BordoEDA';
+import { hojeManaus } from '@/lib/operacaoAoVivoEDA';
 
 type Viagem = { reserva_id: string; operadora: string | null; passeio: string | null; inicio: string; fim: string;
   horario: string | null; pessoas: number; ponto_embarque: string | null; embarcacao: string | null;
   alertas_graves: number; fichas_pendentes: number };
 
 const dt = (d: string) => d.split('-').reverse().slice(0, 2).join('/');
+// EDA_OPERACAO_AO_VIVO_V1: painel de bordo liberado de um dia antes até um dia depois da viagem.
+const somaDia = (d: string, n: number) => { const x = new Date(`${d}T12:00:00Z`); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10); };
+const naJanela = (v: { inicio: string; fim: string }) => { const h = hojeManaus(); return h >= somaDia(v.inicio, -1) && h <= somaDia(v.fim, 1); };
 
 export default function MinhasViagensGuiaEDA() {
   const [lista, setLista] = useState<Viagem[] | null>(null);
@@ -40,6 +45,11 @@ export default function MinhasViagensGuiaEDA() {
                   {v.fichas_pendentes > 0 && `${v.fichas_pendentes} ficha(s) pendente(s). `}
                   Confirme os detalhes com a operadora antes do embarque.
                 </p>
+              )}
+              {naJanela(v) && (
+                <div className="mt-3">
+                  <BordoEDA reservaId={v.reserva_id} titulo="Painel de bordo" />
+                </div>
               )}
             </li>
           ))}

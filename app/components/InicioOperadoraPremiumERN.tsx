@@ -22,6 +22,7 @@ import './capa-eda.css';
 import CartaoMagneticoEDA from './CartaoMagneticoEDA';
 import DigitacaoEDA, { type TrechoDigitado } from './DigitacaoEDA';
 import { conflitosEDA, lotacaoEDA, type ConflitoEDA, type LotacaoEDA } from '@/lib/recursosEDA';
+import { alertasViagem, type ViagemAoVivoEDA } from '@/lib/operacaoAoVivoEDA';
 
 export type ReservaInicioERN = {
   id: string;
@@ -162,6 +163,13 @@ export default function InicioOperadoraPremiumERN({
     Promise.all([conflitosEDA(undefined, 7), lotacaoEDA(7)])
       .then(([c, l]) => { if (ativo) { setConflitos(c); setLotacao(l); } })
       .catch(() => { /* sem permissão */ });
+    return () => { ativo = false; };
+  }, []);
+  // EDA_OPERACAO_AO_VIVO_V1: alertas críticos das viagens em curso entram nas pendências.
+  const [aoVivo, setAoVivo] = useState<ViagemAoVivoEDA[]>([]);
+  useEffect(() => {
+    let ativo = true;
+    supabase.rpc('operacao_ao_vivo_eda').then(({ data, error }) => { if (ativo && !error) setAoVivo((data ?? []) as ViagemAoVivoEDA[]); });
     return () => { ativo = false; };
   }, []);
   useEffect(() => {
@@ -333,10 +341,15 @@ export default function InicioOperadoraPremiumERN({
       const l = lotacao[0];
       lista.push({ tom: 'er', icone: 'barco', titulo: 'Embarcação acima da lotação', detalhe: `${l.nome} · ${l.pessoas}/${l.capacidade} · ${rotuloDia(l.dia, hoje).toLowerCase()}`, acao: 'Ver agenda', href: '/embarcacoes', peso: 96 });
     }
+    for (const v of aoVivo) {
+      const critico = alertasViagem(v).find(a => a.tom === 'er');
+      if (critico) lista.push({ tom: 'er', icone: 'barco', titulo: `${v.passeio || 'Viagem'}: alerta na operação`, detalhe: critico.texto.length > 70 ? `${critico.texto.slice(0, 68)}…` : critico.texto, acao: 'Acompanhar ao vivo', href: '/reservas/ao-vivo', peso: 99 });
+    }
     for (const v of saude ?? []) {
       if (!v.graves && !v.pendentes) continue;
       const quando = `${v.passeio || 'Viagem'} · ${rotuloDia(v.data_inicio, hoje).toLowerCase()}`;
-      const href = v.reserva_id ? `/reservas/editar/${v.reserva_id}` : '/passeios';
+      // Sempre a reserva: é lá que ficam o card Participantes e saúde e o link da ficha.
+      const href = v.reserva_id ? `/reservas/editar/${v.reserva_id}#participantes` : '/reservas';
       if (v.graves) lista.push({ tom: 'er', icone: 'equipe', titulo: `${plural(v.graves, 'alerta grave', 'alertas graves')} de saúde`, detalhe: quando, acao: 'Ver resumo de segurança', href, peso: 98 });
       if (v.pendentes) lista.push({ tom: 'at', icone: 'equipe', titulo: `${plural(v.pendentes, 'ficha de saúde pendente', 'fichas de saúde pendentes')}`, detalhe: quando, acao: 'Enviar link ao turista', href, peso: 85 });
     }
@@ -345,7 +358,7 @@ export default function InicioOperadoraPremiumERN({
       lista.push({ tom: 'nt', icone: 'lista', titulo: `${plural(rascunhos, 'demanda em rascunho', 'demandas em rascunho')}`, detalhe: 'ainda não abertas', acao: 'Ver demandas', href: '/demandas?status=rascunho', peso: 40 });
     }
     return lista.sort((a, b) => b.peso - a.peso);
-  }, [fin, resumo, demandas, hoje, dia7, chegadas, saude, conflitos, lotacao]);
+  }, [fin, resumo, demandas, hoje, dia7, chegadas, saude, conflitos, lotacao, aoVivo]);
 
   const demandasDestaque = useMemo(() => [...demandas]
     .sort((a, b) => (a.status === 'aberta' ? -1 : 0) - (b.status === 'aberta' ? -1 : 0) || (a.data_inicio ?? '9999').localeCompare(b.data_inicio ?? '9999'))
@@ -548,6 +561,7 @@ export default function InicioOperadoraPremiumERN({
           )}
         </div>
         <nav aria-label="Ações rápidas" className="eda-acoes">
+          <Link href="/reservas/ao-vivo" className="eda-bt eda-bt-sec"><Icone nome="barco" tamanho={16} />Operação ao vivo</Link>
           <Link href="/demandas/nova" className="eda-bt eda-bt-sec"><Icone nome="lista" tamanho={16} />Nova demanda</Link>
           {financeiroLiberado && <Link href="/financeiro/receita/novo" className="eda-bt eda-bt-sec"><Icone nome="dinheiro" tamanho={16} />Lançar receita</Link>}
           <Link href="/reservas/nova" className="eda-bt eda-bt-ouro"><Icone nome="mais" tamanho={16} />Nova reserva</Link>
