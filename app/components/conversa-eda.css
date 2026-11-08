@@ -61,6 +61,13 @@
 .cv-eda-pensando i:nth-child(3) { animation-delay: .3s; }
 @keyframes cv-eda-ponto { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
 
+.cv-eda-bloco { display: flex; flex-direction: column; gap: 6px; }
+.cv-eda-bloco-eda { align-items: flex-start; }
+.cv-eda-bloco-usuario { align-items: flex-end; }
+.cv-eda-links { display: flex; flex-wrap: wrap; gap: 6px; max-width: 88%; }
+.cv-eda-links a { padding: 7px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: #1a1205; background: var(--cv-ouro); text-decoration: none; transition: transform .15s ease; }
+.cv-eda-links a:hover { transform: translateY(-1px); }
+.cv-eda-links a:focus-visible { outline: 2px solid var(--cv-texto); outline-offset: 2px; }
 .cv-eda-sugestoes { display: flex; flex-wrap: wrap; gap: 6px; }
 .cv-eda-sugestoes button { padding: 7px 11px; border-radius: 999px; font-size: 12.5px; color: var(--cv-texto); background: transparent; border: 1px solid var(--cv-borda); cursor: pointer; }
 .cv-eda-sugestoes button:hover { border-color: var(--cv-ouro); color: var(--cv-ouro); }
@@ -98,3 +105,5 @@
   --cv-ouro: #a8691e;
   --cv-usuario: rgb(168 105 30 / 10%);
 }
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda-links a,
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda-form button { color: #fff; }

@@ -95,7 +95,37 @@ const TOM_PERIODO: Record<ReturnType<typeof periodoDoDia>, string> = {
 };
 
 // ---------- Operadora ----------
+type Destino = { href: string; rotulo: string };
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function destinosFixos(hoje: string): Record<string, Destino> {
+  const intervalo = `inicio=${hoje}&fim=${somarDias(hoje, 6)}`;
+  return {
+    PAINEL: { href: '/dashboard', rotulo: 'Abrir o painel' },
+    RESERVAS: { href: '/reservas', rotulo: 'Abrir reservas' },
+    NOVA_RESERVA: { href: '/reservas/nova', rotulo: 'Nova reserva' },
+    AO_VIVO: { href: '/reservas/ao-vivo', rotulo: 'Operação ao vivo' },
+    SEM_GUIA: { href: `/reservas?alerta=sem_guia&${intervalo}`, rotulo: 'Ver saídas sem guia' },
+    SEM_EMBARCACAO: { href: `/reservas?alerta=sem_embarcacao&${intervalo}`, rotulo: 'Ver saídas sem embarcação' },
+    SEM_HORARIO: { href: `/reservas?alerta=sem_horario&${intervalo}`, rotulo: 'Ver saídas sem horário' },
+    A_CONFIRMAR: { href: `/reservas?alerta=pendentes&${intervalo}`, rotulo: 'Ver reservas a confirmar' },
+    PASSEIOS: { href: '/passeios', rotulo: 'Abrir passeios' },
+    NOVO_PASSEIO: { href: '/passeios/novo', rotulo: 'Cadastrar passeio' },
+    DEMANDAS: { href: '/demandas', rotulo: 'Abrir demandas' },
+    DEMANDAS_RASCUNHO: { href: '/demandas?status=rascunho', rotulo: 'Ver demandas em rascunho' },
+    NOVA_DEMANDA: { href: '/demandas/nova', rotulo: 'Nova demanda' },
+    FINANCEIRO: { href: '/financeiro', rotulo: 'Abrir financeiro' },
+    FIN_PENDENTES: { href: '/financeiro?periodo=pendentes', rotulo: 'Ver contas pendentes' },
+    NOVA_RECEITA: { href: '/financeiro/receita', rotulo: 'Lançar receita' },
+    NOVA_DESPESA: { href: '/financeiro/despesa', rotulo: 'Lançar despesa' },
+    CLIENTES: { href: '/clientes', rotulo: 'Abrir clientes' },
+    GUIAS: { href: '/guias', rotulo: 'Abrir guias' },
+    EMBARCACOES: { href: '/embarcacoes', rotulo: 'Abrir embarcações' },
+  };
+}
+
 async function contextoOperadora(db: SupabaseClient, empresaId: string, hoje: string) {
+  const destinos = destinosFixos(hoje);
   const ini = somarDias(hoje, -1);
   const fim = somarDias(hoje, 21);
   const [reservas, demandas, financeiro, passeios, saude] = await Promise.all([
@@ -126,6 +156,13 @@ async function contextoOperadora(db: SupabaseClient, empresaId: string, hoje: st
     const atencao = lista.reduce((t, a) => t + Number(a.atencao ?? 0), 0);
     const pend = lista.reduce((t, a) => t + Number(a.pendentes ?? 0), 0);
     linhas.push(`\nFICHAS DE SAÚDE (próx. 7 dias, só contagem): ${graves} alerta(s) grave(s), ${atencao} de atenção, ${pend} ficha(s) pendente(s). Detalhes só dentro de cada reserva.`);
+    const viagens = (saude.data as { reserva_id?: string; passeio?: string; data_inicio?: string; graves?: number; pendentes?: number }[])
+      .filter(v => v.reserva_id && UUID.test(v.reserva_id) && (v.graves || v.pendentes)).slice(0, 6);
+    viagens.forEach((v, i) => {
+      const codigo = `SAUDE_${i + 1}`;
+      destinos[codigo] = { href: `/reservas/editar/${v.reserva_id}#participantes`, rotulo: `${v.graves ? 'Alertas de saúde' : 'Fichas pendentes'} · ${v.passeio ?? 'Viagem'} ${dm(v.data_inicio)}`.slice(0, 60) };
+      linhas.push(`- ${codigo}: ${v.passeio ?? 'Viagem'} em ${dm(v.data_inicio)} — ${v.graves ?? 0} grave(s), ${v.pendentes ?? 0} ficha(s) pendente(s)`);
+    });
   }
   if (!demandas.error) {
     const d = demandas.data ?? [];
@@ -159,7 +196,19 @@ async function contextoOperadora(db: SupabaseClient, empresaId: string, hoje: st
     linhas.push(`\nPASSEIOS CADASTRADOS (${p.length}): nome | categoria | preço | situação | vagas | cidade | duração | no portal`);
     for (const x of p) linhas.push(`- ${x.nome} | ${x.categoria ?? '—'} | ${(x.preco ?? x.valor) != null ? reais(Number(x.preco ?? x.valor)) : '—'} | ${x.situacao ?? '—'} | ${x.vagas ?? '—'} | ${x.cidade ?? '—'} | ${x.duracao ?? '—'} | ${x.publicado_portal ? 'sim' : 'não'}`);
   }
-  return linhas.join('\n').slice(0, 14_000);
+  linhas.push(`\nATALHOS DISPONÍVEIS (código: destino): ${Object.entries(destinos).map(([c, d]) => `${c}: ${d.rotulo}`).join('; ')}`);
+  return { texto: linhas.join('\n').slice(0, 15_000), destinos };
+}
+
+/** Troca os marcadores [[IR:CODIGO]] por links seguros (só destinos conhecidos). */
+function extrairLinks(texto: string, destinos: Record<string, Destino>) {
+  const links: Destino[] = [];
+  const limpo = texto.replace(/\[\[\s*IR\s*:\s*([A-Z0-9_]{2,30})\s*\]\]/gi, (_, codigo: string) => {
+    const d = destinos[codigo.toUpperCase()];
+    if (d && links.length < 3 && !links.some(l => l.href === d.href)) links.push(d);
+    return '';
+  }).replace(/[ \t]+\n/g, '\n').trim();
+  return { limpo, links };
 }
 
 function sistemaOperadora(nome: string, pagina: string, periodo: ReturnType<typeof periodoDoDia>, dados: string) {
@@ -168,9 +217,10 @@ Fala com ${nome || 'a pessoa da operadora'}, que está na página "${pagina}".
 ${TOM_PERIODO[periodo]}
 
 Regras:
-- Português do Brasil simples, caloroso e direto, como um colega experiente. Sem termos técnicos.
+- Português do Brasil simples, caloroso e direto, como um colega experiente. Sem termos técnicos. Cumprimente só na primeira resposta da conversa.
 - Respostas curtas (até ~120 palavras); listas curtas quando ajudar. Datas no formato dd/mm. Valores em R$.
 - Use SOMENTE os DADOS abaixo. Nunca invente números, reservas, nomes ou disponibilidade. Se o dado não estiver aqui, diga que não encontrou e indique a página onde conferir.
+- Atalhos: quando a pessoa pedir para ir/abrir/ver algo, ou quando um atalho ajudar, termine a resposta com até 2 marcadores no formato [[IR:CODIGO]], usando SOMENTE códigos da lista ATALHOS DISPONÍVEIS. O marcador vira um botão; não escreva o endereço da página. Ex.: "Separei os alertas para você. [[IR:SAUDE_1]]".
 - Você não executa ações. Oriente o caminho no menu: Painel, Reservas, Passeios, Demandas, Financeiro, Clientes, Guias, Embarcações, Hospedagens, Vouchers, Relatórios, Configurações.
 - Não existe nome de cliente nem detalhe de saúde nos dados (privacidade). Para isso, oriente abrir a reserva.
 - Dê prioridade ao assunto da página atual, mas responda sobre qualquer área.
@@ -249,6 +299,7 @@ export async function POST(req: NextRequest) {
     }
 
     let sistema: string;
+    let destinos: Record<string, Destino> = {};
     if (modo === 'operadora') {
       const m = /^Bearer ([^\s]+)$/i.exec(req.headers.get('authorization') ?? '');
       if (!m || m[1].length > 8192) throw new Falha(401, 'Entre novamente.');
@@ -266,7 +317,8 @@ export async function POST(req: NextRequest) {
 
       const pagina = typeof dados.pagina === 'string' && PAGINAS.has(dados.pagina) ? dados.pagina : 'painel';
       const contexto = await contextoOperadora(db, String(perfil.empresa_id), hoje);
-      sistema = sistemaOperadora(String(perfil.nome ?? '').split(' ')[0], pagina, periodo, contexto);
+      destinos = contexto.destinos;
+      sistema = sistemaOperadora(String(perfil.nome ?? '').split(' ')[0], pagina, periodo, contexto.texto);
     } else {
       let ip = 'desenvolvimento-local';
       if (process.env.VERCEL === '1') {
@@ -287,7 +339,8 @@ export async function POST(req: NextRequest) {
 
     const texto = await responderComIA(sistema, mensagens.slice(-10));
     if (!texto) return resposta(503, { ok: false, erro: 'A EDA não conseguiu responder agora. Tente de novo em instantes.', diagnostico: falhasIA.map(f => f.split(':')[0]), modelos: { ...modelosEmUso } });
-    return resposta(200, { ok: true, resposta: texto, periodo });
+    const { limpo, links } = extrairLinks(texto, destinos);
+    return resposta(200, { ok: true, resposta: limpo || texto, links, periodo });
   } catch (erro) {
     if (erro instanceof Falha) return resposta(erro.status, { ok: false, erro: erro.message });
     return resposta(503, { ok: false, erro: 'A EDA está indisponível agora.' });

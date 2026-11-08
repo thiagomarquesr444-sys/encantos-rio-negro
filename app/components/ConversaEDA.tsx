@@ -6,11 +6,16 @@
 // Botão discreto flutuante + painel compacto; não altera o layout das páginas.
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
+import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import './conversa-eda.css';
 
-type Msg = { papel: 'usuario' | 'eda'; texto: string };
+type LinkEDA = { href: string; rotulo: string };
+type Msg = { papel: 'usuario' | 'eda'; texto: string; links?: LinkEDA[] };
+
+// Só caminhos internos da plataforma.
+const linkSeguro = (l: LinkEDA) => typeof l?.href === 'string' && /^\/[a-z]/.test(l.href) && !l.href.startsWith('//') && typeof l.rotulo === 'string';
 
 const PAGINAS: [string, string][] = [
   ['/dashboard', 'painel'], ['/passeios', 'passeios'], ['/reservas', 'reservas'],
@@ -91,10 +96,11 @@ export default function ConversaEDA() {
       const r = await fetch('/api/eda-ia', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ modo: 'operadora', pagina, mensagens: historico.slice(-10) }),
+        body: JSON.stringify({ modo: 'operadora', pagina, mensagens: historico.slice(-10).map(({ papel, texto }) => ({ papel, texto })) }),
       });
-      const j = await r.json().catch(() => ({})) as { resposta?: string; erro?: string };
-      setMsgs(m => [...m, { papel: 'eda', texto: j.resposta || j.erro || 'Não consegui responder agora. Tente de novo em instantes.' }]);
+      const j = await r.json().catch(() => ({})) as { resposta?: string; erro?: string; links?: LinkEDA[] };
+      const links = Array.isArray(j.links) ? j.links.filter(linkSeguro).slice(0, 3) : [];
+      setMsgs(m => [...m, { papel: 'eda', texto: j.resposta || j.erro || 'Não consegui responder agora. Tente de novo em instantes.', links }]);
     } catch (e) {
       setMsgs(m => [...m, { papel: 'eda', texto: e instanceof Error && e.message.includes('sessão') ? e.message : 'Sem conexão com a EDA agora. Confira a internet e tente de novo.' }]);
     } finally {
@@ -120,7 +126,14 @@ export default function ConversaEDA() {
 
           <div className="cv-eda-lista" aria-live="polite">
             {msgs.map((m, i) => (
-              <p key={i} className={`cv-eda-msg cv-eda-${m.papel}`}>{formatar(m.texto)}</p>
+              <div key={i} className={`cv-eda-bloco cv-eda-bloco-${m.papel}`}>
+                <p className={`cv-eda-msg cv-eda-${m.papel}`}>{formatar(m.texto)}</p>
+                {!!m.links?.length && (
+                  <div className="cv-eda-links">
+                    {m.links.map(l => <Link key={l.href} href={l.href} onClick={() => setAberto(false)}>{l.rotulo} →</Link>)}
+                  </div>
+                )}
+              </div>
             ))}
             {enviando && <p className="cv-eda-msg cv-eda-eda cv-eda-pensando" aria-label="EDA pensando"><i /><i /><i /></p>}
             {soBoasVindas && !enviando && (
