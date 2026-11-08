@@ -300,6 +300,14 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
     };
   }, []);
   const [loading, setLoading] = useState(true);
+  // EDA_FASE_B_V1: atalho para os pedidos que chegam da Iara.
+  const [pedidosPortal, setPedidosPortal] = useState(0);
+  useEffect(() => {
+    let ativo = true;
+    supabase.from('pedidos_visitante').select('id', { count: 'exact', head: true }).in('status', ['novo', 'em_contato'])
+      .then(({ count, error }) => { if (ativo && !error) setPedidosPortal(count ?? 0); });
+    return () => { ativo = false; };
+  }, []);
   const [busca, setBusca] = useState('');
   const [filtroStatus, setFiltroStatus] = useState<'' | StatusReserva>('');
   const [erroConsulta, setErroConsulta] = useState('');
@@ -721,6 +729,9 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
             <button type="button" disabled={loading || Boolean(erroConsulta)} onClick={exportarRelatorio} className="eda-pg-bt">
               Exportar CSV
             </button>
+            <Link href="/reservas/pedidos" className="eda-pg-bt">
+              Pedidos do portal{pedidosPortal ? <span className="eda-pg-num" style={{ marginLeft: 6 }}>{pedidosPortal}</span> : null}
+            </Link>
             <Link href="/reservas/nova" className="eda-pg-bt eda-pg-bt-ouro">+ Nova reserva</Link>
           </>}
         />
