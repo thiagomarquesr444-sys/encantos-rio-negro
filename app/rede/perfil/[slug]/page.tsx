@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 
 import PublicHeader from '@/app/components/PublicHeader';
+import RodapePublicoEDA from '@/app/components/RodapePublicoEDA';
 import TemaPortalERN from '@/app/components/TemaPortalERN';
 import LogoERN from '@/app/components/LogoERN';
 import PublicacoesPerfilERN from '@/app/components/PublicacoesPerfilERN';
@@ -541,6 +542,7 @@ export default function PerfilRedePage() {
           </>
         )}
       </main>
+      <RodapePublicoEDA />
 
       <style jsx global>{`
         .ern-perfil-publico .ern-perfil-apresentacao {

@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import PublicHeader from '@/app/components/PublicHeader';
+import RodapePublicoEDA from '@/app/components/RodapePublicoEDA';
 import OfertaPasseioEDA from '@/app/components/OfertaPasseioEDA';
 import TemaPortalERN from '@/app/components/TemaPortalERN';
 import { useLanguage } from '@/app/components/LanguageProvider';
@@ -214,6 +215,7 @@ export default function PublicacaoRedePage() {
           </article>
         )}
       </main>
+      <RodapePublicoEDA />
     </div>
     </TemaPortalERN>
   );
