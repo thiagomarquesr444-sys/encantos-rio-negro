@@ -55,7 +55,7 @@ async function chamarGroq(sistema: string, mensagens: MensagemIA[]): Promise<str
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${chave}` },
     body: JSON.stringify({
       model: modelo,
-      temperature: 0.6,
+      temperature: 0.4,
       max_tokens: MAX_SAIDA,
       messages: [
         { role: 'system', content: sistema },
@@ -84,7 +84,7 @@ async function chamarGemini(sistema: string, mensagens: MensagemIA[]): Promise<s
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: sistema }] },
       contents: mensagens.map(m => ({ role: m.papel === 'usuario' ? 'user' : 'model', parts: [{ text: m.texto }] })),
-      generationConfig: { temperature: 0.6, maxOutputTokens: MAX_SAIDA * 3 },
+      generationConfig: { temperature: 0.4, maxOutputTokens: MAX_SAIDA * 3 },
     }),
   });
   if (r.status === 404) cacheModelo.gemini = undefined;

@@ -19,7 +19,10 @@ const linkSeguro = (l: LinkEDA) => typeof l?.href === 'string' && /^\/[a-z]/.tes
 
 const PAGINAS: [string, string][] = [
   ['/dashboard', 'painel'], ['/passeios', 'passeios'], ['/reservas', 'reservas'],
-  ['/demandas', 'demandas'], ['/financeiro', 'financeiro'],
+  ['/demandas', 'demandas'], ['/financeiro', 'financeiro'], ['/clientes', 'clientes'],
+  ['/hospedagens', 'hospedagens'], ['/configuracoes', 'configuracoes'], ['/embarcacoes', 'embarcacoes'],
+  ['/guias', 'guias'], ['/parceiros', 'parceiros'], ['/relatorios', 'relatorios'],
+  ['/vouchers', 'vouchers'], ['/documentos', 'documentos'], ['/fiscal', 'fiscal'], ['/planos', 'planos'],
 ];
 
 const SUGESTOES: Record<string, string[]> = {
@@ -28,6 +31,17 @@ const SUGESTOES: Record<string, string[]> = {
   reservas: ['Quais saídas estão sem guia?', 'Quantas pessoas nesta semana?', 'Tem reserva sem horário?'],
   demandas: ['Quais demandas estão pendentes?', 'O que vence primeiro?', 'Como ligo uma demanda a uma saída?'],
   financeiro: ['Quanto tenho a receber?', 'Tem conta atrasada?', 'Onde mais gastei este mês?'],
+  clientes: ['Quantos clientes novos no mês?', 'De onde vêm meus clientes?', 'Como cadastro um cliente?'],
+  hospedagens: ['Quais hospedagens tenho?', 'Qual a diária de cada uma?', 'Como cadastro uma hospedagem?'],
+  embarcacoes: ['Qual a capacidade dos meus barcos?', 'Tem saída sem embarcação?', 'Como cadastro uma embarcação?'],
+  guias: ['Quais guias falam inglês?', 'Tem saída sem guia?', 'Como cadastro um guia?'],
+  parceiros: ['Quantos parceiros tenho?', 'Como funciona a comissão?', 'Como cadastro um parceiro?'],
+  vouchers: ['Tem voucher vencendo?', 'Como emito um voucher?', 'Como valido um voucher?'],
+  relatorios: ['Que relatórios posso gerar?', 'Resumo do mês', 'Como exporto em PDF?'],
+  documentos: ['Onde ficam meus documentos?', 'O que está pendente?', 'Resumo do mês'],
+  fiscal: ['Como emito nota fiscal?', 'O que preciso para o fiscal?', 'Resumo do mês'],
+  planos: ['Qual meu plano?', 'O que o plano pago libera?', 'Resumo da semana'],
+  configuracoes: ['Como mudo o tema?', 'Como adiciono alguém da equipe?', 'Como apareço no portal?'],
 };
 
 export function periodoManaus(): 'madrugada' | 'manha' | 'tarde' | 'noite' {
@@ -156,7 +170,7 @@ export default function ConversaEDA() {
             />
             <button type="submit" disabled={enviando || !entrada.trim()} aria-label="Enviar">➤</button>
           </form>
-          <p className="cv-eda-nota">A EDA lê só dados da sua operadora; nomes de clientes e fichas de saúde não saem da plataforma.</p>
+          <p className="cv-eda-nota">A EDA lê só dados da sua operadora. Dados pessoais de clientes (nome, CPF, contato, saúde) não saem da plataforma — LGPD.</p>
         </section>
       )}
 
