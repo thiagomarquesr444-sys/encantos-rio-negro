@@ -340,7 +340,6 @@ function calcularProposta(p: PasseioRegra, adultos: number, criancas: number) {
 }
 
 // ---------- Base de conhecimento (tabela conhecimento_eda) ----------
-const normalizar = (t: string) => t.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
 
 async function buscarConhecimento(admin: SupabaseClient, publico: 'visitante' | 'operador', consulta: string, limite = 4) {
   const { data, error } = await admin.from('conhecimento_eda')
