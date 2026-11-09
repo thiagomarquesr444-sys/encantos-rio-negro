@@ -722,10 +722,19 @@ TAREFA ESPECIAL: escreva a RECEPÇÃO de quem acabou de abrir o painel. Devolva 
     if (!texto) return resposta(503, { ok: false, erro: 'Não consegui responder agora. Tente de novo em instantes.', diagnostico: falhasIA.map(f => f.split(':')[0]) });
     // Ficha da conversa (memória da Iara), devolvida ao navegador.
     let fichaNova: FichaIara | null = null;
-    let bruto = texto.replace(/\[\[\s*FICHA\s*:\s*(\{[\s\S]*?\})\s*\]\]/gi, (_, json: string) => {
-      try { fichaNova = lerFicha({ ...fichaPublica, ...JSON.parse(json) }); } catch { /* ignora */ }
-      return '';
-    });
+    // A ficha vem sempre no fim: lê o JSON (tolerando marcador malformado) e corta o resto.
+    const sugestoesPre = extrairSugestoes(texto);
+    let bruto = sugestoesPre.limpo;
+    const posFicha = bruto.search(/\[\[\s*FICHA/i);
+    if (posFicha >= 0) {
+      const cauda = bruto.slice(posFicha);
+      const ini = cauda.indexOf('{');
+      let fim = cauda.lastIndexOf('}');
+      while (ini >= 0 && fim > ini && !fichaNova) {
+        try { fichaNova = lerFicha({ ...fichaPublica, ...JSON.parse(cauda.slice(ini, fim + 1)) }); } catch { fim = cauda.lastIndexOf('}', fim - 1); }
+      }
+      bruto = bruto.slice(0, posFicha);
+    }
     if (modo === 'publico') {
       // Saudação única + texto limpo (sem markdown, sem URLs soltas).
       if (jaCumprimentou) bruto = bruto.replace(/^\s*(boa (noite|tarde)|bom dia|ol[áa]|oi|good (morning|afternoon|evening)|hello|hi|buenas (noches|tardes)|buenos d[íi]as|hola)\b[^\p{L}\n]*/iu, '');
@@ -767,7 +776,7 @@ TAREFA ESPECIAL: escreva a RECEPÇÃO de quem acabou de abrir o painel. Devolva 
         await admin.from('iara_eventos').upsert([...etapas].map(etapa => ({ sessao, etapa, empresa_id: empresaFoco, passeio_id: passeioFoco, idioma: typeof dados.idioma === 'string' && IDIOMAS.has(dados.idioma) ? dados.idioma : 'PT' })), { onConflict: 'sessao,etapa', ignoreDuplicates: true });
       }
     }
-    return resposta(200, { ok: true, resposta: final, links, sugestoes: comSugestoes.sugestoes, pedido, ficha: fichaNova, periodo, motor: { modelo: ultimoModeloIA.nome, ms: Date.now() - inicioIA, tentativas: falhasIA.map(f => f.split(':')[0]) } });
+    return resposta(200, { ok: true, resposta: final, links, sugestoes: sugestoesPre.sugestoes.length ? sugestoesPre.sugestoes : comSugestoes.sugestoes, pedido, ficha: fichaNova, periodo, motor: { modelo: ultimoModeloIA.nome, ms: Date.now() - inicioIA, tentativas: falhasIA.map(f => f.split(':')[0]) } });
   } catch (erro) {
     if (erro instanceof Falha) return resposta(erro.status, { ok: false, erro: erro.message });
     return resposta(503, { ok: false, erro: 'A EDA está indisponível agora.' });
