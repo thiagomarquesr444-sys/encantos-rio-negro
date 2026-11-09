@@ -435,7 +435,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   const pedacosRef = useRef<Blob[]>([]);
   const cancelarAudioRef = useRef(false);
   const relogioAudioRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const enviarRef = useRef<(v: string) => void>(() => undefined);
+  const enviarRef = useRef<(v: string, origem?: 'busca') => void>(() => undefined);
   const MAX_AUDIO_S = 60;
   const ta = idioma === 'EN'
     ? { gravar: 'Record a voice message', parar: 'Stop and send', cancelar: 'Cancel recording', gravandoTxt: 'Recording…', ouvindo: 'Listening to your audio…', semMic: 'I could not access the microphone. Check the permission in your browser.', falha: 'I could not understand the audio. Could you type it?' }
@@ -573,7 +573,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
     setMensagens([{ autor: 'ern', texto: c.hello }]);
   }
 
-  function enviar(valor: string) {
+  function enviar(valor: string, origem?: 'busca') {
     const texto = valor.trim().slice(0, 300);
     if (!texto || limite || enviandoERN.current) return;
 
@@ -614,7 +614,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
     fetch('/api/eda-ia', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ modo: 'publico', idioma, estilo: estiloIara, mensagens: historico, ficha: fichaIara.current, sessao: sessaoIara.current || undefined, pagina_atual: { caminho: window.location.pathname.slice(0, 120) } }),
+      body: JSON.stringify({ modo: 'publico', idioma, estilo: estiloIara, mensagens: historico, ficha: fichaIara.current, sessao: sessaoIara.current || undefined, origem, pagina_atual: { caminho: window.location.pathname.slice(0, 120) } }),
     })
       .then(r => r.json())
       .then((j: { resposta?: string; erro?: string; sugestoes?: unknown; pedido?: PedidoIara | null; ficha?: unknown; links?: unknown }) => {
@@ -636,17 +636,35 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
 
   enviarRef.current = enviar;
 
+  // EDA_IARA_PONTE_V1: a busca da página Descubra, o botão "Planejar viagem" e
+  // qualquer outro ponto do portal abrem a Iara por este evento (com ou sem texto).
+  useEffect(() => {
+    let espera: ReturnType<typeof setTimeout> | null = null;
+    function aoChamar(evento: Event) {
+      const detalhe = (evento as CustomEvent<{ texto?: unknown; origem?: unknown }>).detail;
+      const texto = typeof detalhe?.texto === 'string' ? detalhe.texto.trim().slice(0, 300) : '';
+      setOfertaIara(null);
+      setAberto(true);
+      if (!texto) return;
+      if (espera) clearTimeout(espera);
+      espera = setTimeout(() => enviarRef.current(texto, detalhe?.origem === 'busca' ? 'busca' : undefined), 380);
+    }
+    window.addEventListener('iara:abrir', aoChamar);
+    return () => { window.removeEventListener('iara:abrir', aoChamar); if (espera) clearTimeout(espera); };
+  }, []);
+
   return (
     <section className="ern-chat-compacto" aria-label={t.title} data-ern-vida-pausada={vidaPausadaERN}>
       {/* ERN_CONCIERGE_VISUAL_V2 */}
       {ofertaIara && !aberto && (
-        <div role="status" style={{ position: 'fixed', right: 20, bottom: 104, zIndex: 60, maxWidth: 'min(320px, calc(100vw - 40px))', display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 14px', borderRadius: 16, color: '#f2f0e6', background: 'rgb(9 22 18 / 94%)', border: '1px solid rgb(244 199 126 / 30%)', boxShadow: '0 16px 40px rgb(0 0 0 / 35%)', backdropFilter: 'blur(10px)', fontSize: 14, lineHeight: 1.45 }}>
-          <span aria-hidden="true" style={{ flex: 'none', display: 'grid', placeItems: 'center', width: 32, height: 32, borderRadius: '50%', overflow: 'hidden' }}><IconeIara /></span>
-          <div style={{ flex: 1 }}>
-            <p style={{ margin: 0 }}>{ofertaIara}</p>
-            <button type="button" onClick={() => { setOfertaIara(null); setAberto(true); }} style={{ marginTop: 8, padding: '6px 12px', borderRadius: 999, border: 0, fontWeight: 600, color: '#1a1205', background: '#f4c77e', cursor: 'pointer' }}>{c.open}</button>
+        <div role="status" className="iara-oferta">
+          <span aria-hidden="true" className="iara-oferta-avatar"><IconeIara /></span>
+          <div className="iara-oferta-corpo">
+            <span className="iara-oferta-nome">Iara</span>
+            <p>{ofertaIara}</p>
+            <button type="button" className="iara-oferta-acao" onClick={() => { setOfertaIara(null); setAberto(true); }}>{c.open} <span aria-hidden="true">→</span></button>
           </div>
-          <button type="button" aria-label={c.close} onClick={() => setOfertaIara(null)} style={{ flex: 'none', border: 0, background: 'transparent', color: '#93a79d', fontSize: 18, lineHeight: 1, cursor: 'pointer' }}>×</button>
+          <button type="button" className="iara-oferta-fechar" aria-label={c.close} onClick={() => setOfertaIara(null)}>×</button>
         </div>
       )}
       <ConciergeLancadorERN
@@ -1301,6 +1319,76 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
         @media (max-width: 600px) {
           .chat-topo { border-radius: 16px 16px 0 0; }
         }
+        /* EDA_IARA_ACABAMENTO_V1: convite da Iara e detalhes finos da conversa */
+        .iara-oferta {
+          position: fixed; z-index: 60;
+          right: max(20px, env(safe-area-inset-right));
+          bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+          max-width: min(340px, calc(100vw - 40px));
+          display: flex; gap: 12px; align-items: flex-start;
+          padding: 14px 14px 14px 16px;
+          border-radius: 20px 20px 6px 20px;
+          color: #f2f0e6; font-size: 14px; line-height: 1.5;
+          background: linear-gradient(160deg, rgb(20 48 38 / 96%), rgb(7 17 14 / 97%));
+          border: 1px solid rgb(244 199 126 / 32%);
+          box-shadow: 0 24px 60px rgb(0 0 0 / 45%), inset 0 1px 0 rgb(255 255 255 / 7%);
+          backdrop-filter: blur(14px);
+        }
+        .iara-oferta::before {
+          content: ''; position: absolute; left: 18px; right: 18px; top: 0; height: 1px;
+          background: linear-gradient(90deg, transparent, rgb(244 199 126 / 70%), transparent);
+        }
+        .iara-oferta-avatar {
+          flex: none; display: grid; place-items: center;
+          width: 40px; height: 40px; border-radius: 50%; overflow: hidden;
+          box-shadow: 0 6px 16px rgb(0 0 0 / 40%), 0 0 0 3px rgb(244 199 126 / 14%);
+        }
+        .iara-oferta-corpo { flex: 1; min-width: 0; }
+        .iara-oferta-nome {
+          display: block; margin-bottom: 2px;
+          font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #f4c77e;
+        }
+        .iara-oferta p { margin: 0; }
+        .iara-oferta-acao {
+          display: inline-flex; align-items: center; gap: 6px;
+          min-height: 36px; margin-top: 10px; padding: 7px 16px;
+          border: 0; border-radius: 999px;
+          font-size: 13px; font-weight: 700; color: #07110e;
+          background: linear-gradient(180deg, #f7d595, #e3a144);
+          box-shadow: 0 8px 20px rgb(227 161 68 / 30%), inset 0 1px 0 rgb(255 255 255 / 55%);
+          transition: filter .2s, transform .2s;
+        }
+        .iara-oferta-acao:hover { filter: brightness(1.06); transform: translateY(-1px); }
+        .iara-oferta-fechar {
+          flex: none; display: grid; place-items: center;
+          width: 28px; height: 28px; border: 0; border-radius: 50%;
+          background: rgb(255 255 255 / 6%); color: #b8c9bf; font-size: 17px; line-height: 1;
+        }
+        .iara-oferta-fechar:hover { background: rgb(255 255 255 / 12%); color: #f4c77e; }
+        @media (prefers-reduced-motion: no-preference) {
+          .iara-oferta { animation: iara-oferta-entra .5s cubic-bezier(.2,.7,.2,1) both; }
+        }
+        @keyframes iara-oferta-entra {
+          from { opacity: 0; transform: translateY(14px) scale(.97); }
+          to { opacity: 1; transform: none; }
+        }
+        .identidade h2 { font-family: var(--font-fraunces), serif; font-size: 19px; font-weight: 600; letter-spacing: 0; }
+        .identidade p { letter-spacing: .02em; }
+        .mensagens {
+          background:
+            radial-gradient(90% 40% at 100% 0%, rgb(227 161 68 / 9%), transparent 70%),
+            radial-gradient(80% 35% at 0% 100%, rgb(27 74 58 / 8%), transparent 70%),
+            #f7f6f2;
+        }
+        .assistente .autor { letter-spacing: .12em; text-transform: uppercase; font-size: 9.5px; }
+        .visitante .autor { letter-spacing: .12em; text-transform: uppercase; font-size: 9.5px; }
+        .mensagens :global(.iara-link) {
+          border-radius: 999px; padding: 8px 14px;
+          background: linear-gradient(180deg, #fffaf0, #f6ecd6);
+          box-shadow: 0 2px 8px rgb(138 75 18 / 10%);
+          transition: transform .2s, box-shadow .2s, border-color .2s;
+        }
+        .mensagens :global(.iara-link:hover) { transform: translateY(-1px); box-shadow: 0 6px 16px rgb(138 75 18 / 18%); }
       `}</style>
     </section>
   );

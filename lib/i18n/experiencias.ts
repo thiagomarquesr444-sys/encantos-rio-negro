@@ -76,11 +76,11 @@ export const experienciasTranslations = {
         'A experiência escolhida pode virar uma oportunidade real.',
       description:
         'Quando o visitante demonstra interesse, a EDA pode organizar informações iniciais e preparar a conexão com operadores, hospedagens, guias ou outros prestadores adequados.',
-      button: 'Falar com o Concierge',
+      button: 'Falar com a Iara',
       example: 'Exemplo de jornada',
       steps: [
         'Visitante escolhe uma experiência',
-        'Concierge entende perfil e período',
+        'Iara entende perfil e período',
         'EDA organiza o contexto da viagem',
         'Operador confirma possibilidade real',
         'Atendimento segue para reserva e operação',
@@ -263,11 +263,11 @@ export const experienciasTranslations = {
         'The experience you choose can become a real opportunity.',
       description:
         'When a visitor shows interest, EDA can organize the initial information and prepare the connection with operators, accommodation providers, guides or other suitable partners.',
-      button: 'Talk to the Concierge',
+      button: 'Talk to Iara',
       example: 'Example journey',
       steps: [
         'Visitor chooses an experience',
-        'Concierge understands profile and travel period',
+        'Iara understands profile and travel period',
         'EDA organizes the travel context',
         'Operator confirms real availability',
         'Service moves forward to reservation and operation',
@@ -454,11 +454,11 @@ export const experienciasTranslations = {
         'La experiencia elegida puede convertirse en una oportunidad real.',
       description:
         'Cuando el visitante demuestra interés, EDA puede organizar la información inicial y preparar la conexión con operadores, hospedajes, guías u otros prestadores adecuados.',
-      button: 'Hablar con el Concierge',
+      button: 'Hablar con Iara',
       example: 'Ejemplo de recorrido',
       steps: [
         'El visitante elige una experiencia',
-        'El Concierge entiende el perfil y el período',
+        'Iara entiende el perfil y el período',
         'EDA organiza el contexto del viaje',
         'El operador confirma la posibilidad real',
         'La atención avanza hacia la reserva y la operación',

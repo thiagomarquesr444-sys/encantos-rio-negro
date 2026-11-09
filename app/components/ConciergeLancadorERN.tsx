@@ -17,7 +17,7 @@ type Props = {
 
 const textos = {
   PT: {
-    abrir: 'EDA — Assistente de viagem',
+    abrir: 'Iara — conversar e planejar a viagem',
     opcoes: 'Opções do assistente',
     esquerda: 'Mover para esquerda',
     direita: 'Mover para direita',
@@ -26,7 +26,7 @@ const textos = {
     retomar: 'Retomar efeitos',
   },
   EN: {
-    abrir: 'EDA — Travel assistant',
+    abrir: 'Iara — chat and plan your trip',
     opcoes: 'Assistant options',
     esquerda: 'Move to the left',
     direita: 'Move to the right',
@@ -35,7 +35,7 @@ const textos = {
     retomar: 'Resume effects',
   },
   ES: {
-    abrir: 'EDA — Asistente de viaje',
+    abrir: 'Iara — conversar y planear tu viaje',
     opcoes: 'Opciones del asistente',
     esquerda: 'Mover a la izquierda',
     direita: 'Mover a la derecha',
@@ -245,7 +245,8 @@ export default function ConciergeLancadorERN({
           background: #07140f;
           overflow: hidden;
           color: #ffffff;
-          box-shadow: 0 6px 20px rgb(0 0 0 / 28%);
+          box-shadow: 0 10px 28px rgb(0 0 0 / 38%), 0 0 0 4px rgb(244 199 126 / 12%), inset 0 1px 0 rgb(255 255 255 / 18%);
+          transition: box-shadow .25s, border-color .25s;
           cursor: grab;
           touch-action: none;
         }
@@ -253,11 +254,12 @@ export default function ConciergeLancadorERN({
           content: '';
           position: absolute;
           inset: -3px;
-          border: 2px solid #ffffff;
+          border: 2px solid #f4c77e;
           border-radius: 50%;
           opacity: 0;
           pointer-events: none;
         }
+        .abrir:hover { border-color: #f7d595; box-shadow: 0 14px 34px rgb(0 0 0 / 42%), 0 0 0 6px rgb(244 199 126 / 20%), inset 0 1px 0 rgb(255 255 255 / 22%); }
         [data-arrastando='true'] .abrir { cursor: grabbing; }
         .estrela {
           display: block;
@@ -270,7 +272,7 @@ export default function ConciergeLancadorERN({
         }
         @keyframes ern-lancador-pulsar {
           0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.07); }
+          50% { transform: scale(1.04); }
         }
         @keyframes ern-lancador-onda {
           0% { transform: scale(1); opacity: 0.8; }
@@ -278,10 +280,10 @@ export default function ConciergeLancadorERN({
         }
         @media (prefers-reduced-motion: no-preference) {
           .abrir {
-            animation: ern-lancador-pulsar 2.4s ease-in-out infinite;
+            animation: ern-lancador-pulsar 3.2s ease-in-out infinite;
           }
           .abrir::after {
-            animation: ern-lancador-onda 2.4s ease-out infinite;
+            animation: ern-lancador-onda 3.2s ease-out infinite;
           }
         }
         [data-pausado='true'] .abrir,
