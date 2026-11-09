@@ -150,7 +150,9 @@ const textos = {
 // ERN_CHAT_COMPACTO_V1
 
 type IdiomaERN = 'PT' | 'EN' | 'ES';
-type MensagemERN = { autor: 'ern' | 'visitante'; texto: string; sugestoes?: string[] };
+type LinkIara = { href: string; rotulo: string };
+type MensagemERN = { autor: 'ern' | 'visitante'; texto: string; sugestoes?: string[]; links?: LinkIara[] };
+const linkIaraSeguro = (l: LinkIara) => typeof l?.rotulo === 'string' && typeof l?.href === 'string' && (/^\/[a-z]/.test(l.href) || /^https:\/\/[^\s<>"]+$/i.test(l.href));
 
 const conversaTextos = {
   PT: {
@@ -311,6 +313,17 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   }, []);
   const listaRef = useRef<HTMLDivElement>(null);
   const [animandoIara, setAnimandoIara] = useState<number | null>(null);
+  // EDA_IARA_PRO_V1: ficha da conversa (memória) e sessão anônima para métricas.
+  const fichaIara = useRef<Record<string, unknown>>({});
+  const linksResposta = useRef<LinkIara[]>([]);
+  const sessaoIara = useRef('');
+  useEffect(() => {
+    try {
+      let s = sessionStorage.getItem('iara.sessao');
+      if (!s) { s = (crypto.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`).replace(/[^a-z0-9-]/gi, '').slice(0, 64); sessionStorage.setItem('iara.sessao', s); }
+      sessaoIara.current = s;
+    } catch {}
+  }, []);
   // Seletor de linguagem: jeito regional (padrão) ou formal.
   const [estiloIara, setEstiloIara] = useState<'regional' | 'formal'>('regional');
   useEffect(() => { try { if (localStorage.getItem('iara.estilo') === 'formal') setEstiloIara('formal'); } catch {} }, []);
@@ -339,7 +352,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
         body: JSON.stringify({
           nome: formPedido.nome, whatsapp: formPedido.whatsapp || null, email: formPedido.email || null, idioma,
           periodo: formPedido.periodo || null, adultos: Number(formPedido.adultos) || 1, criancas: Number(formPedido.criancas) || 0,
-          mensagem: formPedido.mensagem || null, passeio_slug: pedidoIara.passeio_slug, consentimento: true,
+          mensagem: formPedido.mensagem || null, passeio_slug: pedidoIara.passeio_slug, consentimento: true, sessao: sessaoIara.current || undefined,
         }),
       });
       const j = await r.json().catch(() => ({})) as { ok?: boolean; erro?: string; operadora?: boolean };
@@ -366,15 +379,19 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
       voltou = !!localStorage.getItem('iara.visitou.v1');
       localStorage.setItem('iara.visitou.v1', '1');
     } catch { return; }
+    const noPasseio = /^\/experiencias\/[a-z0-9-]+$/.test(window.location.pathname);
+    const regional = (() => { try { return localStorage.getItem('iara.estilo') !== 'formal'; } catch { return true; } })();
     const textos = {
-      PT: voltou ? 'Que bom te ver de volta! Quer continuar planejando sua viagem comigo?' : 'Oi, eu sou a Iara 🌊 Posso te ajudar a escolher a experiência ideal?',
+      PT: noPasseio
+        ? (regional ? 'Égua, gostou desse passeio? Posso ver as vagas e os valores pra ti 🌊' : 'Gostou deste passeio? Posso verificar vagas e valores para você 🌊')
+        : voltou ? (regional ? 'Que bom te ver de volta, maninho! Bora continuar planejando tua viagem?' : 'Que bom te ver de volta! Quer continuar planejando sua viagem comigo?') : 'Oi, eu sou a Iara 🌊 Posso te ajudar a escolher a experiência ideal?',
       EN: voltou ? 'Welcome back! Shall we keep planning your trip?' : 'Hi, I am Iara 🌊 Can I help you find the perfect experience?',
       ES: voltou ? '¡Qué bueno verte de nuevo! ¿Seguimos planeando tu viaje?' : 'Hola, soy Iara 🌊 ¿Te ayudo a elegir la experiencia ideal?',
     };
     const id = window.setTimeout(() => {
       try { sessionStorage.setItem('iara.oferta.v1', '1'); } catch {}
       setOfertaIara(textos[idioma]);
-    }, voltou ? 8000 : 40000);
+    }, voltou ? 8000 : noPasseio ? 25000 : 40000);
     return () => window.clearTimeout(id);
     // Uma vez por montagem; o idioma inicial basta.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -489,9 +506,11 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
     setEntrada('');
 
     const indiceResposta = mensagens.length + 1;
+    linksResposta.current = [];
     const responder = (final: string, sugestoes: string[] = []) => {
       setAnimandoIara(indiceResposta);
-      setMensagens((atuais) => [...atuais, { autor: 'ern', texto: final, sugestoes }]);
+      const links = linksResposta.current;
+      setMensagens((atuais) => [...atuais, { autor: 'ern', texto: final, sugestoes, links }]);
       setDigitandoERN(false);
       enviandoERN.current = false;
       respostaTimerERN.current = null;
@@ -505,11 +524,13 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
     fetch('/api/eda-ia', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ modo: 'publico', idioma, estilo: estiloIara, mensagens: historico }),
+      body: JSON.stringify({ modo: 'publico', idioma, estilo: estiloIara, mensagens: historico, ficha: fichaIara.current, sessao: sessaoIara.current || undefined, pagina_atual: { caminho: window.location.pathname.slice(0, 120) } }),
     })
       .then(r => r.json())
-      .then((j: { resposta?: string; erro?: string; sugestoes?: unknown; pedido?: PedidoIara | null }) => {
+      .then((j: { resposta?: string; erro?: string; sugestoes?: unknown; pedido?: PedidoIara | null; ficha?: unknown; links?: unknown }) => {
         if (!j.resposta) throw new Error(j.erro || 'sem resposta');
+        if (j.ficha && typeof j.ficha === 'object') fichaIara.current = j.ficha as Record<string, unknown>;
+        linksResposta.current = Array.isArray(j.links) ? (j.links as LinkIara[]).filter(linkIaraSeguro).slice(0, 3) : [];
         if (j.pedido && typeof j.pedido === 'object') {
           const pd = j.pedido;
           setPedidoIara({ passeio_slug: typeof pd.passeio_slug === 'string' ? pd.passeio_slug : null, passeio_nome: typeof pd.passeio_nome === 'string' ? pd.passeio_nome : null, adultos: pd.adultos ?? null, criancas: pd.criancas ?? null, periodo: typeof pd.periodo === 'string' ? pd.periodo : null });
@@ -632,6 +653,13 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
                       ? <TextoDigitadoIA texto={mensagem.texto} animar={animandoIara === indice} render={(t2) => t2} aoTerminar={() => setAnimandoIara(a => (a === indice ? null : a))} />
                       : mensagem.texto}
                   </p>
+                  {mensagem.autor === 'ern' && animandoIara !== indice && !!mensagem.links?.length && (
+                    <div className="iara-links" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
+                      {mensagem.links.map(l => l.href.startsWith('/')
+                        ? <Link key={l.href} href={l.href} style={{ padding: '6px 11px', borderRadius: 999, fontSize: 12.5, fontWeight: 600, color: '#1a1205', background: '#f4c77e', textDecoration: 'none' }}>{l.rotulo} →</Link>
+                        : <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer" style={{ padding: '6px 11px', borderRadius: 999, fontSize: 12.5, fontWeight: 600, color: '#1a1205', background: '#f4c77e', textDecoration: 'none' }}>{l.rotulo} ↗</a>)}
+                    </div>
+                  )}
                 </div>
               </div>
             ))}

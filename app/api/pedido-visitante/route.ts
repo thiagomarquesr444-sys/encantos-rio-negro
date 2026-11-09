@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
     try { d = JSON.parse(bruto); } catch { throw new Falha(400, 'Dados inválidos.'); }
     if (!d || typeof d !== 'object' || Array.isArray(d)) throw new Falha(400, 'Dados inválidos.');
 
-    const permitidos = new Set(['nome', 'whatsapp', 'email', 'idioma', 'periodo', 'adultos', 'criancas', 'mensagem', 'passeio_slug', 'consentimento']);
+    const permitidos = new Set(['nome', 'whatsapp', 'email', 'idioma', 'periodo', 'adultos', 'criancas', 'mensagem', 'passeio_slug', 'consentimento', 'sessao']);
     if (Object.keys(d).some(k => !permitidos.has(k))) throw new Falha(400, 'Campos desconhecidos.');
     if (d.consentimento !== true) throw new Falha(400, 'É preciso aceitar o uso dos dados para enviar.');
 
@@ -109,6 +109,15 @@ export async function POST(req: NextRequest) {
       consentimento_em: new Date().toISOString(), consentimento_texto: CONSENTIMENTO[idioma],
     });
     if (error) throw new Falha(503, 'Não foi possível registrar o pedido. Tente de novo.');
+
+    // Métrica do funil da Iara (sem dados pessoais).
+    if (typeof d.sessao === 'string' && /^[a-z0-9-]{16,64}$/i.test(d.sessao)) {
+      const sessao = createHmac('sha256', servico).update('eda-ia-v1:').update(`iara:${d.sessao}`).digest('hex');
+      await admin.from('iara_eventos').upsert(
+        ['conversa', 'fechamento', 'pedido'].map(etapa => ({ sessao, etapa, empresa_id: empresaId, passeio_id: passeioId, idioma })),
+        { onConflict: 'sessao,etapa', ignoreDuplicates: true },
+      );
+    }
 
     return resposta(201, { ok: true, operadora: !!empresaId });
   } catch (e) {

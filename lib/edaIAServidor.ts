@@ -97,9 +97,9 @@ async function chamarGemini(sistema: string, mensagens: MensagemIA[]): Promise<s
 export const falhasIA: string[] = [];
 
 /** Tenta os provedores na ordem configurada; devolve null se nenhum responder. */
-export async function responderComIA(sistema: string, mensagens: MensagemIA[]): Promise<string | null> {
+export async function responderComIA(sistema: string, mensagens: MensagemIA[], ordemPreferida?: string): Promise<string | null> {
   falhasIA.length = 0;
-  const ordem = (process.env.EDA_IA_ORDEM?.trim() || 'groq,gemini').split(',').map(s => s.trim());
+  const ordem = (ordemPreferida || process.env.EDA_IA_ORDEM?.trim() || 'groq,gemini').split(',').map(s => s.trim());
   for (const nome of ordem) {
     try {
       const texto = nome === 'groq' ? await chamarGroq(sistema, mensagens)

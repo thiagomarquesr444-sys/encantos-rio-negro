@@ -297,6 +297,9 @@ export default function PerfilEditorialEDA({ abas, voltar = true }: { abas?: Rea
               <Link href="/comando/feedbacks" className="min-h-11 py-3 underline">
                 Feedbacks dos usuários
               </Link>
+              <Link href="/comando/iara" className="min-h-11 py-3 underline">
+                Funil da Iara (plataforma)
+              </Link>
               <Link href="/dashboard" className="min-h-11 py-3 underline">
                 Abrir operadora
               </Link>
