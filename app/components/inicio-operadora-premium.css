@@ -271,3 +271,18 @@
   .ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-frase-mais { color: #9a5d14; border-color: rgb(154 93 20 / 30%); background: rgb(255 255 255 / 60%); }
 }
 @media (max-width: 640px) and (prefers-reduced-motion: reduce) { .eda-frase-caixa { transition: none; } }
+
+/* EDA_RECEPCAO_V2: recepção curta + botão para continuar a conversa com a EDA. */
+.eda-cabeca .eda-frase { min-height: 3.2em; }
+.eda-responder {
+  display: inline-flex; align-items: center; gap: 6px; margin-top: 10px;
+  padding: 7px 14px; border-radius: 999px; font: inherit; font-size: 13px; font-weight: 600;
+  color: var(--e-ouro, #f4c77e); background: transparent;
+  border: 1px solid rgb(244 199 126 / 35%); cursor: pointer;
+  animation: eda-responder-entra .4s ease both;
+}
+.eda-responder:hover { border-color: var(--e-ouro, #f4c77e); background: rgb(244 199 126 / 8%); }
+.eda-responder:focus-visible { outline: 2px solid var(--e-ouro, #f4c77e); outline-offset: 2px; }
+@keyframes eda-responder-entra { from { opacity: 0; transform: translateY(4px); } }
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-responder { color: #9a5d14; border-color: rgb(154 93 20 / 30%); }
+@media (prefers-reduced-motion: reduce) { .eda-responder { animation: none; } }

@@ -9,29 +9,40 @@
   --cv-borda: rgb(244 199 126 / 22%);
   --cv-ouro: #f4c77e;
   --cv-usuario: rgb(244 199 126 / 14%);
+  /* EDA_LANCADOR_V2: canto superior direito (igual à Iara); painel abre embaixo. */
   position: fixed;
-  right: 20px;
-  bottom: 20px;
+  right: 16px;
+  top: 16px;
   z-index: 72;
   display: flex;
-  flex-direction: column;
+  flex-direction: column-reverse;
   align-items: flex-end;
   gap: 10px;
   font-family: var(--font-gestao, var(--font-geist)), system-ui, sans-serif;
 }
 
 .cv-eda-botao {
-  display: inline-flex; align-items: center; gap: 8px;
-  padding: 10px 16px; border-radius: 999px;
-  font-size: 13.5px; font-weight: 600; color: var(--cv-texto);
-  background: var(--cv-fundo); border: 1px solid var(--cv-borda);
-  box-shadow: 0 12px 32px rgb(0 0 0 / 30%); backdrop-filter: blur(10px);
-  cursor: pointer; transition: transform .18s ease, border-color .18s ease;
+  position: relative;
+  display: grid; place-items: center;
+  width: 58px; height: 58px; padding: 0; flex: none;
+  border: 2px solid rgb(244 199 126 / 85%); border-radius: 50%;
+  background: #07140f; overflow: visible;
+  box-shadow: 0 6px 20px rgb(0 0 0 / 28%);
+  cursor: pointer;
 }
-.cv-eda-botao span { color: var(--cv-ouro); }
-.cv-eda-botao:hover { transform: translateY(-2px); border-color: var(--cv-ouro); }
-.cv-eda-botao:focus-visible, .cv-eda-sugestoes button:focus-visible, .cv-eda-form button:focus-visible, .cv-eda-x:focus-visible { outline: 2px solid var(--cv-ouro); outline-offset: 2px; }
-
+.cv-eda-botao > svg { border-radius: 50%; }
+.cv-eda-botao::after {
+  content: ''; position: absolute; inset: -3px;
+  border: 2px solid #fff; border-radius: 50%;
+  opacity: 0; pointer-events: none;
+}
+@keyframes cv-eda-pulsar { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
+@keyframes cv-eda-onda { 0% { transform: scale(1); opacity: .8; } 100% { transform: scale(1.55); opacity: 0; } }
+@media (prefers-reduced-motion: no-preference) {
+  .cv-eda:not([data-aberto]) .cv-eda-botao { animation: cv-eda-pulsar 2.4s ease-in-out infinite; }
+  .cv-eda:not([data-aberto]) .cv-eda-botao::after { animation: cv-eda-onda 2.4s ease-out infinite; }
+}
+.cv-eda-botao:focus-visible, 
 .cv-eda-painel {
   width: min(380px, calc(100vw - 24px));
   height: min(540px, calc(100vh - 120px));
@@ -44,7 +55,7 @@
 @keyframes cv-eda-entra { from { opacity: 0; transform: translateY(8px) scale(.98); } }
 
 .cv-eda-topo { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--cv-borda); }
-.cv-eda-avatar { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: #1a1205; background: linear-gradient(135deg, #f4c77e, #c98a3a); font-size: 15px; }
+.cv-eda-avatar { display: block; flex: none; width: 34px; height: 34px; border-radius: 50%; overflow: hidden; }
 .cv-eda-nome { margin: 0; font-weight: 700; font-size: 14px; }
 .cv-eda-status { margin: 0; font-size: 11.5px; color: var(--cv-sec); }
 .cv-eda-estilo { margin-left: auto; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--cv-borda); background: transparent; color: var(--cv-sec); font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; }
@@ -70,9 +81,6 @@
 .cv-eda-links a { padding: 7px 12px; border-radius: 999px; font-size: 12.5px; font-weight: 600; color: #1a1205; background: var(--cv-ouro); text-decoration: none; transition: transform .15s ease; }
 .cv-eda-links a:hover { transform: translateY(-1px); }
 .cv-eda-links a:focus-visible { outline: 2px solid var(--cv-texto); outline-offset: 2px; }
-.cv-eda-sugestoes { display: flex; flex-wrap: wrap; gap: 6px; }
-.cv-eda-sugestoes button { padding: 7px 11px; border-radius: 999px; font-size: 12.5px; color: var(--cv-texto); background: transparent; border: 1px solid var(--cv-borda); cursor: pointer; }
-.cv-eda-sugestoes button:hover { border-color: var(--cv-ouro); color: var(--cv-ouro); }
 
 .cv-eda-form { display: flex; gap: 8px; align-items: flex-end; padding: 10px 12px; border-top: 1px solid var(--cv-borda); }
 .cv-eda-form textarea { flex: 1; resize: none; max-height: 110px; padding: 9px 12px; border-radius: 12px; font: inherit; font-size: 13.5px; color: var(--cv-texto); background: rgb(0 0 0 / 18%); border: 1px solid var(--cv-borda); }
@@ -81,20 +89,20 @@
 .cv-eda-form button:disabled { opacity: .4; cursor: default; }
 .cv-eda-nota { margin: 0; padding: 0 14px 10px; font-size: 10.5px; color: var(--cv-sec); }
 
-/* O aviso de feedback (PerguntaEDA) sobe para não cobrir o botão. */
-.ern-gestao:has(.cv-eda) .eda-perg.eda-perg { bottom: 76px; }
+/* Abaixo da barra superior fixa (64px) do celular/tablet. */
+@media (max-width: 1279px) {
+  .cv-eda { top: 80px; }
+  .cv-eda-painel { height: min(540px, calc(100dvh - 240px)); }
+}
 
 @media (max-width: 767px) {
-  .cv-eda { right: 12px; bottom: calc(92px + env(safe-area-inset-bottom, 0px)); }
+  .cv-eda { right: 12px; }
   .cv-eda[data-aberto] { left: 12px; }
-  .cv-eda-painel { width: 100%; height: min(70vh, 520px); }
-  .cv-eda-botao { padding: 9px 14px; font-size: 13px; }
-  .ern-gestao:has(.cv-eda) .eda-perg.eda-perg { bottom: calc(146px + env(safe-area-inset-bottom, 0px)); }
+  .cv-eda-painel { width: 100%; height: min(62dvh, 520px); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .cv-eda-painel, .cv-eda-pensando i { animation: none; }
-  .cv-eda-botao { transition: none; }
 }
 
 /* Tema Claro / Amarelo da gestão */
@@ -109,3 +117,21 @@
 }
 .ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda-links a,
 .ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda-form button { color: #fff; }
+
+/* EDA_AUDIO_V1 */
+.cv-eda-form button { display: grid; place-items: center; flex: none; }
+.cv-eda-cancelar.cv-eda-cancelar { background: transparent; color: #e08a72; }
+.cv-eda-cancelar.cv-eda-cancelar:hover { background: rgb(224 138 114 / 12%); }
+.cv-eda-audio { flex: 1; min-width: 0; min-height: 38px; display: flex; align-items: center; gap: 10px; padding: 0 6px; font-size: 13px; color: var(--cv-sec); }
+.cv-eda-tempo { font-variant-numeric: tabular-nums; font-weight: 600; color: var(--cv-texto); }
+.cv-eda-rec { width: 9px; height: 9px; border-radius: 50%; background: #e05050; animation: cv-eda-pisca 1s ease-in-out infinite; }
+.cv-eda-onda { display: inline-flex; align-items: center; gap: 3px; height: 18px; margin-left: auto; }
+.cv-eda-onda i { display: block; width: 3px; height: 6px; border-radius: 2px; background: var(--cv-ouro); animation: cv-eda-barra .9s ease-in-out infinite; }
+.cv-eda-onda i:nth-child(2) { animation-delay: .12s; }
+.cv-eda-onda i:nth-child(3) { animation-delay: .24s; }
+.cv-eda-onda i:nth-child(4) { animation-delay: .36s; }
+.cv-eda-onda i:nth-child(5) { animation-delay: .48s; }
+@keyframes cv-eda-barra { 0%, 100% { height: 5px; } 50% { height: 18px; } }
+@keyframes cv-eda-pisca { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+.cv-eda-erro { margin: 0; padding: 6px 14px 0; font-size: 12px; color: #e08a72; }
+@media (prefers-reduced-motion: reduce) { .cv-eda-onda i, .cv-eda-rec { animation: none; } }

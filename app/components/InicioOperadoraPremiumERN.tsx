@@ -435,174 +435,29 @@ export default function InicioOperadoraPremiumERN({
     })();
     return () => { ativo = false; window.clearTimeout(limite); };
   }, []);
-  const [resumoAberto, setResumoAberto] = useState(false);
 
   const trechosSaudacao = useMemo<TrechoDigitado[]>(
     () => [{ texto: `${saudacao()}${nome ? `, ${nome}` : ''}.` }],
     [nome],
   );
 
-  // ERN_BRIEFING_DIA_V1: resumo completo do dia, em conversa, um parágrafo por assunto.
+  // EDA_RECEPCAO_V2: o resumo longo saiu. Fica só a recepção cordial da EDA
+  // (período, tempo em Barcelos, época do rio) terminando numa pergunta; os detalhes
+  // a pessoa tira direto com a EDA, que abre já com essa conversa iniciada.
   const trechosConversa = useMemo<TrechoDigitado[]>(() => {
     if (!pronto) return [];
-    const t: TrechoDigitado[] = [];
-    const add = (texto: string, forte = false) => t.push({ texto, forte });
-    const linha = () => { if (t.length) add('\n'); };
+    if (recepcao) return [{ texto: recepcao }];
     const hora = Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: 'America/Manaus' }).format(new Date())) % 24;
     const diaMes = Number((hoje || '').slice(8, 10)) || 0;
-    const dataCurta = (iso: string) => `${iso.slice(8, 10)}/${iso.slice(5, 7)}`;
-
-    if (recepcao) { add(recepcao); add('\n'); }
-
-    // EDA_MADRUGADA_V1: abertura especial para quem entra entre 00h e 05h.
-    if (hora < 5 && !recepcao) {
-      add(['O rio está quieto e Barcelos dorme, mas eu sigo de vigia com você. ', 'Madrugada de trabalho? Fico aqui do seu lado. ', 'A esta hora só a lua e a gente acordados no Rio Negro. '][diaMes % 3]);
-      add('Deixo tudo mastigado para quando o dia clarear.\n');
-    }
-
-    // 1. Agenda do rio
-    const qtdHoje = resumo.hoje.length;
-    const primeira = resumo.hoje.find(r => r.horario);
-    if (qtdHoje === 0) {
-      add(['Hoje o rio está tranquilo: ', 'Dia calmo por aqui: ', 'Nenhuma correria hoje: '][diaMes % 3]);
-      add('nenhuma saída marcada', true);
-      add('.');
-    } else {
-      add('Hoje vocês têm ');
-      add(plural(qtdHoje, 'saída', 'saídas'), true);
-      add(' no rio');
-      if (primeira?.horario) { add(', a primeira às '); add(primeira.horario.slice(0, 5), true); }
-      add('.');
-    }
-    const futuras = resumo.semana.length - qtdHoje;
-    if (futuras > 0) {
-      add(' Nos próximos 7 dias são mais ');
-      add(plural(futuras, 'saída', 'saídas'), true);
-      add(' com ');
-      add(plural(resumo.pessoasSemana, 'pessoa', 'pessoas'), true);
-      add(' para viver a Amazônia com vocês.');
-    } else {
-      add(' A semana também está livre — um bom momento para divulgar seus passeios.');
-    }
-
-    // 2. Caixa
-    if (financeiroLiberado && fin) {
-      linha();
-      add('No caixa: ');
-      add(moedaCentavos(fin.mesAtual?.recebido ?? 0), true);
-      add(' recebidos e ');
-      add(moedaCentavos(fin.mesAtual?.pago ?? 0), true);
-      add(' pagos neste mês.');
-      const vencidos = fin.pend.faixas[0].qtdReceber;
-      if (vencidos > 0) {
-        add(' Há ');
-        add(plural(vencidos, 'recebimento vencido', 'recebimentos vencidos'), true);
-        add(` (${moedaCentavos(fin.pend.faixas[0].receber)}) esperando cobrança.`);
-      } else if (fin.pend.totais.receber > 0) {
-        add(' Ainda faltam ');
-        add(moedaCentavos(fin.pend.totais.receber), true);
-        add(' a receber, nada vencido.');
-      } else {
-        add(' Nada pendente para receber.');
-      }
-      if (fin.pend.faixas[0].qtdPagar > 0) {
-        add(' Atenção: ');
-        add(plural(fin.pend.faixas[0].qtdPagar, 'conta vencida', 'contas vencidas'), true);
-        add(' a pagar.');
-      }
-    } else if (!financeiroLiberado) {
-      linha();
-      add('O financeiro completo fica disponível no plano profissional — é só me chamar em ');
-      add('Planos', true);
-      add('.');
-    }
-
-    // 3. Demandas
-    const abertas = demandas.filter(d => d.status === 'aberta');
-    const rascunhos = demandas.filter(d => d.status === 'rascunho').length;
-    if (abertas.length || rascunhos) {
-      linha();
-      add('Nas demandas: ');
-      if (abertas.length) {
-        add(plural(abertas.length, 'aberta', 'abertas'), true);
-        const proximaDem = [...abertas].filter(d => d.data_inicio && d.data_inicio >= hoje)
-          .sort((x, y) => (x.data_inicio ?? '').localeCompare(y.data_inicio ?? ''))[0];
-        if (proximaDem?.data_inicio) {
-          add(', a próxima começa em ');
-          add(dataCurta(proximaDem.data_inicio), true);
-          add(proximaDem.localidade ? ` (${proximaDem.titulo}, ${proximaDem.localidade})` : ` (${proximaDem.titulo})`);
-        }
-      }
-      if (rascunhos) {
-        add(abertas.length ? ' e ' : '');
-        add(plural(rascunhos, 'rascunho', 'rascunhos'), true);
-        add(' esperando você abrir');
-      }
-      add('.');
-    }
-
-    // 4. Pendências
-    linha();
-    if (pendencias.length) {
-      add('Separei ');
-      add(plural(pendencias.length, 'pendência', 'pendências'), true);
-      add(' em “O que fazer agora”. A mais importante: ');
-      add(pendencias[0].titulo.charAt(0).toLowerCase() + pendencias[0].titulo.slice(1), true);
-      add('.');
-    } else {
-      add('Nenhuma pendência — a operação está em dia.');
-    }
-
-    // 5. Plano
-    if (uso) {
-      const perto = ([['clientes', uso.clientes], ['reservas do mês', uso.reservas_mes], ['passeios', uso.passeios], ['usuários', uso.usuarios]] as const)
-        .find(([, sit]) => sit && sit.dados_validos && !sit.ilimitado && sit.limite && sit.usado / sit.limite >= 0.8);
-      if (perto) {
-        const [rotulo, sit] = perto;
-        add(' Seu plano já usa ');
-        add(`${sit.usado} de ${sit.limite} ${rotulo}`, true);
-        add('.');
-      }
-    }
-
-    // 5b. Saúde e segurança dos viajantes (EDA_FICHA_SAUDE_V1)
-    const graves = (saude ?? []).reduce((n, v) => n + v.graves, 0);
-    const pendFichas = (saude ?? []).reduce((n, v) => n + v.pendentes, 0);
-    if (graves || pendFichas) {
-      linha();
-      if (graves) {
-        add('Atenção à segurança: ');
-        add(plural(graves, 'viajante com alerta grave', 'viajantes com alerta grave'), true);
-        add(' nas viagens dos próximos 7 dias — alergia grave, condição de saúde ou quem não sabe nadar.');
-      }
-      if (pendFichas) {
-        add(graves ? ' Ainda faltam ' : 'Faltam ');
-        add(plural(pendFichas, 'ficha de saúde', 'fichas de saúde'), true);
-        add(' para fechar a preparação. Envie o link ao turista pela reserva.');
-      }
-    }
-
-    // 5c. Barcos e guias (EDA_RECURSOS_AGENDA_V1)
-    if (conflitos.length || lotacao.length) {
-      linha();
-      add('Logística: ');
-      if (conflitos.length) add(plural(conflitos.length, 'conflito de barco ou guia', 'conflitos de barco ou guia'), true);
-      if (conflitos.length && lotacao.length) add(' e ');
-      if (lotacao.length) add(`${lotacao[0].nome} acima da lotação`, true);
-      add(' nos próximos 7 dias. Vale ajustar antes de confirmar com os clientes.');
-    }
-
-    // 6. Fecho
-    const fechos = hora < 5
-      ? ['Agora, se der, descanse — eu fico de olho.', 'Quando quiser, é só perguntar à EDA aqui no canto.', 'Amanhã cedo eu te lembro do que importa.']
+    const op = hora < 5
+      ? ['O rio está quieto e Barcelos dorme, mas eu sigo de vigia com você. Quer que eu adiante algo para amanhã?', 'Madrugada de trabalho? Fico aqui do seu lado. Posso te ajudar em quê?']
       : hora < 12
-      ? ['Bora começar?', 'Vamos juntos neste dia.', 'Estou aqui com você desde cedo.']
-      : hora < 18
-        ? ['Sigo acompanhando com você.', 'Qualquer novidade, eu aviso.', 'A tarde está nas suas mãos — e eu ajudo.']
-        : ['Amanhã eu te lembro do que vier.', 'Bom descanso quando der.', 'Deixo tudo organizado para amanhã.'];
-    add(' ' + fechos[diaMes % fechos.length]);
-    return t;
-  }, [pronto, resumo, fin, hoje, demandas, pendencias, uso, financeiroLiberado, saude, conflitos, lotacao, recepcao]);
+        ? ['Que bom te ver cedo por aqui. Vamos ver juntos o que o dia pede?', 'Dia começando no Rio Negro. Quer que eu te conte como está a operação?']
+        : hora < 18
+          ? ['Tarde seguindo por aqui. Como está indo o dia na operação?', 'Voltou para dar uma olhada? Me conta o que você precisa agora.']
+          : ['Fim de dia chegando no Rio Negro. Quer que eu deixe o amanhã organizado com você?', 'Noite tranquila por aqui. Como foi o dia na operação?'];
+    return [{ texto: op[diaMes % op.length] }];
+  }, [pronto, recepcao, hoje]);
 
   const proxima = resumo.hoje.find(r => r.horario) ?? resumo.semana[0];
 
@@ -619,15 +474,16 @@ export default function InicioOperadoraPremiumERN({
         <div>
           <p className="eda-eb"><i className="eda-capa-traco" aria-hidden="true" />{dataExtenso(hoje)}{nomeEmpresa ? ` · ${nomeEmpresa}` : ''}</p>
           <h1><DigitacaoEDA trechos={trechosSaudacao} iniciar={pronto} velocidade={42} atraso={250} cursorEspera aoTerminar={() => setSaudacaoPronta(true)} /></h1>
-          {/* ERN_FLUTUANTES_CELULAR_V1: no celular o resumo abre recolhido */}
-          <div id="eda-resumo-dia" className={`eda-frase-caixa${resumoAberto ? ' eda-frase-aberta' : ''}`}>
-            <p className="eda-frase" aria-live="off">
-              <DigitacaoEDA trechos={trechosConversa} iniciar={pronto && saudacaoPronta && recepcaoPronta} velocidade={13} atraso={380} cursorFinal pularAoClicar />
-            </p>
-          </div>
-          {pronto && (
-            <button type="button" className="eda-frase-mais" aria-expanded={resumoAberto} aria-controls="eda-resumo-dia" onClick={() => setResumoAberto(v => !v)}>
-              {resumoAberto ? 'Recolher resumo' : 'Ver resumo completo'}
+          <p className="eda-frase" aria-live="off">
+            <DigitacaoEDA trechos={trechosConversa} iniciar={pronto && saudacaoPronta && recepcaoPronta} velocidade={18} atraso={380} cursorFinal pularAoClicar />
+          </p>
+          {pronto && saudacaoPronta && recepcaoPronta && (
+            <button
+              type="button"
+              className="eda-responder"
+              onClick={() => window.dispatchEvent(new CustomEvent('eda:abrir', { detail: { texto: trechosConversa.map(x => x.texto).join('') } }))}
+            >
+              Responder à EDA
             </button>
           )}
         </div>
