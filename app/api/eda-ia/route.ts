@@ -11,7 +11,7 @@ function novoCliente(url: string, chave: string, token?: string) {
   });
 }
 type SupabaseClient = ReturnType<typeof novoCliente>;
-import { falhasIA, responderComIA, horaManaus, hojeManaus, periodoDoDia, type MensagemIA } from '@/lib/edaIAServidor';
+import { falhasIA, ultimoModeloIA, responderComIA, horaManaus, hojeManaus, periodoDoDia, type MensagemIA } from '@/lib/edaIAServidor';
 
 // EDA_IA_CONVERSA_V1
 // Conversa com IA real (texto livre) para a gestão da operadora e para o
@@ -711,6 +711,7 @@ TAREFA ESPECIAL: escreva a RECEPÇÃO de quem acabou de abrir o painel. Devolva 
     }
 
     if (modo === 'operadora') sistema += blocoEstilo(modo, estilo);
+    const inicioIA = Date.now();
     const texto = await responderComIA(sistema, mensagens.slice(-12), modo === 'publico' ? (process.env.EDA_IA_ORDEM_IARA?.trim() || 'gemini,groq') : undefined);
     if (!texto) return resposta(503, { ok: false, erro: 'Não consegui responder agora. Tente de novo em instantes.', diagnostico: falhasIA.map(f => f.split(':')[0]) });
     // Ficha da conversa (memória da Iara), devolvida ao navegador.
@@ -758,7 +759,7 @@ TAREFA ESPECIAL: escreva a RECEPÇÃO de quem acabou de abrir o painel. Devolva 
         await admin.from('iara_eventos').upsert([...etapas].map(etapa => ({ sessao, etapa, empresa_id: empresaFoco, passeio_id: passeioFoco, idioma: typeof dados.idioma === 'string' && IDIOMAS.has(dados.idioma) ? dados.idioma : 'PT' })), { onConflict: 'sessao,etapa', ignoreDuplicates: true });
       }
     }
-    return resposta(200, { ok: true, resposta: final, links, sugestoes: comSugestoes.sugestoes, pedido, ficha: fichaNova, periodo });
+    return resposta(200, { ok: true, resposta: final, links, sugestoes: comSugestoes.sugestoes, pedido, ficha: fichaNova, periodo, motor: { modelo: ultimoModeloIA.nome, ms: Date.now() - inicioIA, tentativas: falhasIA.map(f => f.split(':')[0]) } });
   } catch (erro) {
     if (erro instanceof Falha) return resposta(erro.status, { ok: false, erro: erro.message });
     return resposta(503, { ok: false, erro: 'A EDA está indisponível agora.' });

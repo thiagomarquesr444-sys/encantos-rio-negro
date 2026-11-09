@@ -18,6 +18,7 @@ function comTempo(): AbortSignal {
 // tentamos o próximo da lista.
 const cacheModelo: { groq?: string[]; gemini?: string[] } = {};
 export const modelosEmUso = cacheModelo;
+export const ultimoModeloIA = { nome: '', ms: 0 };
 
 async function modelosGroq(chave: string): Promise<string[]> {
   if (cacheModelo.groq?.length) return cacheModelo.groq;
@@ -74,7 +75,7 @@ async function chamarGroq(sistema: string, mensagens: MensagemIA[]): Promise<str
     if (r.ok) {
       const dados = await r.json() as { choices?: { message?: { content?: string } }[] };
       const texto = dados.choices?.[0]?.message?.content?.trim();
-      if (texto) return texto;
+      if (texto) { ultimoModeloIA.nome = `groq/${modelo}`; return texto; }
       ultimo = `groq vazio ${modelo}`;
       continue;
     }
@@ -115,7 +116,7 @@ async function chamarGemini(sistema: string, mensagens: MensagemIA[]): Promise<s
       if (r.ok) {
         const dados = await r.json() as { candidates?: { content?: { parts?: { text?: string; thought?: boolean }[] } }[] };
         const texto = dados.candidates?.[0]?.content?.parts?.filter(p => !p.thought).map(p => p.text ?? '').join('').trim();
-        if (texto) return texto;
+        if (texto) { ultimoModeloIA.nome = `gemini/${modelo}`; return texto; }
         ultimo = `gemini vazio ${modelo}`;
         break;
       }
