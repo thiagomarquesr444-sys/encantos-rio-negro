@@ -88,6 +88,8 @@ export default function ConversaEDA() {
   const [entrada, setEntrada] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [animando, setAnimando] = useState<number | null>(null);
+  const [estilo, setEstilo] = useState<'regional' | 'formal'>('regional');
+  useEffect(() => { try { if (localStorage.getItem('eda.estilo') === 'formal') setEstilo('formal'); } catch {} }, []);
   const fimRef = useRef<HTMLDivElement>(null);
   const campoRef = useRef<HTMLTextAreaElement>(null);
 
@@ -117,7 +119,7 @@ export default function ConversaEDA() {
       const r = await fetch('/api/eda-ia', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ modo: 'operadora', pagina, mensagens: historico.slice(-12).map(({ papel, texto }) => ({ papel, texto })) }),
+        body: JSON.stringify({ modo: 'operadora', pagina, estilo, mensagens: historico.slice(-12).map(({ papel, texto }) => ({ papel, texto })) }),
       });
       const j = await r.json().catch(() => ({})) as { resposta?: string; erro?: string; links?: LinkEDA[]; sugestoes?: string[] };
       const links = Array.isArray(j.links) ? j.links.filter(linkSeguro).slice(0, 3) : [];
@@ -144,6 +146,13 @@ export default function ConversaEDA() {
               <p className="cv-eda-nome">EDA</p>
               <p className="cv-eda-status">{periodoManaus() === 'madrugada' ? 'De vigia na madrugada' : 'Lendo os dados da sua operadora'}</p>
             </div>
+            <button
+              type="button"
+              className="cv-eda-estilo"
+              aria-pressed={estilo === 'formal'}
+              title="Alternar entre jeito regional e linguagem formal"
+              onClick={() => setEstilo(e => { const n = e === 'regional' ? 'formal' : 'regional'; try { localStorage.setItem('eda.estilo', n); } catch {} return n; })}
+            >{estilo === 'regional' ? 'Jeito regional' : 'Formal'}</button>
             <button type="button" className="cv-eda-x" onClick={() => setAberto(false)} aria-label="Fechar conversa">×</button>
           </header>
 

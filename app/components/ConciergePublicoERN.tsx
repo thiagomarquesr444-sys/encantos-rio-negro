@@ -311,6 +311,10 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   }, []);
   const listaRef = useRef<HTMLDivElement>(null);
   const [animandoIara, setAnimandoIara] = useState<number | null>(null);
+  // Seletor de linguagem: jeito regional (padrão) ou formal.
+  const [estiloIara, setEstiloIara] = useState<'regional' | 'formal'>('regional');
+  useEffect(() => { try { if (localStorage.getItem('iara.estilo') === 'formal') setEstiloIara('formal'); } catch {} }, []);
+  const trocarEstiloIara = () => setEstiloIara(e => { const n = e === 'regional' ? 'formal' : 'regional'; try { localStorage.setItem('iara.estilo', n); } catch {} return n; });
 
   // EDA_FASE_B_V1: pedido com consentimento (LGPD) — o visitante preenche os próprios dados.
   type PedidoIara = { passeio_slug: string | null; passeio_nome: string | null; adultos: number | null; criancas: number | null; periodo: string | null };
@@ -501,7 +505,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
     fetch('/api/eda-ia', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ modo: 'publico', idioma, mensagens: historico }),
+      body: JSON.stringify({ modo: 'publico', idioma, estilo: estiloIara, mensagens: historico }),
     })
       .then(r => r.json())
       .then((j: { resposta?: string; erro?: string; sugestoes?: unknown; pedido?: PedidoIara | null }) => {
@@ -584,6 +588,13 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
               <h2 id="ern-chat-titulo">{t.title}</h2>
               <p>{c.badge}</p>
             </div>
+            <button
+              type="button"
+              onClick={trocarEstiloIara}
+              aria-pressed={estiloIara === 'formal'}
+              title={idioma === 'EN' ? 'Switch between regional and formal language' : idioma === 'ES' ? 'Cambiar entre lenguaje regional y formal' : 'Alternar entre jeito regional e linguagem formal'}
+              style={{ flex: 'none', padding: '4px 9px', borderRadius: 999, border: '1px solid rgb(244 199 126 / 35%)', background: 'transparent', color: 'inherit', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}
+            >{estiloIara === 'regional' ? (idioma === 'PT' ? 'Jeito regional' : 'Regional') : 'Formal'}</button>
             {controleVidaERN}
             <button
               type="button"

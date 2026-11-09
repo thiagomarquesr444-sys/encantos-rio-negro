@@ -1,0 +1,66 @@
+/* EDA_REACOES_V1 — reações amazônicas */
+.eda-reacoes { position: relative; display: inline-flex; align-items: center; gap: 2px; flex-wrap: wrap; }
+.eda-reacoes-principal, .eda-reacoes-mais {
+  display: inline-flex; align-items: center; gap: 6px; min-height: 41px; padding: 5px 9px;
+  border-radius: 10px; border: 1px solid transparent; background: transparent;
+  color: var(--r-muted, #6b6457); font-size: 12px; font-weight: 600; cursor: pointer;
+  touch-action: manipulation; user-select: none; -webkit-user-select: none; -webkit-touch-callout: none;
+}
+.eda-reacoes-principal:hover, .eda-reacoes-mais:hover { background: #8a4b1208; }
+.eda-reacoes-principal[aria-pressed='true'] { color: var(--r-gold, #a8691e); background: #8a4b120f; }
+.eda-reacoes-mais { min-width: 30px; padding: 5px 6px; font-size: 11px; }
+.eda-reacoes button:focus-visible { outline: 2px solid #e3a144; outline-offset: 2px; }
+.eda-reacoes button:disabled { opacity: .55; cursor: default; }
+
+.eda-reacoes-resumo { display: inline-flex; align-items: center; gap: 0; margin-left: 4px; font-size: 12px; color: var(--r-muted, #6b6457); }
+.eda-reacoes-mini { display: grid; place-items: center; width: 22px; height: 22px; margin-right: -6px; border-radius: 50%; background: #fffaf0; border: 1px solid #e9dfbf; overflow: hidden; }
+.eda-reacoes-mini svg, .eda-reacoes-mini img, .eda-reacoes-mini .eda-reacao-tucunare { width: 18px !important; height: 14px !important; }
+.eda-reacoes-resumo b { margin-left: 10px; }
+
+.eda-reacoes-menu {
+  position: absolute; bottom: calc(100% + 6px); left: 0; z-index: 40; width: max-content; max-width: min(92vw, 360px);
+  padding: 8px; border-radius: 16px; background: #fffaf0; border: 1px solid #e9dfbf;
+  box-shadow: 0 14px 34px rgb(60 40 10 / 20%); animation: eda-reacoes-abre .16s ease;
+}
+@keyframes eda-reacoes-abre { from { opacity: 0; transform: translateY(6px) scale(.97); } }
+.eda-reacoes-opcoes { display: flex; gap: 2px; }
+.eda-reacoes-opcao {
+  display: grid; justify-items: center; gap: 3px; width: 64px; padding: 6px 2px; border: 0; border-radius: 12px;
+  background: transparent; color: #3b2a12; font-size: 10.5px; font-weight: 600; line-height: 1.15; text-align: center; cursor: pointer;
+  transition: transform .15s ease, background .15s ease;
+}
+.eda-reacoes-opcao:hover { transform: translateY(-4px) scale(1.06); background: #e3a14414; }
+.eda-reacoes-opcao[aria-checked='true'] { background: #e3a14426; }
+.eda-reacoes-opcao small { color: #8a7a5a; font-weight: 500; }
+.eda-reacoes-nota { margin: 6px 4px 0; font-size: 10.5px; color: #8a7a5a; }
+.eda-reacoes-aviso { margin-left: 6px; font-size: 11.5px; color: #a8691e; }
+
+.eda-reacao-img { display: block; width: 30px; height: 22px; object-fit: contain; pointer-events: none; }
+.eda-reacao-tucunare {
+  display: block; width: 30px; height: 22px; background: url('/images/pesca/tucunare-nado.png') 0 0 / 200% 200% no-repeat;
+}
+.eda-reacao-pulo { animation: eda-reacao-pulo .5s ease; }
+@keyframes eda-reacao-pulo { 40% { transform: translateY(-5px) scale(1.18); } 100% { transform: none; } }
+
+/* "Quero ir!" — o anzol fisga o tucunaré */
+.eda-fisgar { overflow: visible; }
+.eda-fisgar-peixe { transform-box: fill-box; transform-origin: center; animation: eda-peixe-nada 2.6s ease-in-out infinite; }
+.eda-fisgar-respingo { opacity: 0; }
+@keyframes eda-peixe-nada { 0%, 100% { transform: translateX(-2px); } 50% { transform: translateX(2px); } }
+.eda-fisgar-ativo .eda-fisgar-peixe { animation: eda-peixe-fisgado .9s cubic-bezier(.3, 1.4, .5, 1) forwards; }
+.eda-fisgar-ativo .eda-fisgar-linha-anzol { animation: eda-linha-puxa .9s ease forwards; transform-box: view-box; transform-origin: 34px 12px; }
+.eda-fisgar-ativo .eda-fisgar-respingo { animation: eda-respingo .7s ease .15s; }
+@keyframes eda-peixe-fisgado {
+  0% { transform: translate(0, 0) rotate(0); }
+  35% { transform: translate(2px, -10px) rotate(-28deg); }
+  65% { transform: translate(1px, -14px) rotate(-38deg); }
+  100% { transform: translate(1px, -12px) rotate(-34deg); }
+}
+@keyframes eda-linha-puxa { 0% { transform: scaleY(1); } 40% { transform: scaleY(.6); } 100% { transform: scaleY(.72); } }
+@keyframes eda-respingo { 0% { opacity: 0; transform: translateY(2px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(-6px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .eda-fisgar-peixe, .eda-fisgar-ativo .eda-fisgar-peixe, .eda-fisgar-ativo .eda-fisgar-linha-anzol,
+  .eda-fisgar-ativo .eda-fisgar-respingo, .eda-reacao-pulo, .eda-reacoes-menu { animation: none !important; }
+  .eda-fisgar-ativo .eda-fisgar-peixe { transform: translate(1px, -12px) rotate(-34deg); }
+}

@@ -417,7 +417,7 @@ export default function InicioOperadoraPremiumERN({
         const { data } = await supabase.auth.getSession();
         const token = data.session?.access_token;
         if (!token) return;
-        const r = await fetch('/api/eda-ia', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ modo: 'recepcao' }) });
+        const r = await fetch('/api/eda-ia', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ modo: 'recepcao', estilo: (() => { try { return localStorage.getItem('eda.estilo') === 'formal' ? 'formal' : 'regional'; } catch { return 'regional'; } })() }) });
         const j = await r.json().catch(() => ({})) as { variacoes?: unknown };
         const lista = Array.isArray(j.variacoes) ? j.variacoes.filter((x): x is string => typeof x === 'string' && x.length > 0) : [];
         if (!ativo || !lista.length) return;

@@ -341,6 +341,23 @@ function calcularProposta(p: PasseioRegra, adultos: number, criancas: number) {
   return linhas.join('\n');
 }
 
+// ---------- Reações da Rede (só interesse; não são reservas) ----------
+type Ranking = { publicacao_id: string; titulo: string; slug: string | null; empresa_id: string | null; autor: string | null; quero_ir: number; total: number };
+async function rankingReacoes(admin: SupabaseClient) {
+  const { data, error } = await admin.rpc('ranking_reacoes_eda', { p_dias: 7 });
+  return error || !Array.isArray(data) ? [] : (data as Ranking[]);
+}
+
+// ---------- Jeito de falar (seletor regional / formal) ----------
+const VOCABULARIO_NORTISTA = "égua (surpresa ou admiração), pai d'égua (muito bom), de rocha (de verdade), mano/mana, maninho, bora, leseira (bobagem), panema (azar, principalmente na pesca), banzeiro (ondas fortes no rio), carapanã (mosquito), merendar (lanchar), pitiú (cheiro de peixe), cunhantã (moça), curumim (menino), rabeta (canoa com motor pequeno)";
+function blocoEstilo(modo: 'operadora' | 'publico', estilo: 'regional' | 'formal', idioma = 'PT') {
+  if (estilo === 'formal') return '\n\nJEITO DE FALAR: formal — português padrão, cordial e profissional, sem gírias nem expressões regionais.';
+  if (modo === 'operadora') return `\n\nJEITO DE FALAR: regional nortista/barcelense — fale à vontade, como gente da terra, usando até 2 expressões por resposta quando soar natural. Vocabulário: ${VOCABULARIO_NORTISTA}. Números, datas, valores e alertas SEMPRE claros, sem gíria no que é sério.`;
+  return idioma === 'PT'
+    ? `\n\nJEITO DE FALAR: regional nortista/barcelense, com leveza — no máximo UMA expressão por resposta, natural e sem caricatura. Vocabulário: ${VOCABULARIO_NORTISTA}. Se o visitante parecer ser de fora, explique a expressão entre parênteses de forma simpática.`
+    : `\n\nJEITO DE FALAR: no idioma do visitante, use no máximo UMA palavra regional do Norte do Brasil de vez em quando (ex.: "égua", "pai d'égua"), sempre explicada entre parênteses.`;
+}
+
 // ---------- Base de conhecimento (tabela conhecimento_eda) ----------
 
 async function buscarConhecimento(admin: SupabaseClient, publico: 'visitante' | 'operador', consulta: string, limite = 4) {
@@ -501,6 +518,7 @@ export async function POST(req: NextRequest) {
     const modo = dados.modo;
     if (modo !== 'operadora' && modo !== 'publico' && modo !== 'recepcao') throw new Falha(400, 'Modo inválido.');
 
+    const estilo: 'regional' | 'formal' = dados.estilo === 'formal' ? 'formal' : 'regional';
     const admin = novoCliente(url, servico);
     const agora = new Date();
     const periodo = periodoDoDia(horaManaus(agora));
@@ -510,14 +528,14 @@ export async function POST(req: NextRequest) {
     if (modo === 'recepcao') {
       const op = await autenticarOperadora(req, url, anon);
       const contexto = await contextoOperadora(op.db, op.empresaId, hoje);
-      const assinatura = createHmac('sha256', servico).update(`${hoje}|${periodo}|${contexto.texto}`).digest('hex');
+      const assinatura = createHmac('sha256', servico).update(`${hoje}|${periodo}|${estilo}|${contexto.texto}`).digest('hex');
       const { data: guardada } = await admin.from('eda_recepcao').select('assinatura,variacoes').eq('usuario_id', op.usuarioId).maybeSingle();
       if (guardada?.assinatura === assinatura && Array.isArray(guardada.variacoes) && guardada.variacoes.length) {
         return resposta(200, { ok: true, variacoes: guardada.variacoes, periodo, cache: true });
       }
       if (!(await consumir(admin, identificar(servico, 'global'), numeroEnv('EDA_IA_LIMITE_GLOBAL_DIA', 1000)))) throw new Falha(429, 'Limite diário atingido.');
       if (!(await consumir(admin, identificar(servico, `r:${op.usuarioId}`), numeroEnv('EDA_IA_LIMITE_RECEPCAO_DIA', 20)))) throw new Falha(429, 'Limite diário atingido.');
-      const sistema = `${sistemaOperadora(op.nome, 'painel', periodo, contexto.texto, '')}
+      const sistema = `${sistemaOperadora(op.nome, 'painel', periodo, contexto.texto, '')}${blocoEstilo('operadora', estilo)}
 
 TAREFA ESPECIAL: escreva a RECEPÇÃO de quem acabou de abrir o painel. Devolva SOMENTE um array JSON com 3 textos diferentes entre si, cada um com 1 ou 2 frases (até 220 caracteres), sem saudação inicial (a saudação com o nome já aparece na tela) e sem marcadores [[...]]. Cada texto destaca, com leveza, o ponto mais importante do momento segundo os DADOS (algo urgente, uma conquista ou uma sugestão útil). ${periodo === 'madrugada' ? 'É madrugada: seja especialmente acolhedora com quem está trabalhando a esta hora.' : ''} Exemplo de formato: ["texto 1","texto 2","texto 3"]`;
       const texto = await responderComIA(sistema, [{ papel: 'usuario', texto: 'Escreva a recepção agora.' }]);
@@ -544,10 +562,13 @@ TAREFA ESPECIAL: escreva a RECEPÇÃO de quem acabou de abrir o painel. Devolva 
         throw new Falha(429, 'Você atingiu o limite de perguntas de hoje. Amanhã eu volto com tudo!');
       }
       const pagina = typeof dados.pagina === 'string' && PAGINAS.has(dados.pagina) ? dados.pagina : 'painel';
-      const [contexto, conhecimento] = await Promise.all([
+      const [contexto, conhecimento, ranking] = await Promise.all([
         contextoOperadora(op.db, op.empresaId, hoje),
         buscarConhecimento(admin, 'operador', `${pagina} ${consulta}`),
+        rankingReacoes(admin),
       ]);
+      const minhas = ranking.filter(r => r.empresa_id === op.empresaId);
+      if (minhas.length) contexto.texto += `\n\nREAÇÕES NAS SUAS PUBLICAÇÕES (últimos 7 dias; são só interesse, não reservas): ${minhas.slice(0, 6).map(r => `"${r.titulo}" — ${r.quero_ir} "Quero ir!" de ${r.total} reações`).join('; ')}. Sugira transformar o interesse em venda (ex.: publicar próximas saídas, responder pedidos).`;
       destinos = contexto.destinos;
       // Agente de proposta (gestão): calcula pelo cadastro do passeio.
       const intOp = intencoes(consulta);
@@ -574,11 +595,14 @@ TAREFA ESPECIAL: escreva a RECEPÇÃO de quem acabou de abrir o painel. Devolva 
         ? dados.preferencias.filter((p): p is string => typeof p === 'string').slice(0, 5).map(p => mascararDados(p.slice(0, 120))).join(' | ')
         : '';
       const publico = novoCliente(url, anon);
-      const [catalogo, conhecimento, operadoras] = await Promise.all([
+      const [catalogo, conhecimento, operadoras, ranking] = await Promise.all([
         contextoPublico(publico),
         buscarConhecimento(admin, 'visitante', `${consulta} ${prefs}`),
         operadorasPublicas(admin),
+        rankingReacoes(admin),
       ]);
+      const destaques = ranking.filter(r => r.quero_ir > 0).slice(0, 3);
+      if (destaques.length) catalogo.texto += `\n\nMAIS PROCURADOS NA REDE (reações "Quero ir!" dos últimos 7 dias; prova social real, use os números exatos): ${destaques.map(r => `"${r.titulo}"${r.autor ? ` (${r.autor})` : ''} — ${r.quero_ir}${r.slug ? ` | /rede/publicacao/${r.slug}` : ''}`).join('; ')}.`;
       catalogoLista = catalogo.lista;
 
       // Orquestrador: ativa os agentes de disponibilidade, proposta e reservas.
@@ -604,6 +628,7 @@ TAREFA ESPECIAL: escreva a RECEPÇÃO de quem acabou de abrir o painel. Devolva 
       sistema = sistemaPublico(idioma, periodo, prefs, `${catalogo.texto}${operadoras ? `\n\nOPERADORAS PARCEIRAS (perfis públicos):\n${operadoras}` : ''}`, conhecimento, blocos.join('\n'));
     }
 
+    sistema += blocoEstilo(modo, estilo, typeof dados.idioma === 'string' ? dados.idioma : 'PT');
     const texto = await responderComIA(sistema, mensagens.slice(-12));
     if (!texto) return resposta(503, { ok: false, erro: 'Não consegui responder agora. Tente de novo em instantes.', diagnostico: falhasIA.map(f => f.split(':')[0]) });
     const comSugestoes = extrairSugestoes(mascararDados(texto));

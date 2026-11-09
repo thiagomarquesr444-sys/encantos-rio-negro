@@ -47,7 +47,9 @@
 .cv-eda-avatar { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; color: #1a1205; background: linear-gradient(135deg, #f4c77e, #c98a3a); font-size: 15px; }
 .cv-eda-nome { margin: 0; font-weight: 700; font-size: 14px; }
 .cv-eda-status { margin: 0; font-size: 11.5px; color: var(--cv-sec); }
-.cv-eda-x { margin-left: auto; width: 30px; height: 30px; border-radius: 50%; font-size: 20px; line-height: 1; color: var(--cv-sec); background: transparent; border: 0; cursor: pointer; }
+.cv-eda-estilo { margin-left: auto; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--cv-borda); background: transparent; color: var(--cv-sec); font: inherit; font-size: 11px; font-weight: 600; cursor: pointer; }
+.cv-eda-estilo:hover { color: var(--cv-ouro); border-color: var(--cv-ouro); }
+.cv-eda-x { width: 30px; height: 30px; border-radius: 50%; font-size: 20px; line-height: 1; color: var(--cv-sec); background: transparent; border: 0; cursor: pointer; }
 .cv-eda-x:hover { color: var(--cv-texto); background: rgb(255 255 255 / 6%); }
 
 .cv-eda-lista { flex: 1; overflow-y: auto; padding: 14px; display: flex; flex-direction: column; gap: 10px; overscroll-behavior: contain; }
