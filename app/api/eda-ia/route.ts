@@ -450,7 +450,7 @@ async function contextoPublico(db: SupabaseClient) {
   // (os botões P1..Pn são montados na rota a partir da lista)
   const lista = (data as Record<string, unknown>[]).slice(0, 40).map(p => ({ id: String(p.id), nome: String(p.nome ?? ''), slug: p.slug ? String(p.slug) : null }));
   return { lista, texto: (data as Record<string, unknown>[]).slice(0, 40).map((p, i) =>
-    `- [botão P${i + 1}] ${p.nome} | ${p.categoria ?? '—'} | ${p.cidade ?? '—'} | ${p.duracao ?? '—'} | ${p.preco != null ? `a partir de ${reais(Number(p.preco))}${p.preco_modalidade ? ` (${p.preco_modalidade})` : ''}` : 'preço sob consulta'} | operadora: ${p.operadora_nome ?? '—'} | próxima saída: ${p.proxima_saida ? dm(String(p.proxima_saida)) : 'a combinar'}${p.proxima_saida_vagas != null ? ` (${p.proxima_saida_vagas} vagas)` : ''} | contato público: ${p.operadora_whatsapp ? 'WhatsApp da operadora na página do passeio' : 'pela página do passeio'} | link: /experiencias${p.slug ? `/${p.slug}` : ''}`,
+    `- [botão P${i + 1}] ${p.nome} | ${p.categoria ?? '—'} | ${p.cidade ?? '—'} | ${p.duracao ?? '—'} | ${p.preco != null ? `a partir de ${reais(Number(p.preco))}${p.preco_modalidade ? ` (${p.preco_modalidade})` : ''}` : 'preço sob consulta'} | operadora: ${p.operadora_nome ?? '—'} | próxima saída: ${p.proxima_saida ? dm(String(p.proxima_saida)) : 'a combinar'}${p.proxima_saida_vagas != null ? ` (${p.proxima_saida_vagas} vagas)` : ''} | inclui: ${Array.isArray(p.inclui) && p.inclui.length ? (p.inclui as string[]).slice(0, 8).join(', ') : 'não informado'}${Array.isArray(p.nao_inclui) && p.nao_inclui.length ? ` | não inclui: ${(p.nao_inclui as string[]).slice(0, 6).join(', ')}` : ''} | contato público: ${p.operadora_whatsapp ? 'WhatsApp da operadora na página do passeio' : 'pela página do passeio'} | link: /experiencias${p.slug ? `/${p.slug}` : ''}`,
   ).join('\n').slice(0, 9000) || 'Ainda não há passeios publicados.' };
 }
 
@@ -517,7 +517,9 @@ ${REGRA_SUGESTOES}
 - No FINAL de toda resposta, atualize a ficha: [[FICHA:{"nome":...,"interesse":...,"destino":...,"mes":...,"adultos":...,"criancas":...,"orcamento":...,"etapa":"..."}]] (JSON válido, só o que souber; etapa ∈ ${ETAPAS.join('|')}).
 
 === VERDADE E PRIVACIDADE ===
-- Passeios, preços, vagas: SOMENTE do CATÁLOGO e dos AGENTES. Nunca invente. A operadora confirma valor final e disponibilidade.
+- Passeios, preços, vagas e O QUE ESTÁ INCLUSO: SOMENTE do CATÁLOGO e dos AGENTES. Nunca invente inclusos (refeições, pernoite, barco, equipamento), pacotes ou serviços de uma operadora. Se "inclui" estiver "não informado", diga que a operadora detalha. A operadora confirma valor final e disponibilidade.
+- "Pesque e solte" só quando o assunto for pesca esportiva.
+- Sempre termine a frase e a resposta por completo antes dos marcadores.
 - Fatos do território: use o CONHECIMENTO; se não souber, diga que a operadora local confirma.
 - Pesca esportiva no Rio Negro é pesque e solte.
 - Só informação pública: nada de clientes, reservas, finanças ou dados internos de operadoras.
@@ -647,7 +649,7 @@ TAREFA ESPECIAL: escreva a RECEPÇÃO de quem acabou de abrir o painel. Devolva 
         if (!recebido || !isIP(recebido)) throw new Falha(503, 'Não foi possível validar o envio.');
         ip = recebido;
       }
-      if (!(await consumir(admin, identificar(servico, `ip:${ip}`), numeroEnv('EDA_IA_LIMITE_VISITANTE_DIA', 40)))) {
+      if (!(await consumir(admin, identificar(servico, `ip:${ip}`), numeroEnv('EDA_IA_LIMITE_VISITANTE_DIA', 60)))) {
         throw new Falha(429, 'Conversamos bastante hoje! Volte amanhã que eu continuo te ajudando.');
       }
       const idioma = typeof dados.idioma === 'string' && IDIOMAS.has(dados.idioma) ? dados.idioma : 'PT';
@@ -726,6 +728,7 @@ TAREFA ESPECIAL: escreva a RECEPÇÃO de quem acabou de abrir o painel. Devolva 
       bruto = bruto.replace(/\*\*|__|^#+\s*/gm, '').replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '$1').replace(/https?:\/\/\S+/g, '').replace(/^\s*[-*•]\s+/gm, '');
       bruto = bruto.charAt(0).toUpperCase() + bruto.slice(1);
     }
+    bruto = bruto.replace(/\[\[[^\]]*$/g, '').trim();
     const comSugestoes = extrairSugestoes(mascararDados(bruto));
     const { limpo: semIr, links: linksIr } = extrairLinks(comSugestoes.limpo, destinos);
     const linksPub: Destino[] = [];

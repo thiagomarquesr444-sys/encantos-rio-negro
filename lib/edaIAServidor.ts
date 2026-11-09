@@ -65,7 +65,9 @@ async function chamarGroq(sistema: string, mensagens: MensagemIA[]): Promise<str
       body: JSON.stringify({
         model: modelo,
         temperature: 0.4,
-        max_tokens: MAX_SAIDA,
+        max_tokens: 2000,
+        // Modelos com raciocínio: pouco raciocínio e só a resposta final.
+        ...(/gpt-oss/i.test(modelo) ? { reasoning_effort: 'low' } : /qwen3/i.test(modelo) ? { reasoning_effort: 'none' } : {}),
         messages: [
           { role: 'system', content: sistema },
           ...mensagens.map(m => ({ role: m.papel === 'usuario' ? 'user' : 'assistant', content: m.texto })),
@@ -74,13 +76,14 @@ async function chamarGroq(sistema: string, mensagens: MensagemIA[]): Promise<str
     });
     if (r.ok) {
       const dados = await r.json() as { choices?: { message?: { content?: string } }[] };
-      const texto = dados.choices?.[0]?.message?.content?.trim();
+      const texto = dados.choices?.[0]?.message?.content?.replace(/<think>[\s\S]*?<\/think>/gi, '').trim();
       if (texto) { ultimoModeloIA.nome = `groq/${modelo}`; return texto; }
       ultimo = `groq vazio ${modelo}`;
       continue;
     }
     if (r.status === 404) cacheModelo.groq = undefined;
     ultimo = `groq ${r.status} ${modelo}: ${(await r.text()).slice(0, 120)}`;
+    if (r.status === 400 && /reasoning/i.test(ultimo)) continue;
     if (r.status !== 429 && r.status !== 404 && r.status !== 413) break;
   }
   throw new Error(ultimo || 'groq falhou');
