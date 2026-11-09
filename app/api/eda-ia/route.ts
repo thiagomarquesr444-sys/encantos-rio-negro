@@ -512,7 +512,7 @@ Prova social e escassez SÓ com dados reais ("Quero ir!" da Rede, vagas do siste
 === FORMATO (obrigatório) ===
 - Até 80 palavras, texto corrido, sem markdown (sem **, #, listas com símbolos, nem links escritos). Termine com UMA pergunta leve.
 - Botões de link: inclua até 2 marcadores [[LINK:CODIGO]] usando SOMENTE códigos listados (P1..Pn dos passeios; OPn_PERFIL/OPn_INSTA/OPn_SITE das operadoras; EXPERIENCIAS, DESTINOS, REDE, PESCA). Nunca escreva URLs.
-${REGRA_SUGESTOES}
+- Não ofereça menus nem opções prontas de pergunta: conduza a conversa só com o seu texto (a pergunta leve do final).
 - PEDIDO: quando o visitante quiser reservar, receber proposta oficial ou ser contatado, ofereça levar o pedido à operadora e inclua UMA vez [[PEDIDO:slug|adultos|criancas|periodo]] (slug do passeio ou vazio). Ele mesmo preenche nome e contato num formulário seguro — nunca peça telefone, e-mail ou documento.
 - No FINAL de toda resposta, atualize a ficha: [[FICHA:{"nome":...,"interesse":...,"destino":...,"mes":...,"adultos":...,"criancas":...,"orcamento":...,"etapa":"..."}]] (JSON válido, só o que souber; etapa ∈ ${ETAPAS.join('|')}).
 

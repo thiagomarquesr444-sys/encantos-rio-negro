@@ -24,7 +24,7 @@ const nextConfig: NextConfig = {
   // - frame-ancestors/X-Frame-Options: impede abrir o site dentro de outro site (clickjacking).
   // - nosniff: o navegador não "adivinha" o tipo de arquivo.
   // - Referrer-Policy: não envia o endereço completo da página para outros sites.
-  // - Permissions-Policy: câmera e microfone desligados; localização só no próprio site.
+  // - Permissions-Policy: câmera desligada; microfone (áudio para a Iara) e localização só no próprio site.
   async headers() {
     return [
       {
@@ -34,7 +34,7 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "SAMEORIGIN" },
           { key: "X-Content-Type-Options", value: "nosniff" },
           { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-          { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(self), payment=()" },
+          { key: "Permissions-Policy", value: "camera=(), microphone=(self), geolocation=(self), payment=()" },
           { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
         ],
       },

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { PointerEvent as ReactPointerEvent } from 'react';
 import { createPortal } from 'react-dom';
+import IconeIara from './IconeIara';
 
 type PontoERN = { x: number; y: number };
 
@@ -221,7 +222,7 @@ export default function ConciergeLancadorERN({
           aoAbrir();
         }}
       >
-        <span className="estrela" aria-hidden="true">✦</span>
+        <span className="estrela" aria-hidden="true"><IconeIara /></span>
       </button>
 
       <style jsx>{`
@@ -239,9 +240,10 @@ export default function ConciergeLancadorERN({
           width: 58px;
           height: 58px;
           padding: 0;
-          border: 3px solid #ffffff;
+          border: 2px solid rgb(244 199 126 / 85%);
           border-radius: 50%;
-          background: radial-gradient(circle at 32% 28%, #2f8f84, #123c3f 70%, #0d2a30);
+          background: #07140f;
+          overflow: hidden;
           color: #ffffff;
           box-shadow: 0 6px 20px rgb(0 0 0 / 28%);
           cursor: grab;
@@ -258,9 +260,9 @@ export default function ConciergeLancadorERN({
         }
         [data-arrastando='true'] .abrir { cursor: grabbing; }
         .estrela {
-          font-size: 26px;
-          line-height: 1;
-          text-shadow: 0 0 8px rgb(255 255 255 / 45%);
+          display: block;
+          width: 100%;
+          height: 100%;
         }
         .abrir:focus-visible {
           outline: 3px solid #287b72;

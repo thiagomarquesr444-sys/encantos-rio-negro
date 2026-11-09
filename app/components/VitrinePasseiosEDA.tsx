@@ -22,6 +22,8 @@ type Props = {
   rotuloInteresse?: string;
   onLimparInteresse?: () => void;
   slug?: string;
+  // EDA_EXPERIENCIA_LINK_V1: abre direto o detalhe deste passeio (link da Iara).
+  abrirPasseio?: string;
   titulo?: string;
   subtitulo?: string;
   compacta?: boolean;
@@ -143,7 +145,7 @@ function Fotos({ passeio, grande }: { passeio: PasseioPublicoEDA; grande?: boole
 
 export default function VitrinePasseiosEDA({
   slug, titulo = 'Passeios das operadoras', subtitulo, compacta, limite, ocultarOperadora, onVerTodos,
-  interesse, rotuloInteresse, onLimparInteresse,
+  interesse, rotuloInteresse, onLimparInteresse, abrirPasseio,
 }: Props) {
   const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' });
   const [categoria, setCategoria] = useState('');
@@ -159,6 +161,23 @@ export default function VitrinePasseiosEDA({
       .catch(() => { if (ativo) setEstado({ tipo: 'erro' }); });
     return () => { ativo = false; };
   }, [slug, tentativa]);
+
+  // Link direto: quando a lista chega, abre o passeio pedido uma única vez.
+  const jaAbriu = useRef(false);
+  useEffect(() => {
+    if (!abrirPasseio || jaAbriu.current || estado.tipo !== 'pronto') return;
+    jaAbriu.current = true;
+    const alvo = estado.itens.find((p) => p.slug === abrirPasseio);
+    if (alvo) setAberto(alvo);
+  }, [abrirPasseio, estado]);
+
+  function fecharDetalhe() {
+    setAberto(null);
+    // Volta o endereço para /experiencias (recarregar não reabre o detalhe).
+    if (abrirPasseio && window.location.pathname.startsWith('/experiencias/')) {
+      window.history.replaceState(window.history.state, '', '/experiencias#passeios');
+    }
+  }
 
   useEffect(() => {
     if (aberto) dialogo.current?.showModal();
@@ -262,12 +281,12 @@ export default function VitrinePasseiosEDA({
         </div>
       )}
 
-      <dialog ref={dialogo} className="vp-dialogo" onClose={() => setAberto(null)} onClick={(e) => { if (e.target === dialogo.current) setAberto(null); }}>
+      <dialog ref={dialogo} className="vp-dialogo" onClose={fecharDetalhe} onClick={(e) => { if (e.target === dialogo.current) fecharDetalhe(); }}>
         {aberto && (() => {
           const preco = precoPasseioEDA(aberto.preco);
           return (
             <div className="vp-detalhe">
-              <button type="button" className="vp-fechar" onClick={() => setAberto(null)} aria-label="Fechar">×</button>
+              <button type="button" className="vp-fechar" onClick={fecharDetalhe} aria-label="Fechar">×</button>
               <Fotos passeio={aberto} grande />
               <div className="vp-detalhe-corpo">
                 <small>{[aberto.categoria, aberto.cidade, aberto.duracao].filter(Boolean).join(' · ')}</small>

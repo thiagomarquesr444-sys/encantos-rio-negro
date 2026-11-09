@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import ConciergeLancadorERN from './ConciergeLancadorERN';
+import IconeIara from './IconeIara';
 import TextoDigitadoIA from './TextoDigitadoIA';
 import { useLanguage } from '@/app/components/LanguageProvider';
 
@@ -420,6 +421,100 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   // ERN_DIGITANDO_V1
   const [digitandoERN, setDigitandoERN] = useState(false);
   const enviandoERN = useRef(false);
+
+  // EDA_IARA_AUDIO_V1: o visitante grava um áudio (pensado para o celular);
+  // o servidor transcreve (Whisper/Groq, sem guardar o áudio) e a frase vai
+  // para a Iara como se tivesse sido escrita. Toque para gravar, toque para enviar.
+  const [gravando, setGravando] = useState(false);
+  const [transcrevendo, setTranscrevendo] = useState(false);
+  const [segundosAudio, setSegundosAudio] = useState(0);
+  const [erroAudio, setErroAudio] = useState<string | null>(null);
+  const [audioSuportado, setAudioSuportado] = useState(false);
+  const gravadorRef = useRef<MediaRecorder | null>(null);
+  const fluxoRef = useRef<MediaStream | null>(null);
+  const pedacosRef = useRef<Blob[]>([]);
+  const cancelarAudioRef = useRef(false);
+  const relogioAudioRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const enviarRef = useRef<(v: string) => void>(() => undefined);
+  const MAX_AUDIO_S = 60;
+  const ta = idioma === 'EN'
+    ? { gravar: 'Record a voice message', parar: 'Stop and send', cancelar: 'Cancel recording', gravandoTxt: 'Recording…', ouvindo: 'Listening to your audio…', semMic: 'I could not access the microphone. Check the permission in your browser.', falha: 'I could not understand the audio. Could you type it?' }
+    : idioma === 'ES'
+      ? { gravar: 'Grabar un audio', parar: 'Detener y enviar', cancelar: 'Cancelar grabación', gravandoTxt: 'Grabando…', ouvindo: 'Escuchando tu audio…', semMic: 'No pude acceder al micrófono. Revisa el permiso del navegador.', falha: 'No pude entender el audio. ¿Puedes escribirlo?' }
+      : { gravar: 'Gravar áudio', parar: 'Parar e enviar', cancelar: 'Cancelar gravação', gravandoTxt: 'Gravando…', ouvindo: 'Ouvindo seu áudio…', semMic: 'Não consegui acessar o microfone. Confira a permissão no navegador.', falha: 'Não consegui entender o áudio. Pode escrever?' };
+
+  useEffect(() => {
+    setAudioSuportado(typeof window !== 'undefined' && typeof window.MediaRecorder !== 'undefined' && !!navigator.mediaDevices?.getUserMedia);
+    return () => { liberarMicrofone(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  function liberarMicrofone() {
+    if (relogioAudioRef.current) { clearInterval(relogioAudioRef.current); relogioAudioRef.current = null; }
+    fluxoRef.current?.getTracks().forEach((faixa) => faixa.stop());
+    fluxoRef.current = null;
+  }
+
+  async function iniciarAudio() {
+    if (gravando || transcrevendo || limite || digitandoERN) return;
+    setErroAudio(null);
+    try {
+      const fluxo = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } });
+      fluxoRef.current = fluxo;
+      const tipos = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4', 'audio/ogg;codecs=opus'];
+      const tipo = tipos.find((x) => MediaRecorder.isTypeSupported?.(x));
+      const gravador = new MediaRecorder(fluxo, tipo ? { mimeType: tipo, audioBitsPerSecond: 32000 } : undefined);
+      pedacosRef.current = [];
+      cancelarAudioRef.current = false;
+      gravador.ondataavailable = (e) => { if (e.data.size) pedacosRef.current.push(e.data); };
+      gravador.onstop = () => {
+        liberarMicrofone();
+        setGravando(false);
+        const blob = new Blob(pedacosRef.current, { type: gravador.mimeType || tipo || 'audio/webm' });
+        pedacosRef.current = [];
+        if (cancelarAudioRef.current || blob.size < 800) return;
+        void transcreverAudio(blob);
+      };
+      gravadorRef.current = gravador;
+      gravador.start(250);
+      setSegundosAudio(0);
+      setGravando(true);
+      if (navigator.vibrate) navigator.vibrate(30);
+      let decorridos = 0;
+      relogioAudioRef.current = setInterval(() => {
+        decorridos += 1;
+        setSegundosAudio(decorridos);
+        if (decorridos >= MAX_AUDIO_S) pararAudio(false);
+      }, 1000);
+    } catch {
+      liberarMicrofone();
+      setErroAudio(ta.semMic);
+    }
+  }
+
+  function pararAudio(cancelar: boolean) {
+    cancelarAudioRef.current = cancelar;
+    const g = gravadorRef.current;
+    if (g && g.state !== 'inactive') g.stop();
+    else { liberarMicrofone(); setGravando(false); }
+  }
+
+  async function transcreverAudio(blob: Blob) {
+    setTranscrevendo(true);
+    try {
+      const corpo = new FormData();
+      corpo.append('audio', blob, 'audio');
+      corpo.append('idioma', idioma);
+      const r = await fetch('/api/iara-audio', { method: 'POST', body: corpo });
+      const j = await r.json().catch(() => ({})) as { texto?: string; erro?: string };
+      if (!r.ok || !j.texto) { setErroAudio(j.erro || ta.falha); return; }
+      enviarRef.current(j.texto);
+    } catch {
+      setErroAudio(ta.falha);
+    } finally {
+      setTranscrevendo(false);
+    }
+  }
   const respostaTimerERN = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textoDigitandoERN = idioma === 'EN'
     ? 'Preparing a response'
@@ -436,12 +531,6 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   }, []);
 
   const limite = mensagens.length >= 61;
-  const resumo = preferencias
-    .map((valor, indice) => `${c.details[indice]}: ${valor}`)
-    .join('\n');
-
-  const corpoEmail = `${t.greeting}\n\n${resumo}\n\n${t.ending}`;
-  const emailHref = `mailto:contato.encantosrionegro@gmail.com?subject=${encodeURIComponent(t.subject)}&body=${encodeURIComponent(corpoEmail)}`;
 
   useEffect(() => {
     const dialogo = dialogRef.current;
@@ -464,6 +553,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   }, [mensagens, aberto, digitandoERN]);
 
   function fechar() {
+    if (gravadorRef.current?.state === 'recording') pararAudio(true);
     setAberto(false);
     devolverFocoERN();
   }
@@ -544,12 +634,14 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
       .catch((e: unknown) => responder(e instanceof Error && /limite|Volte amanh/i.test(e.message) ? e.message : c.fallback));
   }
 
+  enviarRef.current = enviar;
+
   return (
     <section className="ern-chat-compacto" aria-label={t.title} data-ern-vida-pausada={vidaPausadaERN}>
       {/* ERN_CONCIERGE_VISUAL_V2 */}
       {ofertaIara && !aberto && (
         <div role="status" style={{ position: 'fixed', right: 20, bottom: 104, zIndex: 60, maxWidth: 'min(320px, calc(100vw - 40px))', display: 'flex', gap: 10, alignItems: 'flex-start', padding: '12px 14px', borderRadius: 16, color: '#f2f0e6', background: 'rgb(9 22 18 / 94%)', border: '1px solid rgb(244 199 126 / 30%)', boxShadow: '0 16px 40px rgb(0 0 0 / 35%)', backdropFilter: 'blur(10px)', fontSize: 14, lineHeight: 1.45 }}>
-          <span aria-hidden="true" style={{ flex: 'none', display: 'grid', placeItems: 'center', width: 30, height: 30, borderRadius: '50%', color: '#1a1205', background: 'linear-gradient(135deg,#f4c77e,#c98a3a)' }}>✦</span>
+          <span aria-hidden="true" style={{ flex: 'none', display: 'grid', placeItems: 'center', width: 32, height: 32, borderRadius: '50%', overflow: 'hidden' }}><IconeIara /></span>
           <div style={{ flex: 1 }}>
             <p style={{ margin: 0 }}>{ofertaIara}</p>
             <button type="button" onClick={() => { setOfertaIara(null); setAberto(true); }} style={{ marginTop: 8, padding: '6px 12px', borderRadius: 999, border: 0, fontWeight: 600, color: '#1a1205', background: '#f4c77e', cursor: 'pointer' }}>{c.open}</button>
@@ -565,7 +657,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
         aoPausar={() => setVidaPausadaERN(valor => !valor)}
       />
       <header className="cartao-topo">
-        <span className="avatar" aria-hidden="true">✦</span>
+        <span className="avatar" aria-hidden="true"><IconeIara /></span>
         <div>
           <p className="marca">{t.title}</p>
           <p className="legenda">{c.badge}</p>
@@ -604,7 +696,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
       >
         <div className="janela">
           <header className="chat-topo">
-            <span className="avatar" aria-hidden="true">✦</span>
+            <span className="avatar" aria-hidden="true"><IconeIara /></span>
             <div className="identidade">
               <h2 id="ern-chat-titulo">{t.title}</h2>
               <p>{c.badge}</p>
@@ -656,23 +748,13 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
                   {mensagem.autor === 'ern' && animandoIara !== indice && !!mensagem.links?.length && (
                     <div className="iara-links" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
                       {mensagem.links.map(l => l.href.startsWith('/')
-                        ? <Link key={l.href} href={l.href} style={{ padding: '6px 11px', borderRadius: 999, fontSize: 12.5, fontWeight: 600, color: '#1a1205', background: '#f4c77e', textDecoration: 'none' }}>{l.rotulo} →</Link>
-                        : <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer" style={{ padding: '6px 11px', borderRadius: 999, fontSize: 12.5, fontWeight: 600, color: '#1a1205', background: '#f4c77e', textDecoration: 'none' }}>{l.rotulo} ↗</a>)}
+                        ? <Link key={l.href} href={l.href} className="iara-link">{l.rotulo} →</Link>
+                        : <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer" className="iara-link">{l.rotulo} ↗</a>)}
                     </div>
                   )}
                 </div>
               </div>
             ))}
-            {!digitandoERN && animandoIara === null && !limite && mensagens.length > 1 && (() => {
-              const ultima = mensagens[mensagens.length - 1];
-              return ultima?.autor === 'ern' && ultima.sugestoes?.length ? (
-                <div className="sugestoes iara-sugestoes">
-                  {ultima.sugestoes.map((s2) => (
-                    <button key={s2} type="button" onClick={() => enviar(s2)}>{s2}</button>
-                  ))}
-                </div>
-              ) : null;
-            })()}
             {digitandoERN && (
               <div className="linha assistente">
                 <div className="balao ern-digitando" role="status">
@@ -714,48 +796,67 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
             {limite && <p className="limite" role="status">{c.limit}</p>}
           </div>
 
-          {mensagens.length <= 1 && !limite && !digitandoERN && (
-            <div className="sugestoes" aria-label={t.questions[0]}>
-              {t.interests.map((interesse) => (
-                <button
-                  key={interesse}
-                  type="button"
-                  onClick={() => enviar(interesse)}
-                >{interesse}</button>
-              ))}
-            </div>
-          )}
-
-          {mensagens.length >= 5 && !digitandoERN && animandoIara === null && (
-            <nav className="atalhos" aria-label={t.explore}>
-              <Link href="/destinos">{t.explore} ↗</Link>
-              <Link href="/rede">{t.network} ↗</Link>
-              <a href={emailHref} title={c.emailHelp}>{t.email} ↗</a>
-            </nav>
-          )}
-
+          {erroAudio && <p className="iara-audio-erro" role="alert">{erroAudio}</p>}
           <form
             className="compositor"
+            data-gravando={gravando || undefined}
             onSubmit={(evento) => {
               evento.preventDefault();
               enviar(entrada);
             }}
           >
-            <label className="sr-only" htmlFor="ern-chat-mensagem">{c.input}</label>
-            <input
-              id="ern-chat-mensagem"
-              value={entrada}
-              maxLength={300}
-              autoComplete="off"
-              placeholder={c.placeholder}
-              disabled={limite || digitandoERN}
-              onChange={(evento) => setEntrada(evento.target.value)}
-            />
-            <button
-              type="submit"
-              className="principal"
-              disabled={!entrada.trim() || limite || digitandoERN}
-            >{c.send}</button>
+            {gravando ? (
+              <>
+                <button type="button" className="iara-audio-cancelar" onClick={() => pararAudio(true)} aria-label={ta.cancelar} title={ta.cancelar}>
+                  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M6 7h12M9.5 7V5h5v2M8 7l.8 12h6.4L16 7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" /></svg>
+                </button>
+                <div className="iara-audio-status" role="status" aria-live="polite">
+                  <span className="iara-audio-ponto" aria-hidden="true" />
+                  <span>{ta.gravandoTxt}</span>
+                  <span className="iara-audio-tempo">{`0:${String(segundosAudio).padStart(2, '0')}`}</span>
+                  <span className="iara-audio-onda" aria-hidden="true"><i /><i /><i /><i /><i /></span>
+                </div>
+                <button type="button" className="principal iara-audio-btn" onClick={() => pararAudio(false)} aria-label={ta.parar} title={ta.parar}>
+                  <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 12l15-7-5 15-2.5-6.2L4 12Z" fill="currentColor" /></svg>
+                </button>
+              </>
+            ) : transcrevendo ? (
+              <div className="iara-audio-status" role="status" aria-live="polite">
+                <span className="iara-audio-onda" aria-hidden="true"><i /><i /><i /><i /><i /></span>
+                <span>{ta.ouvindo}</span>
+              </div>
+            ) : (
+              <>
+                <label className="sr-only" htmlFor="ern-chat-mensagem">{c.input}</label>
+                <input
+                  id="ern-chat-mensagem"
+                  value={entrada}
+                  maxLength={300}
+                  autoComplete="off"
+                  placeholder={c.placeholder}
+                  disabled={limite || digitandoERN}
+                  onChange={(evento) => { setEntrada(evento.target.value); if (erroAudio) setErroAudio(null); }}
+                />
+                {audioSuportado && !entrada.trim() ? (
+                  <button
+                    type="button"
+                    className="principal iara-audio-btn"
+                    onClick={() => void iniciarAudio()}
+                    disabled={limite || digitandoERN}
+                    aria-label={ta.gravar}
+                    title={ta.gravar}
+                  >
+                    <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor" /><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+                  </button>
+                ) : (
+                  <button
+                    type="submit"
+                    className="principal"
+                    disabled={!entrada.trim() || limite || digitandoERN}
+                  >{c.send}</button>
+                )}
+              </>
+            )}
           </form>
 
           <footer className="chat-rodape">
@@ -788,7 +889,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
         .avatar {
           display: grid; place-items: center; flex-shrink: 0;
           width: 32px; height: 32px; border-radius: 50%;
-          background: #8a4b12; color: white;
+          background: transparent; overflow: visible;
         }
         .marca { margin: 0; font-size: 14px; font-weight: 700; }
         .legenda { margin: 3px 0 0; font-size: 10px; line-height: 1.5; color: #4b5a53; }
@@ -1070,15 +1171,14 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
         .chat-topo .avatar {
           position: relative;
           width: 42px; height: 42px;
-          background: linear-gradient(180deg, #f7d595, #e3a144);
-          color: #07110e; font-size: 20px;
-          box-shadow: 0 8px 22px rgb(227 161 68 / 35%), inset 0 1px 0 rgb(255 255 255 / 55%);
+          background: transparent;
+          box-shadow: 0 8px 22px rgb(0 0 0 / 35%);
         }
         .chat-topo .avatar::after {
           content: '';
           position: absolute; right: -1px; bottom: -1px;
           width: 11px; height: 11px; border-radius: 50%;
-          background: #f4c77e; border: 2px solid #0b1f18;
+          background: #3fbf7f; border: 2px solid #0b1f18;
         }
         .identidade h2 { color: #f5f3ea; font-size: 16px; font-weight: 650; letter-spacing: -.01em; }
         .identidade p { color: #b8c9bf; font-size: 11px; }
@@ -1142,6 +1242,51 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
           box-shadow: inset 0 1px 0 rgb(255 255 255 / 55%);
         }
         .compositor .principal:hover:not(:disabled) { background: linear-gradient(180deg, #fbe3ae, #eaa94d); }
+        /* EDA_IARA_AUDIO_V1 + links mais sóbrios */
+        .mensagens :global(.iara-link) {
+          display: inline-flex; align-items: center; gap: 6px;
+          padding: 7px 12px; border-radius: 10px;
+          font-size: 12.5px; font-weight: 600; text-decoration: none;
+          color: #0b1f18; background: #f6f1e6; border: 1px solid #e3c999;
+        }
+        .mensagens :global(.iara-link:hover) { background: #f1e5cc; border-color: #d99a3e; }
+        .compositor { display: flex; align-items: center; }
+        .compositor input { flex: 1; min-width: 0; }
+        .iara-audio-btn {
+          flex: none; width: 44px; min-width: 44px; padding: 0 !important;
+          display: grid !important; place-items: center;
+        }
+        .iara-audio-cancelar {
+          flex: none; display: grid; place-items: center;
+          width: 40px; height: 40px; border: 0; border-radius: 50%;
+          background: transparent; color: #8a3b2a;
+        }
+        .iara-audio-cancelar:hover { background: #f6e8e4; }
+        .iara-audio-status {
+          flex: 1; min-width: 0; min-height: 44px;
+          display: flex; align-items: center; gap: 10px;
+          padding: 0 10px; font-size: 13.5px; color: #33443c;
+        }
+        .iara-audio-tempo { font-variant-numeric: tabular-nums; font-weight: 600; color: #0f1c17; }
+        .iara-audio-ponto {
+          width: 9px; height: 9px; border-radius: 50%; background: #d64545;
+          animation: iara-pisca 1s ease-in-out infinite;
+        }
+        .iara-audio-onda { display: inline-flex; align-items: center; gap: 3px; height: 18px; margin-left: auto; }
+        .iara-audio-onda i {
+          display: block; width: 3px; height: 6px; border-radius: 2px; background: #d99a3e;
+          animation: iara-onda 0.9s ease-in-out infinite;
+        }
+        .iara-audio-onda i:nth-child(2) { animation-delay: .12s; }
+        .iara-audio-onda i:nth-child(3) { animation-delay: .24s; }
+        .iara-audio-onda i:nth-child(4) { animation-delay: .36s; }
+        .iara-audio-onda i:nth-child(5) { animation-delay: .48s; }
+        @keyframes iara-onda { 0%, 100% { height: 5px; } 50% { height: 18px; } }
+        @keyframes iara-pisca { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
+        .iara-audio-erro { margin: 8px 16px 0; font-size: 12.5px; color: #a33a2a; }
+        @media (prefers-reduced-motion: reduce) {
+          .iara-audio-onda i, .iara-audio-ponto { animation: none; }
+        }
         .chat-rodape { padding: 4px 16px 12px; }
         .chat-rodape p { font-size: 11px; }
         .chat-rodape button { color: #8a4b12; font-weight: 600; }

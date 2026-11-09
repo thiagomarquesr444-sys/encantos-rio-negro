@@ -221,7 +221,7 @@ function Dourado({ children }: { children: string }) {
   );
 }
 
-export default function ExperienciasPremiumERN() {
+export default function ExperienciasPremiumERN({ abrirPasseio }: { abrirPasseio?: string } = {}) {
   const { idioma } = useLanguage();
   const t = textos[idioma];
   const [regiao, setRegiao] = useState<'todos' | RegiaoHistoria>('todos');
@@ -317,6 +317,7 @@ export default function ExperienciasPremiumERN() {
         <section id="passeios" className="scroll-mt-24 bg-[#07110E] py-16 md:py-20">
           <div className="mx-auto max-w-[1180px] px-5 md:px-8">
             <VitrinePasseiosEDA
+              abrirPasseio={abrirPasseio}
               interesse={interesse}
               rotuloInteresse={interesseAtual?.nome}
               onLimparInteresse={() => setInteresse(null)}
