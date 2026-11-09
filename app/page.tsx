@@ -10,6 +10,7 @@ import PreviaGestaoEDA from '@/app/components/PreviaGestaoEDA';
 import RodapePublicoEDA from '@/app/components/RodapePublicoEDA';
 import HeroImersivoERN from '@/app/components/HeroImersivoERN';
 import VitrineDestinosERN from '@/app/components/VitrineDestinosERN';
+import IconeIara from '@/app/components/IconeIara';
 import { useLanguage } from '@/app/components/LanguageProvider';
 
 import {
@@ -22,9 +23,9 @@ import {
 // Concierge sobre a mesma paisagem e vitrine de destinos por região.
 
 const conciergeCta = {
-  PT: 'Conversar com o Concierge',
-  EN: 'Talk to the Concierge',
-  ES: 'Hablar con el Concierge',
+  PT: 'Conversar com a Iara',
+  EN: 'Talk to Iara',
+  ES: 'Hablar con Iara',
 } as const;
 
 const FOCO =
@@ -97,7 +98,7 @@ export default function Home() {
           }}
         />
 
-        <HeroImersivoERN onBuscar={buscarDestino} />
+        <HeroImersivoERN onBuscar={buscarDestino} onFiltrar={setBusca} />
 
         <div
           id="concierge"
@@ -117,7 +118,7 @@ export default function Home() {
             href="#concierge"
             className={`group inline-flex min-h-[54px] shrink-0 items-center gap-3 rounded-full bg-gradient-to-b from-[#F7D595] to-[#E3A144] py-2 pl-2 pr-6 text-sm font-bold text-[#07110E] shadow-[0_14px_32px_rgb(227_161_68/30%),inset_0_1px_0_rgb(255_255_255/55%)] transition hover:brightness-105 ${FOCO}`}
           >
-            <span aria-hidden="true" className="grid h-10 w-10 place-items-center rounded-full bg-[#07110E] text-lg text-[#F4C77E]">✦</span>
+            <span aria-hidden="true" className="block h-10 w-10 overflow-hidden rounded-full shadow-[0_4px_12px_rgb(0_0_0/35%)]"><IconeIara /></span>
             {conciergeCta[idioma]}
             <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none">→</span>
           </a>

@@ -124,6 +124,14 @@ export default function PublicHeader() {
     '/operadores',
   );
 
+  // EDA_IARA_PONTE_V1: "Planejar viagem" abre a conversa com a Iara na hora.
+  // Em páginas sem a Iara montada, o link segue para a Descubra, que já abre a conversa.
+  function abrirIara(evento: { preventDefault: () => void }) {
+    if (!document.getElementById('ern-conversa')) return;
+    evento.preventDefault();
+    window.setTimeout(() => window.dispatchEvent(new CustomEvent('iara:abrir', { detail: {} })), 0);
+  }
+
   function fecharMenu() {
     // Fecha imediatamente para permitir também a navegação
     // por âncoras dentro da mesma página.
@@ -295,6 +303,7 @@ export default function PublicHeader() {
 
             <Link
               href="/#concierge"
+              onClick={abrirIara}
               className={`ern-botao-ouro group inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#F7D595] to-[#E3A144] px-5 text-sm font-bold text-[#07130F] shadow-[0_10px_26px_rgb(227_161_68/35%),inset_0_1px_0_rgb(255_255_255/55%)] transition hover:brightness-105 ${FOCO}`}
             >
               {t.plan}
@@ -467,7 +476,7 @@ export default function PublicHeader() {
 
               <Link
                 href="/#concierge"
-                onClick={fecharMenu}
+                onClick={(evento) => { fecharMenu(); abrirIara(evento); }}
                 className={`flex min-h-[52px] items-center justify-center rounded-xl bg-[#E3A144] px-4 py-3 text-center text-sm font-bold text-[#07130F] hover:bg-[#F0B35C] ${FOCO}`}
               >
                 {t.plan}

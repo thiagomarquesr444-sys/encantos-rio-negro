@@ -19,7 +19,7 @@ export const homeTranslations = {
     },
 
     concierge: {
-      title: 'Concierge Encantos',
+      title: 'Iara',
       status: 'Planejamento inteligente',
       question:
         'Como você imagina sua viagem pelo Rio Negro?',
@@ -76,8 +76,8 @@ export const homeTranslations = {
         'O Rio Negro vai além de um único destino. A EDA conecta paisagens, festas, comunidades, rios, arquipélagos e experiências que ajudam a contar a identidade de Barcelos, Novo Airão e de toda essa região amazônica.',
       unsure: 'Não sabe por onde começar?',
       unsureDescription:
-        'Conte ao Concierge o tipo de experiência que você procura e a EDA ajuda a organizar possibilidades pelo território.',
-      conciergeButton: 'Planejar com o Concierge',
+        'Conte à Iara o tipo de experiência que você procura e a EDA ajuda a organizar possibilidades pelo território.',
+      conciergeButton: 'Planejar com a Iara',
     },
 
     territories: [
@@ -173,7 +173,7 @@ export const homeTranslations = {
     },
 
     footer: {
-      left: 'EDA Concierge — Barcelos, Amazonas.',
+      left: 'Encantos da Amazônia — Barcelos, Amazonas.',
       right: 'Encantos da Amazônia',
     },
   },
@@ -196,7 +196,7 @@ export const homeTranslations = {
     },
 
     concierge: {
-      title: 'Encantos Concierge',
+      title: 'Iara',
       status: 'Smart planning',
       question:
         'How do you imagine your journey through the Rio Negro?',
@@ -253,8 +253,8 @@ export const homeTranslations = {
         'The Rio Negro goes far beyond a single destination. EDA connects landscapes, festivals, communities, rivers, archipelagos and experiences that help tell the identity of Barcelos, Novo Airão and this entire Amazonian region.',
       unsure: 'Not sure where to begin?',
       unsureDescription:
-        'Tell the Concierge what kind of experience you are looking for and EDA can help organize possibilities across the territory.',
-      conciergeButton: 'Plan with the Concierge',
+        'Tell Iara what kind of experience you are looking for and EDA can help organize possibilities across the territory.',
+      conciergeButton: 'Plan with Iara',
     },
 
     territories: [
@@ -350,7 +350,7 @@ export const homeTranslations = {
     },
 
     footer: {
-      left: 'EDA Concierge — Barcelos, Amazonas.',
+      left: 'Encantos da Amazônia — Barcelos, Amazonas.',
       right: 'Encantos da Amazônia',
     },
   },
@@ -373,7 +373,7 @@ export const homeTranslations = {
     },
 
     concierge: {
-      title: 'Concierge Encantos',
+      title: 'Iara',
       status: 'Planificación inteligente',
       question:
         '¿Cómo imaginas tu viaje por el Río Negro?',
@@ -430,8 +430,8 @@ export const homeTranslations = {
         'El Río Negro va mucho más allá de un único destino. EDA conecta paisajes, fiestas, comunidades, ríos, archipiélagos y experiencias que ayudan a contar la identidad de Barcelos, Novo Airão y toda esta región amazónica.',
       unsure: '¿No sabes por dónde empezar?',
       unsureDescription:
-        'Cuéntale al Concierge qué tipo de experiencia buscas y EDA te ayuda a organizar posibilidades por el territorio.',
-      conciergeButton: 'Planificar con el Concierge',
+        'Cuéntale a Iara qué tipo de experiencia buscas y EDA te ayuda a organizar posibilidades por el territorio.',
+      conciergeButton: 'Planificar con Iara',
     },
 
     territories: [
@@ -527,7 +527,7 @@ export const homeTranslations = {
     },
 
     footer: {
-      left: 'EDA Concierge — Barcelos, Amazonas.',
+      left: 'Encantos da Amazônia — Barcelos, Amazonas.',
       right: 'Encantos da Amazônia',
     },
   },

@@ -156,8 +156,10 @@ export default function LibrasERN() {
         .ern-libras {
           position: fixed;
           right: max(12px, env(safe-area-inset-right));
-          /* ERN_DOCK_FLUTUANTES_V1: acima do EDA e do Feedback, fora do conteúdo */
-          bottom: calc(172px + env(safe-area-inset-bottom, 0px));
+          /* EDA_LIBRAS_POSICAO_V2: no meio da lateral direita — longe do botão da Iara
+             (no alto) e do convite dela (embaixo). */
+          top: 50%;
+          transform: translateY(-50%);
           z-index: 60;
           font-family: var(--font-work-sans), sans-serif;
         }
@@ -169,10 +171,10 @@ export default function LibrasERN() {
           min-height: 48px;
           padding: 0;
           border: 0;
-          border-radius: 8px;
+          border-radius: 12px;
           background: #247bea;
           color: #fff;
-          box-shadow: 0 3px 12px rgb(0 0 0 / 20%);
+          box-shadow: 0 8px 22px rgb(0 0 0 / 30%), 0 0 0 1px rgb(255 255 255 / 18%);
           font: inherit;
           font-size: 14px;
           font-weight: 700;

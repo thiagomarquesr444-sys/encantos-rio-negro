@@ -9,7 +9,7 @@ export const destinosTranslations = {
       description:
         'Rios, arquipélagos, florestas, praias, cidades, festivais e comunidades conectados por uma das paisagens mais singulares da Amazônia.',
       explore: 'Explorar destinos',
-      plan: 'Planejar com o Concierge',
+      plan: 'Planejar com a Iara',
       region: 'Do Baixo ao Médio Rio Negro',
       sideTitle:
         'Escolha menos pelo mapa e mais pelo tipo de experiência que você quer viver.',
@@ -35,7 +35,7 @@ export const destinosTranslations = {
       paragraph1:
         'Cada lugar muda com as águas, com a época do ano e com a forma de chegar. Por isso, a EDA combina território, cultura, experiências e operação local em uma mesma jornada.',
       paragraph2:
-        'Antes de escolher um roteiro, o visitante pode entender o destino, descobrir o que faz sentido para seu perfil e conversar com o Concierge para avançar no planejamento.',
+        'Antes de escolher um roteiro, o visitante pode entender o destino, descobrir o que faz sentido para seu perfil e conversar com a Iara para avançar no planejamento.',
     },
 
     explore: 'Explorar',
@@ -108,12 +108,12 @@ export const destinosTranslations = {
     },
 
     planning: {
-      eyebrow: 'EDA Concierge',
+      eyebrow: 'Iara',
       title: 'Você não precisa conhecer o mapa para começar.',
       description:
         'Diga quando pretende viajar, quantas pessoas vão, o que gosta de fazer e quanto tempo deseja permanecer. A EDA ajuda a organizar as possibilidades antes da confirmação com os operadores.',
       button: 'Começar planejamento',
-      questionsTitle: 'O Concierge pode começar por',
+      questionsTitle: 'A Iara pode começar por',
       questions: [
         'Quando você quer viajar?',
         'Quantas pessoas estarão no grupo?',
@@ -289,7 +289,7 @@ export const destinosTranslations = {
       description:
         'Rivers, archipelagos, forests, beaches, towns, festivals and communities connected by one of the most distinctive landscapes in the Amazon.',
       explore: 'Explore destinations',
-      plan: 'Plan with the Concierge',
+      plan: 'Plan with Iara',
       region: 'From the Lower to the Middle Rio Negro',
       sideTitle:
         'Choose less by the map and more by the kind of experience you want to live.',
@@ -316,7 +316,7 @@ export const destinosTranslations = {
       paragraph1:
         'Every place changes with the waters, the season and the way you get there. That is why EDA combines territory, culture, experiences and local operations into one journey.',
       paragraph2:
-        'Before choosing an itinerary, visitors can understand the destination, discover what best fits their profile and talk to the Concierge to move forward with planning.',
+        'Before choosing an itinerary, visitors can understand the destination, discover what best fits their profile and talk to Iara to move forward with planning.',
     },
 
     explore: 'Explore',
@@ -390,14 +390,14 @@ export const destinosTranslations = {
     },
 
     planning: {
-      eyebrow: 'EDA Concierge',
+      eyebrow: 'Iara',
       title:
         'You do not need to know the map to get started.',
       description:
         'Tell us when you want to travel, how many people are going, what you enjoy doing and how long you want to stay. EDA helps organize the possibilities before confirmation with local operators.',
       button: 'Start planning',
       questionsTitle:
-        'The Concierge can start by asking',
+        'Iara can start by asking',
       questions: [
         'When would you like to travel?',
         'How many people are in your group?',
@@ -573,7 +573,7 @@ export const destinosTranslations = {
       description:
         'Ríos, archipiélagos, bosques, playas, ciudades, festivales y comunidades conectados por uno de los paisajes más singulares de la Amazonía.',
       explore: 'Explorar destinos',
-      plan: 'Planificar con el Concierge',
+      plan: 'Planificar con Iara',
       region: 'Del Bajo al Medio Río Negro',
       sideTitle:
         'Elige menos por el mapa y más por el tipo de experiencia que quieres vivir.',
@@ -600,7 +600,7 @@ export const destinosTranslations = {
       paragraph1:
         'Cada lugar cambia con las aguas, la época del año y la forma de llegar. Por eso, EDA combina territorio, cultura, experiencias y operación local en un mismo recorrido.',
       paragraph2:
-        'Antes de elegir un itinerario, el visitante puede comprender el destino, descubrir qué encaja mejor con su perfil y conversar con el Concierge para avanzar en la planificación.',
+        'Antes de elegir un itinerario, el visitante puede comprender el destino, descubrir qué encaja mejor con su perfil y conversar con Iara para avanzar en la planificación.',
     },
 
     explore: 'Explorar',
@@ -674,14 +674,14 @@ export const destinosTranslations = {
     },
 
     planning: {
-      eyebrow: 'EDA Concierge',
+      eyebrow: 'Iara',
       title:
         'No necesitas conocer el mapa para empezar.',
       description:
         'Dinos cuándo quieres viajar, cuántas personas van, qué te gusta hacer y cuánto tiempo deseas permanecer. EDA ayuda a organizar las posibilidades antes de la confirmación con los operadores.',
       button: 'Comenzar planificación',
       questionsTitle:
-        'El Concierge puede comenzar preguntando',
+        'Iara puede comenzar preguntando',
       questions: [
         '¿Cuándo quieres viajar?',
         '¿Cuántas personas estarán en el grupo?',

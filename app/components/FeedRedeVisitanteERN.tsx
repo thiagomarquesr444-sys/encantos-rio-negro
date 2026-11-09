@@ -561,7 +561,7 @@ export default function FeedRedeVisitanteERN() {
           {authors.filter(author => author.verificado).slice(0, 4).map(author => <Link key={author.id} href={profileHref(author)}><Avatar author={author} /><span><strong>{author.nome_publico}</strong><small>{[author.cidade, author.uf].filter(Boolean).join(' · ') || 'Amazonas'}</small></span><em>{ui.viewProfile}</em></Link>)}
         </section>}
         {abaERN !== 'passeios' && <div style={{ marginBottom: 16 }}><VitrinePasseiosEDA compacta limite={2} titulo="Passeios em alta" onVerTodos={() => { selecionarAbaERN('passeios'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} /></div>}
-        <section className="ern-r-plan-card"><span className="ern-r-plan-mark" aria-hidden="true">✦</span><h2>EDA Concierge</h2><p>{ui.conciergeText}</p><Link href="/#concierge">{ui.conciergeCta} →</Link></section>
+        <section className="ern-r-plan-card"><span className="ern-r-plan-mark" aria-hidden="true">✦</span><h2>Iara</h2><p>{ui.conciergeText}</p><Link href="/#concierge">{ui.conciergeCta} →</Link></section>
         <p className="ern-r-right-footer">{ui.footer}</p>
       </div></aside>
     </div>

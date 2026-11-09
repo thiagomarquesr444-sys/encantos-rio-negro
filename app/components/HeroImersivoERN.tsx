@@ -2,17 +2,19 @@
 
 import { useState, type FormEvent, type ReactNode } from 'react';
 import { useLanguage } from '@/app/components/LanguageProvider';
+import IconeIara from '@/app/components/IconeIara';
 import { homeTranslations, type HomeTranslation } from '@/lib/i18n/home';
 
 // ERN_HERO_IMERSIVO_V1
-// Abertura do portal: título centralizado, busca de destinos e destaques.
+// Abertura do portal: título centralizado, busca atendida pela Iara e destaques.
 // A paisagem de fundo é aplicada pela página (envolve também o Concierge).
 
 const textos = {
   PT: {
-    placeholder: 'Para onde você quer ir?',
-    rotulo: 'Buscar destino',
+    placeholder: 'Pergunte à Iara: para onde você quer ir?',
+    rotulo: 'Buscar com a Iara',
     buscar: 'Buscar',
+    dica: 'Busca com a Iara · destinos, passeios, comidas e lendas da Amazônia',
     sugestoes: 'Populares:',
     destaques: [
       { titulo: 'Atendimento local', texto: 'Quem conhece o rio ajuda você a planejar.' },
@@ -22,9 +24,10 @@ const textos = {
     ],
   },
   EN: {
-    placeholder: 'Where do you want to go?',
-    rotulo: 'Search destination',
+    placeholder: 'Ask Iara: where do you want to go?',
+    rotulo: 'Search with Iara',
     buscar: 'Search',
+    dica: 'Search with Iara · destinations, tours, food and legends of the Amazon',
     sugestoes: 'Popular:',
     destaques: [
       { titulo: 'Local support', texto: 'People who know the river help you plan.' },
@@ -34,9 +37,10 @@ const textos = {
     ],
   },
   ES: {
-    placeholder: '¿A dónde quieres ir?',
-    rotulo: 'Buscar destino',
+    placeholder: 'Pregúntale a Iara: ¿a dónde quieres ir?',
+    rotulo: 'Buscar con Iara',
     buscar: 'Buscar',
+    dica: 'Búsqueda con Iara · destinos, paseos, comidas y leyendas de la Amazonía',
     sugestoes: 'Populares:',
     destaques: [
       { titulo: 'Atención local', texto: 'Quien conoce el río te ayuda a planificar.' },
@@ -115,8 +119,10 @@ function TituloAnimado({ texto }: { texto: string }) {
 
 export default function HeroImersivoERN({
   onBuscar,
+  onFiltrar,
 }: {
   onBuscar: (texto: string) => void;
+  onFiltrar?: (texto: string) => void;
 }) {
   const { idioma } = useLanguage();
   const h = (homeTranslations[idioma] as HomeTranslation).hero;
@@ -125,7 +131,11 @@ export default function HeroImersivoERN({
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
-    onBuscar(termo);
+    // EDA_IARA_PONTE_V1: a busca principal é atendida pela Iara. A vitrine de
+    // destinos é filtrada em silêncio para quem continuar rolando a página.
+    const texto = termo.trim();
+    onFiltrar?.(texto);
+    window.dispatchEvent(new CustomEvent('iara:abrir', { detail: texto ? { texto, origem: 'busca' } : {} }));
   }
 
   return (
@@ -163,8 +173,11 @@ export default function HeroImersivoERN({
       <form
         role="search"
         onSubmit={enviar}
-        className="ern-revela mt-10 flex w-full max-w-[660px] items-stretch gap-2 rounded-[20px] border border-white/15 bg-[#07110E]/75 p-2 shadow-[0_30px_60px_rgb(0_0_0/35%)] backdrop-blur-xl [animation-delay:1100ms]"
+        className="ern-revela ern-busca-iara mt-10 flex w-full max-w-[680px] items-center gap-2 rounded-[22px] border border-[#F4C77E]/25 bg-[#07110E]/78 p-2 shadow-[0_30px_70px_rgb(0_0_0/40%),inset_0_1px_0_rgb(255_255_255/8%)] backdrop-blur-xl transition focus-within:border-[#F4C77E]/70 focus-within:shadow-[0_30px_70px_rgb(0_0_0/40%),0_0_0_4px_rgb(244_199_126/16%),inset_0_1px_0_rgb(255_255_255/8%)] [animation-delay:1100ms]"
       >
+        <span aria-hidden="true" className="ml-1.5 hidden h-10 w-10 shrink-0 overflow-hidden rounded-full shadow-[0_6px_16px_rgb(0_0_0/40%)] sm:block">
+          <IconeIara />
+        </span>
         <label htmlFor="ern-busca-destino" className="sr-only">
           {t.rotulo}
         </label>
@@ -175,7 +188,9 @@ export default function HeroImersivoERN({
           onChange={(evento) => setTermo(evento.target.value)}
           placeholder={t.placeholder}
           autoComplete="off"
-          className="min-h-[52px] min-w-0 flex-1 rounded-xl bg-transparent px-4 text-base text-[#F0F0E8] placeholder:text-[#B8C9BF] focus-visible:outline-none"
+          maxLength={300}
+          enterKeyHint="search"
+          className="min-h-[52px] min-w-0 flex-1 rounded-xl bg-transparent px-3 text-base text-[#F0F0E8] placeholder:text-[#B8C9BF] focus-visible:outline-none"
         />
         <button
           type="submit"
@@ -187,6 +202,11 @@ export default function HeroImersivoERN({
           <span className="hidden sm:inline">{t.buscar}</span>
         </button>
       </form>
+
+      <p className="ern-revela mt-3 flex items-center justify-center gap-2 text-xs tracking-[0.04em] text-[#C9D5CE] [animation-delay:1180ms]">
+        <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#3FBF7F] shadow-[0_0_0_3px_rgb(63_191_127/22%)]" />
+        {t.dica}
+      </p>
 
       <div className="ern-revela mt-5 flex flex-wrap items-center justify-center gap-2 text-sm text-[#D6DFD9] [animation-delay:1250ms]">
         <span>{t.sugestoes}</span>

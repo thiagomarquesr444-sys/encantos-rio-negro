@@ -117,8 +117,8 @@ const premium = {
     redeTexto: 'Fotos, vídeos e relatos de operadores, guias e visitantes sobre este destino.',
     redeBotao: 'Ver na Rede',
     opsTitulo: 'Fale com quem opera',
-    opsTexto: 'Operadores verificados da Rede EDA e o Concierge ajudam a montar sua viagem.',
-    opsConcierge: 'Planejar com o Concierge', opsRede: 'Ver operadores na Rede',
+    opsTexto: 'Operadores verificados da Rede EDA e a Iara ajudam a montar sua viagem.',
+    opsConcierge: 'Planejar com a Iara', opsRede: 'Ver operadores na Rede',
     fatosNota: 'Orientações gerais. Confirme voos, barcos e o nível do rio antes de viajar.',
     verTodos: 'Ver todos', ativo: 'Selecionado no mapa',
     cidadesTitulo: 'Todas as cidades do Amazonas', cidadesEncontradas: 'Cidades',
@@ -136,8 +136,8 @@ const premium = {
     redeTexto: 'Photos, videos and accounts from operators, guides and visitors about this destination.',
     redeBotao: 'See on the Network',
     opsTitulo: 'Talk to local operators',
-    opsTexto: 'Verified EDA Network operators and the Concierge help you plan your trip.',
-    opsConcierge: 'Plan with the Concierge', opsRede: 'See operators on the Network',
+    opsTexto: 'Verified EDA Network operators and Iara help you plan your trip.',
+    opsConcierge: 'Plan with Iara', opsRede: 'See operators on the Network',
     fatosNota: 'General guidance. Confirm flights, boats and river levels before travelling.',
     verTodos: 'See all', ativo: 'Selected on the map',
     cidadesTitulo: 'All cities in Amazonas', cidadesEncontradas: 'Cities',
@@ -155,8 +155,8 @@ const premium = {
     redeTexto: 'Fotos, videos y relatos de operadores, guías y visitantes sobre este destino.',
     redeBotao: 'Ver en la Red',
     opsTitulo: 'Habla con quien opera',
-    opsTexto: 'Operadores verificados de la Red EDA y el Concierge te ayudan a armar tu viaje.',
-    opsConcierge: 'Planear con el Concierge', opsRede: 'Ver operadores en la Red',
+    opsTexto: 'Operadores verificados de la Red EDA e Iara te ayudan a armar tu viaje.',
+    opsConcierge: 'Planear con Iara', opsRede: 'Ver operadores en la Red',
     fatosNota: 'Orientaciones generales. Confirma vuelos, barcos y el nivel del río antes de viajar.',
     verTodos: 'Ver todos', ativo: 'Seleccionado en el mapa',
     cidadesTitulo: 'Todas las ciudades de Amazonas', cidadesEncontradas: 'Ciudades',
@@ -1040,7 +1040,7 @@ export default function ExploradorDestinosERN() {
             </>}
             </div>
             <section className="ern-v-ops" aria-labelledby="ern-v-ops-titulo">
-              <p className="ern-v-kicker">EDA CONCIERGE</p>
+              <p className="ern-v-kicker">IARA</p>
               <h3 id="ern-v-ops-titulo">{p.opsTitulo}</h3>
               <p>{p.opsTexto}</p>
               <Link className="ern-v-ouro-botao" href="/#concierge">✦ {p.opsConcierge}</Link>
@@ -1054,6 +1054,6 @@ export default function ExploradorDestinosERN() {
     </section>
     <section id="ern-v-galeria" className="ern-v-gallery" aria-labelledby="ern-v-gallery-title"><p className="ern-v-kicker">{t.discovery.title}</p><h2 id="ern-v-gallery-title">{interest === 'fishing' ? fishing.filter : u.galleryTitle}</h2><p className="ern-v-section-intro">{u.galleryIntro}</p><div className="ern-v-gallery-grid">{filtered.length ? filtered.map(scene => sceneCard(scene, false)) : <div className="ern-v-empty"><p>{u.noResults}</p><button type="button" className="ern-v-button" onClick={overview}>{u.clear}</button></div>}</div></section>
     <section className="ern-v-waters" aria-labelledby="ern-v-waters-title"><div className="ern-v-waters-image"><SceneImage src="/images/regiao/viagembarco.png.jpeg" alt={`${t.waters.eyebrow} · ${u.context}`} /><span className="ern-v-photo-tag">{u.context}</span></div><div className="ern-v-waters-copy"><p className="ern-v-kicker">{t.waters.eyebrow}</p><h2 id="ern-v-waters-title">{t.waters.title}</h2><p>{t.waters.description}</p><div><h3>{t.waters.highLabel}</h3><p>{t.waters.highDescription}</p><h3>{t.waters.lowLabel}</h3><p>{t.waters.lowDescription}</p></div><p className="ern-v-detail-note">{u.waterNote}</p></div></section>
-    <section className="ern-v-plan"><p className="ern-v-kicker">EDA CONCIERGE</p><h2>{t.planning.title}</h2><p>{t.planning.description}</p><Link className="ern-v-button" href="/#concierge">{u.plan} ↗</Link><Link className="ern-v-network-link" href="/rede">{u.network} ↗</Link></section>
+    <section className="ern-v-plan"><p className="ern-v-kicker">IARA</p><h2>{t.planning.title}</h2><p>{t.planning.description}</p><Link className="ern-v-button" href="/#concierge">{u.plan} ↗</Link><Link className="ern-v-network-link" href="/rede">{u.network} ↗</Link></section>
   </div>;
 }
