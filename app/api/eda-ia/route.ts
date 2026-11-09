@@ -519,6 +519,8 @@ ${REGRA_SUGESTOES}
 === VERDADE E PRIVACIDADE ===
 - Passeios, preços, vagas e O QUE ESTÁ INCLUSO: SOMENTE do CATÁLOGO e dos AGENTES. Nunca invente inclusos (refeições, pernoite, barco, equipamento), pacotes ou serviços de uma operadora. Se "inclui" estiver "não informado", diga que a operadora detalha. A operadora confirma valor final e disponibilidade.
 - "Pesque e solte" só quando o assunto for pesca esportiva.
+- Segurança e saúde: nunca dê garantias absolutas ("totalmente seguro"); fale dos cuidados reais (colete, guias locais, ficha de saúde) e que a operadora orienta.
+- Não pressione: nada de "garanta logo"; informe as vagas reais e deixe o visitante decidir.
 - Sempre termine a frase e a resposta por completo antes dos marcadores.
 - Fatos do território: use o CONHECIMENTO; se não souber, diga que a operadora local confirma.
 - Pesca esportiva no Rio Negro é pesque e solte.
@@ -618,6 +620,7 @@ TAREFA ESPECIAL: escreva a RECEPÇÃO de quem acabou de abrir o painel. Devolva 
     let fichaPublica: FichaIara = {};
     let passeioFoco: string | null = null;
     let jaCumprimentou = false;
+    let intencaoReserva = false;
     if (modo === 'operadora') {
       const op = await autenticarOperadora(req, url, anon);
       if (!(await consumir(admin, identificar(servico, `u:${op.usuarioId}`), numeroEnv('EDA_IA_LIMITE_USUARIO_DIA', 60)))) {
@@ -707,6 +710,7 @@ TAREFA ESPECIAL: escreva a RECEPÇÃO de quem acabou de abrir o painel. Devolva 
         if (regra?.publicado_portal && adultos) blocos.push(`AGENTE DE PROPOSTA:\n${calcularProposta(regra as unknown as PasseioRegra, adultos, criancas)}`);
         else blocos.push('AGENTE DE PROPOSTA: pergunte quantos adultos e crianças (e idades das crianças) para calcular.');
       }
+      intencaoReserva = int.reserva || (fichaPublica.etapa === 'proposta' && /\b(sim|quero|bora|fechado|pode|vamos|yes|si|s[íi])\b/i.test(ultimaPergunta));
       if (int.reserva) blocos.push(`AGENTE DE RESERVAS: o visitante quer avançar. Ofereça levar o pedido à operadora e inclua o marcador [[PEDIDO:${alvo?.slug ?? ''}|adultos|criancas|periodo]] com o que já souber.`);
       jaCumprimentou = mensagens.some(m => m.papel === 'eda');
       sistema = sistemaPublico({ idioma, periodo, estilo, jaCumprimentou, ficha: fichaPublica, paginaAtual, catalogo: catalogoTexto, operadoras: operadoras.texto, conhecimento, agentes: blocos.join('\n') });
@@ -732,7 +736,8 @@ TAREFA ESPECIAL: escreva a RECEPÇÃO de quem acabou de abrir o painel. Devolva 
     const comSugestoes = extrairSugestoes(mascararDados(bruto));
     const { limpo: semIr, links: linksIr } = extrairLinks(comSugestoes.limpo, destinos);
     const linksPub: Destino[] = [];
-    const limpo = semIr.replace(/\[\[\s*LINK\s*:\s*([A-Z0-9_]{2,30})\s*\]\]/gi, (_, c: string) => {
+    const limpo = semIr.replace(/\[\[\s*(?:LINK\s*:\s*)?([A-Z0-9_]{2,30})\s*\]\]/g, (inteiro: string, c: string) => {
+      if (c.toUpperCase() === 'PEDIDO') return inteiro;
       const d = destinos[c.toUpperCase()];
       if (d && linksPub.length < 3 && !linksPub.some(l => l.href === d.href)) linksPub.push(d);
       return '';
@@ -740,13 +745,13 @@ TAREFA ESPECIAL: escreva a RECEPÇÃO de quem acabou de abrir o painel. Devolva 
     const links = [...linksIr, ...linksPub].slice(0, 3);
     let pedido: { passeio_slug: string | null; passeio_nome: string | null; adultos: number | null; criancas: number | null; periodo: string | null } | null = null;
     const final = (limpo || comSugestoes.limpo).replace(/\[\[\s*PEDIDO\s*:?([^\]]*)\]\]/gi, (_, corpo: string) => {
-      if (modo !== 'publico' || pedido) return '';
+      if (modo !== 'publico' || pedido || !intencaoReserva) return '';
       const [slug, a, c, per] = String(corpo ?? '').split('|').map(x => x.trim());
       const item = slug ? catalogoLista.find(x => x.slug === slug) : undefined;
       const n = (v?: string, min = 0) => { const k = Number(v); return Number.isInteger(k) && k >= min && k <= 99 ? k : null; };
       pedido = { passeio_slug: item?.slug ?? null, passeio_nome: item?.nome ?? null, adultos: n(a, 1), criancas: n(c), periodo: per ? mascararDados(per).slice(0, 40) : null };
       return '';
-    }).replace(/\n{3,}/g, '\n\n').trim();
+    }).replace(/\[\[[^\]]*\]\]/g, '').replace(/[ \t]{2,}/g, ' ').replace(/\n{3,}/g, '\n\n').trim();
     // Métricas do funil (sem dados pessoais): etapa alcançada nesta visita.
     if (modo === 'publico') {
       const f = (fichaNova ?? fichaPublica) as FichaIara;
