@@ -135,3 +135,11 @@
 @keyframes cv-eda-pisca { 0%, 100% { opacity: 1; } 50% { opacity: .3; } }
 .cv-eda-erro { margin: 0; padding: 6px 14px 0; font-size: 12px; color: #e08a72; }
 @media (prefers-reduced-motion: reduce) { .cv-eda-onda i, .cv-eda-rec { animation: none; } }
+
+/* EDA_TEMA_CLARO_V2: peças que tinham cor fixa de tema escuro. */
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda-painel { box-shadow: 0 24px 60px rgb(60 40 10 / 18%); }
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda-form textarea { background: #fff; }
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda-x:hover { background: rgb(20 39 30 / 6%); }
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda-cancelar.cv-eda-cancelar { color: #a33a2a; }
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda-erro { color: #a33a2a; }
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda-cancelar.cv-eda-cancelar:hover { background: rgb(163 58 42 / 10%); }

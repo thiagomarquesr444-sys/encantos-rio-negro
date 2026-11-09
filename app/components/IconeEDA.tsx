@@ -6,7 +6,7 @@ import { useId } from 'react';
 export default function IconeEDA({ tamanho = '100%' }: { tamanho?: number | string }) {
   const id = useId().replace(/:/g, '');
   return (
-    <svg width={tamanho} height={tamanho} viewBox="0 0 48 48" aria-hidden="true" focusable="false" style={{ display: 'block' }}>
+    <svg className="eda-ic" width={tamanho} height={tamanho} viewBox="0 0 48 48" aria-hidden="true" focusable="false" style={{ display: 'block' }}>
       <defs>
         <radialGradient id={`f${id}`} cx="35%" cy="28%" r="80%">
           <stop offset="0%" stopColor="#1f5a47" />
