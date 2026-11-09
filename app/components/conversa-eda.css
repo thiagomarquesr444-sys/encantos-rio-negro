@@ -152,3 +152,24 @@
 /* O botão acompanha o emblema branco (sem anel escuro em volta). */
 .ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda-botao { background: #ffffff; border-color: #c98a2e; }
 .ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda-botao::after { border-color: #c98a2e; }
+
+/* EDA_AVISOS_V1 / EDA_ACOES_V1 */
+.cv-eda-badge { position: absolute; top: -4px; right: -4px; min-width: 20px; height: 20px; padding: 0 5px; border-radius: 999px; display: grid; place-items: center; font-size: 11px; font-weight: 700; color: #fff; background: #d64545; border: 2px solid var(--cv-fundo); z-index: 1; }
+.cv-eda-avisos { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; max-width: 92%; }
+.cv-eda-avisos li { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; border-radius: 12px; background: var(--cv-elev); border-left: 3px solid var(--cv-ouro); font-size: 13px; line-height: 1.45; }
+.cv-eda-avisos li[data-gravidade="atencao"] { border-left-color: #e0a040; }
+.cv-eda-avisos li[data-gravidade="urgente"] { border-left-color: #d64545; }
+.cv-eda-avisos li span { color: var(--cv-sec); }
+.cv-eda-aviso-acoes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 2px; }
+.cv-eda-aviso-acoes a, .cv-eda-aviso-acoes button { padding: 5px 10px; border-radius: 999px; font: inherit; font-size: 12px; font-weight: 600; color: var(--cv-ouro); background: transparent; border: 1px solid var(--cv-borda); text-decoration: none; cursor: pointer; }
+.cv-eda-aviso-acoes a:hover, .cv-eda-aviso-acoes button:hover { border-color: var(--cv-ouro); }
+.cv-eda-acoes { display: flex; flex-direction: column; gap: 8px; max-width: 92%; }
+.cv-eda-acao { padding: 10px 12px; border-radius: 12px; border: 1px dashed var(--cv-ouro); background: var(--cv-usuario); font-size: 13px; }
+.cv-eda-acao p { margin: 0 0 8px; line-height: 1.45; }
+.cv-eda-acao div { display: flex; gap: 6px; }
+.cv-eda-acao button { padding: 6px 14px; border-radius: 999px; font: inherit; font-size: 12.5px; font-weight: 700; border: 0; color: #1a1205; background: var(--cv-ouro); cursor: pointer; }
+.cv-eda-acao .cv-eda-acao-nao { color: var(--cv-sec); background: transparent; border: 1px solid var(--cv-borda); font-weight: 600; }
+.cv-eda-acao button:disabled { opacity: .6; cursor: default; }
+.cv-eda-acao small { font-weight: 600; color: var(--cv-sec); }
+.cv-eda-acao[data-estado="feito"] { border-style: solid; }
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda-acao button:not(.cv-eda-acao-nao) { color: #fff; }

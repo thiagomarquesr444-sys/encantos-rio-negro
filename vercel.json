@@ -3,6 +3,10 @@
     {
       "path": "/api/cron/assinaturas/processar-cancelamentos",
       "schedule": "15 4 * * *"
+    },
+    {
+      "path": "/api/cron/eda-diario",
+      "schedule": "0 10 * * *"
     }
   ]
 }
