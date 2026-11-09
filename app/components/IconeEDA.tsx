@@ -1,6 +1,6 @@
 // EDA_ICONE_V1: emblema da EDA (assistente da gestão), irmão do emblema da Iara.
 // Mesmo círculo verde-floresta com aro dourado; no centro, o "E" dos rios
-// (três traços em onda), ligado à identidade Encantos da Amazônia.
+// três ondas douradas (os rios), ligadas à identidade Encantos da Amazônia.
 import { useId } from 'react';
 
 export default function IconeEDA({ tamanho = '100%' }: { tamanho?: number | string }) {
@@ -20,8 +20,6 @@ export default function IconeEDA({ tamanho = '100%' }: { tamanho?: number | stri
       </defs>
       <circle cx="24" cy="24" r="23" fill={`url(#f${id})`} />
       <circle cx="24" cy="24" r="21.6" fill="none" stroke={`url(#o${id})`} strokeWidth="1.1" opacity=".9" />
-      {/* haste do E */}
-      <path d="M16 13.5v21" fill="none" stroke={`url(#o${id})`} strokeWidth="2.6" strokeLinecap="round" />
       {/* três braços em onda (os rios) */}
       <path d="M16 14.5c2.6-1.6 5.2-1.6 7.8 0s5.2 1.6 7.8 0" fill="none" stroke={`url(#o${id})`} strokeWidth="2.2" strokeLinecap="round" />
       <path d="M16 24c2.2-1.4 4.4-1.4 6.6 0s4.4 1.4 6.6 0" fill="none" stroke={`url(#o${id})`} strokeWidth="2.2" strokeLinecap="round" />
