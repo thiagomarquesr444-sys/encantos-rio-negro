@@ -24,6 +24,7 @@ import { falhasIA, responderComIA, horaManaus, hojeManaus, periodoDoDia, type Me
 // - cota diária por usuário/IP e cota global (protege a camada grátis).
 
 export const runtime = 'nodejs';
+export const maxDuration = 60;
 
 const LIMITE_BYTES = 24 * 1024;
 const PAGINAS = new Set(['painel', 'passeios', 'reservas', 'demandas', 'financeiro', 'clientes', 'hospedagens', 'configuracoes', 'embarcacoes', 'guias', 'parceiros', 'relatorios', 'vouchers', 'documentos', 'fiscal', 'planos']);
