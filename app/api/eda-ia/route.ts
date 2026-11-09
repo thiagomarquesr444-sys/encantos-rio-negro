@@ -712,7 +712,7 @@ TAREFA ESPECIAL: escreva a RECEPÇÃO de quem acabou de abrir o painel. Devolva 
 
     if (modo === 'operadora') sistema += blocoEstilo(modo, estilo);
     const inicioIA = Date.now();
-    const texto = await responderComIA(sistema, mensagens.slice(-12), modo === 'publico' ? (process.env.EDA_IA_ORDEM_IARA?.trim() || 'gemini,groq') : undefined);
+    const texto = await responderComIA(sistema, mensagens.slice(-12), modo === 'publico' ? (process.env.EDA_IA_ORDEM_IARA?.trim() || 'groq,gemini') : undefined);
     if (!texto) return resposta(503, { ok: false, erro: 'Não consegui responder agora. Tente de novo em instantes.', diagnostico: falhasIA.map(f => f.split(':')[0]) });
     // Ficha da conversa (memória da Iara), devolvida ao navegador.
     let fichaNova: FichaIara | null = null;

@@ -95,13 +95,13 @@ async function chamarGemini(sistema: string, mensagens: MensagemIA[]): Promise<s
   for (const modelo of lista.slice(0, 3)) {
     if (!/^[a-z0-9.\-]+$/i.test(modelo)) continue;
     // Raciocínio desligado/baixo: respostas rápidas para conversa.
-    const pensamento = /2\.5/.test(modelo) ? { thinkingBudget: 0 } : /^gemini-[3-9]/.test(modelo) ? { thinkingLevel: 'low' } : null;
+    const pensamento = /2\.5/.test(modelo) ? { thinkingBudget: 0 } : /^gemini-[3-9]/.test(modelo) ? { thinkingLevel: 'minimal' } : null;
     for (const comPensamento of pensamento ? [true, false] : [false]) {
       let r: Response;
       try {
         r = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${modelo}:generateContent`, {
           method: 'POST',
-          signal: AbortSignal.timeout(25_000),
+          signal: AbortSignal.timeout(18_000),
           headers: { 'Content-Type': 'application/json', 'x-goog-api-key': chave },
           body: JSON.stringify({
             systemInstruction: { parts: [{ text: sistema }] },
