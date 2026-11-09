@@ -143,3 +143,9 @@
 .ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda-cancelar.cv-eda-cancelar { color: #a33a2a; }
 .ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda-erro { color: #a33a2a; }
 .ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda-cancelar.cv-eda-cancelar:hover { background: rgb(163 58 42 / 10%); }
+
+/* EDA_ICONE_CLARO_V3: no tema claro o emblema fica branco com as três ondas douradas. */
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda .eda-ic > circle:first-of-type { fill: #ffffff; }
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda .eda-ic > circle:nth-of-type(2) { stroke: #c98a2e; }
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda .eda-ic > path { stroke: #c98a2e; }
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda .eda-ic > circle:last-of-type { fill: #c98a2e; }
