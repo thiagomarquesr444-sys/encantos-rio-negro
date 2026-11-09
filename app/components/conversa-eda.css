@@ -149,3 +149,6 @@
 .ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda .eda-ic > circle:nth-of-type(2) { stroke: #c98a2e; }
 .ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda .eda-ic > path { stroke: #c98a2e; }
 .ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda .eda-ic > circle:last-of-type { fill: #c98a2e; }
+/* O botão acompanha o emblema branco (sem anel escuro em volta). */
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda-botao { background: #ffffff; border-color: #c98a2e; }
+.ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda-botao::after { border-color: #c98a2e; }
