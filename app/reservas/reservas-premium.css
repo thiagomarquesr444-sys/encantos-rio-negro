@@ -323,3 +323,8 @@
     width: 100%;
   }
 }
+/* EDA_RESERVA_VINCULOS_V1 */
+.eda-res-vinculos { display: flex; flex-direction: column; gap: 2px; margin-top: 4px; font-size: 12px; color: var(--p-sec, var(--ern-secundario)); }
+.eda-res-vinculos a { color: var(--p-ouro, var(--ern-destaque)); text-decoration: underline; text-underline-offset: 2px; }
+.eda-res-vinculos i { font-style: normal; }
+.eda-res-sem-demanda { opacity: .8; }

@@ -74,6 +74,24 @@ const CONSULTA_INICIAL: Consulta = {
   pagina: 0,
 };
 
+// EDA_DEMANDA_PASSEIO_V2: cada demanda mostra o passeio que prepara e como está a saúde do grupo.
+type VinculoDemandaEDA = { passeio: string | null; data_inicio: string | null; data_fim: string | null; horario: string | null; saude: 'sem_saida' | 'preparada' | 'pendente' | 'ok'; alertas: number };
+
+function PasseioDaDemanda({ v }: { v?: VinculoDemandaEDA }) {
+  if (!v) return null;
+  if (v.saude === 'sem_saida') return <span className="eda-dem-passeio"><PillEDA tom="er">Sem passeio vinculado</PillEDA></span>;
+  const dia = (d: string | null) => (d ? d.split('-').reverse().slice(0, 2).join('/') : '');
+  const periodo = v.data_inicio ? `${dia(v.data_inicio)}${v.data_fim && v.data_fim !== v.data_inicio ? ` a ${dia(v.data_fim)}` : ''}` : '';
+  return (
+    <span className="eda-dem-passeio">
+      <b>{v.passeio ?? 'Passeio'}</b>
+      <small>{periodo}{v.horario ? ` · ${v.horario.slice(0, 5)}` : ''}</small>
+      {v.saude === 'preparada' && <PillEDA tom="ok">Saúde preparada</PillEDA>}
+      {v.saude === 'pendente' && <PillEDA tom="at">{v.alertas} alerta(s) de saúde para preparar</PillEDA>}
+    </span>
+  );
+}
+
 const TOM_STATUS: Record<StatusDemanda, TomEDA> = {
   rascunho: 'nt',
   aberta: 'at',
@@ -200,9 +218,6 @@ function DescricaoDemanda({ texto }: { texto: string | null }) {
   );
 }
 
-function previaDescricao(texto: string | null): string {
-  return (texto ?? '').replace(/\s+/g, ' ').trim();
-}
 
 function hojeISO(): string {
   const d = new Date();
@@ -575,6 +590,20 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
 
   // ERN_PADRAO_PAGINAS_EDA_V1: demanda aberta no painel lateral.
   const [aberta, setAberta] = useState<Demanda | null>(null);
+  const [vinculos, setVinculos] = useState<Record<string, VinculoDemandaEDA>>({});
+  useEffect(() => {
+    if (estado.tipo !== 'pronto') return;
+    const ids = estado.resultado.registros.map((d) => d.id);
+    if (!ids.length) return;
+    let ativo = true;
+    void supabase.rpc('vinculos_demandas_eda', { p_ids: ids }).then(({ data }) => {
+      if (!ativo || !Array.isArray(data)) return;
+      const mapa: Record<string, VinculoDemandaEDA> = {};
+      for (const v of data as (VinculoDemandaEDA & { demanda_id: string })[]) mapa[v.demanda_id] = v;
+      setVinculos(mapa);
+    });
+    return () => { ativo = false; };
+  }, [estado]);
 
   const opcoesStatus: { valor: StatusDemanda | ''; rotulo: string }[] = [
     { valor: '', rotulo: 'Todas' },
@@ -728,7 +757,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
                         </span>
                         <PillEDA tom={TOM_STATUS[demanda.status]}>{STATUS_DEMANDA[demanda.status]}</PillEDA>
                       </span>
-                      {previaDescricao(demanda.descricao) && <span className="eda-dem-previa">{previaDescricao(demanda.descricao)}</span>}
+                      <PasseioDaDemanda v={vinculos[demanda.id]} />
                       <span className="eda-pg-cartao-info">
                         <span>{formatadorQuantidade.format(demanda.quantidade)} {demanda.unidade}</span>
                         <span>{demanda.data_inicio && demanda.data_fim ? `${formatarData(demanda.data_inicio)} a ${formatarData(demanda.data_fim)}` : 'Período não informado'}</span>
@@ -756,7 +785,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
                               <span className="eda-dem-item-txt">
                                 <b>{demanda.titulo}</b>
                                 <span className="eda-dem-local"><IconeLocal />{demanda.localidade}</span>
-                                {previaDescricao(demanda.descricao) && <span className="eda-dem-previa">{previaDescricao(demanda.descricao)}</span>}
+                                <PasseioDaDemanda v={vinculos[demanda.id]} />
                               </span>
                             </button>
                           </td>
@@ -846,6 +875,11 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
               <small>Quantidade prevista</small>
               <strong>{formatadorQuantidade.format(aberta.quantidade)}<em>{aberta.unidade}</em></strong>
               {detalheAberta && <p className="eda-dem-calculo">{detalheAberta}</p>}
+            </div>
+
+            <div className="eda-pg-bloco">
+              <p className="eda-pg-bloco-titulo">Passeio que esta demanda prepara</p>
+              <PasseioDaDemanda v={vinculos[aberta.id]} />
             </div>
 
             <div className="eda-pg-bloco">

@@ -245,6 +245,10 @@ export default function EditarDemandaPage() {
 
   // EDA_DEMANDA_SAIDA_V1: itens sugeridos pela saída vinculada.
   const [sugestaoSaida, setSugestaoSaida] = useState<{ chave: string; itens: ItemDemanda[] } | null>(null);
+  // EDA_DEMANDA_PASSEIO_V2: datas e horário vêm do passeio vinculado.
+  const [passeioVinculado, setPasseioVinculado] = useState<{ passeio: string; horario: string | null } | null>(null);
+  const [avisoVinculo, setAvisoVinculo] = useState(false);
+  useEffect(() => { try { setAvisoVinculo(new URLSearchParams(window.location.search).get('vinculo') === 'falhou'); } catch {} }, []);
   const [estado, setEstado] =
     useState<Estado>({
       tipo: 'carregando',
@@ -981,9 +985,19 @@ export default function EditarDemandaPage() {
         </CartaoMagneticoEDA>
 
         <div style={{ marginTop: 16 }}>
+          {avisoVinculo && !passeioVinculado && (
+            <p role="alert" className="mb-3 rounded-xl border border-[var(--ern-borda)] p-3 text-sm">
+              A demanda foi criada, mas o passeio não foi vinculado. Escolha o passeio abaixo para concluir.
+            </p>
+          )}
           <VinculoSaidaDemandaEDA
             demandaId={id}
             bloqueado={terminal || salvando || excluindo}
+            onSaida={(saida, nec) => {
+              setPasseioVinculado(saida ? { passeio: saida.passeio, horario: saida.horario } : null);
+              if (!saida || !nec || terminal) return;
+              setFormulario((a) => (a ? { ...a, data_inicio: nec.data_inicio, data_fim: nec.data_fim } : a));
+            }}
             onAcrescentar={(itens) => setSugestaoSaida({ chave: crypto.randomUUID(), itens })}
           />
         </div>
@@ -1149,6 +1163,11 @@ export default function EditarDemandaPage() {
           >
             Período da operação
           </h2>
+          {passeioVinculado && (
+            <p className="mt-2 text-sm text-[var(--ern-secundario)]">
+              Vem de <b>{passeioVinculado.passeio}</b>{passeioVinculado.horario ? `, saída às ${passeioVinculado.horario.slice(0, 5)}` : ''}. Se o passeio mudar de data ou horário, a demanda acompanha sozinha.
+            </p>
+          )}
 
           <div className="mt-6 grid gap-5 sm:grid-cols-2">
             <div>
@@ -1163,6 +1182,7 @@ export default function EditarDemandaPage() {
                 id="data-inicio"
                 type="date"
                 disabled={terminal}
+                readOnly={!!passeioVinculado}
                 value={
                   formularioAtual.data_inicio
                 }
@@ -1188,6 +1208,7 @@ export default function EditarDemandaPage() {
                 id="data-fim"
                 type="date"
                 disabled={terminal}
+                readOnly={!!passeioVinculado}
                 value={
                   formularioAtual.data_fim
                 }
@@ -1843,4 +1864,4 @@ export default function EditarDemandaPage() {
       </form>
     </main>
   );
-}
+}

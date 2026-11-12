@@ -6,6 +6,7 @@ export const CATEGORIAS_ITEM = {
   limpeza: 'Limpeza e higiene',
   combustivel: 'Combustível',
   equipamentos: 'Equipamentos e materiais',
+  saude: 'Saúde e segurança',
   outros: 'Outros',
 } as const;
 
@@ -238,4 +239,4 @@ export async function salvarItensDemanda(
   }
 
   return data;
-}
+}

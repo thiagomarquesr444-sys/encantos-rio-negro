@@ -18,6 +18,7 @@ const cores: Record<CategoriaItem, string> = {
   limpeza: '#B39AF4',
   combustivel: '#F1B44C',
   equipamentos: '#ED8E83',
+  saude: '#EF4444',
   outros: '#9BB6A6',
 };
 
@@ -177,4 +178,4 @@ export default function GraficoMateriaisDemanda({ itens, previa }: Props) {
       </div>
     </section>
   );
-}
+}

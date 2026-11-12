@@ -182,6 +182,7 @@ export default function NovaDemandaPage() {
   const [itensMateriais, setItensMateriais] = useState<ItemDemanda[]>([]);
   // EDA_DEMANDA_SAIDA_V1
   const [saidaVinculada, setSaidaVinculada] = useState('');
+  const [horarioSaida, setHorarioSaida] = useState<string | null>(null);
   const [sugestao, setSugestao] = useState<{ chave: string; itens: ItemDemanda[] } | null>(null);
 
   const [
@@ -583,6 +584,12 @@ export default function NovaDemandaPage() {
       return;
     }
 
+    // EDA_DEMANDA_PASSEIO_V2: toda demanda nasce de um passeio (saída programada).
+    if (!saidaVinculada) {
+      setErroFormulario('Escolha o passeio e a data que esta demanda vai preparar.');
+      return;
+    }
+
     setSalvando(true);
     setErroFormulario(null);
 
@@ -594,12 +601,14 @@ export default function NovaDemandaPage() {
         itensMateriais,
       );
 
-      if (saidaVinculada) {
-        // A demanda já existe; se o vínculo falhar, ele pode ser refeito na edição.
-        await supabase.rpc('vincular_demanda_saida_eda', {
-          p_demanda_id: demandaCriada.id,
-          p_saida_id: saidaVinculada,
-        });
+      // A demanda já existe; se o vínculo falhar, a edição abre com o aviso para refazer.
+      const { error: erroVinculo } = await supabase.rpc('vincular_demanda_saida_eda', {
+        p_demanda_id: demandaCriada.id,
+        p_saida_id: saidaVinculada,
+      });
+      if (erroVinculo) {
+        router.push(`/demandas/editar/${encodeURIComponent(demandaCriada.id)}?vinculo=falhou`);
+        return;
       }
 
       router.push(
@@ -681,6 +690,7 @@ export default function NovaDemandaPage() {
               onAcrescentar={(itens) => setSugestao({ chave: crypto.randomUUID(), itens })}
               onSaida={(saida, nec) => {
                 setSaidaVinculada(saida?.saida_id ?? '');
+                setHorarioSaida(saida?.horario ?? null);
                 if (!saida || !nec) return;
                 setFormulario((a) => ({
                   ...a,
@@ -802,6 +812,11 @@ export default function NovaDemandaPage() {
               <h2 className="text-2xl">
                 Período da viagem
               </h2>
+              <p className="mt-2 text-sm text-[var(--ern-secundario)]">
+                {saidaVinculada
+                  ? `Vem do passeio vinculado${horarioSaida ? `, saída às ${horarioSaida.slice(0, 5)}` : ''}. Se o passeio mudar de data, a demanda acompanha.`
+                  : 'Escolha o passeio acima: as datas e o horário são preenchidos sozinhos.'}
+              </p>
 
               <div className="mt-6 grid gap-5 sm:grid-cols-2">
                 <div>
@@ -811,6 +826,8 @@ export default function NovaDemandaPage() {
 
                   <input
                     type="date"
+                    readOnly
+                    aria-readonly="true"
                     value={
                       formulario.data_inicio
                     }
@@ -834,6 +851,8 @@ export default function NovaDemandaPage() {
 
                   <input
                     type="date"
+                    readOnly
+                    aria-readonly="true"
                     value={
                       formulario.data_fim
                     }
@@ -1325,4 +1344,4 @@ export default function NovaDemandaPage() {
       </div>
     </main>
   );
-}
+}

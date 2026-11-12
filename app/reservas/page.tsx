@@ -252,6 +252,28 @@ function StatusBadge({ status }: { status: StatusReserva }) {
 
 type PagamentoReserva = { total: number; recebido: number; pendente: number; lancamentos: number };
 
+type VinculoReservaEDA = { passeio: string | null; saida_inicio: string | null; saida_horario: string | null; demanda_id: string | null; demanda_titulo: string | null; demanda_status: string | null };
+
+function VinculosDaReserva({ v, detalhado = false }: { v?: VinculoReservaEDA; detalhado?: boolean }) {
+  if (!v) return null;
+  const dia = (d: string | null) => (d ? d.split('-').reverse().slice(0, 2).join('/') : '');
+  return (
+    <span className="eda-res-vinculos">
+      <span>
+        <i aria-hidden="true">⛵</i> {v.passeio ?? 'Sem passeio'}
+        {v.saida_inicio ? ` · saída ${dia(v.saida_inicio)}${v.saida_horario ? ` ${v.saida_horario.slice(0, 5)}` : ''}` : ''}
+      </span>
+      {v.demanda_id ? (
+        detalhado
+          ? <Link href={`/demandas/editar/${v.demanda_id}`}><i aria-hidden="true">📦</i> Demanda: {v.demanda_titulo}</Link>
+          : <span><i aria-hidden="true">📦</i> Demanda: {v.demanda_titulo}</span>
+      ) : (
+        <span className="eda-res-sem-demanda"><i aria-hidden="true">📦</i> Sem demanda{v.saida_inicio ? ' para esta saída' : ''}</span>
+      )}
+    </span>
+  );
+}
+
 export default function ReservasPage() {
   return (
     <Suspense fallback={<p role="status" className="p-6">Carregando reservas…</p>}>
@@ -283,6 +305,23 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
     inicioOperacional <= fimOperacional;
 
   const [reservas, setReservas] = useState<Reserva[]>([]);
+  // EDA_RESERVA_VINCULOS_V1: passeio, saída e demanda de cada reserva, numa consulta só.
+  const [vinculos, setVinculos] = useState<Record<string, VinculoReservaEDA>>({});
+  useEffect(() => {
+    const ids = reservas.map((r) => String(r.id ?? '')).filter((id) => /^[0-9a-f-]{36}$/i.test(id));
+    if (!ids.length) return;
+    let ativo = true;
+    void (async () => {
+      const mapa: Record<string, VinculoReservaEDA> = {};
+      for (let i = 0; i < ids.length; i += 100) {
+        const { data } = await supabase.rpc('vinculos_reservas_eda', { p_ids: ids.slice(i, i + 100) });
+        if (!ativo || !Array.isArray(data)) return;
+        for (const v of data as (VinculoReservaEDA & { reserva_id: string })[]) mapa[v.reserva_id] = v;
+      }
+      if (ativo) setVinculos(mapa);
+    })();
+    return () => { ativo = false; };
+  }, [reservas]);
   const [referenciaPeriodoERN, setReferenciaPeriodoERN] = useState('');
 
   useEffect(() => {
@@ -816,6 +855,7 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
                       <span style={{ minWidth: 0 }}>
                         <b>{reserva.cliente}</b>
                         <small>{reserva.pacote}</small>
+                        <VinculosDaReserva v={vinculos[String(reserva.id)]} />
                       </span>
                       <strong className="eda-pg-num">{formatarMoeda(reserva.valor)}</strong>
                     </span>
@@ -854,6 +894,7 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
                           <button type="button" className="eda-pg-linha-bt" disabled={excluindo} onClick={() => abrirModal('detalhes', reserva)}>
                             <b>{reserva.cliente}</b>
                             <small>{reserva.pacote}</small>
+                            <VinculosDaReserva v={vinculos[String(reserva.id)]} />
                           </button>
                         </td>
                         <td style={{ whiteSpace: 'nowrap' }}>
@@ -948,6 +989,11 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
                 {pagamento && pagamento.pendente > 0 && <PillEDA tom="at">Pagamento pendente</PillEDA>}
                 {pagamento && pagamento.lancamentos > 0 && pagamento.pendente === 0 && <PillEDA tom="ok">Pago</PillEDA>}
                 {!selecionada.guiaInformado && <PillEDA tom="er">Sem guia</PillEDA>}
+              </div>
+
+              <div className="eda-pg-bloco" style={{ marginTop: 16 }}>
+                <p className="eda-pg-bloco-titulo">Passeio e demanda</p>
+                <VinculosDaReserva v={vinculos[String(selecionada.id)]} detalhado />
               </div>
 
               <div className="eda-pg-bloco" style={{ marginTop: 16 }}>

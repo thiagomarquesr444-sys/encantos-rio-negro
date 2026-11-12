@@ -30,7 +30,7 @@ export function itensDasNecessidades(n: NecessidadesEDA): ItemDemanda[] {
     itens.push({
       ...novoItemDemanda(),
       descricao: `Refeições ${ROTULO[codigo]?.toLowerCase() ?? codigo} — ${qtd} pessoa(s)`,
-      categoria: 'alimentacao',
+      categoria: 'saude',
       quantidade: String(qtd * n.dias * 3),
       unidade: 'unidade',
       observacoes: `${qtd} pessoa(s) × ${n.dias} dia(s) × 3 refeições. Separar no preparo e identificar.`,
@@ -40,7 +40,7 @@ export function itensDasNecessidades(n: NecessidadesEDA): ItemDemanda[] {
     itens.push({
       ...novoItemDemanda(),
       descricao: 'Conferência de cardápio — alergia alimentar',
-      categoria: 'outros',
+      categoria: 'saude',
       quantidade: '1',
       unidade: 'serviço',
       observacoes: `${n.alergia_alimentar} pessoa(s) com alergia alimentar${n.alergias_graves ? `, ${n.alergias_graves} grave(s)` : ''}. Ver detalhes no resumo de segurança da saída.`,
@@ -50,7 +50,7 @@ export function itensDasNecessidades(n: NecessidadesEDA): ItemDemanda[] {
     itens.push({
       ...novoItemDemanda(),
       descricao: 'Colete salva-vidas',
-      categoria: 'equipamentos',
+      categoria: n.nao_nadam > 0 ? 'saude' : 'equipamentos',
       quantidade: String(n.pessoas),
       unidade: 'unidade',
       observacoes: n.nao_nadam > 0
@@ -62,7 +62,7 @@ export function itensDasNecessidades(n: NecessidadesEDA): ItemDemanda[] {
     itens.push({
       ...novoItemDemanda(),
       descricao: 'Kit de primeiros socorros revisado',
-      categoria: 'equipamentos',
+      categoria: 'saude',
       quantidade: '1',
       unidade: 'kit',
       observacoes: 'Há participantes com alergia grave, condição de saúde ou medicação contínua. Confirmar com cada um se leva a própria medicação prescrita.',
@@ -91,24 +91,26 @@ export default function VinculoSaidaDemandaEDA({ demandaId, bloqueado, onSaida, 
       const { data, error } = await supabase.rpc('saidas_para_demanda_eda');
       if (!ativo) return;
       if (error) { if (mensagemFichaEDA(error).startsWith('Sua função')) setSemPermissao(true); else setErro(mensagemFichaEDA(error)); setSaidas([]); return; }
-      setSaidas((data ?? []) as SaidaDemandaEDA[]);
+      const lista = (data ?? []) as SaidaDemandaEDA[];
+      setSaidas(lista);
       if (demandaId) {
         const { data: d } = await supabase.from('demandas').select('saida_id').eq('id', demandaId).maybeSingle();
-        if (ativo && d?.saida_id) { setSaidaId(d.saida_id); void carregarNec(d.saida_id, false); }
+        if (ativo && d?.saida_id) { setSaidaId(d.saida_id); void carregarNec(d.saida_id, true, lista); }
+        else if (ativo) onSaida?.(null, null);
       }
     })();
     return () => { ativo = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [demandaId]);
 
-  async function carregarNec(id: string, avisar: boolean) {
+  async function carregarNec(id: string, avisar: boolean, lista = saidas) {
     setNec(null); setErro('');
     if (!id) { if (avisar) onSaida?.(null, null); return; }
     const { data, error } = await supabase.rpc('necessidades_saida_eda', { p_saida_id: id });
     if (error) { setErro(mensagemFichaEDA(error)); return; }
     const n = data as NecessidadesEDA;
     setNec(n);
-    if (avisar) onSaida?.(saidas?.find((s) => s.saida_id === id) ?? null, n);
+    if (avisar) onSaida?.(lista?.find((s) => s.saida_id === id) ?? null, n);
   }
 
   async function escolher(id: string) {
@@ -127,16 +129,16 @@ export default function VinculoSaidaDemandaEDA({ demandaId, bloqueado, onSaida, 
 
   return (
     <section className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7 vsd">
-      <p className="vsd-eb">Saída do passeio</p>
-      <h2 className="text-2xl">Para qual viagem é esta demanda?</h2>
-      <p className="vsd-txt">Vincule a uma saída para usar pessoas, dias e necessidades reais das fichas dos participantes.</p>
+      <p className="vsd-eb">Passeio vinculado</p>
+      <h2 className="text-2xl">Qual passeio esta demanda prepara?</h2>
+      <p className="vsd-txt">Datas e horário vêm do passeio e se atualizam sozinhos. O tempo para preparar a logística é o mesmo de preparar o cliente.</p>
 
       <select value={saidaId} disabled={bloqueado || saidas === null} onChange={(e) => escolher(e.target.value)}
         className="min-h-12 w-full rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-3 text-[var(--ern-texto)]">
-        <option value="">{saidas === null ? 'Carregando saídas…' : 'Sem vínculo com saída'}</option>
+        <option value="">{saidas === null ? 'Carregando passeios…' : saidas.length ? 'Escolha o passeio e a data' : 'Nenhuma saída programada — programe em Passeios'}</option>
         {saidas?.map((s) => (
           <option key={s.saida_id} value={s.saida_id}>
-            {s.passeio} · {dataCurtaEDA(s.data_inicio)}{s.data_fim && s.data_fim !== s.data_inicio ? ` – ${dataCurtaEDA(s.data_fim)}` : ''} · {s.pessoas} pessoa(s){s.status === 'fechada' ? ' · fechada' : ''}
+            {s.passeio} · {dataCurtaEDA(s.data_inicio)}{s.data_fim && s.data_fim !== s.data_inicio ? ` – ${dataCurtaEDA(s.data_fim)}` : ''}{s.horario ? ` · ${s.horario.slice(0, 5)}` : ''} · {s.pessoas} pessoa(s){s.status === 'fechada' ? ' · fechada' : ''}
           </option>
         ))}
       </select>

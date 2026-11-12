@@ -101,3 +101,8 @@
   .eda-dem-kpi { padding: 14px; }
   .eda-dem-descricao { font-size: 15px; }
 }
+
+/* EDA_DEMANDA_PASSEIO_V2 */
+.eda-dem-passeio { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: 6px; font-size: 13px; }
+.eda-dem-passeio b { font-weight: 700; }
+.eda-dem-passeio small { color: var(--p-sec, var(--ern-secundario)); }
