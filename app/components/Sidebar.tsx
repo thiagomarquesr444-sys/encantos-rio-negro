@@ -281,6 +281,7 @@ export default function Sidebar() {
     ? [
         ...REDE,
         { label: 'Comando EDA', href: '/comando', descricao: 'Perfil oficial e publicações editoriais da plataforma', icone: 'estrela' },
+        { label: 'Painel CEO', href: '/comando/planos', descricao: 'Planos, cobranças e testes grátis da plataforma', icone: 'estrela' },
       ]
     : REDE;
   const itensConta = CONTA;
