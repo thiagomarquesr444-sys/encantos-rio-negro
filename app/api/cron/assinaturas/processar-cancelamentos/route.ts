@@ -1925,6 +1925,101 @@ async function retomarEventosPagamentoERN(
   };
 }
 
+/*
+  ============================================================
+  EDA_CARENCIA_TESTES_V1
+  Carência de 5 dias: o plano segue ativo enquanto a cobrança
+  está vencida. Depois disso, o Asaas é consultado de novo:
+  se ainda houver cobrança vencida, a assinatura é encerrada
+  no Asaas e a empresa volta ao plano Grátis (dados mantidos).
+  Testes grátis vencidos também voltam ao Grátis.
+  ============================================================
+*/
+const CARENCIA_DIAS_EDA = 5;
+
+async function processarCarenciaETestesEDA(
+  admin: ReturnType<typeof criarAdminClient>
+) {
+  const resultado = {
+    encontrados: 0,
+    rebaixados: 0,
+    regularizados: 0,
+    testes_expirados: 0,
+    falhas: 0,
+  };
+
+  const { data: expirados, error: erroTestes } =
+    await admin.rpc('ern_expirar_testes_v1');
+  if (erroTestes) {
+    console.error('[EDA CRON CARÊNCIA] Falha ao expirar testes:', erroTestes.message);
+    resultado.falhas += 1;
+  } else {
+    resultado.testes_expirados = Number(expirados ?? 0);
+  }
+
+  const limite = new Date(
+    Date.now() - CARENCIA_DIAS_EDA * 24 * 60 * 60 * 1000
+  ).toISOString();
+
+  const { data: vencidas, error } = await admin
+    .from('assinaturas_empresas')
+    .select('id, provedor_assinatura_id')
+    .not('inadimplente_desde', 'is', null)
+    .lte('inadimplente_desde', limite)
+    .limit(50);
+
+  if (error) {
+    console.error('[EDA CRON CARÊNCIA] Falha ao listar carências:', error.message);
+    resultado.falhas += 1;
+    return resultado;
+  }
+
+  for (const item of vencidas ?? []) {
+    resultado.encontrados += 1;
+    try {
+      if (!item.provedor_assinatura_id) {
+        await admin.rpc('ern_limpar_inadimplencia_v1', { p_assinatura_id: item.id });
+        resultado.regularizados += 1;
+        continue;
+      }
+
+      // Confere no Asaas antes de rebaixar (o pagamento pode ter chegado sem webhook).
+      const consulta = await listarCobrancasAssinaturaAsaas(item.provedor_assinatura_id);
+      const aindaVencida = consulta.cobrancas.some(
+        (c) => String(c.status ?? '').toUpperCase() === 'OVERDUE'
+      );
+
+      if (!consulta.encontrada || !aindaVencida) {
+        const { error: erroLimpar } = await admin.rpc('ern_limpar_inadimplencia_v1', {
+          p_assinatura_id: item.id,
+        });
+        if (erroLimpar) throw new Error(erroLimpar.message);
+        resultado.regularizados += 1;
+        continue;
+      }
+
+      await removerAssinaturaAsaas(item.provedor_assinatura_id);
+
+      const { data: rebaixa, error: erroRebaixa } = await admin.rpc(
+        'ern_rebaixar_inadimplente_v1',
+        {
+          p_assinatura_id: item.id,
+          p_provedor_assinatura_id: item.provedor_assinatura_id,
+        }
+      );
+      if (erroRebaixa || rebaixa?.ok !== true) {
+        throw new Error(erroRebaixa?.message ?? String(rebaixa?.codigo ?? 'ERN_REBAIXA_RECUSADA'));
+      }
+      resultado.rebaixados += 1;
+    } catch (falha) {
+      console.error('[EDA CRON CARÊNCIA] Falha na assinatura', item.id, falha);
+      resultado.falhas += 1;
+    }
+  }
+
+  return resultado;
+}
+
 async function processar(
   request: NextRequest
 ) {
@@ -1984,6 +2079,8 @@ async function processar(
         agora
       );
 
+    const carenciaEDA = await processarCarenciaETestesEDA(admin);
+
     /*
       ========================================================
       4. RESULTADO GERAL
@@ -1991,9 +2088,9 @@ async function processar(
     */
 
     const totalFalhas =
-      checkouts.falhas + cancelamentos.falhas + recuperacaoCancelamentosERN.falhas + recuperacaoCheckoutsERN.falhas + retomadaEventosERN.falhas;
+      checkouts.falhas + cancelamentos.falhas + recuperacaoCancelamentosERN.falhas + recuperacaoCheckoutsERN.falhas + retomadaEventosERN.falhas + carenciaEDA.falhas;
 
-    const houveTrabalho = retomadaEventosERN.encontrados > 0 || recuperacaoCheckoutsERN.encontrados > 0 || recuperacaoCancelamentosERN.encontrados > 0 ||
+    const houveTrabalho = carenciaEDA.encontrados > 0 || carenciaEDA.testes_expirados > 0 || retomadaEventosERN.encontrados > 0 || recuperacaoCheckoutsERN.encontrados > 0 || recuperacaoCancelamentosERN.encontrados > 0 ||
       checkouts.encontrados >
         0 ||
       cancelamentos.encontrados >
@@ -2037,6 +2134,7 @@ async function processar(
         recuperacao_cancelamentos: recuperacaoCancelamentosERN,
         recuperacao_checkouts: recuperacaoCheckoutsERN,
         retomada_eventos: retomadaEventosERN,
+        carencia_testes: carenciaEDA,
 
         resumo: {
           checkouts_encontrados:

@@ -65,7 +65,7 @@ export type SituacaoLimite = {
 type ConfiguracaoRecurso = {
   nome: string;
   descricao: string;
-  planoMinimo: 'Grátis' | 'Profissional' | 'Premium';
+  planoMinimo: 'Grátis' | 'Pro' | 'Plus';
 };
 
 type CampoLimitePlano =
@@ -94,42 +94,42 @@ export const RECURSOS_PLANOS: Record<
     nome: 'Financeiro',
     descricao:
       'Controle receitas, despesas, valores a receber e movimentações da operação.',
-    planoMinimo: 'Profissional',
+    planoMinimo: 'Pro',
   },
 
   vouchers: {
     nome: 'Vouchers',
     descricao:
       'Crie e acompanhe vouchers vinculados às experiências e reservas.',
-    planoMinimo: 'Profissional',
+    planoMinimo: 'Pro',
   },
 
   relatorios: {
     nome: 'Relatórios',
     descricao:
       'Acompanhe indicadores e informações consolidadas da operação.',
-    planoMinimo: 'Profissional',
+    planoMinimo: 'Pro',
   },
 
   concierge_ia: {
     nome: 'Concierge IA',
     descricao:
       'Use inteligência artificial no atendimento e planejamento das viagens.',
-    planoMinimo: 'Premium',
+    planoMinimo: 'Plus',
   },
 
   whatsapp: {
     nome: 'WhatsApp',
     descricao:
       'Integre atendimento e automações da operação ao WhatsApp.',
-    planoMinimo: 'Premium',
+    planoMinimo: 'Plus',
   },
 
   destaque_rede: {
     nome: 'Destaque na Rede',
     descricao:
       'Ganhe maior exposição dentro da Rede Encantos da Amazônia.',
-    planoMinimo: 'Premium',
+    planoMinimo: 'Plus',
   },
 };
 
