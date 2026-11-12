@@ -7,14 +7,22 @@ export type TabelaAcao =
   | 'reservas' | 'passeios' | 'passeio_saidas' | 'embarcacoes' | 'guias'
   | 'hospedagens' | 'parceiros' | 'vouchers' | 'pedidos_visitante' | 'demandas';
 
-type TipoCampo = 'texto' | 'numero' | 'inteiro' | 'data' | 'hora' | 'bool' | 'opcao' | 'ref';
-export type Campo = { rotulo: string; tipo: TipoCampo; max?: number; min?: number; opcoes?: readonly string[]; ref?: TabelaAcao; soCriar?: boolean };
+type TipoCampo = 'texto' | 'numero' | 'inteiro' | 'data' | 'hora' | 'bool' | 'opcao' | 'ref' | 'uuid';
+export type Campo = { rotulo: string; tipo: TipoCampo; max?: number; min?: number; opcoes?: readonly string[]; ref?: TabelaAcao; soCriar?: boolean; /** preenchido pelo servidor, nunca pela IA */ interno?: boolean };
 type Regra = { nome: string; codigo: string; criar: boolean; obrigatorios?: string[]; campos: Record<string, Campo> };
 
 export const REGRAS_ACAO: Record<TabelaAcao, Regra> = {
   reservas: {
-    nome: 'reserva', codigo: 'R', criar: false,
+    nome: 'reserva', codigo: 'R', criar: true, obrigatorios: ['cliente', 'passeio_id', 'data_reserva', 'quantidade_pessoas', 'valor_total'],
     campos: {
+      cliente: { rotulo: 'cliente', tipo: 'texto', min: 2, max: 120, soCriar: true },
+      cliente_id: { rotulo: 'cadastro do cliente', tipo: 'uuid', interno: true },
+      passeio_id: { rotulo: 'passeio', tipo: 'ref', ref: 'passeios' },
+      saida_id: { rotulo: 'saída', tipo: 'ref', ref: 'passeio_saidas' },
+      pacote: { rotulo: 'pacote', tipo: 'texto', max: 160, interno: true },
+      data_fim_prevista: { rotulo: 'volta', tipo: 'data' },
+      qtd_criancas: { rotulo: 'crianças', tipo: 'inteiro', min: 0, max: 500 },
+      qtd_colo: { rotulo: 'colo', tipo: 'inteiro', min: 0, max: 500 },
       status: { rotulo: 'status', tipo: 'opcao', opcoes: ['Pendente', 'Confirmada', 'Cancelada'] },
       data_reserva: { rotulo: 'data', tipo: 'data' },
       horario: { rotulo: 'horário', tipo: 'hora' },
@@ -103,8 +111,15 @@ export const REGRAS_ACAO: Record<TabelaAcao, Regra> = {
     campos: { status: { rotulo: 'status', tipo: 'opcao', opcoes: ['novo', 'em_contato', 'convertido', 'descartado'] } },
   },
   demandas: {
-    nome: 'demanda', codigo: 'D', criar: false,
+    nome: 'demanda', codigo: 'D', criar: true, obrigatorios: ['titulo', 'categoria', 'localidade', 'quantidade', 'unidade'],
     campos: {
+      titulo: { rotulo: 'título', tipo: 'texto', min: 3, max: 160 },
+      categoria: { rotulo: 'categoria', tipo: 'opcao', opcoes: ['alimentacao', 'bebidas', 'combustivel', 'hospedagem', 'transporte_fluvial', 'guiamento', 'passeios', 'outros'] },
+      localidade: { rotulo: 'local', tipo: 'texto', min: 2, max: 200 },
+      quantidade: { rotulo: 'quantidade', tipo: 'numero', min: 0.01, max: 1_000_000 },
+      unidade: { rotulo: 'unidade', tipo: 'texto', max: 40 },
+      descricao: { rotulo: 'descrição', tipo: 'texto', max: 1000 },
+      saida_id: { rotulo: 'saída', tipo: 'ref', ref: 'passeio_saidas' },
       status: { rotulo: 'status', tipo: 'opcao', opcoes: ['rascunho', 'aberta', 'encerrada', 'cancelada'] },
       data_inicio: { rotulo: 'início', tipo: 'data' },
       data_fim: { rotulo: 'fim', tipo: 'data' },
@@ -162,7 +177,7 @@ export function converterValor(c: Campo, bruto: unknown): Valor | undefined {
       const s = sem(String(t)).replace(/\s+/g, '_');
       return c.opcoes?.find(o => sem(o).replace(/\s+/g, '_') === s);
     }
-    case 'ref':
+    case 'ref': case 'uuid':
       return typeof t === 'string' && UUID_EDA.test(t) ? t : undefined;
   }
 }
@@ -176,7 +191,7 @@ export function acaoRegistroValida(a: unknown): a is AcaoRegistro {
   if (x.tipo === 'alterar' && !UUID_EDA.test(String((x as { id?: string }).id ?? ''))) return false;
   if (x.tipo === 'criar' && !regra.criar) return false;
   const chaves = Object.keys(x.campos);
-  if (!chaves.length || chaves.length > 10) return false;
+  if (!chaves.length || chaves.length > 16) return false;
   for (const k of chaves) {
     const c = regra.campos[k];
     if (!c || (c.soCriar && x.tipo === 'alterar')) return false;
@@ -191,8 +206,9 @@ export function acaoRegistroValida(a: unknown): a is AcaoRegistro {
 export function descreverAcoes(): string {
   return TABELAS_ACAO.map(t => {
     const r = REGRAS_ACAO[t];
-    const campos = Object.entries(r.campos).map(([k, c]) =>
+    const campos = Object.entries(r.campos).filter(([, c]) => !c.interno).map(([k, c]) =>
       `${k}${c.tipo === 'opcao' ? `(${c.opcoes?.join('/')})` : c.tipo === 'ref' ? `(código ${REGRAS_ACAO[c.ref!].codigo}#)` : c.tipo === 'data' ? '(AAAA-MM-DD)' : c.tipo === 'hora' ? '(HH:MM)' : c.tipo === 'bool' ? '(sim/não)' : ''}`).join(', ');
-    return `- ${t} [códigos ${r.codigo}#]${r.criar ? ` — pode CRIAR (obrigatório: ${(r.obrigatorios ?? []).join(', ')})` : ' — só ALTERAR'}: ${campos}`;
+    const obrig = (r.obrigatorios ?? []).filter(k => !r.campos[k]?.interno);
+    return `- ${t} [códigos ${r.codigo}#]${r.criar ? ` — pode CRIAR (obrigatório: ${obrig.join(', ')})` : ' — só ALTERAR'}: ${campos}`;
   }).join('\n');
 }

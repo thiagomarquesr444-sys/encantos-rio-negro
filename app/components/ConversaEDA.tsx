@@ -47,6 +47,15 @@ async function empresaDaSessao(usuarioId: string) {
 }
 
 /** EDA_EXECUTA_V1: grava a ação autorizada com a sessão da pessoa (RLS e plano valem). */
+// Regras do banco (saída lotada, conflito de barco, limite do plano) já vêm em português: mostra direto.
+let ultimoCriado: string | null = null;
+function mensagemBanco(e: { message?: string; code?: string } | null, padrao: string) {
+  const m = e?.message ?? '';
+  if (/limite/i.test(m)) return 'Seu plano chegou ao limite para esse cadastro.';
+  if (e?.code === 'P0001' && m && m.length < 220) return m;
+  return padrao || 'Não consegui concluir agora.';
+}
+
 async function executarRegistro(a: AcaoRegistro, usuarioId: string): Promise<string> {
   if (!acaoRegistroValida(a)) throw new Error('Essa ação não passou na conferência de segurança.');
   const empresa = await empresaDaSessao(usuarioId);
@@ -66,12 +75,22 @@ async function executarRegistro(a: AcaoRegistro, usuarioId: string): Promise<str
   if (a.tipo === 'criar') {
     // Guias: a política de criação exige o autor (usuario_id) da sessão.
     if (a.tabela === 'guias') dados.usuario_id = usuarioId;
-    const { error } = await supabase.from(a.tabela).insert({ ...dados, empresa_id: empresa }).select('id').single();
-    if (error) throw new Error(/limite/i.test(error.message) ? 'Seu plano chegou ao limite para esse cadastro.' : `Não consegui criar ${regra.nome === 'saída' ? 'a saída' : `o(a) ${regra.nome}`}. Confira os dados ou sua permissão.`);
+    if (a.tabela === 'demandas') { dados.criado_por = usuarioId; dados.metodo_estimativa = 'manual'; }
+    // Reserva de cliente novo: cadastra o cliente só com o nome (a ficha é completada depois).
+    if (a.tabela === 'reservas' && !dados.cliente_id) {
+      const { data: novo, error: eCli } = await supabase.from('clientes').insert({ nome: dados.cliente, empresa_id: empresa }).select('id').single();
+      if (eCli || !novo) throw new Error(mensagemBanco(eCli, 'Não consegui cadastrar o cliente.'));
+      dados.cliente_id = novo.id;
+      avisarTelas('clientes');
+    }
+    const { data: criado, error } = await supabase.from(a.tabela).insert({ ...dados, empresa_id: empresa }).select('id').single();
+    if (error || !criado) throw new Error(mensagemBanco(error, `Não consegui criar ${regra.nome === 'saída' || regra.nome === 'reserva' || regra.nome === 'demanda' || regra.nome === 'embarcação' || regra.nome === 'hospedagem' ? 'a' : 'o'} ${regra.nome}. Confira os dados ou sua permissão.`));
     avisarTelas(a.tabela);
-    return `${regra.nome.charAt(0).toUpperCase()}${regra.nome.slice(1)} criado(a).`;
+    ultimoCriado = a.tabela === 'reservas' ? `/reservas/editar/${criado.id}` : a.tabela === 'demandas' ? `/demandas/editar/${criado.id}` : null;
+    return `${regra.nome.charAt(0).toUpperCase()}${regra.nome.slice(1)} ${['reserva', 'saída', 'demanda', 'embarcação', 'hospedagem'].includes(regra.nome) ? 'criada' : 'criado'}.`;
   }
   const { data, error } = await supabase.from(a.tabela).update(dados).eq('id', a.id).eq('empresa_id', empresa).select('id');
+  if (error?.code === 'P0001') throw new Error(mensagemBanco(error, ''));
   if (error || !data?.length) throw new Error(`Não consegui alterar ${regra.nome === 'reserva' || regra.nome === 'saída' || regra.nome === 'embarcação' || regra.nome === 'hospedagem' || regra.nome === 'demanda' ? 'a' : 'o'} ${regra.nome}. Confira sua permissão ou os dados.`);
   avisarTelas(a.tabela);
   return 'Alteração feita.';
@@ -384,9 +403,11 @@ export default function ConversaEDA() {
   async function confirmar(i: number, k: number, a: AcaoEDA, avisar = true): Promise<boolean> {
     marcarEstado(i, k, 'executando');
     try {
+      ultimoCriado = null;
       const ok = await executarAcao(a);
+      const href = ultimoCriado;
       marcarEstado(i, k, 'feito');
-      if (avisar) setMsgs(m => [...m, { papel: 'eda', texto: `${ok} A tela já está atualizada. ✔` }]);
+      if (avisar) setMsgs(m => [...m, { papel: 'eda', texto: `${ok} A tela já está atualizada. ✔`, links: href ? [{ href, rotulo: 'Abrir e gerenciar' }] : undefined }]);
       return true;
     } catch (e) {
       marcarEstado(i, k, 'erro');
