@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, FormEvent } from 'react';
 import { supabase } from '@/lib/supabase';
 import SegurancaContaERN from '@/app/components/SegurancaContaERN';
+import DuasEtapasContaEDA from '@/app/components/DuasEtapasContaEDA';
 import SeletorTemaERN from '@/app/components/SeletorTemaERN';
 import { chavePixAmbigua, normalizarChavePix, TIPOS_CHAVE_PIX, type TipoChavePix } from '@/lib/pixEDA';
 
@@ -481,6 +482,7 @@ export default function ConfiguracoesPage() {
             </p>
           </header>
           <SegurancaContaERN />
+          <DuasEtapasContaEDA />
         </div>
       </main>
     );
@@ -752,6 +754,7 @@ export default function ConfiguracoesPage() {
         </form>
 
         <SegurancaContaERN />
+        <DuasEtapasContaEDA />
       </div>
     </main>
   );

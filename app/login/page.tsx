@@ -3,6 +3,7 @@
 import {
   Suspense,
   useCallback,
+  useEffect,
   useRef,
   useState,
   type FormEvent,
@@ -22,6 +23,7 @@ import AvisoPrivacidadeAcessoERN from '@/app/components/AvisoPrivacidadeAcessoER
 import RequisitosSenhaERN from '@/app/components/RequisitosSenhaERN';
 import { validarSenhaERN } from '@/lib/politicaSenhaERN';
 import { supabase } from '@/lib/supabase';
+import { confirmarCodigoEDA, precisaSegundaEtapaEDA } from '@/lib/duasEtapasEDA';
 import {
   interpretarTipoAcesso,
   type TipoAcesso,
@@ -157,6 +159,21 @@ function FormularioLogin() {
 
   const tokenCaptcha = useRef<TokenCaptchaERN | null>(null);
   const [revisaoCaptcha, setRevisaoCaptcha] = useState(0);
+  // EDA_DUAS_ETAPAS_V1: depois da senha (ou do Google), quem ativou o autenticador confirma o código.
+  const [etapa2fa, setEtapa2fa] = useState<string | null>(null);
+  const [codigo2fa, setCodigo2fa] = useState('');
+  const [erro2fa, setErro2fa] = useState('');
+  const [verificando2fa, setVerificando2fa] = useState(false);
+  useEffect(() => {
+    if (searchParams.get('etapa') !== '2fa') return;
+    let ativo = true;
+    void (async () => {
+      const { data } = await supabase.auth.getUser();
+      if (!ativo || !data.user) return;
+      if (await precisaSegundaEtapaEDA()) { if (ativo) setEtapa2fa(data.user.id); }
+    })();
+    return () => { ativo = false; };
+  }, [searchParams]);
   const receberTokenCaptcha = useCallback((valor: string | null) => {
     tokenCaptcha.current = valor ? { valor, recebidoEm: Date.now() } : null;
   }, []);
@@ -701,6 +718,11 @@ function FormularioLogin() {
         return;
       }
 
+      if (await precisaSegundaEtapaEDA()) {
+        setEtapa2fa(data.session.user.id);
+        return;
+      }
+
       await validarEContinuar(
         data.session.user.id,
       );
@@ -775,6 +797,59 @@ function FormularioLogin() {
 
   const labelClass =
     'mb-2 block text-sm font-medium text-[#EDEDE3]/85';
+
+  async function confirmar2fa(evento: FormEvent<HTMLFormElement>) {
+    evento.preventDefault();
+    if (!etapa2fa || verificando2fa) return;
+    setVerificando2fa(true);
+    setErro2fa('');
+    const falha = await confirmarCodigoEDA(codigo2fa);
+    if (falha) { setErro2fa(falha); setVerificando2fa(false); return; }
+    const volta = searchParams.get('volta') ?? '';
+    if (volta.startsWith('/') && !volta.startsWith('//') && !volta.startsWith('/login')) {
+      window.location.assign(volta);
+      return;
+    }
+    setVerificando2fa(false);
+    const usuario = etapa2fa;
+    setEtapa2fa(null);
+    await validarEContinuar(usuario);
+  }
+
+  if (etapa2fa) {
+    return (
+      <AcessoPremiumERN etapa={modo} perfil={acesso}>
+        <div className="ern-acesso-form">
+          <header>
+            <p className="mt-3 text-sm font-semibold text-[#F4C77E]">Encantos Gestão</p>
+            <h1 className="mt-4 text-2xl leading-tight text-[#F0F0E8] sm:text-3xl" style={{ fontFamily: 'var(--font-fraunces), serif' }}>
+              Confirme que é você
+            </h1>
+            <p className="mt-3 text-sm leading-6 text-[#EDEDE3]/75">
+              Abra o aplicativo autenticador no seu celular e digite o código de 6 números da Encantos.
+            </p>
+          </header>
+          <form onSubmit={confirmar2fa} className="mt-6 space-y-4" aria-busy={verificando2fa}>
+            <label className={labelClass} htmlFor="codigo-2fa">Código de verificação</label>
+            <input id="codigo-2fa" inputMode="numeric" autoComplete="one-time-code" autoFocus maxLength={7}
+              value={codigo2fa} onChange={(e) => { setCodigo2fa(e.target.value); setErro2fa(''); }}
+              className={`${inputClass} text-center text-2xl tracking-[0.5em]`} aria-describedby={erro2fa ? 'erro-2fa' : undefined} />
+            {erro2fa && <p id="erro-2fa" role="alert" className="text-sm text-[#F8A5A5]">{erro2fa}</p>}
+            <button type="submit" disabled={verificando2fa}
+              className={`min-h-[52px] w-full rounded-xl bg-gradient-to-b from-[#F7D595] to-[#E3A144] font-semibold text-[#07110E] disabled:opacity-60 ${focoClass}`}>
+              {verificando2fa ? 'Confirmando…' : 'Confirmar e entrar'}
+            </button>
+            <button type="button" disabled={verificando2fa}
+              onClick={() => { setEtapa2fa(null); setCodigo2fa(''); void supabase.auth.signOut({ scope: 'local' }); }}
+              className={`min-h-12 w-full rounded-xl border border-white/20 text-sm text-[#EDEDE3]/85 ${focoClass}`}>
+              Sair e usar outra conta
+            </button>
+            <p className="text-xs leading-5 text-[#EDEDE3]/60">Perdeu o celular? Fale com o suporte da Encantos para recuperar o acesso.</p>
+          </form>
+        </div>
+      </AcessoPremiumERN>
+    );
+  }
 
   return (
     <AcessoPremiumERN etapa={modo} perfil={acesso}>

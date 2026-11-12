@@ -296,6 +296,22 @@ export async function proxy(request: NextRequest) {
       );
     }
 
+    // EDA_DUAS_ETAPAS_V1: quem ativou o autenticador só passa depois de confirmar o código.
+    // (O banco também exige a sessão confirmada: política restritiva eda_mfa_exigida.)
+    const { data: nivel } =
+      await supabase.auth.mfa.getAuthenticatorAssuranceLevel();
+
+    if (
+      nivel &&
+      nivel.nextLevel === 'aal2' &&
+      nivel.currentLevel !== 'aal2'
+    ) {
+      const volta = `${pathname}${request.nextUrl.search}`;
+      return redirecionar(
+        `/login?etapa=2fa${acessoSolicitado ? `&acesso=${acessoSolicitado}` : ''}&volta=${encodeURIComponent(volta)}`,
+      );
+    }
+
     // Definir senha não exige modalidade profissional.
     if (rotaNovaSenha) {
       return response;
@@ -503,4 +519,4 @@ export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon.ico).*)',
   ],
-};
+};
