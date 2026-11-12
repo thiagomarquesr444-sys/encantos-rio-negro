@@ -16,6 +16,7 @@ import Link from 'next/link';
 
 import { supabase } from '@/lib/supabase';
 import { useAoVivoEDA } from '@/lib/aoVivoEDA';
+import { useAbrirRegistroEDA } from '@/lib/abrirRegistroEDA';
 import { CabecalhoEDA } from '@/app/components/PadraoPaginaEDA';
 import AcomodacoesHospedagemEDA from '@/app/components/AcomodacoesHospedagemEDA';
 import CampoOpcoesEDA from '@/app/components/CampoOpcoesEDA';
@@ -437,6 +438,9 @@ export default function HospedagensPage() {
 
   // EDA_AO_VIVO_V1
   useAoVivoEDA(['hospedagens', 'reservas'], () => void fetchHospedagens(true));
+  // EDA_ABRIR_V1: a EDA abre um registro desta página direto.
+  useAbrirRegistroEDA(hospedagens, abrirEdicao);
+
 
   /*
     ============================================================
@@ -1897,4 +1901,4 @@ export default function HospedagensPage() {
       )}
     </div>
   );
-}
+}

@@ -14,6 +14,7 @@ import { useRouter } from 'next/navigation';
 
 import { supabase } from '@/lib/supabase';
 import { useAoVivoEDA } from '@/lib/aoVivoEDA';
+import { useAbrirRegistroEDA } from '@/lib/abrirRegistroEDA';
 import GraficoPasseios from '@/app/components/GraficoPasseios';
 import { CabecalhoEDA } from '@/app/components/PadraoPaginaEDA';
 import SaidasPasseioEDA from '@/app/components/SaidasPasseioEDA';
@@ -396,6 +397,9 @@ export default function PasseiosPage() {
 
   // EDA_AO_VIVO_V1
   useAoVivoEDA(['passeios', 'passeio_saidas', 'reservas'], () => void fetchPasseios(true));
+  // EDA_ABRIR_V1: a EDA abre um registro desta página direto.
+  useAbrirRegistroEDA(passeios, abrirEdicao);
+
 
   function mostrarSucesso(
     texto: string
@@ -2065,4 +2069,4 @@ function Detalhe({
       </p>
     </div>
   );
-}
+}

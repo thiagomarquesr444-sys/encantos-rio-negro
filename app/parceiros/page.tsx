@@ -7,6 +7,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useAoVivoEDA } from '@/lib/aoVivoEDA';
+import { useAbrirRegistroEDA } from '@/lib/abrirRegistroEDA';
 import CampoLocalEDA from '@/app/components/CampoLocalEDA';
 import { ComissoesParceirosEDA } from '@/app/components/ParceirosComissaoEDA';
 
@@ -246,6 +247,9 @@ export default function ParceirosPage() {
 
   // EDA_AO_VIVO_V1
   useAoVivoEDA(['parceiros', 'reservas'], () => void carregarParceiros(true));
+  // EDA_ABRIR_V1: a EDA abre um registro desta página direto.
+  useAbrirRegistroEDA(parceiros, (p) => setEditando({ ...p }));
+
 
   const tiposExistentes = useMemo(() => {
     return Array.from(
@@ -1416,4 +1420,4 @@ function FormField({
       {children}
     </label>
   );
-}
+}

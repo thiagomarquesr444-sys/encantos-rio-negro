@@ -7,7 +7,8 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { EVENTO_ABRIR_REGISTRO_EDA } from '@/lib/abrirRegistroEDA';
 import { supabase } from '@/lib/supabase';
 import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import { copiarEDA } from '@/lib/copiarEDA';
@@ -162,6 +163,19 @@ function formatar(texto: string): ReactNode[] {
 
 export default function ConversaEDA() {
   const pathname = usePathname() ?? '';
+  const router = useRouter();
+  // EDA_ABRIR_V1: leva a pessoa ao destino sem fechar a conversa. Registro da mesma página abre na hora.
+  function irPara(href: string) {
+    if (!linkSeguro({ href, rotulo: '' })) return;
+    const url = new URL(href, window.location.origin);
+    const id = url.searchParams.get('abrir');
+    if (id && url.pathname === window.location.pathname) {
+      window.dispatchEvent(new CustomEvent(EVENTO_ABRIR_REGISTRO_EDA, { detail: { id } }));
+      return;
+    }
+    try { if (id) sessionStorage.setItem('eda.abrir', id); } catch { /* sem armazenamento */ }
+    router.push(href);
+  }
   const pagina = PAGINAS.find(([r]) => pathname === r || pathname.startsWith(`${r}/`))?.[1];
   const [aberto, setAberto] = useState(false);
   const [msgs, setMsgs] = useState<Msg[]>([]);
@@ -349,7 +363,8 @@ export default function ConversaEDA() {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
         body: JSON.stringify({ modo: 'operadora', pagina, estilo, mensagens: historico.slice(-12).map(({ papel, texto }) => ({ papel, texto })) }),
       });
-      const j = await r.json().catch(() => ({})) as { resposta?: string; erro?: string; links?: LinkEDA[]; acoes?: unknown[] };
+      const j = await r.json().catch(() => ({})) as { resposta?: string; erro?: string; links?: LinkEDA[]; acoes?: unknown[]; navegar?: LinkEDA | null };
+      if (j.navegar && linkSeguro(j.navegar)) irPara(j.navegar.href);
       const acoes = Array.isArray(j.acoes) ? j.acoes.filter(acaoValida).slice(0, 4) : [];
       const links = Array.isArray(j.links) ? j.links.filter(linkSeguro).slice(0, 3) : [];
       setAnimando(historico.length);
@@ -432,7 +447,7 @@ export default function ConversaEDA() {
                           {a.tipo === 'avaliacao' && a.extra?.token && (
                             <button type="button" onClick={() => void copiarAvaliacao(a)}>{copiado === a.id ? 'Link copiado ✔' : 'Copiar link de avaliação'}</button>
                           )}
-                          {a.link && <Link href={a.link}>Abrir →</Link>}
+                          {a.link && <Link href={a.link} onClick={e => { e.preventDefault(); irPara(a.link!); }}>Abrir →</Link>}
                         </div>
                       </li>
                     ))}
@@ -461,7 +476,7 @@ export default function ConversaEDA() {
                 )}
                 {animando !== i && !!m.links?.length && (
                   <div className="cv-eda-links">
-                    {m.links.map(l => <Link key={l.href} href={l.href}>{l.rotulo} →</Link>)}
+                    {m.links.map(l => <Link key={l.href} href={l.href} onClick={e => { e.preventDefault(); irPara(l.href); }}>{l.rotulo} →</Link>)}
                   </div>
                 )}
               </div>

@@ -148,6 +148,17 @@ function destinosFixos(hoje: string): Record<string, Destino> {
   };
 }
 
+// EDA_ABRIR_V1: tela de cada registro (abre o próprio registro, não só a lista).
+function rotaRegistro(tabela: TabelaAcao, id: string, x: Record<string, unknown>): string | null {
+  switch (tabela) {
+    case 'reservas': return `/reservas/editar/${id}`;
+    case 'demandas': return `/demandas/editar/${id}`;
+    case 'passeio_saidas': return typeof x.passeio_id === 'string' && UUID.test(x.passeio_id) ? `/passeios?abrir=${x.passeio_id}` : '/passeios';
+    case 'pedidos_visitante': return '/reservas/pedidos';
+    default: return `/${tabela}?abrir=${id}`;
+  }
+}
+
 async function contextoOperadora(db: SupabaseClient, empresaId: string, hoje: string) {
   const destinos = destinosFixos(hoje);
   const ini = somarDias(hoje, -1);
@@ -183,6 +194,8 @@ async function contextoOperadora(db: SupabaseClient, empresaId: string, hoje: st
       if (typeof x.id !== 'string' || !UUID.test(x.id)) return;
       const cod = `${pre}${i + 1}`;
       codigos[cod] = { tabela, id: x.id, rotulo: rotulo(x as Record<string, unknown>).slice(0, 70) };
+      const href = rotaRegistro(tabela, x.id, x as Record<string, unknown>);
+      if (href) destinos[cod] = { href, rotulo: `Abrir ${codigos[cod].rotulo}`.slice(0, 60) };
       mapa.set(x.id, cod);
     });
     return mapa;
@@ -227,7 +240,10 @@ async function contextoOperadora(db: SupabaseClient, empresaId: string, hoje: st
     linhas.push(`\nDEMANDAS (${d.length}): código | título | categoria | local | início-fim | qtd | status`);
     d.forEach((x, i) => {
       const cod = `D${i + 1}`;
-      if (x.id && UUID.test(String(x.id))) codigos[cod] = { tabela: 'demandas', id: String(x.id), rotulo: String(x.titulo ?? 'demanda').slice(0, 60) };
+      if (x.id && UUID.test(String(x.id))) {
+        codigos[cod] = { tabela: 'demandas', id: String(x.id), rotulo: String(x.titulo ?? 'demanda').slice(0, 60) };
+        destinos[cod] = { href: `/demandas/editar/${x.id}`, rotulo: `Abrir ${codigos[cod].rotulo}`.slice(0, 60) };
+      }
       linhas.push(`- ${cod} | ${x.titulo ?? '—'} | ${x.categoria ?? '—'} | ${x.localidade ?? '—'} | ${dm(x.data_inicio)}-${dm(x.data_fim)} | ${x.quantidade ?? ''} ${x.unidade ?? ''} | ${x.status ?? '—'}`);
     });
   }
@@ -318,7 +334,7 @@ async function contextoOperadora(db: SupabaseClient, empresaId: string, hoje: st
     for (const x of pv.slice(0, 10)) linhas.push(`- ${codPV.get(String(x.id))} | ${x.passeio_nome ?? 'interesse geral'} | ${x.adultos} adulto(s)${x.criancas ? ` + ${x.criancas} criança(s)` : ''} | período: ${x.periodo ?? '—'} | ${x.status} | recebido ${dm(String(x.criado_em).slice(0, 10))}`);
   }
 
-  linhas.push(`\nATALHOS DISPONÍVEIS (código: destino): ${Object.entries(destinos).map(([c, d]) => `${c}: ${d.rotulo}`).join('; ')}`);
+  linhas.push(`\nATALHOS DISPONÍVEIS (código: destino; registros também podem ser abertos pelo próprio código): ${Object.entries(destinos).filter(([, d]) => !d.rotulo.startsWith('Abrir ') || !/[?/][0-9a-f-]{36}/.test(d.href)).map(([c, d]) => `${c}: ${d.rotulo}`).join('; ')}`);
   return { texto: linhas.join('\n').slice(0, 20_000), destinos, passeios: (passeios.data ?? []) as PasseioRegra[], codigos };
 }
 
@@ -568,7 +584,8 @@ Regras:
 - PRECISÃO: use SOMENTE os DADOS. Copie números e datas exatamente; não some, estime nem arredonde por conta própria. Se o dado não estiver aqui, diga com sinceridade que não encontrou e indique onde conferir.
 - LGPD: não existe nome, documento, telefone ou e-mail de cliente nem detalhe de saúde nos DADOS; nunca peça nem repita esse tipo de informação. Para isso, oriente abrir a reserva/cadastro (atalho).
 - VOCÊ EXECUTA, não manda a pessoa fazer: quando ela pedir uma mudança, PREPARE a ação com os marcadores abaixo — ela só autoriza no botão "Confirmar" e você grava ali mesmo, sem sair da página. NUNCA responda com passo a passo de cliques ("vá em…", "clique em…") para algo que você mesma pode fazer.
-- Atalhos [[IR:CODIGO]] (até 2, só códigos de ATALHOS DISPONÍVEIS) apenas quando a pessoa pedir para ABRIR/VER uma tela, ou quando a tarefa realmente não está nas suas ações. Não escreva endereços.
+- LEVAR ATÉ ALGO: quando a pessoa pedir para abrir/ir/mostrar uma tela ou um registro (ex.: "abre o passeio X", "me leva na reserva de sábado"), inclua UM [[ABRIR:CÓDIGO]] — use o código do PRÓPRIO registro (P1, R3, E2, G1, H1, PC1, V1, D2…) ou um código de ATALHOS DISPONÍVEIS — e responda só uma frase curta (ex.: "Abrindo a Visita à Ilha do Aracá."). A plataforma leva a pessoa na hora e a conversa continua aberta. Ache o registro pelo nome mesmo com erro de digitação; se houver dois parecidos, pergunte qual.
+- Botões [[IR:CODIGO]] (até 2, mesmos códigos) só para sugerir uma tela relacionada, quando a tarefa realmente não está nas suas ações. Não escreva endereços.
 - Não ofereça listas de perguntas prontas nem botões de sugestão: conduza a conversa você mesma, com naturalidade (no máximo uma pergunta de acompanhamento quando fizer sentido).
 - PASSADO: para dúvidas sobre o que já aconteceu (meses anteriores, uma data, quem/quando mudou algo), use HISTÓRICO MÊS A MÊS, DIÁRIO DA OPERAÇÃO e BUSCA NO PERÍODO PEDIDO. Se a pessoa não disse o período, pergunte qual (ex.: \"de qual mês?\"). Nunca invente o que não está lá.
 - AÇÕES (até 4 por resposta; você propõe, a pessoa autoriza; nunca diga que já fez antes da confirmação):
@@ -1081,7 +1098,14 @@ Exemplo de formato: ["texto 1","texto 2","texto 3","texto 4","texto 5"]`;
     }
     bruto = bruto.replace(/\[\[[^\]]*$/g, '').trim();
     const comSugestoes = extrairSugestoes(mascararDados(bruto));
-    const { limpo: semIr, links: linksIr } = extrairLinks(comSugestoes.limpo, destinos);
+    // EDA_ABRIR_V1: [[ABRIR:CODIGO]] leva a pessoa na hora (a conversa continua aberta).
+    let navegar: Destino | null = null;
+    const semAbrir = modo === 'operadora' ? comSugestoes.limpo.replace(/\[\[\s*ABRIR\s*:\s*([A-Z0-9_]{1,30})\s*\]\]/gi, (_, c: string) => {
+      const d = destinos[c.toUpperCase()];
+      if (d && !navegar) navegar = d;
+      return '';
+    }) : comSugestoes.limpo;
+    const { limpo: semIr, links: linksIr } = extrairLinks(semAbrir, destinos);
     const linksPub: Destino[] = [];
     const limpo = semIr.replace(/\[\[\s*(?:LINK\s*:\s*)?([A-Z0-9_]{2,30})\s*\]\]/g, (inteiro: string, c: string) => {
       if (c.toUpperCase() === 'PEDIDO') return inteiro;
@@ -1114,7 +1138,11 @@ Exemplo de formato: ["texto 1","texto 2","texto 3","texto 4","texto 5"]`;
         await admin.from('iara_eventos').upsert([...etapas].map(etapa => ({ sessao, etapa, empresa_id: empresaFoco, passeio_id: passeioFoco, idioma: typeof dados.idioma === 'string' && IDIOMAS.has(dados.idioma) ? dados.idioma : 'PT' })), { onConflict: 'sessao,etapa', ignoreDuplicates: true });
       }
     }
-    return resposta(200, { ok: true, resposta: final, links, acoes, sugestoes: sugestoesPre.sugestoes.length ? sugestoesPre.sugestoes : comSugestoes.sugestoes, pedido, ficha: fichaNova, periodo, motor: { modelo: ultimoModeloIA.nome, ms: Date.now() - inicioIA, tentativas: falhasIA.map(f => f.split(':')[0]) } });
+    // Nunca devolve resposta vazia (antes aparecia "Não consegui responder" quando a IA mandava só o marcador).
+    const destinoFinal = navegar as Destino | null;
+    const textoFinal = final || (destinoFinal ? `Abrindo: ${destinoFinal.rotulo.replace(/^Abrir\s+/i, '')}.` : links.length ? 'Aqui está:' : acoes.length ? 'Preparei, é só autorizar no botão abaixo.' : '');
+    if (!textoFinal) return resposta(503, { ok: false, erro: 'Não consegui responder agora. Tente de novo em instantes.' });
+    return resposta(200, { ok: true, resposta: textoFinal, navegar: destinoFinal, links: destinoFinal ? links.filter(l => l.href !== destinoFinal.href) : links, acoes, sugestoes: sugestoesPre.sugestoes.length ? sugestoesPre.sugestoes : comSugestoes.sugestoes, pedido, ficha: fichaNova, periodo, motor: { modelo: ultimoModeloIA.nome, ms: Date.now() - inicioIA, tentativas: falhasIA.map(f => f.split(':')[0]) } });
   } catch (erro) {
     if (erro instanceof Falha) return resposta(erro.status, { ok: false, erro: erro.message });
     return resposta(503, { ok: false, erro: 'A EDA está indisponível agora.' });

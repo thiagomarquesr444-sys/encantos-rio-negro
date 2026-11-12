@@ -17,6 +17,7 @@ import { carregarChegadaDaReserva, textoChegadaVoucher, textoTransferVoucher } f
 import { consultarIdentificacaoEmpresaERN } from '@/lib/identificacaoEmpresaERN';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
 import { useAoVivoEDA } from '@/lib/aoVivoEDA';
+import { useAbrirRegistroEDA } from '@/lib/abrirRegistroEDA';
 import { reservaOperacionalERN } from '@/lib/reservasStatusERN';
 import { SeletorPeriodoMensalERN, SeloExpiracaoERN } from '@/app/components/PeriodoMensalERN';
 import { HISTORICO_ERN, dataNoPeriodoERN, mesAtualERN, periodoDaURLERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
@@ -524,6 +525,9 @@ export default function VouchersPage() {
 
   // EDA_AO_VIVO_V1
   useAoVivoEDA(['vouchers', 'reservas'], () => void carregar(true));
+  // EDA_ABRIR_V1: a EDA abre um registro desta página direto.
+  useAbrirRegistroEDA(vouchers, (v) => abrir('ver', v));
+
 
   useEffect(() => {
     const timer = window.setInterval(() => setHoje(hojeManaus()), 60000);
@@ -1370,4 +1374,4 @@ export default function VouchersPage() {
       )}
     </div>
   );
-}
+}

@@ -8,6 +8,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useAoVivoEDA } from '@/lib/aoVivoEDA';
+import { useAbrirRegistroEDA } from '@/lib/abrirRegistroEDA';
 import {
   obterContextoGuias,
   validarContextoGuias,
@@ -255,6 +256,9 @@ export default function GuiasPage() {
 
   // EDA_AO_VIVO_V1
   useAoVivoEDA(['guias', 'reservas'], () => void fetchGuias(true));
+  // EDA_ABRIR_V1: a EDA abre um registro desta página direto.
+  useAbrirRegistroEDA(guias, abrirEdicao);
+
 
   function abrirEdicao(guia: Guia) {
     if (!podeGerenciar) return;
@@ -1362,4 +1366,4 @@ export default function GuiasPage() {
       )}
     </div>
   );
-}
+}

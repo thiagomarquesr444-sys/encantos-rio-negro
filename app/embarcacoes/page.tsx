@@ -14,6 +14,7 @@ import Link from 'next/link';
 
 import { supabase } from '@/lib/supabase';
 import { useAoVivoEDA } from '@/lib/aoVivoEDA';
+import { useAbrirRegistroEDA } from '@/lib/abrirRegistroEDA';
 import { CabecalhoEDA } from '@/app/components/PadraoPaginaEDA';
 import CampoOpcoesEDA from '@/app/components/CampoOpcoesEDA';
 import { CONDICAO_EMBARCACAO } from '@/lib/opcoesEDA';
@@ -382,6 +383,9 @@ export default function EmbarcacoesPage() {
 
   // EDA_AO_VIVO_V1
   useAoVivoEDA(['embarcacoes', 'reservas'], () => void fetchEmbarcacoes(true));
+  // EDA_ABRIR_V1: a EDA abre um registro desta página direto.
+  useAbrirRegistroEDA(embarcacoes, abrirEdicao);
+
 
   /*
     ============================================================
@@ -1962,4 +1966,4 @@ export default function EmbarcacoesPage() {
       )}
     </div>
   );
-}
+}
