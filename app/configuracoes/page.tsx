@@ -10,7 +10,7 @@ import SegurancaContaERN from '@/app/components/SegurancaContaERN';
 import SeletorTemaERN from '@/app/components/SeletorTemaERN';
 import { chavePixAmbigua, normalizarChavePix, TIPOS_CHAVE_PIX, type TipoChavePix } from '@/lib/pixEDA';
 
-type Tema = 'verde' | 'azul' | 'amarelo' | 'branco' | 'grafite';
+type Tema = 'verde' | 'branco' | 'auto';
 
 type Configuracao = {
   id?: string;
@@ -47,20 +47,9 @@ const TEMAS: Record<
     sobreDestaque: string;
   }
 > = {
-  grafite: {
-    nome: 'Grafite',
-    descricao: 'Escuro neutro com detalhes discretos.',
-    fundo: '#101214',
-    painel: '#1A1D21',
-    texto: '#F0F1F2',
-    secundario: '#BFC5CB',
-    borda: '#454B53',
-    destaque: '#C5B595',
-    sobreDestaque: '#101214',
-  },
   verde: {
-    nome: 'Verde Rio Negro',
-    descricao: 'Identidade atual da plataforma.',
+    nome: 'Noite',
+    descricao: 'Escuro com a identidade da Encantos.',
     fundo: '#07110E',
     painel: '#10231B',
     texto: '#EDEDE3',
@@ -69,30 +58,8 @@ const TEMAS: Record<
     destaque: '#F4C77E',
     sobreDestaque: '#07110E',
   },
-  azul: {
-    nome: 'Azul',
-    descricao: 'Azul profundo com detalhes claros.',
-    fundo: '#081525',
-    painel: '#10263D',
-    texto: '#F0F6FC',
-    secundario: '#B7CAE0',
-    borda: '#35516F',
-    destaque: '#9AD4FF',
-    sobreDestaque: '#081525',
-  },
-  amarelo: {
-    nome: 'Amarelo',
-    descricao: 'Fundo suave com identidade solar.',
-    fundo: '#FFF7DB',
-    painel: '#FFFCF0',
-    texto: '#30260D',
-    secundario: '#695727',
-    borda: '#CDBA7A',
-    destaque: '#805600',
-    sobreDestaque: '#FFFFFF',
-  },
   branco: {
-    nome: 'Branco',
+    nome: 'Claro',
     descricao: 'Superfícies claras e detalhes verdes.',
     fundo: '#F4F6F5',
     painel: '#FFFFFF',
@@ -101,6 +68,17 @@ const TEMAS: Record<
     borda: '#B8C9BF',
     destaque: '#176042',
     sobreDestaque: '#FFFFFF',
+  },
+  auto: {
+    nome: 'Automático',
+    descricao: 'Segue o modo claro ou escuro do aparelho.',
+    fundo: '#07110E',
+    painel: '#10231B',
+    texto: '#EDEDE3',
+    secundario: '#B8C9BF',
+    borda: '#355043',
+    destaque: '#F4C77E',
+    sobreDestaque: '#07110E',
   },
 };
 
@@ -267,7 +245,7 @@ export default function ConfiguracoesPage() {
     '--cfg-destaque': paleta.destaque,
     '--cfg-sobre-destaque': paleta.sobreDestaque,
     colorScheme:
-      config.tema === 'branco' || config.tema === 'amarelo'
+      config.tema === 'branco'
         ? 'light'
         : 'dark',
   } as CSSProperties;
@@ -501,7 +479,7 @@ export default function ConfiguracoesPage() {
                 Aparência
               </h2>
               <p className="mt-2 text-sm leading-6 text-[var(--cfg-secundario)]">
-                Escolha uma paleta para visualizar nesta página.
+                Noite, Claro ou Automático (acompanha o aparelho).
                 Salve para registrar a preferência da empresa.
               </p>
 
@@ -757,4 +735,4 @@ export default function ConfiguracoesPage() {
       </div>
     </main>
   );
-}
+}

@@ -119,14 +119,20 @@ export default function ConversaEDA() {
     void supabase.from('eda_avisos').select('id,tipo,titulo,texto,link,gravidade,extra').is('lido_em', null)
       .order('criado_em', { ascending: false }).limit(10)
       .then(({ data }) => { if (ativo && Array.isArray(data)) setAvisos(data as AvisoEDA[]); });
-    return () => { ativo = false; };
+    const lidos = (e: Event) => {
+      const tipo = (e as CustomEvent<{ tipo?: string }>).detail?.tipo;
+      setAvisos(a => (tipo ? a.filter(x => x.tipo !== tipo) : []));
+    };
+    window.addEventListener('eda:avisos-lidos', lidos);
+    return () => { ativo = false; window.removeEventListener('eda:avisos-lidos', lidos); };
   }, []);
   useEffect(() => {
     if (!aberto || !avisos.length) return;
     const lista = avisos;
     setAvisos([]);
     setMsgs(m => [...m, { papel: 'eda', texto: lista.length === 1 ? 'Tenho um aviso para você:' : `Tenho ${lista.length} avisos para você:`, avisos: lista }]);
-    void supabase.rpc('marcar_avisos_lidos_eda', { p_ids: lista.map(a => a.id) });
+    // A chamada só executa quando é aguardada (.then); antes ficava pendente e o aviso voltava.
+    void supabase.rpc('marcar_avisos_lidos_eda', { p_ids: lista.map(a => a.id) }).then(() => undefined);
   }, [aberto, avisos]);
   useEffect(() => { try { if (localStorage.getItem('eda.estilo') === 'formal') setEstilo('formal'); } catch {} }, []);
   const fimRef = useRef<HTMLDivElement>(null);

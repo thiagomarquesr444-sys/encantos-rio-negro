@@ -109,7 +109,7 @@ export default function PosVendaPage() {
     if (enviados[chave(i)]) return;
     setEnviados(e => ({ ...e, [chave(i)]: true }));
     if (empresaId) {
-      void supabase.from('posvenda_envios').upsert({ reserva_id: i.id, tipo: i.tipo, empresa_id: empresaId }, { onConflict: 'reserva_id,tipo', ignoreDuplicates: true });
+      void supabase.from('posvenda_envios').upsert({ reserva_id: i.id, tipo: i.tipo, empresa_id: empresaId }, { onConflict: 'reserva_id,tipo', ignoreDuplicates: true }).then(() => undefined);
     }
   }
 

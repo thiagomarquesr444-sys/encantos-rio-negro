@@ -41,6 +41,14 @@ function pertenceARota(pathname: string, rota: string): boolean {
   return pathname === rota || pathname.startsWith(`${rota}/`);
 }
 
+// EDA_TEMAS_V2: 'auto' vira Claro ou Noite conforme o modo do aparelho.
+function resolverTema(valor: unknown): Tema {
+  if (valor === 'auto') {
+    try { return window.matchMedia('(prefers-color-scheme: light)').matches ? 'branco' : 'verde'; } catch { return 'verde'; }
+  }
+  return normalizarTema(valor);
+}
+
 function normalizarTema(valor: unknown): Tema {
   return valor === 'verde' ||
     valor === 'azul' ||
@@ -225,7 +233,7 @@ export default function AppShell({
         if (!ativo || requisicao !== versao) return;
         if (error) throw error;
 
-        const escolhido = normalizarTema(data);
+        const escolhido = resolverTema(data);
         setTema(escolhido);
         setErroTema(false);
 
@@ -292,6 +300,8 @@ export default function AppShell({
         }
       });
 
+    const modoAparelho = window.matchMedia?.('(prefers-color-scheme: light)');
+    modoAparelho?.addEventListener?.('change', atualizarTema);
     window.addEventListener('ern:tema-salvo', atualizarTema);
     window.addEventListener('storage', aoMudarPreferenciaEmOutraAba);
     document.addEventListener('visibilitychange', aoRetornar);
@@ -301,6 +311,7 @@ export default function AppShell({
       versao += 1;
       clearTimeout(tarefa);
       subscription.unsubscribe();
+      modoAparelho?.removeEventListener?.('change', atualizarTema);
       window.removeEventListener('ern:tema-salvo', atualizarTema);
       window.removeEventListener('storage', aoMudarPreferenciaEmOutraAba);
       document.removeEventListener('visibilitychange', aoRetornar);
@@ -385,4 +396,4 @@ export default function AppShell({
       <ApresentacaoPaginaERN>{children}</ApresentacaoPaginaERN>
     </div>
   );
-}
+}

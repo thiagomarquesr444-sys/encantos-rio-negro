@@ -4,6 +4,7 @@ import '@/app/components/padrao-formularios-eda.css';
 import './relatorios-premium.css';
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import Link from 'next/link';
+import { supabase } from '@/lib/supabase';
 import { baixarDocumentoPremiumERN } from '@/lib/documentosPremiumERN';
 import { SeletorPeriodoMensalERN } from '@/app/components/PeriodoMensalERN';
 import { dataNoPeriodoERN, mesAtualERN, periodoDaURLERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
@@ -183,6 +184,8 @@ export default function RelatoriosPage() {
   useEffect(() => { void carregar(); return () => { carregamento.current++; sequencia.current++; }; }, []);
   // ERN_PERIODO_MENSAL_V1: abre no mês atual; histórico a um clique.
   const [periodo, setPeriodo] = useState<PeriodoMensalERN>(mesAtualERN);
+  // EDA_AVISO_SEMANAL_LIDO_V1: abrir Relatórios conta como "visto"; o aviso some do assistente até a próxima semana.
+  useEffect(() => { void supabase.rpc('marcar_avisos_tipo_lidos_eda', { p_tipo: 'semanal' }).then(({ error }) => { if (!error) window.dispatchEvent(new CustomEvent('eda:avisos-lidos', { detail: { tipo: 'semanal' } })); }); }, []);
   useEffect(() => { setPeriodo(periodoDaURLERN(new URLSearchParams(window.location.search).get('mes'))); }, []);
   const doPeriodo = useMemo(() => registros.filter(r => dataNoPeriodoERN(r.data_geracao || r.created_at, periodo)), [registros, periodo]);
   const filtrados = useMemo(() => doPeriodo.filter(r => (!status || statusRelatorioERN(r.status) === status) && normalizar(`${r.titulo} ${r.tipo ?? ''} ${r.gerado_por ?? ''} ${statusRelatorioERN(r.status)}`).includes(normalizar(busca))), [doPeriodo, busca, status]);

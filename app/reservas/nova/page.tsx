@@ -282,7 +282,7 @@ export default function NovaReservaPage() {
   }, []);
   useEffect(() => {
     if (!gravada || !pedidoOrigem) return;
-    void supabase.from('pedidos_visitante').update({ status: 'convertido', atualizado_em: new Date().toISOString() }).eq('id', pedidoOrigem);
+    void supabase.from('pedidos_visitante').update({ status: 'convertido', atualizado_em: new Date().toISOString() }).eq('id', pedidoOrigem).then(() => undefined);
   }, [gravada, pedidoOrigem]);
 
   const envioReserva = useRef(false);
@@ -1076,4 +1076,4 @@ export default function NovaReservaPage() {
       </div>
     </PaginaEDA>
   );
-}
+}

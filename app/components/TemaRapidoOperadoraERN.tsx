@@ -1,7 +1,7 @@
 'use client';
 
 // ERN_TEMA_NOITE_CLARO_V1
-// Atalho de tema no menu lateral: apenas Noite (verde-noite) e Claro.
+// Atalho de tema no menu lateral: Noite, Claro e Automático (EDA_TEMAS_V2).
 // Salva em configuracoes.tema da empresa, como antes. As demais cores
 // continuam disponíveis em Configurações para quem já as usa.
 
@@ -14,7 +14,7 @@ type Vinculo = { id: string; empresaId: string; tema: string };
 
 const NOITE: TemaERN = 'verde';
 const CLARO: TemaERN = 'branco';
-const ehClaro = (tema: string) => tema === 'branco' || tema === 'amarelo';
+const AUTO: TemaERN = 'auto';
 
 export default function TemaRapidoOperadoraERN() {
   const pathname = usePathname();
@@ -88,12 +88,12 @@ export default function TemaRapidoOperadoraERN() {
   }
 
   if (!vinculo) return null;
-  const claro = ehClaro(vinculo.tema);
+  const atual = vinculo.tema === CLARO || vinculo.tema === AUTO ? vinculo.tema : NOITE;
 
   return (
     <div className="ern-tema-lateral">
       <div role="group" aria-label="Tema do painel" className="flex gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1">
-        {([[NOITE, 'Noite', !claro], [CLARO, 'Claro', claro]] as const).map(([valor, rotulo, ativo]) => (
+        {([[NOITE, 'Noite', atual === NOITE], [CLARO, 'Claro', atual === CLARO], [AUTO, 'Auto', atual === AUTO]] as const).map(([valor, rotulo, ativo]) => (
           <button
             key={valor}
             type="button"

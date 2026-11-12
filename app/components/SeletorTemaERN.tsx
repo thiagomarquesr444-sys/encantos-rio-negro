@@ -2,18 +2,17 @@
 
 import { useRef } from 'react';
 
-export type TemaERN = 'verde' | 'azul' | 'amarelo' | 'branco' | 'grafite';
+// EDA_TEMAS_V2: só Noite, Claro e Automático (segue o aparelho).
+export type TemaERN = 'verde' | 'branco' | 'auto';
 
 export const OPCOES_TEMA_ERN: {
   valor: TemaERN;
   nome: string;
   cor: string;
 }[] = [
-  { valor: 'grafite', nome: 'Grafite', cor: '#101214' },
-  { valor: 'verde', nome: 'Verde Rio Negro', cor: '#10231b' },
-  { valor: 'azul', nome: 'Azul', cor: '#10263d' },
-  { valor: 'amarelo', nome: 'Amarelo', cor: '#fff7db' },
-  { valor: 'branco', nome: 'Branco', cor: '#ffffff' },
+  { valor: 'verde', nome: 'Noite', cor: '#07110E' },
+  { valor: 'branco', nome: 'Claro', cor: '#F4F6F5' },
+  { valor: 'auto', nome: 'Automático', cor: 'linear-gradient(135deg, #07110E 50%, #F4F6F5 50%)' },
 ];
 
 export default function SeletorTemaERN({
@@ -27,7 +26,7 @@ export default function SeletorTemaERN({
 }) {
   const recipiente = useRef<HTMLDetailsElement>(null);
   const atual = OPCOES_TEMA_ERN.find(item => item.valor === valor)
-    ?? OPCOES_TEMA_ERN[1];
+    ?? OPCOES_TEMA_ERN[0];
 
   return (
     <details ref={recipiente} className="ern-tema-seletor"
