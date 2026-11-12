@@ -9,6 +9,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import { possuiRecurso, type PlanoAtual, type SituacaoLimite } from '@/lib/plano';
 import { consultarFinanceiroERN, type RegistroFinanceiroERN } from '@/lib/financeiroConsultaERN';
 import { analisarGraficosFinanceirosERN, periodoRecenteERN } from '@/lib/financeiroGraficosERN';
@@ -158,6 +159,9 @@ export default function InicioOperadoraPremiumERN({
   // EDA_FICHA_SAUDE_V1: alertas de saúde/segurança das próximas viagens (só contagens).
   const [saude, setSaude] = useState<AlertaViagemEDA[] | null>(null);
   // EDA_RECURSOS_AGENDA_V1: barco/guia em duas viagens e barco acima da lotação.
+  // EDA_AO_VIVO_V1: pendências, saúde e chegadas se atualizam sozinhas.
+  const [revisao, setRevisao] = useState(0);
+  useAoVivoEDA(['reservas', 'pedidos_visitante', 'demandas', 'demanda_itens', 'participante_fichas', 'reserva_participantes', 'passeio_saidas', 'embarcacoes', 'guias'], () => setRevisao((r) => r + 1));
   const [conflitos, setConflitos] = useState<ConflitoEDA[]>([]);
   const [lotacao, setLotacao] = useState<LotacaoEDA[]>([]);
   useEffect(() => {
@@ -166,7 +170,7 @@ export default function InicioOperadoraPremiumERN({
       .then(([c, l]) => { if (ativo) { setConflitos(c); setLotacao(l); } })
       .catch(() => { /* sem permissão */ });
     return () => { ativo = false; };
-  }, []);
+  }, [revisao]);
   // EDA_OPERACAO_AO_VIVO_V1: alertas críticos das viagens em curso entram nas pendências.
   const [aoVivo, setAoVivo] = useState<ViagemAoVivoEDA[]>([]);
   // EDA_FASE_B_V1: pedidos novos vindos da Iara (portal).
@@ -194,18 +198,18 @@ export default function InicioOperadoraPremiumERN({
       if (ativo) setPosVendaPendente(alvo.filter(r => !feitos.has(`${r.id}:${r.data_reserva === ontem ? 'pos' : 'vespera'}`)).length);
     })().catch(() => { /* sem permissão */ });
     return () => { ativo = false; };
-  }, []);
+  }, [revisao]);
   useEffect(() => {
     let ativo = true;
     supabase.rpc('operacao_ao_vivo_eda').then(({ data, error }) => { if (ativo && !error) setAoVivo((data ?? []) as ViagemAoVivoEDA[]); });
     return () => { ativo = false; };
-  }, []);
+  }, [revisao]);
   useEffect(() => {
     let ativo = true;
     supabase.rpc('alertas_proximas_viagens_eda', { p_dias: 7 })
       .then(({ data, error }) => { if (ativo) setSaude(error ? [] : (data ?? []) as AlertaViagemEDA[]); });
     return () => { ativo = false; };
-  }, []);
+  }, [revisao]);
 
   // ERN_RESERVA_CHEGADAS_V1: chegadas dos próximos 7 dias (a partir de agora menos 6 horas).
   useEffect(() => {
@@ -214,7 +218,7 @@ export default function InicioOperadoraPremiumERN({
     const fim = new Date(Date.now() + 7 * 24 * 3600_000).toISOString();
     listarChegadas(inicio, fim).then(l => { if (ativo) setChegadas(l); }).catch(() => { if (ativo) setChegadas([]); });
     return () => { ativo = false; };
-  }, []);
+  }, [revisao]);
 
   // Nome do usuário, embarcações, guias e vitrine na Rede.
   useEffect(() => {

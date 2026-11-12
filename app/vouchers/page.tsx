@@ -16,6 +16,7 @@ import { baixarDocumentoPremiumERN } from '@/lib/documentosPremiumERN';
 import { carregarChegadaDaReserva, textoChegadaVoucher, textoTransferVoucher } from '@/lib/chegadasERN';
 import { consultarIdentificacaoEmpresaERN } from '@/lib/identificacaoEmpresaERN';
 import { isSupabaseConfigured, supabase } from '@/lib/supabase';
+import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import { reservaOperacionalERN } from '@/lib/reservasStatusERN';
 import { SeletorPeriodoMensalERN, SeloExpiracaoERN } from '@/app/components/PeriodoMensalERN';
 import { HISTORICO_ERN, dataNoPeriodoERN, mesAtualERN, periodoDaURLERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
@@ -439,10 +440,10 @@ export default function VouchersPage() {
   const pdfEmAndamento = useRef(false);
   const versaoConsulta = useRef(0);
 
-  const carregar = useCallback(async () => {
+  const carregar = useCallback(async (silencioso = false) => {
     const versao = ++versaoConsulta.current;
 
-    setCarregando(true);
+    if (!silencioso) setCarregando(true);
     setErroConsulta(null);
     setErroAuxiliares(null);
     setClientes([]);
@@ -520,6 +521,9 @@ export default function VouchersPage() {
       versaoConsulta.current += 1;
     };
   }, [carregar]);
+
+  // EDA_AO_VIVO_V1
+  useAoVivoEDA(['vouchers', 'reservas'], () => void carregar(true));
 
   useEffect(() => {
     const timer = window.setInterval(() => setHoje(hojeManaus()), 60000);
@@ -1366,4 +1370,4 @@ export default function VouchersPage() {
       )}
     </div>
   );
-}
+}

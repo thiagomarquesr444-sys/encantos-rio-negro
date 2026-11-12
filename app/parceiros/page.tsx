@@ -6,6 +6,7 @@ import '@/app/components/padrao-formularios-eda.css';
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import CampoLocalEDA from '@/app/components/CampoLocalEDA';
 import { ComissoesParceirosEDA } from '@/app/components/ParceirosComissaoEDA';
 
@@ -172,9 +173,9 @@ export default function ParceirosPage() {
     return atual.empresaId;
   }
 
-  async function carregarParceiros() {
+  async function carregarParceiros(silencioso = false) {
     const consulta = ++consultaParceirosERN.current;
-    setLoading(true);
+    if (!silencioso) setLoading(true);
     setFeedback(atual => atual?.tipo === 'sucesso' ? atual : null);
     contextoParceirosERN.current = null;
 
@@ -242,6 +243,9 @@ export default function ParceirosPage() {
   useEffect(() => {
     carregarParceiros();
   }, []);
+
+  // EDA_AO_VIVO_V1
+  useAoVivoEDA(['parceiros', 'reservas'], () => void carregarParceiros(true));
 
   const tiposExistentes = useMemo(() => {
     return Array.from(
@@ -468,7 +472,7 @@ export default function ParceirosPage() {
           <div className="flex flex-col gap-3 sm:flex-row">
             <button
               type="button"
-              onClick={carregarParceiros}
+              onClick={() => void carregarParceiros()}
               disabled={loading}
               className="inline-flex min-h-[48px] items-center justify-center rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] px-5 text-xs font-semibold text-[var(--ern-secundario)] transition hover:bg-[var(--ern-suave)] disabled:opacity-40"
             >
@@ -1412,4 +1416,4 @@ function FormField({
       {children}
     </label>
   );
-}
+}

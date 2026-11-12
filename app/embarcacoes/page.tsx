@@ -13,6 +13,7 @@ import React, {
 import Link from 'next/link';
 
 import { supabase } from '@/lib/supabase';
+import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import { CabecalhoEDA } from '@/app/components/PadraoPaginaEDA';
 import CampoOpcoesEDA from '@/app/components/CampoOpcoesEDA';
 import { CONDICAO_EMBARCACAO } from '@/lib/opcoesEDA';
@@ -299,9 +300,9 @@ export default function EmbarcacoesPage() {
     return atual.empresaId;
   }
 
-  async function fetchEmbarcacoes() {
+  async function fetchEmbarcacoes(silencioso = false) {
     const consulta = ++consultaFrotaERN.current;
-    setLoading(true);
+    if (!silencioso) setLoading(true);
     setError(null);
     contextoFrotaERN.current = null;
 
@@ -378,6 +379,9 @@ export default function EmbarcacoesPage() {
   useEffect(() => {
     fetchEmbarcacoes();
   }, []);
+
+  // EDA_AO_VIVO_V1
+  useAoVivoEDA(['embarcacoes', 'reservas'], () => void fetchEmbarcacoes(true));
 
   /*
     ============================================================
@@ -892,7 +896,7 @@ export default function EmbarcacoesPage() {
           titulo="Embarcações"
           resumo="Gerencie barcos, lanchas e estruturas fluviais usadas em passeios, deslocamentos e expedições."
           acoes={<>
-                <button type="button" onClick={fetchEmbarcacoes} className="eda-pg-bt">Atualizar</button>
+                <button type="button" onClick={() => void fetchEmbarcacoes()} className="eda-pg-bt">Atualizar</button>
                 <Link href="/embarcacoes/novo" className="eda-pg-bt eda-pg-bt-ouro">+ Nova embarcação</Link>
           </>}
         />
@@ -1958,4 +1962,4 @@ export default function EmbarcacoesPage() {
       )}
     </div>
   );
-}
+}

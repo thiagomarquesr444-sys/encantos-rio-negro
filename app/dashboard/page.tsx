@@ -12,6 +12,7 @@ import GraficosOperadora from '@/app/components/GraficosOperadora';
 import MapaTerritorioERN from '@/app/components/MapaTerritorioERN';
 
 import { supabase } from '@/lib/supabase';
+import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import BotaoCopaPescaERN from '@/app/components/BotaoCopaPescaERN';
 import PainelPorFuncaoERN from '@/app/components/PainelPorFuncaoERN';
 import InicioOperadoraPremiumERN from '@/app/components/InicioOperadoraPremiumERN';
@@ -457,6 +458,9 @@ function DashboardAdministrativoERN() {
   const [uso, setUso] = useState<UsoPlano | null>(null);
 
   const [inicioPeriodo, setInicioPeriodo] = useState('');
+  // EDA_AO_VIVO_V1: o painel acompanha a operação sem recarregar.
+  const [revisao, setRevisao] = useState(0);
+  useAoVivoEDA(['reservas', 'demandas', 'clientes', 'passeios', 'embarcacoes', 'financeiro', 'passeio_saidas'], () => setRevisao((r) => r + 1));
   const [loading, setLoading] = useState(true);
   const [loadingPlano, setLoadingPlano] = useState(true);
 
@@ -659,7 +663,7 @@ function DashboardAdministrativoERN() {
     return () => {
       ativo = false;
     };
-  }, []);
+  }, [revisao]);
 
   const situacaoUso = useMemo(() => {
     if (!plano || !uso) {

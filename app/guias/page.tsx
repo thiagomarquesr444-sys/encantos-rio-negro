@@ -7,6 +7,7 @@ import './guias-premium.css';
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import {
   obterContextoGuias,
   validarContextoGuias,
@@ -145,9 +146,9 @@ export default function GuiasPage() {
   
   const consultaGuiasERN = React.useRef(0);
 
-  async function fetchGuias() {
+  async function fetchGuias(silencioso = false) {
     const consulta = ++consultaGuiasERN.current;
-    setLoading(true);
+    if (!silencioso) setLoading(true);
     setError(null);
     setGuias([]);
     setContexto(null);
@@ -251,6 +252,9 @@ export default function GuiasPage() {
   useEffect(() => {
     void fetchGuias();
   }, []);
+
+  // EDA_AO_VIVO_V1
+  useAoVivoEDA(['guias', 'reservas'], () => void fetchGuias(true));
 
   function abrirEdicao(guia: Guia) {
     if (!podeGerenciar) return;
@@ -1358,4 +1362,4 @@ export default function GuiasPage() {
       )}
     </div>
   );
-}
+}

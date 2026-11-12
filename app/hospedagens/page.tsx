@@ -15,6 +15,7 @@ import React, {
 import Link from 'next/link';
 
 import { supabase } from '@/lib/supabase';
+import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import { CabecalhoEDA } from '@/app/components/PadraoPaginaEDA';
 import AcomodacoesHospedagemEDA from '@/app/components/AcomodacoesHospedagemEDA';
 import CampoOpcoesEDA from '@/app/components/CampoOpcoesEDA';
@@ -355,9 +356,9 @@ export default function HospedagensPage() {
     return atual.empresaId;
   }
 
-  async function fetchHospedagens() {
+  async function fetchHospedagens(silencioso = false) {
     const consulta = ++consultaHospedagensERN.current;
-    setLoading(true);
+    if (!silencioso) setLoading(true);
     setError(null);
     contextoHospedagensERN.current = null;
 
@@ -433,6 +434,9 @@ export default function HospedagensPage() {
   useEffect(() => {
     fetchHospedagens();
   }, []);
+
+  // EDA_AO_VIVO_V1
+  useAoVivoEDA(['hospedagens', 'reservas'], () => void fetchHospedagens(true));
 
   /*
     ============================================================
@@ -952,7 +956,7 @@ export default function HospedagensPage() {
           titulo="Hospedagens"
           resumo="Organize pousadas, hotéis, barcos-hotel e outras unidades ligadas à operação turística."
           acoes={<>
-                <button type="button" onClick={fetchHospedagens} className="eda-pg-bt">Atualizar</button>
+                <button type="button" onClick={() => void fetchHospedagens()} className="eda-pg-bt">Atualizar</button>
                 <Link href="/hospedagens/novo" className="eda-pg-bt eda-pg-bt-ouro">+ Nova hospedagem</Link>
           </>}
         />
@@ -1893,4 +1897,4 @@ export default function HospedagensPage() {
       )}
     </div>
   );
-}
+}

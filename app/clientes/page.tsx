@@ -4,6 +4,7 @@ import './clientes-premium.css';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import {
   BuscaEDA,
   CabecalhoEDA,
@@ -86,6 +87,9 @@ export default function ClientesPage() {
   const [erro, setErro] = useState('');
   const [feedback, setFeedback] = useState('');
   const [tentativa, setTentativa] = useState(0);
+  // EDA_AO_VIVO_V1: cliente novo ou alterado aparece sem recarregar.
+  const silencioso = useRef(false);
+  useAoVivoEDA(['clientes', 'reservas'], () => { silencioso.current = true; setTentativa((t) => t + 1); });
   const [busca, setBusca] = useState('');
   const [situacao, setSituacao] = useState('');
   const [selecionado, setSelecionado] = useState<Cliente | null>(null);
@@ -99,7 +103,8 @@ export default function ClientesPage() {
     let ativo = true;
 
     async function carregar() {
-      setCarregando(true);
+      if (!silencioso.current) setCarregando(true);
+      silencioso.current = false;
       setErro('');
       setClientes([]);
       setContexto(null);
