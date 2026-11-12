@@ -134,7 +134,15 @@ export default function ConversaEDA() {
     // A chamada só executa quando é aguardada (.then); antes ficava pendente e o aviso voltava.
     void supabase.rpc('marcar_avisos_lidos_eda', { p_ids: lista.map(a => a.id) }).then(() => undefined);
   }, [aberto, avisos]);
-  useEffect(() => { try { if (localStorage.getItem('eda.estilo') === 'formal') setEstilo('formal'); } catch {} }, []);
+  // EDA_PADROES_OPERACAO_V1: o jeito de falar vem das Configurações da empresa (vale em todos os aparelhos).
+  useEffect(() => {
+    void supabase.rpc('config_operacao_eda').then(({ data }) => {
+      if ((data as { tom_eda?: string } | null)?.tom_eda === 'formal') setEstilo('formal');
+    });
+    const salvo = (e: Event) => setEstilo((e as CustomEvent<{ tom_eda?: string }>).detail?.tom_eda === 'formal' ? 'formal' : 'regional');
+    window.addEventListener('eda:padroes-salvos', salvo);
+    return () => window.removeEventListener('eda:padroes-salvos', salvo);
+  }, []);
   const fimRef = useRef<HTMLDivElement>(null);
   const campoRef = useRef<HTMLTextAreaElement>(null);
 
@@ -306,7 +314,7 @@ export default function ConversaEDA() {
               className="cv-eda-estilo"
               aria-pressed={estilo === 'formal'}
               title="Alternar entre jeito regional e linguagem formal"
-              onClick={() => setEstilo(e => { const n = e === 'regional' ? 'formal' : 'regional'; try { localStorage.setItem('eda.estilo', n); } catch {} return n; })}
+              onClick={() => setEstilo(e => (e === 'regional' ? 'formal' : 'regional'))}
             >{estilo === 'regional' ? 'Jeito regional' : 'Formal'}</button>
             <button type="button" className="cv-eda-x" onClick={() => setAberto(false)} aria-label="Fechar conversa">×</button>
           </header>

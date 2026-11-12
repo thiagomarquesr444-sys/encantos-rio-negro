@@ -53,6 +53,14 @@ export default function SaidasPasseioEDA({ passeioId, vagasPadrao }: { passeioId
   const [resumo, setResumo] = useState<string | null>(null);
   const [data, setData] = useState('');
   const [horario, setHorario] = useState('');
+  // EDA_PADROES_OPERACAO_V1: horário de saída mais comum vem das Configurações.
+  const [horarioPadrao, setHorarioPadrao] = useState('');
+  useEffect(() => {
+    void supabase.rpc('config_operacao_eda').then(({ data }) => {
+      const h = (data as { horario_saida_padrao?: string | null } | null)?.horario_saida_padrao;
+      if (typeof h === 'string' && /^\d{2}:\d{2}$/.test(h)) { setHorarioPadrao(h); setHorario(atual => atual || h); }
+    });
+  }, []);
   const capacidade = vagasPadrao && vagasPadrao > 0 ? vagasPadrao : null;
   // EDA_VAGAS_UNICAS_V1: a capacidade do passeio é a fonte; cada saída já nasce com ela.
   const [vagas, setVagas] = useState(String(capacidade ?? 10));
@@ -90,7 +98,7 @@ export default function SaidasPasseioEDA({ passeioId, vagasPadrao }: { passeioId
     });
     setSalvando(false);
     if (error) { setErro('Não foi possível abrir a saída.'); return; }
-    setData(''); setHorario('');
+    setData(''); setHorario(horarioPadrao);
     void carregar();
   }
 

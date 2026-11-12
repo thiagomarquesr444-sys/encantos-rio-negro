@@ -26,7 +26,20 @@ type Configuracao = {
   chave_pix: string;
   pix_nome_recebedor: string;
   pix_cidade: string;
+  politica_cancelamento: Politica;
+  prazo_confirmacao_horas: number;
+  horario_saida_padrao: string;
+  tom_eda: 'regional' | 'formal';
 };
+
+// EDA_PADROES_OPERACAO_V1: regras definidas uma vez que alimentam reservas, vouchers, avisos e a EDA.
+type Politica = 'flexivel' | 'moderada' | 'rigida';
+const POLITICAS: { valor: Politica; nome: string; texto: string }[] = [
+  { valor: 'flexivel', nome: 'Flexível', texto: 'Cancelamento grátis até 24 h antes da saída.' },
+  { valor: 'moderada', nome: 'Moderada', texto: 'Grátis até 7 dias antes; depois disso o sinal não é devolvido.' },
+  { valor: 'rigida', nome: 'Rígida', texto: 'Reembolso do sinal só até 15 dias antes da saída.' },
+];
+const PRAZOS_CONFIRMACAO = [2, 6, 12, 24, 48, 72];
 
 type Feedback = {
   tipo: 'sucesso' | 'erro';
@@ -95,6 +108,10 @@ const PADRAO: Configuracao = {
   chave_pix: '',
   pix_nome_recebedor: '',
   pix_cidade: '',
+  politica_cancelamento: 'moderada',
+  prazo_confirmacao_horas: 24,
+  horario_saida_padrao: '',
+  tom_eda: 'regional',
 };
 
 function temaValido(valor: unknown): Tema {
@@ -167,7 +184,8 @@ export default function ConfiguracoesPage() {
             'id,nome_sistema,tema,moeda,fuso_horario,' +
             'permitir_reservas_mesmo_dia,antecedencia_minima_horas,' +
             'porcentagem_sinal,enviar_email_confirmacao,' +
-            'enviar_whatsapp_confirmacao,chave_pix,pix_nome_recebedor,pix_cidade',
+            'enviar_whatsapp_confirmacao,chave_pix,pix_nome_recebedor,pix_cidade,' +
+            'politica_cancelamento,prazo_confirmacao_horas,horario_saida_padrao,tom_eda',
           )
           .eq('empresa_id', empresa)
           .maybeSingle();
@@ -215,6 +233,11 @@ export default function ConfiguracoesPage() {
           chave_pix: registro.chave_pix ?? '',
           pix_nome_recebedor: registro.pix_nome_recebedor ?? '',
           pix_cidade: registro.pix_cidade ?? '',
+          politica_cancelamento: POLITICAS.some(x => x.valor === registro.politica_cancelamento)
+            ? (registro.politica_cancelamento as Politica) : PADRAO.politica_cancelamento,
+          prazo_confirmacao_horas: Number(registro.prazo_confirmacao_horas ?? PADRAO.prazo_confirmacao_horas),
+          horario_saida_padrao: String(registro.horario_saida_padrao ?? '').slice(0, 5),
+          tom_eda: registro.tom_eda === 'formal' ? 'formal' : 'regional',
         });
       } catch (falha) {
         if (ativo) {
@@ -313,6 +336,19 @@ export default function ConfiguracoesPage() {
       return;
     }
 
+    if (
+      !Number.isSafeInteger(config.prazo_confirmacao_horas) ||
+      config.prazo_confirmacao_horas < 1 || config.prazo_confirmacao_horas > 168
+    ) {
+      setFeedback({ tipo: 'erro', texto: 'Escolha um prazo de confirmação válido.' });
+      return;
+    }
+
+    if (config.horario_saida_padrao && !/^([01]\d|2[0-3]):[0-5]\d$/.test(config.horario_saida_padrao)) {
+      setFeedback({ tipo: 'erro', texto: 'Informe o horário de saída no formato 00:00.' });
+      return;
+    }
+
     // EDA_PIX_RECEBIMENTO_V1: só aceita chave Pix em formato válido.
     if (config.chave_pix.trim() && !normalizarChavePix(config.chave_pix, tipoPix)) {
       setFeedback({
@@ -340,6 +376,10 @@ export default function ConfiguracoesPage() {
         chave_pix: normalizarChavePix(config.chave_pix, tipoPix)?.chave ?? null,
         pix_nome_recebedor: config.pix_nome_recebedor.trim().slice(0, 25) || null,
         pix_cidade: config.pix_cidade.trim().slice(0, 15) || null,
+        politica_cancelamento: config.politica_cancelamento,
+        prazo_confirmacao_horas: config.prazo_confirmacao_horas,
+        horario_saida_padrao: config.horario_saida_padrao || null,
+        tom_eda: config.tom_eda,
         updated_at: new Date().toISOString(),
       };
 
@@ -384,6 +424,7 @@ export default function ConfiguracoesPage() {
           detail: { empresaId, tema: config.tema },
         }),
       );
+      window.dispatchEvent(new CustomEvent('eda:padroes-salvos', { detail: { tom_eda: config.tom_eda } }));
 
       setFeedback({
         tipo: 'sucesso',
@@ -537,112 +578,91 @@ export default function ConfiguracoesPage() {
               </p>
             </section>
 
-            <section className={painel} aria-labelledby="titulo-reservas">
-              <h2 id="titulo-reservas" className="text-lg font-semibold">
-                Preferências de reservas
+            <section className={painel} aria-labelledby="titulo-padroes">
+              <h2 id="titulo-padroes" className="text-lg font-semibold">
+                Padrões da operação
               </h2>
               <p className="mt-2 text-sm leading-6 text-[var(--cfg-secundario)]">
-                Estas regras agem na operação: a antecedência mínima e as reservas no mesmo dia
-                definem quais saídas o portal e o Concierge oferecem ao turista, e o % de sinal
-                aparece como atalho nos pagamentos da reserva. Reservas existentes não mudam.
+                Defina uma vez e a plataforma usa sozinha: nas vendas do portal e da Iara, nos
+                pagamentos da reserva, no voucher do cliente e nos avisos da EDA. Reservas já
+                feitas não mudam.
               </p>
 
-              <div className="mt-5 grid min-w-0 gap-5 sm:grid-cols-2">
+              <h3 className="mt-6 text-sm font-semibold">Vendas e pagamento</h3>
+              <div className="mt-3 grid min-w-0 gap-5 sm:grid-cols-2">
                 <label className="min-w-0 text-sm">
-                  Sinal de referência (%)
-                  <input name="porcentagem_sinal"
-                    required
-                    type="number"
-                    min={0}
-                    max={100}
-                    step="0.01"
-                    value={
-                      Number.isFinite(config.porcentagem_sinal)
-                        ? config.porcentagem_sinal
-                        : ''
-                    }
-                    onChange={(event) =>
-                      alterar(
-                        'porcentagem_sinal',
-                        event.target.value === ''
-                          ? Number.NaN
-                          : Number(event.target.value),
-                      )
-                    }
-                    className={campo}
-                  />
+                  Sinal para garantir a vaga (%)
+                  <input name="porcentagem_sinal" required type="number" min={0} max={100} step="0.01"
+                    value={Number.isFinite(config.porcentagem_sinal) ? config.porcentagem_sinal : ''}
+                    onChange={(event) => alterar('porcentagem_sinal', event.target.value === '' ? Number.NaN : Number(event.target.value))}
+                    className={campo} />
+                  <span className="mt-1 block text-xs text-[var(--cfg-secundario)]">Aparece pronto nos pagamentos e no Pix da reserva.</span>
                 </label>
-
                 <label className="min-w-0 text-sm">
-                  Antecedência mínima (horas)
-                  <input name="antecedencia_minima_horas"
-                    required
-                    type="number"
-                    min={0}
-                    step={1}
-                    value={
-                      Number.isFinite(config.antecedencia_minima_horas)
-                        ? config.antecedencia_minima_horas
-                        : ''
-                    }
-                    onChange={(event) =>
-                      alterar(
-                        'antecedencia_minima_horas',
-                        event.target.value === ''
-                          ? Number.NaN
-                          : Number(event.target.value),
-                      )
-                    }
-                    className={campo}
-                  />
+                  Antecedência mínima para vender (horas)
+                  <input name="antecedencia_minima_horas" required type="number" min={0} step={1}
+                    value={Number.isFinite(config.antecedencia_minima_horas) ? config.antecedencia_minima_horas : ''}
+                    onChange={(event) => alterar('antecedencia_minima_horas', event.target.value === '' ? Number.NaN : Number(event.target.value))}
+                    className={campo} />
+                  <span className="mt-1 block text-xs text-[var(--cfg-secundario)]">Saídas mais próximas que isso não aparecem no portal nem na Iara.</span>
+                </label>
+              </div>
+              <label className="mt-4 flex min-h-12 cursor-pointer items-center gap-3 text-sm">
+                <input name="permitir_reservas_mesmo_dia" type="checkbox" checked={config.permitir_reservas_mesmo_dia}
+                  onChange={(event) => alterar('permitir_reservas_mesmo_dia', event.target.checked)}
+                  className="h-5 w-5 shrink-0 accent-[var(--cfg-destaque)]" />
+                Aceitar reservas para saídas no mesmo dia
+              </label>
+
+              <h3 className="mt-6 text-sm font-semibold">Política de cancelamento</h3>
+              <div className="mt-3 grid min-w-0 gap-3 sm:grid-cols-3" role="radiogroup" aria-label="Política de cancelamento">
+                {POLITICAS.map((p) => (
+                  <label key={p.valor} className={`min-w-0 cursor-pointer rounded-xl border p-4 text-sm ${config.politica_cancelamento === p.valor ? 'border-[var(--cfg-destaque)]' : 'border-[var(--cfg-borda)]'}`}>
+                    <span className="flex items-center gap-2 font-semibold">
+                      <input type="radio" name="politica_cancelamento" value={p.valor}
+                        checked={config.politica_cancelamento === p.valor}
+                        onChange={() => alterar('politica_cancelamento', p.valor)}
+                        className="h-4 w-4 accent-[var(--cfg-destaque)]" />
+                      {p.nome}
+                    </span>
+                    <span className="mt-2 block text-xs leading-5 text-[var(--cfg-secundario)]">{p.texto}</span>
+                  </label>
+                ))}
+              </div>
+              <p className="mt-2 text-xs text-[var(--cfg-secundario)]">Vai impressa na verificação do voucher do cliente.</p>
+
+              <h3 className="mt-6 text-sm font-semibold">Rotina da operação</h3>
+              <div className="mt-3 grid min-w-0 gap-5 sm:grid-cols-2">
+                <label className="min-w-0 text-sm">
+                  Prazo para responder pedidos do portal
+                  <select value={config.prazo_confirmacao_horas}
+                    onChange={(event) => alterar('prazo_confirmacao_horas', Number(event.target.value))}
+                    className={campo}>
+                    {PRAZOS_CONFIRMACAO.map((h) => <option key={h} value={h}>{h < 24 ? `${h} horas` : h === 24 ? '1 dia' : `${h / 24} dias`}</option>)}
+                  </select>
+                  <span className="mt-1 block text-xs text-[var(--cfg-secundario)]">Passou disso, a EDA avisa você para não perder o cliente.</span>
+                </label>
+                <label className="min-w-0 text-sm">
+                  Horário de saída mais comum
+                  <input type="time" value={config.horario_saida_padrao}
+                    onChange={(event) => alterar('horario_saida_padrao', event.target.value)}
+                    className={campo} />
+                  <span className="mt-1 block text-xs text-[var(--cfg-secundario)]">Já vem preenchido ao programar uma nova saída.</span>
                 </label>
               </div>
 
-              <label className="mt-5 flex min-h-12 cursor-pointer items-center gap-3 text-sm">
-                <input name="permitir_reservas_mesmo_dia"
-                  type="checkbox"
-                  checked={config.permitir_reservas_mesmo_dia}
-                  onChange={(event) =>
-                    alterar('permitir_reservas_mesmo_dia', event.target.checked)
-                  }
-                  className="h-5 w-5 shrink-0 accent-[var(--cfg-destaque)]"
-                />
-                Permitir reservas para o mesmo dia
-              </label>
-            </section>
-
-            <section className={painel} aria-labelledby="titulo-comunicacao">
-              <h2 id="titulo-comunicacao" className="text-lg font-semibold">
-                Preferências de comunicação
-              </h2>
-              <p className="mt-2 text-sm leading-6 text-[var(--cfg-secundario)]">
-                O envio de mensagens depende da integração e dos recursos do plano.
-              </p>
-
-              <div className="mt-4 space-y-2">
-                <label className="flex min-h-12 cursor-pointer items-center gap-3 text-sm">
-                  <input name="enviar_email_confirmacao"
-                    type="checkbox"
-                    checked={config.enviar_email_confirmacao}
-                    onChange={(event) =>
-                      alterar('enviar_email_confirmacao', event.target.checked)
-                    }
-                    className="h-5 w-5 shrink-0 accent-[var(--cfg-destaque)]"
-                  />
-                  Preferir confirmação por e-mail
-                </label>
-
-                <label className="flex min-h-12 cursor-pointer items-center gap-3 text-sm">
-                  <input name="enviar_whatsapp_confirmacao"
-                    type="checkbox"
-                    checked={config.enviar_whatsapp_confirmacao}
-                    onChange={(event) =>
-                      alterar('enviar_whatsapp_confirmacao', event.target.checked)
-                    }
-                    className="h-5 w-5 shrink-0 accent-[var(--cfg-destaque)]"
-                  />
-                  Preferir confirmação por WhatsApp
-                </label>
+              <h3 className="mt-6 text-sm font-semibold">Jeito de falar da EDA</h3>
+              <div className="mt-3 flex flex-wrap gap-3" role="radiogroup" aria-label="Jeito de falar da EDA">
+                {([['regional', 'Jeito regional', 'Conversa leve, com o jeito da nossa região.'], ['formal', 'Formal', 'Português padrão, cordial e profissional.']] as const).map(([v, nome, texto]) => (
+                  <label key={v} className={`min-w-0 flex-1 cursor-pointer rounded-xl border p-4 text-sm ${config.tom_eda === v ? 'border-[var(--cfg-destaque)]' : 'border-[var(--cfg-borda)]'}`}>
+                    <span className="flex items-center gap-2 font-semibold">
+                      <input type="radio" name="tom_eda" value={v} checked={config.tom_eda === v}
+                        onChange={() => alterar('tom_eda', v)} className="h-4 w-4 accent-[var(--cfg-destaque)]" />
+                      {nome}
+                    </span>
+                    <span className="mt-2 block text-xs leading-5 text-[var(--cfg-secundario)]">{texto}</span>
+                  </label>
+                ))}
               </div>
             </section>
 

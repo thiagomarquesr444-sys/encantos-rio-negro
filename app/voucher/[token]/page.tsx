@@ -10,7 +10,7 @@ import { supabase } from '@/lib/supabase';
 type Verificacao = {
   codigo: string; situacao: 'valido' | 'vencido' | 'utilizado' | 'cancelado'; titular: string | null;
   passeio: string | null; data: string | null; horario: string | null; pessoas: number | null;
-  validade: string | null; utilizado_em: string | null; operadora: string | null;
+  validade: string | null; utilizado_em: string | null; operadora: string | null; cancelamento?: string | null;
 };
 
 const SITUACAO = {
@@ -55,6 +55,7 @@ export default function VerificarVoucherPage() {
             <div><dt>Operadora</dt><dd>{v.operadora || '—'}</dd></div>
             <div><dt>Código</dt><dd className="vv-cod">{v.codigo}</dd></div>
           </dl>
+          {v.cancelamento && <p className="vv-mut"><strong>Cancelamento:</strong> {v.cancelamento}</p>}
           <p className="vv-mut">Esta página confirma apenas a situação do voucher. Em caso de dúvida, fale com a operadora.</p>
         </>
       )}
