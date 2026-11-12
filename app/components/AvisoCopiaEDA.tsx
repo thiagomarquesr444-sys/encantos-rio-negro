@@ -17,8 +17,29 @@ export default function AvisoCopiaEDA() {
       window.clearTimeout(timer.current);
       timer.current = window.setTimeout(() => setAviso(null), 2600);
     };
+    // EDA_AVISO_COPIA_V2: o copiar/colar do próprio teclado ou do toque longo também ganha a marca.
+    const nativo = (mensagem: string) => () => {
+      if (mensagem === 'Copiado' && !String(window.getSelection?.() ?? '').trim()) {
+        const el = document.activeElement as HTMLInputElement | HTMLTextAreaElement | null;
+        const temSelecao = !!el && typeof el.selectionStart === 'number' && el.selectionStart !== el.selectionEnd;
+        if (!temSelecao) return;
+      }
+      window.dispatchEvent(new CustomEvent<DetalheCopiaEDA>(EVENTO_COPIA_EDA, { detail: { mensagem, ok: true } }));
+    };
+    const aoCopiar = nativo('Copiado');
+    const aoRecortar = nativo('Recortado');
+    const aoColar = nativo('Colado');
     window.addEventListener(EVENTO_COPIA_EDA, ouvir);
-    return () => { window.removeEventListener(EVENTO_COPIA_EDA, ouvir); window.clearTimeout(timer.current); };
+    document.addEventListener('copy', aoCopiar);
+    document.addEventListener('cut', aoRecortar);
+    document.addEventListener('paste', aoColar);
+    return () => {
+      window.removeEventListener(EVENTO_COPIA_EDA, ouvir);
+      document.removeEventListener('copy', aoCopiar);
+      document.removeEventListener('cut', aoRecortar);
+      document.removeEventListener('paste', aoColar);
+      window.clearTimeout(timer.current);
+    };
   }, []);
 
   return (

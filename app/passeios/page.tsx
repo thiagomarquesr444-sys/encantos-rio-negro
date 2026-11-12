@@ -13,6 +13,7 @@ import React, {
 import { useRouter } from 'next/navigation';
 
 import { supabase } from '@/lib/supabase';
+import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import GraficoPasseios from '@/app/components/GraficoPasseios';
 import { CabecalhoEDA } from '@/app/components/PadraoPaginaEDA';
 import SaidasPasseioEDA from '@/app/components/SaidasPasseioEDA';
@@ -303,8 +304,8 @@ export default function PasseiosPage() {
     ============================================================
   */
 
-  async function fetchPasseios() {
-    setLoading(true);
+  async function fetchPasseios(silencioso = false) {
+    if (!silencioso) setLoading(true);
 
     try {
       // ERN_CONSULTA_PASSEIOS_COMPLETA
@@ -392,6 +393,9 @@ export default function PasseiosPage() {
   useEffect(() => {
     fetchPasseios();
   }, []);
+
+  // EDA_AO_VIVO_V1
+  useAoVivoEDA(['passeios', 'passeio_saidas', 'reservas'], () => void fetchPasseios(true));
 
   function mostrarSucesso(
     texto: string
@@ -954,7 +958,7 @@ export default function PasseiosPage() {
           titulo="Passeios"
           resumo="Organize experiências, preços, capacidade e informações operacionais do catálogo da empresa."
           acoes={<>
-                <button type="button" onClick={fetchPasseios} disabled={loading} className="eda-pg-bt">Atualizar</button>
+                <button type="button" onClick={() => void fetchPasseios()} disabled={loading} className="eda-pg-bt">Atualizar</button>
                 <button type="button" onClick={() => router.push('/passeios/novo')} className="eda-pg-bt eda-pg-bt-ouro">+ Novo passeio</button>
           </>}
         />
@@ -2061,4 +2065,4 @@ function Detalhe({
       </p>
     </div>
   );
-}
+}

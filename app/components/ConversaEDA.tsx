@@ -9,6 +9,8 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useAoVivoEDA } from '@/lib/aoVivoEDA';
+import { copiarEDA } from '@/lib/copiarEDA';
 import TextoDigitadoIA from './TextoDigitadoIA';
 import IconeEDA from './IconeEDA';
 import './conversa-eda.css';
@@ -114,6 +116,9 @@ export default function ConversaEDA() {
   const [avisos, setAvisos] = useState<AvisoEDA[]>([]);
   const [copiado, setCopiado] = useState<number | null>(null);
   // Avisos automáticos ainda não lidos (gerados pela rotina diária).
+  // EDA_AO_VIVO_V1: aviso novo chega no balão sem recarregar a página.
+  const [revisaoAvisos, setRevisaoAvisos] = useState(0);
+  useAoVivoEDA(['eda_avisos'], () => setRevisaoAvisos((r) => r + 1));
   useEffect(() => {
     let ativo = true;
     void supabase.from('eda_avisos').select('id,tipo,titulo,texto,link,gravidade,extra').is('lido_em', null)
@@ -125,7 +130,7 @@ export default function ConversaEDA() {
     };
     window.addEventListener('eda:avisos-lidos', lidos);
     return () => { ativo = false; window.removeEventListener('eda:avisos-lidos', lidos); };
-  }, []);
+  }, [revisaoAvisos]);
   useEffect(() => {
     if (!aberto || !avisos.length) return;
     const lista = avisos;
@@ -296,7 +301,7 @@ export default function ConversaEDA() {
   }
   async function copiarAvaliacao(a: AvisoEDA) {
     if (!a.extra?.token || !/^[0-9a-f]{36}$/.test(a.extra.token)) return;
-    try { await navigator.clipboard.writeText(`${window.location.origin}/avaliar/${a.extra.token}`); setCopiado(a.id); setTimeout(() => setCopiado(c => (c === a.id ? null : c)), 2500); } catch {}
+    if (await copiarEDA(`${window.location.origin}/avaliar/${a.extra.token}`, 'Link de avaliação copiado')) { setCopiado(a.id); setTimeout(() => setCopiado(c => (c === a.id ? null : c)), 2500); }
   }
 
   return (

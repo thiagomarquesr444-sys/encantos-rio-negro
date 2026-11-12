@@ -7,6 +7,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { useAoVivoEDA } from '@/lib/aoVivoEDA';
+import { copiarEDA } from '@/lib/copiarEDA';
 import { CabecalhoEDA, ChipsEDA, PaginaEDA, PillEDA, VazioEDA, type TomEDA } from '@/app/components/PadraoPaginaEDA';
 
 type Status = 'novo' | 'em_contato' | 'convertido' | 'descartado';
@@ -34,6 +36,9 @@ export default function PedidosVisitantePage() {
   const [salvando, setSalvando] = useState<string | null>(null);
   const [copiado, setCopiado] = useState<string | null>(null);
 
+  // EDA_AO_VIVO_V1: pedido novo do portal aparece sem recarregar.
+  const [revisao, setRevisao] = useState(0);
+  useAoVivoEDA(['pedidos_visitante'], () => setRevisao((r) => r + 1));
   useEffect(() => {
     let ativo = true;
     supabase.from('pedidos_visitante')
@@ -45,7 +50,7 @@ export default function PedidosVisitantePage() {
         setPedidos((data ?? []) as Pedido[]);
       });
     return () => { ativo = false; };
-  }, []);
+  }, [revisao]);
 
   const lista = useMemo(() => (pedidos ?? []).filter(p =>
     filtro === 'abertos' ? p.status === 'novo' || p.status === 'em_contato' : p.status === filtro), [pedidos, filtro]);
@@ -67,7 +72,7 @@ export default function PedidosVisitantePage() {
       p.periodo ? `Período: ${p.periodo}` : '',
       p.mensagem ? `Mensagem: ${p.mensagem}` : '',
     ].filter(Boolean).join('\n');
-    try { await navigator.clipboard.writeText(texto); setCopiado(p.id); setTimeout(() => setCopiado(null), 2000); } catch { /* sem permissão */ }
+    if (await copiarEDA(texto, 'Resumo do pedido copiado')) { setCopiado(p.id); setTimeout(() => setCopiado(null), 2000); }
   }
 
   const contagem = (s: Status) => (pedidos ?? []).filter(p => p.status === s).length;

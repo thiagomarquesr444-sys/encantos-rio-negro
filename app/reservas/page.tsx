@@ -12,6 +12,7 @@ import React, {
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import GraficosReservas from '@/app/components/GraficosReservas';
 import { SeletorPeriodoMensalERN } from '@/app/components/PeriodoMensalERN';
 import { HISTORICO_ERN, dataNoPeriodoERN, periodoDaURLERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
@@ -361,10 +362,10 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
   const exclusaoEmAndamento = useRef(false);
   const versaoConsulta = useRef(0);
 
-  const carregarReservas = useCallback(async () => {
+  const carregarReservas = useCallback(async (silencioso = false) => {
     const versao = ++versaoConsulta.current;
 
-    setLoading(true);
+    if (!silencioso) setLoading(true);
     setErroConsulta('');
     setErroExportacao('');
 
@@ -461,6 +462,9 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
       versaoConsulta.current += 1;
     };
   }, [carregarReservas]);
+
+  // EDA_AO_VIVO_V1
+  useAoVivoEDA(['reservas', 'demandas', 'passeio_saidas', 'financeiro', 'reserva_participantes'], () => void carregarReservas(true));
 
   useEffect(() => {
     if (!sucesso) return;

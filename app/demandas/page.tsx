@@ -17,6 +17,7 @@ import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 import { supabase } from '@/lib/supabase';
+import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import {
   BuscaEDA,
   CabecalhoEDA,
@@ -336,6 +337,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
       tipo: 'carregando',
     });
 
+  const silencioso = useRef(false);
   const [revisao, setRevisao] =
     useState(0);
 
@@ -383,9 +385,12 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
 
     let ativo = true;
 
-    setEstado({
-      tipo: 'carregando',
-    });
+    if (!silencioso.current) {
+      setEstado({
+        tipo: 'carregando',
+      });
+    }
+    silencioso.current = false;
 
     const timeout =
       window.setTimeout(() => {
@@ -512,6 +517,12 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
 
     setConsulta(proxima);
   }
+
+  // EDA_AO_VIVO_V1: reconsulta sem piscar a lista.
+  useAoVivoEDA(['demandas', 'demanda_itens', 'passeio_saidas', 'participante_fichas'], () => {
+    silencioso.current = true;
+    setRevisao((valor) => valor + 1);
+  });
 
   function atualizar(): void {
     requisicaoAtual.current?.abort();

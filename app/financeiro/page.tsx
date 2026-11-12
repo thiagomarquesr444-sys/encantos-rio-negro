@@ -11,6 +11,7 @@ import React, {
 import Link from 'next/link';
 import { BuscaEDA, CabecalhoEDA, ChipsEDA, PaginaEDA, PainelLateralEDA, PillEDA, VazioEDA, type TomEDA } from '@/app/components/PadraoPaginaEDA';
 import { supabase } from '@/lib/supabase';
+import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import { useModulosEquipeERN } from '@/app/components/ModulosEquipeERN';
 import { SeletorPeriodoMensalERN, SeloExpiracaoERN } from '@/app/components/PeriodoMensalERN';
 import { HISTORICO_ERN, dataNoPeriodoERN, mesAtualERN, periodoDaURLERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
@@ -242,9 +243,9 @@ export default function FinanceiroPage() {
   const versaoConsulta = useRef(0);
   const ocupado = salvandoEdicao || excluindo;
 
-  const carregarFinanceiro = useCallback(async () => {
+  const carregarFinanceiro = useCallback(async (silencioso = false) => {
     const versao = ++versaoConsulta.current;
-    setCarregando(true);
+    if (!silencioso) setCarregando(true);
     setErroConsulta(null);
 
     try {
@@ -291,6 +292,9 @@ export default function FinanceiroPage() {
       versaoConsulta.current += 1;
     };
   }, [carregarFinanceiro]);
+
+  // EDA_AO_VIVO_V1
+  useAoVivoEDA(['financeiro', 'reservas'], () => void carregarFinanceiro(true));
 
   useEffect(() => {
     if (!mensagemSucesso) return;
@@ -781,7 +785,7 @@ export default function FinanceiroPage() {
               registros={lancamentos}
               carregando={carregando}
               erro={erroConsulta || ''}
-              aoAtualizar={carregarFinanceiro}
+              aoAtualizar={() => carregarFinanceiro()}
             />
           </div>
         </details>
