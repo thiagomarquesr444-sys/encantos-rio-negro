@@ -420,9 +420,7 @@ export default function InicioOperadoraPremiumERN({
         const j = await r.json().catch(() => ({})) as { variacoes?: unknown };
         const lista = Array.isArray(j.variacoes) ? j.variacoes.filter((x): x is string => typeof x === 'string' && x.length > 0) : [];
         if (!ativo || !lista.length) return;
-        // EDA_SAUDACAO_V3: 1ª visita no período usa as 3 primeiras; recarga/retorno usa as de retorno (sem repetir a saudação).
-        const retorno = saudacaoEDA('').retorno;
-        const grupo = retorno && lista.length > 3 ? lista.slice(3) : lista.slice(0, 3);
+        const grupo = lista;
         let indice = 0;
         try {
           indice = (Number(localStorage.getItem('eda.recepcao.indice')) || 0) + 1;

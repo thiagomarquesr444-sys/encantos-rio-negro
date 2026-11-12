@@ -2,7 +2,7 @@
 
 // EDA_SAUDACAO_V3: a saudação da EDA muda a cada visita.
 // - Primeira entrada no período (manhã/tarde/noite/madrugada): cumprimento do período, com variações.
-// - Recarregou ou voltou no mesmo período: nada de repetir "Boa tarde" — a EDA fala como quem já viu a pessoa hoje.
+// - Recarregou ou voltou no mesmo período: no lugar do "Bom dia", uma interação descontraída do período (café, almoço, jantar, sono).
 // A mesma frase vale para o painel e para a abertura da conversa (calculada uma vez por carregamento).
 
 export type PeriodoEDA = 'madrugada' | 'manha' | 'tarde' | 'noite';
@@ -12,55 +12,40 @@ export function periodoEDA(): PeriodoEDA {
   return h < 5 ? 'madrugada' : h < 12 ? 'manha' : h < 18 ? 'tarde' : 'noite';
 }
 
+// 1ª entrada no período: o cumprimento clássico. Depois dele, a EDA puxa conversa do jeito do momento.
 const PRIMEIRA: Record<PeriodoEDA, ((n: string) => string)[]> = {
-  manha: [
-    n => `Bom dia${n ? `, ${n}` : ''}.`,
-    n => `Bom dia${n ? `, ${n}` : ''}! Café tomado?`,
-    n => `Bom dia por aqui${n ? `, ${n}` : ''}.`,
-    n => `Manhã bonita no Rio Negro${n ? `, ${n}` : ''}. Bom dia!`,
-    n => `Bom dia${n ? `, ${n}` : ''}. Bora começar?`,
-  ],
-  tarde: [
-    n => `Boa tarde${n ? `, ${n}` : ''}.`,
-    n => `Boa tarde${n ? `, ${n}` : ''}! Como vai o dia?`,
-    n => `Boa tarde por aqui${n ? `, ${n}` : ''}.`,
-    n => `Tarde chegando no Rio Negro${n ? `, ${n}` : ''}. Boa tarde!`,
-    n => `Opa, boa tarde${n ? `, ${n}` : ''}!`,
-  ],
-  noite: [
-    n => `Boa noite${n ? `, ${n}` : ''}.`,
-    n => `Boa noite${n ? `, ${n}` : ''}! Fechando o dia?`,
-    n => `Noite chegou no Rio Negro${n ? `, ${n}` : ''}. Boa noite!`,
-    n => `Boa noite por aqui${n ? `, ${n}` : ''}.`,
-  ],
-  madrugada: [
-    n => `Boa noite${n ? `, ${n}` : ''}. Madrugada de trabalho?`,
-    n => `Ainda acordado${n ? `, ${n}` : ''}? Boa noite!`,
-    n => `O rio está quieto${n ? `, ${n}` : ''}. Boa noite.`,
-  ],
+  manha: [n => `Bom dia${n ? `, ${n}` : ''}.`],
+  tarde: [n => `Boa tarde${n ? `, ${n}` : ''}.`],
+  noite: [n => `Boa noite${n ? `, ${n}` : ''}.`],
+  madrugada: [n => `Boa madrugada${n ? `, ${n}` : ''}.`],
 };
 
+const v = (n: string) => (n ? `, ${n}` : '');
 const RETORNO: Record<PeriodoEDA, ((n: string) => string)[]> = {
   manha: [
-    n => `De volta${n ? `, ${n}` : ''}.`,
-    n => `Olha tu aí de novo${n ? `, ${n}` : ''}!`,
-    n => `Tô por aqui${n ? `, ${n}` : ''}.`,
-    n => `Voltou${n ? `, ${n}` : ''}? Pode falar.`,
+    n => `Como foi o café hoje${v(n)}?`,
+    n => `Já tomou aquele cafezinho${v(n)}?`,
+    n => `E aí${v(n)}, a manhã tá rendendo?`,
+    n => `Dormiu bem${v(n)}?`,
+    n => `Café com tapioca ou com pão hoje${v(n)}?`,
   ],
   tarde: [
-    n => `De volta${n ? `, ${n}` : ''}.`,
-    n => `Olha tu aí de novo${n ? `, ${n}` : ''}!`,
-    n => `Seguimos${n ? `, ${n}` : ''}.`,
-    n => `Tô de olho em tudo${n ? `, ${n}` : ''}.`,
+    n => `E o almoço, foi de quê hoje${v(n)}?`,
+    n => `Já merendou${v(n)}?`,
+    n => `Bateu a leseira depois do almoço${v(n)}?`,
+    n => `Como tá a tarde por aí${v(n)}?`,
+    n => `Teve peixinho no almoço${v(n)}?`,
   ],
   noite: [
-    n => `De volta${n ? `, ${n}` : ''}.`,
-    n => `Ainda por aqui${n ? `, ${n}` : ''}?`,
-    n => `Seguimos firmes${n ? `, ${n}` : ''}.`,
+    n => `Como foi o dia${v(n)}?`,
+    n => `Já jantou${v(n)}?`,
+    n => `Dia puxado hoje${v(n)}?`,
+    n => `Bora fechar o dia${v(n)}?`,
   ],
   madrugada: [
-    n => `Ainda acordado${n ? `, ${n}` : ''}?`,
-    n => `Tô de vigia contigo${n ? `, ${n}` : ''}.`,
+    n => `Perdeu o sono${v(n)}?`,
+    n => `Madrugada adentro, hein${v(n)}?`,
+    n => `Tá sem sono${v(n)}? Fico contigo.`,
   ],
 };
 

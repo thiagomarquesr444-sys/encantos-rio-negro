@@ -159,6 +159,31 @@ function rotaRegistro(tabela: TabelaAcao, id: string, x: Record<string, unknown>
   }
 }
 
+/** Acha o registro (ou a tela) citado pelo nome, tolerando erro de digitação simples. */
+function acharDestino(texto: string, codigos: Record<string, CodigoAcao>, destinos: Record<string, Destino>): Destino | null {
+  const n = ` ${normalizar(texto)} `;
+  const palavras = (t: string) => normalizar(t).split(/[^a-z0-9]+/).filter(w => w.length > 2 && !['abrir', 'passeio', 'visita', 'reserva', 'demanda', 'voucher', 'guia', 'para', 'com', 'dos', 'das'].includes(w));
+  let melhor: Destino | null = null; let nota = 0;
+  for (const [cod, c] of Object.entries(codigos)) {
+    const d = destinos[cod];
+    if (!d) continue;
+    const ws = palavras(c.rotulo);
+    if (!ws.length) continue;
+    const acertos = ws.filter(w => n.includes(` ${w}`) || n.includes(w.slice(0, Math.max(4, w.length - 1)))).length;
+    if (!acertos) continue;
+    const tipo: Record<string, RegExp> = { reservas: /reserva/, passeios: /passeio|roteiro/, embarcacoes: /barco|embarca|lancha|voadeira/, guias: /guia/, hospedagens: /hosped|pousada|hotel|lodge/, parceiros: /parceir|agencia/, vouchers: /voucher/, demandas: /demanda|suprimento/, pedidos_visitante: /pedido/ };
+    const pts = (n.includes(normalizar(c.rotulo)) ? 100 : (acertos / ws.length) * 10 + acertos) + (tipo[c.tabela]?.test(n) ? 5 : 0);
+    if (pts > nota) { nota = pts; melhor = d; }
+  }
+  if (nota >= 6) return melhor;
+  // Telas gerais (reservas, financeiro…) pelo nome.
+  for (const d of Object.values(destinos)) {
+    const alvo = normalizar(d.rotulo.replace(/^(abrir|ver)\s+(o |a |os |as )?/i, ''));
+    if (alvo.length > 3 && n.includes(` ${alvo}`)) return d;
+  }
+  return null;
+}
+
 async function contextoOperadora(db: SupabaseClient, empresaId: string, hoje: string) {
   const destinos = destinosFixos(hoje);
   const ini = somarDias(hoje, -1);
@@ -834,7 +859,7 @@ function lerVariacoes(texto: string): string[] {
   try {
     const lista = JSON.parse(bloco);
     return Array.isArray(lista)
-      ? lista.filter((x): x is string => typeof x === 'string').map(x => mascararDados(x.replace(/\*\*/g, '').trim()).slice(0, 320)).filter(x => x.length > 6).slice(0, 5)
+      ? lista.filter((x): x is string => typeof x === 'string').map(x => mascararDados(x.replace(/\*\*/g, '').trim()).slice(0, 320)).filter(x => x.length > 10).slice(0, 4)
       : [];
   } catch { return []; }
 }
@@ -898,7 +923,7 @@ export async function POST(req: NextRequest) {
     if (modo === 'recepcao') {
       const op = await autenticarOperadora(req, url, anon);
       const [contexto, clima] = await Promise.all([contextoOperadora(op.db, op.empresaId, hoje), climaBarcelos()]);
-      const assinatura = createHmac('sha256', servico).update(`v3|${hoje}|${periodo}|${estilo}|${clima.split(',')[0]}|${contexto.texto}`).digest('hex');
+      const assinatura = createHmac('sha256', servico).update(`v4|${hoje}|${periodo}|${estilo}|${clima.split(',')[0]}|${contexto.texto}`).digest('hex');
       const { data: guardada } = await admin.from('eda_recepcao').select('assinatura,variacoes').eq('usuario_id', op.usuarioId).maybeSingle();
       if (guardada?.assinatura === assinatura && Array.isArray(guardada.variacoes) && guardada.variacoes.length) {
         return resposta(200, { ok: true, variacoes: guardada.variacoes, periodo, cache: true });
@@ -908,13 +933,11 @@ export async function POST(req: NextRequest) {
       const sistema = `${sistemaOperadora(op.nome, 'painel', periodo, contexto.texto, '')}${blocoEstilo('operadora', estilo)}
 
 TAREFA ESPECIAL: escreva a RECEPÇÃO de quem acabou de abrir a plataforma — curta, cordial e humana, como uma colega da região puxando conversa. NÃO é um relatório: nada de listar números, caixa ou pendências (isso a pessoa pergunta para você depois).
-Devolva SOMENTE um array JSON com 5 textos, cada um com no máximo 2 frases curtas (até 170 caracteres), sem saudação inicial (a saudação já aparece na tela) e sem marcadores [[...]]:
-- Textos 1 a 3 (primeira entrada no período): cada um com um ÂNGULO DIFERENTE — (1) o tempo agora em Barcelos; (2) a época do rio e o que ela traz para o turismo; (3) uma curiosidade ou dito da região, com leveza.
-- Textos 4 e 5 (a pessoa RECARREGOU ou VOLTOU à plataforma no mesmo período, já foi cumprimentada): bem curtos, tom de continuidade ("seguimos", "tô por aqui"), sem repetir saudação nem perguntar o que já foi perguntado.
-Varie a estrutura: não comece dois textos do mesmo jeito, evite fórmulas como "Quer que eu..." em todos, e no máximo 3 dos 5 terminam com pergunta (quando perguntar, uma pergunta certa para o momento). Só cite um fato dos DADOS se for realmente urgente (ex.: alerta grave de saúde em viagem próxima), em poucas palavras.
+Devolva SOMENTE um array JSON com 3 textos diferentes entre si, cada um com no máximo 2 frases curtas (até 180 caracteres), sem saudação inicial (o "Bom dia/Boa tarde/Boa noite, nome" já aparece na tela) e sem marcadores [[...]].
+Cada texto: (1) um toque do momento — período do dia, o tempo agora em Barcelos e/ou a época do rio; (2) termina com UMA pergunta certa para o momento (ex.: como foi a saída, se quer ver o que tem para amanhã, se vai aproveitar a temporada). Só cite um fato dos DADOS se for realmente urgente (ex.: alerta grave de saúde em viagem próxima), em poucas palavras.
 Tempo agora em Barcelos: ${clima || 'sem informação — não fale do tempo'}. Época: ${epocaRio(hoje)}.
 ${periodo === 'madrugada' ? 'É madrugada: seja acolhedora com quem está trabalhando a esta hora e não puxe assunto de trabalho pesado.' : periodo === 'manha' ? 'É manhã: energia de começo de dia.' : periodo === 'tarde' ? 'É tarde: tom de acompanhamento do dia.' : 'É noite: tom de fechamento do dia e preparação para amanhã.'}
-Exemplo de formato: ["texto 1","texto 2","texto 3","texto 4","texto 5"]`;
+Exemplo de formato: ["texto 1","texto 2","texto 3"]`;
       const texto = await responderComIA(sistema, [{ papel: 'usuario', texto: 'Escreva a recepção agora.' }]);
       const variacoes = texto ? lerVariacoes(texto) : [];
       if (!variacoes.length) return resposta(503, { ok: false, erro: 'Recepção indisponível.' });
@@ -1105,6 +1128,14 @@ Exemplo de formato: ["texto 1","texto 2","texto 3","texto 4","texto 5"]`;
       if (d && !navegar) navegar = d;
       return '';
     }) : comSugestoes.limpo;
+    // Garantia: se a pessoa pediu para abrir algo e a IA não marcou o destino (ou só disse "abrindo"),
+    // o servidor acha o registro pelo nome — nada de prometer e não levar.
+    if (modo === 'operadora' && !navegar) {
+      const ultima = mensagens.filter(m => m.papel === 'usuario').slice(-1)[0]?.texto ?? '';
+      if (/\b(abr[ea]|abrir|abri|ir (para|pra|no|na|ao)|vai (para|pra|no|na)|me (leva|mostra)|leva(r)? (pra|para|no|na|ao)|mostra(r)?|ver|entra(r)? (no|na))\b/i.test(normalizar(ultima)) || /^\s*abrindo\b/i.test(texto)) {
+        navegar = acharDestino(`${ultima} ${texto}`, codigosOp, destinos);
+      }
+    }
     const { limpo: semIr, links: linksIr } = extrairLinks(semAbrir, destinos);
     const linksPub: Destino[] = [];
     const limpo = semIr.replace(/\[\[\s*(?:LINK\s*:\s*)?([A-Z0-9_]{2,30})\s*\]\]/g, (inteiro: string, c: string) => {
