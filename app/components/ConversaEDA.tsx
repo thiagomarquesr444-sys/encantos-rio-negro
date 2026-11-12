@@ -13,6 +13,9 @@ import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import { copiarEDA } from '@/lib/copiarEDA';
 import TextoDigitadoIA from './TextoDigitadoIA';
 import IconeEDA from './IconeEDA';
+import { acaoRegistroValida, REGRAS_ACAO, type AcaoRegistro } from '@/lib/acoesEDA';
+import { EVENTO_AO_VIVO_EDA } from '@/lib/aoVivoEDA';
+import { saudacaoEDA } from '@/lib/saudacaoEDA';
 import './conversa-eda.css';
 
 type LinkEDA = { href: string; rotulo: string };
@@ -20,19 +23,63 @@ type LinkEDA = { href: string; rotulo: string };
 type AcaoEDA =
   | { tipo: 'lancar'; resumo: string; dados: { tipo: 'receita' | 'despesa'; valor: number; categoria: string; data: string; quitado: boolean; descricao: string } }
   | { tipo: 'baixar'; resumo: string; dados: { id: string; tipo: 'receita' | 'despesa'; data: string } }
-  | { tipo: 'demanda'; resumo: string; dados: { id: string; status: 'aberta' | 'encerrada' | 'cancelada' } };
+  | { tipo: 'demanda'; resumo: string; dados: { id: string; status: 'aberta' | 'encerrada' | 'cancelada' } }
+  | AcaoRegistro;
 type EstadoAcao = 'pendente' | 'executando' | 'feito' | 'cancelado' | 'erro';
 type AvisoEDA = { id: number; tipo: string; titulo: string; texto: string; link: string | null; gravidade: string; extra: { token?: string } | null };
 type Msg = { papel: 'usuario' | 'eda'; texto: string; links?: LinkEDA[]; acoes?: AcaoEDA[]; estados?: EstadoAcao[]; avisos?: AvisoEDA[] };
 
 const acaoValida = (a: unknown): a is AcaoEDA => {
-  const x = a as AcaoEDA;
-  return !!x && typeof x.resumo === 'string' && !!x.dados && ['lancar', 'baixar', 'demanda'].includes(x.tipo);
+  const x = a as { tipo?: string; resumo?: unknown; dados?: unknown };
+  if (!x || typeof x.resumo !== 'string') return false;
+  if (x.tipo === 'alterar' || x.tipo === 'criar') return acaoRegistroValida(a);
+  return !!x.dados && ['lancar', 'baixar', 'demanda'].includes(x.tipo ?? '');
 };
+
+// Avisa as telas abertas para se atualizarem sozinhas (sem recarregar nem sair da página).
+const avisarTelas = (tabela: string) => window.dispatchEvent(new CustomEvent(EVENTO_AO_VIVO_EDA, { detail: { tabela } }));
+
+async function empresaDaSessao(usuarioId: string) {
+  const { data: perfil } = await supabase.from('perfis').select('empresa_id').eq('id', usuarioId).single();
+  if (!perfil?.empresa_id) throw new Error('Não encontrei a empresa da sua conta.');
+  return String(perfil.empresa_id);
+}
+
+/** EDA_EXECUTA_V1: grava a ação autorizada com a sessão da pessoa (RLS e plano valem). */
+async function executarRegistro(a: AcaoRegistro, usuarioId: string): Promise<string> {
+  if (!acaoRegistroValida(a)) throw new Error('Essa ação não passou na conferência de segurança.');
+  const empresa = await empresaDaSessao(usuarioId);
+  const regra = REGRAS_ACAO[a.tabela];
+  const dados: Record<string, unknown> = { ...a.campos };
+  // Campos ligados: nome do guia na reserva, valor espelhado, preço do passeio.
+  if (a.tabela === 'reservas') {
+    if (typeof dados.guia_id === 'string') {
+      const { data: g } = await supabase.from('guias').select('nome').eq('id', dados.guia_id).eq('empresa_id', empresa).maybeSingle();
+      if (!g) throw new Error('Não encontrei esse guia na sua equipe.');
+      dados.guia = g.nome;
+    } else if (dados.guia_id === null) dados.guia = null;
+    if (typeof dados.valor_total === 'number') dados.valor = dados.valor_total;
+  }
+  if (a.tabela === 'passeios' && typeof dados.preco === 'number') dados.valor = dados.preco;
+  if (a.tabela === 'pedidos_visitante' || a.tabela === 'passeio_saidas') dados.atualizado_em = new Date().toISOString();
+  if (a.tipo === 'criar') {
+    // Guias: a política de criação exige o autor (usuario_id) da sessão.
+    if (a.tabela === 'guias') dados.usuario_id = usuarioId;
+    const { error } = await supabase.from(a.tabela).insert({ ...dados, empresa_id: empresa }).select('id').single();
+    if (error) throw new Error(/limite/i.test(error.message) ? 'Seu plano chegou ao limite para esse cadastro.' : `Não consegui criar ${regra.nome === 'saída' ? 'a saída' : `o(a) ${regra.nome}`}. Confira os dados ou sua permissão.`);
+    avisarTelas(a.tabela);
+    return `${regra.nome.charAt(0).toUpperCase()}${regra.nome.slice(1)} criado(a).`;
+  }
+  const { data, error } = await supabase.from(a.tabela).update(dados).eq('id', a.id).eq('empresa_id', empresa).select('id');
+  if (error || !data?.length) throw new Error(`Não consegui alterar ${regra.nome === 'reserva' || regra.nome === 'saída' || regra.nome === 'embarcação' || regra.nome === 'hospedagem' || regra.nome === 'demanda' ? 'a' : 'o'} ${regra.nome}. Confira sua permissão ou os dados.`);
+  avisarTelas(a.tabela);
+  return 'Alteração feita.';
+}
 
 async function executarAcao(a: AcaoEDA): Promise<string> {
   const { data: auth } = await supabase.auth.getUser();
   if (!auth.user) throw new Error('Sua sessão expirou. Entre novamente.');
+  if (a.tipo === 'alterar' || a.tipo === 'criar') return executarRegistro(a, auth.user.id);
   if (a.tipo === 'lancar') {
     const { data: perfil } = await supabase.from('perfis').select('empresa_id').eq('id', auth.user.id).single();
     if (!perfil?.empresa_id) throw new Error('Não encontrei a empresa da sua conta.');
@@ -44,6 +91,7 @@ async function executarAcao(a: AcaoEDA): Promise<string> {
       user_id: auth.user.id, empresa_id: perfil.empresa_id,
     }).select('id').single();
     if (error || !data) throw new Error('Não consegui lançar. Confira sua permissão no financeiro.');
+    avisarTelas('financeiro');
     return 'Lançado no financeiro.';
   }
   if (a.tipo === 'baixar') {
@@ -51,10 +99,12 @@ async function executarAcao(a: AcaoEDA): Promise<string> {
       .update({ status: a.dados.tipo === 'receita' ? 'Recebido' : 'Pago', data_liquidacao: a.dados.data })
       .eq('id', a.dados.id).select('id');
     if (error || !data?.length) throw new Error('Não consegui dar baixa. Confira sua permissão no financeiro.');
+    avisarTelas('financeiro');
     return 'Baixa feita.';
   }
   const { data, error } = await supabase.from('demandas').update({ status: a.dados.status }).eq('id', a.dados.id).select('id');
   if (error || !data?.length) throw new Error('Não consegui mudar a demanda. Confira sua permissão.');
+  avisarTelas('demandas');
   return 'Demanda atualizada.';
 }
 
@@ -74,24 +124,30 @@ export function periodoManaus(): 'madrugada' | 'manha' | 'tarde' | 'noite' {
   return h < 5 ? 'madrugada' : h < 12 ? 'manha' : h < 18 ? 'tarde' : 'noite';
 }
 
-function boasVindas(): string {
+// EDA_SAUDACAO_V3: a conversa abre com a MESMA saudação do painel, digitada letra a letra.
+function corpoBoasVindas(pagina: string): string {
   const p = periodoManaus();
-  if (p === 'madrugada') {
-    const op = [
-      'Boa noite! O rio está quieto a esta hora, mas eu sigo de vigia por aqui. 🌙 Quer que eu confira o que fica pronto para amanhã?',
-      'Madrugada de trabalho, hein? Fico com você. Me pergunte qualquer coisa da operação que eu busco rapidinho.',
-      'Boa noite! Enquanto Barcelos dorme, posso adiantar o essencial: saídas de amanhã, pendências ou o caixa. Por onde começamos?',
+  const area = ROTULO_PAGINA[pagina];
+  const op = p === 'madrugada'
+    ? [
+      'O rio está quieto a esta hora, mas eu sigo de vigia por aqui. 🌙 O que você precisa?',
+      'Fico contigo nessa madrugada. Me diz o que mudar ou conferir que eu resolvo.',
+      'Enquanto Barcelos dorme, eu adianto o que você pedir. Por onde começamos?',
+    ]
+    : [
+      area ? `Tô cuidando de ${area} contigo. Me diz o que precisa mudar que eu faço aqui mesmo — você só autoriza.` : 'Me diz o que precisa que eu resolvo aqui mesmo — você só autoriza.',
+      area ? `${area.charAt(0).toUpperCase()}${area.slice(1)} está comigo. Pode pedir do seu jeito: eu confiro, preparo e você confirma.` : 'Pode pedir do seu jeito: eu confiro, preparo e você confirma.',
+      'Aqui é a EDA. Peça a mudança ou a dúvida que eu cuido sem você sair desta página.',
     ];
-    return op[new Date().getDate() % op.length];
-  }
-  const s = p === 'manha' ? 'Bom dia' : p === 'tarde' ? 'Boa tarde' : 'Boa noite';
-  const op = [
-    `${s}! Aqui é a EDA, sua parceira na operação. Pode perguntar do seu jeito — eu olho os dados da sua operadora e te respondo rapidinho.`,
-    `${s}! EDA na área. Quer saber como está o dia, o caixa ou alguma reserva? É só me chamar.`,
-    `${s}! Que bom te ver por aqui. Me diz o que você precisa que eu procuro na plataforma para você.`,
-  ];
-  return op[new Date().getMinutes() % op.length];
+  return op[Math.floor(Math.random() * op.length)];
 }
+
+const ROTULO_PAGINA: Record<string, string> = {
+  painel: 'toda a operação', passeios: 'passeios e saídas', reservas: 'reservas', demandas: 'demandas e suprimentos',
+  financeiro: 'o financeiro', clientes: 'clientes', hospedagens: 'hospedagens', configuracoes: 'configurações',
+  embarcacoes: 'a frota', guias: 'a equipe de guias', parceiros: 'parceiros', relatorios: 'relatórios',
+  vouchers: 'vouchers', documentos: 'documentos', fiscal: 'o fiscal', planos: 'o seu plano',
+};
 
 // Negrito simples (**texto**) sem HTML: o React escapa todo o conteúdo.
 function formatar(texto: string): ReactNode[] {
@@ -115,6 +171,14 @@ export default function ConversaEDA() {
   const [estilo, setEstilo] = useState<'regional' | 'formal'>('regional');
   const [avisos, setAvisos] = useState<AvisoEDA[]>([]);
   const [copiado, setCopiado] = useState<number | null>(null);
+  const [nome, setNome] = useState('');
+  useEffect(() => {
+    void supabase.auth.getUser().then(async ({ data }) => {
+      if (!data.user) return;
+      const { data: perfil } = await supabase.from('perfis').select('nome').eq('id', data.user.id).maybeSingle();
+      setNome(String(perfil?.nome ?? '').trim().split(/\s+/)[0] ?? '');
+    });
+  }, []);
   // Avisos automáticos ainda não lidos (gerados pela rotina diária).
   // EDA_AO_VIVO_V1: aviso novo chega no balão sem recarregar a página.
   const [revisaoAvisos, setRevisaoAvisos] = useState(0);
@@ -151,7 +215,15 @@ export default function ConversaEDA() {
   const fimRef = useRef<HTMLDivElement>(null);
   const campoRef = useRef<HTMLTextAreaElement>(null);
 
-  useEffect(() => { if (aberto) setMsgs(m => (m.length && !m.every(x => x.avisos) ? m : [{ papel: 'eda', texto: boasVindas() }, ...m])); }, [aberto]);
+  useEffect(() => {
+    if (!aberto) return;
+    setMsgs(m => {
+      if (m.length && !m.every(x => x.avisos)) return m;
+      setAnimando(0);
+      return [{ papel: 'eda', texto: `${saudacaoEDA(nome).texto}\n${corpoBoasVindas(pagina ?? 'painel')}` }, ...m];
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aberto]);
   useEffect(() => { fimRef.current?.scrollIntoView({ block: 'end' }); }, [msgs, enviando]);
   useEffect(() => {
     if (!aberto) return;
@@ -164,8 +236,14 @@ export default function ConversaEDA() {
   // EDA_RECEPCAO_V2: o painel chama a EDA já com a recepção como primeira fala.
   useEffect(() => {
     const abrir = (e: Event) => {
-      const texto = (e as CustomEvent<{ texto?: string }>).detail?.texto;
-      setMsgs(m => (m.length && !m.every(x => x.avisos) ? m : [{ papel: 'eda', texto: typeof texto === 'string' && texto.trim() ? texto.trim().slice(0, 400) : boasVindas() }, ...m]));
+      const det = (e as CustomEvent<{ texto?: string; saudacao?: string }>).detail;
+      const corpo = typeof det?.texto === 'string' && det.texto.trim() ? det.texto.trim().slice(0, 400) : corpoBoasVindas('painel');
+      const cumprimento = typeof det?.saudacao === 'string' && det.saudacao.trim() ? det.saudacao.trim().slice(0, 120) : '';
+      setMsgs(m => {
+        if (m.length && !m.every(x => x.avisos)) return m;
+        setAnimando(0);
+        return [{ papel: 'eda', texto: cumprimento ? `${cumprimento}\n${corpo}` : corpo }, ...m];
+      });
       setAberto(true);
     };
     window.addEventListener('eda:abrir', abrir);
@@ -272,7 +350,7 @@ export default function ConversaEDA() {
         body: JSON.stringify({ modo: 'operadora', pagina, estilo, mensagens: historico.slice(-12).map(({ papel, texto }) => ({ papel, texto })) }),
       });
       const j = await r.json().catch(() => ({})) as { resposta?: string; erro?: string; links?: LinkEDA[]; acoes?: unknown[] };
-      const acoes = Array.isArray(j.acoes) ? j.acoes.filter(acaoValida).slice(0, 2) : [];
+      const acoes = Array.isArray(j.acoes) ? j.acoes.filter(acaoValida).slice(0, 4) : [];
       const links = Array.isArray(j.links) ? j.links.filter(linkSeguro).slice(0, 3) : [];
       setAnimando(historico.length);
       setMsgs(m => [...m, { papel: 'eda', texto: j.resposta || j.erro || 'Não consegui responder agora. Tente de novo em instantes.', links, acoes, estados: acoes.map(() => 'pendente' as EstadoAcao) }]);
@@ -288,16 +366,28 @@ export default function ConversaEDA() {
   function marcarEstado(i: number, k: number, estado: EstadoAcao) {
     setMsgs(m => m.map((x, j) => (j === i && x.estados ? { ...x, estados: x.estados.map((e, n) => (n === k ? estado : e)) } : x)));
   }
-  async function confirmar(i: number, k: number, a: AcaoEDA) {
+  async function confirmar(i: number, k: number, a: AcaoEDA, avisar = true): Promise<boolean> {
     marcarEstado(i, k, 'executando');
     try {
       const ok = await executarAcao(a);
       marcarEstado(i, k, 'feito');
-      setMsgs(m => [...m, { papel: 'eda', texto: `${ok} Tudo certo por aqui. ✔` }]);
+      if (avisar) setMsgs(m => [...m, { papel: 'eda', texto: `${ok} A tela já está atualizada. ✔` }]);
+      return true;
     } catch (e) {
       marcarEstado(i, k, 'erro');
       setMsgs(m => [...m, { papel: 'eda', texto: e instanceof Error ? e.message : 'Não consegui concluir agora.' }]);
+      return false;
     }
+  }
+  async function confirmarTodas(i: number) {
+    const msg = msgs[i];
+    if (!msg?.acoes) return;
+    let feitas = 0;
+    for (let k = 0; k < msg.acoes.length; k += 1) {
+      if ((msg.estados?.[k] ?? 'pendente') !== 'pendente') continue;
+      if (await confirmar(i, k, msg.acoes[k], false)) feitas += 1;
+    }
+    if (feitas) setMsgs(m => [...m, { papel: 'eda', texto: `Pronto: ${feitas} ${feitas === 1 ? 'mudança feita' : 'mudanças feitas'}. A tela já está atualizada. ✔` }]);
   }
   async function copiarAvaliacao(a: AvisoEDA) {
     if (!a.extra?.token || !/^[0-9a-f]{36}$/.test(a.extra.token)) return;
@@ -312,7 +402,7 @@ export default function ConversaEDA() {
             <span className="cv-eda-avatar" aria-hidden="true"><IconeEDA /></span>
             <div>
               <p className="cv-eda-nome">EDA</p>
-              <p className="cv-eda-status">{periodoManaus() === 'madrugada' ? 'De vigia na madrugada' : 'Lendo os dados da sua operadora'}</p>
+              <p className="cv-eda-status">{periodoManaus() === 'madrugada' ? 'De vigia na madrugada' : `Cuidando de ${ROTULO_PAGINA[pagina] ?? 'toda a operação'}`}</p>
             </div>
             <button
               type="button"
@@ -329,7 +419,7 @@ export default function ConversaEDA() {
               <div key={i} className={`cv-eda-bloco cv-eda-bloco-${m.papel}`}>
                 <p className={`cv-eda-msg cv-eda-${m.papel}`}>
                   {m.papel === 'eda'
-                    ? <TextoDigitadoIA texto={m.texto} animar={animando === i} render={formatar} aoTerminar={() => setAnimando(a => (a === i ? null : a))} />
+                    ? <TextoDigitadoIA texto={m.texto} animar={animando === i} msPorLetra={i === 0 ? 26 : undefined} render={formatar} aoTerminar={() => setAnimando(a => (a === i ? null : a))} />
                     : formatar(m.texto)}
                 </p>
                 {animando !== i && !!m.avisos?.length && (
@@ -342,7 +432,7 @@ export default function ConversaEDA() {
                           {a.tipo === 'avaliacao' && a.extra?.token && (
                             <button type="button" onClick={() => void copiarAvaliacao(a)}>{copiado === a.id ? 'Link copiado ✔' : 'Copiar link de avaliação'}</button>
                           )}
-                          {a.link && <Link href={a.link} onClick={() => setAberto(false)}>Abrir →</Link>}
+                          {a.link && <Link href={a.link}>Abrir →</Link>}
                         </div>
                       </li>
                     ))}
@@ -350,6 +440,9 @@ export default function ConversaEDA() {
                 )}
                 {animando !== i && !!m.acoes?.length && (
                   <div className="cv-eda-acoes">
+                    {m.acoes.length > 1 && (m.estados ?? []).filter(e => e === 'pendente').length > 1 && (
+                      <button type="button" className="cv-eda-acao-todas" onClick={() => void confirmarTodas(i)}>Autorizar todas ({(m.estados ?? []).filter(e => e === 'pendente').length})</button>
+                    )}
                     {m.acoes.map((a, k) => {
                       const st = m.estados?.[k] ?? 'pendente';
                       return (
@@ -357,7 +450,7 @@ export default function ConversaEDA() {
                           <p>{a.resumo}</p>
                           {st === 'pendente' || st === 'executando' ? (
                             <div>
-                              <button type="button" disabled={st === 'executando'} onClick={() => void confirmar(i, k, a)}>{st === 'executando' ? 'Fazendo…' : 'Confirmar'}</button>
+                              <button type="button" disabled={st === 'executando'} onClick={() => void confirmar(i, k, a)}>{st === 'executando' ? 'Fazendo…' : 'Autorizar'}</button>
                               <button type="button" className="cv-eda-acao-nao" disabled={st === 'executando'} onClick={() => marcarEstado(i, k, 'cancelado')}>Cancelar</button>
                             </div>
                           ) : <small>{st === 'feito' ? 'Feito ✔' : st === 'cancelado' ? 'Cancelado' : 'Não deu certo'}</small>}
@@ -368,7 +461,7 @@ export default function ConversaEDA() {
                 )}
                 {animando !== i && !!m.links?.length && (
                   <div className="cv-eda-links">
-                    {m.links.map(l => <Link key={l.href} href={l.href} onClick={() => setAberto(false)}>{l.rotulo} →</Link>)}
+                    {m.links.map(l => <Link key={l.href} href={l.href}>{l.rotulo} →</Link>)}
                   </div>
                 )}
               </div>

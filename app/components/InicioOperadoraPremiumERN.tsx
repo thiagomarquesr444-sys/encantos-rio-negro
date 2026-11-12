@@ -22,6 +22,7 @@ import './inicio-operadora-premium.css';
 import './capa-eda.css';
 import CartaoMagneticoEDA from './CartaoMagneticoEDA';
 import DigitacaoEDA, { type TrechoDigitado } from './DigitacaoEDA';
+import { saudacaoEDA } from '@/lib/saudacaoEDA';
 import { conflitosEDA, lotacaoEDA, type ConflitoEDA, type LotacaoEDA } from '@/lib/recursosEDA';
 import { alertasViagem, type ViagemAoVivoEDA } from '@/lib/operacaoAoVivoEDA';
 
@@ -119,15 +120,6 @@ function centavosValor(valor: unknown): number | null {
   const [reais, decimal = ''] = texto.split('.');
   const n = Number(reais) * 100 + Number(decimal.padEnd(2, '0'));
   return Number.isSafeInteger(n) && n > 0 ? n : null;
-}
-
-function saudacao(): string {
-  const hora = Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: 'America/Manaus' }).format(new Date())) % 24;
-  // EDA_IA_CONVERSA_V1: 00h–04h59 é madrugada → "Boa noite" (antes dava "Bom dia").
-  if (hora < 5) return 'Boa noite';
-  if (hora < 12) return 'Bom dia';
-  if (hora < 18) return 'Boa tarde';
-  return 'Boa noite';
 }
 
 function dataExtenso(hoje: string): string {
@@ -408,6 +400,9 @@ export default function InicioOperadoraPremiumERN({
     && (!financeiroLiberado || financeiro !== null || Boolean(erroFinanceiro) || tempoEsgotado)
     && (saude !== null || tempoEsgotado);
   const [saudacaoPronta, setSaudacaoPronta] = useState(false);
+  // EDA_SAUDACAO_V3: calculada só no navegador (varia a cada visita; recarga não repete "Boa tarde").
+  const [textoSaudacao, setTextoSaudacao] = useState('');
+  useEffect(() => { setTextoSaudacao(saudacaoEDA(nome).texto); }, [nome]);
 
   // EDA_FASE_A_V1: recepção escrita pela IA. O servidor só gera um texto novo
   // quando os dados mudam; nas recargas alternamos entre as variações guardadas.
@@ -425,12 +420,15 @@ export default function InicioOperadoraPremiumERN({
         const j = await r.json().catch(() => ({})) as { variacoes?: unknown };
         const lista = Array.isArray(j.variacoes) ? j.variacoes.filter((x): x is string => typeof x === 'string' && x.length > 0) : [];
         if (!ativo || !lista.length) return;
+        // EDA_SAUDACAO_V3: 1ª visita no período usa as 3 primeiras; recarga/retorno usa as de retorno (sem repetir a saudação).
+        const retorno = saudacaoEDA('').retorno;
+        const grupo = retorno && lista.length > 3 ? lista.slice(3) : lista.slice(0, 3);
         let indice = 0;
         try {
           indice = (Number(localStorage.getItem('eda.recepcao.indice')) || 0) + 1;
           localStorage.setItem('eda.recepcao.indice', String(indice));
         } catch {}
-        setRecepcao(lista[indice % lista.length]);
+        setRecepcao(grupo[indice % grupo.length]);
       } catch {
         // Sem IA: segue só o resumo do dia.
       } finally {
@@ -441,8 +439,8 @@ export default function InicioOperadoraPremiumERN({
   }, []);
 
   const trechosSaudacao = useMemo<TrechoDigitado[]>(
-    () => [{ texto: `${saudacao()}${nome ? `, ${nome}` : ''}.` }],
-    [nome],
+    () => [{ texto: textoSaudacao }],
+    [textoSaudacao],
   );
 
   // EDA_RECEPCAO_V2: o resumo longo saiu. Fica só a recepção cordial da EDA
@@ -477,7 +475,7 @@ export default function InicioOperadoraPremiumERN({
       <CartaoMagneticoEDA as="header" forca={4} className="eda-cabeca eda-capa">
         <div>
           <p className="eda-eb"><i className="eda-capa-traco" aria-hidden="true" />{dataExtenso(hoje)}{nomeEmpresa ? ` · ${nomeEmpresa}` : ''}</p>
-          <h1><DigitacaoEDA trechos={trechosSaudacao} iniciar={pronto} velocidade={42} atraso={250} cursorEspera aoTerminar={() => setSaudacaoPronta(true)} /></h1>
+          <h1><DigitacaoEDA trechos={trechosSaudacao} iniciar={pronto && !!textoSaudacao} velocidade={42} atraso={250} cursorEspera aoTerminar={() => setSaudacaoPronta(true)} /></h1>
           <p className="eda-frase" aria-live="off">
             <DigitacaoEDA trechos={trechosConversa} iniciar={pronto && saudacaoPronta && recepcaoPronta} velocidade={18} atraso={380} cursorFinal pularAoClicar />
           </p>
@@ -485,7 +483,7 @@ export default function InicioOperadoraPremiumERN({
             <button
               type="button"
               className="eda-responder"
-              onClick={() => window.dispatchEvent(new CustomEvent('eda:abrir', { detail: { texto: trechosConversa.map(x => x.texto).join('') } }))}
+              onClick={() => window.dispatchEvent(new CustomEvent('eda:abrir', { detail: { texto: trechosConversa.map(x => x.texto).join(''), saudacao: trechosSaudacao.map(x => x.texto).join('') } }))}
             >
               Responder à EDA
             </button>

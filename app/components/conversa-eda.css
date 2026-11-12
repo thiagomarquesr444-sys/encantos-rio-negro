@@ -171,5 +171,6 @@
 .cv-eda-acao .cv-eda-acao-nao { color: var(--cv-sec); background: transparent; border: 1px solid var(--cv-borda); font-weight: 600; }
 .cv-eda-acao button:disabled { opacity: .6; cursor: default; }
 .cv-eda-acao small { font-weight: 600; color: var(--cv-sec); }
+.cv-eda-acao-todas { align-self: flex-start; margin-bottom: 6px; padding: 7px 16px; border-radius: 999px; font: inherit; font-size: 12.5px; font-weight: 700; border: 0; color: #1a1205; background: var(--cv-ouro); cursor: pointer; }
 .cv-eda-acao[data-estado="feito"] { border-style: solid; }
 .ern-gestao:is([data-ern-tema="branco"],[data-ern-tema="amarelo"]) .cv-eda-acao button:not(.cv-eda-acao-nao) { color: #fff; }

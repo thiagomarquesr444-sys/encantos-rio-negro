@@ -10,9 +10,12 @@ export default function TextoDigitadoIA({
   animar,
   render,
   aoTerminar,
+  msPorLetra,
 }: {
   texto: string;
   animar: boolean;
+  /** EDA_SAUDACAO_V3: letra a letra, no ritmo da recepção do painel. */
+  msPorLetra?: number;
   render: (parcial: string) => ReactNode;
   aoTerminar?: () => void;
 }) {
@@ -23,14 +26,14 @@ export default function TextoDigitadoIA({
     const reduzir = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
     if (reduzir) { setN(texto.length); aoTerminar?.(); return; }
     setN(0);
-    const passo = Math.max(1, Math.round(texto.length / 220));
+    const passo = msPorLetra ? 1 : Math.max(1, Math.round(texto.length / 220));
     const id = window.setInterval(() => {
       setN(atual => {
         const prox = Math.min(texto.length, atual + passo);
         if (prox >= texto.length) { window.clearInterval(id); aoTerminar?.(); }
         return prox;
       });
-    }, 16);
+    }, msPorLetra ?? 16);
     return () => window.clearInterval(id);
     // aoTerminar muda a cada render; o efeito só depende do texto.
     // eslint-disable-next-line react-hooks/exhaustive-deps
