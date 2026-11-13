@@ -14,119 +14,17 @@ import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import { copiarEDA } from '@/lib/copiarEDA';
 import TextoDigitadoIA from './TextoDigitadoIA';
 import IconeEDA from './IconeEDA';
-import { acaoRegistroValida, REGRAS_ACAO, type AcaoRegistro } from '@/lib/acoesEDA';
-import { EVENTO_AO_VIVO_EDA } from '@/lib/aoVivoEDA';
+import { acaoValidaEDA, desfazerAcaoEDA, executarAcaoEDA, JANELA_DESFAZER_MIN, type AcaoEDA } from '@/lib/executorEDA';
+import ArcoFlechaERN from './ArcoFlechaERN';
 import { saudacaoEDA } from '@/lib/saudacaoEDA';
 import './conversa-eda.css';
 
 type LinkEDA = { href: string; rotulo: string };
-// EDA_ACOES_V1 / EDA_AVISOS_V1
-type AcaoEDA =
-  | { tipo: 'lancar'; resumo: string; dados: { tipo: 'receita' | 'despesa'; valor: number; categoria: string; data: string; quitado: boolean; descricao: string } }
-  | { tipo: 'baixar'; resumo: string; dados: { id: string; tipo: 'receita' | 'despesa'; data: string } }
-  | { tipo: 'demanda'; resumo: string; dados: { id: string; status: 'aberta' | 'encerrada' | 'cancelada' } }
-  | AcaoRegistro;
-type EstadoAcao = 'pendente' | 'executando' | 'feito' | 'cancelado' | 'erro';
+// EDA_ACOES_V1 / EDA_AVISOS_V1 (execução e desfazer em lib/executorEDA)
+type EstadoAcao = 'pendente' | 'executando' | 'feito' | 'cancelado' | 'erro' | 'desfazendo' | 'desfeito';
 type AvisoEDA = { id: number; tipo: string; titulo: string; texto: string; link: string | null; gravidade: string; extra: { token?: string } | null };
-type Msg = { papel: 'usuario' | 'eda'; texto: string; links?: LinkEDA[]; acoes?: AcaoEDA[]; estados?: EstadoAcao[]; avisos?: AvisoEDA[] };
-
-const acaoValida = (a: unknown): a is AcaoEDA => {
-  const x = a as { tipo?: string; resumo?: unknown; dados?: unknown };
-  if (!x || typeof x.resumo !== 'string') return false;
-  if (x.tipo === 'alterar' || x.tipo === 'criar') return acaoRegistroValida(a);
-  return !!x.dados && ['lancar', 'baixar', 'demanda'].includes(x.tipo ?? '');
-};
-
-// Avisa as telas abertas para se atualizarem sozinhas (sem recarregar nem sair da página).
-const avisarTelas = (tabela: string) => window.dispatchEvent(new CustomEvent(EVENTO_AO_VIVO_EDA, { detail: { tabela } }));
-
-async function empresaDaSessao(usuarioId: string) {
-  const { data: perfil } = await supabase.from('perfis').select('empresa_id').eq('id', usuarioId).single();
-  if (!perfil?.empresa_id) throw new Error('Não encontrei a empresa da sua conta.');
-  return String(perfil.empresa_id);
-}
-
-/** EDA_EXECUTA_V1: grava a ação autorizada com a sessão da pessoa (RLS e plano valem). */
-// Regras do banco (saída lotada, conflito de barco, limite do plano) já vêm em português: mostra direto.
-let ultimoCriado: string | null = null;
-function mensagemBanco(e: { message?: string; code?: string } | null, padrao: string) {
-  const m = e?.message ?? '';
-  if (/limite/i.test(m)) return 'Seu plano chegou ao limite para esse cadastro.';
-  if (e?.code === 'P0001' && m && m.length < 220) return m;
-  return padrao || 'Não consegui concluir agora.';
-}
-
-async function executarRegistro(a: AcaoRegistro, usuarioId: string): Promise<string> {
-  if (!acaoRegistroValida(a)) throw new Error('Essa ação não passou na conferência de segurança.');
-  const empresa = await empresaDaSessao(usuarioId);
-  const regra = REGRAS_ACAO[a.tabela];
-  const dados: Record<string, unknown> = { ...a.campos };
-  // Campos ligados: nome do guia na reserva, valor espelhado, preço do passeio.
-  if (a.tabela === 'reservas') {
-    if (typeof dados.guia_id === 'string') {
-      const { data: g } = await supabase.from('guias').select('nome').eq('id', dados.guia_id).eq('empresa_id', empresa).maybeSingle();
-      if (!g) throw new Error('Não encontrei esse guia na sua equipe.');
-      dados.guia = g.nome;
-    } else if (dados.guia_id === null) dados.guia = null;
-    if (typeof dados.valor_total === 'number') dados.valor = dados.valor_total;
-  }
-  if (a.tabela === 'passeios' && typeof dados.preco === 'number') dados.valor = dados.preco;
-  if (a.tabela === 'pedidos_visitante' || a.tabela === 'passeio_saidas') dados.atualizado_em = new Date().toISOString();
-  if (a.tipo === 'criar') {
-    // Guias: a política de criação exige o autor (usuario_id) da sessão.
-    if (a.tabela === 'guias') dados.usuario_id = usuarioId;
-    if (a.tabela === 'demandas') { dados.criado_por = usuarioId; dados.metodo_estimativa = 'manual'; }
-    // Reserva de cliente novo: cadastra o cliente só com o nome (a ficha é completada depois).
-    if (a.tabela === 'reservas' && !dados.cliente_id) {
-      const { data: novo, error: eCli } = await supabase.from('clientes').insert({ nome: dados.cliente, empresa_id: empresa }).select('id').single();
-      if (eCli || !novo) throw new Error(mensagemBanco(eCli, 'Não consegui cadastrar o cliente.'));
-      dados.cliente_id = novo.id;
-      avisarTelas('clientes');
-    }
-    const { data: criado, error } = await supabase.from(a.tabela).insert({ ...dados, empresa_id: empresa }).select('id').single();
-    if (error || !criado) throw new Error(mensagemBanco(error, `Não consegui criar ${regra.nome === 'saída' || regra.nome === 'reserva' || regra.nome === 'demanda' || regra.nome === 'embarcação' || regra.nome === 'hospedagem' ? 'a' : 'o'} ${regra.nome}. Confira os dados ou sua permissão.`));
-    avisarTelas(a.tabela);
-    ultimoCriado = a.tabela === 'reservas' ? `/reservas/editar/${criado.id}` : a.tabela === 'demandas' ? `/demandas/editar/${criado.id}` : null;
-    return `${regra.nome.charAt(0).toUpperCase()}${regra.nome.slice(1)} ${['reserva', 'saída', 'demanda', 'embarcação', 'hospedagem'].includes(regra.nome) ? 'criada' : 'criado'}.`;
-  }
-  const { data, error } = await supabase.from(a.tabela).update(dados).eq('id', a.id).eq('empresa_id', empresa).select('id');
-  if (error?.code === 'P0001') throw new Error(mensagemBanco(error, ''));
-  if (error || !data?.length) throw new Error(`Não consegui alterar ${regra.nome === 'reserva' || regra.nome === 'saída' || regra.nome === 'embarcação' || regra.nome === 'hospedagem' || regra.nome === 'demanda' ? 'a' : 'o'} ${regra.nome}. Confira sua permissão ou os dados.`);
-  avisarTelas(a.tabela);
-  return 'Alteração feita.';
-}
-
-async function executarAcao(a: AcaoEDA): Promise<string> {
-  const { data: auth } = await supabase.auth.getUser();
-  if (!auth.user) throw new Error('Sua sessão expirou. Entre novamente.');
-  if (a.tipo === 'alterar' || a.tipo === 'criar') return executarRegistro(a, auth.user.id);
-  if (a.tipo === 'lancar') {
-    const { data: perfil } = await supabase.from('perfis').select('empresa_id').eq('id', auth.user.id).single();
-    if (!perfil?.empresa_id) throw new Error('Não encontrei a empresa da sua conta.');
-    const d = a.dados;
-    const { data, error } = await supabase.from('financeiro').insert({
-      descricao: d.descricao, tipo: d.tipo, valor: d.valor, categoria: d.categoria, data_vencimento: d.data,
-      data_liquidacao: d.quitado ? d.data : null,
-      status: d.quitado ? (d.tipo === 'receita' ? 'Recebido' : 'Pago') : 'Pendente',
-      user_id: auth.user.id, empresa_id: perfil.empresa_id,
-    }).select('id').single();
-    if (error || !data) throw new Error('Não consegui lançar. Confira sua permissão no financeiro.');
-    avisarTelas('financeiro');
-    return 'Lançado no financeiro.';
-  }
-  if (a.tipo === 'baixar') {
-    const { data, error } = await supabase.from('financeiro')
-      .update({ status: a.dados.tipo === 'receita' ? 'Recebido' : 'Pago', data_liquidacao: a.dados.data })
-      .eq('id', a.dados.id).select('id');
-    if (error || !data?.length) throw new Error('Não consegui dar baixa. Confira sua permissão no financeiro.');
-    avisarTelas('financeiro');
-    return 'Baixa feita.';
-  }
-  const { data, error } = await supabase.from('demandas').update({ status: a.dados.status }).eq('id', a.dados.id).select('id');
-  if (error || !data?.length) throw new Error('Não consegui mudar a demanda. Confira sua permissão.');
-  avisarTelas('demandas');
-  return 'Demanda atualizada.';
-}
+type Msg = { papel: 'usuario' | 'eda'; texto: string; links?: LinkEDA[]; acoes?: AcaoEDA[]; estados?: EstadoAcao[]; logs?: (string | null)[]; avisos?: AvisoEDA[] };
+const acaoValida = acaoValidaEDA;
 
 // Só caminhos internos da plataforma.
 const linkSeguro = (l: LinkEDA) => typeof l?.href === 'string' && /^\/[a-z]/.test(l.href) && !l.href.startsWith('//') && typeof l.rotulo === 'string';
@@ -403,16 +301,29 @@ export default function ConversaEDA() {
   async function confirmar(i: number, k: number, a: AcaoEDA, avisar = true): Promise<boolean> {
     marcarEstado(i, k, 'executando');
     try {
-      ultimoCriado = null;
-      const ok = await executarAcao(a);
-      const href = ultimoCriado;
+      const r = await executarAcaoEDA(a);
+      setMsgs(m => m.map((x, j) => (j === i ? { ...x, logs: (x.acoes ?? []).map((_, n) => (n === k ? r.logId ?? null : x.logs?.[n] ?? null)) } : x)));
       marcarEstado(i, k, 'feito');
-      if (avisar) setMsgs(m => [...m, { papel: 'eda', texto: `${ok} A tela já está atualizada. ✔`, links: href ? [{ href, rotulo: 'Abrir e gerenciar' }] : undefined }]);
+      if (avisar) setMsgs(m => [...m, { papel: 'eda', texto: `${r.texto} A tela já está atualizada. ✔${r.logId ? ' Se precisar, é só tocar no arco para desfazer.' : ''}`, links: r.href ? [{ href: r.href, rotulo: 'Abrir e gerenciar' }] : undefined }]);
       return true;
     } catch (e) {
       marcarEstado(i, k, 'erro');
       setMsgs(m => [...m, { papel: 'eda', texto: e instanceof Error ? e.message : 'Não consegui concluir agora.' }]);
       return false;
+    }
+  }
+  // EDA_DESFAZER_V1: o arco e flecha desfaz a ação (só quem autorizou, até alguns minutos).
+  async function desfazer(i: number, k: number) {
+    const logId = msgs[i]?.logs?.[k];
+    if (!logId) return;
+    marcarEstado(i, k, 'desfazendo');
+    try {
+      const ok = await desfazerAcaoEDA(logId);
+      marcarEstado(i, k, 'desfeito');
+      setMsgs(m => [...m, { papel: 'eda', texto: ok }]);
+    } catch (e) {
+      marcarEstado(i, k, 'feito');
+      setMsgs(m => [...m, { papel: 'eda', texto: e instanceof Error ? e.message : 'Não consegui desfazer agora.' }]);
     }
   }
   async function confirmarTodas(i: number) {
@@ -489,7 +400,16 @@ export default function ConversaEDA() {
                               <button type="button" disabled={st === 'executando'} onClick={() => void confirmar(i, k, a)}>{st === 'executando' ? 'Fazendo…' : 'Autorizar'}</button>
                               <button type="button" className="cv-eda-acao-nao" disabled={st === 'executando'} onClick={() => marcarEstado(i, k, 'cancelado')}>Cancelar</button>
                             </div>
-                          ) : <small>{st === 'feito' ? 'Feito ✔' : st === 'cancelado' ? 'Cancelado' : 'Não deu certo'}</small>}
+                          ) : (st === 'feito' || st === 'desfazendo') && m.logs?.[k] ? (
+                            <div className="cv-eda-feito">
+                              <small>Feito ✔</small>
+                              <button type="button" className={`cv-eda-desfazer${enviando || st === 'desfazendo' ? ' cv-eda-desfazer-pensando' : ''}`}
+                                disabled={st === 'desfazendo'} onClick={() => void desfazer(i, k)}
+                                title={`Desfazer (até ${JANELA_DESFAZER_MIN} min)`} aria-label="Desfazer esta ação">
+                                <ArcoFlechaERN tamanho={20} ativo={st === 'desfazendo'} />
+                              </button>
+                            </div>
+                          ) : <small>{st === 'feito' ? 'Feito ✔' : st === 'desfeito' ? 'Desfeito ↺' : st === 'cancelado' ? 'Cancelado' : 'Não deu certo'}</small>}
                         </div>
                       );
                     })}
@@ -502,7 +422,7 @@ export default function ConversaEDA() {
                 )}
               </div>
             ))}
-            {enviando && <p className="cv-eda-msg cv-eda-eda cv-eda-pensando" aria-label="EDA pensando"><i /><i /><i /></p>}
+            {enviando && <p className="cv-eda-msg cv-eda-eda cv-eda-pensando cv-eda-pensando-arco" aria-label="EDA pensando"><span className="cv-eda-arco-gira"><ArcoFlechaERN tamanho={22} ativo /></span></p>}
             <div ref={fimRef} />
           </div>
 

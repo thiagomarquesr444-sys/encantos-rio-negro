@@ -2,6 +2,8 @@ import { createHmac } from 'node:crypto';
 import { isIP } from 'node:net';
 import { contextoHistorico } from '@/lib/edaHistorico';
 import { valorPorFaixasEDA } from '@/lib/opcoesEDA';
+import { manualPara } from '@/lib/manualEDA';
+import { acharRegistro, campoReal, escolherSaida, normalizarEDA, type Candidato } from '@/lib/resolverEDA';
 import { REGRAS_ACAO, converterValor, descreverAcoes, type AcaoRegistro, type TabelaAcao, type Valor } from '@/lib/acoesEDA';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
@@ -199,7 +201,7 @@ async function contextoOperadora(db: SupabaseClient, empresaId: string, hoje: st
     db.from('pedidos_visitante').select('id,passeio_nome,adultos,criancas,periodo,status,criado_em').eq('empresa_id', empresaId).in('status', ['novo', 'em_contato']).order('criado_em', { ascending: false }).limit(30),
   ]);
   const [reservas, demandas, financeiro, passeios, saude, saidas] = await Promise.all([
-    db.from('reservas').select('id,data_reserva,horario,quantidade_pessoas,valor_total,status,pacote,guia,embarcacao_id')
+    db.from('reservas').select('id,cliente,data_reserva,horario,quantidade_pessoas,valor_total,status,pacote,guia,embarcacao_id')
       .eq('empresa_id', empresaId).gte('data_reserva', ini).lte('data_reserva', fim).order('data_reserva').limit(120),
     db.from('demandas').select('id,titulo,categoria,localidade,data_inicio,data_fim,quantidade,unidade,status')
       .eq('empresa_id', empresaId).order('data_inicio', { ascending: false, nullsFirst: false }).limit(40),
@@ -213,13 +215,13 @@ async function contextoOperadora(db: SupabaseClient, empresaId: string, hoje: st
   ]);
   const codigos: Record<string, CodigoAcao> = {};
   // EDA_EXECUTA_V1: cada registro ganha um código curto (R1, P2, G3…) para a EDA agir sobre ele.
-  const registrar = (tabela: TabelaAcao, lista: { id?: unknown }[] | null | undefined, rotulo: (x: Record<string, unknown>) => string) => {
+  const registrar = (tabela: TabelaAcao, lista: { id?: unknown }[] | null | undefined, rotulo: (x: Record<string, unknown>) => string, busca?: (x: Record<string, unknown>) => string) => {
     const pre = REGRAS_ACAO[tabela].codigo;
     const mapa = new Map<string, string>();
     (lista ?? []).forEach((x, i) => {
       if (typeof x.id !== 'string' || !UUID.test(x.id)) return;
       const cod = `${pre}${i + 1}`;
-      codigos[cod] = { tabela, id: x.id, rotulo: rotulo(x as Record<string, unknown>).slice(0, 70) };
+      codigos[cod] = { tabela, id: x.id, rotulo: rotulo(x as Record<string, unknown>).slice(0, 70), busca: busca?.(x as Record<string, unknown>).slice(0, 200) };
       const href = rotaRegistro(tabela, x.id, x as Record<string, unknown>);
       if (href) destinos[cod] = { href, rotulo: `Abrir ${codigos[cod].rotulo}`.slice(0, 60) };
       mapa.set(x.id, cod);
@@ -230,7 +232,8 @@ async function contextoOperadora(db: SupabaseClient, empresaId: string, hoje: st
   const codE = registrar('embarcacoes', embarcacoes.data, x => String(x.nome ?? 'embarcação'));
   const codG = registrar('guias', guias.data, x => String(x.nome ?? 'guia'));
   const nomePasseio = new Map((passeios.data ?? []).map(x => [String(x.id), String(x.nome ?? '')]));
-  const codR = registrar('reservas', reservas.data, x => `${x.pacote ?? 'reserva'} ${dm(x.data_reserva as string)}`);
+  // O nome do cliente só entra na BUSCA do servidor (achar "a reserva do Fulano"); nunca no texto da IA.
+  const codR = registrar('reservas', reservas.data, x => `${x.pacote ?? 'reserva'} ${dm(x.data_reserva as string)}`, x => `${x.cliente ?? ''} ${x.pacote ?? ''} ${x.guia ?? ''}`);
 
   const linhas: string[] = [];
   linhas.push(`HOJE: ${dm(hoje)}/${hoje.slice(0, 4)}`);
@@ -479,7 +482,7 @@ function extrairSugestoes(texto: string) {
 
 // EDA_ACOES_V1: a EDA propõe, a pessoa confirma com um clique e o navegador
 // executa com a sessão dela (RLS e permissões do banco continuam valendo).
-type CodigoAcao = { tabela: TabelaAcao | 'financeiro'; id: string; rotulo: string; tipo?: string };
+type CodigoAcao = { tabela: TabelaAcao | 'financeiro'; id: string; rotulo: string; tipo?: string; /** só no servidor (ex.: nome do cliente) — nunca vai para a IA */ busca?: string };
 export type AcaoEDA =
   | { tipo: 'lancar'; resumo: string; dados: { tipo: 'receita' | 'despesa'; valor: number; categoria: string; data: string; quitado: boolean; descricao: string } }
   | { tipo: 'baixar'; resumo: string; dados: { id: string; tipo: 'receita' | 'despesa'; data: string } }
@@ -492,46 +495,61 @@ const mostrarValor = (v: Valor, codigos: Record<string, CodigoAcao>) =>
   v === null ? 'vazio' : typeof v === 'boolean' ? (v ? 'sim' : 'não') : /^\d{4}-\d{2}-\d{2}$/.test(String(v)) ? dm(String(v)) : typeof v === 'string' && UUID.test(v) ? (Object.values(codigos).find(c => c.id === v)?.rotulo ?? 'selecionado') : String(v).replace(/_/g, ' ');
 
 /** EDA_EXECUTA_V1: [[ACAO:ALTERAR|R3|status=Confirmada;guia_id=G2]] e [[ACAO:CRIAR|passeios|nome=...;preco=150]]. */
-function lerAcaoRegistro(p: string[], codigos: Record<string, CodigoAcao>): AcaoRegistro | null {
-  const verbo = (p[0] ?? '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
-  const pares = (p.slice(2).join('|')).split(/;(?=\s*[a-z_]+\s*=)/i).map(x => x.trim()).filter(Boolean);
-  let alvo: CodigoAcao | null = null;
+type LeituraAcao = { acao: AcaoRegistro } | { aviso: string } | null;
+
+/**
+ * EDA_RESOLVER_V1: [[ACAO:ALTERAR|R3 ou "reserva do Fulano"|status=Confirmada;guia=Oziel]]
+ * e [[ACAO:CRIAR|reservas|cliente=...;passeio=Ilha do Aracá;pessoas=3]] — aceita códigos OU nomes
+ * e apelidos de campo; o servidor acha os registros reais. Na dúvida, pergunta (aviso) em vez de chutar.
+ */
+function lerAcaoRegistro(p: string[], codigos: Record<string, CodigoAcao>): LeituraAcao {
+  const verbo = normalizarEDA(p[0] ?? '');
+  const pares = (p.slice(2).join('|')).split(/;(?=\s*[a-zçãáéíóú_ ]+\s*=)/i).map(x => x.trim()).filter(Boolean);
+  const candidatos: Candidato[] = Object.entries(codigos).filter(([, c]) => c.tabela !== 'financeiro')
+    .map(([codigo, c]) => ({ codigo, tabela: c.tabela, id: c.id, rotulo: c.rotulo, busca: c.busca }));
+  const opcoesTexto = (xs: Candidato[]) => xs.map(x => `"${x.rotulo}"`).join(' ou ');
+  let alvo: Candidato | null = null;
   let tabela: TabelaAcao;
   if (verbo === 'alterar') {
-    alvo = codigos[(p[1] ?? '').trim().toUpperCase()] ?? null;
-    if (!alvo || alvo.tabela === 'financeiro') return null;
-    tabela = alvo.tabela;
+    const r = acharRegistro((p[1] ?? '').replace(/^"|"$/g, ''), candidatos);
+    if (!r.ok) return r.motivo === 'ambiguo' ? { aviso: `Qual deles: ${opcoesTexto(r.opcoes)}?` } : { aviso: 'Não achei esse registro nos dados de agora — me diga o nome dele como aparece na tela.' };
+    alvo = r.candidato;
+    tabela = alvo.tabela as TabelaAcao;
   } else if (verbo === 'criar') {
-    const t = (p[1] ?? '').trim().toLowerCase() as TabelaAcao;
-    if (!REGRAS_ACAO[t]?.criar) return null;
+    const bruto = normalizarEDA(p[1] ?? '').replace(/ /g, '_');
+    const apelido: Record<string, TabelaAcao> = { reserva: 'reservas', passeio: 'passeios', saida: 'passeio_saidas', saidas: 'passeio_saidas', embarcacao: 'embarcacoes', barco: 'embarcacoes', guia: 'guias', hospedagem: 'hospedagens', parceiro: 'parceiros', demanda: 'demandas' };
+    const t = (REGRAS_ACAO[bruto as TabelaAcao] ? bruto : apelido[bruto]) as TabelaAcao | undefined;
+    if (!t || !REGRAS_ACAO[t]?.criar) return null;
     tabela = t;
   } else return null;
   const regra = REGRAS_ACAO[tabela];
   const campos: Record<string, Valor> = {};
-  for (const par of pares.slice(0, 10)) {
+  for (const par of pares.slice(0, 14)) {
     const i = par.indexOf('=');
-    if (i < 1) return null;
-    const k = par.slice(0, i).trim().toLowerCase();
-    let bruto: string = par.slice(i + 1).trim();
+    if (i < 1) continue;
+    const k = campoReal(tabela, par.slice(0, i));
+    let bruto: string = par.slice(i + 1).trim().replace(/^"|"$/g, '');
+    if (!k) continue; // campo fora da lista: ignorado (nunca gravado)
     const c = regra.campos[k];
-    if (!c || c.interno || (c.soCriar && verbo === 'alterar')) return null;
-    if (c.tipo === 'ref') {
-      const ref = codigos[bruto.toUpperCase()];
-      if (!/^(vazio|nenhum|-)$/i.test(bruto)) {
-        if (!ref || ref.tabela !== c.ref) return null;
-        bruto = ref.id;
-      }
+    if (!c || c.interno || (c.soCriar && verbo === 'alterar')) continue;
+    if (c.tipo === 'ref' && !/^(vazio|nenhum|-)$/i.test(bruto)) {
+      const r = acharRegistro(bruto, candidatos, c.ref);
+      if (!r.ok) return { aviso: r.motivo === 'ambiguo' ? `Qual ${c.rotulo}: ${opcoesTexto(r.opcoes)}?` : `Não achei ${c.rotulo} "${bruto.slice(0, 40)}" no cadastro.` };
+      bruto = r.candidato.id;
     }
     const v = converterValor(c, bruto);
-    if (v === undefined) return null;
+    if (v === undefined) return { aviso: `O valor de ${c.rotulo} ("${bruto.slice(0, 30)}") não está certo — pode repetir?` };
     campos[k] = v;
   }
   if (!Object.keys(campos).length) return null;
   // Reserva e demanda são completadas pelo servidor (saída, preço, cliente) — a conferência final é lá.
-  if (verbo === 'criar' && tabela !== 'reservas' && tabela !== 'demandas' && (regra.obrigatorios ?? []).some(k => campos[k] == null)) return null;
+  if (verbo === 'criar' && tabela !== 'reservas' && tabela !== 'demandas') {
+    const falta = (regra.obrigatorios ?? []).filter(k => campos[k] == null);
+    if (falta.length) return { aviso: `Para criar ${regra.nome} ainda falta: ${falta.map(k => regra.campos[k].rotulo).join(', ')}.` };
+  }
   const descr = Object.entries(campos).map(([k, v]) => `${regra.campos[k].rotulo}: ${mostrarValor(v, codigos)}`).join(' · ');
-  if (verbo === 'alterar' && alvo) return { tipo: 'alterar', tabela, id: alvo.id, campos, resumo: `Alterar ${regra.nome} "${alvo.rotulo}" → ${descr}` };
-  return { tipo: 'criar', tabela, campos, resumo: `Criar ${regra.nome} → ${descr}` };
+  if (verbo === 'alterar' && alvo) return { acao: { tipo: 'alterar', tabela, id: alvo.id, campos, resumo: `Alterar ${regra.nome} "${alvo.rotulo}" → ${descr}` } };
+  return { acao: { tipo: 'criar', tabela, campos, resumo: `Criar ${regra.nome} → ${descr}` } };
 }
 
 /**
@@ -547,6 +565,26 @@ async function completarAcoes(acoes: AcaoEDA[], db: SupabaseClient, empresaId: s
     if ((a.tipo !== 'criar' && a.tipo !== 'alterar') || (a.tabela !== 'reservas' && a.tabela !== 'demandas')) { prontas.push(a); continue; }
     const c = { ...a.campos } as Record<string, Valor>;
     const extras: string[] = [];
+    // Pedido da Iara → reserva: passeio, nome e pessoas vêm do próprio pedido.
+    if (a.tabela === 'reservas' && a.tipo === 'criar' && typeof c.pedido_id === 'string') {
+      const { data: pd } = await db.from('pedidos_visitante').select('passeio_id,nome,adultos,criancas,status').eq('id', c.pedido_id).eq('empresa_id', empresaId).maybeSingle();
+      if (!pd) { avisos.push('Não achei esse pedido do portal.'); continue; }
+      if (pd.status === 'convertido') { avisos.push('Esse pedido já virou reserva.'); continue; }
+      if (pd.passeio_id) c.passeio_id ??= pd.passeio_id;
+      c.cliente ??= String(pd.nome ?? '').slice(0, 120) || null;
+      c.quantidade_pessoas ??= Number(pd.adultos ?? 1) + Number(pd.criancas ?? 0);
+      if (Number(pd.criancas ?? 0) > 0) c.qtd_criancas ??= Number(pd.criancas);
+      extras.push('pedido da Iara será marcado como convertido');
+    }
+    // Saída escolhida sozinha: pela data dita; sem data, a única aberta; várias = pergunta qual.
+    if (a.tabela === 'reservas' && a.tipo === 'criar' && typeof c.passeio_id === 'string' && typeof c.saida_id !== 'string') {
+      const { data: sds } = await db.from('passeio_saidas').select('id,data_inicio,status').eq('empresa_id', empresaId).eq('passeio_id', c.passeio_id).gte('data_inicio', hojeManaus()).order('data_inicio').limit(12);
+      const esc = escolherSaida((sds ?? []).map(x => ({ id: String(x.id), data_inicio: String(x.data_inicio), status: String(x.status) })), typeof c.data_reserva === 'string' ? c.data_reserva : null);
+      if (esc.ok) c.saida_id = esc.saida.id;
+      else if (esc.motivo === 'varias') { avisos.push(`Esse passeio tem saída ${esc.datas.slice(0, 4).map(d => dm(d)).join(', ')} — qual delas?`); continue; }
+      else if (esc.motivo === 'nenhuma' && c.data_reserva == null) { avisos.push('Esse passeio não tem saída aberta — me diga a data da viagem (ou peça para eu abrir uma saída).'); continue; }
+      else if (esc.motivo === 'sem_na_data') extras.push('sem saída programada nessa data');
+    }
     if (typeof c.saida_id === 'string') {
       const { data: sd } = await db.from('passeio_saidas').select('passeio_id,data_inicio,data_fim,horario,status').eq('id', c.saida_id).eq('empresa_id', empresaId).maybeSingle();
       if (!sd) { avisos.push('Não achei essa saída.'); continue; }
@@ -577,6 +615,11 @@ async function completarAcoes(acoes: AcaoEDA[], db: SupabaseClient, empresaId: s
           extras.push(`valor calculado pelo passeio: R$ ${Number(c.valor_total).toFixed(2).replace('.', ',')}`);
         }
       }
+    }
+    if (a.tabela === 'reservas' && typeof c.embarcacao_id === 'string' && Number(c.quantidade_pessoas ?? 0) > 0) {
+      const { data: bc } = await db.from('embarcacoes').select('capacidade,status').eq('id', c.embarcacao_id).eq('empresa_id', empresaId).maybeSingle();
+      if (bc?.capacidade && Number(c.quantidade_pessoas) > Number(bc.capacidade)) extras.push(`⚠ ${c.quantidade_pessoas} pessoas e o barco leva ${bc.capacidade}`);
+      if (bc?.status && /manuten|inativ/i.test(String(bc.status))) extras.push(`⚠ barco está ${String(bc.status).toLowerCase()}`);
     }
     if (a.tabela === 'reservas' && Number(c.qtd_criancas ?? 0) + Number(c.qtd_colo ?? 0) > Number(c.quantidade_pessoas ?? 1)) {
       avisos.push('Crianças e colo não podem passar do total de pessoas.'); continue;
@@ -610,16 +653,18 @@ async function completarAcoes(acoes: AcaoEDA[], db: SupabaseClient, empresaId: s
   return { acoes: prontas, avisos };
 }
 
-function extrairAcoes(texto: string, codigos: Record<string, CodigoAcao>, hoje: string): { limpo: string; acoes: AcaoEDA[] } {
+function extrairAcoes(texto: string, codigos: Record<string, CodigoAcao>, hoje: string): { limpo: string; acoes: AcaoEDA[]; avisos: string[] } {
   const acoes: AcaoEDA[] = [];
+  const avisosLeitura: string[] = [];
   const normal = (t: string) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().trim();
   const limpo = texto.replace(/\[\[\s*A[CÇ][AÃ]O\s*:([^\]]{1,700})\]\]/gi, (_, corpo: string) => {
     if (acoes.length >= 4) return '';
     const p = corpo.split('|').map(x => x.trim());
     const tipo = normal(p[0] ?? '');
     if (tipo === 'alterar' || tipo === 'criar') {
-      const a = lerAcaoRegistro(p, codigos);
-      if (a) acoes.push(a);
+      const l = lerAcaoRegistro(p, codigos);
+      if (l && 'acao' in l) acoes.push(l.acao);
+      else if (l && 'aviso' in l) avisosLeitura.push(l.aviso);
     } else if (tipo === 'lancar') {
       const t = normal(p[1] ?? '') === 'despesa' ? 'despesa' : normal(p[1] ?? '') === 'receita' ? 'receita' : null;
       const valor = Math.round(Number(String(p[2] ?? '').replace(/[^\d,.-]/g, '').replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.')) * 100) / 100;
@@ -643,7 +688,7 @@ function extrairAcoes(texto: string, codigos: Record<string, CodigoAcao>, hoje: 
     }
     return '';
   });
-  return { limpo: limpo.replace(/\n{3,}/g, '\n\n').trim(), acoes };
+  return { limpo: limpo.replace(/\n{3,}/g, '\n\n').trim(), acoes, avisos: [...new Set(avisosLeitura)].slice(0, 3) };
 }
 
 // EDA_LIDER_PAGINA_V1: em cada página a EDA é a líder daquele domínio — conhece o
@@ -673,6 +718,8 @@ Fala com ${nome || 'a pessoa da operadora'}, que está na página "${pagina}" �
 ${TOM_PERIODO[periodo]}
 
 NESTA PÁGINA VOCÊ É A LÍDER: ${LIDER_PAGINA[pagina] ?? LIDER_PAGINA.painel}
+
+${manualPara(pagina)}
 Como líder, você conhece todo o contingente desse domínio nos DADOS (cada registro tem um código), aponta o que está fora das obrigações e resolve junto — mas também responde sobre qualquer outra área da gestão.
 
 Personalidade:
@@ -697,14 +744,16 @@ Regras:
   Campos permitidos (use exatamente estes nomes e valores):
 ${descreverAcoes()}
   Financeiro: [[ACAO:LANCAR|receita ou despesa|valor numérico|categoria|AAAA-MM-DD|recebido/pago ou pendente|descrição curta sem dados pessoais]] — categorias de receita: ${CATEGORIAS_RECEITA.join(', ')}; de despesa: ${CATEGORIAS_DESPESA.join(', ')}. [[ACAO:BAIXAR|código F]] dá baixa num LANÇAMENTO PENDENTE.
-  NOVA RESERVA (do começo ao fim, sem mandar para o formulário): [[ACAO:CRIAR|reservas|cliente=Nome dito pela pessoa;saida_id=S2;quantidade_pessoas=3;qtd_criancas=1;guia_id=G1;embarcacao_id=E1;status=Pendente]]
-    • Use a SAÍDA PROGRAMADA do passeio (código S#): ela já traz passeio, data e horário. Sem saída, informe passeio_id + data_reserva (+ horario).
-    • O valor é calculado pelo preço do passeio (crianças pelo %, colo grátis) — só informe valor_total se a pessoa disser outro valor.
-    • O cliente é achado pelo nome no cadastro; se não existir, é cadastrado só com o nome. Conte a família pelo que foi dito (ex.: "ele, a esposa e o filho" = 3 pessoas, 1 criança).
-    • Status padrão Pendente; Confirmada só se a pessoa disser que está confirmada/pago.
-  NOVA DEMANDA (suprimentos de uma saída): [[ACAO:CRIAR|demandas|titulo=Rancho da saída;categoria=alimentacao;quantidade=30;unidade=kg;saida_id=S2]]
-  GERENCIAR: mudar status, data, horário, pessoas, guia, barco, saída e valor de reserva; abrir/encerrar/cancelar demanda; abrir/fechar saída; publicar passeio; etc. — sempre com ALTERAR no código do registro.
-  Use SOMENTE códigos que existem nos DADOS. Se a pessoa disser "pode executar"/"vamos" e você já tem o necessário, PREPARE na mesma resposta — nunca diga "preparei" sem o marcador. Se faltar informação essencial (qual registro, valor, data), pergunte antes em uma frase. Em pedidos com várias mudanças, prepare todas de uma vez.
+  NOVA RESERVA — o jeito mais simples (o servidor completa o resto): [[ACAO:CRIAR|reservas|cliente=General Sampaio;passeio=Ilha do Aracá;pessoas=3;criancas=1;barco=Jaguá;guia=Oziel]]
+    • Pode usar NOMES (passeio=, barco=, guia=, saida=) ou CÓDIGOS (P1, E2, G1, S3) — o servidor acha o registro, escolhe a saída aberta do passeio (se houver duas, ele pergunta qual), puxa data, horário e preço.
+    • Só informe data=AAAA-MM-DD se a pessoa disser a data; valor= só se ela disser outro valor; status=Confirmada só se ela disser que está confirmado/pago (padrão Pendente).
+    • Conte a família pelo que foi dito ("ele, a esposa e o filho" = pessoas=3; criancas=1 se o filho for criança).
+    • Pedido da Iara vira reserva com [[ACAO:CRIAR|reservas|pedido=PV1]] (o pedido já traz passeio, nome e pessoas).
+  NOVA DEMANDA: [[ACAO:CRIAR|demandas|titulo=Rancho da saída;categoria=alimentacao;quantidade=30;unidade=kg;saida=S2]]
+  NOVA SAÍDA: [[ACAO:CRIAR|passeio_saidas|passeio=Ilha do Aracá;data=2026-12-05;hora=06:00;vagas=10]]
+  GERENCIAR qualquer registro: [[ACAO:ALTERAR|R3|status=Confirmada]] ou pelo nome: [[ACAO:ALTERAR|reserva do General Sampaio|guia=Oziel;barco=Jaguá]] — vale para reserva, saída, demanda, passeio, barco, guia, hospedagem, parceiro, voucher e pedido.
+  NÃO PERGUNTE o que está nos DADOS (datas, horários, preços, vagas, capacidade). Se a pessoa disser "pode executar"/"vamos", PREPARE na mesma resposta — nunca diga "preparei" sem o marcador. Em pedidos com várias mudanças, prepare todas de uma vez. Se o servidor não conseguir fechar (falta algo de verdade), ele mesmo pergunta.
+  Depois de autorizada, toda ação pode ser desfeita pelo arco e flecha ao lado dela.
   Ao preparar, explique em 1 frase o que vai mudar e diga que é só autorizar no botão. Exclusões não são feitas por aqui: ofereça cancelar/inativar pelo status. Documento, telefone, e-mail e saúde do cliente NÃO passam por você (LGPD): depois da reserva, ofereça abrir a ficha para a pessoa completar.
 - Atende a gestão inteira.
 - Use o CONHECIMENTO para explicar como a plataforma funciona.
@@ -1188,11 +1237,11 @@ Exemplo de formato: ["texto 1","texto 2","texto 3"]`;
     if (modo === 'operadora') {
       const ex = extrairAcoes(texto, codigosOp, hoje);
       const tinhaMarcador = /\[\[\s*A[CÇ][AÃ]O\s*:/i.test(texto);
-      let avisosAcao: string[] = [];
+      let avisosAcao: string[] = [...ex.avisos];
       acoes = ex.acoes;
       if (opSessao && acoes.length) {
         const comp = await completarAcoes(acoes, opSessao.db, opSessao.empresaId, codigosOp);
-        acoes = comp.acoes; avisosAcao = comp.avisos;
+        acoes = comp.acoes; avisosAcao = [...avisosAcao, ...comp.avisos];
       }
       // Nunca dizer "preparei" sem botão: se a ação não fechou, explica o que falta.
       const semAcao = !acoes.length && (tinhaMarcador || /\b(preparei|é só (confirmar|autorizar)|no botão abaixo)\b/i.test(ex.limpo));

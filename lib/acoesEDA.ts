@@ -17,6 +17,8 @@ export const REGRAS_ACAO: Record<TabelaAcao, Regra> = {
     campos: {
       cliente: { rotulo: 'cliente', tipo: 'texto', min: 2, max: 120, soCriar: true },
       cliente_id: { rotulo: 'cadastro do cliente', tipo: 'uuid', interno: true },
+      // Pedido da Iara que virou esta reserva (não é coluna da reserva: marca o pedido como convertido).
+      pedido_id: { rotulo: 'pedido do portal', tipo: 'ref', ref: 'pedidos_visitante', soCriar: true },
       passeio_id: { rotulo: 'passeio', tipo: 'ref', ref: 'passeios' },
       saida_id: { rotulo: 'saída', tipo: 'ref', ref: 'passeio_saidas' },
       pacote: { rotulo: 'pacote', tipo: 'texto', max: 160, interno: true },

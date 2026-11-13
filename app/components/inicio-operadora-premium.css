@@ -286,3 +286,4 @@
 @keyframes eda-responder-entra { from { opacity: 0; transform: translateY(4px); } }
 .ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-responder { color: #9a5d14; border-color: rgb(154 93 20 / 30%); }
 @media (prefers-reduced-motion: reduce) { .eda-responder { animation: none; } }
+.eda-frase-iara { margin-top: 6px; padding-left: 10px; border-left: 2px solid color-mix(in srgb, var(--e-ouro, #f4c77e) 70%, transparent); }

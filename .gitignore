@@ -43,3 +43,6 @@ next-env.d.ts
 backups-ern/
 .ern-testes-temporarios/
 public/videos/descubra-v1/
+
+# treino da EDA (compilado)
+/.treino-eda

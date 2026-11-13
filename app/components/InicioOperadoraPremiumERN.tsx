@@ -169,6 +169,15 @@ export default function InicioOperadoraPremiumERN({
   const [pedidosNovos, setPedidosNovos] = useState(0);
   const [pedidosParados, setPedidosParados] = useState(0);
   const [posVendaPendente, setPosVendaPendente] = useState(0);
+  // EDA_IARA_PARA_EDA_V1: o que a Iara recolheu no portal chega na hora, logo abaixo da saudação.
+  const [pedidosIara, setPedidosIara] = useState<{ passeio_nome: string | null; adultos: number | null; criancas: number | null; periodo: string | null }[]>([]);
+  useEffect(() => {
+    let ativo = true;
+    void supabase.from('pedidos_visitante').select('passeio_nome,adultos,criancas,periodo').eq('status', 'novo')
+      .order('criado_em', { ascending: false }).limit(5)
+      .then(({ data, error }) => { if (ativo && !error) setPedidosIara((data ?? []) as typeof pedidosIara); });
+    return () => { ativo = false; };
+  }, [revisao]);
   useEffect(() => {
     let ativo = true;
     supabase.from('pedidos_visitante').select('criado_em').eq('status', 'novo').limit(200)
@@ -459,6 +468,23 @@ export default function InicioOperadoraPremiumERN({
     return [{ texto: op[diaMes % op.length] }];
   }, [pronto, recepcao, hoje]);
 
+  // Aviso da Iara: só informa e espera a pessoa pedir (nada é feito sozinho).
+  const [conversaPronta, setConversaPronta] = useState(false);
+  const trechosIara = useMemo<TrechoDigitado[]>(() => {
+    if (!pedidosIara.length) return [];
+    const pessoas = (p: (typeof pedidosIara)[number]) => {
+      const a = Number(p.adultos ?? 0), c = Number(p.criancas ?? 0);
+      return [a ? `${a} ${a === 1 ? 'adulto' : 'adultos'}` : '', c ? `${c} ${c === 1 ? 'criança' : 'crianças'}` : ''].filter(Boolean).join(' e ');
+    };
+    if (pedidosIara.length === 1) {
+      const p = pedidosIara[0];
+      const det = [p.passeio_nome?.trim(), pessoas(p), p.periodo ? `para ${p.periodo.trim()}` : ''].filter(Boolean).join(', ');
+      return [{ texto: 'A Iara acabou de me passar um pedido do portal' }, { texto: det ? `: ${det}.` : '.' }, { texto: ' Quando quiser, é só me pedir que eu monto a reserva.' }];
+    }
+    const nomes = [...new Set(pedidosIara.map(p => p.passeio_nome?.trim()).filter(Boolean))].slice(0, 3).join(', ');
+    return [{ texto: `A Iara me passou ${pedidosIara.length} pedidos novos do portal` }, { texto: nomes ? ` (${nomes}).` : '.' }, { texto: ' Me chama que eu te mostro e monto as reservas.' }];
+  }, [pedidosIara]);
+
   const proxima = resumo.hoje.find(r => r.horario) ?? resumo.semana[0];
 
   // Gráfico de 6 meses (centavos).
@@ -475,13 +501,18 @@ export default function InicioOperadoraPremiumERN({
           <p className="eda-eb"><i className="eda-capa-traco" aria-hidden="true" />{dataExtenso(hoje)}{nomeEmpresa ? ` · ${nomeEmpresa}` : ''}</p>
           <h1><DigitacaoEDA trechos={trechosSaudacao} iniciar={pronto && !!textoSaudacao} velocidade={42} atraso={250} cursorEspera aoTerminar={() => setSaudacaoPronta(true)} /></h1>
           <p className="eda-frase" aria-live="off">
-            <DigitacaoEDA trechos={trechosConversa} iniciar={pronto && saudacaoPronta && recepcaoPronta} velocidade={18} atraso={380} cursorFinal pularAoClicar />
+            <DigitacaoEDA trechos={trechosConversa} iniciar={pronto && saudacaoPronta && recepcaoPronta} velocidade={18} atraso={380} cursorFinal={!trechosIara.length} pularAoClicar aoTerminar={() => setConversaPronta(true)} />
           </p>
+          {trechosIara.length > 0 && (
+            <p className="eda-frase eda-frase-iara" aria-live="polite">
+              <DigitacaoEDA trechos={trechosIara} iniciar={pronto && conversaPronta} velocidade={18} atraso={420} cursorFinal pularAoClicar />
+            </p>
+          )}
           {pronto && saudacaoPronta && recepcaoPronta && (
             <button
               type="button"
               className="eda-responder"
-              onClick={() => window.dispatchEvent(new CustomEvent('eda:abrir', { detail: { texto: trechosConversa.map(x => x.texto).join(''), saudacao: trechosSaudacao.map(x => x.texto).join('') } }))}
+              onClick={() => window.dispatchEvent(new CustomEvent('eda:abrir', { detail: { texto: [...trechosConversa, ...(trechosIara.length ? [{ texto: '\n' }, ...trechosIara] : [])].map(x => x.texto).join(''), saudacao: trechosSaudacao.map(x => x.texto).join('') } }))}
             >
               Responder à EDA
             </button>

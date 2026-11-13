@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "treino:eda": "tsc -p scripts/treino-eda/tsconfig.json && node --test .treino-eda/scripts/treino-eda/resolver.test.js",
+    "treino:eda:ao-vivo": "node scripts/treino-eda/ao-vivo.mjs"
   },
   "dependencies": {
     "@fontsource-variable/fraunces": "^5.3.0",
