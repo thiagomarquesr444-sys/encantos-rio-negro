@@ -7,7 +7,7 @@ export const homeTranslations = {
       title:
         'A Amazônia como você nunca viu.',
       description:
-        'Experiências, hospedagens, pesca esportiva e roteiros pelo Amazonas, do Rio Negro a Parintins, organizados com tecnologia e conhecimento local.',
+        'Experiências, hospedagens, pesca esportiva e roteiros pelo Amazonas, do Rio Negro ao Solimões, organizados com tecnologia e conhecimento local.',
       description2:
         'A EDA aproxima visitantes de operadores locais e oferece a tecnologia que ajuda quem trabalha com turismo a organizar clientes, reservas, experiências e operação em um só lugar.',
       plan: 'Planejar minha viagem',
@@ -184,7 +184,7 @@ export const homeTranslations = {
       title:
         'The Amazon as you have never seen it.',
       description:
-        'Experiences, accommodation, sport fishing and itineraries across Amazonas, from the Rio Negro to Parintins, organized with technology and local knowledge.',
+        'Experiences, accommodation, sport fishing and itineraries across Amazonas, from the Rio Negro to the Solimões, organized with technology and local knowledge.',
       description2:
         'EDA connects visitors with local operators and provides technology that helps tourism professionals organize clients, reservations, experiences and operations in one place.',
       plan: 'Plan my trip',
@@ -361,7 +361,7 @@ export const homeTranslations = {
       title:
         'La Amazonía como nunca la has visto.',
       description:
-        'Experiencias, hospedajes, pesca deportiva e itinerarios por Amazonas, del Río Negro a Parintins, organizados con tecnología y conocimiento local.',
+        'Experiencias, hospedajes, pesca deportiva e itinerarios por Amazonas, del Río Negro al Solimões, organizados con tecnología y conocimiento local.',
       description2:
         'EDA conecta a los visitantes con operadores locales y ofrece tecnología para ayudar a quienes trabajan con turismo a organizar clientes, reservas, experiencias y operaciones en un solo lugar.',
       plan: 'Planificar mi viaje',

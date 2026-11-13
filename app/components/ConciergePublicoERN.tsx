@@ -4,7 +4,6 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import ArcoFlechaERN from './ArcoFlechaERN';
 import { periodoEDA, saudacaoEDA } from '@/lib/saudacaoEDA';
 import { destinoIaraValido, destinoParaParametro, type DestinoIara } from '@/lib/iaraDestinosERN';
 import './iara-conversa.css';
@@ -171,6 +170,23 @@ function mascararIara(t: string) {
     .replace(/\b(?:\d[ -]?){13,19}\b/g, '[número oculto]')
     .replace(/(?:\+?55\s?)?\(?\d{2}\)?\s?9?\d{4}[-\s]?\d{4}\b/g, '[telefone oculto]');
 }
+// IARA_HISTORICO_V2: a conversa de quem está logado acompanha o visitante entre
+// as páginas (cache da aba + conta). Conversa longa: só as últimas mensagens
+// ficam guardadas; o resto é apagado (LGPD — minimização). A saudação (lenta)
+// não é guardada, para não se repetir a cada página.
+const IARA_MAX_TELA = 60;
+const IARA_MAX_SALVAS = 40;
+const chaveCacheIara = (id: string) => `iara.conversa.v2.${id}`;
+function limparCacheIara() {
+  try { Object.keys(sessionStorage).filter(k => k.startsWith('iara.conversa.')).forEach(k => sessionStorage.removeItem(k)); } catch {}
+}
+function prepararParaSalvar(lista: MensagemERN[]) {
+  return lista.filter(m => !m.lenta).slice(-IARA_MAX_SALVAS).map(m => ({
+    autor: m.autor, texto: mascararIara(m.texto).slice(0, 1500),
+    ...(m.links?.length ? { links: m.links } : {}),
+    ...(m.destino ? { destino: { tipo: m.destino.tipo, id: m.destino.id, nome: m.destino.nome } } : {}),
+  }));
+}
 function lerMensagensSalvas(v: unknown): MensagemERN[] {
   if (!Array.isArray(v)) return [];
   return v.flatMap((x): MensagemERN[] => {
@@ -180,7 +196,7 @@ function lerMensagensSalvas(v: unknown): MensagemERN[] {
     const links = Array.isArray(o.links) ? (o.links as LinkIara[]).filter(linkIaraSeguro).slice(0, 3) : undefined;
     const destino = destinoIaraValido(o.destino) ?? undefined;
     return [{ autor: o.autor, texto: o.texto.slice(0, 1500), links, destino }];
-  }).slice(-40);
+  }).slice(-IARA_MAX_SALVAS);
 }
 
 // IARA_SAUDACAO_V1: a mesma lógica da EDA — "Bom dia" só na 1ª entrada do período;
@@ -496,9 +512,24 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   // IARA_MEMORIA_V1: carrega a conversa de quem está logado; ao sair da conta, apaga da tela.
   useEffect(() => {
     let ativo = true;
+    let carregadoPara: string | null = null;
     async function carregar(id: string | null) {
       if (!id) { setUsuarioId(null); setNomeVisitante(''); setMemoriaPronta(true); return; }
+      // O Supabase avisa SIGNED_IN mais de uma vez: carrega só uma vez por conta.
+      if (carregadoPara === id) return;
+      carregadoPara = id;
       setUsuarioId(id);
+      // Volta de outra página: o cache da aba devolve a conversa na hora.
+      let doCache = false;
+      try {
+        const bruto = sessionStorage.getItem(chaveCacheIara(id));
+        const cache = bruto ? lerMensagensSalvas(JSON.parse(bruto)) : [];
+        if (cache.length && !enviandoERN.current) {
+          doCache = true;
+          setMensagens(atuais => [...cache, ...atuais.filter(m => !cache.some(x => x.texto === m.texto && x.autor === m.autor))]);
+          setRestaurou(true);
+        }
+      } catch {}
       const [perfil, conversa] = await Promise.all([
         supabase.from('perfis').select('nome').eq('id', id).maybeSingle(),
         supabase.from('iara_conversas').select('mensagens,ficha').eq('usuario_id', id).maybeSingle(),
@@ -506,11 +537,12 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
       if (!ativo) return;
       setNomeVisitante(String(perfil.data?.nome ?? '').trim().split(/\s+/)[0] ?? '');
       const salvas = lerMensagensSalvas(conversa.data?.mensagens);
-      if (salvas.length && !enviandoERN.current) {
-        setMensagens(atuais => (atuais.some(m => m.autor === 'visitante') ? atuais : salvas));
+      const f = conversa.data?.ficha;
+      if (f && typeof f === 'object' && !Array.isArray(f)) fichaIara.current = f as Record<string, unknown>;
+      if (salvas.length && !doCache) {
+        // Junta o que veio da conta com o que já foi dito nesta página (sem perder nada).
+        setMensagens(atuais => [...salvas, ...atuais]);
         setRestaurou(true);
-        const f = conversa.data?.ficha;
-        if (f && typeof f === 'object' && !Array.isArray(f)) fichaIara.current = f as Record<string, unknown>;
       }
       setMemoriaPronta(true);
     }
@@ -523,6 +555,8 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
         pedidoIA.current?.abort();
         setUsuarioId(null); setNomeVisitante(''); setRestaurou(false);
         setMensagens([]); setSaudou(false); fichaIara.current = {};
+        limparCacheIara();
+        carregadoPara = null;
       } else if (evento === 'SIGNED_IN' && sessao?.user.id) {
         void carregar(sessao.user.id);
       }
@@ -533,12 +567,9 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   // Grava (com máscara) depois de cada mudança na conversa de quem está logado.
   useEffect(() => {
     if (!usuarioId || !memoriaPronta || !mensagens.some(m => m.autor === 'visitante')) return;
+    const lista = prepararParaSalvar(mensagens);
+    try { sessionStorage.setItem(chaveCacheIara(usuarioId), JSON.stringify(lista)); } catch {}
     const id = window.setTimeout(() => {
-      const lista = mensagens.slice(-40).map(m => ({
-        autor: m.autor, texto: mascararIara(m.texto).slice(0, 1500),
-        ...(m.links?.length ? { links: m.links } : {}),
-        ...(m.destino ? { destino: { tipo: m.destino.tipo, id: m.destino.id, nome: m.destino.nome } } : {}),
-      }));
       void supabase.from('iara_conversas').upsert({ usuario_id: usuarioId, mensagens: lista, ficha: fichaIara.current, atualizado_em: new Date().toISOString() }).then(() => undefined);
     }, 900);
     return () => window.clearTimeout(id);
@@ -607,6 +638,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   const cancelarAudioRef = useRef(false);
   const relogioAudioRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const enviarRef = useRef<(v: string, origem?: 'busca') => void>(() => undefined);
+  const iniciarAudioRef = useRef<() => void>(() => undefined);
   const MAX_AUDIO_S = 60;
   const ta = idioma === 'EN'
     ? { gravar: 'Record a voice message', parar: 'Stop and send', cancelar: 'Cancel recording', gravandoTxt: 'Recording…', ouvindo: 'Listening to your audio…', semMic: 'I could not access the microphone. Check the permission in your browser.', falha: 'I could not understand the audio. Could you type it?' }
@@ -701,7 +733,13 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
     };
   }, []);
 
-  const limite = mensagens.length >= 61;
+  // Conversa longa não trava mais: as mensagens mais antigas saem da tela.
+  const limite = false;
+  useEffect(() => {
+    if (mensagens.length > IARA_MAX_TELA && animandoIara === null && !digitandoERN) {
+      setMensagens(m => m.slice(-(IARA_MAX_TELA - 10)));
+    }
+  }, [mensagens.length, animandoIara, digitandoERN]);
 
   useEffect(() => {
     const dialogo = dialogRef.current;
@@ -748,6 +786,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
     setRestaurou(false);
     setMensagens([]);
     setSaudou(false);
+    limparCacheIara();
     if (usuarioId) void supabase.from('iara_conversas').delete().eq('usuario_id', usuarioId).then(() => undefined);
   }
 
@@ -852,16 +891,19 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   }
 
   enviarRef.current = enviar;
+  iniciarAudioRef.current = () => { void iniciarAudio(); };
 
   // EDA_IARA_PONTE_V1: a busca da página Descubra, o botão "Planejar viagem" e
   // qualquer outro ponto do portal abrem a Iara por este evento (com ou sem texto).
   useEffect(() => {
     let espera: ReturnType<typeof setTimeout> | null = null;
     function aoChamar(evento: Event) {
-      const detalhe = (evento as CustomEvent<{ texto?: unknown; origem?: unknown }>).detail;
+      const detalhe = (evento as CustomEvent<{ texto?: unknown; origem?: unknown; audio?: unknown }>).detail;
       const texto = typeof detalhe?.texto === 'string' ? detalhe.texto.trim().slice(0, 300) : '';
       setOfertaIara(null);
       setAberto(true);
+      // IARA_BUSCA_AUDIO_V1: microfone da barra de busca — abre a Iara já gravando.
+      if (detalhe?.audio === true) { iniciarAudioRef.current(); return; }
       if (!texto) return;
       if (espera) clearTimeout(espera);
       espera = setTimeout(() => enviarRef.current(texto, detalhe?.origem === 'busca' ? 'busca' : undefined), 380);
@@ -1001,12 +1043,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
                 <div className="balao ern-digitando" role="status">
                   <span className="autor">{t.title}</span>
                   <span className="sr-only">{textoDigitandoERN}</span>
-                  <span className="iara-pensando">
-                    <button type="button" className="iara-arco iara-arco-balao" onClick={cancelarResposta} aria-label={c.parar} title={c.parar}>
-                      <ArcoFlechaERN tamanho={20} ativo />
-                    </button>
-                    <small aria-hidden="true">{c.pensando}</small>
-                  </span>
+                  <span className="ern-pontos" aria-hidden="true"><i /><i /><i /></span>
                 </div>
               </div>
             )}
@@ -1083,7 +1120,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
                 />
                 {digitandoERN ? (
                   <button type="button" className="iara-arco" onClick={cancelarResposta} aria-label={c.parar} title={c.parar}>
-                    <ArcoFlechaERN tamanho={22} ativo />
+                    <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2.5" fill="currentColor" /></svg>
                   </button>
                 ) : audioSuportado && !entrada.trim() ? (
                   <button
@@ -1622,4 +1659,4 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
       `}</style>
     </section>
   );
-}
+}

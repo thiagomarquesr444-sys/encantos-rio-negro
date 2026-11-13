@@ -15,6 +15,7 @@ const textos = {
     placeholder: 'Pergunte à Iara: para onde você quer ir?',
     rotulo: 'Buscar com a Iara',
     buscar: 'Buscar',
+    audio: 'Falar com a Iara (áudio)',
     dica: 'Busca com a Iara · destinos, passeios, comidas e lendas da Amazônia',
     sugestoes: 'Populares:',
     destaques: [
@@ -28,6 +29,7 @@ const textos = {
     placeholder: 'Ask Iara: where do you want to go?',
     rotulo: 'Search with Iara',
     buscar: 'Search',
+    audio: 'Talk to Iara (voice)',
     dica: 'Search with Iara · destinations, tours, food and legends of the Amazon',
     sugestoes: 'Popular:',
     destaques: [
@@ -41,6 +43,7 @@ const textos = {
     placeholder: 'Pregúntale a Iara: ¿a dónde quieres ir?',
     rotulo: 'Buscar con Iara',
     buscar: 'Buscar',
+    audio: 'Hablar con Iara (audio)',
     dica: 'Búsqueda con Iara · destinos, paseos, comidas y leyendas de la Amazonía',
     sugestoes: 'Populares:',
     destaques: [
@@ -180,6 +183,20 @@ function TituloAnimado({ texto }: { texto: string }) {
   );
 }
 
+// HERO_RIO_NEGRO_SOLIMOES_V1: "do Rio Negro ao Solimões" em dourado, ecoando
+// o Encontro das Águas que está ao fundo da Descubra.
+function destacarDescricao(texto: string): ReactNode {
+  const m = texto.match(/(d[eo]l? R[ií]o Negro a[lo]? Solimões|from the Rio Negro to the Solimões)/);
+  if (!m || m.index === undefined) return texto;
+  return (
+    <>
+      {texto.slice(0, m.index)}
+      <span className="font-semibold text-[#F4C77E]">{m[0]}</span>
+      {texto.slice(m.index + m[0].length)}
+    </>
+  );
+}
+
 export default function HeroImersivoERN({
   onBuscar,
   onFiltrar,
@@ -194,6 +211,15 @@ export default function HeroImersivoERN({
   const [focado, setFocado] = useState(false);
   const falas = useMemo(() => falasBusca(idioma === 'EN' || idioma === 'ES' ? idioma : 'PT'), [idioma]);
   const busca = useBuscaViva(falas, focado || !!termo, t.placeholder);
+  const [temMicrofone, setTemMicrofone] = useState(false);
+  useEffect(() => {
+    setTemMicrofone(typeof window.MediaRecorder !== 'undefined' && !!navigator.mediaDevices?.getUserMedia);
+  }, []);
+
+  // IARA_BUSCA_AUDIO_V1: o microfone abre a Iara já gravando (toque = gesto do usuário).
+  function falarComIara() {
+    window.dispatchEvent(new CustomEvent('iara:abrir', { detail: { audio: true } }));
+  }
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
@@ -234,7 +260,7 @@ export default function HeroImersivoERN({
       </h1>
 
       <p className="ern-revela mt-7 max-w-[640px] text-base leading-7 text-[#DBE3DE] [animation-delay:900ms] md:text-lg md:leading-8">
-        {h.description}
+        {destacarDescricao(h.description)}
       </p>
 
       <form
@@ -248,22 +274,45 @@ export default function HeroImersivoERN({
         <label htmlFor="ern-busca-destino" className="sr-only">
           {t.rotulo}
         </label>
-        <input
-          id="ern-busca-destino"
-          type="search"
-          value={termo}
-          onChange={(evento) => setTermo(evento.target.value)}
-          placeholder={busca.texto}
-          onFocus={() => setFocado(true)}
-          onBlur={() => setFocado(false)}
-          autoComplete="off"
-          maxLength={300}
-          enterKeyHint="search"
-          className="min-h-[52px] min-w-0 flex-1 rounded-xl bg-transparent px-3 text-base text-[#F0F0E8] placeholder:text-[#B8C9BF] focus-visible:outline-none"
-        />
+        {/* IARA_BUSCA_MOBILE_V1: a fala da Iara fica numa camada própria que quebra
+            em até 2 linhas — no celular o placeholder cortava as palavras. */}
+        <div className="relative min-w-0 flex-1">
+          <input
+            id="ern-busca-destino"
+            type="search"
+            value={termo}
+            onChange={(evento) => setTermo(evento.target.value)}
+            placeholder={busca.texto}
+            onFocus={() => setFocado(true)}
+            onBlur={() => setFocado(false)}
+            autoComplete="off"
+            maxLength={300}
+            enterKeyHint="search"
+            className="min-h-[52px] w-full rounded-xl bg-transparent px-3 text-base text-[#F0F0E8] placeholder:text-transparent focus-visible:outline-none"
+          />
+          {!termo && (
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-0 flex items-center px-3 text-left text-[14px] leading-[1.25] text-[#B8C9BF] sm:text-base"
+            >
+              <span className="line-clamp-2 break-words">{busca.texto}</span>
+            </span>
+          )}
+        </div>
+        {temMicrofone && (
+          <button
+            type="button"
+            onClick={falarComIara}
+            aria-label={t.audio}
+            title={t.audio}
+            className={`inline-flex h-[44px] w-[44px] shrink-0 items-center justify-center rounded-full border border-[#F4C77E]/35 bg-white/[0.04] text-[#F4C77E] transition hover:border-[#F4C77E] hover:bg-[#F4C77E]/10 ${FOCO}`}
+          >
+            <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3" fill="currentColor" /><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" /></svg>
+          </button>
+        )}
         <button
           type="submit"
-          className={`inline-flex min-h-[52px] shrink-0 items-center gap-2 rounded-[14px] bg-gradient-to-b from-[#F7D595] to-[#E3A144] px-6 text-sm font-bold text-[#07110E] shadow-[inset_0_1px_0_rgb(255_255_255/55%)] transition hover:brightness-105 ${FOCO}`}
+          className={`inline-flex min-h-[52px] shrink-0 items-center gap-2 rounded-[14px] bg-gradient-to-b from-[#F7D595] to-[#E3A144] px-4 text-sm sm:px-6 font-bold text-[#07110E] shadow-[inset_0_1px_0_rgb(255_255_255/55%)] transition hover:brightness-105 ${FOCO}`}
         >
           <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
             <path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M21 21l-4.3-4.3" />
