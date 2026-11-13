@@ -25,8 +25,8 @@ const ATALHOS = [
     href: '/passeios',
   },
   {
-    titulo: 'Vouchers',
-    descricao: 'Documentos vinculados às reservas.',
+    titulo: 'Embarques do dia',
+    descricao: 'Check-in dos vouchers no embarque.',
     href: '/vouchers',
   },
   {

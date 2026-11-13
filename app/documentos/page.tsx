@@ -10,9 +10,9 @@ import { useModulosEquipeERN } from
 
 const documentos = [
   {
-    titulo: 'Vouchers turísticos',
+    titulo: 'Vouchers do turista',
     descricao:
-      'Consulte os vouchers emitidos e gere documentos Premium com os dados da operadora.',
+      'Emitidos dentro de cada reserva. Aqui: embarques do dia, PDF Premium e check-in.',
     href: '/vouchers',
     modulo: 'vouchers',
     icone: '01',

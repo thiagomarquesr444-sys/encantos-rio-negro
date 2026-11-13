@@ -49,7 +49,7 @@ function itens(v: Viagem): Item[] {
       href: reserva,
     },
     { ok: n(v.saldo) <= 0.009, rotulo: 'Pagamento', detalhe: n(v.saldo) > 0.009 ? `Saldo ${moeda(v.saldo)}` : 'Quitado', href: reserva },
-    { ok: n(v.sem_voucher) === 0, rotulo: 'Voucher', detalhe: n(v.sem_voucher) ? `${v.sem_voucher} reserva(s) sem voucher` : 'Emitido', href: '/vouchers/novo' },
+    { ok: n(v.sem_voucher) === 0, rotulo: 'Voucher', detalhe: n(v.sem_voucher) ? `${v.sem_voucher} reserva(s) sem voucher` : 'Emitido', href: '/reservas' },
   ];
   if (v.saida_id) {
     lista.push({ ok: n(v.demandas) > 0, rotulo: 'Apoio (combustível, gelo, rancho)', detalhe: n(v.demandas) ? `${v.demandas} demanda(s) vinculada(s)` : 'Nenhuma demanda vinculada', href: '/demandas/nova' });

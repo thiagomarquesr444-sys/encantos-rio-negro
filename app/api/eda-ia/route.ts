@@ -137,7 +137,7 @@ function destinosFixos(hoje: string): Record<string, Destino> {
     EMBARCACOES: { href: '/embarcacoes', rotulo: 'Abrir embarcações' },
     HOSPEDAGENS: { href: '/hospedagens', rotulo: 'Abrir hospedagens' },
     PARCEIROS: { href: '/parceiros', rotulo: 'Abrir parceiros' },
-    VOUCHERS: { href: '/vouchers', rotulo: 'Abrir vouchers' },
+    VOUCHERS: { href: '/vouchers', rotulo: 'Abrir embarques do dia' },
     RELATORIOS: { href: '/relatorios', rotulo: 'Abrir relatórios' },
     DOCUMENTOS: { href: '/documentos', rotulo: 'Abrir documentos' },
     FISCAL: { href: '/fiscal', rotulo: 'Abrir fiscal' },

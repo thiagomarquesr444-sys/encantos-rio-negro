@@ -12,6 +12,7 @@ import HospedagemReservaEDA from '@/app/components/HospedagemReservaEDA';
 import { AlertaRecursosReservaEDA } from '@/app/components/AgendaRecursoEDA';
 import { ParceiroReservaEDA } from '@/app/components/ParceirosComissaoEDA';
 import { FinanceiroReservaEDA } from '@/app/components/FinanceiroConectadoEDA';
+import VoucherReservaEDA from '@/app/components/VoucherReservaEDA';
 import { mensagemSaidaEDA } from '@/lib/saidasGestaoEDA';
 import LogisticaReserva from '@/app/components/LogisticaReserva';
 import PeriodoReservaERN, { validarPeriodoReservaERN } from '@/app/components/PeriodoReservaERN';
@@ -569,7 +570,7 @@ function EditarReservaConteudo({ id }: { id?: string }) {
       setFeedback({
         tipo: 'sucesso',
         mensagem: form.status === 'Cancelada'
-          ? 'Reserva salva como Cancelada. Revise separadamente os vouchers e os lançamentos financeiros vinculados.'
+          ? 'Reserva salva como Cancelada. O voucher ativo foi cancelado automaticamente; revise os lançamentos financeiros vinculados.'
           : 'Reserva atualizada com sucesso.',
       });
       setGravada(true);
@@ -636,7 +637,6 @@ function EditarReservaConteudo({ id }: { id?: string }) {
           </>}
           acoes={!salvando && !gravada ? (
             <>
-              <Link href={`/vouchers?reserva_id=${idURL}`} className="eda-pg-bt">Vouchers</Link>
               <Link href={`/financeiro?reserva_id=${idURL}`} className="eda-pg-bt">Financeiro</Link>
             </>
           ) : undefined}
@@ -804,7 +804,7 @@ function EditarReservaConteudo({ id }: { id?: string }) {
                   {form.status === 'Cancelada' && (
                     <div role="status" className="eda-pg-aviso eda-pg-aviso-at" style={{ margin: 0 }}>
                       {statusOriginal === 'Cancelada' ? 'Esta reserva está cancelada.' : 'Ao salvar, esta reserva ficará cancelada.'}
-                      {' '}O histórico será preservado. Revise separadamente os vouchers, as receitas e as despesas vinculadas.
+                      {' '}O histórico será preservado. O voucher ativo será cancelado automaticamente; revise as receitas e despesas vinculadas.
                     </div>
                   )}
 
@@ -876,6 +876,11 @@ function EditarReservaConteudo({ id }: { id?: string }) {
         {/* EDA_FINANCEIRO_CONECTADO_V1: pagamentos da reserva. */}
         <div className="eda-pg-grade-form" style={{ marginTop: 16 }}>
           <FinanceiroReservaEDA reservaId={id} bloqueado={somenteConsultaERN || salvando || gravada} />
+        </div>
+
+        {/* EDA_VOUCHER_NA_RESERVA_V1: o voucher do turista nasce e é cuidado aqui. */}
+        <div className="eda-pg-grade-form" style={{ marginTop: 16 }}>
+          <VoucherReservaEDA reservaId={id} />
         </div>
       </div>
     </PaginaEDA>

@@ -132,7 +132,7 @@ export default function DocumentosOperacaoEDA() {
           <div className={r.vencendo ? 'k-aviso' : ''}><b>{r.vencendo}</b><span>vencem em 30 dias</span></div>
           <div><b>{r.em_dia}</b><span>em dia</span></div>
           <div><b>{r.vouchers_mes}</b><span>vouchers emitidos no mês</span></div>
-          <Link href="/vouchers" className={r.reservas_sem_voucher ? 'k-aviso' : ''}><b>{r.reservas_sem_voucher}</b><span>viagens em 30 dias sem voucher</span></Link>
+          <Link href="/reservas" className={r.reservas_sem_voucher ? 'k-aviso' : ''}><b>{r.reservas_sem_voucher}</b><span>viagens em 30 dias sem voucher</span></Link>
           {r.receber_mes !== null && <Link href="/financeiro"><b>{moeda(Number(r.receber_mes))}</b><span>a receber no mês</span></Link>}
         </div>
       )}

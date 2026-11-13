@@ -46,7 +46,7 @@ const GRUPOS: NavGroup[] = [
     itens: [
       { label: 'Clientes', href: '/clientes', descricao: 'Cadastro e relacionamento com viajantes', icone: 'equipe' },
       { label: 'Passeios', href: '/passeios', descricao: 'Roteiros, experiências e catálogo', icone: 'rio' },
-      { label: 'Vouchers', href: '/vouchers', descricao: 'Documentos vinculados às reservas', icone: 'voucher' },
+      { label: 'Embarques do dia', href: '/vouchers', descricao: 'Check-in dos vouchers no embarque', icone: 'voucher' },
       { label: 'Central de Documentos', href: '/documentos', descricao: 'PDFs, vouchers e demonstrativos da operadora', icone: 'documento' },
       { label: 'Mapa operacional', href: '/dashboard/mapa', descricao: 'Território, localidades e referências', icone: 'mapa' },
     ],
