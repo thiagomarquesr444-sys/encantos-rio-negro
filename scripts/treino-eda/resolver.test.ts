@@ -2,7 +2,7 @@
 // Cada cenário é um jeito real de o operador falar; o resultado tem que ser sempre o mesmo.
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { acharRegistro, campoReal, escolherSaida, semelhanca, type Candidato } from '../../lib/resolverEDA';
+import { acharRegistro, campoReal, escolherSaida, intencaoReservaDireta, semelhanca, type Candidato } from '../../lib/resolverEDA';
 import { acaoRegistroValida, converterValor, REGRAS_ACAO } from '../../lib/acoesEDA';
 
 const id = (n: number) => `00000000-0000-4000-8000-${String(n).padStart(12, '0')}`;
@@ -114,4 +114,20 @@ test('segurança: ação forjada é barrada no navegador', () => {
 test('semelhança é estável', () => {
   assert.ok(semelhanca('ilha do araca', 'Visita a Ilha do Aracá') >= 0.6);
   assert.ok(semelhanca('rio negro', 'Pesca esportiva do tucunaré') < 0.6);
+});
+
+test('rede de segurança: reserva citada pelo nome do cliente', () => {
+  const r1 = intencaoReservaDireta('confirma a reserva do Francisco Damasceno', C);
+  assert.ok(r1 && 'alvo' in r1 && r1.alvo.codigo === 'R2' && r1.campos.status === 'Confirmada');
+  const r2 = intencaoReservaDireta('coloca o barco Jaguá na reserva do Francisco Damasceno', C);
+  assert.ok(r2 && 'alvo' in r2 && r2.campos.embarcacao_id === id(11));
+  const r3 = intencaoReservaDireta('cancela a reserva do Raimundo Nonato', C);
+  assert.ok(r3 && 'alvo' in r3 && r3.alvo.codigo === 'R1' && r3.campos.status === 'Cancelada');
+  const r4 = intencaoReservaDireta('troca o guia da reserva do Raimundo Nonato para o Oziel', C);
+  assert.ok(r4 && 'alvo' in r4 && r4.campos.guia_id === id(21));
+  const r5 = intencaoReservaDireta('muda a reserva do Raimundo para 4 pessoas', C);
+  assert.ok(r5 && 'alvo' in r5 && r5.campos.quantidade_pessoas === 4);
+  assert.equal(intencaoReservaDireta('quantas reservas tenho hoje?', C), null);
+  const r6 = intencaoReservaDireta('confirma a reserva do Bartolomeu', C);
+  assert.ok(r6 && 'aviso' in r6);
 });

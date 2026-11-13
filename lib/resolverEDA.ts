@@ -103,3 +103,39 @@ export function escolherSaida<T extends { id: string; data_inicio: string; statu
   if (abertas.length === 1) return { ok: true, saida: abertas[0] };
   return { ok: false, motivo: abertas.length ? 'varias' : 'nenhuma', datas: abertas.map(s => s.data_inicio) };
 }
+
+/**
+ * EDA_INTENCAO_DIRETA_V1: rede de segurança quando a IA não monta a ação para uma reserva citada
+ * pelo NOME DO CLIENTE (a IA não vê nomes de clientes — LGPD; o servidor vê na busca).
+ * Ex.: "confirma a reserva do Francisco", "coloca o barco Jaguá na reserva do Raimundo",
+ * "troca o guia da reserva do Raimundo para o Oziel", "muda a reserva do Raimundo para 4 pessoas".
+ * Devolve o alvo e os campos (ids já achados) ou um aviso; null se a frase não é desse tipo.
+ */
+export function intencaoReservaDireta(frase: string, candidatos: Candidato[]):
+  { alvo: Candidato; campos: Record<string, string | number> } | { aviso: string } | null {
+  const n = normalizarEDA(frase);
+  const m = /\breservas? d[oa]s? (.+?)(?= (?:para|pra|com|no dia|amanha|hoje)\b|$)/.exec(n);
+  if (!m) return null;
+  const nome = m[1].trim();
+  const r = acharRegistro(nome, candidatos, 'reservas');
+  if (!r.ok) return r.motivo === 'ambiguo' ? { aviso: 'Achei mais de uma reserva com esse nome — me diga a data ou o passeio.' } : { aviso: `Não achei reserva de "${nome}" nos próximos dias.` };
+  const campos: Record<string, string | number> = {};
+  if (/\b(confirm\w*)\b/.test(n)) campos.status = 'Confirmada';
+  else if (/\b(cancel\w*|desmarc\w*)\b/.test(n)) campos.status = 'Cancelada';
+  else if (/\b(pendente|volta pra pendente)\b/.test(n)) campos.status = 'Pendente';
+  const barco = /\b(?:barco|embarcacao|lancha|voadeira) (.+?)(?= (?:na|no|da|do|para|pra|em)\b|$)/.exec(n);
+  if (barco) {
+    const b = acharRegistro(barco[1], candidatos, 'embarcacoes');
+    if (!b.ok) return { aviso: `Não achei o barco "${barco[1]}".` };
+    campos.embarcacao_id = b.candidato.id;
+  }
+  const guia = /\bguia (?:da reserva d[oa]s? .+? )?(?:para|pra) (?:o |a )?(.+)$/.exec(n) ?? /\bguia (?!da reserva)(.+?)(?= (?:na|no|da|do|para|pra|em)\b|$)/.exec(n);
+  if (guia) {
+    const g = acharRegistro(guia[1], candidatos, 'guias');
+    if (!g.ok) return { aviso: `Não achei o guia "${guia[1]}".` };
+    campos.guia_id = g.candidato.id;
+  }
+  const pessoas = /\b(\d{1,3}) (?:pessoas|pax|passageiros)\b/.exec(n);
+  if (pessoas) campos.quantidade_pessoas = Number(pessoas[1]);
+  return Object.keys(campos).length ? { alvo: r.candidato, campos } : null;
+}

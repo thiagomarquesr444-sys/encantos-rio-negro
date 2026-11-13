@@ -3,7 +3,7 @@ import { isIP } from 'node:net';
 import { contextoHistorico } from '@/lib/edaHistorico';
 import { valorPorFaixasEDA } from '@/lib/opcoesEDA';
 import { manualPara } from '@/lib/manualEDA';
-import { acharRegistro, campoReal, escolherSaida, normalizarEDA, type Candidato } from '@/lib/resolverEDA';
+import { acharRegistro, campoReal, escolherSaida, intencaoReservaDireta, normalizarEDA, type Candidato } from '@/lib/resolverEDA';
 import { REGRAS_ACAO, converterValor, descreverAcoes, type AcaoRegistro, type TabelaAcao, type Valor } from '@/lib/acoesEDA';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
@@ -752,6 +752,7 @@ ${descreverAcoes()}
   NOVA DEMANDA: [[ACAO:CRIAR|demandas|titulo=Rancho da saída;categoria=alimentacao;quantidade=30;unidade=kg;saida=S2]]
   NOVA SAÍDA: [[ACAO:CRIAR|passeio_saidas|passeio=Ilha do Aracá;data=2026-12-05;hora=06:00;vagas=10]]
   GERENCIAR qualquer registro: [[ACAO:ALTERAR|R3|status=Confirmada]] ou pelo nome: [[ACAO:ALTERAR|reserva do General Sampaio|guia=Oziel;barco=Jaguá]] — vale para reserva, saída, demanda, passeio, barco, guia, hospedagem, parceiro, voucher e pedido.
+  NOMES DE CLIENTES: você NÃO vê nomes de clientes nos DADOS (LGPD), mas o servidor acha. Quando a pessoa citar uma reserva pelo nome do cliente, NUNCA diga que não encontrou: monte [[ACAO:ALTERAR|reserva do <nome que ela disse>|...]] e o servidor localiza.
   NÃO PERGUNTE o que está nos DADOS (datas, horários, preços, vagas, capacidade). Se a pessoa disser "pode executar"/"vamos", PREPARE na mesma resposta — nunca diga "preparei" sem o marcador. Em pedidos com várias mudanças, prepare todas de uma vez. Se o servidor não conseguir fechar (falta algo de verdade), ele mesmo pergunta.
   Depois de autorizada, toda ação pode ser desfeita pelo arco e flecha ao lado dela.
   Ao preparar, explique em 1 frase o que vai mudar e diga que é só autorizar no botão. Exclusões não são feitas por aqui: ofereça cancelar/inativar pelo status. Documento, telefone, e-mail e saúde do cliente NÃO passam por você (LGPD): depois da reserva, ofereça abrir a ficha para a pessoa completar.
@@ -1239,6 +1240,27 @@ Exemplo de formato: ["texto 1","texto 2","texto 3"]`;
       const tinhaMarcador = /\[\[\s*A[CÇ][AÃ]O\s*:/i.test(texto);
       let avisosAcao: string[] = [...ex.avisos];
       acoes = ex.acoes;
+      // EDA_INTENCAO_DIRETA_V1: reserva citada pelo nome do cliente (que a IA não vê) — o servidor monta.
+      let viaDireta = false;
+      if (!acoes.length) {
+        const ultima = mensagens.filter(m => m.papel === 'usuario').slice(-1)[0]?.texto ?? '';
+        const cands: Candidato[] = Object.entries(codigosOp).filter(([, c]) => c.tabela !== 'financeiro')
+          .map(([codigo, c]) => ({ codigo, tabela: c.tabela, id: c.id, rotulo: c.rotulo, busca: c.busca }));
+        const d = intencaoReservaDireta(ultima, cands);
+        if (d && 'alvo' in d) {
+          const regraR = REGRAS_ACAO.reservas;
+          const campos: Record<string, Valor> = {};
+          for (const [k, v] of Object.entries(d.campos)) {
+            const conv = regraR.campos[k] ? converterValor(regraR.campos[k], v) : undefined;
+            if (conv !== undefined) campos[k] = conv;
+          }
+          if (Object.keys(campos).length) {
+            const descr = Object.entries(campos).map(([k, v]) => `${regraR.campos[k].rotulo}: ${mostrarValor(v, codigosOp)}`).join(' · ');
+            acoes = [{ tipo: 'alterar', tabela: 'reservas', id: d.alvo.id, campos, resumo: `Alterar reserva "${d.alvo.rotulo}" → ${descr}` }];
+            viaDireta = true;
+          }
+        } else if (d && 'aviso' in d && /n[aã]o (encontrei|achei)/i.test(ex.limpo)) avisosAcao.push(d.aviso);
+      }
       if (opSessao && acoes.length) {
         const comp = await completarAcoes(acoes, opSessao.db, opSessao.empresaId, codigosOp);
         acoes = comp.acoes; avisosAcao = [...avisosAcao, ...comp.avisos];
@@ -1247,7 +1269,9 @@ Exemplo de formato: ["texto 1","texto 2","texto 3"]`;
       const semAcao = !acoes.length && (tinhaMarcador || /\b(preparei|é só (confirmar|autorizar)|no botão abaixo)\b/i.test(ex.limpo));
       textoIA = semAcao
         ? `${avisosAcao.join(' ') || 'Não consegui montar essa ação com segurança — me diga de novo o que mudar, com o nome do registro.'}`
-        : `${ex.limpo || 'Preparei, é só autorizar no botão abaixo.'}${avisosAcao.length ? `\n\n${avisosAcao.join(' ')}` : ''}`;
+        : viaDireta && acoes.length
+          ? `Achei a reserva. Preparei a mudança aqui embaixo — é só autorizar.${avisosAcao.length ? `\n\n${avisosAcao.join(' ')}` : ''}`
+          : `${ex.limpo || 'Preparei, é só autorizar no botão abaixo.'}${avisosAcao.length ? `\n\n${avisosAcao.join(' ')}` : ''}`;
     }
     const sugestoesPre = extrairSugestoes(textoIA);
     let bruto = sugestoesPre.limpo;
