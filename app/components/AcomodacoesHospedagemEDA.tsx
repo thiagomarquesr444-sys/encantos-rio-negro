@@ -12,6 +12,7 @@ import {
   TIPOS_ACOMODACAO, mapaHospedagemEDA, mensagemHospedagemEDA, rotuloTipoAcomodacao,
   type AcomodacaoEDA, type MapaHospedagemEDA,
 } from '@/lib/hospedagensEDA';
+import { confirmarEDA } from '@/lib/dialogoEDA';
 
 export default function AcomodacoesHospedagemEDA({ hospedagemId, bloqueado }: { hospedagemId: string; bloqueado?: boolean }) {
   const [lista, setLista] = useState<AcomodacaoEDA[] | null>(null);
@@ -58,7 +59,7 @@ export default function AcomodacoesHospedagemEDA({ hospedagemId, bloqueado }: { 
   }
 
   async function excluir(a: AcomodacaoEDA) {
-    if (!window.confirm(`Excluir "${a.nome}"?`)) return;
+    if (!(await confirmarEDA(`Excluir a acomodação "${a.nome}"?`, { titulo: 'Excluir acomodação', confirmar: 'Excluir', perigo: true }))) return;
     const { error } = await supabase.from('hospedagem_acomodacoes').delete().eq('id', a.id);
     if (error) { setErro(mensagemHospedagemEDA(error)); return; }
     void carregar();

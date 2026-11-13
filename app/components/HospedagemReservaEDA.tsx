@@ -11,6 +11,7 @@ import {
   disponibilidadeHospedagemEDA, mensagemHospedagemEDA, rotuloTipoAcomodacao, somarDiasISO,
   type DisponibilidadeAcomodacaoEDA, type EstadiaReservaEDA,
 } from '@/lib/hospedagensEDA';
+import { confirmarEDA } from '@/lib/dialogoEDA';
 
 type Props = { reservaId?: string; bloqueado: boolean; pessoas: string; dataInicio: string; dataFim: string };
 
@@ -83,7 +84,7 @@ export default function HospedagemReservaEDA({ reservaId, bloqueado, pessoas, da
   }
 
   async function remover(id: string) {
-    if (!window.confirm('Remover esta estadia? As noites voltam a ficar livres.')) return;
+    if (!(await confirmarEDA('As noites voltam a ficar livres para outras reservas.', { titulo: 'Remover esta estadia?', confirmar: 'Remover', perigo: true }))) return;
     const { error } = await supabase.from('reserva_hospedagens').delete().eq('id', id);
     if (error) { setErro(mensagemHospedagemEDA(error)); return; }
     void carregar();

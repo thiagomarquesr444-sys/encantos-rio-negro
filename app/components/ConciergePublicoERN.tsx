@@ -6,6 +6,7 @@ import ConciergeLancadorERN from './ConciergeLancadorERN';
 import IconeIara from './IconeIara';
 import TextoDigitadoIA from './TextoDigitadoIA';
 import { useLanguage } from '@/app/components/LanguageProvider';
+import { confirmarEDA } from '@/lib/dialogoEDA';
 
 const textos = {
   PT: {
@@ -558,8 +559,8 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
     devolverFocoERN();
   }
 
-  function reiniciar() {
-    if (!window.confirm(c.clear)) return;
+  async function reiniciar() {
+    if (!(await confirmarEDA(c.clear, { titulo: 'Iara' }))) return;
 
     if (respostaTimerERN.current !== null) {
       clearTimeout(respostaTimerERN.current);
@@ -879,7 +880,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
 
           <footer className="chat-rodape">
             <p>{etapa === 4 ? c.emailHelp : t.notice}</p>
-            <button type="button" onClick={reiniciar}>
+            <button type="button" onClick={() => void reiniciar()}>
               {limite ? c.limitButton : c.restart}
             </button>
           </footer>

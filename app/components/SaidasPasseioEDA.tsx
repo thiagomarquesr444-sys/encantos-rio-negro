@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import { dataCurtaEDA } from '@/lib/passeiosPublicosEDA';
 import { mensagemFichaEDA, resumoSegurancaEDA, type LinhaResumoEDA } from '@/lib/fichaSaudeEDA';
 import { hojeManausEDA, listarSaidasGestaoEDA, type SaidaGestaoEDA } from '@/lib/saidasGestaoEDA';
+import { confirmarEDA } from '@/lib/dialogoEDA';
 
 type Saida = SaidaGestaoEDA;
 
@@ -104,7 +105,7 @@ export default function SaidasPasseioEDA({ passeioId, vagasPadrao }: { passeioId
 
   async function alterarStatus(s: Saida, status: Saida['status']) {
     if (status === 'cancelada' && s.ocupadas > 0 &&
-      !window.confirm(`Esta saída tem ${s.ocupadas} pessoa(s) reservada(s). Cancelar mesmo assim? As reservas continuam e precisam ser tratadas.`)) return;
+      !(await confirmarEDA(`Esta saída tem ${s.ocupadas} pessoa(s) reservada(s). As reservas continuam e precisam ser tratadas.`, { titulo: 'Cancelar esta saída?', confirmar: 'Cancelar saída', cancelar: 'Voltar', perigo: true }))) return;
     const { error } = await supabase.from('passeio_saidas').update({ status }).eq('id', s.id);
     if (error) { setErro('Não foi possível atualizar a saída.'); return; }
     void carregar();

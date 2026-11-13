@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { supabase } from '@/lib/supabase';
 import { cnpjValidoERN, REGIMES_TRIBUTARIOS_ERN, regimeTributarioValidoERN, type RegimeTributarioERN } from '@/lib/fiscalERN';
+import { confirmarEDA } from '@/lib/dialogoEDA';
 
 // ERN_FISCAL_REGIME_ISS_V1: parâmetros para estimar impostos nas simulações.
 type Tributacao = { regime: RegimeTributarioERN; codigo_servico: string; aliquota_iss: string; aliquota_simples: string };
@@ -178,7 +179,7 @@ if (!data) throw new Error('Salvamento sem confirmação do banco.');
         <div><p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#E3A144]">EDA / PREPARAÇÃO PARA NFS-e</p>
           <h2 className="mt-2 text-lg font-semibold">Cadastro fiscal da operadora</h2>
           <p className="mt-1 text-xs leading-5 text-[#94A5A1]">Dados privados do prestador. Não modificam o perfil público nem autorizam emissão oficial.</p></div>
-        <button type="button" onClick={() => { if (alterado && !window.confirm('Descartar alterações não salvas?')) return; atualizar(); }} disabled={carregando || salvando}
+        <button type="button" onClick={async () => { if (alterado && !(await confirmarEDA('As alterações ainda não salvas serão perdidas.', { titulo: 'Descartar alterações?', confirmar: 'Descartar', perigo: true }))) return; atualizar(); }} disabled={carregando || salvando}
           className="min-h-10 rounded-xl border border-white/15 px-3 text-xs hover:bg-white/5 disabled:opacity-50">Recarregar</button>
       </header>
       {carregando && <p role="status" className="mt-4 text-sm text-[#94A5A1]">Consultando cadastro autorizado…</p>}

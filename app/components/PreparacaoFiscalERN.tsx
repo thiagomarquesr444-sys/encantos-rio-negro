@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import PreviaDPSERN from '@/app/components/PreviaDPSERN';
 import { pendenciasEmitenteERN, type EmitenteFiscalERN } from '@/lib/fiscalERN';
+import { confirmarEDA } from '@/lib/dialogoEDA';
 
 type ReservaFiscal = {
   id: string;
@@ -156,7 +157,7 @@ export default function PreparacaoFiscalERN({
         .select('id', { head: true, count: 'exact' })
         .eq('empresa_id', empresaId).eq('reserva_id', reserva.id);
       if (erroAntes || antes === null) throw new Error('Não foi possível conferir solicitações anteriores.');
-      if (!window.confirm(`Registrar ou reutilizar SIMULAÇÃO da reserva ${reserva.id.slice(0, 8)}?\nValor comercial: ${moeda(Number(reserva.valor_total))}\nNenhuma NFS-e será emitida.`)) return;
+      if (!(await confirmarEDA(`Reserva ${reserva.id.slice(0, 8)}\nValor comercial: ${moeda(Number(reserva.valor_total))}\nNenhuma NFS-e será emitida.`, { titulo: 'Registrar simulação fiscal?' }))) return;
       const { data: sessao } = await supabase.auth.getSession();
       if (!sessao.session?.access_token) throw new Error('Token da sessão indisponível.');
       const resposta = await fetch('/api/fiscal/nfse', {

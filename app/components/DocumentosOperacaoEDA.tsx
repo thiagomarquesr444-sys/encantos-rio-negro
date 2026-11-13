@@ -7,6 +7,7 @@ import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { hojeManausEDA } from '@/lib/saidasGestaoEDA';
+import { confirmarEDA } from '@/lib/dialogoEDA';
 
 export const CATEGORIAS_DOCUMENTO = [
   ['cadastur_empresa', 'Cadastur da operadora'],
@@ -107,7 +108,7 @@ export default function DocumentosOperacaoEDA() {
   }
 
   async function excluir(d: Doc) {
-    if (!window.confirm(`Excluir "${d.titulo}"? Isso não pode ser desfeito.`)) return;
+    if (!(await confirmarEDA(`Excluir "${d.titulo}"? Isso não pode ser desfeito.`, { titulo: 'Excluir documento', confirmar: 'Excluir', perigo: true }))) return;
     const { error } = await supabase.from('documentos_operacao').delete().eq('id', d.id);
     if (error) { setErro(erroAmigavel(error.message)); return; }
     void carregar();

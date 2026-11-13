@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { baixarDocumentoPremiumERN } from '@/lib/documentosPremiumERN';
 import { consultarIdentificacaoEmpresaERN } from '@/lib/identificacaoEmpresaERN';
 import { carregarChegadaDaReserva, textoChegadaVoucher, textoTransferVoucher } from '@/lib/chegadasERN';
+import { confirmarEDA, perguntarEDA } from '@/lib/dialogoEDA';
 
 export type SnapshotVoucherEDA = {
   operadora?: { nome?: string | null; cnpj?: string | null; telefone?: string | null; email?: string | null; cidade?: string | null; endereco?: string | null; whatsapp?: string | null };
@@ -87,16 +88,18 @@ export async function emitirVoucherEDA(reservaId: string, novaVersao = false): P
 }
 
 export async function checkinVoucherEDA(v: VoucherEDA): Promise<boolean> {
-  if (!window.confirm(`Fazer o check-in do voucher ${v.codigo} (${v.cliente_nome ?? 'titular'})? Confira o documento com foto do titular. Depois disso o voucher não pode ser usado de novo.`)) return false;
+  if (!(await confirmarEDA(`Voucher ${v.codigo} · ${v.cliente_nome ?? 'titular'}\nConfira o documento com foto do titular. Depois do check-in o voucher não pode ser usado de novo.`, { titulo: 'Fazer o check-in?', confirmar: 'Confirmar embarque' }))) return false;
   const { error } = await supabase.rpc('marcar_voucher_utilizado_eda', { p_voucher_id: v.id });
   if (error) throw error;
   return true;
 }
 
 export async function cancelarVoucherEDA(v: VoucherEDA): Promise<boolean> {
-  const motivo = window.prompt(`Cancelar o voucher ${v.codigo}? O turista deixa de poder usá-lo. Informe o motivo:`);
+  const motivo = await perguntarEDA(`O turista deixa de poder usar o voucher ${v.codigo}. O motivo fica registrado no histórico.`, {
+    titulo: 'Cancelar o voucher?', confirmar: 'Cancelar voucher', cancelar: 'Voltar', perigo: true,
+    campo: { rotulo: 'Motivo do cancelamento', placeholder: 'Ex.: turista desistiu da viagem', minimo: 3, maximo: 300 },
+  });
   if (motivo === null) return false;
-  if (motivo.trim().length < 3) throw new Error('Informe o motivo do cancelamento.');
   const { error } = await supabase.from('vouchers')
     .update({ status: 'Cancelado', motivo_cancelamento: motivo.trim().slice(0, 300) }).eq('id', v.id);
   if (error) throw error;

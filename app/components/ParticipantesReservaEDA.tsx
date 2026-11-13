@@ -16,6 +16,7 @@ import {
   faixaEtariaEDA, idadeNaDataEDA, RELACOES_PARTICIPANTE, type FaixaEtariaEDA, type PoliticaCriancasEDA,
 } from '@/lib/opcoesEDA';
 import { copiarEDA } from '@/lib/copiarEDA';
+import { confirmarEDA } from '@/lib/dialogoEDA';
 
 const ROTULO_FAIXA: Record<FaixaEtariaEDA, string> = { adulto: 'Adulto', crianca: 'Criança', colo: 'Colo' };
 type ContextoReserva = {
@@ -107,7 +108,7 @@ export default function ParticipantesReservaEDA({ reservaId, bloqueado, pessoas 
   const titular = lista?.find((p) => p.titular);
 
   async function remover(p: ParticipanteEDA) {
-    if (!window.confirm(`Remover ${p.nome} da reserva? A ficha de saúde dele também será apagada.`)) return;
+    if (!(await confirmarEDA(`A ficha de saúde de ${p.nome} também será apagada.`, { titulo: `Remover ${p.nome} da reserva?`, confirmar: 'Remover', perigo: true }))) return;
     const { error } = await supabase.from('reserva_participantes').delete().eq('id', p.participante_id);
     if (error) { setErro(mensagemFichaEDA(error)); return; }
     void carregar();

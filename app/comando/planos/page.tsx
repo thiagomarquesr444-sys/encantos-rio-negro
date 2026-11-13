@@ -7,6 +7,7 @@ import '@/app/components/padrao-paginas-eda.css';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { confirmarEDA } from '@/lib/dialogoEDA';
 
 type Empresa = {
   id: string; nome: string; cidade: string | null; tem_documento: boolean;
@@ -77,7 +78,7 @@ export default function PainelCeoPlanos() {
   }
 
   async function encerrar(e: Empresa) {
-    if (!window.confirm(`Encerrar o teste de ${e.nome} agora? A empresa volta ao Grátis.`)) return;
+    if (!(await confirmarEDA(`A empresa ${e.nome} volta ao plano Grátis agora.`, { titulo: 'Encerrar o teste?', confirmar: 'Encerrar', perigo: true }))) return;
     const { data: r, error } = await supabase.rpc('ern_comando_encerrar_teste_v1', { p_empresa_id: e.id });
     setAviso(error || r?.ok !== true ? (ERROS[r?.codigo] ?? 'Não foi possível encerrar.') : `Teste de ${e.nome} encerrado.`);
     void carregar();

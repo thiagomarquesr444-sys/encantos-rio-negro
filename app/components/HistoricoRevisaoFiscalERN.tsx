@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import { supabase } from '@/lib/supabase';
+import { confirmarEDA } from '@/lib/dialogoEDA';
 
 type Estado = 'em_preparacao' | 'com_pendencias' | 'revisado_internamente';
 type Reserva = { id: string; status: string | null; valor_total: number | string | null };
@@ -84,7 +85,7 @@ export default function HistoricoRevisaoFiscalERN({ reservaSelecionada }: { rese
     if (!editor || !empresaId || !usuarioId || !reservaId || trava.current) return;
     if (observacoes.length > 1200) { setErro('Observações acima de 1.200 caracteres.'); return; }
     if (!reservas.some(r => r.id === reservaId)) { setErro('Reserva selecionada não está disponível para esta operadora.'); return; }
-    if (estado === 'revisado_internamente' && !window.confirm('Confirmar apenas a revisão INTERNA? Isto não autoriza nem emite NFS-e.')) return;
+    if (estado === 'revisado_internamente' && !(await confirmarEDA('Isto registra apenas a revisão INTERNA. Não autoriza nem emite NFS-e.', { titulo: 'Confirmar revisão interna?' }))) return;
     trava.current = true; setSalvando(true); setErro(''); setAviso('');
     try {
       const existente = historico.find(r => r.reserva_id === reservaId);

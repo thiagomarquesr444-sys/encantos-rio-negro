@@ -11,6 +11,7 @@ import {
   linkVerificacaoEDA, listarVouchersReservaEDA, mensagemVoucherEDA, moedaBR, situacaoVoucherEDA,
   type SituacaoVoucherEDA, type VoucherEDA,
 } from '@/lib/voucherTuristaEDA';
+import { confirmarEDA } from '@/lib/dialogoEDA';
 
 const COR: Record<SituacaoVoucherEDA, string> = {
   Ativo: 'var(--p-verde, #22c55e)', Utilizado: 'var(--p-amar, #f59e0b)', Cancelado: 'var(--p-verm, #ef4444)',
@@ -68,10 +69,10 @@ export default function VoucherReservaEDA({ reservaId, compacto = false }: { res
   const podeEmitir = confirmada && pago > 0 && !ativo;
 
   const emitir = (nova: boolean) => executar(async () => {
-    const msg = nova
-      ? 'Emitir nova versão com os dados atuais da reserva? A versão atual ficará como Substituída e deixará de valer. Reenvie a nova ao turista.'
-      : 'Emitir o voucher desta reserva? Reserva, passageiros e pagamento serão congelados no voucher.';
-    if (!window.confirm(msg)) return false;
+    const ok = nova
+      ? await confirmarEDA('O voucher será refeito com os dados atuais da reserva. A versão atual fica como Substituída e deixa de valer. Depois, reenvie o novo ao turista.', { titulo: 'Emitir nova versão?', confirmar: 'Emitir nova versão' })
+      : await confirmarEDA('Os dados da reserva, dos passageiros e do pagamento ficarão registrados no voucher, como comprovante de compra do turista.', { titulo: 'Emitir o voucher?', confirmar: 'Emitir voucher' });
+    if (!ok) return false;
     const v = await emitirVoucherEDA(reservaId, nova);
     setAviso(`Voucher ${v.codigo} emitido${v.versao > 1 ? ` (versão ${v.versao})` : ''}. Baixe o PDF ou envie pelo WhatsApp.`);
     return false;
