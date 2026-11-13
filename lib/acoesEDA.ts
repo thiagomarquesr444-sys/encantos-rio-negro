@@ -122,6 +122,12 @@ export const REGRAS_ACAO: Record<TabelaAcao, Regra> = {
       unidade: { rotulo: 'unidade', tipo: 'texto', max: 40 },
       descricao: { rotulo: 'descrição', tipo: 'texto', max: 1000 },
       saida_id: { rotulo: 'saída', tipo: 'ref', ref: 'passeio_saidas' },
+      // EDA_LOTE2_V1: demanda calculada (pessoas × dias × consumo por pessoa/dia + margem).
+      consumo_pessoa_dia: { rotulo: 'consumo por pessoa/dia', tipo: 'numero', min: 0.01, max: 1000 },
+      pessoas_estimadas: { rotulo: 'pessoas', tipo: 'inteiro', min: 1, max: 5000 },
+      dias_estimados: { rotulo: 'dias', tipo: 'inteiro', min: 1, max: 365 },
+      margem_percentual: { rotulo: 'margem (%)', tipo: 'numero', min: 0, max: 100 },
+      metodo_estimativa: { rotulo: 'cálculo', tipo: 'opcao', opcoes: ['manual', 'pessoa_dia'], interno: true },
       status: { rotulo: 'status', tipo: 'opcao', opcoes: ['rascunho', 'aberta', 'encerrada', 'cancelada'] },
       data_inicio: { rotulo: 'início', tipo: 'data' },
       data_fim: { rotulo: 'fim', tipo: 'data' },

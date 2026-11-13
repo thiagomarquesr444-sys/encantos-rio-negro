@@ -10,9 +10,12 @@ export type AcaoEDA =
   | { tipo: 'lancar'; resumo: string; dados: { tipo: 'receita' | 'despesa'; valor: number; categoria: string; data: string; quitado: boolean; descricao: string } }
   | { tipo: 'baixar'; resumo: string; dados: { id: string; tipo: 'receita' | 'despesa'; data: string } }
   | { tipo: 'demanda'; resumo: string; dados: { id: string; status: 'aberta' | 'encerrada' | 'cancelada' } }
+  | { tipo: 'voucher'; resumo: string; dados: { reserva_id: string } }
+  | { tipo: 'avaliacao'; resumo: string; dados: { avaliacao_id: string } }
   | AcaoRegistro;
 
-export type ResultadoEDA = { texto: string; href?: string | null; logId?: string | null };
+/** whatsapp: link wa.me já montado (a pessoa toca para enviar — o navegador não deixa abrir sozinho). */
+export type ResultadoEDA = { texto: string; href?: string | null; logId?: string | null; whatsapp?: string | null };
 
 export const JANELA_DESFAZER_MIN = 15;
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -23,7 +26,10 @@ export const acaoValidaEDA = (a: unknown): a is AcaoEDA => {
   const x = a as { tipo?: string; resumo?: unknown; dados?: unknown };
   if (!x || typeof x.resumo !== 'string') return false;
   if (x.tipo === 'alterar' || x.tipo === 'criar') return acaoRegistroValida(a);
-  return !!x.dados && ['lancar', 'baixar', 'demanda'].includes(x.tipo ?? '');
+  if (!x.dados || typeof x.dados !== 'object') return false;
+  if (x.tipo === 'voucher') return UUID.test(String((x.dados as { reserva_id?: unknown }).reserva_id ?? ''));
+  if (x.tipo === 'avaliacao') return UUID.test(String((x.dados as { avaliacao_id?: unknown }).avaliacao_id ?? ''));
+  return ['lancar', 'baixar', 'demanda'].includes(x.tipo ?? '');
 };
 
 // Regras do banco (saída lotada, conflito de barco, limite do plano) já vêm em português: mostra direto.
@@ -67,7 +73,7 @@ async function executarRegistro(a: AcaoRegistro, usuarioId: string, empresa: str
 
   if (a.tipo === 'criar') {
     if (a.tabela === 'guias') dados.usuario_id = usuarioId;
-    if (a.tabela === 'demandas') { dados.criado_por = usuarioId; dados.metodo_estimativa = 'manual'; }
+    if (a.tabela === 'demandas') { dados.criado_por = usuarioId; dados.metodo_estimativa ??= 'manual'; }
     // O pedido da Iara não é coluna da reserva: guarda para marcar como convertido depois.
     const pedidoId = typeof dados.pedido_id === 'string' && UUID.test(dados.pedido_id) ? dados.pedido_id : null;
     delete dados.pedido_id;
@@ -108,9 +114,58 @@ async function executarRegistro(a: AcaoRegistro, usuarioId: string, empresa: str
   return { texto: 'Alteração feita.', logId };
 }
 
+const MENSAGENS_VOUCHER: [string, string][] = [
+  ['EDA_VOUCHER_RESERVA_NAO_CONFIRMADA', 'A reserva precisa estar Confirmada para emitir o voucher.'],
+  ['EDA_VOUCHER_SEM_PAGAMENTO', 'Ainda não há pagamento recebido nessa reserva — registre o pagamento e eu emito.'],
+  ['EDA_VOUCHER_SEM_VALOR', 'A reserva está sem valor — complete o valor antes do voucher.'],
+  ['EDA_VOUCHER_JA_EMITIDO', 'Essa reserva já tem voucher ativo.'],
+  ['EDA_VOUCHER_PLANO', 'Vouchers estão disponíveis a partir do plano Pro.'],
+  ['EDA_VOUCHER_MFA', 'Confirme a verificação em duas etapas para emitir vouchers.'],
+  ['EDA_VOUCHER_SEM_PERMISSAO', 'Somente o administrador ou operador da empresa emite vouchers.'],
+];
+
+/** EDA_LOTE2_V1: voucher pela regra do banco (Confirmada + paga + sem voucher ativo). */
+async function emitirVoucher(reservaId: string, empresa: string, resumo: string): Promise<ResultadoEDA> {
+  const { data, error } = await supabase.rpc('emitir_voucher_reserva_eda', { p_reserva_id: reservaId, p_substituir: false });
+  if (error || !data?.id) {
+    const m = error?.message ?? '';
+    throw new Error(MENSAGENS_VOUCHER.find(([c]) => m.includes(c))?.[1] ?? 'Não consegui emitir o voucher agora.');
+  }
+  avisarTelas('vouchers');
+  avisarTelas('reservas');
+  await registrar(empresa, 'voucher', 'vouchers', String(data.id), resumo, null, { reserva_id: reservaId, codigo: data.codigo });
+  // Voucher emitido não se desfaz pelo arco: é documento do turista (cancelamento só pela reserva).
+  return { texto: `Voucher ${data.codigo ?? ''} emitido.`.replace('  ', ' '), href: `/reservas/editar/${reservaId}` };
+}
+
+const soDigitos = (t: string | null | undefined) => String(t ?? '').replace(/\D/g, '');
+
+/** EDA_LOTE2_V1: pedido de avaliação pós-viagem — mensagem pronta com o link; a pessoa toca para enviar. */
+async function pedirAvaliacao(avaliacaoId: string, empresa: string): Promise<ResultadoEDA> {
+  const { data: av } = await supabase.from('avaliacoes').select('token,reserva_id,passeio_nome,respondido_em').eq('id', avaliacaoId).eq('empresa_id', empresa).maybeSingle();
+  if (!av?.token) throw new Error('Não achei essa avaliação.');
+  if (av.respondido_em) return { texto: 'O cliente já avaliou essa viagem. 🙌' };
+  const [{ data: rv }, { data: emp }] = await Promise.all([
+    supabase.from('reservas').select('cliente,cliente_id').eq('id', av.reserva_id).eq('empresa_id', empresa).maybeSingle(),
+    supabase.from('empresa').select('nome').eq('id', empresa).maybeSingle(),
+  ]);
+  const { data: cli } = rv?.cliente_id ? await supabase.from('clientes').select('telefone').eq('id', rv.cliente_id).maybeSingle() : { data: null };
+  const nome = String(rv?.cliente ?? '').trim().split(/\s+/)[0] || 'tudo bem';
+  const link = `${window.location.origin}/avaliar/${av.token}`;
+  const texto = `Olá, ${nome}! Aqui é da ${emp?.nome ?? 'nossa equipe'}. 🌿 Esperamos que ${av.passeio_nome ?? 'a experiência'} tenha sido inesquecível!\n\nConta pra gente como foi? Leva menos de 1 minuto: ${link}\n\nObrigado por viver a Amazônia com a gente! 🌊`;
+  await supabase.from('posvenda_envios').upsert({ reserva_id: av.reserva_id, tipo: 'pos', empresa_id: empresa }, { onConflict: 'reserva_id,tipo', ignoreDuplicates: true });
+  let tel = soDigitos(cli?.telefone);
+  if (tel.length >= 10 && tel.length <= 11) tel = `55${tel}`;
+  if (tel.length >= 12) return { texto: 'Mensagem pronta. Toque em "Enviar no WhatsApp" para mandar ao cliente.', whatsapp: `https://wa.me/${tel}?text=${encodeURIComponent(texto)}` };
+  try { await navigator.clipboard.writeText(texto); } catch { /* sem área de transferência */ }
+  return { texto: 'O cliente está sem telefone no cadastro — copiei a mensagem com o link para você enviar por onde preferir.' };
+}
+
 export async function executarAcaoEDA(a: AcaoEDA): Promise<ResultadoEDA> {
   const { usuarioId, empresa } = await sessao();
   if (a.tipo === 'alterar' || a.tipo === 'criar') return executarRegistro(a, usuarioId, empresa);
+  if (a.tipo === 'voucher') return emitirVoucher(a.dados.reserva_id, empresa, a.resumo);
+  if (a.tipo === 'avaliacao') return pedirAvaliacao(a.dados.avaliacao_id, empresa);
   if (a.tipo === 'lancar') {
     const d = a.dados;
     const { data, error } = await supabase.from('financeiro').insert({
@@ -150,6 +205,7 @@ export async function desfazerAcaoEDA(logId: string): Promise<string> {
   if (log.desfeito_em) throw new Error('Essa ação já foi desfeita.');
   if (Date.now() - new Date(log.criado_em).getTime() > JANELA_DESFAZER_MIN * 60_000) throw new Error(`Passou de ${JANELA_DESFAZER_MIN} minutos — agora ajuste direto na tela.`);
   const tabela = String(log.tabela);
+  if (log.tipo === 'voucher') throw new Error('Voucher emitido não se desfaz por aqui — cancele pela reserva.');
   if (!TABELAS_DESFAZER.has(tabela) || !UUID.test(String(log.registro_id ?? ''))) throw new Error('Essa ação não pode ser desfeita por aqui.');
   const id = String(log.registro_id);
 

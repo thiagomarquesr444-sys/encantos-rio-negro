@@ -363,6 +363,51 @@ async function contextoOperadora(db: SupabaseClient, empresaId: string, hoje: st
     for (const x of pv.slice(0, 10)) linhas.push(`- ${codPV.get(String(x.id))} | ${x.passeio_nome ?? 'interesse geral'} | ${x.adultos} adulto(s)${x.criancas ? ` + ${x.criancas} criança(s)` : ''} | período: ${x.periodo ?? '—'} | ${x.status} | recebido ${dm(String(x.criado_em).slice(0, 10))}`);
   }
 
+  // EDA_LOTE2_V1: vouchers a emitir (reserva Confirmada + pagamento recebido + sem voucher ativo).
+  try {
+    const { data: conf } = await db.from('reservas').select('id,pacote,data_reserva,quantidade_pessoas,status,cliente')
+      .eq('empresa_id', empresaId).gte('data_reserva', somarDias(hoje, -3)).lte('data_reserva', somarDias(hoje, 120))
+      .order('data_reserva').limit(80);
+    const confirmadas = (conf ?? []).filter(x => /^confirmad/i.test(String(x.status ?? '')));
+    if (confirmadas.length) {
+      const ids = confirmadas.map(x => String(x.id));
+      const [{ data: pagos }, { data: vs }] = await Promise.all([
+        db.from('financeiro').select('reserva_id,valor,tipo,status').eq('empresa_id', empresaId).in('reserva_id', ids),
+        db.from('vouchers').select('reserva_id,status').eq('empresa_id', empresaId).in('reserva_id', ids),
+      ]);
+      const pagas = new Set((pagos ?? []).filter(f => /receita/i.test(String(f.tipo)) && /^(recebido|pago)$/i.test(String(f.status)) && Number(f.valor) > 0).map(f => String(f.reserva_id)));
+      const comVoucher = new Set((vs ?? []).filter(v => /^(ativo|valido)$/i.test(String(v.status))).map(v => String(v.reserva_id)));
+      const faltam = confirmadas.filter(x => pagas.has(String(x.id)) && !comVoucher.has(String(x.id))).slice(0, 10);
+      const semPagamento = confirmadas.filter(x => !pagas.has(String(x.id)) && !comVoucher.has(String(x.id))).length;
+      if (faltam.length || semPagamento) {
+        let n = Object.keys(codigos).filter(k => /^R\d+$/.test(k)).length;
+        const porId = new Map(Object.entries(codigos).filter(([, c]) => c.tabela === 'reservas').map(([k, c]) => [c.id, k]));
+        linhas.push(`\nVOUCHERS A EMITIR (reserva Confirmada e paga, ainda sem voucher): ${faltam.length}${semPagamento ? ` · ${semPagamento} confirmada(s) ainda sem pagamento registrado (voucher só depois do pagamento)` : ''}`);
+        for (const x of faltam) {
+          let cod = porId.get(String(x.id));
+          if (!cod) { cod = `R${++n}`; codigos[cod] = { tabela: 'reservas', id: String(x.id), rotulo: `${x.pacote ?? 'reserva'} ${dm(x.data_reserva as string)}`.slice(0, 70), busca: `${x.cliente ?? ''} ${x.pacote ?? ''}`.slice(0, 200) }; destinos[cod] = { href: `/reservas/editar/${x.id}`, rotulo: `Abrir ${codigos[cod].rotulo}`.slice(0, 60) }; }
+          linhas.push(`- ${cod} | ${x.pacote ?? '—'} | ${dm(x.data_reserva as string)} | ${x.quantidade_pessoas ?? 1} pessoa(s)`);
+        }
+      }
+    }
+  } catch { /* sem vouchers no contexto */ }
+
+  // EDA_LOTE2_V1: avaliações a pedir (viagem terminou; link pronto; cliente ainda não respondeu).
+  try {
+    const { data: avs } = await db.from('avaliacoes').select('id,passeio_nome,criado_em,expira_em,respondido_em')
+      .eq('empresa_id', empresaId).is('respondido_em', null).gte('criado_em', new Date(Date.now() - 14 * 86400_000).toISOString())
+      .order('criado_em', { ascending: false }).limit(10);
+    const abertas = (avs ?? []).filter(a => !a.expira_em || new Date(String(a.expira_em)).getTime() > Date.now());
+    if (abertas.length) {
+      linhas.push(`\nAVALIAÇÕES A PEDIR (viagem terminou; o cliente ainda não avaliou): ${abertas.length}`);
+      abertas.forEach((a, i) => {
+        const cod = `AV${i + 1}`;
+        codigos[cod] = { tabela: 'avaliacoes', id: String(a.id), rotulo: `avaliação ${a.passeio_nome ?? ''}`.slice(0, 70) };
+        linhas.push(`- ${cod} | ${a.passeio_nome ?? 'passeio'} | gerada ${dm(String(a.criado_em).slice(0, 10))}`);
+      });
+    }
+  } catch { /* sem avaliações no contexto */ }
+
   linhas.push(`\nATALHOS DISPONÍVEIS (código: destino; registros também podem ser abertos pelo próprio código): ${Object.entries(destinos).filter(([, d]) => !d.rotulo.startsWith('Abrir ') || !/[?/][0-9a-f-]{36}/.test(d.href)).map(([c, d]) => `${c}: ${d.rotulo}`).join('; ')}`);
   return { texto: linhas.join('\n').slice(0, 20_000), destinos, passeios: (passeios.data ?? []) as PasseioRegra[], codigos };
 }
@@ -482,11 +527,13 @@ function extrairSugestoes(texto: string) {
 
 // EDA_ACOES_V1: a EDA propõe, a pessoa confirma com um clique e o navegador
 // executa com a sessão dela (RLS e permissões do banco continuam valendo).
-type CodigoAcao = { tabela: TabelaAcao | 'financeiro'; id: string; rotulo: string; tipo?: string; /** só no servidor (ex.: nome do cliente) — nunca vai para a IA */ busca?: string };
+type CodigoAcao = { tabela: TabelaAcao | 'financeiro' | 'avaliacoes'; id: string; rotulo: string; tipo?: string; /** só no servidor (ex.: nome do cliente) — nunca vai para a IA */ busca?: string };
 export type AcaoEDA =
   | { tipo: 'lancar'; resumo: string; dados: { tipo: 'receita' | 'despesa'; valor: number; categoria: string; data: string; quitado: boolean; descricao: string } }
   | { tipo: 'baixar'; resumo: string; dados: { id: string; tipo: 'receita' | 'despesa'; data: string } }
   | { tipo: 'demanda'; resumo: string; dados: { id: string; status: 'aberta' | 'encerrada' | 'cancelada' } }
+  | { tipo: 'voucher'; resumo: string; dados: { reserva_id: string } }
+  | { tipo: 'avaliacao'; resumo: string; dados: { avaliacao_id: string } }
   | AcaoRegistro;
 const CATEGORIAS_RECEITA = ['Turismo / Pacotes', 'Hospedagem', 'Alimentação', 'Outras Receitas'];
 const CATEGORIAS_DESPESA = ['Manutenção / Operacional', 'Combustível', 'Alimentação / Insumos', 'Salários / Guias', 'Outras Despesas'];
@@ -505,7 +552,7 @@ type LeituraAcao = { acao: AcaoRegistro } | { aviso: string } | null;
 function lerAcaoRegistro(p: string[], codigos: Record<string, CodigoAcao>): LeituraAcao {
   const verbo = normalizarEDA(p[0] ?? '');
   const pares = (p.slice(2).join('|')).split(/;(?=\s*[a-zçãáéíóú_ ]+\s*=)/i).map(x => x.trim()).filter(Boolean);
-  const candidatos: Candidato[] = Object.entries(codigos).filter(([, c]) => c.tabela !== 'financeiro')
+  const candidatos: Candidato[] = Object.entries(codigos).filter(([, c]) => c.tabela in REGRAS_ACAO)
     .map(([codigo, c]) => ({ codigo, tabela: c.tabela, id: c.id, rotulo: c.rotulo, busca: c.busca }));
   const opcoesTexto = (xs: Candidato[]) => xs.map(x => `"${x.rotulo}"`).join(' ou ');
   let alvo: Candidato | null = null;
@@ -633,7 +680,35 @@ async function completarAcoes(acoes: AcaoEDA[], db: SupabaseClient, empresaId: s
       else if (achados.length > 1) { avisos.push(`Achei ${achados.length} clientes com esse nome — me diga o nome completo.`); continue; }
       else extras.push('cliente novo: será cadastrado só com o nome (complete depois na ficha)');
     }
+    // EDA_LOTE2_V1: demanda montada pelo sistema — pessoas da saída (reservas não canceladas),
+    // dias da saída, consumo por pessoa/dia e margem: quantidade = pessoas × dias × consumo × (1 + margem).
+    if (a.tabela === 'demandas' && a.tipo === 'criar' && c.quantidade == null) {
+      if (typeof c.saida_id === 'string') {
+        if (c.pessoas_estimadas == null) {
+          const { data: rs } = await db.from('reservas').select('quantidade_pessoas,status').eq('empresa_id', empresaId).eq('saida_id', c.saida_id);
+          const total = (rs ?? []).filter(r => !/cancel/i.test(String(r.status ?? ''))).reduce((t, r) => t + Number(r.quantidade_pessoas ?? 0), 0);
+          if (total > 0) c.pessoas_estimadas = total;
+        }
+        if (c.dias_estimados == null && typeof c.data_inicio === 'string') {
+          const fim = typeof c.data_fim === 'string' ? c.data_fim : c.data_inicio;
+          c.dias_estimados = Math.max(1, Math.round((Date.parse(`${fim}T12:00:00Z`) - Date.parse(`${c.data_inicio}T12:00:00Z`)) / 86400_000) + 1);
+        }
+      }
+      if (c.consumo_pessoa_dia != null) {
+        if (c.pessoas_estimadas == null) { avisos.push('Para calcular a demanda preciso de quantas pessoas vão (a saída ainda não tem reservas).'); continue; }
+        if (c.dias_estimados == null) c.dias_estimados = 1;
+        const margem = c.margem_percentual == null ? 10 : Number(c.margem_percentual);
+        c.margem_percentual = margem;
+        c.metodo_estimativa = 'pessoa_dia';
+        c.quantidade = Math.round(Number(c.pessoas_estimadas) * Number(c.dias_estimados) * Number(c.consumo_pessoa_dia) * (1 + margem / 100) * 100) / 100;
+        extras.push(`cálculo: ${c.pessoas_estimadas} pessoa(s) × ${c.dias_estimados} dia(s) × ${String(c.consumo_pessoa_dia).replace('.', ',')} ${c.unidade ?? ''} + ${margem}% de margem`);
+      } else if (c.categoria === 'alimentacao' || c.categoria === 'bebidas') {
+        avisos.push(`Para montar a demanda de ${c.categoria === 'bebidas' ? 'bebidas' : 'alimentação'}, me diga o consumo por pessoa por dia (ex.: 1,5 kg ou 3 litros)${c.pessoas_estimadas ? ` — já tenho ${c.pessoas_estimadas} pessoa(s)` : ''}${c.dias_estimados ? ` e ${c.dias_estimados} dia(s)` : ''}.`);
+        continue;
+      }
+    }
     if (a.tabela === 'demandas' && a.tipo === 'criar') {
+      c.metodo_estimativa ??= 'manual';
       c.status ??= 'rascunho';
       c.unidade ??= 'unidade';
       if (c.localidade == null) c.localidade = 'Barcelos';
@@ -661,7 +736,13 @@ function extrairAcoes(texto: string, codigos: Record<string, CodigoAcao>, hoje: 
     if (acoes.length >= 4) return '';
     const p = corpo.split('|').map(x => x.trim());
     const tipo = normal(p[0] ?? '');
-    if (tipo === 'alterar' || tipo === 'criar') {
+    if (tipo === 'voucher' || tipo === 'avaliacao') {
+      // EDA_LOTE2_V1: [[ACAO:VOUCHER|R3]] emite o voucher; [[ACAO:AVALIACAO|AV1]] envia o link de avaliação.
+      const alvo = codigos[(p[1] ?? '').trim().toUpperCase()];
+      if (tipo === 'voucher' && alvo?.tabela === 'reservas') acoes.push({ tipo: 'voucher', resumo: `Emitir o voucher da reserva "${alvo.rotulo}" (o turista recebe o comprovante com QR de embarque)`, dados: { reserva_id: alvo.id } });
+      else if (tipo === 'avaliacao' && alvo?.tabela === 'avaliacoes') acoes.push({ tipo: 'avaliacao', resumo: `Enviar ao cliente o pedido de ${alvo.rotulo} (abre o WhatsApp com a mensagem pronta)`, dados: { avaliacao_id: alvo.id } });
+      else avisosLeitura.push(tipo === 'voucher' ? 'Não achei essa reserva para emitir o voucher.' : 'Não achei essa avaliação.');
+    } else if (tipo === 'alterar' || tipo === 'criar') {
       const l = lerAcaoRegistro(p, codigos);
       if (l && 'acao' in l) acoes.push(l.acao);
       else if (l && 'aviso' in l) avisosLeitura.push(l.aviso);
@@ -749,7 +830,10 @@ ${descreverAcoes()}
     • Só informe data=AAAA-MM-DD se a pessoa disser a data; valor= só se ela disser outro valor; status=Confirmada só se ela disser que está confirmado/pago (padrão Pendente).
     • Conte a família pelo que foi dito ("ele, a esposa e o filho" = pessoas=3; criancas=1 se o filho for criança).
     • Pedido da Iara vira reserva com [[ACAO:CRIAR|reservas|pedido=PV1]] (o pedido já traz passeio, nome e pessoas).
-  NOVA DEMANDA: [[ACAO:CRIAR|demandas|titulo=Rancho da saída;categoria=alimentacao;quantidade=30;unidade=kg;saida=S2]]
+  NOVA DEMANDA calculada pelo sistema: [[ACAO:CRIAR|demandas|titulo=Rancho;categoria=alimentacao;unidade=kg;consumo=1.5;saida=S2]] — o servidor conta as pessoas das reservas da saída e os dias, e calcula a quantidade (+10% de margem). Com quantidade fixa: quantidade=30 no lugar de consumo.
+  VOUCHER: com a autorização, [[ACAO:VOUCHER|R3]] emite o voucher de reserva Confirmada e paga (só as de VOUCHERS A EMITIR). Na PRIMEIRA resposta da conversa, se houver VOUCHERS A EMITIR, avise em 1 frase e já prepare as ações VOUCHER para a pessoa autorizar. Reserva confirmada sem pagamento: avise que falta registrar o pagamento (voucher só depois).
+  AVALIAÇÃO: se houver AVALIAÇÕES A PEDIR, lembre a pessoa (uma vez por conversa) e prepare [[ACAO:AVALIACAO|AV1]] — ao autorizar, abre o WhatsApp do cliente com o link de avaliação pronto.
+  PEDIDO DA IARA: só vira reserva com o aval da pessoa — avise o pedido e pergunte se pode montar; com o "pode", prepare [[ACAO:CRIAR|reservas|pedido=PV1]].
   NOVA SAÍDA: [[ACAO:CRIAR|passeio_saidas|passeio=Ilha do Aracá;data=2026-12-05;hora=06:00;vagas=10]]
   GERENCIAR qualquer registro: [[ACAO:ALTERAR|R3|status=Confirmada]] ou pelo nome: [[ACAO:ALTERAR|reserva do General Sampaio|guia=Oziel;barco=Jaguá]] — vale para reserva, saída, demanda, passeio, barco, guia, hospedagem, parceiro, voucher e pedido.
   NOMES DE CLIENTES: você NÃO vê nomes de clientes nos DADOS (LGPD), mas o servidor acha. Quando a pessoa citar uma reserva pelo nome do cliente, NUNCA diga que não encontrou: monte [[ACAO:ALTERAR|reserva do <nome que ela disse>|...]] e o servidor localiza.
@@ -1244,7 +1328,7 @@ Exemplo de formato: ["texto 1","texto 2","texto 3"]`;
       let viaDireta = false;
       if (!acoes.length) {
         const ultima = mensagens.filter(m => m.papel === 'usuario').slice(-1)[0]?.texto ?? '';
-        const cands: Candidato[] = Object.entries(codigosOp).filter(([, c]) => c.tabela !== 'financeiro')
+        const cands: Candidato[] = Object.entries(codigosOp).filter(([, c]) => c.tabela in REGRAS_ACAO)
           .map(([codigo, c]) => ({ codigo, tabela: c.tabela, id: c.id, rotulo: c.rotulo, busca: c.busca }));
         const d = intencaoReservaDireta(ultima, cands);
         if (d && 'alvo' in d) {

@@ -18,7 +18,7 @@ const APELIDOS_COMUNS: Record<string, string> = {
 const APELIDOS: Partial<Record<TabelaAcao, Record<string, string>>> = {
   reservas: { pessoas: 'quantidade_pessoas', quantidade: 'quantidade_pessoas', criancas: 'qtd_criancas', colo: 'qtd_colo', valor: 'valor_total', preco: 'valor_total', data: 'data_reserva', volta: 'data_fim_prevista', pedido: 'pedido_id', nome: 'cliente', cliente_nome: 'cliente' },
   passeio_saidas: { data: 'data_inicio', ida: 'data_inicio', volta: 'data_fim', vagas: 'vagas_total', obs: 'observacao', observacoes: 'observacao' },
-  demandas: { data: 'data_inicio', nome: 'titulo', local: 'localidade', obs: 'descricao' },
+  demandas: { data: 'data_inicio', nome: 'titulo', local: 'localidade', obs: 'descricao', consumo: 'consumo_pessoa_dia', por_pessoa_dia: 'consumo_pessoa_dia', pessoas: 'pessoas_estimadas', dias: 'dias_estimados', margem: 'margem_percentual' },
   passeios: { valor: 'preco', portal: 'publicado_portal', publicado: 'publicado_portal', status: 'situacao' },
   hospedagens: { diaria: 'valor_diaria', valor: 'valor_diaria' },
   parceiros: { comissao: 'comissao_porcentagem' },

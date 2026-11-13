@@ -219,5 +219,22 @@
     "espera": {
       "semAcao": true
     }
+  },
+  {
+    "pedido": "monta a demanda de rancho da próxima saída da ilha do aracá, 1,5 kg por pessoa por dia",
+    "pagina": "demandas",
+    "espera": {
+      "acao": "criar",
+      "tabela": "demandas",
+      "naoPergunta": true
+    }
+  },
+  {
+    "pedido": "tem voucher para emitir?",
+    "espera": {}
+  },
+  {
+    "pedido": "tem avaliação para pedir?",
+    "espera": {}
   }
 ]

@@ -23,7 +23,7 @@ type LinkEDA = { href: string; rotulo: string };
 // EDA_ACOES_V1 / EDA_AVISOS_V1 (execução e desfazer em lib/executorEDA)
 type EstadoAcao = 'pendente' | 'executando' | 'feito' | 'cancelado' | 'erro' | 'desfazendo' | 'desfeito';
 type AvisoEDA = { id: number; tipo: string; titulo: string; texto: string; link: string | null; gravidade: string; extra: { token?: string } | null };
-type Msg = { papel: 'usuario' | 'eda'; texto: string; links?: LinkEDA[]; acoes?: AcaoEDA[]; estados?: EstadoAcao[]; logs?: (string | null)[]; avisos?: AvisoEDA[] };
+type Msg = { papel: 'usuario' | 'eda'; texto: string; whatsapp?: string; links?: LinkEDA[]; acoes?: AcaoEDA[]; estados?: EstadoAcao[]; logs?: (string | null)[]; avisos?: AvisoEDA[] };
 const acaoValida = acaoValidaEDA;
 
 // Só caminhos internos da plataforma.
@@ -304,7 +304,7 @@ export default function ConversaEDA() {
       const r = await executarAcaoEDA(a);
       setMsgs(m => m.map((x, j) => (j === i ? { ...x, logs: (x.acoes ?? []).map((_, n) => (n === k ? r.logId ?? null : x.logs?.[n] ?? null)) } : x)));
       marcarEstado(i, k, 'feito');
-      if (avisar) setMsgs(m => [...m, { papel: 'eda', texto: `${r.texto} A tela já está atualizada. ✔${r.logId ? ' Se precisar, é só tocar no arco para desfazer.' : ''}`, links: r.href ? [{ href: r.href, rotulo: 'Abrir e gerenciar' }] : undefined }]);
+      if (avisar) setMsgs(m => [...m, { papel: 'eda', texto: r.whatsapp ? r.texto : `${r.texto} A tela já está atualizada. ✔${r.logId ? ' Se precisar, é só tocar no arco para desfazer.' : ''}`, whatsapp: r.whatsapp && /^https:\/\/wa\.me\/\d{10,15}\?text=/.test(r.whatsapp) ? r.whatsapp : undefined, links: r.href ? [{ href: r.href, rotulo: 'Abrir e gerenciar' }] : undefined }]);
       return true;
     } catch (e) {
       marcarEstado(i, k, 'erro');
@@ -413,6 +413,11 @@ export default function ConversaEDA() {
                         </div>
                       );
                     })}
+                  </div>
+                )}
+                {animando !== i && m.whatsapp && (
+                  <div className="cv-eda-links">
+                    <a href={m.whatsapp} target="_blank" rel="noopener noreferrer">Enviar no WhatsApp →</a>
                   </div>
                 )}
                 {animando !== i && !!m.links?.length && (
