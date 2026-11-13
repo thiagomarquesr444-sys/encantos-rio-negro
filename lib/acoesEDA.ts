@@ -102,8 +102,8 @@ export const REGRAS_ACAO: Record<TabelaAcao, Regra> = {
   vouchers: {
     nome: 'voucher', codigo: 'V', criar: false,
     campos: {
-      status: { rotulo: 'status', tipo: 'opcao', opcoes: ['Ativo', 'Utilizado', 'Cancelado'] },
-      validade: { rotulo: 'validade', tipo: 'data' },
+      // EDA_VOUCHER_TURISTA_V1: emissão/nova versão só pela reserva; check-in pelo operador. A EDA só cancela.
+      status: { rotulo: 'status', tipo: 'opcao', opcoes: ['Cancelado'] },
     },
   },
   pedidos_visitante: {

@@ -660,7 +660,7 @@ const LIDER_PAGINA: Record<string, string> = {
   guias: 'Líder da EQUIPE DE GUIAS: quem está ativo, em tour, de férias; idiomas; escala nas saídas. Obrigação: toda saída com guia que fale o idioma do grupo.',
   parceiros: 'Líder de PARCEIROS e comissões: agências, hotéis e indicadores, comissão de cada um e status.',
   relatorios: 'Líder de RELATÓRIOS: leitura dos números da operação, comparação de meses, tendências.',
-  vouchers: 'Líder de VOUCHERS: emitidos, utilizados, cancelados e validade. Obrigação: voucher de reserva cancelada também cancelado; nada vencendo sem aviso.',
+  vouchers: 'Líder de VOUCHERS (comprovante de compra do turista, emitido pela operadora): nasce só da reserva Confirmada com sinal/pagamento Recebido, um ativo por reserva (titular + dependentes), dados congelados; reserva alterada pede nova versão; check-in só pelo operador; reserva cancelada cancela o voucher automaticamente; não existe voucher avulso nem exclusão. Obrigação: avisar reserva confirmada e paga sem voucher, voucher com reserva alterada e voucher não enviado ao turista.',
   documentos: 'Líder de DOCUMENTOS da operação (PDFs, listas, relatórios).',
   fiscal: 'Líder FISCAL: notas e dados fiscais da empresa. Emissão de nota é feita na própria tela fiscal.',
   configuracoes: 'Líder de CONFIGURAÇÕES: padrões da operação e da conta.',

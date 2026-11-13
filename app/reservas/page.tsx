@@ -10,7 +10,8 @@ import React, {
   useState,
 } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { emitirComConfirmacaoEDA, mensagemVoucherEDA } from '@/lib/voucherEmissaoEDA';
 import { supabase } from '@/lib/supabase';
 import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import GraficosReservas from '@/app/components/GraficosReservas';
@@ -690,6 +691,21 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
 
   // ERN_PADRAO_PAGINAS_EDA_V1: pagamento da reserva aberta no painel lateral.
   const [pagamento, setPagamento] = useState<PagamentoReserva | null>(null);
+  // EDA_VOUCHER_TURISTA_V1: voucher nasce da reserva confirmada com sinal/pagamento.
+  const routerVoucher = useRouter();
+  const [emitindoVoucher, setEmitindoVoucher] = useState(false);
+  const [erroVoucher, setErroVoucher] = useState('');
+  useEffect(() => { setErroVoucher(''); }, [modal?.reserva.id]);
+  async function emitirVoucher(reservaId: string) {
+    if (emitindoVoucher) return;
+    setEmitindoVoucher(true); setErroVoucher('');
+    try {
+      const v = await emitirComConfirmacaoEDA(reservaId);
+      if (v) routerVoucher.push(`/vouchers?reserva_id=${encodeURIComponent(reservaId)}&emitido=${encodeURIComponent(v.codigo)}`);
+    } catch (falha) {
+      setErroVoucher(mensagemVoucherEDA(falha));
+    } finally { setEmitindoVoucher(false); }
+  }
   const [erroPagamento, setErroPagamento] = useState('');
   const idAberto = modal?.reserva.id;
 
@@ -1048,13 +1064,22 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
                 <div className="eda-pg-bloco">
                   <p className="eda-pg-bloco-titulo">Atalhos</p>
                   <div className="eda-pg-atalhos">
-                    {reservaOperacionalERN(selecionada.status) && (
-                      <Link href={`/vouchers/novo?reserva_id=${idURL}`} className="eda-pg-bt eda-pg-bt-p">Emitir voucher</Link>
+                    {normalizarStatusReservaERN(selecionada.statusOriginal ?? selecionada.status) === 'Confirmada' && (
+                      <button type="button" disabled={emitindoVoucher || (!!pagamento && pagamento.recebido <= 0)} onClick={() => void emitirVoucher(String(idSelecionado))} className="eda-pg-bt eda-pg-bt-p">
+                        {emitindoVoucher ? 'Emitindo…' : 'Emitir voucher'}
+                      </button>
                     )}
                     <Link href={`/vouchers?reserva_id=${idURL}`} className="eda-pg-bt eda-pg-bt-p">Vouchers</Link>
                     <Link href={`/financeiro/receita/novo?reserva_id=${idURL}`} className="eda-pg-bt eda-pg-bt-p">Registrar receita</Link>
                     <Link href={`/financeiro?reserva_id=${idURL}`} className="eda-pg-bt eda-pg-bt-p">Ver financeiro</Link>
                   </div>
+                  {normalizarStatusReservaERN(selecionada.statusOriginal ?? selecionada.status) === 'Pendente' && (
+                    <p className="eda-pg-texto-mut" style={{ marginTop: 8 }}>Confirme a reserva para emitir o voucher do turista.</p>
+                  )}
+                  {normalizarStatusReservaERN(selecionada.statusOriginal ?? selecionada.status) === 'Confirmada' && pagamento && pagamento.recebido <= 0 && (
+                    <p className="eda-pg-texto-mut" style={{ marginTop: 8 }}>Para emitir o voucher, registre o sinal ou o pagamento como receita Recebida.</p>
+                  )}
+                  {erroVoucher && <p role="alert" className="eda-pg-texto-mut" style={{ marginTop: 8, color: 'var(--p-amar)' }}>{erroVoucher}</p>}
                 </div>
               )}
             </>

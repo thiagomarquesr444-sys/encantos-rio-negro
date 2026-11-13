@@ -8,7 +8,7 @@ import { useParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
 type Verificacao = {
-  codigo: string; situacao: 'valido' | 'vencido' | 'utilizado' | 'cancelado'; titular: string | null;
+  codigo: string; situacao: 'valido' | 'vencido' | 'utilizado' | 'cancelado' | 'substituido'; versao?: number | null; titular: string | null;
   passeio: string | null; data: string | null; horario: string | null; pessoas: number | null;
   validade: string | null; utilizado_em: string | null; operadora: string | null; cancelamento?: string | null;
 };
@@ -18,6 +18,7 @@ const SITUACAO = {
   vencido: { titulo: 'Voucher vencido', cor: '#f59e0b' },
   utilizado: { titulo: 'Voucher já utilizado', cor: '#f59e0b' },
   cancelado: { titulo: 'Voucher cancelado', cor: '#ef4444' },
+  substituido: { titulo: 'Voucher substituído por nova versão', cor: '#38bdf8' },
 } as const;
 
 const data = (d?: string | null) => (d ? d.split('-').reverse().join('/') : '—');

@@ -22,8 +22,9 @@ import { reservaOperacionalERN } from '@/lib/reservasStatusERN';
 import { SeletorPeriodoMensalERN, SeloExpiracaoERN } from '@/app/components/PeriodoMensalERN';
 import { HISTORICO_ERN, dataNoPeriodoERN, mesAtualERN, periodoDaURLERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
 import { copiarEDA } from '@/lib/copiarEDA';
+import { emitirVoucherReservaEDA, mensagemVoucherEDA } from '@/lib/voucherEmissaoEDA';
 
-type StatusVoucher = 'Ativo' | 'Utilizado' | 'Cancelado';
+type StatusVoucher = 'Ativo' | 'Utilizado' | 'Cancelado' | 'Substituído';
 type StatusExibido = StatusVoucher | 'Desconhecido';
 type FiltroStatus = '' | StatusExibido | 'Expirado';
 
@@ -34,7 +35,26 @@ type DetalheVoucherEDA = {
   hospedagens: { hospedagem: string; acomodacao: string; checkin: string; checkout: string; check_in_hora: string | null; check_out_hora: string | null; endereco: string | null; hospedes: number }[];
 };
 
+// EDA_VOUCHER_TURISTA_V1: dados congelados na emissão a partir da reserva.
+type SnapshotVoucherEDA = {
+  operadora?: { nome?: string | null; cnpj?: string | null; telefone?: string | null; email?: string | null; cidade?: string | null; endereco?: string | null; whatsapp?: string | null };
+  titular?: { nome?: string | null; telefone?: string | null };
+  passageiros?: { nome: string; relacao: string | null; titular: boolean; nascimento: string | null }[];
+  quantidades?: { total: number | null; criancas: number; colo: number };
+  passeio?: { nome?: string | null; inicio?: string | null; horario?: string | null; fim?: string | null; horario_fim?: string | null; ponto_embarque?: string | null; inclui?: string[] | null; nao_inclui?: string[] | null; duracao?: string | null; guia?: string | null; embarcacao?: string | null };
+  financeiro?: { total: number; pago: number; saldo: number };
+  fichas?: { participantes: number; preenchidas: number };
+};
+
 interface Voucher {
+  versao?: number | null;
+  snapshot?: SnapshotVoucherEDA | null;
+  valor_pago?: number | string | null;
+  saldo?: number | string | null;
+  enviado_em?: string | null;
+  reserva_alterada_em?: string | null;
+  cancelado_em?: string | null;
+  motivo_cancelamento?: string | null;
   token_verificacao?: string | null;
   utilizado_em?: string | null;
   id: string;
@@ -98,6 +118,7 @@ function obterStatus(valor: string | null): StatusExibido {
   if (status === 'ativo' || status === 'valido') return 'Ativo';
   if (status === 'utilizado') return 'Utilizado';
   if (status === 'cancelado') return 'Cancelado';
+  if (status === 'substituido') return 'Substituído';
 
   return 'Desconhecido';
 }
@@ -514,6 +535,8 @@ export default function VouchersPage() {
     const parametros = new URLSearchParams(window.location.search);
     const reservaURL = parametros.get('reserva_id') ?? '';
     setReservaFiltro(reservaURL);
+    const emitido = parametros.get('emitido');
+    if (emitido) setSucesso(`Voucher ${emitido} emitido. Baixe o PDF ou envie ao turista pelo WhatsApp.`);
     // Vindo de uma reserva, mostra todos os vouchers dela (histórico).
     setPeriodo(reservaURL && !parametros.has('mes') ? HISTORICO_ERN : periodoDaURLERN(parametros.get('mes')));
     void carregar();
@@ -857,10 +880,17 @@ export default function VouchersPage() {
       } catch { det = null; }
       const linkVerificacao = det?.token ? `${window.location.origin}/voucher/${det.token}` : null;
       const fmt = (d?: string | null) => (d ? d.split('-').reverse().join('/') : '');
+      const snap = atual.snapshot ?? null;
+      const RELACAO: Record<string, string> = { titular: 'Titular', conjuge: 'Cônjuge', filho: 'Filho(a)', pai: 'Pai', mae: 'Mãe', outro: 'Dependente' };
+      const fin = snap?.financeiro;
 
       baixarDocumentoPremiumERN({
         titulo: 'Voucher Turístico',
-        tabela: det && det.participantes.length > 0 ? {
+        tabela: snap?.passageiros?.length ? {
+          titulo: 'Passageiros (titular e dependentes)',
+          colunas: ['Nome', 'Vínculo', 'Nascimento'],
+          linhas: snap.passageiros.map((p) => [p.nome, p.titular ? 'Titular' : (RELACAO[p.relacao ?? ''] ?? (p.relacao || 'Dependente')), fmt(p.nascimento) || '—']),
+        } : det && det.participantes.length > 0 ? {
           titulo: 'Participantes',
           colunas: ['Nome', 'Nascimento', ''],
           linhas: det.participantes.map((p) => [p.nome, fmt(p.nascimento) || '—', p.titular ? 'Titular' : '']),
@@ -891,7 +921,14 @@ export default function VouchersPage() {
           { campo: 'Participantes', valor: atual.quantidade_pessoas ?? 'Não informado' },
           { campo: 'Data do passeio na emissão', valor: formatarData(atual.data_passeio) },
           { campo: 'Horário na emissão', valor: atual.horario_passeio?.slice(0, 5) || 'Não informado' },
-          { campo: 'Valor registrado', valor: moeda(valorDoBanco(atual.valor)) },
+          ...(fin ? [
+            { campo: 'Valor total da compra', valor: moeda(Number(fin.total)) },
+            { campo: 'Pago até a emissão', valor: moeda(Number(fin.pago)) },
+            { campo: 'Saldo a pagar no embarque', valor: Number(fin.saldo) > 0 ? moeda(Number(fin.saldo)) : 'Quitado' },
+          ] : [{ campo: 'Valor registrado', valor: moeda(valorDoBanco(atual.valor)) }]),
+          ...((atual.versao ?? 1) > 1 ? [{ campo: 'Versão do voucher', valor: `${atual.versao} (substitui a anterior)` }] : []),
+          ...(snap?.fichas && snap.fichas.participantes > 0 ? [{ campo: 'Fichas de saúde', valor: snap.fichas.preenchidas >= snap.fichas.participantes ? 'Todas preenchidas ✓' : `${snap.fichas.preenchidas} de ${snap.fichas.participantes} preenchidas` }] : []),
+          ...(snap?.operadora?.whatsapp ? [{ campo: 'WhatsApp da operadora', valor: snap.operadora.whatsapp }] : []),
           { campo: 'Validade', valor: formatarData(atual.validade) },
           { campo: 'Status administrativo', valor: status },
           {
@@ -916,12 +953,14 @@ export default function VouchersPage() {
           ...(linkVerificacao ? [{ campo: 'Verificar autenticidade', valor: linkVerificacao }] : []),
         ],
         observacoes: [
-          'Os dados do passeio representam o histórico registrado na emissão do voucher.',
+          'Comprovante de compra emitido pela operadora. Apresente este voucher (PDF ou link) no embarque com documento com foto do titular.',
+          'Os dados do passeio, dos passageiros e do pagamento representam o registrado na emissão; alterações geram nova versão.',
+          'Cancelamentos e remarcações seguem a política combinada com a operadora.',
           'Os dados empresariais refletem o cadastro consultado na data deste download.',
           'A identificação empresarial não constitui validação cadastral ou fiscal.',
           'O status Ativo não comprova, isoladamente, aptidão para utilização.',
           'Confirme a reserva e as condições do serviço antes do atendimento.',
-          'Este documento não constitui nota fiscal nem comprovante de pagamento.',
+          'Este documento não constitui nota fiscal.',
         ],
       });
 
@@ -936,15 +975,69 @@ export default function VouchersPage() {
   }
   // EDA_VOUCHERS_PARCEIROS_V1: baixa de utilização (embarque/check-in).
   async function marcarUtilizado(item: Voucher) {
-    if (!window.confirm(`Registrar o embarque do voucher ${item.codigo}? Depois disso ele não pode ser usado de novo.`)) return;
+    if (!window.confirm(`Fazer o check-in do voucher ${item.codigo}? Confirme a identidade do titular. Depois disso ele não pode ser usado de novo.`)) return;
     const { error } = await supabase.rpc('marcar_voucher_utilizado_eda', { p_voucher_id: item.id });
     if (error) {
       setErroPDF(error.message.includes('EDA_VOUCHER_JA_UTILIZADO') ? 'Este voucher já foi utilizado.'
         : error.message.includes('EDA_VOUCHER_CANCELADO') ? 'Voucher cancelado não pode ser utilizado.'
-        : 'Não foi possível registrar o embarque.');
+        : error.message.includes('EDA_VOUCHER_SUBSTITUIDO') ? 'Este voucher foi substituído por uma nova versão.'
+        : error.message.includes('EDA_VOUCHER_SEM_PERMISSAO') ? 'Somente o administrador ou operador da empresa faz o check-in.'
+        : 'Não foi possível registrar o check-in.');
       return;
     }
+    setSucesso(`Check-in do voucher ${item.codigo} registrado.`);
     void carregar();
+  }
+
+  // EDA_VOUCHER_TURISTA_V1: nova versão com os dados atuais da reserva.
+  async function novaVersao(item: Voucher) {
+    if (!item.reserva_id || mutacao.current) return;
+    if (!window.confirm(`Emitir nova versão do voucher ${item.codigo} com os dados atuais da reserva? O voucher atual ficará como Substituído e deixará de valer. Reenvie o novo ao turista.`)) return;
+    mutacao.current = true; setOcupado(true);
+    try {
+      const v = await emitirVoucherReservaEDA(item.reserva_id, true);
+      setSucesso(`Nova versão emitida: ${v.codigo} (versão ${v.versao}). Envie ao turista.`);
+      await carregar(true);
+    } catch (falha) {
+      setErroPDF(mensagemVoucherEDA(falha, 'Não foi possível emitir a nova versão.'));
+    } finally { mutacao.current = false; setOcupado(false); }
+  }
+
+  // EDA_VOUCHER_TURISTA_V1: cancelamento manual (histórico preservado, sem exclusão).
+  async function cancelarVoucher(item: Voucher) {
+    const motivo = window.prompt(`Cancelar o voucher ${item.codigo}? Informe o motivo (o turista deixa de poder usá-lo):`);
+    if (motivo === null) return;
+    if (motivo.trim().length < 3) { setErroPDF('Informe o motivo do cancelamento.'); return; }
+    const { error } = await supabase.from('vouchers')
+      .update({ status: 'Cancelado', motivo_cancelamento: motivo.trim().slice(0, 300) })
+      .eq('id', item.id);
+    if (error) { setErroPDF('Não foi possível cancelar o voucher.'); return; }
+    setSucesso(`Voucher ${item.codigo} cancelado.`);
+    void carregar();
+  }
+
+  // EDA_VOUCHER_TURISTA_V1: envio ao turista pelo WhatsApp (texto pronto + link de verificação).
+  async function enviarWhatsApp(item: Voucher) {
+    const tel = (item.snapshot?.titular?.telefone ?? '').replace(/\D/g, '');
+    const numero = tel.length >= 10 && tel.length <= 11 ? `55${tel}` : tel;
+    const nome = (item.snapshot?.titular?.nome || item.cliente_nome || '').split(' ')[0];
+    const p = item.snapshot?.passeio;
+    const f = item.snapshot?.financeiro;
+    const link = item.token_verificacao ? `${window.location.origin}/voucher/${item.token_verificacao}` : '';
+    const texto = [
+      `Olá${nome ? `, ${nome}` : ''}! Aqui é da ${item.snapshot?.operadora?.nome || 'operadora'}.`,
+      `Seu voucher ${item.codigo} está emitido e garantido:`,
+      `• ${p?.nome || item.passeio_nome || 'Passeio'} — ${formatarData(p?.inicio || item.data_passeio)}${(p?.horario || item.horario_passeio) ? ` às ${(p?.horario || item.horario_passeio || '').slice(0, 5)}` : ''}`,
+      p?.ponto_embarque ? `• Embarque: ${p.ponto_embarque}` : '',
+      f && f.saldo > 0 ? `• Saldo a pagar no embarque: ${moeda(f.saldo)}` : '• Pagamento: quitado',
+      link ? `Confira a autenticidade: ${link}` : '',
+      'Apresente este voucher (PDF ou link) no embarque. Boa viagem pelas águas da Amazônia!',
+    ].filter(Boolean).join('\n');
+    window.open(`https://wa.me/${numero}?text=${encodeURIComponent(texto)}`, '_blank', 'noopener,noreferrer');
+    if (!item.enviado_em) {
+      await supabase.from('vouchers').update({ enviado_em: new Date().toISOString() }).eq('id', item.id);
+      void carregar(true);
+    }
   }
 
   function etiqueta(item: Voucher) {
@@ -956,6 +1049,8 @@ export default function VouchersPage() {
           ? 'border-amber-400/25 bg-amber-400/10 text-amber-300'
           : status === 'Cancelado'
             ? 'border-red-400/25 bg-red-400/10 text-red-300'
+            : status === 'Substituído'
+            ? 'border-sky-400/25 bg-sky-400/10 text-sky-300'
             : 'border-white/25 bg-white/5 text-[#D6E2D9]';
 
     return (
@@ -966,6 +1061,12 @@ export default function VouchersPage() {
         {expirado(item, hoje) && (
           <p className="text-xs font-medium text-red-300">Validade expirada</p>
         )}
+        {(item.versao ?? 1) > 1 && <p className="text-xs text-[#B4C8BB]">Versão {item.versao}</p>}
+        {status === 'Ativo' && item.enviado_em && <p className="text-xs text-[#B4C8BB]">Enviado ao turista</p>}
+        {status === 'Ativo' && item.reserva_alterada_em && item.reserva_id && (
+          <p className="text-xs font-medium text-amber-300">A reserva mudou depois da emissão. Emita a nova versão.</p>
+        )}
+        {status === 'Cancelado' && item.motivo_cancelamento && <p className="text-xs text-red-300/80">{item.motivo_cancelamento}</p>}
       </div>
     );
   }
@@ -984,9 +1085,19 @@ export default function VouchersPage() {
         >
           {gerandoPDFId === item.id ? 'Gerando PDF...' : 'Baixar PDF Premium'}
         </button>
+        {obterStatus(item.status) === 'Ativo' && item.reserva_id && (
+          <button type="button" disabled={ocupado} onClick={() => void novaVersao(item)} className={`${buttonClass} ${item.reserva_alterada_em ? 'border-amber-400/40 text-amber-200' : ''}`}>
+            Emitir nova versão
+          </button>
+        )}
+        {obterStatus(item.status) === 'Ativo' && (
+          <button type="button" disabled={ocupado} onClick={() => void enviarWhatsApp(item)} className={buttonClass}>
+            {item.enviado_em ? 'Reenviar no WhatsApp' : 'Enviar no WhatsApp'}
+          </button>
+        )}
         {obterStatus(item.status) === 'Ativo' && (
           <button type="button" disabled={ocupado} onClick={() => void marcarUtilizado(item)} className={buttonClass}>
-            Registrar embarque
+            Fazer check-in
           </button>
         )}
         {item.token_verificacao && (
@@ -994,29 +1105,23 @@ export default function VouchersPage() {
             Copiar link de verificação
           </button>
         )}
-        <button
-          type="button"
-          disabled={ocupado || (!item.reserva_id && Boolean(erroAuxiliares))}
-          onClick={() => abrir('editar', item)}
-          className={buttonClass}
-        >
-          Editar
-        </button>
-        <button
-          type="button"
-          disabled={ocupado}
-          onClick={() => abrir('excluir', item)}
-          className={`${buttonClass} border-red-400/25 text-red-300`}
-        >
-          Excluir
-        </button>
+        {obterStatus(item.status) === 'Ativo' && (
+          <button
+            type="button"
+            disabled={ocupado}
+            onClick={() => void cancelarVoucher(item)}
+            className={`${buttonClass} border-red-400/25 text-red-300`}
+          >
+            Cancelar voucher
+          </button>
+        )}
       </div>
     );
   }
 
   function vinculo(item: Voucher) {
     if (!item.reserva_id) {
-      return <p className="mt-2 text-xs text-[#B4C8BB]">Voucher avulso</p>;
+      return <p className="mt-2 text-xs text-[#B4C8BB]">Voucher avulso (histórico)</p>;
     }
 
     return (
@@ -1082,8 +1187,8 @@ export default function VouchersPage() {
             <button type="button" disabled={carregando || ocupado} onClick={() => void carregar()} className={buttonClass}>
               {carregando ? 'Atualizando…' : 'Atualizar'}
             </button>
-            <Link href="/vouchers/novo" className={`${buttonClass} border-[#E3A144] bg-[#E3A144] font-bold text-[#07130F] hover:bg-[#F0B35C]`}>
-              + Novo voucher
+            <Link href="/reservas" title="O voucher é emitido a partir de uma reserva confirmada com sinal ou pagamento registrado." className={`${buttonClass} border-[#E3A144] bg-[#E3A144] font-bold text-[#07130F] hover:bg-[#F0B35C]`}>
+              Emitir pela reserva
             </Link>
           </div>
         </div>
@@ -1160,6 +1265,7 @@ export default function VouchersPage() {
               <option value="Ativo">Ativos</option>
               <option value="Utilizado">Utilizados</option>
               <option value="Cancelado">Cancelados</option>
+              <option value="Substituído">Substituídos</option>
               <option value="Expirado">Ativos expirados</option>
               <option value="Desconhecido">Desconhecidos</option>
             </select>
