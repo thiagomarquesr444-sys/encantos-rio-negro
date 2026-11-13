@@ -2,10 +2,10 @@
 // Uso: npm.cmd run treino:eda:ao-vivo  → pede seu e-mail e senha da plataforma (a senha não aparece
 // na tela e não é salva), entra pelo Supabase e roda os cenários.
 // Só PREPARA ações (nada é gravado: gravar exige o clique em "Autorizar").
-// Ajuste os nomes em cenarios.json para os da sua operadora de teste.
+// Ajuste os nomes em lib/treinoEDACenarios.json para os da sua operadora de teste.
 import { readFileSync } from 'node:fs';
 import readline from 'node:readline';
-import cenarios from './cenarios.json' with { type: 'json' };
+import cenarios from '../../lib/treinoEDACenarios.json' with { type: 'json' };
 
 const URL_BASE = process.env.EDA_URL ?? 'https://os-rio-negro.vercel.app';
 
