@@ -3,7 +3,6 @@
 import { useState } from 'react';
 
 import PublicHeader from '@/app/components/PublicHeader';
-import ConciergePublicoERN from '@/app/components/ConciergePublicoERN';
 import FeedDescubraERN from '@/app/components/FeedDescubraERN';
 import CulturaAmazonicaERN from '@/app/components/CulturaAmazonicaERN';
 import PreviaGestaoEDA from '@/app/components/PreviaGestaoEDA';
@@ -122,7 +121,6 @@ export default function Home() {
             {conciergeCta[idioma]}
             <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none">→</span>
           </a>
-          <ConciergePublicoERN />
         </div>
 
         <div className="relative z-10 border-t border-[#355043] bg-[#07110E]/90">
@@ -204,4 +202,4 @@ export default function Home() {
       <RodapePublicoEDA />
     </div>
   );
-}
+}

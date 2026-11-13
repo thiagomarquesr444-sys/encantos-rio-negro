@@ -11,6 +11,7 @@ import PerguntaEDA from '@/app/components/PerguntaEDA';
 import ConversaEDA from '@/app/components/ConversaEDA';
 import AoVivoEDA from '@/app/components/AoVivoEDA';
 import VoltarEDA from '@/app/components/VoltarEDA';
+import ConciergePublicoERN from '@/app/components/ConciergePublicoERN';
 import '@/app/components/cartao-magnetico-eda.css';
 import '@/app/components/capa-eda.css';
 import { EVENTO_ESTILO_PAINEL, lerEstiloPainel, type EstiloPainelERN } from '@/lib/estiloPainelERN';
@@ -38,6 +39,10 @@ const ROTAS_GESTAO = [
   '/planos',
   '/demandas',
 ] as const;
+
+// IARA_GLOBAL_V1: a Iara acompanha o visitante em todas as páginas públicas
+// (montada uma vez: a conversa continua ao trocar de página).
+const ROTAS_IARA = ['/experiencias', '/destinos', '/rede', '/pesca-esportiva', '/operadores', '/precos', '/contato', '/privacidade', '/termos', '/reembolso'] as const;
 
 function pertenceARota(pathname: string, rota: string): boolean {
   return pathname === rota || pathname.startsWith(`${rota}/`);
@@ -398,6 +403,7 @@ export default function AppShell({
       }
     >
       <ApresentacaoPaginaERN>{children}</ApresentacaoPaginaERN>
+      {(pathname === '/' || ROTAS_IARA.some(rota => pertenceARota(pathname ?? '', rota))) && <ConciergePublicoERN />}
     </div>
   );
-}
+}

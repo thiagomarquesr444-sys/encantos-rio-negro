@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, type FormEvent, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
+import { periodoEDA } from '@/lib/saudacaoEDA';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import IconeIara from '@/app/components/IconeIara';
 import { homeTranslations, type HomeTranslation } from '@/lib/i18n/home';
@@ -52,6 +53,68 @@ const textos = {
 };
 
 const SUGESTOES = ['Barcelos', 'Mariuá', 'Serra do Aracá', 'Anavilhanas'];
+
+// IARA_BUSCA_VIVA_V1: a Iara "conversa" dentro da barra de busca — saúda o
+// visitante conforme o período e vai oferecendo caminhos, letra por letra
+// (como a recepção do painel da operadora). Buscar com o campo vazio aceita
+// a oferta que está na tela.
+type FalaBusca = { fala: string; pedido?: string };
+function falasBusca(idioma: 'PT' | 'EN' | 'ES'): FalaBusca[] {
+  const p = periodoEDA();
+  if (idioma === 'EN') return [
+    { fala: `${p === 'manha' ? 'Good morning' : p === 'tarde' ? 'Good afternoon' : 'Good evening'}! I am Iara 🌊 Where shall we go?` },
+    { fala: 'Name a town in Amazonas and I will fly you there on the map', pedido: 'Show me the towns of Amazonas on the map' },
+    { fala: 'Fancy seeing the Meeting of the Waters up close?', pedido: 'Take me to the Meeting of the Waters' },
+    { fala: 'Peacock bass fishing in Barcelos, maybe?', pedido: 'I want to fish peacock bass in Barcelos' },
+    { fala: 'Shall I tell you the legend of the pink river dolphin?', pedido: 'Tell me the legend of the pink river dolphin' },
+  ];
+  if (idioma === 'ES') return [
+    { fala: `${p === 'manha' ? '¡Buenos días' : p === 'tarde' ? '¡Buenas tardes' : '¡Buenas noches'}! Soy Iara 🌊 ¿A dónde vamos?` },
+    { fala: 'Dime una ciudad de Amazonas y te llevo volando en el mapa', pedido: 'Muéstrame las ciudades de Amazonas en el mapa' },
+    { fala: '¿Ver el Encuentro de las Aguas de cerca?', pedido: 'Llévame al Encuentro de las Aguas' },
+    { fala: '¿Pescar tucunaré en Barcelos?', pedido: 'Quiero pescar tucunaré en Barcelos' },
+    { fala: '¿Te cuento la leyenda del boto?', pedido: 'Cuéntame la leyenda del boto' },
+  ];
+  return [
+    { fala: `${p === 'manha' ? 'Bom dia' : p === 'tarde' ? 'Boa tarde' : p === 'noite' ? 'Boa noite' : 'Boa madrugada'}! Eu sou a Iara 🌊 Pra onde a gente vai?` },
+    { fala: 'Me diz uma cidade do Amazonas que eu te levo no mapa', pedido: 'Quero conhecer as cidades do Amazonas no mapa' },
+    { fala: 'Bora ver o Encontro das Águas de pertinho?', pedido: 'Me leva para o Encontro das Águas' },
+    { fala: 'Já pensou em pescar tucunaré em Barcelos?', pedido: 'Quero pescar tucunaré em Barcelos' },
+    { fala: 'Quer ouvir a lenda do boto que encanta o rio?', pedido: 'Me conta a lenda do boto' },
+    { fala: 'Mariuá ou Anavilhanas: qual arquipélago te chama?', pedido: 'Quero conhecer o Arquipélago de Mariuá' },
+    { fala: 'Já provou tacacá? Te conto onde tomar um bom', pedido: 'Me fala do tacacá' },
+  ];
+}
+
+function useBuscaViva(falas: FalaBusca[], parado: boolean, padrao: string) {
+  const [texto, setTexto] = useState(padrao);
+  const atual = useRef<FalaBusca | null>(null);
+  useEffect(() => {
+    if (parado || typeof window === 'undefined' || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      atual.current = null; setTexto(padrao); return;
+    }
+    let ativo = true;
+    let tarefa = 0;
+    let i = 0;
+    const espera = (ms: number, fn: () => void) => { tarefa = window.setTimeout(() => { if (ativo) fn(); }, ms); };
+    function escrever(k: number) {
+      const f = falas[i % falas.length];
+      atual.current = f;
+      setTexto(f.fala.slice(0, k));
+      if (k < f.fala.length) espera(/[.!?]/.test(f.fala[k - 1] ?? '') ? 260 : 38, () => escrever(k + 1));
+      else espera(2800, () => apagar(f.fala.length));
+    }
+    function apagar(k: number) {
+      const f = falas[i % falas.length];
+      setTexto(f.fala.slice(0, k));
+      if (k > 0) espera(14, () => apagar(k - 1));
+      else { i += 1; espera(380, () => escrever(1)); }
+    }
+    espera(1500, () => escrever(1));
+    return () => { ativo = false; window.clearTimeout(tarefa); };
+  }, [falas, parado, padrao]);
+  return { texto: texto || ' ', atual };
+}
 
 const FOCO =
   'focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#F4C77E]';
@@ -128,13 +191,17 @@ export default function HeroImersivoERN({
   const h = (homeTranslations[idioma] as HomeTranslation).hero;
   const t = textos[idioma];
   const [termo, setTermo] = useState('');
+  const [focado, setFocado] = useState(false);
+  const falas = useMemo(() => falasBusca(idioma === 'EN' || idioma === 'ES' ? idioma : 'PT'), [idioma]);
+  const busca = useBuscaViva(falas, focado || !!termo, t.placeholder);
 
   function enviar(evento: FormEvent<HTMLFormElement>) {
     evento.preventDefault();
     // EDA_IARA_PONTE_V1: a busca principal é atendida pela Iara. A vitrine de
     // destinos é filtrada em silêncio para quem continuar rolando a página.
-    const texto = termo.trim();
-    onFiltrar?.(texto);
+    // Campo vazio: aceita a oferta que a Iara está mostrando na barra.
+    const texto = termo.trim() || busca.atual.current?.pedido || '';
+    onFiltrar?.(termo.trim());
     window.dispatchEvent(new CustomEvent('iara:abrir', { detail: texto ? { texto, origem: 'busca' } : {} }));
   }
 
@@ -186,7 +253,9 @@ export default function HeroImersivoERN({
           type="search"
           value={termo}
           onChange={(evento) => setTermo(evento.target.value)}
-          placeholder={t.placeholder}
+          placeholder={busca.texto}
+          onFocus={() => setFocado(true)}
+          onBlur={() => setFocado(false)}
           autoComplete="off"
           maxLength={300}
           enterKeyHint="search"

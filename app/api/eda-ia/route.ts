@@ -7,6 +7,10 @@ import { acharRegistro, campoReal, escolherSaida, intencaoReservaDireta, normali
 import { REGRAS_ACAO, converterValor, descreverAcoes, type AcaoRegistro, type TabelaAcao, type Valor } from '@/lib/acoesEDA';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { acharDestinoIara, NOMES_MUNICIPIOS_IARA, type DestinoIara } from '@/lib/iaraDestinosERN';
+import { destinosTranslations } from '@/lib/i18n/destinos';
+import { HISTORIAS_MUNICIPIOS } from '@/lib/historiasMunicipiosERN';
+import { fatosDaCidade, type CidadeBaseERN } from '@/lib/fatosDestinosERN';
 
 // Tipo concreto do cliente (sem genéricos abertos).
 function novoCliente(url: string, chave: string, token?: string) {
@@ -986,10 +990,52 @@ Iara: "Excelente escolha! A melhor temporada vai de setembro a março, com pico 
 Visitante: "tem muito mosquito?"
 Iara: "Pode ficar tranquilo: a água do Rio Negro é ácida, por isso há bem menos mosquitos que em rios de água barrenta. Ainda assim, recomendo repelente. Gostaria de conhecer um passeio de canoa pelo igapó?"`;
 
+// ---------- IARA_DOMINIO_V1: páginas públicas e destinos do mapa ----------
+const PAGINAS_PUBLICAS = `MAPA DO PORTAL (você conhece todas as páginas públicas e pode levar o visitante a qualquer uma):
+- Descubra (início, código DESCUBRA): abertura do portal, busca atendida por você, destaques do Amazonas.
+- Experiências (EXPERIENCIAS): passeios publicados pelas operadoras, com preço e próximas saídas; cada passeio tem página própria.
+- Destinos (DESTINOS): mapa do Amazonas com os 62 municípios, cidades-base com curadoria (Manaus, Novo Airão, Barcelos, Santa Isabel do Rio Negro, São Gabriel da Cachoeira, Parintins), lugares como Mariuá, Anavilhanas, Serra do Aracá, Cachoeira do Eldorado, Parque Nacional do Jaú e Encontro das Águas, com vista de satélite, pontos turísticos e vista da rua.
+- Rede (REDE): feed com publicações das operadoras, guias e da própria Encantos, reações amazônicas ("Quero ir!", "Pai d'égua!"…) e perfis verificados. Cultura e vivências (CULTURA).
+- Pesca esportiva (PESCA): temporada, pesque e solte e o território de Mariuá.
+- Para profissionais: Encantos Gestão (OPERADORES), planos e preços (PRECOS), criar conta (CRIAR_CONTA, ACESSO_GUIA, ACESSO_FORNECEDOR).
+- Institucional: Contato (CONTATO), Privacidade (PRIVACIDADE), Termos (TERMOS), Reembolso (REEMBOLSO).
+Municípios no mapa de Destinos: ${NOMES_MUNICIPIOS_IARA}.
+Se o visitante pedir para IR a uma página ("me leva pra Rede", "abre os passeios"), inclua [[ABRIR:CODIGO]] — a página abre e a conversa continua aberta. Para destinos do mapa NÃO use ABRIR: o sistema cuida do voo (veja AGENTE DE DESTINOS).`;
+
+const CENA_DA_CIDADE: Record<string, string> = {
+  manaus: 'encontro-das-aguas', 'novo-airao': 'novo-airao', barcelos: 'barcelos',
+  'santa-isabel': 'santa-isabel-do-rio-negro', 'sao-gabriel': 'sao-gabriel-da-cachoeira', parintins: 'parintins',
+};
+const HISTORIA_CIDADE: Record<string, string> = {
+  'sao-gabriel': 'sao-gabriel-da-cachoeira', 'santa-isabel': 'santa-isabel-do-rio-negro', barcelos: 'barcelos', 'novo-airao': 'novo-airao', manaus: 'manaus',
+};
+
+/** O que a plataforma sabe (curadoria própria) sobre o destino citado. */
+function conhecimentoDestino(d: DestinoIara, idioma: string): string {
+  const L = idioma === 'EN' || idioma === 'ES' ? idioma : 'PT';
+  const cenas = destinosTranslations[L].destinations as unknown as Record<string, { titulo: string; local: string; descricao: string; historia?: string; preparacao?: string }>;
+  const partes: string[] = [];
+  const idCena = d.tipo === 'cidade' ? CENA_DA_CIDADE[d.id] : d.tipo === 'lugar' ? d.id : '';
+  const cena = idCena ? cenas[idCena] : undefined;
+  if (cena) partes.push(`${cena.titulo} (${cena.local}): ${cena.descricao}${cena.historia ? ` ${cena.historia}` : ''}${cena.preparacao ? ` Preparação: ${cena.preparacao}` : ''}`);
+  const idHist = d.tipo === 'cidade' ? HISTORIA_CIDADE[d.id] : '';
+  const hist = HISTORIAS_MUNICIPIOS.find(h => h.id === idHist || normalizar(h.nome) === normalizar(d.nome));
+  const th = hist?.textos[L as 'PT'] ?? hist?.textos.PT;
+  if (th) partes.push(`${th.titulo}: ${th.texto} Fatos: ${th.fatos.join('; ')}`);
+  if (d.tipo === 'cidade') {
+    try { partes.push(fatosDaCidade(d.id as CidadeBaseERN, L).map(f => `${f.rotulo}: ${f.valor}`).join(' | ')); } catch { /* cidade sem fatos */ }
+  }
+  if (!partes.length) partes.push(`${d.nome} é um dos 62 municípios do Amazonas no mapa de Destinos (sede municipal marcada, com vista de satélite, pontos turísticos e vista da rua). A curadoria própria da Encantos ainda não chegou lá: fale só do que tem certeza (região, rio principal, se souber) e diga que as operadoras locais completam.`);
+  return partes.join('\n').slice(0, 2600);
+}
+
+const PEDIU_IR = /\b(me leva|me leve|leva(r)? (eu |a gente )?(pra|para|ate)|quero (ver|conhecer|ir)|mostra|mostre|abre|abrir|bora (la|ver|conhecer)|vamos (la|ver|conhecer)|no mapa|take me|show me|let'?s go|llevame|muestrame|vamos)\b/;
+const ACEITOU = /^\s*(sim|s|quero|bora|pode|pode ser|vamos|claro|com certeza|leva|me leva|manda|bora la|yes|sure|ok|okay|si|vale|dale)\b/;
+
 function sistemaPublico(o: {
   idioma: string; periodo: ReturnType<typeof periodoDoDia>; estilo: 'regional' | 'formal'; jaCumprimentou: boolean;
   ficha: FichaIara; paginaAtual: string; catalogo: string; operadoras: string; conhecimento: string; agentes: string;
-  comercial?: string; iscas?: string; daBusca?: boolean;
+  comercial?: string; iscas?: string; daBusca?: boolean; destino?: string;
 }) {
   const lingua = o.idioma === 'EN' ? 'English' : o.idioma === 'ES' ? 'español' : 'português do Brasil';
   const regional = o.estilo === 'regional';
@@ -1014,6 +1060,8 @@ Nunca pergunte de novo o que já está na ficha. Use o nome com moderação.
 PÁGINA QUE ELE ESTÁ VENDO AGORA: ${o.paginaAtual || 'não informada'}
 ${o.daBusca ? 'A ÚLTIMA MENSAGEM FOI DIGITADA NA BARRA DE BUSCA da página Descubra: trate como um destino ou interesse procurado. Responda já com o que existe sobre isso (CATÁLOGO primeiro, depois CONHECIMENTO), inclua um botão ([[LINK:Pn]] do passeio que combina ou [[LINK:DESTINOS]]) e puxe a conversa com uma pergunta.' : ''}
 
+${PAGINAS_PUBLICAS}
+${o.destino ? `\n=== AGENTE DE DESTINOS ===\n${o.destino}\n` : ''}
 === QUEM ESTÁ FALANDO ===
 Perfil na ficha: ${o.ficha.perfil ?? 'ainda não identificado (trate como visitante)'}. Você atende dois públicos: (1) VISITANTES — turistas, moradores e curiosos; (2) PROFISSIONAIS do turismo — operadoras, donos de barco ou pousada, guias e fornecedores. Se a pessoa disser que é profissional do turismo, grave "perfil" na ficha (operadora | guia | fornecedor) e mude para o MODO PROFISSIONAL. Na dúvida, pergunte com leveza se ela vem passear ou trabalha com turismo.
 ${o.comercial ? `
@@ -1042,7 +1090,7 @@ Prova social e escassez SÓ com dados reais ("Quero ir!" da Rede, vagas do siste
 
 === FORMATO (obrigatório) ===
 - Até 90 palavras, texto corrido, sem markdown (sem **, #, listas com símbolos, nem links escritos). Termine com UMA pergunta leve.
-- Botões de link: inclua até 2 marcadores [[LINK:CODIGO]] usando SOMENTE códigos listados (P1..Pn dos passeios; OPn_PERFIL/OPn_INSTA/OPn_SITE das operadoras; EXPERIENCIAS, DESTINOS, REDE, PESCA, CULTURA; para profissionais: PRECOS, OPERADORES, CRIAR_CONTA, ACESSO_GUIA, ACESSO_FORNECEDOR). Nunca escreva URLs.
+- Botões de link: inclua até 2 marcadores [[LINK:CODIGO]] usando SOMENTE códigos listados (P1..Pn dos passeios; OPn_PERFIL/OPn_INSTA/OPn_SITE das operadoras; DESCUBRA, EXPERIENCIAS, DESTINOS, REDE, PESCA, CULTURA, CONTATO, PRIVACIDADE, TERMOS, REEMBOLSO; para profissionais: PRECOS, OPERADORES, CRIAR_CONTA, ACESSO_GUIA, ACESSO_FORNECEDOR). Nunca escreva URLs.
 - Não ofereça menus nem opções prontas de pergunta: conduza a conversa só com o seu texto (a pergunta leve do final).
 - PEDIDO: quando o visitante quiser reservar, receber proposta oficial ou ser contatado, ofereça levar o pedido à operadora e inclua UMA vez [[PEDIDO:slug|adultos|criancas|periodo]] (slug do passeio ou vazio). Ele mesmo preenche nome e contato num formulário seguro — nunca peça telefone, e-mail ou documento.
 - No FINAL de toda resposta, atualize a ficha: [[FICHA:{"perfil":"visitante|operadora|guia|fornecedor","nome":...,"interesse":...,"destino":...,"mes":...,"adultos":...,"criancas":...,"orcamento":...,"etapa":"..."}]] (JSON válido, só o que souber; etapa ∈ ${ETAPAS.join('|')}).
@@ -1181,6 +1229,8 @@ Exemplo de formato: ["texto 1","texto 2","texto 3"]`;
     let codigosOp: Record<string, CodigoAcao> = {};
     let intencaoReserva = false;
     let opSessao: { db: SupabaseClient; empresaId: string } | null = null;
+    let destinoIara: (DestinoIara & { auto: boolean }) | null = null;
+    let blocoDestino = '';
     if (modo === 'operadora') {
       const op = await autenticarOperadora(req, url, anon);
       opSessao = { db: op.db, empresaId: op.empresaId };
@@ -1242,6 +1292,11 @@ Exemplo de formato: ["texto 1","texto 2","texto 3"]`;
       catalogoLista = catalogo.lista;
       // Botões permitidos (montados pelo servidor; a IA só escolhe códigos).
       destinos = {
+        DESCUBRA: { href: '/', rotulo: 'Ir para o início' },
+        CONTATO: { href: '/contato', rotulo: 'Contato' },
+        PRIVACIDADE: { href: '/privacidade', rotulo: 'Privacidade' },
+        TERMOS: { href: '/termos', rotulo: 'Termos de uso' },
+        REEMBOLSO: { href: '/reembolso', rotulo: 'Reembolso' },
         EXPERIENCIAS: { href: '/experiencias', rotulo: 'Ver experiências' },
         DESTINOS: { href: '/destinos', rotulo: 'Explorar destinos' },
         REDE: { href: '/rede', rotulo: 'Ver a Rede' },
@@ -1307,7 +1362,25 @@ Exemplo de formato: ["texto 1","texto 2","texto 3"]`;
         iscas = await iscasIara(admin);
       }
       const daBusca = dados.origem === 'busca';
-      sistema = sistemaPublico({ idioma, periodo, estilo, jaCumprimentou, ficha: fichaPublica, paginaAtual, catalogo: catalogoTexto, operadoras: operadoras.texto, conhecimento, agentes: modoComercial ? '' : blocos.join('\n'), comercial, iscas, daBusca });
+      // IARA_DESTINOS_V1: destino citado → a Iara oferece (ou faz, se pedido) o voo no mapa.
+      if (!modoComercial) {
+        const ultimaIara = mensagens.filter(m => m.papel === 'eda').slice(-1)[0]?.texto ?? '';
+        let achado = acharDestinoIara(ultimaPergunta);
+        let auto = !!achado && PEDIU_IR.test(` ${normalizar(ultimaPergunta)} `);
+        if (!achado && ACEITOU.test(normalizar(ultimaPergunta)) && /\b(mapa|map|te levo|levar|llevo)\b/i.test(normalizar(ultimaIara))) {
+          achado = acharDestinoIara(ultimaIara) ?? acharDestinoIara(mensagens.filter(m => m.papel === 'usuario').slice(-4, -1).reverse().join(' . '));
+          auto = !!achado;
+        }
+        if (achado) {
+          destinoIara = { ...achado, auto };
+          blocoDestino = `${auto
+            ? `O visitante pediu para ir a ${achado.nome} e o sistema JÁ ESTÁ levando ele agora no mapa de Destinos (voo com zoom até o território aberto). Diga com entusiasmo, em 1 ou 2 frases curtas, que está levando e o que ele vai ver chegando lá. Não pergunte se ele quer ir.`
+            : `O visitante citou ${achado.nome}. A interface vai mostrar sozinha o botão "Conhecer ${achado.nome} no mapa" (voo com zoom até o território). Conte UM detalhe encantador do lugar e termine convidando: quer que eu te leve até lá no mapa? Não escreva link nem código para isso.`}
+CONHECIMENTO DO DESTINO (curadoria da plataforma — use só isto como fato):
+${conhecimentoDestino(achado, idioma)}`;
+        }
+      }
+      sistema = sistemaPublico({ idioma, periodo, estilo, jaCumprimentou, ficha: fichaPublica, paginaAtual, catalogo: catalogoTexto, operadoras: operadoras.texto, conhecimento, agentes: modoComercial ? '' : blocos.join('\n'), comercial, iscas, daBusca, destino: blocoDestino });
     }
 
     if (modo === 'operadora') sistema += blocoEstilo(modo, estilo);
@@ -1381,7 +1454,7 @@ Exemplo de formato: ["texto 1","texto 2","texto 3"]`;
     const comSugestoes = extrairSugestoes(mascararDados(bruto));
     // EDA_ABRIR_V1: [[ABRIR:CODIGO]] leva a pessoa na hora (a conversa continua aberta).
     let navegar: Destino | null = null;
-    const semAbrir = modo === 'operadora' ? comSugestoes.limpo.replace(/\[\[\s*ABRIR\s*:\s*([A-Z0-9_]{1,30})\s*\]\]/gi, (_, c: string) => {
+    const semAbrir = modo === 'operadora' || modo === 'publico' ? comSugestoes.limpo.replace(/\[\[\s*ABRIR\s*:\s*([A-Z0-9_]{1,30})\s*\]\]/gi, (_, c: string) => {
       const d = destinos[c.toUpperCase()];
       if (d && !navegar) navegar = d;
       return '';
@@ -1431,7 +1504,7 @@ Exemplo de formato: ["texto 1","texto 2","texto 3"]`;
     const destinoFinal = navegar as Destino | null;
     const textoFinal = final || (destinoFinal ? `Abrindo: ${destinoFinal.rotulo.replace(/^Abrir\s+/i, '')}.` : links.length ? 'Aqui está:' : acoes.length ? 'Preparei, é só autorizar no botão abaixo.' : '');
     if (!textoFinal) return resposta(503, { ok: false, erro: 'Não consegui responder agora. Tente de novo em instantes.' });
-    return resposta(200, { ok: true, resposta: textoFinal, navegar: destinoFinal, links: destinoFinal ? links.filter(l => l.href !== destinoFinal.href) : links, acoes, sugestoes: sugestoesPre.sugestoes.length ? sugestoesPre.sugestoes : comSugestoes.sugestoes, pedido, ficha: fichaNova, periodo, motor: { modelo: ultimoModeloIA.nome, ms: Date.now() - inicioIA, tentativas: falhasIA.map(f => f.split(':')[0]) } });
+    return resposta(200, { ok: true, resposta: textoFinal, navegar: destinoFinal, links: destinoFinal ? links.filter(l => l.href !== destinoFinal.href) : links, acoes, sugestoes: sugestoesPre.sugestoes.length ? sugestoesPre.sugestoes : comSugestoes.sugestoes, pedido, ficha: fichaNova, destino: destinoIara, periodo, motor: { modelo: ultimoModeloIA.nome, ms: Date.now() - inicioIA, tentativas: falhasIA.map(f => f.split(':')[0]) } });
   } catch (erro) {
     if (erro instanceof Falha) return resposta(erro.status, { ok: false, erro: erro.message });
     return resposta(503, { ok: false, erro: 'A EDA está indisponível agora.' });

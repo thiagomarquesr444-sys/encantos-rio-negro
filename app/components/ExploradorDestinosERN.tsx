@@ -14,6 +14,7 @@ import { destinosTranslations } from '@/lib/i18n/destinos';
 import { HISTORIAS_MUNICIPIOS } from '@/lib/historiasMunicipiosERN';
 import { MUNICIPIOS_AMAZONAS, type MunicipioAM } from '@/lib/municipiosAmazonasERN';
 import ArcoFlechaERN from './ArcoFlechaERN';
+import { destinoDoParametro, destinoIaraValido, type DestinoIara } from '@/lib/iaraDestinosERN';
 import SateliteCidadeERN, { chaveEmbedGoogle } from './SateliteCidadeERN';
 import { chaveGoogleMapas, criarMotorGoogle, criarMotorLeaflet, type MotorMapa, type PinMapa } from './motorMapaERN';
 import {
@@ -411,6 +412,67 @@ export default function ExploradorDestinosERN() {
     const alvo = cities.filter(c => value === 'all' || ZONA_DA_CIDADE[c.id] === value);
     if (alvo.length) map.current?.fitBounds(alvo.map(item => item.coords), 90, 9);
   }
+  // IARA_VOO_V1: a Iara leva o visitante — visão do Amazonas, voo com zoom
+  // até o lugar e o território já aberto (painel + vista de satélite).
+  const vooRef = useRef<{ n: number; cancelar: () => void }>({ n: 0, cancelar: () => undefined });
+  const vooPendente = useRef<DestinoIara | null>(null);
+  function voarComIara(d: DestinoIara) {
+    const motor = map.current;
+    if (!motor || status !== 'ready') { vooPendente.current = d; return; }
+    vooRef.current.cancelar();
+    const n = vooRef.current.n + 1;
+    vooRef.current = { n, cancelar: () => undefined };
+    let coords: [number, number] | null = null;
+    let zoomFinal = zoomCidade();
+    let abrir: () => void = () => undefined;
+    if (d.tipo === 'cidade') {
+      const c = cities.find(x => x.id === d.id);
+      if (c) { coords = c.coords; abrir = () => chooseCity(c.id); }
+    } else if (d.tipo === 'lugar') {
+      const cena = scenes.find(x => x.id === d.id);
+      const base = cena ? cities.find(x => x.id === cena.city) : undefined;
+      if (cena && base) { coords = cena.coords ?? base.coords; zoomFinal = cena.coords ? zoomLugar() : zoomCidade(); abrir = () => choose(cena); }
+    } else {
+      const m = MUNICIPIOS_AMAZONAS.find(x => x.ibge === d.id);
+      if (m) { coords = m.coords; abrir = () => irMunicipio(m); }
+    }
+    if (!coords) return;
+    const alvo = coords;
+    setSatelite(null); setDrawer(null); setActiveId(null); setMunicipio(null);
+    setRegion('all'); setZona('all'); setInterest('all'); setQuery('');
+    document.getElementById('ern-v-explorar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // 1) o Amazonas inteiro; 2) o voo até o território; 3) o território aberto.
+    motor.fitBounds(cities.map(item => item.coords), 65);
+    const espera = window.setTimeout(() => {
+      if (vooRef.current.n !== n) return;
+      vooRef.current.cancelar = motor.voarPara(alvo, zoomFinal, () => {
+        if (vooRef.current.n !== n) return;
+        abrir();
+        window.dispatchEvent(new CustomEvent('iara:chegou', { detail: { nome: d.nome } }));
+      });
+    }, 1100);
+    vooRef.current.cancelar = () => window.clearTimeout(espera);
+  }
+  const voarRef = useRef(voarComIara);
+  voarRef.current = voarComIara;
+  useEffect(() => {
+    const aoPedir = (e: Event) => {
+      const d = destinoIaraValido((e as CustomEvent).detail);
+      if (d) voarRef.current(d);
+    };
+    window.addEventListener('iara:destino', aoPedir);
+    return () => { window.removeEventListener('iara:destino', aoPedir); vooRef.current.cancelar(); };
+  }, []);
+  // Chegou pelo link da Iara (/destinos?iara=cidade:barcelos) ou pedido feito antes do mapa carregar.
+  useEffect(() => {
+    if (status !== 'ready') return;
+    const url = new URL(window.location.href);
+    const pedido = destinoDoParametro(url.searchParams.get('iara')) ?? vooPendente.current;
+    vooPendente.current = null;
+    if (url.searchParams.has('iara')) { url.searchParams.delete('iara'); window.history.replaceState(window.history.state, '', url.toString()); }
+    if (pedido) voarRef.current(pedido);
+  }, [status, motorTipo]);
+
   function toggleSaved(id: DestinationId) {
     setSaved(items => items.includes(id) ? items.filter(item => item !== id) : [...items, id]);
   }

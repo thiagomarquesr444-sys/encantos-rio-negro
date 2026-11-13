@@ -2,6 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
+import { usePathname, useRouter } from 'next/navigation';
+import { supabase } from '@/lib/supabase';
+import ArcoFlechaERN from './ArcoFlechaERN';
+import { periodoEDA, saudacaoEDA } from '@/lib/saudacaoEDA';
+import { destinoIaraValido, destinoParaParametro, type DestinoIara } from '@/lib/iaraDestinosERN';
+import './iara-conversa.css';
 import ConciergeLancadorERN from './ConciergeLancadorERN';
 import IconeIara from './IconeIara';
 import TextoDigitadoIA from './TextoDigitadoIA';
@@ -153,7 +159,64 @@ const textos = {
 
 type IdiomaERN = 'PT' | 'EN' | 'ES';
 type LinkIara = { href: string; rotulo: string };
-type MensagemERN = { autor: 'ern' | 'visitante'; texto: string; sugestoes?: string[]; links?: LinkIara[] };
+type DestinoMsg = DestinoIara & { auto?: boolean };
+type MensagemERN = { autor: 'ern' | 'visitante'; texto: string; sugestoes?: string[]; links?: LinkIara[]; destino?: DestinoMsg; lenta?: boolean };
+
+// IARA_MEMORIA_V1: o que vai para a conta de quem está logado passa por esta máscara (LGPD).
+function mascararIara(t: string) {
+  return t
+    .replace(/[\w.+-]+@[\w-]+\.[\w.]+/g, '[e-mail oculto]')
+    .replace(/\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g, '[CPF oculto]')
+    .replace(/\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b/g, '[CNPJ oculto]')
+    .replace(/\b(?:\d[ -]?){13,19}\b/g, '[número oculto]')
+    .replace(/(?:\+?55\s?)?\(?\d{2}\)?\s?9?\d{4}[-\s]?\d{4}\b/g, '[telefone oculto]');
+}
+function lerMensagensSalvas(v: unknown): MensagemERN[] {
+  if (!Array.isArray(v)) return [];
+  return v.flatMap((x): MensagemERN[] => {
+    if (!x || typeof x !== 'object') return [];
+    const o = x as Record<string, unknown>;
+    if ((o.autor !== 'ern' && o.autor !== 'visitante') || typeof o.texto !== 'string' || !o.texto.trim()) return [];
+    const links = Array.isArray(o.links) ? (o.links as LinkIara[]).filter(linkIaraSeguro).slice(0, 3) : undefined;
+    const destino = destinoIaraValido(o.destino) ?? undefined;
+    return [{ autor: o.autor, texto: o.texto.slice(0, 1500), links, destino }];
+  }).slice(-40);
+}
+
+// IARA_SAUDACAO_V1: a mesma lógica da EDA — "Bom dia" só na 1ª entrada do período;
+// depois, uma interação descontraída. O corpo muda conforme a página que o visitante está vendo.
+function corpoIara(idioma: IdiomaERN, caminho: string, regional: boolean, voltou: boolean): string {
+  const p = periodoEDA();
+  const sorteia = (l: string[]) => l[Math.floor(Math.random() * l.length)];
+  if (idioma === 'EN') {
+    if (voltou) return 'Good to see you again! Shall we pick up where we left off? 🌊';
+    if (caminho.startsWith('/destinos')) return 'I am Iara, guardian of the waters 🌊 Name any town in Amazonas or a place on the Rio Negro and I will fly you there on the map.';
+    return sorteia(['I am Iara, guardian of the waters of Encantos da Amazônia 🌊 What brought you here — fishing, nature, culture or pure curiosity?', 'Iara here 🌊 I know every bend of the Rio Negro. Where shall we start: a destination, a tour or a legend?']);
+  }
+  if (idioma === 'ES') {
+    if (voltou) return '¡Qué bueno verte de nuevo! ¿Seguimos donde quedamos? 🌊';
+    if (caminho.startsWith('/destinos')) return 'Soy Iara, guardiana de las aguas 🌊 Dime cualquier ciudad de Amazonas o un lugar del Río Negro y te llevo volando en el mapa.';
+    return sorteia(['Soy Iara, guardiana de las aguas de Encantos da Amazônia 🌊 ¿Qué te trajo aquí — pesca, naturaleza, cultura o pura curiosidad?', 'Aquí Iara 🌊 Conozco cada curva del Río Negro. ¿Empezamos por un destino, un paseo o una leyenda?']);
+  }
+  const tu = (a: string, b: string) => (regional ? a : b);
+  if (voltou) return tu('Que bom te ver de novo! Bora continuar de onde a gente parou? 🌊', 'Que bom ver você de novo! Continuamos de onde paramos? 🌊');
+  if (p === 'madrugada') return tu('O rio tá quietinho a esta hora, mas eu sigo acordada contigo 🌙 Quer sonhar com uma viagem ou ouvir uma lenda da Amazônia?', 'O rio está tranquilo a esta hora, mas sigo aqui com você 🌙 Quer planejar uma viagem ou ouvir uma lenda da Amazônia?');
+  if (caminho.startsWith('/destinos')) return tu('Eu sou a Iara, a guardiã das águas 🌊 Me diz qualquer cidade do Amazonas ou um lugar do Rio Negro que eu te levo até lá no mapa, com zoom no território.', 'Eu sou a Iara, a guardiã das águas 🌊 Diga qualquer cidade do Amazonas ou um lugar do Rio Negro e eu levo você até lá no mapa, com zoom no território.');
+  if (caminho.startsWith('/experiencias')) return tu('Eu sou a Iara 🌊 Tô aqui pra te ajudar a escolher a experiência certa, sem pressa. O que tu quer viver por aqui?', 'Eu sou a Iara 🌊 Estou aqui para ajudar você a escolher a experiência certa, sem pressa. O que gostaria de viver por aqui?');
+  if (caminho.startsWith('/rede')) return tu('Eu sou a Iara 🌊 Aqui na Rede tu vê o que as operadoras e os guias tão vivendo no rio. Quer que eu te apresente alguém?', 'Eu sou a Iara 🌊 Aqui na Rede você acompanha o que operadoras e guias estão vivendo no rio. Quer que eu apresente alguém?');
+  if (caminho.startsWith('/operadores') || caminho.startsWith('/precos')) return tu('Eu sou a Iara 🌊 Trabalha com turismo? Te mostro como a Encantos Gestão ajuda tua operação e qual plano combina contigo.', 'Eu sou a Iara 🌊 Trabalha com turismo? Mostro como a Encantos Gestão ajuda sua operação e qual plano combina com você.');
+  return sorteia([
+    tu('Eu sou a Iara, a guardiã das águas da Encantos da Amazônia 🌊 Me conta: o que te trouxe até aqui — pesca, natureza, cultura ou só curiosidade?', 'Eu sou a Iara, a guardiã das águas da Encantos da Amazônia 🌊 O que trouxe você até aqui — pesca, natureza, cultura ou curiosidade?'),
+    tu('Aqui é a Iara 🌊 Conheço cada curva do Rio Negro. Bora começar por um destino, um passeio ou uma lenda?', 'Aqui é a Iara 🌊 Conheço cada curva do Rio Negro. Começamos por um destino, um passeio ou uma lenda?'),
+  ]);
+}
+function saudacaoIara(idioma: IdiomaERN, nome: string): string {
+  if (idioma === 'PT') return saudacaoEDA(nome).texto;
+  const p = periodoEDA();
+  const v = nome ? `, ${nome}` : '';
+  if (idioma === 'EN') return `${p === 'manha' ? 'Good morning' : p === 'tarde' ? 'Good afternoon' : 'Good evening'}${v}.`;
+  return `${p === 'manha' ? 'Buenos días' : p === 'tarde' ? 'Buenas tardes' : 'Buenas noches'}${v}.`;
+}
 const linkIaraSeguro = (l: LinkIara) => typeof l?.rotulo === 'string' && typeof l?.href === 'string' && (/^\/[a-z]/.test(l.href) || /^https:\/\/[^\s<>"]+$/i.test(l.href));
 
 const conversaTextos = {
@@ -185,6 +248,13 @@ const conversaTextos = {
     limitButton: 'Nova conversa para continuar',
     clear: 'Apagar esta conversa e começar novamente?',
     language: 'Português',
+    privacyConta: 'A Iara usa inteligência artificial para responder. Como você está conectado, esta conversa fica guardada na sua conta para continuar de onde parou (só você vê; "Nova conversa" apaga). CPF, telefone e e-mail são ocultados automaticamente.',
+    parar: 'Parar resposta',
+    pensando: 'Iara pensando… toque no arco para cancelar',
+    cancelado: 'Tudo bem, parei por aqui. Pode me perguntar de outro jeito quando quiser. 🌊',
+    mapa: (n: string) => `Conhecer ${n} no mapa`,
+    levando: (n: string) => `Segura firme que eu te levo até ${n}! 🛶`,
+    chegou: (n: string) => `Chegamos em ${n}! 🌊 Esse é o território inteiro, com vista de satélite. Quer que eu te conte o que tem de bom por aqui?`,
   },
   EN: {
     badge: 'Guardian of the waters · AI assistant',
@@ -214,6 +284,13 @@ const conversaTextos = {
     limitButton: 'Start a new conversation to continue',
     clear: 'Clear this conversation and start again?',
     language: 'English',
+    privacyConta: 'Iara uses artificial intelligence. Because you are signed in, this chat is saved to your account so you can continue later (only you see it; "New conversation" deletes it). IDs, phones and emails are hidden automatically.',
+    parar: 'Stop answer',
+    pensando: 'Iara is thinking… tap the bow to cancel',
+    cancelado: 'All right, I stopped. Ask me another way whenever you like. 🌊',
+    mapa: (n: string) => `See ${n} on the map`,
+    levando: (n: string) => `Hold on, I am taking you to ${n}! 🛶`,
+    chegou: (n: string) => `Here we are in ${n}! 🌊 This is the whole territory, seen by satellite. Shall I tell you what is good around here?`,
   },
   ES: {
     badge: 'Guardiana de las aguas · asistente con IA',
@@ -243,6 +320,13 @@ const conversaTextos = {
     limitButton: 'Inicie otra conversación para continuar',
     clear: '¿Borrar esta conversación y empezar de nuevo?',
     language: 'Español',
+    privacyConta: 'Iara usa inteligencia artificial. Como iniciaste sesión, esta conversación se guarda en tu cuenta para continuar después (solo tú la ves; "Nueva conversación" la borra). Documentos, teléfonos y correos se ocultan automáticamente.',
+    parar: 'Detener respuesta',
+    pensando: 'Iara pensando… toca el arco para cancelar',
+    cancelado: 'Está bien, me detuve. Pregúntame de otra forma cuando quieras. 🌊',
+    mapa: (n: string) => `Conocer ${n} en el mapa`,
+    levando: (n: string) => `¡Agárrate, te llevo hasta ${n}! 🛶`,
+    chegou: (n: string) => `¡Llegamos a ${n}! 🌊 Este es el territorio entero, visto por satélite. ¿Te cuento qué hay de bueno por aquí?`,
   },
 };
 
@@ -258,9 +342,17 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   const [entrada, setEntrada] = useState('');
   const [etapa, setEtapa] = useState(0);
   const [preferencias, setPreferencias] = useState<string[]>([]);
-  const [mensagens, setMensagens] = useState<MensagemERN[]>([
-    { autor: 'ern', texto: c.hello },
-  ]);
+  const [mensagens, setMensagens] = useState<MensagemERN[]>([]);
+  const pathname = usePathname() ?? '/';
+  const router = useRouter();
+  // IARA_MEMORIA_V1: quem está logado tem a conversa guardada na própria conta.
+  const [usuarioId, setUsuarioId] = useState<string | null>(null);
+  const [nomeVisitante, setNomeVisitante] = useState('');
+  const [memoriaPronta, setMemoriaPronta] = useState(false);
+  const [restaurou, setRestaurou] = useState(false);
+  const [saudou, setSaudou] = useState(false);
+  const mensagensRef = useRef<MensagemERN[]>([]);
+  mensagensRef.current = mensagens;
   const dialogRef = useRef<HTMLDialogElement>(null);
   const abrirRef = useRef<HTMLButtonElement>(null);
   const mobileRef = useRef<HTMLButtonElement>(null);
@@ -318,6 +410,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   // EDA_IARA_PRO_V1: ficha da conversa (memória) e sessão anônima para métricas.
   const fichaIara = useRef<Record<string, unknown>>({});
   const linksResposta = useRef<LinkIara[]>([]);
+  const destinoResposta = useRef<DestinoMsg | undefined>(undefined);
   const sessaoIara = useRef('');
   useEffect(() => {
     try {
@@ -400,6 +493,81 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   }, []);
   useEffect(() => { if (aberto) setOfertaIara(null); }, [aberto]);
 
+  // IARA_MEMORIA_V1: carrega a conversa de quem está logado; ao sair da conta, apaga da tela.
+  useEffect(() => {
+    let ativo = true;
+    async function carregar(id: string | null) {
+      if (!id) { setUsuarioId(null); setNomeVisitante(''); setMemoriaPronta(true); return; }
+      setUsuarioId(id);
+      const [perfil, conversa] = await Promise.all([
+        supabase.from('perfis').select('nome').eq('id', id).maybeSingle(),
+        supabase.from('iara_conversas').select('mensagens,ficha').eq('usuario_id', id).maybeSingle(),
+      ]);
+      if (!ativo) return;
+      setNomeVisitante(String(perfil.data?.nome ?? '').trim().split(/\s+/)[0] ?? '');
+      const salvas = lerMensagensSalvas(conversa.data?.mensagens);
+      if (salvas.length && !enviandoERN.current) {
+        setMensagens(atuais => (atuais.some(m => m.autor === 'visitante') ? atuais : salvas));
+        setRestaurou(true);
+        const f = conversa.data?.ficha;
+        if (f && typeof f === 'object' && !Array.isArray(f)) fichaIara.current = f as Record<string, unknown>;
+      }
+      setMemoriaPronta(true);
+    }
+    void supabase.auth.getSession()
+      .then(({ data }) => (ativo ? carregar(data.session?.user.id ?? null) : undefined))
+      .catch(() => { if (ativo) setMemoriaPronta(true); });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((evento, sessao) => {
+      if (!ativo) return;
+      if (evento === 'SIGNED_OUT') {
+        pedidoIA.current?.abort();
+        setUsuarioId(null); setNomeVisitante(''); setRestaurou(false);
+        setMensagens([]); setSaudou(false); fichaIara.current = {};
+      } else if (evento === 'SIGNED_IN' && sessao?.user.id) {
+        void carregar(sessao.user.id);
+      }
+    });
+    return () => { ativo = false; subscription.unsubscribe(); };
+  }, []);
+
+  // Grava (com máscara) depois de cada mudança na conversa de quem está logado.
+  useEffect(() => {
+    if (!usuarioId || !memoriaPronta || !mensagens.some(m => m.autor === 'visitante')) return;
+    const id = window.setTimeout(() => {
+      const lista = mensagens.slice(-40).map(m => ({
+        autor: m.autor, texto: mascararIara(m.texto).slice(0, 1500),
+        ...(m.links?.length ? { links: m.links } : {}),
+        ...(m.destino ? { destino: { tipo: m.destino.tipo, id: m.destino.id, nome: m.destino.nome } } : {}),
+      }));
+      void supabase.from('iara_conversas').upsert({ usuario_id: usuarioId, mensagens: lista, ficha: fichaIara.current, atualizado_em: new Date().toISOString() }).then(() => undefined);
+    }, 900);
+    return () => window.clearTimeout(id);
+  }, [mensagens, usuarioId, memoriaPronta]);
+
+  // IARA_SAUDACAO_V1: ao abrir, a Iara cumprimenta letra por letra (como a EDA no painel).
+  useEffect(() => {
+    if (!aberto || saudou || !memoriaPronta) return;
+    setSaudou(true);
+    const regional = estiloIara === 'regional';
+    const texto = `${saudacaoIara(idioma, nomeVisitante)}\n${corpoIara(idioma, window.location.pathname, regional, restaurou)}`;
+    setAnimandoIara(mensagensRef.current.length);
+    setMensagens(m => [...m, { autor: 'ern', texto, lenta: true }]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [aberto, saudou, memoriaPronta]);
+
+  // IARA_VOO_V1: o mapa avisa quando o visitante chegou ao território.
+  useEffect(() => {
+    const chegou = (e: Event) => {
+      const nome = (e as CustomEvent<{ nome?: unknown }>).detail?.nome;
+      if (typeof nome !== 'string' || !nome) return;
+      const texto = c.chegou(nome.slice(0, 60));
+      setMensagens(m => [...m, { autor: 'ern', texto }]);
+      setOfertaIara(texto);
+    };
+    window.addEventListener('iara:chegou', chegou);
+    return () => window.removeEventListener('iara:chegou', chegou);
+  }, [c]);
+
   const [vidaPausadaERN, setVidaPausadaERN] = useState(false);
   const legendaVidaERN = idioma === 'EN'
     ? (vidaPausadaERN ? 'Resume visual effect' : 'Pause visual effect')
@@ -422,6 +590,8 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   // ERN_DIGITANDO_V1
   const [digitandoERN, setDigitandoERN] = useState(false);
   const enviandoERN = useRef(false);
+  // IARA_ARCO_V1: o arco girando é também o botão de cancelar a resposta.
+  const pedidoIA = useRef<AbortController | null>(null);
 
   // EDA_IARA_AUDIO_V1: o visitante grava um áudio (pensado para o celular);
   // o servidor transcreve (Whisper/Groq, sem guardar o áudio) e a frase vai
@@ -566,12 +736,41 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
       clearTimeout(respostaTimerERN.current);
       respostaTimerERN.current = null;
     }
+    pedidoIA.current?.abort();
+    pedidoIA.current = null;
     enviandoERN.current = false;
     setDigitandoERN(false);
     setEtapa(0);
     setPreferencias([]);
     setEntrada('');
-    setMensagens([{ autor: 'ern', texto: c.hello }]);
+    setPedidoIara(null);
+    fichaIara.current = {};
+    setRestaurou(false);
+    setMensagens([]);
+    setSaudou(false);
+    if (usuarioId) void supabase.from('iara_conversas').delete().eq('usuario_id', usuarioId).then(() => undefined);
+  }
+
+  function cancelarResposta() {
+    if (!enviandoERN.current) return;
+    pedidoIA.current?.abort();
+    pedidoIA.current = null;
+    if (respostaTimerERN.current !== null) { clearTimeout(respostaTimerERN.current); respostaTimerERN.current = null; }
+    enviandoERN.current = false;
+    setDigitandoERN(false);
+    setMensagens(m => [...m, { autor: 'ern', texto: c.cancelado }]);
+    window.setTimeout(() => document.getElementById('ern-chat-mensagem')?.focus(), 0);
+  }
+
+  // IARA_VOO_V1: leva o visitante ao destino no mapa (zoom até o território aberto).
+  function levarAoDestino(d: DestinoIara) {
+    setMensagens(m => [...m, { autor: 'ern', texto: c.levando(d.nome) }]);
+    window.setTimeout(() => {
+      if (gravadorRef.current?.state === 'recording') pararAudio(true);
+      setAberto(false);
+      if (window.location.pathname === '/destinos') window.dispatchEvent(new CustomEvent('iara:destino', { detail: d }));
+      else router.push(`/destinos?iara=${encodeURIComponent(destinoParaParametro(d))}`);
+    }, 1100);
   }
 
   function enviar(valor: string, origem?: 'busca') {
@@ -596,12 +795,13 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
     setMensagens((atuais) => [...atuais, { autor: 'visitante', texto }]);
     setEntrada('');
 
-    const indiceResposta = mensagens.length + 1;
     linksResposta.current = [];
+    destinoResposta.current = undefined;
     const responder = (final: string, sugestoes: string[] = []) => {
-      setAnimandoIara(indiceResposta);
       const links = linksResposta.current;
-      setMensagens((atuais) => [...atuais, { autor: 'ern', texto: final, sugestoes, links }]);
+      const destino = destinoResposta.current;
+      setAnimandoIara(mensagensRef.current.length);
+      setMensagens((atuais) => [...atuais, { autor: 'ern', texto: final, sugestoes, links, destino }]);
       setDigitandoERN(false);
       enviandoERN.current = false;
       respostaTimerERN.current = null;
@@ -612,14 +812,26 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
       return;
     }
 
+    const controle = new AbortController();
+    pedidoIA.current = controle;
     fetch('/api/eda-ia', {
       method: 'POST',
+      signal: controle.signal,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ modo: 'publico', idioma, estilo: estiloIara, mensagens: historico, ficha: fichaIara.current, sessao: sessaoIara.current || undefined, origem, pagina_atual: { caminho: window.location.pathname.slice(0, 120) } }),
     })
       .then(r => r.json())
-      .then((j: { resposta?: string; erro?: string; sugestoes?: unknown; pedido?: PedidoIara | null; ficha?: unknown; links?: unknown }) => {
+      .then((j: { resposta?: string; erro?: string; sugestoes?: unknown; pedido?: PedidoIara | null; ficha?: unknown; links?: unknown; navegar?: unknown; destino?: unknown }) => {
+        if (controle.signal.aborted) return;
+        pedidoIA.current = null;
         if (!j.resposta) throw new Error(j.erro || 'sem resposta');
+        const destino = destinoIaraValido(j.destino);
+        const auto = !!destino && !!(j.destino as { auto?: unknown }).auto;
+        destinoResposta.current = destino ? { ...destino, auto } : undefined;
+        // Página pública pedida ("me leva pra Rede"): abre e a conversa continua aberta.
+        const nav = j.navegar as LinkIara | null | undefined;
+        if (!auto && nav && linkIaraSeguro(nav) && nav.href.startsWith('/') && !nav.href.startsWith('//')) router.push(nav.href);
+        if (auto && destino) window.setTimeout(() => levarAoDestino(destino), 2200);
         if (j.ficha && typeof j.ficha === 'object') fichaIara.current = j.ficha as Record<string, unknown>;
         linksResposta.current = Array.isArray(j.links) ? (j.links as LinkIara[]).filter(linkIaraSeguro).slice(0, 3) : [];
         if (j.pedido && typeof j.pedido === 'object') {
@@ -632,7 +844,11 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
           : [];
         responder(j.resposta.replace(/\*\*/g, ''), sugestoes);
       })
-      .catch((e: unknown) => responder(e instanceof Error && /limite|Volte amanh/i.test(e.message) ? e.message : c.fallback));
+      .catch((e: unknown) => {
+        if (controle.signal.aborted) return;
+        pedidoIA.current = null;
+        responder(e instanceof Error && /limite|Volte amanh/i.test(e.message) ? e.message : c.fallback);
+      });
   }
 
   enviarRef.current = enviar;
@@ -738,7 +954,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
           </header>
 
           <div className="informacoes">
-            <p id="ern-chat-privacidade">{c.privacy}</p>
+            <p id="ern-chat-privacidade">{usuarioId ? c.privacyConta : c.privacy}</p>
           </div>
 
           <div
@@ -761,7 +977,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
                   </span>
                   <p>
                     {mensagem.autor === 'ern'
-                      ? <TextoDigitadoIA texto={mensagem.texto} animar={animandoIara === indice} render={(t2) => t2} aoTerminar={() => setAnimandoIara(a => (a === indice ? null : a))} />
+                      ? <TextoDigitadoIA texto={mensagem.texto} animar={animandoIara === indice} msPorLetra={mensagem.lenta ? 26 : undefined} render={(t2) => t2} aoTerminar={() => setAnimandoIara(a => (a === indice ? null : a))} />
                       : mensagem.texto}
                   </p>
                   {mensagem.autor === 'ern' && animandoIara !== indice && !!mensagem.links?.length && (
@@ -771,6 +987,12 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
                         : <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer" className="iara-link">{l.rotulo} ↗</a>)}
                     </div>
                   )}
+                  {mensagem.autor === 'ern' && animandoIara !== indice && mensagem.destino && !mensagem.destino.auto && (
+                    <button type="button" className="iara-destino" disabled={digitandoERN} onClick={() => levarAoDestino(mensagem.destino!)}>
+                      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M9 4 3 6.5v13.5l6-2.5 6 2.5 6-2.5V4l-6 2.5L9 4Zm0 0v13.5m6-11v13.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" /></svg>
+                      {c.mapa(mensagem.destino.nome)}
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -779,8 +1001,11 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
                 <div className="balao ern-digitando" role="status">
                   <span className="autor">{t.title}</span>
                   <span className="sr-only">{textoDigitandoERN}</span>
-                  <span className="ern-pontos" aria-hidden="true">
-                    <i /><i /><i />
+                  <span className="iara-pensando">
+                    <button type="button" className="iara-arco iara-arco-balao" onClick={cancelarResposta} aria-label={c.parar} title={c.parar}>
+                      <ArcoFlechaERN tamanho={20} ativo />
+                    </button>
+                    <small aria-hidden="true">{c.pensando}</small>
                   </span>
                 </div>
               </div>
@@ -856,7 +1081,11 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
                   disabled={limite || digitandoERN}
                   onChange={(evento) => { setEntrada(evento.target.value); if (erroAudio) setErroAudio(null); }}
                 />
-                {audioSuportado && !entrada.trim() ? (
+                {digitandoERN ? (
+                  <button type="button" className="iara-arco" onClick={cancelarResposta} aria-label={c.parar} title={c.parar}>
+                    <ArcoFlechaERN tamanho={22} ativo />
+                  </button>
+                ) : audioSuportado && !entrada.trim() ? (
                   <button
                     type="button"
                     className="principal iara-audio-btn"
@@ -1393,4 +1622,4 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
       `}</style>
     </section>
   );
-}
+}

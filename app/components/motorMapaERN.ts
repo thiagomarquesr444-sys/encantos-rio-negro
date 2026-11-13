@@ -30,12 +30,18 @@ export interface MotorMapa {
   tipo: 'google' | 'leaflet';
   setView(coords: Coord, zoom: number): void;
   fitBounds(pontos: Coord[], margem: number, zoomMaximo?: number): void;
+  /** IARA_VOO_V1: viagem animada até o ponto (a Iara leva o visitante). */
+  voarPara(coords: Coord, zoom: number, aoChegar: () => void): () => void;
   getZoom(): number;
   aoMudarZoom(callback: (zoom: number) => void): void;
   limparPins(): void;
   adicionarPin(pin: PinMapa): void;
   definirPosicao(posicao: { coords: Coord; accuracy: number } | null): void;
   destruir(): void;
+}
+
+function semMovimento() {
+  return typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 }
 
 export function chaveGoogleMapas(): string {
@@ -187,6 +193,23 @@ export async function criarMotorGoogle(
         });
       }
     },
+    voarPara(coords, zoom, aoChegar) {
+      // O Google não tem "voo": centraliza e aproxima um nível por vez.
+      const destino = { lat: coords[0], lng: coords[1] };
+      let ativo = true;
+      let atual = mapa.getZoom() ?? 6;
+      if (semMovimento()) { mapa.setZoom(zoom); mapa.panTo(destino); aoChegar(); return () => undefined; }
+      mapa.panTo(destino);
+      const passo = window.setInterval(() => {
+        if (!ativo) return;
+        atual += atual < zoom ? 1 : -1;
+        mapa.setZoom(atual);
+        mapa.panTo(destino);
+        if (atual === zoom) { window.clearInterval(passo); window.setTimeout(() => { if (ativo) aoChegar(); }, 450); }
+      }, 260);
+      if (atual === zoom) { window.clearInterval(passo); window.setTimeout(() => { if (ativo) aoChegar(); }, 600); }
+      return () => { ativo = false; window.clearInterval(passo); };
+    },
     getZoom() { return mapa.getZoom() ?? 6; },
     aoMudarZoom(callback) { mapa.addListener('zoom_changed', () => callback(mapa.getZoom() ?? 6)); },
     limparPins() { pins.forEach(pin => pin.setMap(null)); pins = []; },
@@ -241,6 +264,16 @@ export async function criarMotorLeaflet(
     fitBounds(pontos, margem, zoomMaximo) {
       if (!pontos.length) return;
       mapa.fitBounds(L.latLngBounds(pontos), { padding: [margem, margem], maxZoom: zoomMaximo, animate: false });
+    },
+    voarPara(coords, zoom, aoChegar) {
+      let ativo = true;
+      if (semMovimento()) { mapa.setView(coords, zoom, { animate: false }); aoChegar(); return () => undefined; }
+      const fim = () => { if (!ativo) return; ativo = false; window.clearTimeout(reserva); aoChegar(); };
+      // Reserva: se o mapa já estiver no ponto, o "moveend" pode não chegar.
+      const reserva = window.setTimeout(fim, 3600);
+      mapa.once('moveend', fim);
+      mapa.flyTo(coords, zoom, { duration: 2.8, easeLinearity: 0.2 });
+      return () => { ativo = false; window.clearTimeout(reserva); mapa.off('moveend', fim); };
     },
     getZoom() { return mapa.getZoom(); },
     aoMudarZoom(callback) { mapa.on('zoomend', () => callback(mapa.getZoom())); },
