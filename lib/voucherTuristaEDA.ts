@@ -167,7 +167,8 @@ export async function baixarPDFVoucherEDA(v: VoucherEDA): Promise<void> {
     tipo: 'Voucher',
     empresa: op?.nome || empresa.nome,
     identificador: v.codigo,
-    nomeArquivo: `EDA-voucher-${v.codigo}.pdf`,
+    // Nome do arquivo = nome do turista (titular) + data do embarque.
+    nomeArquivo: `Voucher-${(snap?.titular?.nome || v.cliente_nome || v.codigo).normalize('NFD').replace(/[\u0300-\u036f]/g, '').trim().replace(/\s+/g, '-')}-${dataBR(inicio).replace(/\//g, '-')}.pdf`,
     status: situacao === 'Ativo' ? 'Válido para embarque' : situacao,
     tabela: passageiros.length ? { titulo: 'Passageiros (titular e dependentes)', colunas: ['Nome', 'Vínculo', 'Nascimento'], linhas: passageiros } : undefined,
     destaque: chegada ? {
