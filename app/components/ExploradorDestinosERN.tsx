@@ -190,7 +190,7 @@ const cities: { id: CityId; name: string; coords: [number, number]; image?: stri
   { id: 'parintins', name: 'Parintins', coords: [-2.628, -56.736], image: '/images/cultura/festribal.jpg' },
 ];
 const scenes: Scene[] = [
-  { id: 'cachoeira-eldorado', city: 'barcelos', image: '/images/destinos/eldorado-card.png', interests: ['nature'], source: `${barcelosSource}serra-do-araca/` },
+  { id: 'cachoeira-eldorado', city: 'barcelos', image: '/images/destinos/eldorado-card.webp', interests: ['nature'], source: `${barcelosSource}serra-do-araca/` },
   { id: 'barcelos', city: 'barcelos', image: '/images/regiao/matriz.png.jpeg', interests: ['waters', 'nature', 'culture', 'fishing'], source: municipalSource },
   { id: 'praia-grande', city: 'barcelos', image: '/images/regiao/barcelospraia.png.jpeg', context: true, interests: ['waters'], source: `${barcelosSource}praia-grande/`, coords: [-0.96058, -62.92789] },
   { id: 'mariua', city: 'barcelos', image: '/images/destinos/mariua-capa.jpg', interests: ['waters', 'nature', 'fishing'], source: `${barcelosSource}arquipelago-de-mariua/` },
@@ -580,7 +580,7 @@ export default function ExploradorDestinosERN() {
           : 'Novo Airão · boto-cor-de-rosa · referência regional';
         pin({
           coords: c.coords, titulo: descricaoBoto, rotulo: c.name, z: 30, classe: 'ern-v-boto-marker',
-          html: '<span class="ern-v-boto-visual" style="display:grid!important;place-items:center!important;width:64px!important;height:42px!important;max-width:64px!important;max-height:42px!important;padding:2px!important;box-sizing:border-box!important;overflow:hidden!important"><img src="/images/fauna/boto-ern.png" alt="" width="60" height="38" draggable="false" style="display:block!important;width:60px!important;height:38px!important;min-width:0!important;min-height:0!important;max-width:60px!important;max-height:38px!important;object-fit:contain!important;position:static!important;pointer-events:none!important" /></span>',
+          html: '<span class="ern-v-boto-visual" style="display:grid!important;place-items:center!important;width:64px!important;height:42px!important;max-width:64px!important;max-height:42px!important;padding:2px!important;box-sizing:border-box!important;overflow:hidden!important"><img src="/images/fauna/boto-reacao.webp" alt="" width="60" height="38" draggable="false" style="display:block!important;width:60px!important;height:38px!important;min-width:0!important;min-height:0!important;max-width:60px!important;max-height:38px!important;object-fit:contain!important;position:static!important;pointer-events:none!important" /></span>',
           aoClicar: () => { const destino = scenes.find(scene => scene.id === 'novo-airao'); if (destino) choose(destino); },
         });
         return;
@@ -740,7 +740,7 @@ export default function ExploradorDestinosERN() {
       {drawer && <aside className="ern-v-drawer" aria-labelledby="ern-v-detail-title">
         <button type="button" className="ern-v-close" onClick={closeDrawer} aria-label={u.close}>×</button>
         {drawer === 'saved' ? <div className="ern-v-detail-copy"><h2 ref={heading} tabIndex={-1} id="ern-v-detail-title">{u.selection}</h2><p>{u.selectionNote}</p>{saved.length ? saved.map(id => sceneCard(scenes.find(scene => scene.id === id)!, true)) : <p>{u.selectionEmpty}</p>}<Link className="ern-v-button" href="/#concierge">{u.plan} ↗</Link></div> : <>
-          {active && <div className="ern-v-detail-photo"><SceneImage src={active.id === 'cachoeira-eldorado' ? '/images/destinos/eldorado-detalhe.png' : active.image} alt={`${content!.titulo} · ${active.id === 'cachoeira-eldorado' ? eldoradoImagemLabel : active.context ? u.context : u.collection}`} eager /><span className="ern-v-photo-tag">{active.id === 'cachoeira-eldorado' ? eldoradoImagemLabel : active.context ? u.context : u.collection}</span></div>}
+          {active && <div className="ern-v-detail-photo"><SceneImage src={active.id === 'cachoeira-eldorado' ? '/images/destinos/eldorado-detalhe.webp' : active.image} alt={`${content!.titulo} · ${active.id === 'cachoeira-eldorado' ? eldoradoImagemLabel : active.context ? u.context : u.collection}`} eager /><span className="ern-v-photo-tag">{active.id === 'cachoeira-eldorado' ? eldoradoImagemLabel : active.context ? u.context : u.collection}</span></div>}
           <div className="ern-v-detail-copy"><p className="ern-v-kicker">{active ? content!.local : u.regional}</p><h2 ref={heading} tabIndex={-1} id="ern-v-detail-title">{interest === 'fishing' && active?.id === 'barcelos' ? fishing.title : content?.titulo ?? city.name}</h2>
             <div className="ern-v-abas" role="tablist" aria-label={content?.titulo ?? city.name}>
               {ABAS.map((valor, i) => <button type="button" role="tab" key={valor} id={`ern-v-aba-${valor}`} aria-selected={aba === valor} aria-controls="ern-v-aba-painel" onClick={() => setAba(valor)}>{p.abas[i]}</button>)}
@@ -1038,7 +1038,7 @@ export default function ExploradorDestinosERN() {
                 <VideoDestinoERN
                   key={active.id}
                   title={t.destinations['cachoeira-eldorado'].titulo}
-                  poster="/images/destinos/eldorado-card.png"
+                  poster="/images/destinos/eldorado-card.webp"
                   videos={['/videos%20destinos/serradoaraca1.1.MP4']}
                 />
                 <details style={{ marginTop: '12px', fontSize: '11px', lineHeight: 1.6 }}>

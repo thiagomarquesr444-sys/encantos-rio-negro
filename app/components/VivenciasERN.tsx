@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { prepararFotoEnvioEDA } from '@/lib/fotoEnvioEDA';
 import {
   listarFeedPublico,
   type PublicacaoPublica,
@@ -165,9 +166,10 @@ export function ConfigurarVivenciaERN({
           throw new Error('A capa deve ser JPEG, PNG ou WebP de até 5 MB.');
         }
 
-        const path = `publicacoes/${publicacaoId}/${crypto.randomUUID()}.${extension}`;
+        const capaEnvio = await prepararFotoEnvioEDA(capa); // EDA_FOTO_LEVE_V1
+        const path = `publicacoes/${publicacaoId}/${crypto.randomUUID()}.${formats[capaEnvio.type] ?? extension}`;
         const { error: uploadError } = await supabase.storage.from('vivencias-ern')
-          .upload(path, capa, { upsert: false, contentType: capa.type });
+          .upload(path, capaEnvio, { upsert: false, contentType: capaEnvio.type });
         if (uploadError) throw uploadError;
 
         const { data: check, error: checkError } = await supabase.from('publicacoes')
@@ -531,4 +533,4 @@ export function ListaVivenciasERN({
       )}
     </section>
   );
-}
+}

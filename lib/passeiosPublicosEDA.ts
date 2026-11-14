@@ -1,5 +1,6 @@
 // EDA_PASSEIOS_PORTAL_V1: passeios das operadoras expostos no portal público.
 import { supabase } from '@/lib/supabase';
+import { prepararFotoEnvioEDA } from '@/lib/fotoEnvioEDA';
 
 export type PasseioPublicoEDA = {
   id: string;
@@ -159,7 +160,7 @@ export async function enviarFotosPasseioEDA(empresaId: string, arquivos: File[])
   const urls: string[] = [];
 
   for (const arquivo of arquivos) {
-    const blob = await prepararFoto(arquivo);
+    const blob = await prepararFoto(await prepararFotoEnvioEDA(arquivo)); // EDA_FOTO_LEVE_V1
     const tipo = blob.type && FORMATOS[blob.type] ? blob.type : 'image/jpeg';
     const caminho = `${empresaId}/passeios/${crypto.randomUUID()}.${FORMATOS[tipo]}`;
 

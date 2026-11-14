@@ -18,6 +18,7 @@ import AppShell from '@/app/components/AppShell';
 import { LanguageProvider } from '@/app/components/LanguageProvider';
 import InstalarERN from '@/app/components/InstalarERN';
 import OfflineBaseERN from '@/app/components/OfflineBaseERN';
+import MonitorSinalEDA from '@/app/components/SinalEDA';
 import LibrasERN from '@/app/components/LibrasERN';
 
 const fontes = {
@@ -83,6 +84,7 @@ export default function RootLayout({
         />
         <PularConteudoEDA />
         <OfflineBaseERN />
+        <MonitorSinalEDA />
         <InstalarERN />
         <LibrasERN />
         <LanguageProvider>
@@ -96,4 +98,4 @@ export default function RootLayout({
       </body>
     </html>
   );
-}
+}

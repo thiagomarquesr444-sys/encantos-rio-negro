@@ -3,21 +3,25 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
+import dynamic from 'next/dynamic';
 
 import { supabase } from '@/lib/supabase';
 import Sidebar from '@/app/components/Sidebar';
 import MagnetismoGlobalEDA from '@/app/components/MagnetismoGlobalEDA';
-import PerguntaEDA from '@/app/components/PerguntaEDA';
-import ConversaEDA from '@/app/components/ConversaEDA';
 import AoVivoEDA from '@/app/components/AoVivoEDA';
 import VoltarEDA from '@/app/components/VoltarEDA';
-import ConciergePublicoERN from '@/app/components/ConciergePublicoERN';
 import '@/app/components/cartao-magnetico-eda.css';
 import '@/app/components/capa-eda.css';
 import { EVENTO_ESTILO_PAINEL, lerEstiloPainel, type EstiloPainelERN } from '@/lib/estiloPainelERN';
 import SidebarProfissional from '@/app/components/SidebarProfissional';
 // ERN_TEMA_CLARO_GERADO_V1: versão clara dos estilos próprios das páginas da gestão.
 import '@/app/tema-claro-gestao.css';
+
+// EDA_CODIGO_ENXUTO_V1: a Iara (portal) e a EDA (gestão) viram pacotes separados.
+// Quem abre o portal não baixa o código da gestão, e vice-versa. Visual igual.
+const PerguntaEDA = dynamic(() => import('@/app/components/PerguntaEDA'));
+const ConversaEDA = dynamic(() => import('@/app/components/ConversaEDA'));
+const ConciergePublicoERN = dynamic(() => import('@/app/components/ConciergePublicoERN'));
 
 type Tema = 'verde' | 'azul' | 'amarelo' | 'branco' | 'grafite';
 

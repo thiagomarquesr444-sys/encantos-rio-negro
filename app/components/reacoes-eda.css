@@ -37,7 +37,7 @@
 
 .eda-reacao-img { display: block; width: 30px; height: 22px; object-fit: contain; pointer-events: none; }
 .eda-reacao-tucunare {
-  display: block; width: 30px; height: 22px; background: url('/images/pesca/tucunare-nado.png') 0 0 / 200% 200% no-repeat;
+  display: block; width: 30px; height: 22px; background: url('/images/pesca/tucunare-nado.webp') 0 0 / 200% 200% no-repeat;
 }
 .eda-reacao-pulo { animation: eda-reacao-pulo .5s ease; }
 @keyframes eda-reacao-pulo { 40% { transform: translateY(-5px) scale(1.18); } 100% { transform: none; } }

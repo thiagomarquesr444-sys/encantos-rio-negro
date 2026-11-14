@@ -2,6 +2,7 @@
 
 import { useRef, useState, type ChangeEvent } from 'react';
 import { supabase } from '@/lib/supabase';
+import { prepararFotoEnvioEDA } from '@/lib/fotoEnvioEDA';
 import LogoERN from '@/app/components/LogoERN';
 
 const PERFIL = '6d2be2c2-31f7-4f5a-b62b-db262177bdd3';
@@ -57,8 +58,9 @@ export default function ImagensEditorialERN({
     event: ChangeEvent<HTMLInputElement>,
     finalidade: 'logo' | 'capa',
   ) {
-    const arquivo = event.currentTarget.files?.[0];
+    const escolhido = event.currentTarget.files?.[0];
     event.currentTarget.value = '';
+    const arquivo = escolhido ? await prepararFotoEnvioEDA(escolhido) : undefined; // EDA_FOTO_LEVE_V1
 
     if (!arquivo || trava.current || bloqueado) return;
 
@@ -232,4 +234,4 @@ export default function ImagensEditorialERN({
       </div>
     </section>
   );
-}
+}

@@ -2,7 +2,7 @@
 // usado pela reserva (emitir, PDF, WhatsApp, check-in, cancelar) e pela
 // página "Embarques do dia" (check-in no porto).
 import { supabase } from '@/lib/supabase';
-import { baixarDocumentoPremiumERN } from '@/lib/documentosPremiumERN';
+import { baixarDocumentoPremiumERN } from '@/lib/pdfSobDemandaEDA'; // EDA_PDF_SOB_DEMANDA_V1
 import { consultarIdentificacaoEmpresaERN } from '@/lib/identificacaoEmpresaERN';
 import { carregarChegadaDaReserva, textoChegadaVoucher, textoTransferVoucher } from '@/lib/chegadasERN';
 import { confirmarEDA, perguntarEDA } from '@/lib/dialogoEDA';

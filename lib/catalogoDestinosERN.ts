@@ -108,7 +108,7 @@ export const CATALOGO_DESTINOS_ERN: DestinoCatalogo[] = [
     },
   },
   {
-    tipo: 'curadoria', id: 'lendas-da-amazonia', municipio: '', regiao: 'estado', interesses: ['lendas', 'cultura'], imagem: '/images/fauna/boto-ern.png',
+    tipo: 'curadoria', id: 'lendas-da-amazonia', municipio: '', regiao: 'estado', interesses: ['lendas', 'cultura'], imagem: '/images/fauna/boto-ern.webp',
     textos: {
       PT: { titulo: 'Crendices e lendas', local: 'Todo o Amazonas', descricao: 'Boto, Iara, Curupira, Mapinguari e Cobra Grande: as histórias que os mais velhos contam na beira do rio. Peça para a Iara contar uma.' },
       EN: { titulo: 'Beliefs and legends', local: 'All of Amazonas', descricao: 'The pink river dolphin, Iara, Curupira, Mapinguari and the Great Snake: stories elders tell on the riverbank. Ask Iara to tell you one.' },

@@ -5,9 +5,9 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useLanguage } from '@/app/components/LanguageProvider';
 
 const capturas = [
-  { arquivo: 'dashboard-desktop..png', largura: 1870, altura: 1012 },
-  { arquivo: 'dashboard-desktop2..png', largura: 1870, altura: 1022 },
-  { arquivo: 'agenda-desktop..png', largura: 1872, altura: 1022 },
+  { arquivo: 'dashboard-desktop.webp', largura: 1870, altura: 1012 },
+  { arquivo: 'dashboard-desktop2.webp', largura: 1870, altura: 1022 },
+  { arquivo: 'agenda-desktop.webp', largura: 1872, altura: 1022 },
 ];
 
 const textos = {
@@ -281,4 +281,4 @@ export default function DemonstracaoOperadoresERN() {
       `}</style>
     </section>
   );
-}
+}

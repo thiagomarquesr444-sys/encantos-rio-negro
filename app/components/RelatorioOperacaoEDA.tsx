@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { baixarDocumentoPremiumERN } from '@/lib/documentosPremiumERN';
+import { baixarDocumentoPremiumERN } from '@/lib/pdfSobDemandaEDA'; // EDA_PDF_SOB_DEMANDA_V1
 import { baixarCsvRelatorioERN } from '@/lib/relatoriosERN';
 
 type Op = {

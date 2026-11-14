@@ -1,5 +1,6 @@
 import { resolverMidiasPrivadasERN } from '@/lib/midiasPrivadasERN';
 import { supabase } from '@/lib/supabase';
+import { prepararFotoEnvioEDA } from '@/lib/fotoEnvioEDA';
 import {
   carregarPerfilPublicoEditorialERN,
   type ContextoPerfilPublicoERN,
@@ -80,6 +81,7 @@ export async function enviarImagemPublicacaoERN(
   credito: string,
   consentimento: boolean,
 ): Promise<MidiaPublicacaoERN> {
+  arquivo = await prepararFotoEnvioEDA(arquivo); // EDA_FOTO_LEVE_V1 (só com sinal fraco)
   const formatos: Record<string, string> = {
     'image/jpeg': 'jpg',
     'image/png': 'png',
@@ -162,4 +164,4 @@ export async function enviarImagemPublicacaoERN(
       'Atualize a galeria antes de tentar novamente.',
     );
   }
-}
+}

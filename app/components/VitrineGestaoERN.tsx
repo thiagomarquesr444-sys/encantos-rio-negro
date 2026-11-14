@@ -12,27 +12,27 @@ type Captura = {
 };
 
 const desktop: Captura[] = [
-  { arquivo: 'dashboard-desktop..png', largura: 1870, altura: 1012 },
-  { arquivo: 'dashboard-desktop2..png', largura: 1870, altura: 1022 },
-  { arquivo: 'dashboard-desktop3..png', largura: 1862, altura: 1025 },
-  { arquivo: 'dashboard-desktop4..png', largura: 1873, altura: 1015 },
-  { arquivo: 'dashboard-desktop5..png', largura: 1870, altura: 1021 },
-  { arquivo: 'dashboard-desktop6..png', largura: 1873, altura: 988 },
+  { arquivo: 'dashboard-desktop.webp', largura: 1870, altura: 1012 },
+  { arquivo: 'dashboard-desktop2.webp', largura: 1870, altura: 1022 },
+  { arquivo: 'dashboard-desktop3.webp', largura: 1862, altura: 1025 },
+  { arquivo: 'dashboard-desktop4.webp', largura: 1873, altura: 1015 },
+  { arquivo: 'dashboard-desktop5.webp', largura: 1870, altura: 1021 },
+  { arquivo: 'dashboard-desktop6.webp', largura: 1873, altura: 988 },
 ];
 
 const grupos: Captura[][] = [
   desktop,
   [
-    { arquivo: 'agenda-desktop..png', largura: 1872, altura: 1022 },
-    { arquivo: 'agenda-desktop1..png', largura: 1867, altura: 1027 },
+    { arquivo: 'agenda-desktop.webp', largura: 1872, altura: 1022 },
+    { arquivo: 'agenda-desktop1.webp', largura: 1867, altura: 1027 },
   ],
-  [{ arquivo: 'financeiro-desktop..png', largura: 1871, altura: 1018 }],
+  [{ arquivo: 'financeiro-desktop.webp', largura: 1871, altura: 1018 }],
   [
-    { arquivo: 'publicar-desktop..png', largura: 1871, altura: 1032 },
-    { arquivo: 'publica\u00e7\u00e3o-desktop..png', largura: 1862, altura: 1020 },
+    { arquivo: 'publicar-desktop.webp', largura: 1871, altura: 1032 },
+    { arquivo: 'publica\u00e7\u00e3o-desktop.webp', largura: 1862, altura: 1020 },
   ],
   [
-    { arquivo: 'temas-desktop..png', largura: 1862, altura: 1021 },
+    { arquivo: 'temas-desktop.webp', largura: 1862, altura: 1021 },
     { arquivo: 'menu-mobile.png.jpeg', largura: 720, altura: 1343 },
   ],
   [
@@ -286,4 +286,4 @@ export default function VitrineGestaoERN({
       `}</style>
     </section>
   );
-}
+}

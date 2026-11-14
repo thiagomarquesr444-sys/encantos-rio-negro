@@ -5,7 +5,7 @@ import SeletorERN from './SeletorERN';
 import GraficoMateriaisDemanda from './GraficoMateriaisDemanda';
 import { subtotal, moeda } from '@/lib/calculosMateriaisDemanda';
 import { exportarMateriaisDemanda } from '@/lib/exportarMateriaisDemanda';
-import { exportarChecklistDemandaERN } from '@/lib/exportarChecklistDemandaERN';
+// EDA_PDF_SOB_DEMANDA_V1: o gerador de PDF só é baixado quando o checklist é pedido.
 import { confirmarERN } from '@/lib/confirmarERN';
 import {
   CATEGORIAS_ITEM,
@@ -174,6 +174,7 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange, acre
     setErro('');
     setAviso('');
     try {
+      const { exportarChecklistDemandaERN } = await import('@/lib/exportarChecklistDemandaERN');
       await exportarChecklistDemandaERN(demandaId, versao);
       setAviso('Checklist PDF Premium gerado com a lista salva.');
     } catch (falha) {
@@ -555,4 +556,4 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange, acre
       )}
     </section>
   );
-}
+}

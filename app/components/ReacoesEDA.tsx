@@ -48,7 +48,7 @@ export function ArcoLancaEDA({ ativo, tamanho = 30 }: { ativo: boolean; tamanho?
 export function IconeReacao({ r, ativo }: { r: Reacao; ativo: boolean }) {
   if (r === 'quero_ir') return <ArcoLancaEDA ativo={ativo} />;
   if (r === 'pai_degua') return <span className={`eda-reacao-tucunare${ativo ? ' eda-reacao-pulo' : ''}`} aria-hidden="true" />;
-  const src = r === 'lindeza' ? '/images/marcos/arco-sao-gabriel.svg' : r === 'encantei' ? '/images/fauna/boto-ern.png' : '/images/marcos/maraca-reacao.svg';
+  const src = r === 'lindeza' ? '/images/marcos/arco-sao-gabriel.svg' : r === 'encantei' ? '/images/fauna/boto-reacao.webp' : '/images/marcos/maraca-reacao.svg';
   // eslint-disable-next-line @next/next/no-img-element
   return <img className={`eda-reacao-img${ativo ? ' eda-reacao-pulo' : ''}`} src={src} alt="" width={30} height={22} draggable={false} />;
 }

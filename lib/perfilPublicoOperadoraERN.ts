@@ -1,4 +1,5 @@
 import { supabase } from '@/lib/supabase';
+import { prepararFotoEnvioEDA } from '@/lib/fotoEnvioEDA';
 
 export type ContextoPerfilPublicoERN = {
   usuarioId: string;
@@ -295,6 +296,7 @@ export async function enviarImagemPerfilPublicoERN(
   arquivo: File,
   finalidade: 'logo' | 'capa',
 ): Promise<string> {
+  arquivo = await prepararFotoEnvioEDA(arquivo); // EDA_FOTO_LEVE_V1 (só com sinal fraco)
   await validarContexto(contexto);
 
   const formatos: Record<string, string> = {
@@ -343,4 +345,4 @@ export function linkWhatsAppPerfilERN(
     'e gostaria de informações sobre suas experiências na Amazônia.';
 
   return `https://wa.me/${normalizado}?text=${encodeURIComponent(mensagem)}`;
-}
+}

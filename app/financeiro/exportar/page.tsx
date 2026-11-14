@@ -3,7 +3,7 @@ import '@/app/components/padrao-paginas-eda.css';
 import '@/app/components/padrao-formularios-eda.css';
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { baixarDocumentoPremiumERN } from "@/lib/documentosPremiumERN";
+import { baixarDocumentoPremiumERN } from "@/lib/pdfSobDemandaEDA"; // EDA_PDF_SOB_DEMANDA_V1
 import { mesValidoERN, rotuloMesERN } from "@/lib/periodoMensalERN";
 import { consultarFinanceiroERN, filtrarFinanceiroERN, periodoFinanceiroERN, statusFinanceiroERN, type RegistroFinanceiroERN, type FiltroPeriodoFinanceiroERN } from "@/lib/financeiroConsultaERN";
 const PERIODOS: {valor:FiltroPeriodoFinanceiroERN;nome:string}[]=[{valor:"todos",nome:"Histórico"},{valor:"mes_atual",nome:"Mês atual — vencimentos"},{valor:"receitas",nome:"Receitas"},{valor:"despesas",nome:"Despesas"},{valor:"pendentes",nome:"Pendentes"},{valor:"com_reserva",nome:"Com reserva"}];

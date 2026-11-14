@@ -24,7 +24,7 @@ export default function HeroExperienciasERN({
     <section className="hero-experiencias-ern">
       <div className="midia-abertura">
         <Image
-          src="/images/experiencias/experiencias-hero-horizontal.png"
+          src="/images/experiencias/experiencias-hero-horizontal.webp"
           alt={imageAlt}
           fill
           sizes="100vw"
@@ -311,4 +311,4 @@ export default function HeroExperienciasERN({
       `}</style>
     </section>
   );
-}
+}

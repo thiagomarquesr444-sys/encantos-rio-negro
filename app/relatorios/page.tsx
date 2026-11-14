@@ -5,7 +5,7 @@ import './relatorios-premium.css';
 import { useEffect, useId, useMemo, useRef, useState, type FormEvent, type ReactNode } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import { baixarDocumentoPremiumERN } from '@/lib/documentosPremiumERN';
+import { baixarDocumentoPremiumERN } from '@/lib/pdfSobDemandaEDA'; // EDA_PDF_SOB_DEMANDA_V1
 import { SeletorPeriodoMensalERN } from '@/app/components/PeriodoMensalERN';
 import { dataNoPeriodoERN, mesAtualERN, periodoDaURLERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
 import { consultarIdentificacaoEmpresaERN } from '@/lib/identificacaoEmpresaERN';

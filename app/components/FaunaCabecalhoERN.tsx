@@ -32,7 +32,7 @@ export default function FaunaCabecalhoERN({ altura, oncaNaConta = false, araraEn
             height: altura,
             transform: 'translate(' + animal.deslocamento + ', -50%)',
             clipPath: animal.recorte,
-            backgroundImage: "url('/images/regiao/ern-fauna-menu.png')",
+            backgroundImage: "url('/images/regiao/ern-fauna-menu.webp')",
             backgroundSize: '100% 100%',
             backgroundRepeat: 'no-repeat',
           }}
