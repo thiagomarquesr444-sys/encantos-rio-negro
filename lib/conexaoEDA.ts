@@ -156,3 +156,20 @@ export function aoMudarSinalEDA(fn: (fraco: boolean) => void): () => void {
   window.addEventListener(EVENTO, ouvinte);
   return () => window.removeEventListener(EVENTO, ouvinte);
 }
+
+// EDA_MODO_LEVE_V1: versão leve (480p) de um vídeo do site, usada só com sinal fraco.
+// '/videos destinos/praiagrande.MP4' -> '/videos/leve/praiagrande.mp4'
+export function videoLeveEDA(src: string): string {
+  if (!src.startsWith('/videos')) return src; // vídeos de operadoras (Supabase) ficam como estão
+  const nome = decodeURIComponent(src.split('/').pop() ?? '').replace(/\.[^.]+$/, '');
+  const slug = nome.normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().replace(/[^a-z0-9.-]/g, '-');
+  return `/videos/leve/${slug}.mp4`;
+}
+
+// EDA_MODO_LEVE_V1: foto enviada pela operadora (Supabase) em versão reduzida,
+// pelo otimizador de imagens da Vercel — só usada com sinal fraco.
+const PREFIXO_FOTOS = 'https://leltgfdonsbmsstyprss.supabase.co/storage/v1/object/public/';
+export function fotoLeveEDA(url: string, fraco: boolean, largura: 640 | 828 = 828): string {
+  if (!fraco || !url || !url.startsWith(PREFIXO_FOTOS)) return url;
+  return `/_next/image?url=${encodeURIComponent(url)}&w=${largura}&q=60`;
+}

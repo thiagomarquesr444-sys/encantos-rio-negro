@@ -9,6 +9,7 @@ import { supabase } from '@/lib/supabase';
 import SegurancaContaERN from '@/app/components/SegurancaContaERN';
 import DuasEtapasContaEDA from '@/app/components/DuasEtapasContaEDA';
 import SeletorTemaERN from '@/app/components/SeletorTemaERN';
+import ModoEconomicoEDA from '@/app/components/ModoEconomicoEDA';
 import { chavePixAmbigua, normalizarChavePix, TIPOS_CHAVE_PIX, type TipoChavePix } from '@/lib/pixEDA';
 
 type Tema = 'verde' | 'branco';
@@ -560,6 +561,9 @@ export default function ConfiguracoesPage() {
                   bloqueado={salvando || salvandoTema}
                 />
               </div>
+
+              {/* EDA_MODO_LEVE_V1: vale para este aparelho */}
+              <ModoEconomicoEDA variante="painel" />
             </section>
 
             <section className={painel} aria-labelledby="titulo-identificacao">

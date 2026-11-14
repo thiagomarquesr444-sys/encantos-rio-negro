@@ -1,5 +1,7 @@
 'use client';
 import { CompartilharVivenciaERN, ListaVivenciasERN } from './VivenciasERN';
+import { useSinalFracoEDA } from '@/app/components/SinalEDA';
+import { fotoLeveEDA } from '@/lib/conexaoEDA';
 import VitrinePasseiosEDA from './VitrinePasseiosEDA';
 import OfertaChipEDA from './OfertaChipEDA';
 
@@ -157,10 +159,11 @@ function publicationDate(value: string, lang: string) {
 }
 function Photo({ src, alt, className = '', eager = false, errorText = '' }: { src: string; alt: string; className?: string; eager?: boolean; errorText?: string }) {
   const [error, setError] = useState(false);
+  const fraco = useSinalFracoEDA(); // EDA_MODO_LEVE_V1: foto reduzida só com sinal fraco
   useEffect(() => setError(false), [src]);
   if (error) return <div className={`ern-r-photo-fallback ${className}`} role="img" aria-label={alt}>{errorText || 'EDA'}</div>;
   // eslint-disable-next-line @next/next/no-img-element
-  return <img src={src} alt={alt} className={className} loading={eager ? 'eager' : 'lazy'} decoding="async" onError={() => setError(true)} />;
+  return <img src={fotoLeveEDA(src, fraco)} alt={alt} className={className} loading={eager ? 'eager' : 'lazy'} decoding="async" onError={() => setError(true)} />;
 }
 function Avatar({ author }: { author: PublicacaoPublica['autor'] }) {
   const words = author.nome_publico.trim().split(/\s+/).filter(Boolean);

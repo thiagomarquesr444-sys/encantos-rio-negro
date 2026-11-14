@@ -1427,3 +1427,17 @@ html[data-ern-portal="escuro"] .ern-publico {
 .ern-gestao :is(code, kbd, samp, pre) {
   font-family: var(--font-geist-mono), ui-monospace, monospace;
 }
+
+/* EDA_MODO_LEVE_V1 — só vale com sinal fraco (html[data-eda-sinal="fraco"]),
+   ligado automaticamente pelo monitor de sinal ou pelo botão "Modo econômico".
+   Com sinal normal nada aqui se aplica: o visual segue igual ao desenvolvido.
+   Tira as animações contínuas (pesam no celular simples). Cores, textos,
+   imagens e layout continuam iguais. */
+html[data-eda-sinal="fraco"] *,
+html[data-eda-sinal="fraco"] *::before,
+html[data-eda-sinal="fraco"] *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
+}

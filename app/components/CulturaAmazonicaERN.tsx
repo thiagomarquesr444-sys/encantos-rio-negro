@@ -2,6 +2,7 @@
 
 import { useRef, useState } from 'react';
 import { useLanguage } from '@/app/components/LanguageProvider';
+import { sinalFracoEDA, videoLeveEDA } from '@/lib/conexaoEDA';
 
 const colecoes = [
   {
@@ -160,6 +161,7 @@ function VideoCulturaERN({
   repetir: string;
 }) {
   const [aberto, setAberto] = useState(false);
+  const [leve, setLeve] = useState(false); // EDA_MODO_LEVE_V1
   const [erro, setErro] = useState(false);
   const vertical = item.altura > item.largura;
   const poster = '/images/cultura/' + item.capa;
@@ -191,12 +193,12 @@ function VideoCulturaERN({
           onError={() => setErro(true)}
           className="absolute inset-0 h-full w-full object-contain"
         >
-          <source src={'/videos/' + item.arquivo} type="video/mp4" />
+          <source src={leve ? videoLeveEDA('/videos/' + item.arquivo) : '/videos/' + item.arquivo} type="video/mp4" />
         </video>
       ) : (
         <button
           type="button"
-          onClick={() => setAberto(true)}
+          onClick={() => { setLeve(sinalFracoEDA()); setAberto(true); }}
           aria-label={assistir + ': ' + item.titulo}
           className="group absolute inset-0 h-full w-full focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-inset focus-visible:ring-[#e3b567]"
         >

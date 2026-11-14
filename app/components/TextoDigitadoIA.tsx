@@ -4,6 +4,7 @@
 // Respeita "reduzir movimento" do sistema e pode ser pulado com um clique.
 
 import { useEffect, useState, type ReactNode } from 'react';
+import { sinalFracoEDA } from '@/lib/conexaoEDA';
 
 export default function TextoDigitadoIA({
   texto,
@@ -23,7 +24,8 @@ export default function TextoDigitadoIA({
 
   useEffect(() => {
     if (!animar) { setN(texto.length); return; }
-    const reduzir = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    // EDA_MODO_LEVE_V1: com sinal fraco o texto aparece pronto (sem letra a letra).
+    const reduzir = typeof window !== 'undefined' && (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || sinalFracoEDA());
     if (reduzir) { setN(texto.length); aoTerminar?.(); return; }
     setN(0);
     const passo = msPorLetra ? 1 : Math.max(1, Math.round(texto.length / 220));

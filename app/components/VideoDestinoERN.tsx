@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useLanguage } from './LanguageProvider';
+import { sinalFracoEDA, videoLeveEDA } from '@/lib/conexaoEDA';
 
 type Props = {
   title: string;
@@ -58,7 +59,9 @@ export default function VideoDestinoERN({ title, poster, videos }: Props) {
   const [bloqueado, setBloqueado] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const capaRef = useRef<HTMLButtonElement>(null);
-  const src = videos[selecionado];
+  // EDA_MODO_LEVE_V1: com sinal fraco, toca a versão leve (480p). Decide no play.
+  const [leve, setLeve] = useState(false);
+  const src = leve ? videoLeveEDA(videos[selecionado]) : videos[selecionado];
 
   useEffect(() => {
     const video = videoRef.current;
@@ -104,6 +107,7 @@ export default function VideoDestinoERN({ title, poster, videos }: Props) {
     setErro(false);
     setBloqueado(false);
     setCarregando(true);
+    setLeve(sinalFracoEDA());
     setIniciado(true);
   }
 
@@ -332,4 +336,4 @@ export default function VideoDestinoERN({ title, poster, videos }: Props) {
       `}</style>
     </section>
   );
-}
+}

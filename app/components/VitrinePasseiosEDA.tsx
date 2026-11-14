@@ -3,6 +3,8 @@
 // EDA_PASSEIOS_PORTAL_V1: vitrine pública dos passeios publicados pelas operadoras.
 
 import SeloEDA from './SeloEDA';
+import { useSinalFracoEDA } from '@/app/components/SinalEDA';
+import { fotoLeveEDA } from '@/lib/conexaoEDA';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
@@ -104,6 +106,7 @@ type Estado =
 
 function Fotos({ passeio, grande }: { passeio: PasseioPublicoEDA; grande?: boolean }) {
   const trilho = useRef<HTMLDivElement>(null);
+  const fraco = useSinalFracoEDA(); // EDA_MODO_LEVE_V1
   const [atual, setAtual] = useState(0);
   const fotos = passeio.fotos;
 
@@ -127,9 +130,9 @@ function Fotos({ passeio, grande }: { passeio: PasseioPublicoEDA; grande?: boole
         {fotos.map((url, i) => (
           <div key={url} className="vp-slide">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="vp-fundo" src={url} alt="" aria-hidden="true" loading="lazy" />
+            <img className="vp-fundo" src={fotoLeveEDA(url, fraco, 640)} alt="" aria-hidden="true" loading="lazy" />
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className="vp-img" src={url} alt={i === 0 ? passeio.nome : ''} loading={i === 0 ? 'eager' : 'lazy'} />
+            <img className="vp-img" src={fotoLeveEDA(url, fraco)} alt={i === 0 ? passeio.nome : ''} loading={i === 0 ? 'eager' : 'lazy'} />
           </div>
         ))}
       </div>

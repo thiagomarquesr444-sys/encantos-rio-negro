@@ -6,6 +6,7 @@
 // vez; com "reduzir movimento" o texto aparece pronto.
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { sinalFracoEDA } from '@/lib/conexaoEDA';
 
 export type TrechoDigitado = { texto: string; forte?: boolean };
 
@@ -40,8 +41,9 @@ export default function DigitacaoEDA({
     pulou.current = false;
     if (!iniciar) return;
 
+    // EDA_MODO_LEVE_V1: com sinal fraco o texto aparece pronto (sem letra a letra).
     const reduzir = typeof window !== 'undefined'
-      && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+      && (window.matchMedia?.('(prefers-reduced-motion: reduce)').matches || sinalFracoEDA());
     if (reduzir || total === 0) {
       setMostrados(total);
       setTerminou(true);

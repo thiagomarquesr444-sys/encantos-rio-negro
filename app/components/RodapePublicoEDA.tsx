@@ -3,6 +3,7 @@
 import Link from 'next/link';
 
 import LogoERN from '@/app/components/LogoERN';
+import ModoEconomicoEDA from '@/app/components/ModoEconomicoEDA';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import { EMPRESA_EDA } from '@/lib/empresaEDA';
 
@@ -86,6 +87,8 @@ export default function RodapePublicoEDA() {
           >
             {t.feedback}
           </button>
+          {/* EDA_MODO_LEVE_V1 */}
+          <ModoEconomicoEDA />
         </nav>
       </div>
       <div className="border-t border-white/10">
