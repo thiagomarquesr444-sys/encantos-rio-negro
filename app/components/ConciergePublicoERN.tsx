@@ -1736,6 +1736,69 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
         .iara-audio-cancelar, .iara-audio-erro { color: #f0a08f; }
         .iara-audio-cancelar:hover { background: rgb(240 160 143 / 12%); }
         .chat-rodape button { color: #f4c77e; }
+        /* IARA_FABLEPREMIUM_V2: acabamento premium da conversa (profundidade, fios dourados, vidro) */
+        dialog {
+          background:
+            radial-gradient(120% 60% at 100% 0%, rgb(244 199 126 / 10%), transparent 60%),
+            radial-gradient(90% 50% at 0% 100%, rgb(40 123 114 / 16%), transparent 65%),
+            linear-gradient(180deg, #0c1a16, #07110e);
+          box-shadow: 0 40px 110px rgb(0 0 0 / 65%), 0 0 0 1px rgb(255 255 255 / 5%), inset 0 1px 0 rgb(255 255 255 / 8%);
+        }
+        .informacoes { background: rgb(255 255 255 / 4%); backdrop-filter: blur(10px); }
+        .informacoes p { font-size: 11px; line-height: 1.55; }
+        .mensagens {
+          padding: 22px 16px 18px;
+          scrollbar-width: thin;
+          -webkit-mask-image: linear-gradient(180deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+          mask-image: linear-gradient(180deg, transparent 0, #000 16px, #000 calc(100% - 16px), transparent 100%);
+        }
+        .linha { margin-bottom: 16px; }
+        .balao {
+          position: relative;
+          padding: 14px 16px;
+          border-radius: 20px 20px 20px 6px;
+          background: linear-gradient(180deg, rgb(255 255 255 / 8%), rgb(255 255 255 / 3%));
+          border: 1px solid rgb(255 255 255 / 10%);
+          box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%), 0 14px 30px -18px rgb(0 0 0 / 75%);
+        }
+        .assistente .balao::before {
+          content: '';
+          position: absolute; left: 16px; right: 42%; top: -1px; height: 1px;
+          background: linear-gradient(90deg, rgb(244 199 126 / 75%), transparent);
+        }
+        .assistente .autor {
+          display: inline-flex; align-items: center; gap: 7px;
+          font-size: 10.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase;
+        }
+        .assistente .autor::before {
+          content: '';
+          width: 6px; height: 6px; border-radius: 50%;
+          background: radial-gradient(circle at 35% 35%, #fbe3ae, #e3a144);
+          box-shadow: 0 0 0 3px rgb(244 199 126 / 14%);
+        }
+        .visitante .balao {
+          border-radius: 20px 20px 6px 20px;
+          border: 1px solid rgb(244 199 126 / 24%);
+          background: linear-gradient(180deg, #23604c, #143a2e);
+          box-shadow: inset 0 1px 0 rgb(255 255 255 / 12%), 0 14px 30px -16px rgb(0 0 0 / 70%);
+        }
+        .balao p { font-size: 14.5px; line-height: 1.65; }
+        .mensagens :global(.iara-link) {
+          padding: 8px 14px; border-radius: 999px;
+          box-shadow: inset 0 1px 0 rgb(255 255 255 / 6%);
+          transition: background .2s, border-color .2s, transform .2s;
+        }
+        .mensagens :global(.iara-link:hover) { transform: translateY(-1px); }
+        .compositor {
+          margin: 12px 14px 8px; padding: 6px 6px 6px 8px;
+          background: linear-gradient(180deg, rgb(255 255 255 / 9%), rgb(255 255 255 / 4%));
+          border: 1px solid rgb(244 199 126 / 28%);
+          box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%), 0 16px 34px -18px rgb(0 0 0 / 80%);
+          transition: border-color .2s, box-shadow .2s;
+        }
+        .compositor:focus-within { border-color: #f4c77e; box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%), 0 0 0 4px rgb(244 199 126 / 16%); }
+        .compositor .principal { box-shadow: inset 0 1px 0 rgb(255 255 255 / 55%), 0 10px 22px -8px rgb(227 161 68 / 60%); }
+        .chat-rodape button { text-underline-offset: 3px; }
         /* Convite da Iara: discreto no celular, sem cobrir o conteúdo */
         @media (max-width: 640px) {
           .iara-oferta { left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); max-width: none; padding: 10px 12px; gap: 10px; }
