@@ -29,12 +29,13 @@ export default function TextoDigitadoIA({
     if (reduzir) { setN(texto.length); aoTerminar?.(); return; }
     setN(0);
     const passo = msPorLetra ? 1 : Math.max(1, Math.round(texto.length / 220));
+    // O aviso de término fica fora do setN: chamado dentro dele, o React acusava
+    // "Cannot update a component while rendering a different component".
+    let atual = 0;
     const id = window.setInterval(() => {
-      setN(atual => {
-        const prox = Math.min(texto.length, atual + passo);
-        if (prox >= texto.length) { window.clearInterval(id); aoTerminar?.(); }
-        return prox;
-      });
+      atual = Math.min(texto.length, atual + passo);
+      setN(atual);
+      if (atual >= texto.length) { window.clearInterval(id); aoTerminar?.(); }
     }, msPorLetra ?? 16);
     return () => window.clearInterval(id);
     // aoTerminar muda a cada render; o efeito só depende do texto.
