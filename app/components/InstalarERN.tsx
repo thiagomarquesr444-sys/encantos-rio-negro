@@ -34,6 +34,7 @@ export default function InstalarERN() {
   const [disponivel, setDisponivel] = useState(false);
   const [instalando, setInstalando] = useState(false);
   const [erro, setErro] = useState('');
+  const iosRef = useRef(false);
 
   useEffect(() => {
     montado.current = true;
@@ -57,6 +58,15 @@ export default function InstalarERN() {
       if (modoApp.matches) instalado();
     }
 
+    // EDA_IOS_V1: iPhone não tem o convite automático; mostramos o passo a passo.
+    const ua = navigator.userAgent;
+    const ios = /iPad|iPhone|iPod/.test(ua) || (ua.includes('Macintosh') && navigator.maxTouchPoints > 1);
+    const jaInstalado = modoApp.matches || (navigator as Navigator & { standalone?: boolean }).standalone === true;
+    if (ios && !jaInstalado && !dispensadoRecentemente()) {
+      iosRef.current = true;
+      setDisponivel(true);
+    }
+
     window.addEventListener('beforeinstallprompt', receberConvite);
     window.addEventListener('appinstalled', instalado);
     modoApp.addEventListener('change', mudarModo);
@@ -71,6 +81,10 @@ export default function InstalarERN() {
   }, []);
 
   async function instalar() {
+    if (iosRef.current) {
+      setErro('No Safari, toque em Compartilhar (quadrado com seta) e depois em \u201cAdicionar \u00e0 Tela de In\u00edcio\u201d.');
+      return;
+    }
     const evento = convite.current;
     if (!evento || ocupado.current) return;
 
@@ -159,4 +173,4 @@ export default function InstalarERN() {
       `}</style>
     </aside>
   );
-}
+}
