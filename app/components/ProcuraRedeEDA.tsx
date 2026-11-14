@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ArcoLancaEDA, IconeReacao } from './ReacoesEDA';
+import ArcoFlechaERN from './ArcoFlechaERN';
 import type { Reacao } from '@/lib/reacoesEDA';
 import './reacoes-eda.css';
 
@@ -110,7 +111,7 @@ export default function ProcuraRedeEDA() {
                   <span className="eda-procura-pos">{i + 1}</span>
                   <span className="eda-procura-nome">{p.nome}</span>
                   <span className="eda-procura-barra" aria-hidden="true"><i style={{ width: `${((p.quero || p.total) / maior) * 100}%` }} /></span>
-                  <b title={`${p.quero} “Quero ir!” · ${p.total} reações`}>{p.quero}<small>🏹</small></b>
+                  <b title={`${p.quero} “Quero ir!” · ${p.total} reações`}>{p.quero}<small aria-hidden="true"><ArcoFlechaERN tamanho={13} /></small></b>
                 </li>
               ))}
             </ol>

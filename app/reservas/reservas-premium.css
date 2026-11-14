@@ -328,3 +328,4 @@
 .eda-res-vinculos a { color: var(--p-ouro, var(--ern-destaque)); text-decoration: underline; text-underline-offset: 2px; }
 .eda-res-vinculos i { font-style: normal; }
 .eda-res-sem-demanda { opacity: .8; }
+.eda-res-vinculos i svg { display: inline-block; vertical-align: -2px; }

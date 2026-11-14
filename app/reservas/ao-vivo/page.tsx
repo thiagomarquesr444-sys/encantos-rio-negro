@@ -103,7 +103,7 @@ export default function OperacaoAoVivoPage() {
                   onClick={() => setSelecionada(v.chave)} style={{ borderLeftColor: COR[tom] }}>
                   <span className="av-item-topo"><b>{v.passeio || 'Viagem'}</b><PillEDA tom={fase.tom}>{fase.rotulo}</PillEDA></span>
                   <small>{v.inicio === v.fim ? dt(v.inicio) : `${dt(v.inicio)} a ${dt(v.fim)}`}{v.horario ? ` · ${v.horario.slice(0, 5)}` : ''} · {v.pessoas} pessoa(s){v.embarcacao ? ` · ${v.embarcacao.nome}` : ''}</small>
-                  <small>{v.posicao ? `📍 ${tempoRelativo(v.posicao.em)}` : '📍 sem localização'}{alertas.length ? ` · ${alertas.filter((a) => a.tom !== 'nt').length} alerta(s)` : ' · tudo certo'}</small>
+                  <small>{v.posicao ? `Posição ${tempoRelativo(v.posicao.em)}` : 'Sem localização'}{alertas.length ? ` · ${alertas.filter((a) => a.tom !== 'nt').length} alerta(s)` : ' · tudo certo'}</small>
                 </button>
               ))}
             </section>

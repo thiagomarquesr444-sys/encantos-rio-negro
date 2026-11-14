@@ -370,6 +370,7 @@ export default function Sidebar() {
     setSaindo(true);
     setErroSaida(null);
     try {
+      try { sessionStorage.removeItem('eda.conversa.v1'); } catch { /* sem armazenamento */ }
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       window.location.assign('/acesso');

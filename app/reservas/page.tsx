@@ -9,6 +9,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import IconeERN from '@/app/components/IconeERN';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import VoucherReservaEDA from '@/app/components/VoucherReservaEDA';
@@ -262,15 +263,15 @@ function VinculosDaReserva({ v, detalhado = false }: { v?: VinculoReservaEDA; de
   return (
     <span className="eda-res-vinculos">
       <span>
-        <i aria-hidden="true">⛵</i> {v.passeio ?? 'Sem passeio'}
+        <i aria-hidden="true"><IconeERN nome="rio" tamanho={14} /></i> {v.passeio ?? 'Sem passeio'}
         {v.saida_inicio ? ` · saída ${dia(v.saida_inicio)}${v.saida_horario ? ` ${v.saida_horario.slice(0, 5)}` : ''}` : ''}
       </span>
       {v.demanda_id ? (
         detalhado
-          ? <Link href={`/demandas/editar/${v.demanda_id}`}><i aria-hidden="true">📦</i> Demanda: {v.demanda_titulo}</Link>
-          : <span><i aria-hidden="true">📦</i> Demanda: {v.demanda_titulo}</span>
+          ? <Link href={`/demandas/editar/${v.demanda_id}`}><i aria-hidden="true"><IconeERN nome="lista" tamanho={14} /></i> Demanda: {v.demanda_titulo}</Link>
+          : <span><i aria-hidden="true"><IconeERN nome="lista" tamanho={14} /></i> Demanda: {v.demanda_titulo}</span>
       ) : (
-        <span className="eda-res-sem-demanda"><i aria-hidden="true">📦</i> Sem demanda{v.saida_inicio ? ' para esta saída' : ''}</span>
+        <span className="eda-res-sem-demanda"><i aria-hidden="true"><IconeERN nome="lista" tamanho={14} /></i> Sem demanda{v.saida_inicio ? ' para esta saída' : ''}</span>
       )}
     </span>
   );

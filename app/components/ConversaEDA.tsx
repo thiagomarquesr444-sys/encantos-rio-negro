@@ -48,7 +48,7 @@ function corpoBoasVindas(pagina: string): string {
   const area = ROTULO_PAGINA[pagina];
   const op = p === 'madrugada'
     ? [
-      'O rio está quieto a esta hora, mas eu sigo de vigia por aqui. 🌙 O que você precisa?',
+      'O rio está quieto a esta hora, mas eu sigo de vigia por aqui. O que você precisa?',
       'Fico contigo nessa madrugada. Me diz o que mudar ou conferir que eu resolvo.',
       'Enquanto Barcelos dorme, eu adianto o que você pedir. Por onde começamos?',
     ]
@@ -78,6 +78,36 @@ function formatar(texto: string): ReactNode[] {
   ));
 }
 
+const CHAVE_CONVERSA = 'eda.conversa.v1';
+const ESTADOS_ACAO: EstadoAcao[] = ['pendente', 'executando', 'feito', 'cancelado', 'erro', 'desfazendo', 'desfeito'];
+// Confere tudo que volta do armazenamento antes de mostrar (nunca confia no que está guardado).
+function restaurarMsgs(valor: unknown): Msg[] {
+  if (!Array.isArray(valor)) return [];
+  const lista: Msg[] = [];
+  for (const bruto of valor.slice(-40)) {
+    const x = bruto as Partial<Msg> | null;
+    if (!x || (x.papel !== 'usuario' && x.papel !== 'eda') || typeof x.texto !== 'string') continue;
+    const m: Msg = { papel: x.papel, texto: x.texto.slice(0, 4000) };
+    if (typeof x.whatsapp === 'string' && x.whatsapp.startsWith('https://wa.me/')) m.whatsapp = x.whatsapp;
+    if (Array.isArray(x.links)) m.links = x.links.filter(linkSeguro).slice(0, 3);
+    if (Array.isArray(x.acoes) && x.acoes.length && x.acoes.every(acaoValida)) {
+      m.acoes = x.acoes;
+      m.estados = x.acoes.map((_, i) => {
+        const e = Array.isArray(x.estados) ? x.estados[i] : undefined;
+        // Ação que estava no meio de gravar quando a página mudou: confira antes de repetir.
+        if (e === 'executando' || e === 'desfazendo') return 'erro';
+        return e && ESTADOS_ACAO.includes(e) ? e : 'pendente';
+      });
+      m.logs = x.acoes.map((_, i) => {
+        const l = Array.isArray(x.logs) ? x.logs[i] : null;
+        return typeof l === 'string' ? l : null;
+      });
+    }
+    lista.push(m);
+  }
+  return lista;
+}
+
 export default function ConversaEDA() {
   const pathname = usePathname() ?? '';
   const router = useRouter();
@@ -103,13 +133,38 @@ export default function ConversaEDA() {
   const [avisos, setAvisos] = useState<AvisoEDA[]>([]);
   const [copiado, setCopiado] = useState<number | null>(null);
   const [nome, setNome] = useState('');
+  // EDA_CONVERSA_PERSISTENTE_V1: a conversa acompanha a pessoa entre as páginas da gestão.
+  // Fica só nesta aba (sessionStorage), vale 12 h, é da conta que a escreveu e some ao sair.
+  const uidRef = useRef<string | null>(null);
+  const restauradoRef = useRef(false);
   useEffect(() => {
     void supabase.auth.getUser().then(async ({ data }) => {
-      if (!data.user) return;
+      if (!data.user) {
+        try { sessionStorage.removeItem(CHAVE_CONVERSA); } catch { /* sem armazenamento */ }
+        return;
+      }
+      uidRef.current = data.user.id;
+      try {
+        const g = JSON.parse(sessionStorage.getItem(CHAVE_CONVERSA) || 'null') as { uid?: string; em?: number; aberto?: boolean; msgs?: unknown } | null;
+        if (g && g.uid === data.user.id && typeof g.em === 'number' && Date.now() - g.em < 12 * 3600_000) {
+          const lista = restaurarMsgs(g.msgs);
+          if (lista.length) {
+            setMsgs(m => (m.some(x => x.papel === 'usuario') ? m : lista));
+            if (g.aberto) setAberto(true);
+          }
+        } else if (g) sessionStorage.removeItem(CHAVE_CONVERSA);
+      } catch { /* conversa guardada inválida: começa do zero */ }
+      restauradoRef.current = true;
       const { data: perfil } = await supabase.from('perfis').select('nome').eq('id', data.user.id).maybeSingle();
       setNome(String(perfil?.nome ?? '').trim().split(/\s+/)[0] ?? '');
     });
   }, []);
+  useEffect(() => {
+    if (!restauradoRef.current || !uidRef.current || !msgs.length) return;
+    try {
+      sessionStorage.setItem(CHAVE_CONVERSA, JSON.stringify({ uid: uidRef.current, em: Date.now(), aberto, msgs: msgs.filter(m => !m.avisos).slice(-40) }));
+    } catch { /* sem armazenamento */ }
+  }, [msgs, aberto]);
   // Avisos automáticos ainda não lidos (gerados pela rotina diária).
   // EDA_AO_VIVO_V1: aviso novo chega no balão sem recarregar a página.
   const [revisaoAvisos, setRevisaoAvisos] = useState(0);
