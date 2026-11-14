@@ -1,0 +1,67 @@
+/* EDA_EMBARQUES_PREMIUM_V1: Embarques do dia no padrão Encantos (Noite/Claro). */
+.eda-emb-porto {
+  position: relative; overflow: hidden; margin-top: 16px; border-radius: 22px; min-height: 190px;
+  border: 1px solid var(--p-borda); background: var(--p-painel);
+  display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
+}
+.eda-emb-porto-img { position: relative; min-height: 190px; }
+.eda-emb-porto-img img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.eda-emb-porto-img::after {
+  content: ''; position: absolute; inset: 0;
+  background: linear-gradient(90deg, rgb(4 12 9 / 15%) 0%, rgb(4 12 9 / 35%) 60%, var(--p-painel) 100%);
+}
+.eda-emb-porto-txt { position: absolute; left: 22px; bottom: 18px; z-index: 1; color: #f6f1e4; text-shadow: 0 2px 12px rgb(0 0 0 / 55%); max-width: 70%; }
+.eda-emb-porto-txt small { display: block; font-size: 11px; letter-spacing: .14em; text-transform: uppercase; opacity: .85; }
+.eda-emb-porto-txt b { display: block; font-size: 22px; line-height: 1.2; margin-top: 4px; }
+.eda-emb-prox { padding: 20px 22px; display: flex; flex-direction: column; justify-content: center; gap: 6px; }
+.eda-emb-prox p { margin: 0; }
+.eda-emb-rot { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--p-sec); }
+.eda-emb-hora { font-size: 40px; font-weight: 700; line-height: 1; color: var(--p-ouro); font-variant-numeric: tabular-nums; }
+.eda-emb-sub { color: var(--p-sec); font-size: 14px; }
+
+.eda-emb-kpis { display: grid; gap: 12px; margin-top: 16px; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); }
+.eda-emb-kpi {
+  position: relative; overflow: hidden; border-radius: 18px; padding: 16px 16px 14px;
+  border: 1px solid var(--p-borda); background: var(--p-painel); box-shadow: var(--p-sombra);
+}
+.eda-emb-kpi::before {
+  content: ''; position: absolute; right: -30px; top: -30px; width: 110px; height: 110px; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--k, var(--p-ouro)) 22%, transparent), transparent 70%);
+}
+.eda-emb-kpi-ic { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center;
+  color: var(--k, var(--p-ouro)); background: color-mix(in srgb, var(--k, var(--p-ouro)) 14%, transparent); }
+.eda-emb-kpi p { margin: 10px 0 0; font-size: 12px; color: var(--p-sec); }
+.eda-emb-kpi b { display: block; font-size: 26px; margin-top: 2px; font-variant-numeric: tabular-nums; }
+
+.eda-emb-lista { margin-top: 16px; display: grid; gap: 14px; }
+.eda-emb-card {
+  display: grid; grid-template-columns: 210px minmax(0, 1fr); overflow: hidden; border-radius: 20px;
+  border: 1px solid var(--p-borda); background: var(--p-painel); box-shadow: var(--p-sombra);
+  transition: border-color .25s ease;
+}
+.eda-emb-card:hover { border-color: color-mix(in srgb, var(--p-ouro) 40%, var(--p-borda)); }
+.eda-emb-card[data-feito="1"] { opacity: .82; }
+.eda-emb-foto { position: relative; min-height: 170px; }
+.eda-emb-foto img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.eda-emb-foto::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgb(0 0 0 / 5%) 40%, rgb(0 0 0 / 60%)); }
+.eda-emb-foto-hora { position: absolute; left: 12px; bottom: 10px; z-index: 1; color: #fff; font-weight: 700; font-size: 22px; text-shadow: 0 2px 10px rgb(0 0 0 / 60%); }
+.eda-emb-foto-hora small { display: block; font-size: 10px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase; opacity: .85; }
+.eda-emb-corpo { padding: 16px 18px; min-width: 0; }
+.eda-emb-topo { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px; align-items: flex-start; }
+.eda-emb-nome { margin: 0; font-size: 17px; font-weight: 700; }
+.eda-emb-meta { margin: 2px 0 0; color: var(--p-sec); font-size: 13px; }
+.eda-emb-cod { font-family: ui-monospace, monospace; font-size: 12px; padding: 2px 8px; border-radius: 999px; border: 1px dashed var(--p-borda); color: var(--p-ouro); }
+.eda-emb-dados { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; margin-top: 12px; }
+.eda-emb-dado { border-radius: 12px; padding: 8px 10px; background: var(--p-suave); }
+.eda-emb-dado span { display: block; font-size: 11px; color: var(--p-sec); }
+.eda-emb-dado b { display: block; font-size: 14px; margin-top: 2px; overflow-wrap: anywhere; }
+.eda-emb-alerta { margin: 10px 0 0; font-size: 13px; color: var(--p-amar); }
+.eda-emb-acoes { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+
+@media (max-width: 720px) {
+  .eda-emb-porto { grid-template-columns: 1fr; }
+  .eda-emb-porto-img::after { background: linear-gradient(180deg, rgb(4 12 9 / 10%), rgb(4 12 9 / 55%)); }
+  .eda-emb-card { grid-template-columns: 1fr; }
+  .eda-emb-foto { min-height: 140px; }
+}
+@media (prefers-reduced-motion: reduce) { .eda-emb-card { transition: none; } }
