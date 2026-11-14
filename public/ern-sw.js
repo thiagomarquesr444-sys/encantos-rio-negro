@@ -14,6 +14,7 @@ const CACHE_OFFLINE = 'ern-offline-base-' + VERSAO;
 const CACHE_ESTATICO = 'eda-estatico-' + VERSAO;
 const CACHE_MIDIA = 'eda-midia-' + VERSAO;
 const CACHE_PAGINAS = 'eda-paginas-' + VERSAO;
+const CACHE_GESTAO = 'eda-gestao-' + VERSAO;
 const PAGINA_OFFLINE = '/ern-offline.html';
 
 const LIMITE_ESTATICO = 300;
@@ -30,6 +31,15 @@ const PAGINAS_PUBLICAS = [
   /^\/experiencias(\/[^/]+)?\/?$/,
   /^\/(precos|operadores|contato|termos|privacidade|reembolso|pesca-esportiva)\/?$/,
 ];
+
+// Telas da operadora que precisam abrir sem internet no porto/rio.
+// Guardamos só a "moldura" da tela (sem dados): os dados vêm do aparelho
+// (cópia do dia, apagada ao sair da conta) ou do servidor.
+const PAGINAS_GESTAO_OFFLINE = [/^\/vouchers\/?$/];
+
+function paginaGestaoOffline(url) {
+  return PAGINAS_GESTAO_OFFLINE.some(r => r.test(url.pathname)) && !url.search;
+}
 
 function paginaPublica(url) {
   return PAGINAS_PUBLICAS.some(r => r.test(url.pathname)) && !url.search;
@@ -80,7 +90,7 @@ self.addEventListener('install', event => {
 
 self.addEventListener('activate', event => {
   event.waitUntil((async () => {
-    const atuais = [CACHE_OFFLINE, CACHE_ESTATICO, CACHE_MIDIA, CACHE_PAGINAS];
+    const atuais = [CACHE_OFFLINE, CACHE_ESTATICO, CACHE_MIDIA, CACHE_PAGINAS, CACHE_GESTAO];
     const nomes = await caches.keys();
     await Promise.all(
       nomes
@@ -97,6 +107,7 @@ self.addEventListener('message', event => {
     event.waitUntil((async () => {
       await caches.delete(CACHE_PAGINAS);
       await caches.delete(CACHE_MIDIA);
+      await caches.delete(CACHE_GESTAO);
     })());
   }
 });
@@ -118,11 +129,12 @@ async function telaOffline() {
 
 // Páginas públicas: rede primeiro. Se a rede cair ou passar de 6 s,
 // mostra a última versão guardada e atualiza por trás.
-async function paginaRedePrimeiro(event) {
+async function paginaRedePrimeiro(event, nomeCache) {
   const pedido = event.request;
-  const cache = await caches.open(CACHE_PAGINAS);
+  const cache = await caches.open(nomeCache);
   const daRede = fetch(pedido).then(async resposta => {
-    await guardar(CACHE_PAGINAS, pedido, resposta.clone(), LIMITE_PAGINAS);
+    // Redirecionou (ex.: login expirado) não é guardado.
+    if (!resposta.redirected) await guardar(nomeCache, pedido, resposta.clone(), LIMITE_PAGINAS);
     return resposta;
   });
   event.waitUntil(daRede.catch(() => undefined));
@@ -175,7 +187,9 @@ self.addEventListener('fetch', event => {
 
   if (pedido.mode === 'navigate') {
     if (paginaPublica(url)) {
-      event.respondWith(paginaRedePrimeiro(event));
+      event.respondWith(paginaRedePrimeiro(event, CACHE_PAGINAS));
+    } else if (paginaGestaoOffline(url)) {
+      event.respondWith(paginaRedePrimeiro(event, CACHE_GESTAO));
     } else {
       // Gestão e links com token: sempre da rede; sem rede, tela offline EDA.
       event.respondWith(fetch(pedido).catch(() => telaOffline()));

@@ -11,6 +11,7 @@ import Link from 'next/link';
 import LogoERN from '@/app/components/LogoERN';
 
 import { supabase } from '@/lib/supabase';
+import { erroDeRedeEDA } from '@/lib/filaOfflineEDA';
 
 import {
   planoEstaAtivo,
@@ -33,6 +34,29 @@ type EstadoPlano =
   | { tipo: 'pronto'; plano: PlanoAtual };
 
 const TEMPO_LIMITE_MS = 15_000;
+
+// EDA_FILA_OFFLINE_V1: sem internet (porto, rio), usa o último plano confirmado
+// desta conta neste aparelho (até 48 h) para a tela abrir. É só a liberação da
+// tela: o servidor continua conferindo o plano em toda ação real.
+const CHAVE_PLANO_OFFLINE = 'eda-plano-offline-v1';
+const VALIDADE_PLANO_OFFLINE = 48 * 3600 * 1000;
+
+function guardarPlanoOffline(usuario: string, resposta: unknown) {
+  try { localStorage.setItem(CHAVE_PLANO_OFFLINE, JSON.stringify({ usuario, resposta, em: Date.now() })); } catch { /* nada */ }
+}
+
+async function planoOffline(): Promise<PlanoAtual | null> {
+  try {
+    const { data } = await supabase.auth.getSession();
+    let usuario = data.session?.user?.id;
+    if (!usuario) { try { usuario = sessionStorage.getItem('eda-offline-usuario-v1') ?? undefined; } catch { /* nada */ } }
+    const salvo = JSON.parse(localStorage.getItem(CHAVE_PLANO_OFFLINE) || 'null') as { usuario: string; resposta: unknown; em: number } | null;
+    if (!usuario || !salvo || salvo.usuario !== usuario || Date.now() - salvo.em > VALIDADE_PLANO_OFFLINE) return null;
+    return interpretarPlano(salvo.resposta);
+  } catch {
+    return null;
+  }
+}
 
 // EDA_AVISO_PREMIUM_V1: botões e superfícies seguem os tokens --ern-* do tema da gestão.
 const BOTAO_PRIMARIO = 'eda-aviso-botao eda-aviso-botao-primario';
@@ -233,6 +257,12 @@ export default function PlanoGate({
 
         const resposta: unknown = data;
         const plano = interpretarPlano(resposta);
+        if (plano) {
+          void supabase.auth.getSession().then(({ data: sessao }) => {
+            const id = sessao.session?.user?.id;
+            if (id) guardarPlanoOffline(id, resposta);
+          });
+        }
 
         setEstado(
           plano
@@ -242,6 +272,14 @@ export default function PlanoGate({
       } catch (erro: unknown) {
         if (!ativo || controller.signal.aborted) {
           return;
+        }
+
+        if (erroDeRedeEDA(erro)) {
+          const guardado = await planoOffline();
+          if (guardado && ativo) {
+            setEstado({ tipo: 'pronto', plano: guardado });
+            return;
+          }
         }
 
         console.error(

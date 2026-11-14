@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 
 import { supabase } from '@/lib/supabase';
 import { aoMudarSinalEDA, iniciarMonitorSinalEDA, sinalFracoEDA } from '@/lib/conexaoEDA';
+import { limparDadosOfflineEDA } from '@/lib/filaOfflineEDA';
 
 // iPhone/iPad (inclui iPad que se apresenta como Mac).
 function ehIOS(): boolean {
@@ -31,6 +32,8 @@ export default function MonitorSinalEDA() {
     const { data } = supabase.auth.onAuthStateChange(evento => {
       if (evento !== 'SIGNED_OUT') return;
       navigator.serviceWorker?.controller?.postMessage({ tipo: 'eda-limpar-cache' });
+      void limparDadosOfflineEDA();
+      try { localStorage.removeItem('eda-plano-offline-v1'); } catch { /* nada */ }
     });
 
     return () => data.subscription.unsubscribe();

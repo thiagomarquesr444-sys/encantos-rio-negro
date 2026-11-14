@@ -4,9 +4,10 @@
 import '@/app/components/padrao-paginas-eda.css';
 import './embarques-eda.css';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { aoMudarFilaEDA, erroDeRedeEDA, guardarCopiaEmbarquesEDA, lerCopiaEmbarquesEDA, listarFilaEDA } from '@/lib/filaOfflineEDA';
 import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import { BuscaEDA, CabecalhoEDA, PaginaEDA, PillEDA, VazioEDA, type TomEDA } from '@/app/components/PadraoPaginaEDA';
 import CartaoMagneticoEDA from '@/app/components/CartaoMagneticoEDA';
@@ -54,16 +55,62 @@ export default function EmbarquesDoDiaPage() {
   const [ocupado, setOcupado] = useState<string | null>(null);
   const hoje = hojeManausEDA();
 
+  // EDA_FILA_OFFLINE_V1: check-ins guardados no aparelho (sem internet) aparecem
+  // como feitos aqui, e a lista do dia abre mesmo sem sinal no porto.
+  const [pendentes, setPendentes] = useState<Set<string>>(new Set());
+  const [semRede, setSemRede] = useState('');
+
+  const atualizarPendentes = useCallback(async () => {
+    const fila = await listarFilaEDA();
+    setPendentes(new Set(fila.filter((a) => a.tipo === 'checkin_voucher').map((a) => a.alvo)));
+  }, []);
+
+  useEffect(() => {
+    void atualizarPendentes();
+    return aoMudarFilaEDA(() => void atualizarPendentes());
+  }, [atualizarPendentes]);
+
+  // Quando a fila esvazia (sinal voltou e enviou), recarrega a lista real.
+  const [tinhaPendentes, setTinhaPendentes] = useState(false);
+  const carregarRef = useRef<(() => Promise<void>) | null>(null);
+  useEffect(() => {
+    if (pendentes.size > 0) { setTinhaPendentes(true); return; }
+    if (tinhaPendentes) { setTinhaPendentes(false); void carregarRef.current?.(); }
+  }, [pendentes, tinhaPendentes]);
+
   const carregar = useCallback(async () => {
     setErro('');
-    const { data: d, error } = await supabase.from('vouchers').select(CAMPOS_VOUCHER_EDA)
-      .eq('data_passeio', data).in('status', ['Ativo', 'Utilizado', 'valido'])
-      .order('horario_passeio', { ascending: true, nullsFirst: false }).limit(500);
-    if (error) { setErro('Não foi possível carregar os embarques.'); setLista([]); return; }
-    setLista((d ?? []) as unknown as VoucherEDA[]);
+    let resposta: { data: unknown; error: { message?: string } | null };
+    try {
+      resposta = await supabase.from('vouchers').select(CAMPOS_VOUCHER_EDA)
+        .eq('data_passeio', data).in('status', ['Ativo', 'Utilizado', 'valido'])
+        .order('horario_passeio', { ascending: true, nullsFirst: false }).limit(500);
+    } catch (e) {
+      resposta = { data: null, error: { message: String((e as Error)?.message ?? e) } };
+    }
+    const { data: d, error } = resposta;
+    if (error) {
+      if (erroDeRedeEDA(error)) {
+        const copia = await lerCopiaEmbarquesEDA<{ em: string; lista: VoucherEDA[] }>(data);
+        if (copia) {
+          const hora = new Date(copia.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', timeZone: 'America/Manaus' });
+          setSemRede(`Sem internet: mostrando a lista guardada às ${hora}. Os check-ins sobem sozinhos quando o sinal voltar.`);
+          setLista(copia.lista);
+          return;
+        }
+        setErro('Sem internet e sem lista guardada deste dia. Abra esta tela uma vez com sinal para usar no porto.');
+        setLista([]);
+        return;
+      }
+      setErro('Não foi possível carregar os embarques.'); setLista([]); return;
+    }
+    setSemRede('');
+    const listaNova = (d ?? []) as unknown as VoucherEDA[];
+    setLista(listaNova);
+    void guardarCopiaEmbarquesEDA(data, { em: new Date().toISOString(), lista: listaNova });
   }, [data]);
 
-  useEffect(() => { setLista(null); void carregar(); }, [carregar]);
+  useEffect(() => { carregarRef.current = carregar; setLista(null); void carregar(); }, [carregar]);
   useAoVivoEDA(['vouchers'], () => void carregar());
 
   // EDA_EMBARQUES_FOTO_REAL_V1: foto real do passeio cadastrado (voucher → passeio,
@@ -125,8 +172,9 @@ export default function EmbarquesDoDiaPage() {
     return (lista ?? []).filter((v) => !t || sem(`${v.codigo} ${v.cliente_nome ?? ''} ${v.passeio_nome ?? ''}`).includes(t));
   }, [lista, porCodigo, busca]);
 
-  const aEmbarcar = (lista ?? []).filter((v) => situacaoVoucherEDA(v, data) === 'Ativo');
-  const feitos = (lista ?? []).filter((v) => situacaoVoucherEDA(v, data) === 'Utilizado');
+  const situacaoTela = (v: VoucherEDA): SituacaoVoucherEDA => (pendentes.has(v.id) ? 'Utilizado' : situacaoVoucherEDA(v, data));
+  const aEmbarcar = (lista ?? []).filter((v) => situacaoTela(v) === 'Ativo');
+  const feitos = (lista ?? []).filter((v) => situacaoTela(v) === 'Utilizado');
   const pessoas = aEmbarcar.reduce((n, v) => n + (v.snapshot?.passageiros?.length || v.quantidade_pessoas || 0), 0);
   const proxima = aEmbarcar.find((v) => v.horario_passeio) ?? aEmbarcar[0];
   const saldo = aEmbarcar.reduce((n, v) => n + Number(v.snapshot?.financeiro?.saldo ?? 0), 0);
@@ -136,7 +184,13 @@ export default function EmbarquesDoDiaPage() {
     setOcupado(v.id); setErro(''); setAviso('');
     try {
       if (tipo === 'pdf') await baixarPDFVoucherEDA(v);
-      else if (await checkinVoucherEDA(v)) { setAviso(`Check-in de ${v.cliente_nome ?? v.codigo} registrado.`); await carregar(); }
+      else {
+        const feito = await checkinVoucherEDA(v);
+        if (feito === 'fila') {
+          setAviso(`Check-in de ${v.cliente_nome ?? v.codigo} guardado no aparelho. Será enviado quando o sinal voltar.`);
+          await atualizarPendentes();
+        } else if (feito) { setAviso(`Check-in de ${v.cliente_nome ?? v.codigo} registrado.`); await carregar(); }
+      }
     } catch (e) { setErro(mensagemVoucherEDA(e)); } finally { setOcupado(null); }
   }
 
@@ -192,6 +246,7 @@ export default function EmbarquesDoDiaPage() {
           {porCodigo && <p className="eda-pg-texto-mut" style={{ marginTop: 6 }}>Resultado pelo código, em qualquer data.</p>}
         </div>
 
+        {semRede && <p role="status" style={{ marginTop: 12, color: 'var(--p-ouro, #d9a441)' }}>{semRede}</p>}
         {aviso && <p role="status" style={{ marginTop: 12, color: 'var(--p-verde)' }}>{aviso}</p>}
         {erro && <p role="alert" style={{ marginTop: 12, color: 'var(--p-verm)' }}>{erro}</p>}
 
@@ -203,7 +258,7 @@ export default function EmbarquesDoDiaPage() {
               acao={<Link href="/reservas" className="eda-pg-bt">Ir para Reservas</Link>} />
           )}
           {filtrados.map((v, i) => {
-            const sit = situacaoVoucherEDA(v, data);
+            const sit = situacaoTela(v);
             const f = v.snapshot?.financeiro;
             const pax = v.snapshot?.passageiros ?? [];
             return (
@@ -220,7 +275,7 @@ export default function EmbarquesDoDiaPage() {
                     </div>
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
                       <span className="eda-emb-cod">{v.codigo}</span>
-                      <PillEDA tom={TOM[sit]}>{sit === 'Utilizado' ? 'Check-in feito' : sit === 'Ativo' ? 'A embarcar' : sit}</PillEDA>
+                      <PillEDA tom={TOM[sit]}>{sit === 'Utilizado' ? (pendentes.has(v.id) ? 'Check-in feito · aguardando sinal' : 'Check-in feito') : sit === 'Ativo' ? 'A embarcar' : sit}</PillEDA>
                     </div>
                   </div>
                   <div className="eda-emb-dados">

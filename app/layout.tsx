@@ -19,6 +19,7 @@ import { LanguageProvider } from '@/app/components/LanguageProvider';
 import InstalarERN from '@/app/components/InstalarERN';
 import OfflineBaseERN from '@/app/components/OfflineBaseERN';
 import MonitorSinalEDA from '@/app/components/SinalEDA';
+import FilaOfflineEDA from '@/app/components/FilaOfflineEDA';
 import LibrasERN from '@/app/components/LibrasERN';
 
 const fontes = {
@@ -85,6 +86,7 @@ export default function RootLayout({
         <PularConteudoEDA />
         <OfflineBaseERN />
         <MonitorSinalEDA />
+        <FilaOfflineEDA />
         <InstalarERN />
         <LibrasERN />
         <LanguageProvider>

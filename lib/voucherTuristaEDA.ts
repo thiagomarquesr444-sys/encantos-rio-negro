@@ -3,6 +3,8 @@
 // página "Embarques do dia" (check-in no porto).
 import { supabase } from '@/lib/supabase';
 import { baixarDocumentoPremiumERN } from '@/lib/pdfSobDemandaEDA'; // EDA_PDF_SOB_DEMANDA_V1
+import { enfileirarCheckinEDA, erroDeRedeEDA } from '@/lib/filaOfflineEDA';
+import { sinalFracoEDA } from '@/lib/conexaoEDA';
 import { consultarIdentificacaoEmpresaERN } from '@/lib/identificacaoEmpresaERN';
 import { carregarChegadaDaReserva, textoChegadaVoucher, textoTransferVoucher } from '@/lib/chegadasERN';
 import { confirmarEDA, perguntarEDA } from '@/lib/dialogoEDA';
@@ -87,10 +89,29 @@ export async function emitirVoucherEDA(reservaId: string, novaVersao = false): P
   return data as { id: string; codigo: string; versao: number };
 }
 
-export async function checkinVoucherEDA(v: VoucherEDA): Promise<boolean> {
+// EDA_FILA_OFFLINE_V1: sem internet no porto, o check-in fica guardado no
+// aparelho (com o horário real) e sobe sozinho quando o sinal voltar.
+// Com internet normal, segue direto como sempre. Retorna 'fila' quando guardou.
+export async function checkinVoucherEDA(v: VoucherEDA): Promise<boolean | 'fila'> {
   if (!(await confirmarEDA(`Voucher ${v.codigo} · ${v.cliente_nome ?? 'titular'}\nConfira o documento com foto do titular. Depois do check-in o voucher não pode ser usado de novo.`, { titulo: 'Fazer o check-in?', confirmar: 'Confirmar embarque' }))) return false;
-  const { error } = await supabase.rpc('marcar_voucher_utilizado_eda', { p_voucher_id: v.id });
-  if (error) throw error;
+  const guardar = async () => { await enfileirarCheckinEDA(v.id, v.codigo); return 'fila' as const; };
+  if (typeof navigator !== 'undefined' && navigator.onLine === false) return guardar();
+  try {
+    // Sinal fraco: se o servidor não responder em 15 s, guarda e segue o embarque.
+    // (Se o check-in tiver chegado mesmo assim, o reenvio reconhece e não duplica.)
+    let pedido = supabase.rpc('marcar_voucher_utilizado_eda', { p_voucher_id: v.id });
+    if (sinalFracoEDA() && typeof AbortSignal !== 'undefined' && 'timeout' in AbortSignal) {
+      pedido = pedido.abortSignal(AbortSignal.timeout(15_000));
+    }
+    const { error } = await pedido;
+    if (error) {
+      if (erroDeRedeEDA(error)) return guardar();
+      throw error;
+    }
+  } catch (erro) {
+    if (erroDeRedeEDA(erro)) return guardar();
+    throw erro;
+  }
   return true;
 }
 
