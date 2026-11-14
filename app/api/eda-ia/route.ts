@@ -10,6 +10,7 @@ import { createClient } from '@supabase/supabase-js';
 import { acharDestinoIara, NOMES_MUNICIPIOS_IARA, type DestinoIara } from '@/lib/iaraDestinosERN';
 import { destinosTranslations } from '@/lib/i18n/destinos';
 import { HISTORIAS_MUNICIPIOS } from '@/lib/historiasMunicipiosERN';
+import { carregarFichas, fichaDe, festaIntrusa, municipioDoDestino, respostaDaFicha, textoFicha, REGRA_FICHA, type FichaMunicipio } from '@/lib/fichasMunicipiosIara';
 import { fatosDaCidade, type CidadeBaseERN } from '@/lib/fatosDestinosERN';
 
 // Tipo concreto do cliente (sem genéricos abertos).
@@ -1231,6 +1232,9 @@ Exemplo de formato: ["texto 1","texto 2","texto 3"]`;
     let opSessao: { db: SupabaseClient; empresaId: string } | null = null;
     let destinoIara: (DestinoIara & { auto: boolean }) | null = null;
     let blocoDestino = '';
+    // IARA_FICHAS_MUNICIPIOS_V1
+    let municipioIara = '';
+    let fichasIara: FichaMunicipio[] = [];
     if (modo === 'operadora') {
       const op = await autenticarOperadora(req, url, anon);
       opSessao = { db: op.db, empresaId: op.empresaId };
@@ -1368,7 +1372,7 @@ Exemplo de formato: ["texto 1","texto 2","texto 3"]`;
         let achado = acharDestinoIara(ultimaPergunta);
         let auto = !!achado && PEDIU_IR.test(` ${normalizar(ultimaPergunta)} `);
         if (!achado && ACEITOU.test(normalizar(ultimaPergunta)) && /\b(mapa|map|te levo|levar|llevo)\b/i.test(normalizar(ultimaIara))) {
-          achado = acharDestinoIara(ultimaIara) ?? acharDestinoIara(mensagens.filter(m => m.papel === 'usuario').slice(-4, -1).reverse().join(' . '));
+          achado = acharDestinoIara(ultimaIara) ?? acharDestinoIara(mensagens.filter(m => m.papel === 'usuario').slice(-4, -1).reverse().map(m => m.texto).join(' . '));
           auto = !!achado;
         }
         if (achado) {
@@ -1379,13 +1383,32 @@ Exemplo de formato: ["texto 1","texto 2","texto 3"]`;
 CONHECIMENTO DO DESTINO (curadoria da plataforma — use só isto como fato):
 ${conhecimentoDestino(achado, idioma)}`;
         }
+        // IARA_FICHAS_MUNICIPIOS_V1: ficha oficial do município citado (ou do município do lugar).
+        const destinoFicha = achado ?? acharDestinoIara(mensagens.filter(m => m.papel === 'usuario').slice(-3).reverse().map(m => m.texto).join(' . '));
+        if (destinoFicha) {
+          fichasIara = await carregarFichas(admin);
+          municipioIara = municipioDoDestino(destinoFicha);
+          const ficha = fichaDe(fichasIara, municipioIara);
+          blocoDestino += `${blocoDestino ? '\n' : ''}${ficha ? textoFicha(ficha) : `Município em foco: ${municipioIara}. Ainda não há ficha de curadoria: não afirme festas, artesanato nem pontos turísticos específicos; ofereça o mapa.`}`;
+        }
       }
       sistema = sistemaPublico({ idioma, periodo, estilo, jaCumprimentou, ficha: fichaPublica, paginaAtual, catalogo: catalogoTexto, operadoras: operadoras.texto, conhecimento, agentes: modoComercial ? '' : blocos.join('\n'), comercial, iscas, daBusca, destino: blocoDestino });
+      sistema += `\n\n${REGRA_FICHA}`;
     }
 
     if (modo === 'operadora') sistema += blocoEstilo(modo, estilo);
     const inicioIA = Date.now();
-    const texto = await responderComIA(sistema, mensagens.slice(-12), modo === 'publico' ? (process.env.EDA_IA_ORDEM_IARA?.trim() || 'groq,gemini') : undefined);
+    let texto = await responderComIA(sistema, mensagens.slice(-12), modo === 'publico' ? (process.env.EDA_IA_ORDEM_IARA?.trim() || 'groq,gemini') : undefined);
+    // IARA_FICHAS_MUNICIPIOS_V1: verificador — festa de outro município? Refaz uma vez; se insistir, responde só com a ficha.
+    if (texto && modo === 'publico' && municipioIara && fichasIara.length) {
+      const intrusa = festaIntrusa(texto, municipioIara, fichasIara);
+      if (intrusa) {
+        const correcao = `\n\nATENÇÃO: a resposta anterior errou ao citar "${intrusa}", que NÃO é de ${municipioIara}. Responda de novo usando apenas a FICHA OFICIAL DE ${municipioIara.toUpperCase()}.`;
+        const nova = await responderComIA(sistema + correcao, mensagens.slice(-12), process.env.EDA_IA_ORDEM_IARA?.trim() || 'groq,gemini');
+        const ficha = fichaDe(fichasIara, municipioIara);
+        texto = nova && !festaIntrusa(nova, municipioIara, fichasIara) ? nova : ficha ? respostaDaFicha(ficha) : nova;
+      }
+    }
     if (!texto) return resposta(503, { ok: false, erro: 'Não consegui responder agora. Tente de novo em instantes.', diagnostico: falhasIA.map(f => f.split(':')[0]) });
     // Ficha da conversa (memória da Iara), devolvida ao navegador.
     let fichaNova: FichaIara | null = null;
