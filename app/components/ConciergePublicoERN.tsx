@@ -10,6 +10,7 @@ import './iara-conversa.css';
 import ConciergeLancadorERN from './ConciergeLancadorERN';
 import IconeIara from './IconeIara';
 import TextoDigitadoIA from './TextoDigitadoIA';
+import { comIconesIara } from './IconesIaraEDA';
 import { chaveRecepcao, falaPaginaIara, recepcaoIara, type MomentoRecepcao, type OpcaoRecepcao } from '@/lib/recepcaoIaraEDA';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import { confirmarEDA } from '@/lib/dialogoEDA';
@@ -228,8 +229,8 @@ function corpoIara(idioma: IdiomaERN, caminho: string, regional: boolean, voltou
   if (caminho.startsWith('/rede')) return tu('Eu sou a Iara 🌊 Aqui na Rede tu vê o que as operadoras e os guias tão vivendo no rio. Quer que eu te apresente alguém?', 'Eu sou a Iara 🌊 Aqui na Rede você acompanha o que operadoras e guias estão vivendo no rio. Quer que eu apresente alguém?');
   if (caminho.startsWith('/operadores') || caminho.startsWith('/precos')) return tu('Eu sou a Iara 🌊 Trabalha com turismo? Te mostro como a Encantos Gestão ajuda tua operação e qual plano combina contigo.', 'Eu sou a Iara 🌊 Trabalha com turismo? Mostro como a Encantos Gestão ajuda sua operação e qual plano combina com você.');
   return sorteia([
-    tu('Eu sou a Iara, a guardiã das águas da Encantos da Amazônia 🌊 Me conta: o que te trouxe até aqui — pesca, natureza, cultura ou só curiosidade?', 'Eu sou a Iara, a guardiã das águas da Encantos da Amazônia 🌊 O que trouxe você até aqui — pesca, natureza, cultura ou curiosidade?'),
-    tu('Aqui é a Iara 🌊 Conheço cada curva do Rio Negro. Bora começar por um destino, um passeio ou uma lenda?', 'Aqui é a Iara 🌊 Conheço cada curva do Rio Negro. Começamos por um destino, um passeio ou uma lenda?'),
+    tu('Eu sou a Iara 🌊 O que te trouxe até aqui: pesca, natureza, cultura ou curiosidade?', 'Eu sou a Iara 🌊 O que trouxe você até aqui: pesca, natureza, cultura ou curiosidade?'),
+    tu('Aqui é a Iara 🌊 Bora começar por um destino, um passeio ou uma lenda?', 'Aqui é a Iara 🌊 Começamos por um destino, um passeio ou uma lenda?'),
   ]);
 }
 function saudacaoIara(idioma: IdiomaERN, nome: string): string {
@@ -957,7 +958,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
           <span aria-hidden="true" className="iara-oferta-avatar"><IconeIara /></span>
           <div className="iara-oferta-corpo">
             <span className="iara-oferta-nome">Iara <small>· Encantos da Amazônia</small></span>
-            <p><TextoDigitadoIA texto={ofertaIara.texto} animar msPorLetra={30} render={(t2) => t2} /></p>
+            <p><TextoDigitadoIA texto={ofertaIara.texto} animar msPorLetra={34} render={(t2) => comIconesIara(t2)} /></p>
             <div className="iara-oferta-opcoes">
               {ofertaIara.opcoes.map(o => (
                 <button key={o.rotulo} type="button" className="iara-oferta-opcao" onClick={() => escolherOpcaoIara(o)}>{o.rotulo}</button>
@@ -1061,7 +1062,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
                   </span>
                   <p>
                     {mensagem.autor === 'ern'
-                      ? <TextoDigitadoIA texto={mensagem.texto} animar={animandoIara === indice} msPorLetra={mensagem.lenta ? 30 : 18} render={(t2) => t2} aoTerminar={() => setAnimandoIara(a => (a === indice ? null : a))} />
+                      ? <TextoDigitadoIA texto={mensagem.texto} animar={animandoIara === indice} msPorLetra={mensagem.lenta ? 30 : 18} render={(t2) => comIconesIara(t2)} aoTerminar={() => setAnimandoIara(a => (a === indice ? null : a))} />
                       : mensagem.texto}
                   </p>
                   {mensagem.autor === 'ern' && animandoIara !== indice && !!mensagem.links?.length && (

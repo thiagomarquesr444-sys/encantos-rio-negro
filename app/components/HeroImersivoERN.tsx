@@ -4,12 +4,11 @@ import { useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode } 
 import { periodoEDA } from '@/lib/saudacaoEDA';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import IconeIara from '@/app/components/IconeIara';
+import { comIconesIara } from '@/app/components/IconesIaraEDA';
 import { homeTranslations, type HomeTranslation } from '@/lib/i18n/home';
 import { MUNICIPIOS_AMAZONAS } from '@/lib/municipiosAmazonasERN';
 
 const NOMES_FAIXA = [...MUNICIPIOS_AMAZONAS].map((m) => m.nome).sort((a, b) => a.localeCompare(b, 'pt-BR'));
-// Municípios que já têm roteiro, festa ou página na plataforma.
-const DESTAQUES_FAIXA = new Set(['Barcelos', 'Manaus', 'Novo Airão', 'Parintins', 'Santa Isabel do Rio Negro', 'São Gabriel da Cachoeira', 'Presidente Figueiredo', 'Manacapuru', 'Maués', 'Tefé', 'Tabatinga', 'Uarini']);
 
 // ERN_HERO_IMERSIVO_V1
 // Abertura do portal: título centralizado, busca atendida pela Iara e destaques.
@@ -252,32 +251,25 @@ export default function HeroImersivoERN({
 
   return (
     <div className="relative z-10 mx-auto flex max-w-[1180px] flex-col items-center px-5 pb-16 pt-32 text-center md:px-8 md:pb-20 md:pt-40">
-      {/* EDA_FAIXA_62_MUNICIPIOS_V1: os 62 municípios do Amazonas rolando devagar
-          numa faixa premium — selo fixo à esquerda, nomes em serifa, cidades com
-          roteiro na plataforma em dourado. Pausa ao passar o mouse. */}
-      <div className="ern-revela eda-faixa-municipios relative w-full max-w-[820px]">
-        <p className="sr-only">{`${MUNICIPIOS_AMAZONAS.length} municípios do Amazonas: ${NOMES_FAIXA.join(', ')}`}</p>
-        <div aria-hidden="true" className="eda-faixa-moldura">
-          <span className="eda-faixa-selo">
-            <b>62</b>
-            <small>{idioma === 'EN' ? 'towns' : idioma === 'ES' ? 'municipios' : 'municípios'}</small>
-          </span>
-          <span className="eda-faixa-janela">
-            <span className="eda-faixa-trilho">
-              {[0, 1].map((copia) => (
-                <span key={copia} className="flex shrink-0 items-center">
-                  {NOMES_FAIXA.map((nome) => (
-                    <span key={`${copia}-${nome}`} className={`eda-faixa-nome ${DESTAQUES_FAIXA.has(nome) ? 'eda-faixa-ouro' : ''}`}>
-                      <i className="eda-faixa-losango" />
-                      {nome}
-                    </span>
-                  ))}
+      {/* ERN_SELO_LUGARES_V1 + EDA_FAIXA_62_MUNICIPIOS_V2: a cápsula original,
+          agora com os 62 municípios do Amazonas rolando devagar. */}
+      <p
+        aria-label={`Municípios do Amazonas: ${NOMES_FAIXA.join(', ')}`}
+        className="ern-revela ern-selo-lugares relative w-full max-w-[560px] overflow-hidden rounded-full border border-[#F4C77E]/25 bg-[#07110E]/55 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#F4C77E] backdrop-blur-md sm:text-xs"
+      >
+        <span aria-hidden="true" className="ern-selo-trilho eda-selo-62 flex w-max">
+          {[0, 1].map((copia) => (
+            <span key={copia} className="flex shrink-0 items-center">
+              {NOMES_FAIXA.map((lugar) => (
+                <span key={`${copia}-${lugar}`} className="flex items-center gap-3 whitespace-nowrap pl-3">
+                  <span className="h-1.5 w-1.5 rotate-45 bg-gradient-to-b from-[#F7D595] to-[#E3A144]" />
+                  {lugar}
                 </span>
               ))}
             </span>
-          </span>
-        </div>
-      </div>
+          ))}
+        </span>
+      </p>
 
       <h1
         aria-label={h.title}
@@ -334,7 +326,7 @@ export default function HeroImersivoERN({
                 className="line-clamp-2 break-words transition-opacity duration-700 ease-out"
                 style={{ opacity: focado ? 0.55 : busca.visivel ? 1 : 0 }}
               >
-                {focado ? t.placeholder : busca.texto}
+                {focado ? t.placeholder : comIconesIara(busca.texto)}
               </span>
             </span>
           )}
