@@ -1,7 +1,7 @@
 'use client';
 
 // ERN_TEMA_NOITE_CLARO_V1
-// Atalho de tema no menu lateral: Noite, Claro e Automático (EDA_TEMAS_V2).
+// Atalho de tema no menu lateral: Noite e Claro (EDA_TEMAS_V3).
 // Salva em configuracoes.tema da empresa, como antes. As demais cores
 // continuam disponíveis em Configurações para quem já as usa.
 
@@ -14,7 +14,6 @@ type Vinculo = { id: string; empresaId: string; tema: string };
 
 const NOITE: TemaERN = 'verde';
 const CLARO: TemaERN = 'branco';
-const AUTO: TemaERN = 'auto';
 
 export default function TemaRapidoOperadoraERN() {
   const pathname = usePathname();
@@ -55,11 +54,17 @@ export default function TemaRapidoOperadoraERN() {
     }
 
     void carregar();
-    return () => { ativo = false; };
+    // EDA_TEMAS_V3: acompanha a troca feita em Configurações.
+    function aoSalvarTema(e: Event) {
+      const tema = (e as CustomEvent<{ tema?: string }>).detail?.tema;
+      if (tema === NOITE || tema === CLARO) setVinculo(v => (v ? { ...v, tema } : v));
+    }
+    window.addEventListener('ern:tema-salvo', aoSalvarTema);
+    return () => { ativo = false; window.removeEventListener('ern:tema-salvo', aoSalvarTema); };
   }, [pathname]);
 
   async function salvar(tema: TemaERN) {
-    if (!vinculo || trava.current || tema === vinculo.tema) return;
+    if (!vinculo || trava.current || tema === (vinculo.tema === CLARO ? CLARO : NOITE)) return;
     trava.current = true;
     setSalvando(true);
     setMensagem('');
@@ -88,12 +93,12 @@ export default function TemaRapidoOperadoraERN() {
   }
 
   if (!vinculo) return null;
-  const atual = vinculo.tema === CLARO || vinculo.tema === AUTO ? vinculo.tema : NOITE;
+  const atual: TemaERN = vinculo.tema === CLARO ? CLARO : NOITE;
 
   return (
     <div className="ern-tema-lateral">
       <div role="group" aria-label="Tema do painel" className="flex gap-1 rounded-full border border-white/10 bg-white/[0.04] p-1">
-        {([[NOITE, 'Noite', atual === NOITE], [CLARO, 'Claro', atual === CLARO], [AUTO, 'Auto', atual === AUTO]] as const).map(([valor, rotulo, ativo]) => (
+        {([[NOITE, 'Noite', atual === NOITE], [CLARO, 'Claro', atual === CLARO]] as const).map(([valor, rotulo, ativo]) => (
           <button
             key={valor}
             type="button"

@@ -11,7 +11,7 @@ import DuasEtapasContaEDA from '@/app/components/DuasEtapasContaEDA';
 import SeletorTemaERN from '@/app/components/SeletorTemaERN';
 import { chavePixAmbigua, normalizarChavePix, TIPOS_CHAVE_PIX, type TipoChavePix } from '@/lib/pixEDA';
 
-type Tema = 'verde' | 'branco' | 'auto';
+type Tema = 'verde' | 'branco';
 
 type Configuracao = {
   id?: string;
@@ -82,17 +82,6 @@ const TEMAS: Record<
     borda: '#B8C9BF',
     destaque: '#176042',
     sobreDestaque: '#FFFFFF',
-  },
-  auto: {
-    nome: 'Automático',
-    descricao: 'Segue o modo claro ou escuro do aparelho.',
-    fundo: '#07110E',
-    painel: '#10231B',
-    texto: '#EDEDE3',
-    secundario: '#B8C9BF',
-    borda: '#355043',
-    destaque: '#F4C77E',
-    sobreDestaque: '#07110E',
   },
 };
 
@@ -290,6 +279,45 @@ export default function ConfiguracoesPage() {
     'border border-[var(--cfg-borda)] px-4 text-sm font-semibold ' +
     'focus-visible:outline-none focus-visible:ring-2 ' +
     'focus-visible:ring-[var(--cfg-destaque)] disabled:opacity-60';
+
+  // EDA_TEMAS_V3: o tema é salvo e aplicado na hora (como no menu lateral),
+  // sem depender do botão Salvar do formulário.
+  const [salvandoTema, setSalvandoTema] = useState(false);
+  async function trocarTema(tema: Tema) {
+    if (!config.id || !empresaId || salvandoTema || tema === config.tema) {
+      if (!config.id) alterar('tema', tema);
+      return;
+    }
+    const anterior = config.tema;
+    setSalvandoTema(true);
+    alterar('tema', tema);
+    try {
+      const { data, error } = await supabase
+        .from('configuracoes')
+        .update({ tema, updated_at: new Date().toISOString() })
+        .eq('id', config.id)
+        .eq('empresa_id', empresaId)
+        .select('id,tema')
+        .single();
+      if (error || !data || data.tema !== tema) throw new Error('tema');
+      window.dispatchEvent(new CustomEvent('ern:tema-salvo', { detail: { empresaId, tema } }));
+    } catch {
+      alterar('tema', anterior);
+      setFeedback({ tipo: 'erro', texto: 'Não foi possível trocar o tema. Tente novamente.' });
+    } finally {
+      setSalvandoTema(false);
+    }
+  }
+
+  // Sincroniza quando o tema é trocado pelo menu lateral.
+  useEffect(() => {
+    function aoSalvarTema(e: Event) {
+      const tema = (e as CustomEvent<{ tema?: string }>).detail?.tema;
+      if (tema === 'verde' || tema === 'branco') setConfig(atual => (atual.tema === tema ? atual : { ...atual, tema }));
+    }
+    window.addEventListener('ern:tema-salvo', aoSalvarTema);
+    return () => window.removeEventListener('ern:tema-salvo', aoSalvarTema);
+  }, []);
 
   function alterar<K extends keyof Configuracao>(
     chave: K,
@@ -522,15 +550,14 @@ export default function ConfiguracoesPage() {
                 Aparência
               </h2>
               <p className="mt-2 text-sm leading-6 text-[var(--cfg-secundario)]">
-                Noite, Claro ou Automático (acompanha o aparelho).
-                Salve para registrar a preferência da empresa.
+                Noite ou Claro. A troca vale na hora para toda a empresa.
               </p>
 
               <div className="mt-5">
                 <SeletorTemaERN
                   valor={config.tema}
-                  onEscolher={(tema) => alterar('tema', tema)}
-                  bloqueado={salvando}
+                  onEscolher={(tema) => void trocarTema(tema)}
+                  bloqueado={salvando || salvandoTema}
                 />
               </div>
             </section>
@@ -758,4 +785,4 @@ export default function ConfiguracoesPage() {
       </div>
     </main>
   );
-}
+}

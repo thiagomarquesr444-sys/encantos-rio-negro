@@ -48,11 +48,9 @@ function pertenceARota(pathname: string, rota: string): boolean {
   return pathname === rota || pathname.startsWith(`${rota}/`);
 }
 
-// EDA_TEMAS_V2: 'auto' vira Claro ou Noite conforme o modo do aparelho.
+// EDA_TEMAS_V3: Automático removido; quem tinha 'auto' salvo fica em Noite.
 function resolverTema(valor: unknown): Tema {
-  if (valor === 'auto') {
-    try { return window.matchMedia('(prefers-color-scheme: light)').matches ? 'branco' : 'verde'; } catch { return 'verde'; }
-  }
+  if (valor === 'auto') return 'verde';
   return normalizarTema(valor);
 }
 
@@ -307,8 +305,6 @@ export default function AppShell({
         }
       });
 
-    const modoAparelho = window.matchMedia?.('(prefers-color-scheme: light)');
-    modoAparelho?.addEventListener?.('change', atualizarTema);
     window.addEventListener('ern:tema-salvo', atualizarTema);
     window.addEventListener('storage', aoMudarPreferenciaEmOutraAba);
     document.addEventListener('visibilitychange', aoRetornar);
@@ -318,7 +314,6 @@ export default function AppShell({
       versao += 1;
       clearTimeout(tarefa);
       subscription.unsubscribe();
-      modoAparelho?.removeEventListener?.('change', atualizarTema);
       window.removeEventListener('ern:tema-salvo', atualizarTema);
       window.removeEventListener('storage', aoMudarPreferenciaEmOutraAba);
       document.removeEventListener('visibilitychange', aoRetornar);

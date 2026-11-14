@@ -6,7 +6,7 @@
 // demandas, Rede EDA, cadastros e plano. As cores vêm do tema da empresa
 // (Noite ou Claro) por variáveis próprias em inicio-operadora-premium.css.
 
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useAoVivoEDA } from '@/lib/aoVivoEDA';
@@ -411,12 +411,18 @@ export default function InicioOperadoraPremiumERN({
   const [saudacaoPronta, setSaudacaoPronta] = useState(false);
   // EDA_SAUDACAO_V3: calculada só no navegador (varia a cada visita; recarga não repete "Boa tarde").
   const [textoSaudacao, setTextoSaudacao] = useState('');
-  useEffect(() => { setTextoSaudacao(saudacaoEDA(nome).texto); }, [nome]);
+  // EDA_FRASE_FIXA_V1: a saudação é sorteada uma única vez, quando a página fica
+  // pronta (nome já carregado) — não troca no meio da digitação.
+  useEffect(() => {
+    if (!pronto || textoSaudacao) return;
+    setTextoSaudacao(saudacaoEDA(nome).texto);
+  }, [pronto, nome, textoSaudacao]);
 
   // EDA_FASE_A_V1: recepção escrita pela IA. O servidor só gera um texto novo
   // quando os dados mudam; nas recargas alternamos entre as variações guardadas.
   const [recepcao, setRecepcao] = useState('');
   const [recepcaoPronta, setRecepcaoPronta] = useState(false);
+  const conversaIniciada = useRef(false);
   useEffect(() => {
     let ativo = true;
     const limite = window.setTimeout(() => { if (ativo) setRecepcaoPronta(true); }, 3500);
@@ -428,7 +434,8 @@ export default function InicioOperadoraPremiumERN({
         const r = await fetch('/api/eda-ia', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ modo: 'recepcao', estilo: (() => { try { return localStorage.getItem('eda.estilo') === 'formal' ? 'formal' : 'regional'; } catch { return 'regional'; } })() }) });
         const j = await r.json().catch(() => ({})) as { variacoes?: unknown };
         const lista = Array.isArray(j.variacoes) ? j.variacoes.filter((x): x is string => typeof x === 'string' && x.length > 0) : [];
-        if (!ativo || !lista.length) return;
+        // EDA_FRASE_FIXA_V1: se a digitação já começou (resposta lenta), não troca a frase.
+        if (!ativo || !lista.length || conversaIniciada.current) return;
         const grupo = lista;
         let indice = 0;
         try {
@@ -468,6 +475,17 @@ export default function InicioOperadoraPremiumERN({
     return [{ texto: op[diaMes % op.length] }];
   }, [pronto, recepcao, hoje]);
 
+  // EDA_FRASE_FIXA_V1: congela a frase no instante em que a digitação começa.
+  // Antes, a resposta da IA (ou a troca de "hoje") chegava depois e reiniciava
+  // a digitação com outra frase.
+  const [conversaFixa, setConversaFixa] = useState<TrechoDigitado[] | null>(null);
+  useEffect(() => {
+    if (conversaFixa || !pronto || !saudacaoPronta || !recepcaoPronta || !trechosConversa.length) return;
+    conversaIniciada.current = true;
+    setConversaFixa(trechosConversa);
+  }, [conversaFixa, pronto, saudacaoPronta, recepcaoPronta, trechosConversa]);
+  const trechosFrase = conversaFixa ?? [];
+
   // Aviso da Iara: só informa e espera a pessoa pedir (nada é feito sozinho).
   const [conversaPronta, setConversaPronta] = useState(false);
   const trechosIara = useMemo<TrechoDigitado[]>(() => {
@@ -501,7 +519,7 @@ export default function InicioOperadoraPremiumERN({
           <p className="eda-eb"><i className="eda-capa-traco" aria-hidden="true" />{dataExtenso(hoje)}{nomeEmpresa ? ` · ${nomeEmpresa}` : ''}</p>
           <h1><DigitacaoEDA trechos={trechosSaudacao} iniciar={pronto && !!textoSaudacao} velocidade={42} atraso={250} cursorEspera aoTerminar={() => setSaudacaoPronta(true)} /></h1>
           <p className="eda-frase" aria-live="off">
-            <DigitacaoEDA trechos={trechosConversa} iniciar={pronto && saudacaoPronta && recepcaoPronta} velocidade={18} atraso={380} cursorFinal={!trechosIara.length} pularAoClicar aoTerminar={() => setConversaPronta(true)} />
+            <DigitacaoEDA trechos={trechosFrase} iniciar={!!conversaFixa} velocidade={18} atraso={380} cursorFinal={!trechosIara.length} pularAoClicar aoTerminar={() => setConversaPronta(true)} />
           </p>
           {trechosIara.length > 0 && (
             <p className="eda-frase eda-frase-iara" aria-live="polite">
@@ -512,7 +530,7 @@ export default function InicioOperadoraPremiumERN({
             <button
               type="button"
               className="eda-responder"
-              onClick={() => window.dispatchEvent(new CustomEvent('eda:abrir', { detail: { texto: [...trechosConversa, ...(trechosIara.length ? [{ texto: '\n' }, ...trechosIara] : [])].map(x => x.texto).join(''), saudacao: trechosSaudacao.map(x => x.texto).join('') } }))}
+              onClick={() => window.dispatchEvent(new CustomEvent('eda:abrir', { detail: { texto: [...trechosFrase, ...(trechosIara.length ? [{ texto: '\n' }, ...trechosIara] : [])].map(x => x.texto).join(''), saudacao: trechosSaudacao.map(x => x.texto).join('') } }))}
             >
               Responder à EDA
             </button>

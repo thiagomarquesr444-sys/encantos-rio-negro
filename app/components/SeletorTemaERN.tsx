@@ -2,8 +2,8 @@
 
 import { useRef } from 'react';
 
-// EDA_TEMAS_V2: só Noite, Claro e Automático (segue o aparelho).
-export type TemaERN = 'verde' | 'branco' | 'auto';
+// EDA_TEMAS_V3: só Noite e Claro (Automático removido).
+export type TemaERN = 'verde' | 'branco';
 
 export const OPCOES_TEMA_ERN: {
   valor: TemaERN;
@@ -12,7 +12,6 @@ export const OPCOES_TEMA_ERN: {
 }[] = [
   { valor: 'verde', nome: 'Noite', cor: '#07110E' },
   { valor: 'branco', nome: 'Claro', cor: '#F4F6F5' },
-  { valor: 'auto', nome: 'Automático', cor: 'linear-gradient(135deg, #07110E 50%, #F4F6F5 50%)' },
 ];
 
 export default function SeletorTemaERN({
