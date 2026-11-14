@@ -42,25 +42,24 @@
 .eda-reacao-pulo { animation: eda-reacao-pulo .5s ease; }
 @keyframes eda-reacao-pulo { 40% { transform: translateY(-5px) scale(1.18); } 100% { transform: none; } }
 
-/* "Quero ir!" — o anzol fisga o tucunaré */
-.eda-fisgar { overflow: visible; }
-.eda-fisgar-peixe { transform-box: fill-box; transform-origin: center; animation: eda-peixe-nada 2.6s ease-in-out infinite; }
-.eda-fisgar-respingo { opacity: 0; }
-@keyframes eda-peixe-nada { 0%, 100% { transform: translateX(-2px); } 50% { transform: translateX(2px); } }
-.eda-fisgar-ativo .eda-fisgar-peixe { animation: eda-peixe-fisgado .9s cubic-bezier(.3, 1.4, .5, 1) forwards; }
-.eda-fisgar-ativo .eda-fisgar-linha-anzol { animation: eda-linha-puxa .9s ease forwards; transform-box: view-box; transform-origin: 34px 12px; }
-.eda-fisgar-ativo .eda-fisgar-respingo { animation: eda-respingo .7s ease .15s; }
-@keyframes eda-peixe-fisgado {
-  0% { transform: translate(0, 0) rotate(0); }
-  35% { transform: translate(2px, -10px) rotate(-28deg); }
-  65% { transform: translate(1px, -14px) rotate(-38deg); }
-  100% { transform: translate(1px, -12px) rotate(-34deg); }
+/* EDA_REACAO_ARCO_V1 — "Quero ir!": o arco dispara a flecha */
+.eda-arco-lanca { overflow: visible; }
+.eda-arco-flecha, .eda-arco-corda { transform-box: view-box; }
+.eda-arco-rastro { opacity: 0; }
+.eda-arco-lanca-ativo .eda-arco-flecha { animation: eda-flecha-voa 1s cubic-bezier(.2, .8, .3, 1) forwards; }
+.eda-arco-lanca-ativo .eda-arco-corda { animation: eda-corda-solta .45s ease; }
+.eda-arco-lanca-ativo .eda-arco-rastro { animation: eda-rastro .5s ease .12s; }
+@keyframes eda-flecha-voa {
+  0% { transform: translateX(0); opacity: 1; }
+  18% { transform: translateX(-4px); }
+  55% { transform: translateX(26px); opacity: 0; }
+  56% { transform: translateX(-10px); opacity: 0; }
+  100% { transform: translateX(0); opacity: 1; }
 }
-@keyframes eda-linha-puxa { 0% { transform: scaleY(1); } 40% { transform: scaleY(.6); } 100% { transform: scaleY(.72); } }
-@keyframes eda-respingo { 0% { opacity: 0; transform: translateY(2px); } 30% { opacity: 1; } 100% { opacity: 0; transform: translateY(-6px); } }
+@keyframes eda-corda-solta { 0% { d: path("M14 6 L 14 42"); } 18% { d: path("M14 6 L 9 24 L 14 42"); } 40% { d: path("M14 6 L 16 24 L 14 42"); } 100% { d: path("M14 6 L 14 42"); } }
+@keyframes eda-rastro { 0% { opacity: 0; transform: translateX(-4px); } 40% { opacity: 1; } 100% { opacity: 0; transform: translateX(10px); } }
 
 @media (prefers-reduced-motion: reduce) {
-  .eda-fisgar-peixe, .eda-fisgar-ativo .eda-fisgar-peixe, .eda-fisgar-ativo .eda-fisgar-linha-anzol,
-  .eda-fisgar-ativo .eda-fisgar-respingo, .eda-reacao-pulo, .eda-reacoes-menu { animation: none !important; }
-  .eda-fisgar-ativo .eda-fisgar-peixe { transform: translate(1px, -12px) rotate(-34deg); }
+  .eda-arco-lanca-ativo .eda-arco-flecha, .eda-arco-lanca-ativo .eda-arco-corda,
+  .eda-arco-lanca-ativo .eda-arco-rastro, .eda-reacao-pulo, .eda-reacoes-menu, .eda-procura-voo { animation: none !important; }
 }

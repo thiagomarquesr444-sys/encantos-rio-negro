@@ -16,13 +16,14 @@ import { analisarGraficosFinanceirosERN, periodoRecenteERN } from '@/lib/finance
 import { analisarPendenciasDashboardERN } from '@/lib/financeiroDashboardERN';
 import { normalizarStatusReservaERN, reservaOperacionalERN } from '@/lib/reservasStatusERN';
 import ArcoFlechaERN from './ArcoFlechaERN';
+import ProcuraRedeEDA from './ProcuraRedeEDA';
 import { BarrasAgrupadasEDA, TendenciaEDA } from './GraficosEDA';
 import { listarChegadas, temTransfer, MODOS_CHEGADA, VEICULOS_TRANSFER, type ChegadaPainel } from '@/lib/chegadasERN';
 import './inicio-operadora-premium.css';
 import './capa-eda.css';
 import CartaoMagneticoEDA from './CartaoMagneticoEDA';
 import DigitacaoEDA, { type TrechoDigitado } from './DigitacaoEDA';
-import { saudacaoEDA } from '@/lib/saudacaoEDA';
+import { novaVisitaSaudacaoEDA, saudacaoEDA } from '@/lib/saudacaoEDA';
 import { conflitosEDA, lotacaoEDA, type ConflitoEDA, type LotacaoEDA } from '@/lib/recursosEDA';
 import { alertasViagem, type ViagemAoVivoEDA } from '@/lib/operacaoAoVivoEDA';
 
@@ -415,6 +416,7 @@ export default function InicioOperadoraPremiumERN({
   // pronta (nome já carregado) — não troca no meio da digitação.
   useEffect(() => {
     if (!pronto || textoSaudacao) return;
+    novaVisitaSaudacaoEDA();
     setTextoSaudacao(saudacaoEDA(nome).texto);
   }, [pronto, nome, textoSaudacao]);
 
@@ -423,6 +425,7 @@ export default function InicioOperadoraPremiumERN({
   const [recepcao, setRecepcao] = useState('');
   const [recepcaoPronta, setRecepcaoPronta] = useState(false);
   const conversaIniciada = useRef(false);
+  const [sorteioVisita] = useState(() => Math.floor(Math.random() * 1000));
   useEffect(() => {
     let ativo = true;
     const limite = window.setTimeout(() => { if (ativo) setRecepcaoPronta(true); }, 3500);
@@ -472,8 +475,8 @@ export default function InicioOperadoraPremiumERN({
         : hora < 18
           ? ['Tarde seguindo por aqui. Como está indo o dia na operação?', 'Voltou para dar uma olhada? Me conta o que você precisa agora.']
           : ['Fim de dia chegando no Rio Negro. Quer que eu deixe o amanhã organizado com você?', 'Noite tranquila por aqui. Como foi o dia na operação?'];
-    return [{ texto: op[diaMes % op.length] }];
-  }, [pronto, recepcao, hoje]);
+    return [{ texto: op[(diaMes + sorteioVisita) % op.length] }];
+  }, [pronto, recepcao, hoje, sorteioVisita]);
 
   // EDA_FRASE_FIXA_V1: congela a frase no instante em que a digitação começa.
   // Antes, a resposta da IA (ou a troca de "hoje") chegava depois e reiniciava
@@ -712,6 +715,7 @@ export default function InicioOperadoraPremiumERN({
             <div><b>{rede ? rede.rascunhos : '—'}</b><small>rascunhos</small></div>
             <div><b className="eda-arco"><ArcoFlechaERN tamanho={18} ativo={!!rede?.verificado} /></b><small>{rede?.verificado ? 'verificado' : 'não verificado'}</small></div>
           </div>
+          <ProcuraRedeEDA />
           <div className="eda-acoes">
             <Link href="/configuracoes/publicacoes" className="eda-bt eda-bt-ouro eda-bt-p">Nova publicação</Link>
             <Link href={rede?.publicado && rede.slug ? `/rede/perfil/${rede.slug}` : '/configuracoes/perfil-publico'} className="eda-bt eda-bt-sec eda-bt-p">{rede?.publicado ? 'Ver perfil ↗' : 'Configurar perfil'}</Link>

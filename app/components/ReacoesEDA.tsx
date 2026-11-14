@@ -1,7 +1,7 @@
 'use client';
 
 // EDA_REACOES_V1 — Reações amazônicas do feed.
-// Toque rápido = "Quero ir!" (o anzol fisga o tucunaré). Segurar / passar o
+// Toque rápido = "Quero ir!" (o arco dispara a flecha). Segurar / passar o
 // mouse / botão ▾ abre as outras: arco (Que lindeza), boto (Me encantei),
 // tucunaré (Pai d'égua!) e maracá (Cultura viva).
 // São apenas reações: medem interesse e destacam os passeios mais procurados.
@@ -18,41 +18,35 @@ const ROTULOS: Record<Idioma, Record<Reacao, string> & { mais: string; nota: str
   ES: { quero_ir: '¡Quiero ir!', lindeza: 'Qué belleza', encantei: 'Me encanté', pai_degua: "¡Pai d'égua! (genial)", cultura: 'Cultura viva', mais: 'Más reacciones', nota: 'Las reacciones muestran interés — no son reservas.', entrar: 'Inicia sesión para reaccionar', erro: 'No funcionó ahora.' },
 };
 
-/** "Quero ir!": anzol que fisga o tucunaré (anima quando ativo). */
-export function FisgarEDA({ ativo, tamanho = 30 }: { ativo: boolean; tamanho?: number }) {
+/** EDA_REACAO_ARCO_V1 — "Quero ir!": o arco dispara a flecha (anima quando ativo). */
+export function ArcoLancaEDA({ ativo, tamanho = 30 }: { ativo: boolean; tamanho?: number }) {
   return (
-    <svg className={`eda-fisgar${ativo ? ' eda-fisgar-ativo' : ''}`} width={tamanho} height={tamanho} viewBox="0 0 48 48" aria-hidden="true">
+    <svg className={`eda-arco-lanca${ativo ? ' eda-arco-lanca-ativo' : ''}`} width={tamanho} height={tamanho} viewBox="0 0 48 48" aria-hidden="true">
       <defs>
-        <linearGradient id="eda-vara" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#c58a46" /><stop offset="1" stop-color="#7a4515" /></linearGradient>
-        <linearGradient id="eda-tucunare" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#9aa63a" /><stop offset=".55" stop-color="#e3b23c" /><stop offset="1" stop-color="#f3d27a" /></linearGradient>
+        <linearGradient id="eda-arco-madeira" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stopColor="#c58a46" /><stop offset="1" stopColor="#7a4515" /></linearGradient>
       </defs>
-      {/* água */}
-      <path className="eda-fisgar-agua" d="M2 40 q5 -3 10 0 t10 0 t10 0 t10 0 t6 0" fill="none" stroke="#4fa3b8" strokeWidth="2" strokeLinecap="round" />
-      {/* vara e linha */}
-      <path d="M4 4 Q 22 2 34 12" fill="none" stroke="#3b230d" strokeWidth="3.6" strokeLinecap="round" />
-      <path d="M4 4 Q 22 2 34 12" fill="none" stroke="url(#eda-vara)" strokeWidth="2.2" strokeLinecap="round" />
-      <g className="eda-fisgar-linha-anzol">
-        <line className="eda-fisgar-linha" x1="34" y1="12" x2="34" y2="30" stroke="#f5f3ea" strokeWidth="1" />
-        <path className="eda-fisgar-anzol" d="M34 30 v3 a2.5 2.5 0 0 1 -5 0" fill="none" stroke="#e3a144" strokeWidth="1.6" strokeLinecap="round" />
+      {/* arco */}
+      <path d="M14 6 Q 32 24 14 42" fill="none" stroke="#3b230d" strokeWidth="4" strokeLinecap="round" />
+      <path d="M14 6 Q 32 24 14 42" fill="none" stroke="url(#eda-arco-madeira)" strokeWidth="2.4" strokeLinecap="round" />
+      <circle cx="21.6" cy="24" r="1.6" fill="#e3a144" />
+      {/* corda (estica e solta) */}
+      <path className="eda-arco-corda" d="M14 6 L 14 42" fill="none" stroke="#f5f3ea" strokeWidth="1" />
+      {/* flecha */}
+      <g className="eda-arco-flecha">
+        <line x1="8" y1="24" x2="40" y2="24" stroke="#d7b98a" strokeWidth="1.8" strokeLinecap="round" />
+        <path d="M40 24 l-5 -3.2 v6.4 Z" fill="#e3a144" stroke="#7a4515" strokeWidth=".6" />
+        <path d="M8 24 l-3 -3 M8 24 l-3 3 M11 24 l-3 -3 M11 24 l-3 3" stroke="#c8402f" strokeWidth="1.4" strokeLinecap="round" />
       </g>
-      {/* tucunaré */}
-      <g className="eda-fisgar-peixe">
-        <path d="M22 37 q8 -6 16 0 q-8 6 -16 0 Z" fill="url(#eda-tucunare)" stroke="#3b3a0d" strokeWidth="1" />
-        <path d="M22 37 l-5 -4 v8 Z" fill="#c8402f" stroke="#5a1d13" strokeWidth=".8" />
-        <path d="M27 33.6 v6.8 M31 33 v8 M35 34 v6" stroke="#2a2a0b" strokeWidth="1.1" />
-        <circle cx="36" cy="36" r="1" fill="#1a1205" />
-        <circle cx="24.5" cy="37" r="1.3" fill="#2a2a0b" stroke="#e3a144" strokeWidth=".6" />
-      </g>
-      {/* respingos */}
-      <g className="eda-fisgar-respingo" fill="#7cc4d4">
-        <circle cx="26" cy="38" r="1.2" /><circle cx="40" cy="37" r="1" /><circle cx="33" cy="41" r="1.1" />
+      {/* rastro */}
+      <g className="eda-arco-rastro" stroke="#f4c77e" strokeWidth="1.2" strokeLinecap="round">
+        <line x1="22" y1="20" x2="30" y2="20" /><line x1="20" y1="28" x2="28" y2="28" />
       </g>
     </svg>
   );
 }
 
-function IconeReacao({ r, ativo }: { r: Reacao; ativo: boolean }) {
-  if (r === 'quero_ir') return <FisgarEDA ativo={ativo} />;
+export function IconeReacao({ r, ativo }: { r: Reacao; ativo: boolean }) {
+  if (r === 'quero_ir') return <ArcoLancaEDA ativo={ativo} />;
   if (r === 'pai_degua') return <span className={`eda-reacao-tucunare${ativo ? ' eda-reacao-pulo' : ''}`} aria-hidden="true" />;
   const src = r === 'lindeza' ? '/images/marcos/arco-sao-gabriel.svg' : r === 'encantei' ? '/images/fauna/boto-ern.png' : '/images/marcos/maraca-reacao.svg';
   // eslint-disable-next-line @next/next/no-img-element
