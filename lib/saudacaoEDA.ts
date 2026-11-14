@@ -51,6 +51,10 @@ const RETORNO: Record<PeriodoEDA, ((n: string) => string)[]> = {
 
 let cache: { chave: string; fn: (n: string) => string; retorno: boolean } | null = null;
 
+/** EDA_SAUDACAO_V4: o painel chama ao montar — cada volta ao painel é uma visita nova
+ *  (antes o cache só mudava ao recarregar a página). */
+export function novaVisitaSaudacaoEDA() { cache = null; }
+
 /** Saudação desta visita. Chamar com o primeiro nome (ou ''). Mesmo resultado no painel e na conversa. */
 export function saudacaoEDA(nome: string): { texto: string; retorno: boolean } {
   if (typeof window === 'undefined') return { texto: '', retorno: false };
