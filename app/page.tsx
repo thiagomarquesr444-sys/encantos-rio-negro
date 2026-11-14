@@ -32,9 +32,9 @@ const FOCO =
   'focus-visible:outline-[#F4C77E]';
 
 const faixaOperador = {
-  PT: { destaque: 'Trabalha com turismo no Rio Negro?', texto: 'Organize reservas, vouchers e o financeiro da sua operação e apareça para quem procura o território.', link: 'Conhecer a EDA para operadores', precos: 'Ver planos e preços' },
-  EN: { destaque: 'Do you work in tourism on the Rio Negro?', texto: 'Organize bookings, vouchers and finances, and be found by people looking for the region.', link: 'EDA for operators', precos: 'See plans and pricing' },
-  ES: { destaque: '¿Trabajas con turismo en el Río Negro?', texto: 'Organiza reservas, vouchers y finanzas, y aparece para quienes buscan el territorio.', link: 'EDA para operadores', precos: 'Ver planes y precios' },
+  PT: { destaque: 'Trabalha com turismo no Amazonas?', texto: 'Organize reservas, vouchers e o financeiro da sua operação e apareça para quem procura o território.', link: 'Conhecer a Encantos Gestão', precos: 'Ver planos e preços' },
+  EN: { destaque: 'Do you work in tourism in Amazonas?', texto: 'Organize bookings, vouchers and finances, and be found by people looking for the region.', link: 'EDA for operators', precos: 'See plans and pricing' },
+  ES: { destaque: '¿Trabajas con turismo en Amazonas?', texto: 'Organiza reservas, vouchers y finanzas, y aparece para quienes buscan el territorio.', link: 'EDA para operadores', precos: 'Ver planes y precios' },
 };
 
 export default function Home() {

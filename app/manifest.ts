@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     id: '/',
     name: 'Encantos da Amazônia',
     short_name: 'EDA',
-    description: 'Turismo, cultura e pesca esportiva no Amazonas, do Rio Negro a Parintins.',
+    description: 'Turismo, cultura e pesca esportiva no Amazonas, do Rio Negro ao Solimões.',
     lang: 'pt-BR',
     start_url: '/',
     scope: '/',

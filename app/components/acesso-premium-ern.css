@@ -190,3 +190,7 @@
 .ern-acesso-v2 .ern-acesso-beneficios li>span{color:#f7d595}
 .ern-acesso-v2 .ern-acesso-perfis a>span{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:rgb(255 255 255 / 5%);color:#cdd8d2;font-size:0}
 .ern-acesso-v2 .ern-acesso-perfis a[aria-current=true]>span{background:linear-gradient(180deg,#f7d595,#e3a144);color:#07110e}
+
+/* FABLEPREMIUM_V1: painel da foto com fundo enquanto a imagem carrega e menor no celular */
+.ern-acesso-v2 .ern-acesso-manifesto{background:linear-gradient(160deg,#143026,#07110e)}
+@media(max-width:767px){.ern-acesso-v2 .ern-acesso-manifesto{min-height:240px}}

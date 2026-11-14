@@ -26,7 +26,7 @@ import './FeedRedeVisitanteERN.css';
 const PAGE = 12;
 const copy = {
   PT: {
-    title: 'Quem vive a Amazônia, mostra a Amazônia.', titleParts: ['Quem vive a', 'Amazônia', ', mostra a Amazônia.'], sub: 'Lugares, histórias e quem faz parte deles, do Rio Negro a Parintins.',
+    title: 'Quem vive a Amazônia, mostra a Amazônia.', titleParts: ['Quem vive a', 'Amazônia', ', mostra a Amazônia.'], sub: 'Lugares, histórias e quem faz parte deles, do Rio Negro ao Solimões.',
     flechar: 'Flechar', flechado: 'Flechado', whatsapp: 'Chamar no WhatsApp', whatsappMsg: (titulo: string) => `Olá! Vi a publicação "${titulo}" na Rede Encantos da Amazônia e quero saber mais.`,
     seeOnMap: 'Ver no mapa', featured: 'Destino em destaque', featuredName: 'Encontro das Águas', featuredText: 'Onde o Rio Negro encontra o Solimões, diante de Manaus.', openMap: 'Abrir no mapa',
     verifiedTitle: 'Operadores verificados', viewProfile: 'Ver perfil', conciergeText: 'Gostou de uma história? Transforme em viagem.', conciergeCta: 'Planejar agora',
@@ -51,7 +51,7 @@ const copy = {
     newPosts: 'publicações adicionadas', scrollTop: 'Voltar ao início', filterActive: 'Filtros ativos',
   },
   EN: {
-    title: 'Those who live the Amazon show the Amazon.', titleParts: ['Those who live the', 'Amazon', ' show the Amazon.'], sub: 'Places, stories and the people behind them, from the Rio Negro to Parintins.',
+    title: 'Those who live the Amazon show the Amazon.', titleParts: ['Those who live the', 'Amazon', ' show the Amazon.'], sub: 'Places, stories and the people behind them, from the Rio Negro to the Solimões.',
     flechar: 'Arrow', flechado: 'Arrowed', whatsapp: 'Message on WhatsApp', whatsappMsg: (titulo: string) => `Hello! I saw the post "${titulo}" on the Encantos da Amazônia Network and would like to know more.`,
     seeOnMap: 'See on the map', featured: 'Featured destination', featuredName: 'Meeting of the Waters', featuredText: 'Where the Rio Negro meets the Solimões, in front of Manaus.', openMap: 'Open on the map',
     verifiedTitle: 'Verified operators', viewProfile: 'View profile', conciergeText: 'Loved a story? Turn it into a trip.', conciergeCta: 'Plan now',
@@ -76,7 +76,7 @@ const copy = {
     newPosts: 'posts added', scrollTop: 'Back to the beginning', filterActive: 'Active filters',
   },
   ES: {
-    title: 'Quien vive la Amazonía, muestra la Amazonía.', titleParts: ['Quien vive la', 'Amazonía', ', muestra la Amazonía.'], sub: 'Lugares, historias y las personas que los hacen posibles, del Río Negro a Parintins.',
+    title: 'Quien vive la Amazonía, muestra la Amazonía.', titleParts: ['Quien vive la', 'Amazonía', ', muestra la Amazonía.'], sub: 'Lugares, historias y las personas que los hacen posibles, del Río Negro al Solimões.',
     flechar: 'Flechar', flechado: 'Flechado', whatsapp: 'Escribir por WhatsApp', whatsappMsg: (titulo: string) => `¡Hola! Vi la publicación "${titulo}" en la Red Encantos da Amazônia y quiero saber más.`,
     seeOnMap: 'Ver en el mapa', featured: 'Destino destacado', featuredName: 'Encuentro de las Aguas', featuredText: 'Donde el Río Negro encuentra al Solimões, frente a Manaos.', openMap: 'Abrir en el mapa',
     verifiedTitle: 'Operadores verificados', viewProfile: 'Ver perfil', conciergeText: '¿Te gustó una historia? Conviértela en viaje.', conciergeCta: 'Planear ahora',

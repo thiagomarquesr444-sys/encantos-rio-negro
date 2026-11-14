@@ -93,6 +93,6 @@ export default function AcessoPremiumERN({ children, etapa, perfil }: Props) {
         {children}
       </div>
     </div>
-    <footer className="ern-acesso-base"><span>Encantos Gestão · do Rio Negro a Parintins</span><nav aria-label="Informações da plataforma"><Link href="/privacidade">Privacidade</Link><Link href="/termos">Termos</Link><Link href="/contato">Atendimento</Link></nav></footer>
+    <footer className="ern-acesso-base"><span>Encantos Gestão · do Rio Negro ao Solimões</span><nav aria-label="Informações da plataforma"><Link href="/privacidade">Privacidade</Link><Link href="/termos">Termos</Link><Link href="/contato">Atendimento</Link></nav></footer>
   </main>;
 }

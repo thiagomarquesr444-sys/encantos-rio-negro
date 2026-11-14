@@ -964,9 +964,6 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
             <span className="iara-oferta-nome">Iara <small>· Encantos da Amazônia</small></span>
             <p><TextoDigitadoIA texto={ofertaIara.texto} animar msPorLetra={34} render={(t2) => comIconesIara(t2)} /></p>
             <div className="iara-oferta-opcoes">
-              {ofertaIara.opcoes.map(o => (
-                <button key={o.rotulo} type="button" className="iara-oferta-opcao" onClick={() => escolherOpcaoIara(o)}>{o.rotulo}</button>
-              ))}
               <button type="button" className="iara-oferta-acao" onClick={() => { setOfertaIara(null); setAberto(true); }}>{c.open} <span aria-hidden="true">→</span></button>
             </div>
           </div>
@@ -1715,6 +1712,37 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
           transition: transform .2s, box-shadow .2s, border-color .2s;
         }
         .mensagens :global(.iara-link:hover) { transform: translateY(-1px); box-shadow: 0 6px 16px rgb(138 75 18 / 18%); }
+        /* IARA_FABLEPREMIUM_V1: conversa no tema escuro do portal (antes clara sobre site escuro) */
+        dialog { background: #0a1512; color: #eef0e8; border-color: rgb(244 199 126 / 30%); box-shadow: 0 30px 90px rgb(0 0 0 / 60%), 0 0 0 1px rgb(255 255 255 / 4%); }
+        .informacoes { background: rgb(255 255 255 / 3%); border-bottom: 1px solid rgb(255 255 255 / 8%); }
+        .informacoes p, .chat-rodape p { color: #9fb0a7; }
+        .mensagens { background: transparent; color: #eef0e8; scrollbar-color: rgb(244 199 126 / 35%) transparent; }
+        .balao { background: rgb(255 255 255 / 5%); border: 1px solid rgb(255 255 255 / 9%); color: #eef0e8; box-shadow: none; }
+        .assistente .autor { color: #f4c77e; }
+        .visitante .balao { border: 0; background: linear-gradient(180deg, #1f5745, #163c30); color: #f5f3ea; }
+        .limite { color: #c9d4cd; }
+        .sugestoes, .atalhos { background: transparent; border-top-color: rgb(255 255 255 / 8%); }
+        .sugestoes button, .atalhos :global(a) { background: rgb(244 199 126 / 8%); color: #f7d595; border-color: rgb(244 199 126 / 40%); }
+        .sugestoes button:hover, .atalhos :global(a:hover) { background: rgb(244 199 126 / 18%); border-color: #f4c77e; }
+        .compositor { background: rgb(255 255 255 / 6%); border-color: rgb(255 255 255 / 12%); box-shadow: none; }
+        .compositor input { color: #f2f0e6; background: transparent; }
+        .compositor input::placeholder { color: #8fa198; }
+        .compositor:focus-within { border-color: #e3a144; box-shadow: 0 0 0 3px rgb(227 161 68 / 22%); }
+        .mensagens :global(.iara-link) { color: #f7d595; background: rgb(244 199 126 / 8%); border-color: rgb(244 199 126 / 35%); }
+        .mensagens :global(.iara-link:hover) { background: rgb(244 199 126 / 18%); border-color: #f4c77e; }
+        .mensagens :global(.iara-pedido a) { color: #f4c77e; }
+        .iara-audio-status { color: #c9d4cd; }
+        .iara-audio-tempo { color: #f2f0e6; }
+        .iara-audio-cancelar, .iara-audio-erro { color: #f0a08f; }
+        .iara-audio-cancelar:hover { background: rgb(240 160 143 / 12%); }
+        .chat-rodape button { color: #f4c77e; }
+        /* Convite da Iara: discreto no celular, sem cobrir o conteúdo */
+        @media (max-width: 640px) {
+          .iara-oferta { left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); max-width: none; padding: 10px 12px; gap: 10px; }
+          .iara-oferta-avatar { width: 32px; height: 32px; }
+          .iara-oferta p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; font-size: 13px; }
+          .iara-oferta-opcoes { margin-top: 6px; }
+        }
       `}</style>
     </section>
   );

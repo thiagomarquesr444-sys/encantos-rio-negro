@@ -155,7 +155,7 @@ export default function LibrasERN() {
       <style jsx>{`
         .ern-libras {
           position: fixed;
-          right: max(12px, env(safe-area-inset-right));
+          right: 0;
           /* EDA_LIBRAS_POSICAO_V2: no meio da lateral direita — longe do botão da Iara
              (no alto) e do convite dela (embaixo). */
           top: 50%;
@@ -167,11 +167,12 @@ export default function LibrasERN() {
           display: flex;
           align-items: center;
           justify-content: center;
-          width: 48px; min-width: 48px; height: 48px;
+          /* FABLEPREMIUM_V1: aba colada na borda, cobre menos o conteúdo. */
+          width: 44px; min-width: 44px; height: 48px;
           min-height: 48px;
           padding: 0;
           border: 0;
-          border-radius: 12px;
+          border-radius: 12px 0 0 12px;
           background: #247bea;
           color: #fff;
           box-shadow: 0 8px 22px rgb(0 0 0 / 30%), 0 0 0 1px rgb(255 255 255 / 18%);
@@ -214,10 +215,10 @@ export default function LibrasERN() {
         }
         @media (max-width: 640px) {
           .ern-libras {
-            right: max(8px, env(safe-area-inset-right));
+            right: 0;
           }
           button {
-            min-width: 48px;
+            min-width: 44px;
             padding: 0;
             font-size: 13px;
           }

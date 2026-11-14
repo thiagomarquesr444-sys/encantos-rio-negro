@@ -22,11 +22,11 @@ const FOCO = 'focus-visible:outline-2 focus-visible:outline-offset-4 focus-visib
 
 const textos = {
   PT: {
-    garantias: ['Do Rio Negro a Parintins', 'Operadores da Rede EDA', 'Atendimento em PT, EN e ES'],
+    garantias: ['Do Rio Negro ao Solimões', 'Operadores da Rede EDA', 'Atendimento em PT, EN e ES'],
     legendaFoto: 'Casa flutuante · Rio Negro',
     selo: 'Experiências · Amazonas',
     titulo: ['Experiências que só a', 'Amazônia', 'oferece.'],
-    intro: 'Pesca esportiva, rios, floresta, festivais e sabores, do Rio Negro a Parintins, com quem conhece o território.',
+    intro: 'Pesca esportiva, rios, floresta, festivais e sabores, do Rio Negro ao Solimões, com quem conhece o território.',
     encontrar: 'Encontrar minha experiência',
     concierge: 'Conversar com a Iara',
     interessesEyebrow: 'O que desperta sua curiosidade?',
@@ -75,11 +75,11 @@ const textos = {
     links: [['Atendimento', '/contato'], ['Privacidade', '/privacidade'], ['Termos', '/termos']],
   },
   EN: {
-    garantias: ['From the Rio Negro to Parintins', 'EDA Network operators', 'Support in PT, EN and ES'],
+    garantias: ['From the Rio Negro to the Solimões', 'EDA Network operators', 'Support in PT, EN and ES'],
     legendaFoto: 'Floating house · Rio Negro',
     selo: 'Experiences · Amazonas',
     titulo: ['Experiences only the', 'Amazon', 'can offer.'],
-    intro: 'Sport fishing, rivers, forest, festivals and flavors, from the Rio Negro to Parintins, with people who know the region.',
+    intro: 'Sport fishing, rivers, forest, festivals and flavors, from the Rio Negro to the Solimões, with people who know the region.',
     encontrar: 'Find my experience',
     concierge: 'Talk to Iara',
     interessesEyebrow: 'What sparks your curiosity?',
@@ -128,11 +128,11 @@ const textos = {
     links: [['Support', '/contato'], ['Privacy', '/privacidade'], ['Terms', '/termos']],
   },
   ES: {
-    garantias: ['Del Río Negro a Parintins', 'Operadores de la Red EDA', 'Atención en PT, EN y ES'],
+    garantias: ['Del Río Negro al Solimões', 'Operadores de la Red EDA', 'Atención en PT, EN y ES'],
     legendaFoto: 'Casa flotante · Río Negro',
     selo: 'Experiencias · Amazonas',
     titulo: ['Experiencias que solo la', 'Amazonía', 'ofrece.'],
-    intro: 'Pesca deportiva, ríos, selva, festivales y sabores, del Río Negro a Parintins, con quienes conocen el territorio.',
+    intro: 'Pesca deportiva, ríos, selva, festivales y sabores, del Río Negro al Solimões, con quienes conocen el territorio.',
     encontrar: 'Encontrar mi experiencia',
     concierge: 'Hablar con Iara',
     interessesEyebrow: '¿Qué despierta tu curiosidad?',

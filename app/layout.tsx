@@ -59,7 +59,7 @@ export const metadata: Metadata = {
     template: '%s • Encantos da Amazônia',
   },
   description:
-    'Turismo, cultura e pesca esportiva no Amazonas, do Rio Negro a Parintins: destinos, experiências, operadores e guias locais.',
+    'Turismo, cultura e pesca esportiva no Amazonas, do Rio Negro ao Solimões: destinos, experiências, operadores e guias locais.',
   openGraph: {
     type: 'website',
     locale: 'pt_BR',

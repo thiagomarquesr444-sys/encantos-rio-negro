@@ -286,6 +286,9 @@ export default function ConciergeLancadorERN({
             animation: ern-lancador-onda 3.2s ease-out infinite;
           }
         }
+        @media (max-width: 640px) {
+          .ern-lancador, .abrir { width: 50px; height: 50px; }
+        }
         [data-pausado='true'] .abrir,
         [data-pausado='true'] .abrir::after {
           animation-play-state: paused;

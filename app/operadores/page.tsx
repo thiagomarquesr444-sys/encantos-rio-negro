@@ -312,7 +312,7 @@ export default function OperadoresPage() {
       </main>
       <footer className="border-t border-white/10 px-5 py-10 sm:px-8">
         <div className="mx-auto flex max-w-[1280px] flex-col gap-6 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-3"><LogoERN tamanho={40} /><span className="leading-tight"><span className="block text-lg font-semibold text-[#F0F0E8]">Encantos Gestão</span><span className="block text-xs text-[#8FA39A]">Encantos da Amazônia · do Rio Negro a Parintins</span></span></div>
+          <div className="flex items-center gap-3"><LogoERN tamanho={40} /><span className="leading-tight"><span className="block text-lg font-semibold text-[#F0F0E8]">Encantos Gestão</span><span className="block text-xs text-[#8FA39A]">Encantos da Amazônia · do Rio Negro ao Solimões</span></span></div>
           <nav aria-label="Informações e atendimento" className="flex flex-wrap gap-x-5 gap-y-1">
             {t.footer.map(([nome, href]) => <Link key={href} href={href} className={`inline-flex min-h-11 items-center text-sm font-semibold text-[#EDEDE3] hover:text-[#F4C77E] ${FOCO}`}>{nome}</Link>)}
             <button type="button" aria-haspopup="dialog" onClick={() => window.dispatchEvent(new Event('eda:abrir-feedback'))} className={`eda-rodape-feedback inline-flex min-h-11 items-center text-sm font-semibold text-[#EDEDE3] hover:text-[#F4C77E] ${FOCO}`}>Feedback</button>

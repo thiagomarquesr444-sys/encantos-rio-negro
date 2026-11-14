@@ -111,7 +111,7 @@ const copy = {
 const premium = {
   PT: {
     titulo: ['Explore a', 'Amazônia', 'no mapa.'],
-    intro: 'Do Alto Rio Negro a Parintins: escolha uma região, toque em um lugar e descubra o que viver.',
+    intro: 'Do Alto Rio Negro ao Solimões: escolha uma região, toque em um lugar e descubra o que viver.',
     regioes: 'Regiões', contagem: (n: number) => `${n} ${n === 1 ? 'destino' : 'destinos'}`,
     abas: ['Visão geral', 'História', 'Na Rede', 'Como chegar'],
     semHistoria: 'A história deste lugar está sendo reunida com pesquisadores e moradores da região.',
@@ -130,7 +130,7 @@ const premium = {
   },
   EN: {
     titulo: ['Explore the', 'Amazon', 'on the map.'],
-    intro: 'From the Upper Rio Negro to Parintins: choose a region, tap a place and discover what to experience.',
+    intro: 'From the Upper Rio Negro to the Solimões: choose a region, tap a place and discover what to experience.',
     regioes: 'Regions', contagem: (n: number) => `${n} ${n === 1 ? 'destination' : 'destinations'}`,
     abas: ['Overview', 'History', 'On the Network', 'Getting there'],
     semHistoria: 'The history of this place is being gathered with local researchers and residents.',
@@ -149,7 +149,7 @@ const premium = {
   },
   ES: {
     titulo: ['Explora la', 'Amazonía', 'en el mapa.'],
-    intro: 'Del Alto Río Negro a Parintins: elige una región, toca un lugar y descubre qué vivir.',
+    intro: 'Del Alto Río Negro al Solimões: elige una región, toca un lugar y descubre qué vivir.',
     regioes: 'Regiones', contagem: (n: number) => `${n} ${n === 1 ? 'destino' : 'destinos'}`,
     abas: ['Visión general', 'Historia', 'En la Red', 'Cómo llegar'],
     semHistoria: 'La historia de este lugar se está reuniendo con investigadores y habitantes de la región.',
