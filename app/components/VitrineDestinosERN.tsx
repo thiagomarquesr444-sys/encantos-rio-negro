@@ -13,6 +13,7 @@ import {
 } from '@/lib/catalogoDestinosERN';
 import { MUNICIPIOS_AMAZONAS } from '@/lib/municipiosAmazonasERN';
 import { acharDestinoIara, destinoParaParametro } from '@/lib/iaraDestinosERN';
+import { fichaPorNome, useFichasMunicipios } from '@/lib/fichasMunicipiosCliente';
 
 // ERN_VITRINE_DESTINOS_V1 → EDA_DESCUBRA_AMAZONAS_V1
 // "Descubra o território" agora cobre o Amazonas inteiro. Três filtros
@@ -170,6 +171,10 @@ export default function VitrineDestinosERN({
   });
 
   const destinoMunicipio = municipio ? acharDestinoIara(municipio) : null;
+  // IARA_FICHAS_NAS_TELAS_V1: o cartão do município mostra o que está na ficha oficial.
+  const fichas = useFichasMunicipios();
+  const ficha = municipio ? fichaPorNome(fichas, municipio) : null;
+  const festaFicha = ficha?.festas?.[0];
   const filtrando = aba !== 'todos' || base !== 'todas' || !!municipio || !!termo;
   const limparTudo = () => { setAba('todos'); setBase('todas'); setMunicipio(''); onLimparBusca(); };
 
@@ -296,7 +301,12 @@ export default function VitrineDestinosERN({
               >
                 <span className="text-xs font-semibold uppercase tracking-[0.16em] text-[#F4C77E]">Iara · {t.municipio}</span>
                 <span className="mt-2 text-3xl font-semibold leading-tight tracking-[-0.02em] text-[#F0F0E8]" style={{ fontFamily: 'var(--font-fraunces), serif' }}>{t.conhecer(municipio)}</span>
-                <span className="mt-2 max-w-[460px] text-sm leading-6 text-[#D6DFD9]">{t.conhecerTexto(municipio)}</span>
+                <span className="mt-2 max-w-[520px] text-sm leading-6 text-[#D6DFD9]">{idioma === 'PT' && ficha?.resumo ? ficha.resumo : t.conhecerTexto(municipio)}</span>
+                {idioma === 'PT' && festaFicha && (
+                  <span className="mt-2 inline-flex w-fit items-center gap-2 rounded-full border border-[#F4C77E]/40 bg-[#F4C77E]/10 px-3 py-1 text-xs font-semibold text-[#F7D595]">
+                    {festaFicha.nome.split('—')[0].trim()}{festaFicha.quando ? ` · ${festaFicha.quando}` : ''}
+                  </span>
+                )}
                 <span className="mt-4 inline-flex w-fit items-center gap-2 rounded-full bg-gradient-to-b from-[#F7D595] to-[#E3A144] px-4 py-2 text-sm font-bold text-[#07110E]">
                   {destinoMunicipio ? t.verMapa : t.perguntar} <span aria-hidden="true">→</span>
                 </span>

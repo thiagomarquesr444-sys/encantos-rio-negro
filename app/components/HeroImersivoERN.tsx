@@ -7,6 +7,7 @@ import IconeIara from '@/app/components/IconeIara';
 import { comIconesIara } from '@/app/components/IconesIaraEDA';
 import { homeTranslations, type HomeTranslation } from '@/lib/i18n/home';
 import { MUNICIPIOS_AMAZONAS } from '@/lib/municipiosAmazonasERN';
+import { curiosidadesFichas, useFichasMunicipios } from '@/lib/fichasMunicipiosCliente';
 
 const NOMES_FAIXA = [...MUNICIPIOS_AMAZONAS].map((m) => m.nome).sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
@@ -227,7 +228,17 @@ export default function HeroImersivoERN({
   const [temTexto, setTemTexto] = useState(false);
   const [compondo, setCompondo] = useState(false);
   useEffect(() => { if (!termo && !compondo) setTemTexto(false); }, [termo, compondo]);
-  const falas = useMemo(() => falasBusca(idioma === 'EN' || idioma === 'ES' ? idioma : 'PT'), [idioma]);
+  // IARA_FICHAS_NAS_TELAS_V1: as falas da barra misturam a recepção com
+  // curiosidades reais das fichas dos municípios (festa + mês + município).
+  const fichas = useFichasMunicipios();
+  const falas = useMemo(() => {
+    const base = falasBusca(idioma === 'EN' || idioma === 'ES' ? idioma : 'PT');
+    if (idioma !== 'PT' || !fichas.length) return base;
+    const extras = curiosidadesFichas(fichas, 4).map(c => ({ fala: c.fala, pedido: c.pedido }));
+    const mix = [base[0], base[1]];
+    base.slice(2).forEach((f, i) => { mix.push(f); if (extras[i]) mix.push(extras[i]); });
+    return mix;
+  }, [idioma, fichas]);
   const busca = useBuscaViva(falas, focado || !!termo || temTexto, t.placeholder);
   const [temMicrofone, setTemMicrofone] = useState(false);
   useEffect(() => {

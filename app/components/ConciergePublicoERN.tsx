@@ -12,6 +12,7 @@ import IconeIara from './IconeIara';
 import TextoDigitadoIA from './TextoDigitadoIA';
 import { comIconesIara } from './IconesIaraEDA';
 import { chaveRecepcao, falaPaginaIara, recepcaoIara, type MomentoRecepcao, type OpcaoRecepcao } from '@/lib/recepcaoIaraEDA';
+import { curiosidadesFichas, useFichasMunicipios } from '@/lib/fichasMunicipiosCliente';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import { confirmarEDA } from '@/lib/dialogoEDA';
 
@@ -496,6 +497,9 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   const setOfertaIara = (texto: string | null, opcoes: OpcaoRecepcao[] = []) =>
     setOfertaIaraEstado(texto ? { texto, opcoes, n: Date.now() } : null);
   const fechadasIara = useRef(0);
+  const fichasIaraTela = useFichasMunicipios();
+  const fichasIaraRef = useRef(fichasIaraTela);
+  fichasIaraRef.current = fichasIaraTela;
   useEffect(() => {
     if (!memoriaPronta || aberto) return;
     let paginas: string[] = [];
@@ -514,7 +518,6 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
     const chave = chaveRecepcao(pathname);
     if (momento === 'pagina' && paginas.includes(chave)) return;
     const regional = estiloIara === 'regional';
-    const r = recepcaoIara(idioma, pathname, regional, momento, nomeVisitante);
     const espera = momento === 'pagina' ? 4200 : 2600;
     const id = window.setTimeout(() => {
       try {
@@ -522,6 +525,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
         localStorage.setItem('iara.visitou.v1', '1');
         if (momento === 'primeiro-login' && usuarioId) localStorage.setItem(`iara.acolhida.${usuarioId}`, '1');
       } catch {}
+      const r = recepcaoIara(idioma, pathname, regional, momento, nomeVisitante, curiosidadesFichas(fichasIaraRef.current, 1)[0] ?? null);
       setOfertaIara(r.texto, r.opcoes);
     }, espera);
     return () => window.clearTimeout(id);

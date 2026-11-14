@@ -116,8 +116,21 @@ export function recepcaoIara(
   regional: boolean,
   momento: MomentoRecepcao,
   nome = '',
+  curiosidade?: { fala: string; pedido: string; municipio: string } | null,
 ): RecepcaoIara {
-  const pagina = falaPaginaIara(idioma, caminho, regional);
+  let pagina = falaPaginaIara(idioma, caminho, regional);
+  // IARA_FICHAS_NAS_TELAS_V1: na Descubra e em Destinos, metade das vezes a
+  // Iara traz uma curiosidade real de um município (da ficha oficial).
+  const g = grupoPagina(caminho);
+  if (idioma === 'PT' && curiosidade && (g === 'descubra' || g === 'destinos') && Math.random() < 0.5) {
+    pagina = {
+      texto: `Sabia? ${curiosidade.fala}`,
+      opcoes: [
+        { rotulo: `Conhecer ${curiosidade.municipio}`, pedido: `Me leva para ${curiosidade.municipio}` },
+        { rotulo: 'Me conta mais', pedido: curiosidade.pedido },
+      ],
+    };
+  }
   const chave = grupoPagina(caminho);
   const v = nome ? `, ${nome}` : '';
   const tu = (a: string, b: string) => (regional ? a : b);
