@@ -66,7 +66,7 @@ export default function CatalogoTerritorialERN({ mapa, referencia, aoExplorar }:
   const origem = referencia?.coordenadas ?? selecionada?.coordenadas ?? null;
   const nomeOrigem = referencia ? (referencia.origem === "gps" ? "posição do aparelho a bordo" : "posição manual da embarcação") : selecionada ? `${selecionada.nome} · ${selecionada.municipio}` : "";
   return <section aria-labelledby="catalogo-territorial-ern" className="border-b border-white/10 bg-[var(--ern-painel,#0C211A)] p-4 sm:p-6">
-    <h3 id="catalogo-territorial-ern" className="text-xl text-[color:var(--ern-destaque,#F4C77E)]">Explore o Rio Negro</h3>
+    <h3 id="catalogo-territorial-ern" className="text-xl text-[color:var(--ern-destaque,#F4C77E)]">Localidades do território</h3>
     <p className="mt-2 text-xs leading-6 text-[color:var(--ern-secundario,#EDEDE3)]">{LOCALIDADES_RIO_NEGRO.length.toLocaleString("pt-BR")} referências territoriais do IBGE em Manaus, Iranduba, Novo Airão, Barcelos, Santa Isabel e São Gabriel. O recorte inclui áreas interiores e afluentes desses municípios; ainda não representa toda a bacia nem todos os atrativos.</p>
     <div className="mt-4 grid gap-3 sm:grid-cols-3">
       <label className="text-xs">Buscar localidade<input aria-label="Buscar localidade regional" value={busca} onChange={e => { setBusca(e.target.value); setLimite(12); }} placeholder="Ex.: Cucuí, Paricatuba…" className={CAMPO+" mt-2"} /></label>

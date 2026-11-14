@@ -92,13 +92,13 @@ function restaurarMsgs(valor: unknown): Msg[] {
     if (Array.isArray(x.links)) m.links = x.links.filter(linkSeguro).slice(0, 3);
     if (Array.isArray(x.acoes) && x.acoes.length && x.acoes.every(acaoValida)) {
       m.acoes = x.acoes;
-      m.estados = x.acoes.map((_, i) => {
+      m.estados = x.acoes.map((_, i): EstadoAcao => {
         const e = Array.isArray(x.estados) ? x.estados[i] : undefined;
         // Ação que estava no meio de gravar quando a página mudou: confira antes de repetir.
         if (e === 'executando' || e === 'desfazendo') return 'erro';
         return e && ESTADOS_ACAO.includes(e) ? e : 'pendente';
       });
-      m.logs = x.acoes.map((_, i) => {
+      m.logs = x.acoes.map((_, i): string | null => {
         const l = Array.isArray(x.logs) ? x.logs[i] : null;
         return typeof l === 'string' ? l : null;
       });

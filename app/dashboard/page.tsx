@@ -7,6 +7,7 @@ import {
 
 import React, { useEffect, useMemo, useState } from 'react';
 import './dashboard-premium.css';
+import '@/app/fablepremium.css';
 import Link from 'next/link';
 import GraficosOperadora from '@/app/components/GraficosOperadora';
 import MapaTerritorioERN from '@/app/components/MapaTerritorioERN';
@@ -676,7 +677,7 @@ function DashboardAdministrativoERN() {
   // ERN_INICIO_OPERADORA_PREMIUM_V1: a página inicial nova concentra o dia
   // da operadora; mapa e análises completas seguem logo abaixo.
   return (
-    <div className="eda-inicio-fundo min-w-0 w-full break-words">
+    <div data-fable="gestao" className="eda-inicio-fundo min-w-0 w-full break-words">
       <InicioOperadoraPremiumERN
         hoje={inicioPeriodo || dataLocalManaus()}
         reservas={reservasOperacionais}
@@ -692,9 +693,9 @@ function DashboardAdministrativoERN() {
       <div className="ern-premium-dashboard eda-analises min-w-0 w-full">
         <div className="mx-auto min-w-0 w-full max-w-[1360px] px-4 pb-12 pt-6 sm:px-5 md:px-8">
           <section aria-labelledby="eda-territorio" id="mapa-ern" className="scroll-mt-28">
-            <p className="eda-sec-eb">Território</p>
-            <h2 id="eda-territorio" className="eda-sec-titulo">Mapa da operação</h2>
-            <MapaTerritorioERN demandas={demandasOperacionais} carregando={loading} />
+            <p className="eda-sec-eb">Operação</p>
+            <h2 id="eda-territorio" className="eda-sec-titulo">Mapa operacional</h2>
+            <MapaTerritorioERN demandas={demandasOperacionais} carregando={loading} somenteOperacao />
           </section>
 
           <section aria-labelledby="eda-analises" id="ern-v446-graficos" className="mt-10 scroll-mt-28">

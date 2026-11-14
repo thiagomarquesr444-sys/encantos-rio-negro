@@ -1,0 +1,100 @@
+/* FABLEPREMIUM_V1 — camada de acabamento da Encantos da Amazônia.
+   Só refina (tipografia, profundidade, movimento); não troca a identidade.
+   Vale onde a página marca data-fable="portal" ou data-fable="gestao".
+   Movimento desliga com "reduzir movimento" e com sinal fraco (modo leve). */
+
+[data-fable] {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+[data-fable] ::selection { background: rgb(244 199 126 / 32%); }
+[data-fable] :is(h1, h2, h3) { text-wrap: balance; }
+[data-fable] p { text-wrap: pretty; }
+
+@keyframes fable-surge {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes fable-brilho {
+  from { transform: translateX(-120%) skewX(-18deg); }
+  to { transform: translateX(220%) skewX(-18deg); }
+}
+
+/* ---------- Portal público (página-modelo: Descubra) ---------- */
+
+/* As seções abaixo do hero surgem conforme entram na tela (só em navegadores com suporte). */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    html:not([data-eda-sinal='fraco']) [data-fable='portal'] > section:not(:first-of-type) > * {
+      animation: fable-surge linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 32%;
+    }
+  }
+}
+[data-fable='portal'] :is(h1, h2) { letter-spacing: -0.032em; }
+[data-fable='portal'] a,
+[data-fable='portal'] button { -webkit-tap-highlight-color: transparent; }
+
+/* ---------- Gestão (página-modelo: Painel) ---------- */
+
+[data-fable='gestao'] .eda-eb { letter-spacing: 0.16em; }
+[data-fable='gestao'] :is(.eda-num, .eda-hora, .eda-total) { font-variant-numeric: tabular-nums; }
+
+/* Cartões: fio de luz no topo, profundidade em camadas e resposta ao toque. */
+[data-fable='gestao'] .eda-card {
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 6%),
+    0 1px 2px rgb(0 0 0 / 14%),
+    0 12px 32px -18px rgb(0 0 0 / 45%);
+  transition: border-color .2s ease, box-shadow .25s ease, transform .25s cubic-bezier(.2, .7, .2, 1);
+}
+[data-fable='gestao'] .eda-card:hover {
+  border-color: color-mix(in srgb, #e3a144 34%, var(--e-borda));
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 8%),
+    0 2px 4px rgb(0 0 0 / 16%),
+    0 22px 44px -22px rgb(0 0 0 / 55%);
+}
+[data-fable='gestao'] .eda-kpi:hover { transform: translateY(-2px); }
+[data-fable='gestao'] .eda-kpi-ic {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #e3a144 26%, transparent);
+}
+
+/* Linhas de lista: marcador dourado ao passar. */
+[data-fable='gestao'] .eda-item { position: relative; }
+[data-fable='gestao'] .eda-item::before {
+  content: '';
+  position: absolute; left: 0; top: 22%; bottom: 22%; width: 2px; border-radius: 2px;
+  background: #e3a144; opacity: 0; transform: scaleY(.4);
+  transition: opacity .18s ease, transform .18s ease;
+}
+[data-fable='gestao'] .eda-item:hover::before { opacity: 1; transform: none; }
+
+/* Botão principal: brilho que atravessa ao passar. */
+[data-fable='gestao'] .eda-bt-ouro { position: relative; overflow: hidden; }
+[data-fable='gestao'] .eda-bt-ouro::after {
+  content: '';
+  position: absolute; top: 0; bottom: 0; left: 0; width: 40%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 38%), transparent);
+  transform: translateX(-120%) skewX(-18deg);
+  pointer-events: none;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-eda-sinal='fraco']) [data-fable='gestao'] .eda-bt-ouro:hover::after {
+    animation: fable-brilho .7s ease-out;
+  }
+  /* Entrada em cascata dos indicadores e dos cartões. */
+  html:not([data-eda-sinal='fraco']) [data-fable='gestao'] .eda-kpis > * {
+    animation: fable-surge .5s cubic-bezier(.2, .7, .2, 1) both;
+  }
+  html:not([data-eda-sinal='fraco']) [data-fable='gestao'] .eda-kpis > :nth-child(2) { animation-delay: .06s; }
+  html:not([data-eda-sinal='fraco']) [data-fable='gestao'] .eda-kpis > :nth-child(3) { animation-delay: .12s; }
+  html:not([data-eda-sinal='fraco']) [data-fable='gestao'] .eda-kpis > :nth-child(4) { animation-delay: .18s; }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-fable='gestao'] .eda-card,
+  [data-fable='gestao'] .eda-item::before { transition: none; }
+}

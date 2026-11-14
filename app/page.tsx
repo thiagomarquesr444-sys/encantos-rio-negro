@@ -11,6 +11,7 @@ import HeroImersivoERN from '@/app/components/HeroImersivoERN';
 import VitrineDestinosERN from '@/app/components/VitrineDestinosERN';
 import IconeIara from '@/app/components/IconeIara';
 import { useLanguage } from '@/app/components/LanguageProvider';
+import '@/app/fablepremium.css';
 
 import {
   homeTranslations,
@@ -66,6 +67,7 @@ export default function Home() {
 
   return (
     <div
+      data-fable="portal"
       className="min-h-screen overflow-x-hidden bg-[#07110E] text-[#EDEDE3]"
       style={{
         fontFamily: 'var(--font-work-sans), sans-serif',
@@ -202,4 +204,4 @@ export default function Home() {
       <RodapePublicoEDA />
     </div>
   );
-}
+}

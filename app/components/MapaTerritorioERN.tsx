@@ -27,6 +27,8 @@ type Props = {
   demandas?: DemandaMapa[];
   carregando?: boolean;
   mostrarDemandas?: boolean;
+  /** FABLEPREMIUM_V1: no Painel da operadora fica só a visão operacional (sem a aba de turismo). */
+  somenteOperacao?: boolean;
 };
 type Coordenadas = [number, number];
 type Categoria = "praias" | "natureza" | "cultura";
@@ -285,6 +287,7 @@ export default function MapaTerritorioERN({
   demandas = VAZIAS,
   carregando = false,
   mostrarDemandas = true,
+  somenteOperacao = false,
 }: Props) {
   const container = useRef<HTMLDivElement>(null);
   const mapa = useRef<LeafletMap | null>(null);
@@ -310,8 +313,8 @@ export default function MapaTerritorioERN({
   const [atrativoId, setAtrativoId] = useState<string | null>(
     "praia-grande-barcelos",
   );
-  const [modoSelecionado, setModo] = useState<Modo>("turismo");
-  const modo: Modo = mostrarDemandas ? modoSelecionado : "turismo";
+  const [modoSelecionado, setModo] = useState<Modo>(somenteOperacao ? "demandas" : "turismo");
+  const modo: Modo = somenteOperacao ? "demandas" : mostrarDemandas ? modoSelecionado : "turismo";
   const [categoria, setCategoria] = useState<Categoria | "todas">("todas");
   const [busca, setBusca] = useState("");
   const [estado, setEstado] = useState<"carregando" | "pronto" | "erro">(
@@ -861,7 +864,7 @@ export default function MapaTerritorioERN({
       `}</style>
       <div className="border-b border-white/10 bg-gradient-to-br from-[var(--ern-fundo,#18372a)] to-[var(--ern-fundo,#0A1713)] p-4 sm:p-6">
         <p className="text-[10px] font-semibold uppercase tracking-[0.18em] text-[color:var(--ern-destaque,#E3A144)]">
-          EDA · território, turismo e operação
+          {somenteOperacao ? "EDA · operação no território" : "EDA · território, turismo e operação"}
         </p>
         <div className="mt-2 flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -870,19 +873,20 @@ export default function MapaTerritorioERN({
               className="text-2xl sm:text-3xl"
               style={{ fontFamily: "var(--font-fraunces), serif" }}
             >
-              Explore o Rio Negro
+              {somenteOperacao ? "Mapa operacional" : "Explore o Rio Negro"}
             </h2>
             <p className="mt-2 max-w-2xl text-xs leading-6 text-[color:var(--ern-secundario,#EDEDE3)]">
-              Praias, natureza e cultura conectadas ao território da sua
-              operação.
+              {somenteOperacao
+                ? "Demandas, embarcação e localidades da sua operação, direto no mapa."
+                : "Praias, natureza e cultura conectadas ao território da sua operação."}
             </p>
           </div>
           <span className="rounded-full border border-[#E3A144]/30 px-3 py-2 text-[10px] uppercase tracking-wider text-[color:var(--ern-destaque,#F4C77E)]">
-            Alto e Baixo Rio Negro
+            {somenteOperacao ? "Amazonas" : "Alto e Baixo Rio Negro"}
           </span>
         </div>
         <div className="mt-4 flex flex-wrap gap-2" aria-label="Visão do mapa">
-          {(["turismo", "demandas"] as const).filter((item) => mostrarDemandas || item === "turismo").map((item) => (
+          {(["turismo", "demandas"] as const).filter((item) => !somenteOperacao && (mostrarDemandas || item === "turismo")).map((item) => (
             <button
               key={item}
               type="button"
