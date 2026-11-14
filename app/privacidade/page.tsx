@@ -5,11 +5,12 @@ import PaginaInstitucionalERN, {
   LinkInstitucionalERN,
   SecaoInstitucionalERN,
 } from '@/app/components/PaginaInstitucionalERN';
+import { EMPRESA_EDA } from '@/lib/empresaEDA';
 
 export const metadata: Metadata = {
   title: 'Política de Privacidade',
   description:
-    'Informações sobre o tratamento de dados pessoais no projeto Encantos da Amazônia e o canal para exercício de direitos.',
+    'Informações sobre o tratamento de dados pessoais pela Encantos da Amazônia AI e o canal para exercício de direitos.',
   robots: {
     index: false,
     follow: true,
@@ -38,6 +39,11 @@ const finalidades = [
       'O checkout utiliza dados cadastrais da empresa para a contratação. Ao criar um cliente no Asaas, a integração encaminha nome, CPF/CNPJ e, quando preenchidos, e-mail e telefone. Identificadores de assinatura, cobrança, valor e situação de pagamento também são registrados pela EDA.',
   },
   {
+    titulo: 'Iara, assistente do portal',
+    texto:
+      'As mensagens e áudios enviados à Iara são usados para responder ao visitante e, com consentimento, encaminhar pedidos às operadoras. Para quem está conectado, o histórico da conversa é mantido por tempo limitado e os trechos mais antigos são apagados automaticamente. A Iara não acessa dados financeiros nem cadastros internos das operadoras. As respostas são geradas por serviços de inteligência artificial contratados pela empresa.',
+  },
+  {
     titulo: 'Atendimento',
     texto:
       'Quando você envia uma mensagem, o endereço de e-mail, o conteúdo e os anexos enviados são utilizados para analisar e responder à solicitação. O atendimento utiliza Gmail.',
@@ -48,27 +54,27 @@ export default function PrivacidadePage() {
   return (
     <PaginaInstitucionalERN
       titulo="Política de Privacidade"
-      descricao="Informações sobre dados pessoais no projeto Encantos da Amazônia."
+      descricao="Como a Encantos da Amazônia AI trata dados pessoais, conforme a LGPD."
     >
       <SecaoInstitucionalERN titulo="Sobre esta versão">
         <p>
-          Atualização: 21 de outubro de 2026.
+          Atualização: 13 de novembro de 2026.
         </p>
 
         <p>
-          Esta é uma versão inicial em revisão. O inventário de
-          integrações, os prazos de retenção e as configurações
-          dos fornecedores ainda estão sendo conferidos.
-          Esta publicação não representa uma certificação
-          de conformidade.
+          Esta política se aplica ao portal público, à Iara,
+          à Rede EDA e à plataforma de gestão das operadoras.
+          Ela é revisada sempre que uma funcionalidade ou
+          integração muda. Esta publicação não representa uma
+          certificação de conformidade.
         </p>
       </SecaoInstitucionalERN>
 
       <SecaoInstitucionalERN titulo="1. Responsável e contato">
         <p>
-          O projeto Encantos da Amazônia (anteriormente Encantos Rio Negro) é atualmente conduzido por
-          Thiago Rodrigues Marques, em Barcelos, Amazonas, Brasil,
-          e ainda não possui pessoa jurídica constituída.
+          A controladora dos dados tratados diretamente pela
+          plataforma é a <strong>{EMPRESA_EDA.nomeFantasia}</strong>,
+          inscrita no CNPJ sob o nº {EMPRESA_EDA.cnpj}.
         </p>
 
         <p>
@@ -128,9 +134,11 @@ export default function PrivacidadePage() {
 
       <SecaoInstitucionalERN titulo="4. Serviços utilizados">
         <p>
-          A estrutura do projeto utiliza Supabase para autenticação
-          e armazenamento de dados, Vercel para hospedagem e Asaas
-          na integração de assinaturas. Google participa quando
+          A plataforma utiliza Supabase para autenticação
+          e armazenamento de dados, Vercel para hospedagem, Asaas
+          na integração de assinaturas e provedores de inteligência
+          artificial (como Google Gemini e Groq) para gerar as
+          respostas da Iara e da EDA. Google participa quando
           você utiliza o login com Google ou envia mensagens
           ao atendimento pelo Gmail.
         </p>
@@ -239,7 +247,7 @@ export default function PrivacidadePage() {
       <SecaoInstitucionalERN titulo="10. Atualizações">
         <p>
           Este documento será atualizado para acompanhar
-          as funcionalidades e a formalização do projeto.
+          a evolução das funcionalidades da plataforma.
           Mudanças de finalidade e tratamentos que dependam
           de consentimento exigem avaliação própria; atualizar
           o texto não substitui essa avaliação.

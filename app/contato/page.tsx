@@ -5,6 +5,7 @@ import PaginaInstitucionalERN, {
   LinkInstitucionalERN,
   SecaoInstitucionalERN,
 } from '@/app/components/PaginaInstitucionalERN';
+import { EMPRESA_EDA } from '@/lib/empresaEDA';
 
 export const metadata: Metadata = {
   title: 'Contato e atendimento',
@@ -47,12 +48,11 @@ export default function ContatoPage() {
   return (
     <PaginaInstitucionalERN
       titulo="Contato e atendimento"
-      descricao="Canal de atendimento do projeto Encantos da Amazônia."
+      descricao="Canal oficial de atendimento da Encantos da Amazônia AI."
     >
       <SecaoInstitucionalERN titulo="Fale com a EDA">
         <p>
-          Responsável pelo projeto: Thiago Rodrigues Marques.
-          Localidade: Barcelos, Amazonas, Brasil.
+          Empresa: <strong>{EMPRESA_EDA.nomeFantasia}</strong> — CNPJ {EMPRESA_EDA.cnpj}.
         </p>
 
         <LinkInstitucionalERN

@@ -1,6 +1,7 @@
 'use client';
 
 
+import SeloEDA from './SeloEDA';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -373,9 +374,9 @@ export default function PublicHeader() {
                 {t.menu}
               </h2>
 
-              <p className="mt-1 text-sm text-[#EDEDE3]/70">
-                Encantos da Amazônia
-              </p>
+              <span className="mt-1.5 block">
+                <SeloEDA />
+              </span>
             </div>
 
             <button

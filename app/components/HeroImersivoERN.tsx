@@ -5,6 +5,11 @@ import { periodoEDA } from '@/lib/saudacaoEDA';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import IconeIara from '@/app/components/IconeIara';
 import { homeTranslations, type HomeTranslation } from '@/lib/i18n/home';
+import { MUNICIPIOS_AMAZONAS } from '@/lib/municipiosAmazonasERN';
+
+const NOMES_FAIXA = [...MUNICIPIOS_AMAZONAS].map((m) => m.nome).sort((a, b) => a.localeCompare(b, 'pt-BR'));
+// Municípios que já têm roteiro, festa ou página na plataforma.
+const DESTAQUES_FAIXA = new Set(['Barcelos', 'Manaus', 'Novo Airão', 'Parintins', 'Santa Isabel do Rio Negro', 'São Gabriel da Cachoeira', 'Presidente Figueiredo', 'Manacapuru', 'Maués', 'Tefé', 'Tabatinga', 'Uarini']);
 
 // ERN_HERO_IMERSIVO_V1
 // Abertura do portal: título centralizado, busca atendida pela Iara e destaques.
@@ -79,22 +84,34 @@ function falasBusca(idioma: 'PT' | 'EN' | 'ES'): FalaBusca[] {
     { fala: '¿Te cuento la leyenda del boto?', pedido: 'Cuéntame la leyenda del boto' },
   ];
   return [
-    { fala: `${p === 'manha' ? 'Bom dia' : p === 'tarde' ? 'Boa tarde' : p === 'noite' ? 'Boa noite' : 'Boa madrugada'}! Eu sou a Iara 🌊 Pra onde a gente vai?` },
-    { fala: 'Me diz uma cidade do Amazonas que eu te levo no mapa', pedido: 'Quero conhecer as cidades do Amazonas no mapa' },
+    { fala: `${p === 'manha' ? 'Bom dia' : p === 'tarde' ? 'Boa tarde' : p === 'noite' ? 'Boa noite' : 'Boa madrugada'}! Eu sou a Iara, a recepcionista da Encantos 🌊` },
+    { fala: 'Me conta: o que te trouxe até a Amazônia hoje?', pedido: 'Quero ideias para conhecer a Amazônia' },
+    { fala: 'Me diz uma das 62 cidades do Amazonas que eu te levo lá no mapa', pedido: 'Quero conhecer as cidades do Amazonas no mapa' },
+    { fala: 'Já provou tacacá, tambaqui na brasa ou x-caboquinho?', pedido: 'Me fala da culinária amazonense' },
+    { fala: 'Quer ouvir a lenda do boto que encanta as moças na beira do rio?', pedido: 'Me conta a lenda do boto' },
     { fala: 'Bora ver o Encontro das Águas de pertinho?', pedido: 'Me leva para o Encontro das Águas' },
-    { fala: 'Já pensou em pescar tucunaré em Barcelos?', pedido: 'Quero pescar tucunaré em Barcelos' },
-    { fala: 'Quer ouvir a lenda do boto que encanta o rio?', pedido: 'Me conta a lenda do boto' },
-    { fala: 'Mariuá ou Anavilhanas: qual arquipélago te chama?', pedido: 'Quero conhecer o Arquipélago de Mariuá' },
-    { fala: 'Já provou tacacá? Te conto onde tomar um bom', pedido: 'Me fala do tacacá' },
+    { fala: 'Garantido ou Caprichoso? Te conto tudo do Festival de Parintins', pedido: 'Me fala do Festival de Parintins' },
+    { fala: 'Pescar tucunaré-açu em Barcelos é sonho de muito pescador…', pedido: 'Quero pescar tucunaré em Barcelos' },
+    { fala: 'Artesanato baniwa, piaçava, cerâmica: quer conhecer quem faz?', pedido: 'Quero conhecer o artesanato do Amazonas' },
+    { fala: 'Tem operadora de turismo? Te mostro como a plataforma trabalha sozinha por ti', pedido: 'Trabalho com turismo, como a plataforma funciona?' },
   ];
 }
 
+// IARA_BUSCA_CALMA_V2: ritmo de recepcionista — cada fala é escrita devagar,
+// fica na tela tempo de sobra para ser lida e sai num esmaecer suave (sem
+// "apagar" letra por letra). Assim o visitante lê, pensa e responde.
+const MS_POR_LETRA = 62;
+const PAUSA_PONTUACAO = 420;
+const TEMPO_LEITURA = 6200;
+const TEMPO_ESMAECER = 700;
+
 function useBuscaViva(falas: FalaBusca[], parado: boolean, padrao: string) {
   const [texto, setTexto] = useState(padrao);
+  const [visivel, setVisivel] = useState(true);
   const atual = useRef<FalaBusca | null>(null);
   useEffect(() => {
     if (parado || typeof window === 'undefined' || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
-      atual.current = null; setTexto(padrao); return;
+      atual.current = null; setTexto(padrao); setVisivel(true); return;
     }
     let ativo = true;
     let tarefa = 0;
@@ -103,20 +120,19 @@ function useBuscaViva(falas: FalaBusca[], parado: boolean, padrao: string) {
     function escrever(k: number) {
       const f = falas[i % falas.length];
       atual.current = f;
+      setVisivel(true);
       setTexto(f.fala.slice(0, k));
-      if (k < f.fala.length) espera(/[.!?]/.test(f.fala[k - 1] ?? '') ? 260 : 38, () => escrever(k + 1));
-      else espera(2800, () => apagar(f.fala.length));
+      if (k < f.fala.length) espera(/[.!?,]/.test(f.fala[k - 1] ?? '') ? PAUSA_PONTUACAO : MS_POR_LETRA, () => escrever(k + 1));
+      else espera(TEMPO_LEITURA + f.fala.length * 25, esmaecer);
     }
-    function apagar(k: number) {
-      const f = falas[i % falas.length];
-      setTexto(f.fala.slice(0, k));
-      if (k > 0) espera(14, () => apagar(k - 1));
-      else { i += 1; espera(380, () => escrever(1)); }
+    function esmaecer() {
+      setVisivel(false);
+      espera(TEMPO_ESMAECER, () => { i += 1; setTexto(''); espera(450, () => escrever(1)); });
     }
-    espera(1500, () => escrever(1));
+    espera(1800, () => escrever(1));
     return () => { ativo = false; window.clearTimeout(tarefa); };
   }, [falas, parado, padrao]);
-  return { texto: texto || ' ', atual };
+  return { texto: texto || ' ', visivel, atual };
 }
 
 const FOCO =
@@ -209,8 +225,11 @@ export default function HeroImersivoERN({
   const t = textos[idioma];
   const [termo, setTermo] = useState('');
   const [focado, setFocado] = useState(false);
+  const [temTexto, setTemTexto] = useState(false);
+  const [compondo, setCompondo] = useState(false);
+  useEffect(() => { if (!termo && !compondo) setTemTexto(false); }, [termo, compondo]);
   const falas = useMemo(() => falasBusca(idioma === 'EN' || idioma === 'ES' ? idioma : 'PT'), [idioma]);
-  const busca = useBuscaViva(falas, focado || !!termo, t.placeholder);
+  const busca = useBuscaViva(falas, focado || !!termo || temTexto, t.placeholder);
   const [temMicrofone, setTemMicrofone] = useState(false);
   useEffect(() => {
     setTemMicrofone(typeof window.MediaRecorder !== 'undefined' && !!navigator.mediaDevices?.getUserMedia);
@@ -233,24 +252,32 @@ export default function HeroImersivoERN({
 
   return (
     <div className="relative z-10 mx-auto flex max-w-[1180px] flex-col items-center px-5 pb-16 pt-32 text-center md:px-8 md:pb-20 md:pt-40">
-      {/* ERN_SELO_LUGARES_V1: lugares do Amazonas rolando devagar dentro da cápsula. */}
-      <p
-        aria-label={h.location.replace(/ • /g, ', ')}
-        className="ern-revela ern-selo-lugares relative w-full max-w-[560px] overflow-hidden rounded-full border border-[#F4C77E]/25 bg-[#07110E]/55 py-2 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#F4C77E] backdrop-blur-md sm:text-xs"
-      >
-        <span aria-hidden="true" className="ern-selo-trilho flex w-max">
-          {[0, 1].map((copia) => (
-            <span key={copia} className="flex shrink-0 items-center">
-              {h.location.split(' • ').map((lugar) => (
-                <span key={`${copia}-${lugar}`} className="flex items-center gap-3 whitespace-nowrap pl-3">
-                  <span className="h-1.5 w-1.5 rotate-45 bg-gradient-to-b from-[#F7D595] to-[#E3A144]" />
-                  {lugar}
+      {/* EDA_FAIXA_62_MUNICIPIOS_V1: os 62 municípios do Amazonas rolando devagar
+          numa faixa premium — selo fixo à esquerda, nomes em serifa, cidades com
+          roteiro na plataforma em dourado. Pausa ao passar o mouse. */}
+      <div className="ern-revela eda-faixa-municipios relative w-full max-w-[820px]">
+        <p className="sr-only">{`${MUNICIPIOS_AMAZONAS.length} municípios do Amazonas: ${NOMES_FAIXA.join(', ')}`}</p>
+        <div aria-hidden="true" className="eda-faixa-moldura">
+          <span className="eda-faixa-selo">
+            <b>62</b>
+            <small>{idioma === 'EN' ? 'towns' : idioma === 'ES' ? 'municipios' : 'municípios'}</small>
+          </span>
+          <span className="eda-faixa-janela">
+            <span className="eda-faixa-trilho">
+              {[0, 1].map((copia) => (
+                <span key={copia} className="flex shrink-0 items-center">
+                  {NOMES_FAIXA.map((nome) => (
+                    <span key={`${copia}-${nome}`} className={`eda-faixa-nome ${DESTAQUES_FAIXA.has(nome) ? 'eda-faixa-ouro' : ''}`}>
+                      <i className="eda-faixa-losango" />
+                      {nome}
+                    </span>
+                  ))}
                 </span>
               ))}
             </span>
-          ))}
-        </span>
-      </p>
+          </span>
+        </div>
+      </div>
 
       <h1
         aria-label={h.title}
@@ -274,28 +301,41 @@ export default function HeroImersivoERN({
         <label htmlFor="ern-busca-destino" className="sr-only">
           {t.rotulo}
         </label>
-        {/* IARA_BUSCA_MOBILE_V1: a fala da Iara fica numa camada própria que quebra
-            em até 2 linhas — no celular o placeholder cortava as palavras. */}
+        {/* IARA_BUSCA_MOBILE_V1 / IARA_BUSCA_SEM_SOMBRA_V2: a fala da Iara fica numa
+            camada própria (até 2 linhas no celular). O campo não tem placeholder
+            nativo — era ele que deixava uma "sombra" da frase por trás das letras
+            digitadas — e a camada some no primeiro toque de tecla, inclusive
+            durante a composição do teclado do celular (autocorretor/acentos). */}
         <div className="relative min-w-0 flex-1">
           <input
             id="ern-busca-destino"
-            type="search"
+            type="text"
+            inputMode="search"
             value={termo}
             onChange={(evento) => setTermo(evento.target.value)}
-            placeholder={busca.texto}
+            onInput={(evento) => setTemTexto(evento.currentTarget.value.length > 0)}
+            onCompositionStart={() => setCompondo(true)}
+            onCompositionEnd={(evento) => { setCompondo(false); setTemTexto(evento.currentTarget.value.length > 0); }}
             onFocus={() => setFocado(true)}
             onBlur={() => setFocado(false)}
             autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
             maxLength={300}
             enterKeyHint="search"
-            className="min-h-[52px] w-full rounded-xl bg-transparent px-3 text-base text-[#F0F0E8] placeholder:text-transparent focus-visible:outline-none"
+            className="relative z-[1] min-h-[52px] w-full rounded-xl bg-transparent px-3 text-base text-[#F0F0E8] caret-[#F4C77E] focus-visible:outline-none"
           />
-          {!termo && (
+          {!termo && !temTexto && !compondo && (
             <span
               aria-hidden="true"
-              className="pointer-events-none absolute inset-0 flex items-center px-3 text-left text-[14px] leading-[1.25] text-[#B8C9BF] sm:text-base"
+              className="pointer-events-none absolute inset-0 z-0 flex items-center px-3 text-left text-[14px] leading-[1.3] text-[#B8C9BF] sm:text-base"
             >
-              <span className="line-clamp-2 break-words">{busca.texto}</span>
+              <span
+                className="line-clamp-2 break-words transition-opacity duration-700 ease-out"
+                style={{ opacity: focado ? 0.55 : busca.visivel ? 1 : 0 }}
+              >
+                {focado ? t.placeholder : busca.texto}
+              </span>
             </span>
           )}
         </div>

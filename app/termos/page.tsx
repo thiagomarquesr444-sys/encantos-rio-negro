@@ -4,6 +4,7 @@ import PaginaInstitucionalERN, {
   LinkInstitucionalERN,
   SecaoInstitucionalERN,
 } from '@/app/components/PaginaInstitucionalERN';
+import { EMPRESA_EDA } from '@/lib/empresaEDA';
 
 export const metadata: Metadata = {
   title: 'Termos de Serviço',
@@ -17,17 +18,17 @@ export const metadata: Metadata = {
 
 const secoes = [
   {
-    titulo: '1. Responsável pelo projeto',
+    titulo: '1. Empresa responsável',
     paragrafos: [
-      'O projeto Encantos da Amazônia (anteriormente Encantos Rio Negro) é conduzido por Thiago Rodrigues Marques, em Barcelos, Amazonas, Brasil. A pessoa jurídica do projeto ainda não foi constituída.',
-      'O canal de atendimento é contato.encantosrionegro@gmail.com.',
+      `A plataforma Encantos da Amazônia (EDA) é operada pela ${EMPRESA_EDA.nomeFantasia}, inscrita no CNPJ sob o nº ${EMPRESA_EDA.cnpj}.`,
+      `O canal de atendimento é ${EMPRESA_EDA.email}.`,
     ],
   },
   {
     titulo: '2. Serviços e funcionalidades',
     paragrafos: [
-      'A EDA reúne um portal público sobre a Amazônia, do Rio Negro a Parintins, perfis e publicações profissionais e ferramentas de gestão para empresas usuárias.',
-      'Funcionalidades identificadas como prévia, em preparação ou em desenvolvimento não devem ser consideradas disponíveis para contratação. O concierge e sua estrutura de agentes ainda estão em preparação.',
+      'A EDA reúne um portal público sobre a Amazônia, do Rio Negro ao Solimões, perfis e publicações profissionais e ferramentas de gestão para empresas usuárias.',
+      'Funcionalidades identificadas como prévia, em preparação ou em desenvolvimento não devem ser consideradas disponíveis para contratação. A Iara (concierge do portal) e a EDA (assistente da gestão) já estão em funcionamento e usam inteligência artificial; pedidos, confirmações e cobranças continuam passando pela aprovação humana da operadora.',
       'O uso da plataforma não garante vendas, reservas, renda, aprovação cadastral ou resultados comerciais.',
     ],
   },
@@ -69,7 +70,7 @@ const secoes = [
     paragrafos: [
       'Não tente acessar dados de outras empresas, explorar falhas, contornar permissões ou utilizar a plataforma para fraude, spam ou atividades ilícitas.',
       'Comunique suspeitas de acesso indevido ou falhas pelo canal de atendimento, sem enviar senhas nem expor dados de terceiros.',
-      'O projeto está em desenvolvimento e seus controles permanecem sujeitos a revisão. Isso não elimina as responsabilidades legais do responsável pelo serviço.',
+      'A plataforma evolui continuamente e seus controles passam por revisão periódica. Isso não elimina as responsabilidades legais do responsável pelo serviço.',
     ],
   },
   {
@@ -92,7 +93,7 @@ export default function TermosPage() {
   return (
     <PaginaInstitucionalERN
       titulo="Termos de Serviço"
-      descricao="Condições e informações sobre o uso do projeto Encantos da Amazônia. Versão inicial em revisão."
+      descricao="Condições de uso da plataforma Encantos da Amazônia AI."
     >
       {secoes.map((secao) => (
         <SecaoInstitucionalERN

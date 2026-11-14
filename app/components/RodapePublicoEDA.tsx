@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 import LogoERN from '@/app/components/LogoERN';
 import { useLanguage } from '@/app/components/LanguageProvider';
+import { EMPRESA_EDA } from '@/lib/empresaEDA';
 
 // EDA_RODAPE_PUBLICO_V1
 // Rodapé único das páginas públicas (Descubra, Experiências, Destinos, Rede
@@ -86,6 +87,11 @@ export default function RodapePublicoEDA() {
             {t.feedback}
           </button>
         </nav>
+      </div>
+      <div className="border-t border-white/10">
+        <p className="mx-auto max-w-[1180px] px-5 py-4 text-xs text-[#8FA79A] sm:px-8">
+          © {new Date().getFullYear()} {EMPRESA_EDA.nomeFantasia} · CNPJ {EMPRESA_EDA.cnpj}
+        </p>
       </div>
     </footer>
   );

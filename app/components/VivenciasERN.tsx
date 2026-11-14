@@ -10,6 +10,7 @@ import {
 } from '@/lib/redePublica';
 import { destinosTranslations } from '@/lib/i18n/destinos';
 import { useLanguage } from './LanguageProvider';
+import { copiarEDA } from '@/lib/copiarEDA';
 
 const button: CSSProperties = {
   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -261,8 +262,8 @@ export function CompartilharVivenciaERN({ post }: { post: PublicacaoPublica }) {
       if (navigator.share) {
         await navigator.share({ title: post.titulo, text: `${post.autor.nome_publico} · Vivências EDA`, url });
       } else {
-        await navigator.clipboard.writeText(texto);
-        setAviso(tr('Link copiado.', 'Link copied.', 'Enlace copiado.'));
+        if (await copiarEDA(texto, tr('Link copiado', 'Link copied', 'Enlace copiado'))) setAviso('');
+        else setAviso(tr('Copie o link no campo abaixo.', 'Copy the link below.', 'Copia el enlace de abajo.'));
       }
     } catch (error) {
       if (!(error instanceof Error && error.name === 'AbortError')) {

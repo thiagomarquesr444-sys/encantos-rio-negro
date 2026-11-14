@@ -2,6 +2,7 @@
 
 // EDA_PASSEIOS_PORTAL_V1: vitrine pública dos passeios publicados pelas operadoras.
 
+import SeloEDA from './SeloEDA';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import {
@@ -289,7 +290,8 @@ export default function VitrinePasseiosEDA({
               <button type="button" className="vp-fechar" onClick={fecharDetalhe} aria-label="Fechar">×</button>
               <Fotos passeio={aberto} grande />
               <div className="vp-detalhe-corpo">
-                <small>{[aberto.categoria, aberto.cidade, aberto.duracao].filter(Boolean).join(' · ')}</small>
+                <SeloEDA />
+                <small style={{ display: 'block', marginTop: 12 }}>{[aberto.categoria, aberto.cidade, aberto.duracao].filter(Boolean).join(' · ')}</small>
                 <h3>{aberto.nome}</h3>
                 {aberto.descricao && <p>{aberto.descricao}</p>}
                 <dl>
@@ -369,7 +371,9 @@ export default function VitrinePasseiosEDA({
         .vp-aviso { color: var(--vp-sec); } .vp-aviso button { color: var(--vp-ouro); background: none; border: 0; text-decoration: underline; cursor: pointer; }
         .vp-vazio { display: grid; justify-items: center; gap: 8px; padding: 34px 18px; border: 1px dashed var(--vp-borda); border-radius: 22px; text-align: center; color: var(--vp-sec); }
         .vp-vazio span { font-size: 26px; color: var(--vp-ouro); } .vp-vazio a { color: var(--vp-ouro); font-weight: 600; }
-        .vp-dialogo { width: min(720px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 1px solid var(--vp-borda); border-radius: 24px; background: var(--vp-painel); color: var(--vp-texto); overflow: auto; }
+        .vp-dialogo { width: min(720px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 0; border: 1px solid rgba(227,161,68,.55); border-radius: 24px; background: var(--vp-painel); color: var(--vp-texto); overflow: auto; box-shadow: 0 24px 70px rgba(0,0,0,.45); }
+        .vp-dialogo[open] { animation: vp-janela-in .28s cubic-bezier(.2,.9,.3,1.15) both; }
+        @keyframes vp-janela-in { from { opacity: 0; transform: translateY(14px) scale(.96); } }
         .vp-dialogo::backdrop { background: rgb(3 8 6 / 78%); backdrop-filter: blur(4px); }
         .vp-detalhe { position: relative; }
         .vp-fechar { position: absolute; z-index: 5; top: 12px; right: 12px; width: 38px; height: 38px; border: 0; border-radius: 50%; background: rgb(0 0 0 / 60%); color: #fff; font-size: 22px; cursor: pointer; }

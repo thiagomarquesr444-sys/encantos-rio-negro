@@ -131,7 +131,7 @@ const RECURSOS_LABELS: Record<
     'Integração com WhatsApp',
 
   concierge_ia:
-    'Concierge com IA',
+    'Concierge com IA (Iara)',
 
   destaque_rede:
     'Destaque na Rede Encantos',

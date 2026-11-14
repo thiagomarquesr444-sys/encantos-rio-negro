@@ -1,5 +1,6 @@
 'use client';
 
+import SeloEDA from './SeloEDA';
 import { useEffect, useId, useRef, useState, type FormEvent } from 'react';
 import type { CSSProperties } from 'react';
 import Link from 'next/link';
@@ -267,6 +268,7 @@ export default function FeedbackERN() {
           event.preventDefault();
           fechar();
         }}>
+        <SeloEDA />
         <div className="ern-feedback-cabecalho">
           <h2 id={`${id}-titulo`}>{t.titulo}</h2>
           <button type="button" onClick={fechar} disabled={enviando}
@@ -364,12 +366,16 @@ export default function FeedbackERN() {
           width:min(520px,calc(100vw - 28px));
           max-height:calc(100dvh - 32px);
           overflow:auto;overscroll-behavior:contain;
-          border:1px solid var(--ern-borda,#454b53);
-          border-radius:22px;padding:24px;
+          border:1px solid rgba(227,161,68,.55);
+          border-radius:22px;padding:22px 24px 24px;
           background:var(--ern-painel,#1a1d21);
           color:var(--ern-texto,#f0f1f2);
-          box-shadow:0 20px 80px #0006;font:14px sans-serif;
+          box-shadow:0 24px 70px rgba(0,0,0,.45);font:14px var(--font-geist),system-ui,sans-serif;
         }
+        .ern-feedback-dialogo[open]{animation:eda-janela-in .26s cubic-bezier(.2,.9,.3,1.15) both}
+        @keyframes eda-janela-in{from{opacity:0;transform:translateY(14px) scale(.96)}}
+        .ern-feedback-dialogo .ern-feedback-cabecalho{margin-top:12px}
+        .ern-feedback-cabecalho h2{font-family:var(--font-fraunces),Georgia,serif}
         .ern-feedback-dialogo::backdrop { background:#0009; }
         .ern-feedback-dialogo .ern-feedback-cabecalho {
           display:flex;align-items:center;justify-content:space-between;gap:15px;

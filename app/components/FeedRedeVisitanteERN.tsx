@@ -8,6 +8,7 @@ import OfertaChipEDA from './OfertaChipEDA';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type KeyboardEvent } from 'react';
 import Link from 'next/link';
 import ReacoesEDA from './ReacoesEDA';
+import { copiarEDA } from '@/lib/copiarEDA';
 import { useLanguage } from './LanguageProvider';
 import LogoERN from './LogoERN';
 import { redeTranslations, type RedeTranslation } from '@/lib/i18n/rede';
@@ -469,8 +470,7 @@ export default function FeedRedeVisitanteERN() {
       try { await navigator.share({ title: post.titulo, text: post.resumo || undefined, url }); return; }
       catch (error) { if (error instanceof Error && error.name === 'AbortError') return; }
     }
-    let copied = false;
-    try { await navigator.clipboard.writeText(url); copied = true; } catch { /* Campo permite cópia manual. */ }
+    const copied = await copiarEDA(url);
     if (gen === generation.current) setShared({ id: post.id, url, copied });
   }
   function clear() {

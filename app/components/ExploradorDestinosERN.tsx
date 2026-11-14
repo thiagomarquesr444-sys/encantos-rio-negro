@@ -14,6 +14,7 @@ import { destinosTranslations } from '@/lib/i18n/destinos';
 import { HISTORIAS_MUNICIPIOS } from '@/lib/historiasMunicipiosERN';
 import { MUNICIPIOS_AMAZONAS, type MunicipioAM } from '@/lib/municipiosAmazonasERN';
 import ArcoFlechaERN from './ArcoFlechaERN';
+import { copiarEDA } from '@/lib/copiarEDA';
 import { destinoDoParametro, destinoIaraValido, type DestinoIara } from '@/lib/iaraDestinosERN';
 import SateliteCidadeERN, { chaveEmbedGoogle } from './SateliteCidadeERN';
 import { chaveGoogleMapas, criarMotorGoogle, criarMotorLeaflet, type MotorMapa, type PinMapa } from './motorMapaERN';
@@ -481,7 +482,7 @@ export default function ExploradorDestinosERN() {
     const url = new URL(window.location.href);
     url.searchParams.set('lugar', active.id); url.hash = '';
     setShareUrl(url.toString()); setMessage('');
-    try { await navigator.clipboard.writeText(url.toString()); setMessage(u.copied); } catch { /* O campo permite copiar manualmente. */ }
+    if (await copiarEDA(url.toString(), u.copied)) setMessage(u.copied);
   }
   function locate() {
     if (!navigator.geolocation) { setGeoError(true); return; }

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import PublicHeader from '@/app/components/PublicHeader';
 import RodapePublicoEDA from '@/app/components/RodapePublicoEDA';
 import MenuInstitucionalERN from '@/app/components/MenuInstitucionalERN';
+import { EMPRESA_EDA } from '@/lib/empresaEDA';
 
 // ERN_INSTITUCIONAL_PREMIUM_V1
 // Modelo das páginas de Atendimento, Privacidade, Termos e Reembolso no
@@ -20,8 +21,7 @@ const FOCO =
   'focus-visible:outline-2 focus-visible:outline-offset-4 ' +
   'focus-visible:outline-[#E3A144]';
 
-export const EMAIL_ATENDIMENTO_ERN =
-  'contato.encantosrionegro@gmail.com';
+export const EMAIL_ATENDIMENTO_ERN = EMPRESA_EDA.email;
 
 export function SecaoInstitucionalERN({
   titulo,
@@ -102,6 +102,13 @@ export default function PaginaInstitucionalERN({
           >
             Escrever para a equipe <span aria-hidden="true">→</span>
           </a>
+          <div className="mt-4 rounded-[18px] border border-[#e3dfd6] bg-white p-4 text-sm leading-6 text-[#4b5a53]">
+            <span className="flex items-center gap-2">
+              <span aria-hidden="true" className="grid h-7 w-7 place-items-center rounded-full bg-gradient-to-br from-[#e3a144] to-[#b5762a] font-[family-name:var(--font-fraunces)] text-sm font-extrabold text-[#07110e]">E</span>
+              <strong className="text-[#0f1c17]">{EMPRESA_EDA.nomeFantasia}</strong>
+            </span>
+            <span className="mt-1 block">CNPJ {EMPRESA_EDA.cnpj}</span>
+          </div>
         </aside>
 
         <div className="min-w-0 space-y-6">{children}</div>

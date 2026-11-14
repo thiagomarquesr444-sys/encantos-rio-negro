@@ -37,7 +37,8 @@ type Plano = {
 };
 
 const ORDEM = ['free', 'pro', 'premium'];
-const EM_IMPLANTACAO = new Set(['concierge_ia', 'whatsapp']);
+// EDA_PLANOS_V2: Concierge (Iara) já em funcionamento no portal e na gestão.
+const EM_IMPLANTACAO = new Set(['whatsapp']);
 
 const textos = {
   PT: {
@@ -52,7 +53,7 @@ const textos = {
     gratis: 'para sempre',
     recomendado: 'Recomendado',
     usuarios: 'usuários da equipe', clientes: 'clientes', reservas: 'reservas por mês', passeios: 'passeios no catálogo', ilimitado: 'Sem limite de',
-    recursos: { rede_basica: 'Perfil na Rede EDA', vouchers: 'Vouchers em PDF', financeiro: 'Financeiro', relatorios: 'Relatórios', destaque_rede: 'Destaque na Rede', concierge_ia: 'Concierge com IA', whatsapp: 'Atendimento por WhatsApp' } as Record<string, string>,
+    recursos: { rede_basica: 'Perfil na Rede EDA', vouchers: 'Vouchers em PDF', financeiro: 'Financeiro', relatorios: 'Relatórios', destaque_rede: 'Destaque na Rede', concierge_ia: 'Concierge com IA — Iara', whatsapp: 'Atendimento por WhatsApp' } as Record<string, string>,
     implantacao: 'em implantação',
     comecar: 'Criar conta grátis',
     assinar: 'Começar com este plano',
@@ -74,7 +75,7 @@ const textos = {
     gratis: 'forever',
     recomendado: 'Recommended',
     usuarios: 'team users', clientes: 'clients', reservas: 'bookings per month', passeios: 'tours in catalog', ilimitado: 'Unlimited',
-    recursos: { rede_basica: 'EDA Network profile', vouchers: 'PDF vouchers', financeiro: 'Finance', relatorios: 'Reports', destaque_rede: 'Featured on the Network', concierge_ia: 'AI Concierge', whatsapp: 'WhatsApp support' } as Record<string, string>,
+    recursos: { rede_basica: 'EDA Network profile', vouchers: 'PDF vouchers', financeiro: 'Finance', relatorios: 'Reports', destaque_rede: 'Featured on the Network', concierge_ia: 'AI Concierge — Iara', whatsapp: 'WhatsApp support' } as Record<string, string>,
     implantacao: 'coming soon',
     comecar: 'Create free account',
     assinar: 'Start with this plan',
@@ -96,7 +97,7 @@ const textos = {
     gratis: 'para siempre',
     recomendado: 'Recomendado',
     usuarios: 'usuarios del equipo', clientes: 'clientes', reservas: 'reservas por mes', passeios: 'paseos en el catálogo', ilimitado: 'Sin límite de',
-    recursos: { rede_basica: 'Perfil en la Red EDA', vouchers: 'Vouchers en PDF', financeiro: 'Finanzas', relatorios: 'Informes', destaque_rede: 'Destacado en la Red', concierge_ia: 'Concierge con IA', whatsapp: 'Atención por WhatsApp' } as Record<string, string>,
+    recursos: { rede_basica: 'Perfil en la Red EDA', vouchers: 'Vouchers en PDF', financeiro: 'Finanzas', relatorios: 'Informes', destaque_rede: 'Destacado en la Red', concierge_ia: 'Concierge con IA — Iara', whatsapp: 'Atención por WhatsApp' } as Record<string, string>,
     implantacao: 'en implementación',
     comecar: 'Crear cuenta gratis',
     assinar: 'Empezar con este plan',

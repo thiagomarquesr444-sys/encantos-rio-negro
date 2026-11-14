@@ -10,6 +10,7 @@ import './iara-conversa.css';
 import ConciergeLancadorERN from './ConciergeLancadorERN';
 import IconeIara from './IconeIara';
 import TextoDigitadoIA from './TextoDigitadoIA';
+import { chaveRecepcao, falaPaginaIara, recepcaoIara, type MomentoRecepcao, type OpcaoRecepcao } from '@/lib/recepcaoIaraEDA';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import { confirmarEDA } from '@/lib/dialogoEDA';
 
@@ -203,6 +204,11 @@ function lerMensagensSalvas(v: unknown): MensagemERN[] {
 // depois, uma interação descontraída. O corpo muda conforme a página que o visitante está vendo.
 function corpoIara(idioma: IdiomaERN, caminho: string, regional: boolean, voltou: boolean): string {
   const p = periodoEDA();
+  // IARA_RECEPCAO_PAGINAS_V1: cada página tem a sua apresentação.
+  const grupo = chaveRecepcao(caminho);
+  if (!voltou && grupo !== 'outra' && grupo !== 'descubra' && !(idioma === 'PT' && p === 'madrugada')) {
+    return falaPaginaIara(idioma, caminho, regional).texto;
+  }
   const sorteia = (l: string[]) => l[Math.floor(Math.random() * l.length)];
   if (idioma === 'EN') {
     if (voltou) return 'Good to see you again! Shall we pick up where we left off? 🌊';
@@ -480,33 +486,64 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
     }
   }
 
-  // EDA_FASE_A_V1: iniciativa única da Iara — oferece ajuda uma vez por visita,
-  // depois de ~40 s na página (ou ~8 s para quem está voltando). Fechou, não volta.
-  const [ofertaIara, setOfertaIara] = useState<string | null>(null);
+  // IARA_RECEPCAO_PAGINAS_V1 (substitui a iniciativa única EDA_FASE_A_V1):
+  // a Iara recebe o visitante em cada página pública, uma vez por página por
+  // visita, com o que a página oferece e duas alternativas. Primeira visita,
+  // volta à plataforma e primeiro login ganham recepção calorosa. Quem fecha
+  // o balão duas vezes deixa a Iara quieta até a próxima visita.
+  const [ofertaIara, setOfertaIaraEstado] = useState<{ texto: string; opcoes: OpcaoRecepcao[]; n: number } | null>(null);
+  const setOfertaIara = (texto: string | null, opcoes: OpcaoRecepcao[] = []) =>
+    setOfertaIaraEstado(texto ? { texto, opcoes, n: Date.now() } : null);
+  const fechadasIara = useRef(0);
   useEffect(() => {
-    let voltou = false;
+    if (!memoriaPronta || aberto) return;
+    let paginas: string[] = [];
+    let primeiraDaVisita = false;
+    let momento: MomentoRecepcao = 'pagina';
     try {
-      if (sessionStorage.getItem('iara.oferta.v1')) return;
-      voltou = !!localStorage.getItem('iara.visitou.v1');
-      localStorage.setItem('iara.visitou.v1', '1');
+      if (sessionStorage.getItem('iara.silenciada.v2')) return;
+      paginas = JSON.parse(sessionStorage.getItem('iara.paginas.v2') || '[]');
+      if (!Array.isArray(paginas)) paginas = [];
+      primeiraDaVisita = paginas.length === 0;
+      const visitou = !!localStorage.getItem('iara.visitou.v1');
+      const chaveAcolhida = usuarioId ? `iara.acolhida.${usuarioId}` : '';
+      if (usuarioId && !localStorage.getItem(chaveAcolhida)) momento = 'primeiro-login';
+      else if (primeiraDaVisita) momento = visitou ? 'voltou' : 'primeira-visita';
     } catch { return; }
-    const noPasseio = /^\/experiencias\/[a-z0-9-]+$/.test(window.location.pathname);
-    const regional = (() => { try { return localStorage.getItem('iara.estilo') !== 'formal'; } catch { return true; } })();
-    const textos = {
-      PT: noPasseio
-        ? (regional ? 'Égua, gostou desse passeio? Posso ver as vagas e os valores pra ti 🌊' : 'Gostou deste passeio? Posso verificar vagas e valores para você 🌊')
-        : voltou ? (regional ? 'Que bom te ver de volta, maninho! Bora continuar planejando tua viagem?' : 'Que bom te ver de volta! Quer continuar planejando sua viagem comigo?') : 'Oi, eu sou a Iara 🌊 Posso te ajudar a escolher a experiência ideal?',
-      EN: voltou ? 'Welcome back! Shall we keep planning your trip?' : 'Hi, I am Iara 🌊 Can I help you find the perfect experience?',
-      ES: voltou ? '¡Qué bueno verte de nuevo! ¿Seguimos planeando tu viaje?' : 'Hola, soy Iara 🌊 ¿Te ayudo a elegir la experiencia ideal?',
-    };
+    const chave = chaveRecepcao(pathname);
+    if (momento === 'pagina' && paginas.includes(chave)) return;
+    const regional = estiloIara === 'regional';
+    const r = recepcaoIara(idioma, pathname, regional, momento, nomeVisitante);
+    const espera = momento === 'pagina' ? 4200 : 2600;
     const id = window.setTimeout(() => {
-      try { sessionStorage.setItem('iara.oferta.v1', '1'); } catch {}
-      setOfertaIara(textos[idioma]);
-    }, voltou ? 8000 : noPasseio ? 25000 : 40000);
+      try {
+        sessionStorage.setItem('iara.paginas.v2', JSON.stringify([...new Set([...paginas, chave])].slice(-20)));
+        localStorage.setItem('iara.visitou.v1', '1');
+        if (momento === 'primeiro-login' && usuarioId) localStorage.setItem(`iara.acolhida.${usuarioId}`, '1');
+      } catch {}
+      setOfertaIara(r.texto, r.opcoes);
+    }, espera);
     return () => window.clearTimeout(id);
-    // Uma vez por montagem; o idioma inicial basta.
+    // Reage à troca de página e ao login; o resto é lido na hora.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [pathname, memoriaPronta, usuarioId]);
+  // Some sozinho depois de um tempo de leitura (sem insistir).
+  useEffect(() => {
+    if (!ofertaIara) return;
+    const id = window.setTimeout(() => setOfertaIara(null), 26000 + ofertaIara.texto.length * 40);
+    return () => window.clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ofertaIara?.n]);
+  function fecharOfertaIara() {
+    setOfertaIara(null);
+    fechadasIara.current += 1;
+    if (fechadasIara.current >= 2) { try { sessionStorage.setItem('iara.silenciada.v2', '1'); } catch {} }
+  }
+  function escolherOpcaoIara(o: OpcaoRecepcao) {
+    setOfertaIara(null);
+    if (o.href) { router.push(o.href); return; }
+    window.dispatchEvent(new CustomEvent('iara:abrir', { detail: o.pedido ? { texto: o.pedido } : {} }));
+  }
   useEffect(() => { if (aberto) setOfertaIara(null); }, [aberto]);
 
   // IARA_MEMORIA_V1: carrega a conversa de quem está logado; ao sair da conta, apaga da tela.
@@ -916,14 +953,19 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
     <section className="ern-chat-compacto" aria-label={t.title} data-ern-vida-pausada={vidaPausadaERN}>
       {/* ERN_CONCIERGE_VISUAL_V2 */}
       {ofertaIara && !aberto && (
-        <div role="status" className="iara-oferta">
+        <div role="status" className="iara-oferta" key={ofertaIara.n}>
           <span aria-hidden="true" className="iara-oferta-avatar"><IconeIara /></span>
           <div className="iara-oferta-corpo">
-            <span className="iara-oferta-nome">Iara</span>
-            <p>{ofertaIara}</p>
-            <button type="button" className="iara-oferta-acao" onClick={() => { setOfertaIara(null); setAberto(true); }}>{c.open} <span aria-hidden="true">→</span></button>
+            <span className="iara-oferta-nome">Iara <small>· Encantos da Amazônia</small></span>
+            <p><TextoDigitadoIA texto={ofertaIara.texto} animar msPorLetra={30} render={(t2) => t2} /></p>
+            <div className="iara-oferta-opcoes">
+              {ofertaIara.opcoes.map(o => (
+                <button key={o.rotulo} type="button" className="iara-oferta-opcao" onClick={() => escolherOpcaoIara(o)}>{o.rotulo}</button>
+              ))}
+              <button type="button" className="iara-oferta-acao" onClick={() => { setOfertaIara(null); setAberto(true); }}>{c.open} <span aria-hidden="true">→</span></button>
+            </div>
           </div>
-          <button type="button" className="iara-oferta-fechar" aria-label={c.close} onClick={() => setOfertaIara(null)}>×</button>
+          <button type="button" className="iara-oferta-fechar" aria-label={c.close} onClick={fecharOfertaIara}>×</button>
         </div>
       )}
       <ConciergeLancadorERN
@@ -1019,7 +1061,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
                   </span>
                   <p>
                     {mensagem.autor === 'ern'
-                      ? <TextoDigitadoIA texto={mensagem.texto} animar={animandoIara === indice} msPorLetra={mensagem.lenta ? 26 : undefined} render={(t2) => t2} aoTerminar={() => setAnimandoIara(a => (a === indice ? null : a))} />
+                      ? <TextoDigitadoIA texto={mensagem.texto} animar={animandoIara === indice} msPorLetra={mensagem.lenta ? 30 : 18} render={(t2) => t2} aoTerminar={() => setAnimandoIara(a => (a === indice ? null : a))} />
                       : mensagem.texto}
                   </p>
                   {mensagem.autor === 'ern' && animandoIara !== indice && !!mensagem.links?.length && (
@@ -1615,7 +1657,19 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
           display: block; margin-bottom: 2px;
           font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #f4c77e;
         }
-        .iara-oferta p { margin: 0; }
+        .iara-oferta p { margin: 0; white-space: pre-line; }
+        .iara-oferta { max-width: min(380px, calc(100vw - 32px)); }
+        .iara-oferta-nome small { font-weight: 600; letter-spacing: .08em; color: #b8c9bf; text-transform: none; }
+        .iara-oferta-opcoes { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+        .iara-oferta-opcoes .iara-oferta-acao { margin-top: 0; }
+        .iara-oferta-opcao {
+          min-height: 36px; padding: 6px 13px; border-radius: 999px;
+          border: 1px solid rgb(244 199 126 / 40%); background: rgb(244 199 126 / 8%);
+          color: #f7d595; font-size: 12.5px; font-weight: 600; cursor: pointer;
+          transition: background .2s, border-color .2s;
+        }
+        .iara-oferta-opcao:hover { background: rgb(244 199 126 / 18%); border-color: #f4c77e; }
+        .iara-oferta-opcao:focus-visible, .iara-oferta-acao:focus-visible, .iara-oferta-fechar:focus-visible { outline: 2px solid #f4c77e; outline-offset: 2px; }
         .iara-oferta-acao {
           display: inline-flex; align-items: center; gap: 6px;
           min-height: 36px; margin-top: 10px; padding: 7px 16px;
