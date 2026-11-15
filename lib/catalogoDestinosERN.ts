@@ -136,7 +136,7 @@ export const CATALOGO_DESTINOS_ERN: DestinoCatalogo[] = [
     },
   },
   {
-    tipo: 'curadoria', id: 'presidente-figueiredo', municipio: 'Presidente Figueiredo', regiao: 'metropolitana', interesses: ['natureza', 'aguas'], imagem: '/images/regiao/ern-amazonia.jpg', mapa: 'municipio:1303536',
+    tipo: 'curadoria', id: 'presidente-figueiredo', municipio: 'Presidente Figueiredo', regiao: 'metropolitana', interesses: ['natureza', 'aguas'], imagem: '/images/destinos/curadoria/presidente-figueiredo.jpg', video: '/videos/curadoria/presidente-figueiredo.mp4', mapa: 'municipio:1303536',
     textos: {
       PT: { titulo: 'Terra das cachoeiras', local: 'Presidente Figueiredo', descricao: 'Mais de cem cachoeiras, cavernas e trilhas de floresta preservada, a pouco mais de 100 km de Manaus.' },
       EN: { titulo: 'Land of waterfalls', local: 'Presidente Figueiredo', descricao: 'Over a hundred waterfalls, caves and trails in preserved forest, just over 100 km from Manaus.' },
