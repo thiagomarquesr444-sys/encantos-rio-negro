@@ -109,7 +109,7 @@ export default function ProntidaoSaidasEDA({ hoje, financeiroLiberado }: { hoje:
       const alvoSaude = rsv.find((r) => meus.some((a) => a.reserva_id === r.id)) ?? rsv[0];
       if (fichasPend) abertos.push({ chave: 'fichas', texto: `${plural(fichasPend, 'ficha de saúde pendente', 'fichas de saúde pendentes')}`, href: editar(alvoSaude, '#participantes'), acao: 'Enviar link' });
       if (graves && !dms.some((d) => d.saude_preparada_em)) {
-        abertos.push({ chave: 'saude', texto: `${plural(graves, 'alerta grave', 'alertas graves')} de saúde sem preparo confirmado`, href: dms[0] ? `/demandas/editar/${dms[0].id}` : editar(alvoSaude, '#participantes'), acao: 'Preparar' });
+        abertos.push({ chave: 'saude', texto: `${plural(graves, 'alerta grave', 'alertas graves')} de saúde sem preparo confirmado`, href: `/reservas/seguranca/${s.id}`, acao: 'Ver resumo' });
       }
 
       // 5. Guia

@@ -387,7 +387,8 @@ export default function InicioOperadoraPremiumERN({
       const quando = `${v.passeio || 'Viagem'} · ${rotuloDia(v.data_inicio, hoje).toLowerCase()}`;
       // Sempre a reserva: é lá que ficam o card Participantes e saúde e o link da ficha.
       const href = v.reserva_id ? `/reservas/editar/${v.reserva_id}#participantes` : '/reservas';
-      if (v.graves) lista.push({ tom: 'er', icone: 'equipe', titulo: `${plural(v.graves, 'alerta grave', 'alertas graves')} de saúde`, detalhe: quando, acao: 'Ver resumo de segurança', href, peso: 98 });
+      // EDA_RESUMO_SEGURANCA_V1: o alerta grave abre o resumo de segurança da saída (precauções e primeiros socorros).
+      if (v.graves) lista.push({ tom: 'er', icone: 'equipe', titulo: `${plural(v.graves, 'alerta grave', 'alertas graves')} de saúde`, detalhe: quando, acao: 'Ver resumo de segurança', href: v.saida_id ? `/reservas/seguranca/${v.saida_id}` : href, peso: 98 });
       if (v.pendentes) lista.push({ tom: 'at', icone: 'equipe', titulo: `${plural(v.pendentes, 'ficha de saúde pendente', 'fichas de saúde pendentes')}`, detalhe: quando, acao: 'Enviar link ao turista', href, peso: 85 });
     }
     const rascunhos = demandas.filter(d => d.status === 'rascunho').length;
