@@ -623,13 +623,48 @@ function lerAcaoRegistro(p: string[], codigos: Record<string, CodigoAcao>): Leit
  * achado pelo nome (sem expor a lista à IA) ou será cadastrado na confirmação.
  * Devolve as ações prontas e, para as que não fecham, o motivo em linguagem simples.
  */
-async function completarAcoes(acoes: AcaoEDA[], db: SupabaseClient, empresaId: string, codigos: Record<string, CodigoAcao>): Promise<{ acoes: AcaoEDA[]; avisos: string[] }> {
+async function completarAcoes(acoes: AcaoEDA[], db: SupabaseClient, empresaId: string, codigos: Record<string, CodigoAcao>, frase = ''): Promise<{ acoes: AcaoEDA[]; avisos: string[] }> {
   const prontas: AcaoEDA[] = [];
   const avisos: string[] = [];
   for (const a of acoes) {
     if ((a.tipo !== 'criar' && a.tipo !== 'alterar') || (a.tabela !== 'reservas' && a.tabela !== 'demandas')) { prontas.push(a); continue; }
     const c = { ...a.campos } as Record<string, Valor>;
     const extras: string[] = [];
+    // EDA_DEMANDA_FRASE_V1: o que o operador já disse não é perguntado de novo. Categoria, consumo
+    // por pessoa/dia e a próxima saída do passeio citado saem da própria frase quando a IA não preencheu.
+    if (a.tabela === 'demandas' && a.tipo === 'criar' && frase) {
+      const f = ` ${normalizar(frase)} `;
+      if (c.categoria == null) {
+        const cat = /\b(rancho|comida|aliment|refeic)/.test(f) ? 'alimentacao' : /\b(bebida|agua mineral|gelo|refrigerante)/.test(f) ? 'bebidas' : /\b(combustivel|gasolina|diesel)/.test(f) ? 'combustivel' : null;
+        if (cat) c.categoria = cat;
+      }
+      const taxa = /(\d+(?:[.,]\d+)?)\s*(kg|quilos?|kilos?|litros?|l)\b[^.;]{0,15}\bpor pessoa\b/.exec(f);
+      if (taxa && c.consumo_pessoa_dia == null && c.quantidade == null) {
+        const v = Number(taxa[1].replace(',', '.'));
+        if (v > 0 && v <= 1000) { c.consumo_pessoa_dia = v; c.unidade ??= /^l/.test(taxa[2]) ? 'litro' : 'kg'; }
+      }
+      if (c.titulo == null && c.categoria != null) c.titulo = /\brancho\b/.test(f) ? 'Rancho da saída' : `Demanda de ${c.categoria === 'alimentacao' ? 'alimentação' : String(c.categoria)}`;
+      if (typeof c.saida_id !== 'string') {
+        // Passeio citado na frase (pelas palavras do nome) → a próxima saída aberta dele.
+        const VAZIAS = new Set(['visita', 'passeio', 'conheca', 'para', 'pelo', 'pela', 'com', 'das', 'dos', 'rio']);
+        let melhor: { id: string; nota: number } | null = null;
+        let empate = false;
+        for (const cod of Object.values(codigos)) {
+          if (cod.tabela !== 'passeios') continue;
+          const palavras = normalizar(cod.rotulo).split(/[^a-z0-9]+/).filter(w => w.length > 2 && !VAZIAS.has(w));
+          if (!palavras.length) continue;
+          const acertos = palavras.filter(w => f.includes(` ${w} `) || f.includes(` ${w},`) || f.includes(` ${w}.`)).length;
+          const nota = acertos / palavras.length;
+          if (acertos === 0 || nota < 0.5) continue;
+          if (!melhor || nota > melhor.nota) { melhor = { id: cod.id, nota }; empate = false; }
+          else if (nota === melhor.nota && cod.id !== melhor.id) empate = true;
+        }
+        if (melhor && !empate) {
+          const { data: sds } = await db.from('passeio_saidas').select('id,data_inicio,status').eq('empresa_id', empresaId).eq('passeio_id', melhor.id).eq('status', 'aberta').gte('data_inicio', hojeManaus()).order('data_inicio').limit(1);
+          if (sds?.[0]) { c.saida_id = String(sds[0].id); extras.push(`próxima saída: ${dm(String(sds[0].data_inicio))}`); }
+        }
+      }
+    }
     // Pedido da Iara → reserva: passeio, nome e pessoas vêm do próprio pedido.
     if (a.tabela === 'reservas' && a.tipo === 'criar' && typeof c.pedido_id === 'string') {
       const { data: pd } = await db.from('pedidos_visitante').select('passeio_id,nome,adultos,criancas,status').eq('id', c.pedido_id).eq('empresa_id', empresaId).maybeSingle();
@@ -1469,7 +1504,7 @@ ${conhecimentoDestino(achado, idioma)}`;
         } else if (d && 'aviso' in d && /n[aã]o (encontrei|achei)/i.test(ex.limpo)) avisosAcao.push(d.aviso);
       }
       if (opSessao && acoes.length) {
-        const comp = await completarAcoes(acoes, opSessao.db, opSessao.empresaId, codigosOp);
+        const comp = await completarAcoes(acoes, opSessao.db, opSessao.empresaId, codigosOp, mensagens.filter(m => m.papel === 'usuario').slice(-1)[0]?.texto ?? '');
         acoes = comp.acoes; avisosAcao = [...avisosAcao, ...comp.avisos];
       }
       // Nunca dizer "preparei" sem botão: se a ação não fechou, explica o que falta.
@@ -1479,6 +1514,14 @@ ${conhecimentoDestino(achado, idioma)}`;
         : viaDireta && acoes.length
           ? `Achei a reserva. Preparei a mudança aqui embaixo — é só autorizar.${avisosAcao.length ? `\n\n${avisosAcao.join(' ')}` : ''}`
           : `${ex.limpo || 'Preparei, é só autorizar no botão abaixo.'}${avisosAcao.length ? `\n\n${avisosAcao.join(' ')}` : ''}`;
+    }
+    // EDA_SEM_MASSA_V1: pedido de apagar/cancelar "tudo" ou "todas" nunca vira ação, mesmo com autorização.
+    if (modo === 'operadora') {
+      const pedidoOp = normalizar(mensagens.filter(m => m.papel === 'usuario').slice(-1)[0]?.texto ?? '');
+      if (/\b(apag\w*|exclu\w*|delet\w*|remov\w*|cancel\w*|limp\w*|zer[ae]\w*)\b.{0,30}\b(tod[ao]s?|tudo)\b/.test(pedidoOp)) {
+        acoes = [];
+        textoIA = 'Isso eu não faço em massa: é arriscado demais e não tem volta fácil. Me diga qual registro (uma reserva, uma demanda, um cliente) e eu preparo só ele para você autorizar.';
+      }
     }
     const sugestoesPre = extrairSugestoes(textoIA);
     let bruto = sugestoesPre.limpo;
@@ -1504,6 +1547,7 @@ ${conhecimentoDestino(achado, idioma)}`;
     const comSugestoes = extrairSugestoes(mascararDados(bruto));
     // EDA_ABRIR_V1: [[ABRIR:CODIGO]] leva a pessoa na hora (a conversa continua aberta).
     let navegar: Destino | null = null;
+    let abriuPorNome = false;
     const semAbrir = modo === 'operadora' || modo === 'publico' ? comSugestoes.limpo.replace(/\[\[\s*ABRIR\s*:\s*([A-Z0-9_]{1,30})\s*\]\]/gi, (_, c: string) => {
       const d = destinos[c.toUpperCase()];
       if (d && !navegar) navegar = d;
@@ -1514,7 +1558,15 @@ ${conhecimentoDestino(achado, idioma)}`;
     if (modo === 'operadora' && !navegar) {
       const ultima = mensagens.filter(m => m.papel === 'usuario').slice(-1)[0]?.texto ?? '';
       if (/\b(abr[ea]|abrir|abri|ir (para|pra|no|na|ao)|vai (para|pra|no|na)|me (leva|mostra)|leva(r)? (pra|para|no|na|ao)|mostra(r)?|ver|entra(r)? (no|na))\b/i.test(normalizar(ultima)) || /^\s*abrindo\b/i.test(texto)) {
-        navegar = acharDestino(`${ultima} ${texto}`, codigosOp, destinos);
+        // EDA_ABRIR_POR_NOME_V1: "abre a reserva do Fulano" — a IA não vê nomes (LGPD); o servidor acha.
+        const porNome = /\breservas? d[oa]s? (.+?)\s*$/.exec(normalizarEDA(ultima));
+        if (porNome) {
+          const candsNome: Candidato[] = Object.entries(codigosOp).filter(([, c]) => c.tabela === 'reservas')
+            .map(([codigo, c]) => ({ codigo, tabela: c.tabela, id: c.id, rotulo: c.rotulo, busca: c.busca }));
+          const achado = acharRegistro(porNome[1], candsNome, 'reservas');
+          if (achado.ok && destinos[achado.candidato.codigo]) { navegar = destinos[achado.candidato.codigo]; abriuPorNome = true; }
+        }
+        if (!navegar) navegar = acharDestino(`${ultima} ${texto}`, codigosOp, destinos);
       }
     }
     const { limpo: semIr, links: linksIr } = extrairLinks(semAbrir, destinos);
@@ -1552,7 +1604,7 @@ ${conhecimentoDestino(achado, idioma)}`;
     }
     // Nunca devolve resposta vazia (antes aparecia "Não consegui responder" quando a IA mandava só o marcador).
     const destinoFinal = navegar as Destino | null;
-    const textoFinal = final || (destinoFinal ? `Abrindo: ${destinoFinal.rotulo.replace(/^Abrir\s+/i, '')}.` : links.length ? 'Aqui está:' : acoes.length ? 'Preparei, é só autorizar no botão abaixo.' : '');
+    const textoFinal = abriuPorNome && destinoFinal ? 'Achei a reserva e já abri para você.' : final || (destinoFinal ? `Abrindo: ${destinoFinal.rotulo.replace(/^Abrir\s+/i, '')}.` : links.length ? 'Aqui está:' : acoes.length ? 'Preparei, é só autorizar no botão abaixo.' : '');
     if (!textoFinal) return resposta(503, { ok: false, erro: 'Não consegui responder agora. Tente de novo em instantes.' });
     return resposta(200, { ok: true, resposta: textoFinal, navegar: destinoFinal, links: destinoFinal ? links.filter(l => l.href !== destinoFinal.href) : links, acoes, sugestoes: sugestoesPre.sugestoes.length ? sugestoesPre.sugestoes : comSugestoes.sugestoes, pedido, ficha: fichaNova, destino: destinoIara, periodo, modoIara: modo === 'publico' ? modoIara : undefined, motor: { modelo: ultimoModeloIA.nome, ms: Date.now() - inicioIA, tentativas: falhasIA.map(f => f.split(':')[0]) } });
   } catch (erro) {
