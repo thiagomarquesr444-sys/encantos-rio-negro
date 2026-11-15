@@ -78,7 +78,7 @@ const CONSULTA_INICIAL: Consulta = {
 // EDA_DEMANDA_PASSEIO_V2: cada demanda mostra o passeio que prepara e como está a saúde do grupo.
 type VinculoDemandaEDA = { passeio: string | null; data_inicio: string | null; data_fim: string | null; horario: string | null; saude: 'sem_saida' | 'preparada' | 'pendente' | 'ok'; alertas: number };
 
-function PasseioDaDemanda({ v }: { v?: VinculoDemandaEDA }) {
+function PasseioDaDemanda({ v, inativa }: { v?: VinculoDemandaEDA; inativa?: boolean }) {
   if (!v) return null;
   if (v.saude === 'sem_saida') return <span className="eda-dem-passeio"><PillEDA tom="er">Sem passeio vinculado</PillEDA></span>;
   const dia = (d: string | null) => (d ? d.split('-').reverse().slice(0, 2).join('/') : '');
@@ -88,7 +88,8 @@ function PasseioDaDemanda({ v }: { v?: VinculoDemandaEDA }) {
       <b>{v.passeio ?? 'Passeio'}</b>
       <small>{periodo}{v.horario ? ` · ${v.horario.slice(0, 5)}` : ''}</small>
       {v.saude === 'preparada' && <PillEDA tom="ok">Saúde preparada</PillEDA>}
-      {v.saude === 'pendente' && <PillEDA tom="at">{v.alertas} alerta(s) de saúde para preparar</PillEDA>}
+      {/* Demanda cancelada não tem mais nada a preparar. */}
+      {v.saude === 'pendente' && !inativa && <PillEDA tom="at">{v.alertas} alerta(s) de saúde para preparar</PillEDA>}
     </span>
   );
 }
@@ -768,7 +769,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
                         </span>
                         <PillEDA tom={TOM_STATUS[demanda.status]}>{STATUS_DEMANDA[demanda.status]}</PillEDA>
                       </span>
-                      <PasseioDaDemanda v={vinculos[demanda.id]} />
+                      <PasseioDaDemanda v={vinculos[demanda.id]} inativa={demanda.status === 'cancelada'} />
                       <span className="eda-pg-cartao-info">
                         <span>{formatadorQuantidade.format(demanda.quantidade)} {demanda.unidade}</span>
                         <span>{demanda.data_inicio && demanda.data_fim ? `${formatarData(demanda.data_inicio)} a ${formatarData(demanda.data_fim)}` : 'Período não informado'}</span>
@@ -796,7 +797,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
                               <span className="eda-dem-item-txt">
                                 <b>{demanda.titulo}</b>
                                 <span className="eda-dem-local"><IconeLocal />{demanda.localidade}</span>
-                                <PasseioDaDemanda v={vinculos[demanda.id]} />
+                                <PasseioDaDemanda v={vinculos[demanda.id]} inativa={demanda.status === 'cancelada'} />
                               </span>
                             </button>
                           </td>
@@ -890,7 +891,7 @@ function DemandasConteudo({ parametros }: { parametros: string }) {
 
             <div className="eda-pg-bloco">
               <p className="eda-pg-bloco-titulo">Passeio que esta demanda prepara</p>
-              <PasseioDaDemanda v={vinculos[aberta.id]} />
+              <PasseioDaDemanda v={vinculos[aberta.id]} inativa={aberta.status === 'cancelada'} />
             </div>
 
             <div className="eda-pg-bloco">

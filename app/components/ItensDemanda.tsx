@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import SeletorERN from './SeletorERN';
+import { supabase } from '@/lib/supabase';
 import GraficoMateriaisDemanda from './GraficoMateriaisDemanda';
 import { subtotal, moeda } from '@/lib/calculosMateriaisDemanda';
 import { exportarMateriaisDemanda } from '@/lib/exportarMateriaisDemanda';
@@ -252,7 +253,16 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange, acre
       const novaVersao = await salvarItensDemanda(demandaId, versao, itens);
       setVersao(novaVersao);
       setAlterado(false);
-      setAviso('Lista salva com sucesso.');
+      // EDA_DESPESA_DEMANDA_V1: a plataforma mantém a despesa da demanda no Financeiro e conta ao operador.
+      let financeiro = '';
+      try {
+        const { data: despesa } = await supabase.from('financeiro').select('valor,status').eq('demanda_id', demandaId).eq('origem', 'demanda_auto').maybeSingle();
+        if (despesa) {
+          const centavos = BigInt(Math.round(Number(despesa.valor ?? 0) * 100));
+          financeiro = ` A despesa desta demanda no Financeiro está em ${moeda(centavos)} (${String(despesa.status).toLowerCase() === 'pago' ? 'paga' : 'a pagar'}), atualizada pela plataforma.`;
+        }
+      } catch { /* o aviso do Financeiro é complementar */ }
+      setAviso(`Lista salva com sucesso.${financeiro}`);
     } catch (falha) {
       setErro(falha instanceof Error ? falha.message : 'Falha ao salvar a lista.');
     } finally {

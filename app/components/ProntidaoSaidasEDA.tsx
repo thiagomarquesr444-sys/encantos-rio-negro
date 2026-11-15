@@ -13,7 +13,7 @@ import './prontidao-eda.css';
 
 type Saida = { id: string; passeio_id: string | null; data_inicio: string; horario: string | null; vagas_total: number | null; status: string | null };
 type Reserva = { id: string; saida_id: string | null; status: string | null; quantidade_pessoas: number | null; embarcacao_id: string | null; guia_id: string | null; guia: string | null };
-type Demanda = { id: string; saida_id: string | null; status: string | null; pessoas_estimadas: number | null; saude_preparada_em: string | null; demanda_itens: { situacao: string | null }[] | null };
+type Demanda = { id: string; saida_id: string | null; status: string | null; pessoas_estimadas: number | null; publico_alvo: string | null; saude_preparada_em: string | null; demanda_itens: { situacao: string | null }[] | null };
 type Alerta = { saida_id: string | null; reserva_id: string | null; graves: number | null; pendentes: number | null };
 type Barco = { id: string; nome: string | null; capacidade: number | null; status: string | null };
 type Aberto = { chave: string; texto: string; href: string; acao: string };
@@ -56,7 +56,7 @@ export default function ProntidaoSaidasEDA({ hoje, financeiroLiberado }: { hoje:
     const [ps, rs, ds, al] = await Promise.all([
       supabase.from('passeios').select('id,nome').in('id', passeioIds.length ? passeioIds : [NENHUM]),
       supabase.from('reservas').select('id,saida_id,status,quantidade_pessoas,embarcacao_id,guia_id,guia').in('saida_id', ids),
-      supabase.from('demandas').select('id,saida_id,status,pessoas_estimadas,saude_preparada_em,demanda_itens(situacao)').in('saida_id', ids),
+      supabase.from('demandas').select('id,saida_id,status,pessoas_estimadas,publico_alvo,saude_preparada_em,demanda_itens(situacao)').in('saida_id', ids),
       supabase.rpc('alertas_proximas_viagens_eda', { p_dias: 8 }),
     ]);
     const nomes = new Map(((ps.data ?? []) as unknown as { id: string; nome: string | null }[]).map((p) => [p.id, p.nome ?? 'Passeio']));
@@ -130,10 +130,17 @@ export default function ProntidaoSaidasEDA({ hoje, financeiroLiberado }: { hoje:
 
       // 7. Demanda de suprimentos
       const abertas = dms.filter((d) => !/rascunho/i.test(d.status ?? ''));
-      const desalinhada = abertas.find((d) => Number(d.pessoas_estimadas ?? 0) > 0 && pessoas > 0 && Math.abs(Number(d.pessoas_estimadas) - pessoas) / pessoas > 0.25);
+      // Demanda que inclui a tripulação tem mais gente que as reservas, e isso está certo:
+      // só avisa se ela estiver calculada para MENOS pessoas do que os turistas confirmados.
+      const desalinhada = abertas.find((d) => {
+        const est = Number(d.pessoas_estimadas ?? 0);
+        if (est <= 0 || pessoas <= 0) return false;
+        if (d.publico_alvo && d.publico_alvo !== 'turistas') return est < pessoas;
+        return Math.abs(est - pessoas) / pessoas > 0.25;
+      });
       if (!dms.length) abertos.push({ chave: 'demanda', texto: 'Saída sem demanda de suprimentos', href: '/demandas/nova', acao: 'Criar demanda' });
       else if (!abertas.length) abertos.push({ chave: 'demanda', texto: 'Demanda ainda em rascunho', href: `/demandas/editar/${dms[0].id}`, acao: 'Abrir demanda' });
-      else if (desalinhada) abertos.push({ chave: 'demanda', texto: `Demanda calculada para ${desalinhada.pessoas_estimadas} pessoas; a saída tem ${pessoas}`, href: `/demandas/editar/${desalinhada.id}`, acao: 'Recalcular' });
+      else if (desalinhada) abertos.push({ chave: 'demanda', texto: `Demanda calculada para ${desalinhada.pessoas_estimadas} pessoas; a saída tem ${pessoas} ${pessoas === 1 ? 'turista' : 'turistas'}`, href: `/demandas/editar/${desalinhada.id}`, acao: 'Recalcular' });
 
       // 8. Materiais embarcados
       const naoEmbarcados = dms.reduce((t, d) => t + (d.demanda_itens ?? []).filter((i) => i.situacao !== 'atendido').length, 0);
