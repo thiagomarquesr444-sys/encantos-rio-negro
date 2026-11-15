@@ -1,0 +1,23 @@
+/* EDA_PRONTIDAO_V1: prontidão das saídas (modo véspera) no Painel. */
+.eda-pront { display: grid; gap: 14px; margin-top: 24px; }
+.eda-pront-card { display: grid; gap: 12px; }
+.eda-pront-card[data-tom='er'] { border-color: color-mix(in srgb, var(--e-verm) 55%, var(--e-borda)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--e-verm) 18%, transparent), var(--e-sombra); }
+.eda-pront-card[data-tom='at'] { border-color: color-mix(in srgb, var(--e-amar) 45%, var(--e-borda)); }
+.eda-pront-card[data-tom='ok'] { border-color: color-mix(in srgb, var(--e-verde) 40%, var(--e-borda)); }
+.eda-pront-topo { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 10px 16px; }
+.eda-pront-txt { display: grid; gap: 3px; min-width: 0; }
+.eda-pront-txt b { font-size: 16px; font-weight: 650; letter-spacing: -0.01em; color: var(--e-texto); overflow-wrap: anywhere; }
+.eda-pront-txt small { font-size: 12.5px; color: var(--e-sec); }
+.eda-pront-barra { height: 6px; border-radius: 999px; background: var(--e-suave); overflow: hidden; }
+.eda-pront-barra i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #e3a144, #f7d595); transition: width .4s ease; }
+.eda-pront-card[data-tom='ok'] .eda-pront-barra i { background: var(--e-verde); }
+.eda-pront-lista { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; }
+.eda-pront-lista li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 14px; padding: 9px 0; border-top: 1px solid var(--e-borda); font-size: 14px; color: var(--e-texto); }
+.eda-pront-lista li:first-child { border-top: 0; }
+.eda-pront-acoes { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; }
+.eda-pront-acoes button.eda-lk, .eda-pront-mini button.eda-lk { background: none; border: 0; padding: 0; cursor: pointer; font: inherit; font-size: 13px; }
+.eda-pront-motivo { display: flex; flex: 1 1 280px; flex-wrap: wrap; align-items: center; gap: 8px; }
+.eda-pront-motivo input { flex: 1 1 200px; min-height: 38px; min-width: 0; padding: 0 12px; border-radius: 10px; border: 1px solid var(--e-borda); background: var(--e-suave); color: var(--e-texto); font: inherit; font-size: 13.5px; }
+.eda-pront-motivo input:focus-visible { outline: 2px solid var(--e-ouro); outline-offset: 2px; }
+.eda-pront-mini { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding-block: 14px; }
+@media (prefers-reduced-motion: reduce) { .eda-pront-barra i { transition: none; } }

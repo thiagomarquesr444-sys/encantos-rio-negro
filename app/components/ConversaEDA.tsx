@@ -249,6 +249,19 @@ export default function ConversaEDA() {
   const cancelarRef = useRef(false);
   const relogioRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const enviarRef = useRef<(v: string) => void>(() => undefined);
+  // EDA_PRONTIDAO_V1: o Painel pede uma tarefa pronta (ex.: "Preparar com a EDA") — abre e já envia.
+  useEffect(() => {
+    let espera: ReturnType<typeof setTimeout> | null = null;
+    const pedir = (e: Event) => {
+      const texto = (e as CustomEvent<{ texto?: unknown }>).detail?.texto;
+      if (typeof texto !== 'string' || !texto.trim()) return;
+      setAberto(true);
+      if (espera) clearTimeout(espera);
+      espera = setTimeout(() => enviarRef.current(texto.trim().slice(0, 900)), 400);
+    };
+    window.addEventListener('eda:pedir', pedir);
+    return () => { window.removeEventListener('eda:pedir', pedir); if (espera) clearTimeout(espera); };
+  }, []);
   useEffect(() => {
     setAudioOk(typeof window.MediaRecorder !== 'undefined' && !!navigator.mediaDevices?.getUserMedia);
     return () => liberarMic();

@@ -19,6 +19,7 @@ import ArcoFlechaERN from './ArcoFlechaERN';
 import ProcuraRedeEDA from './ProcuraRedeEDA';
 import { BarrasAgrupadasEDA, TendenciaEDA } from './GraficosEDA';
 import { listarChegadas, temTransfer, MODOS_CHEGADA, VEICULOS_TRANSFER, type ChegadaPainel } from '@/lib/chegadasERN';
+import ProntidaoSaidasEDA from './ProntidaoSaidasEDA';
 import './inicio-operadora-premium.css';
 import './capa-eda.css';
 import CartaoMagneticoEDA from './CartaoMagneticoEDA';
@@ -565,6 +566,8 @@ export default function InicioOperadoraPremiumERN({
           etiqueta={!financeiroLiberado ? 'Recurso do plano' : fin ? (fin.pend.faixas[0].qtdReceber ? `${moedaCurta(fin.pend.faixas[0].receber)} vencido` : `${moedaCurta(fin.pend.proximos.receber)} em 7 dias`) : 'Carregando'}
           tom={fin && fin.pend.faixas[0].qtdReceber ? 'at' : 'nt'} href="/financeiro?periodo=pendentes" />
       </section>
+
+      <ProntidaoSaidasEDA hoje={hoje} financeiroLiberado={financeiroLiberado} />
 
       <div className="eda-linha eda-linha-a">
         <section className="eda-card" aria-labelledby="eda-agenda">
