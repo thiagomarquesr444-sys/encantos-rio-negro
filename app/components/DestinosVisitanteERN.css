@@ -441,3 +441,7 @@
   .ern-v-root .ern-v-muni-acoes .ern-v-network-link{min-height:36px;font-size:12.5px;justify-content:flex-start}
   .ern-v-root .ern-v-stage .ern-v-drawer{left:8px;right:8px;bottom:8px;max-height:70%}
 }
+/* A janela do município sobe enquanto o aviso de chegada da Iara está na tela (não ficam uma sobre a outra). */
+@media(max-width:640px){
+  body:has(.iara-oferta) .ern-v-root .ern-v-muni-card{bottom:118px}
+}
