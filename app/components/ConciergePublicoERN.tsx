@@ -162,6 +162,17 @@ const textos = {
 type IdiomaERN = 'PT' | 'EN' | 'ES';
 type LinkIara = { href: string; rotulo: string };
 type DestinoMsg = DestinoIara & { auto?: boolean };
+// IARA_MODOS_V1: nome do modo em PT, EN e ES.
+const ROTULOS_MODO_IARA: Record<string, [string, string, string]> = {
+  atendimento: ['Atendimento', 'Welcome desk', 'Atención'],
+  mentora: ['Mentora do território', 'Territory guide', 'Guía del territorio'],
+  catalogo: ['Catálogo e preços', 'Catalog and prices', 'Catálogo y precios'],
+  disponibilidade: ['Disponibilidade', 'Availability', 'Disponibilidad'],
+  proposta: ['Proposta', 'Proposal', 'Propuesta'],
+  reservas: ['Reservas', 'Bookings', 'Reservas'],
+  parceiros: ['Parceiros', 'Partners', 'Socios'],
+};
+
 type MensagemERN = { autor: 'ern' | 'visitante'; texto: string; sugestoes?: string[]; links?: LinkIara[]; destino?: DestinoMsg; lenta?: boolean };
 
 // IARA_MEMORIA_V1: o que vai para a conta de quem está logado passa por esta máscara (LGPD).
@@ -363,6 +374,8 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   const t = textos[idioma];
   const c = conversaTextos[idioma];
   const [aberto, setAberto] = useState(false);
+  // IARA_MODOS_V1: modo de operação da última resposta (Atendimento, Proposta, Reservas…).
+  const [modoIara, setModoIara] = useState('');
   const [entrada, setEntrada] = useState('');
   const [etapa, setEtapa] = useState(0);
   const [preferencias, setPreferencias] = useState<string[]>([]);
@@ -902,7 +915,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
       body: JSON.stringify({ modo: 'publico', idioma, estilo: estiloIara, mensagens: historico, ficha: fichaIara.current, sessao: sessaoIara.current || undefined, origem, pagina_atual: { caminho: window.location.pathname.slice(0, 120) } }),
     })
       .then(r => r.json())
-      .then((j: { resposta?: string; erro?: string; sugestoes?: unknown; pedido?: PedidoIara | null; ficha?: unknown; links?: unknown; navegar?: unknown; destino?: unknown }) => {
+      .then((j: { resposta?: string; erro?: string; sugestoes?: unknown; pedido?: PedidoIara | null; ficha?: unknown; links?: unknown; navegar?: unknown; destino?: unknown; modoIara?: unknown }) => {
         if (controle.signal.aborted) return;
         pedidoIA.current = null;
         if (!j.resposta) throw new Error(j.erro || 'sem resposta');
@@ -914,6 +927,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
         if (!auto && nav && linkIaraSeguro(nav) && nav.href.startsWith('/') && !nav.href.startsWith('//')) router.push(nav.href);
         if (auto && destino) window.setTimeout(() => levarAoDestino(destino), 2200);
         if (j.ficha && typeof j.ficha === 'object') fichaIara.current = j.ficha as Record<string, unknown>;
+        if (typeof j.modoIara === 'string') setModoIara(ROTULOS_MODO_IARA[j.modoIara]?.[idioma === 'EN' ? 1 : idioma === 'ES' ? 2 : 0] ?? '');
         linksResposta.current = Array.isArray(j.links) ? (j.links as LinkIara[]).filter(linkIaraSeguro).slice(0, 3) : [];
         if (j.pedido && typeof j.pedido === 'object') {
           const pd = j.pedido;
@@ -1021,6 +1035,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
             <div className="identidade">
               <h2 id="ern-chat-titulo">{t.title}</h2>
               <p>{c.badge}</p>
+              {modoIara && <span className="iara-modo" role="status">{modoIara}</span>}
             </div>
             <button
               type="button"
@@ -1799,6 +1814,12 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
         .compositor:focus-within { border-color: #f4c77e; box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%), 0 0 0 4px rgb(244 199 126 / 16%); }
         .compositor .principal { box-shadow: inset 0 1px 0 rgb(255 255 255 / 55%), 0 10px 22px -8px rgb(227 161 68 / 60%); }
         .chat-rodape button { text-underline-offset: 3px; }
+        .iara-modo {
+          display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 3px 10px;
+          border-radius: 999px; border: 1px solid rgb(244 199 126 / 38%); background: rgb(244 199 126 / 10%);
+          color: #f7d595; font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
+        }
+        .iara-modo::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #f4c77e; }
         /* Convite da Iara: discreto no celular, sem cobrir o conteúdo */
         @media (max-width: 640px) {
           .iara-oferta { left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); max-width: none; padding: 10px 12px; gap: 10px; }
