@@ -26,6 +26,7 @@ export const MANUAL_PAGINA: Record<string, string> = {
   vouchers: 'Embarques do dia: vouchers emitidos pela reserva; check-in no embarque. A EDA só pode cancelar voucher.',
   clientes: 'Clientes: carteira da operadora. Dados pessoais só no formulário (LGPD); a EDA cria o cliente só com o nome quando faz uma reserva.',
   relatorios: 'Relatórios: números do mês, comparações e PDFs.',
+  calendario: 'Calendário Amazônico: visões Mês, Semana por recurso (barcos, guias, hospedagens), Dia e Agenda; camadas Operação, Financeiro, Recursos e Amazônica (rio, pesca, lua, feriados, festas, clima). Mostra a prontidão de cada saída e os conflitos. O operador remarca uma saída arrastando ou pela data no painel (com confirmação e Desfazer) e bloqueia a agenda de barco, guia, hospedagem ou da empresa. Remarcar a saída leva junto as reservas e as demandas abertas dela; voucher emitido precisa de nova versão.',
 };
 
 export function manualPara(pagina: string): string {

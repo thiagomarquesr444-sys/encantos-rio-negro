@@ -30,6 +30,7 @@ const ROTAS_GESTAO = [
   '/financeiro',
   '/clientes',
   '/reservas',
+  '/calendario',
   '/hospedagens',
   '/passeios',
   '/configuracoes',

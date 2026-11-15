@@ -280,6 +280,35 @@ export default function NovaReservaPage() {
       });
     return () => { ativo = false; };
   }, []);
+  // EDA_CALENDARIO_V1: ?saida=ID (ou ?data=AAAA-MM-DD) vindo do Calendário Amazônico
+  // já abre a reserva no passeio, na saída e na data escolhidos (leitura via RLS).
+  useEffect(() => {
+    const url = new URLSearchParams(window.location.search);
+    if (url.get('pedido')) return;
+    const saida = url.get('saida');
+    const dia = url.get('data');
+    let ativo = true;
+    if (saida && /^[0-9a-f-]{36}$/i.test(saida)) {
+      supabase.from('passeio_saidas').select('id,passeio_id,data_inicio,data_fim,horario,passeios(nome)').eq('id', saida).maybeSingle()
+        .then(({ data }) => {
+          if (!ativo || !data) return;
+          const p = data.passeios as unknown as { nome?: string | null } | null;
+          setForm(atual => ({
+            ...atual,
+            passeio_id: data.passeio_id,
+            pacote: p?.nome ?? atual.pacote,
+            saida_id: data.id,
+            data_reserva: data.data_inicio,
+            horario: data.horario?.slice(0, 5) ?? atual.horario,
+            data_fim_prevista: data.data_fim ?? atual.data_fim_prevista,
+          }));
+        });
+    } else if (dia && /^\d{4}-\d{2}-\d{2}$/.test(dia)) {
+      setForm(atual => ({ ...atual, data_reserva: dia }));
+    }
+    return () => { ativo = false; };
+  }, []);
+
   useEffect(() => {
     if (!gravada || !pedidoOrigem) return;
     void supabase.from('pedidos_visitante').update({ status: 'convertido', atualizado_em: new Date().toISOString() }).eq('id', pedidoOrigem).then(() => undefined);

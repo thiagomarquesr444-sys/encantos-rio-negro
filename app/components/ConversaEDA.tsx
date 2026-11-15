@@ -34,7 +34,7 @@ const PAGINAS: [string, string][] = [
   ['/demandas', 'demandas'], ['/financeiro', 'financeiro'], ['/clientes', 'clientes'],
   ['/hospedagens', 'hospedagens'], ['/configuracoes', 'configuracoes'], ['/embarcacoes', 'embarcacoes'],
   ['/guias', 'guias'], ['/parceiros', 'parceiros'], ['/relatorios', 'relatorios'],
-  ['/vouchers', 'vouchers'], ['/documentos', 'documentos'], ['/fiscal', 'fiscal'], ['/planos', 'planos'],
+  ['/vouchers', 'vouchers'], ['/calendario', 'calendario'], ['/documentos', 'documentos'], ['/fiscal', 'fiscal'], ['/planos', 'planos'],
 ];
 
 export function periodoManaus(): 'madrugada' | 'manha' | 'tarde' | 'noite' {
@@ -64,7 +64,7 @@ const ROTULO_PAGINA: Record<string, string> = {
   painel: 'toda a operação', passeios: 'passeios e saídas', reservas: 'reservas', demandas: 'demandas e suprimentos',
   financeiro: 'o financeiro', clientes: 'clientes', hospedagens: 'hospedagens', configuracoes: 'configurações',
   embarcacoes: 'a frota', guias: 'a equipe de guias', parceiros: 'parceiros', relatorios: 'relatórios',
-  vouchers: 'vouchers', documentos: 'documentos', fiscal: 'o fiscal', planos: 'o seu plano',
+  vouchers: 'vouchers', calendario: 'o calendário da operação', documentos: 'documentos', fiscal: 'o fiscal', planos: 'o seu plano',
 };
 
 // Negrito simples (**texto**) sem HTML: o React escapa todo o conteúdo.

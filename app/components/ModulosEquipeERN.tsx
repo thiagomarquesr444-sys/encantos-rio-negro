@@ -14,6 +14,7 @@ const ROTAS: ReadonlyArray<readonly [string, string]> = [
   ['/financeiro', 'financeiro'],
   ['/clientes', 'clientes'],
   ['/reservas', 'reservas'],
+  ['/calendario', 'reservas'],
   ['/passeios', 'passeios'],
   ['/vouchers', 'vouchers'],
   ['/hospedagens', 'hospedagens'],

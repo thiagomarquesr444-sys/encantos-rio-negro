@@ -10,7 +10,7 @@ const CATEGORIAS = new Set(['problema', 'sugestao', 'experiencia']);
 
 const ROTAS_OPERADORA = [
   '/dashboard', '/clientes', '/reservas', '/passeios',
-  '/vouchers', '/hospedagens', '/embarcacoes', '/guias',
+  '/vouchers', '/calendario', '/hospedagens', '/embarcacoes', '/guias',
   '/parceiros', '/demandas', '/financeiro', '/relatorios',
   '/configuracoes', '/planos', '/comando',
 ];

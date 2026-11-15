@@ -44,6 +44,7 @@ const GRUPOS: NavGroup[] = [
     id: 'operacao',
     label: 'Operação',
     itens: [
+      { label: 'Calendário Amazônico', href: '/calendario', descricao: 'Saídas, recursos, vencimentos e o ritmo do rio', icone: 'agenda' },
       { label: 'Clientes', href: '/clientes', descricao: 'Cadastro e relacionamento com viajantes', icone: 'equipe' },
       { label: 'Passeios', href: '/passeios', descricao: 'Roteiros, experiências e catálogo', icone: 'rio' },
       { label: 'Embarques do dia', href: '/vouchers', descricao: 'Check-in dos vouchers no embarque', icone: 'voucher' },

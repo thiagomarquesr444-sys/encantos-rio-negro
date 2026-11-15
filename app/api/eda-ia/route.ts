@@ -37,7 +37,7 @@ export const runtime = 'nodejs';
 export const maxDuration = 60;
 
 const LIMITE_BYTES = 24 * 1024;
-const PAGINAS = new Set(['painel', 'passeios', 'reservas', 'demandas', 'financeiro', 'clientes', 'hospedagens', 'configuracoes', 'embarcacoes', 'guias', 'parceiros', 'relatorios', 'vouchers', 'documentos', 'fiscal', 'planos']);
+const PAGINAS = new Set(['painel', 'passeios', 'reservas', 'demandas', 'financeiro', 'clientes', 'hospedagens', 'configuracoes', 'embarcacoes', 'guias', 'parceiros', 'relatorios', 'vouchers', 'calendario', 'documentos', 'fiscal', 'planos']);
 
 // LGPD: mascara CPF/CNPJ, e-mail, telefone e cartão antes de qualquer envio à IA (e na resposta).
 function mascararDados(t: string) {
@@ -145,6 +145,7 @@ function destinosFixos(hoje: string): Record<string, Destino> {
     HOSPEDAGENS: { href: '/hospedagens', rotulo: 'Abrir hospedagens' },
     PARCEIROS: { href: '/parceiros', rotulo: 'Abrir parceiros' },
     VOUCHERS: { href: '/vouchers', rotulo: 'Abrir embarques do dia' },
+    CALENDARIO: { href: '/calendario', rotulo: 'Abrir o Calendário Amazônico' },
     RELATORIOS: { href: '/relatorios', rotulo: 'Abrir relatórios' },
     DOCUMENTOS: { href: '/documentos', rotulo: 'Abrir documentos' },
     FISCAL: { href: '/fiscal', rotulo: 'Abrir fiscal' },
@@ -840,6 +841,7 @@ const LIDER_PAGINA: Record<string, string> = {
   parceiros: 'Líder de PARCEIROS e comissões: agências, hotéis e indicadores, comissão de cada um e status.',
   relatorios: 'Líder de RELATÓRIOS: leitura dos números da operação, comparação de meses, tendências.',
   vouchers: 'Líder de VOUCHERS (comprovante de compra do turista, emitido pela operadora): nasce só da reserva Confirmada com sinal/pagamento Recebido, um ativo por reserva (titular + dependentes), dados congelados; reserva alterada pede nova versão; check-in só pelo operador; reserva cancelada cancela o voucher automaticamente; não existe voucher avulso nem exclusão. Obrigação: avisar reserva confirmada e paga sem voucher, voucher com reserva alterada e voucher não enviado ao turista.',
+  calendario: 'Líder do CALENDÁRIO AMAZÔNICO: a operação no tempo — saídas (com prontidão), reservas, demandas, hospedagens, vencimentos do financeiro, bloqueios de agenda (manutenção de barco, folga de guia, dia sem operação), pedidos da Iara com data, e a camada amazônica (fase do rio, temporada de pesca, lua, feriados, festas dos municípios, clima). Obrigações: apontar conflitos de barco/guia (dupla escala, bloqueio, lotação, folga curta de navegação entre expedições), saídas da semana com pendência e dias livres que podem virar oferta. Remarcar uma saída só com autorização, avisando impacto em reservas, demandas e vouchers; mensagem ao cliente nunca sai sem o operador.',
   documentos: 'Líder de DOCUMENTOS da operação (PDFs, listas, relatórios).',
   fiscal: 'Líder FISCAL: notas e dados fiscais da empresa. Emissão de nota é feita na própria tela fiscal.',
   configuracoes: 'Líder de CONFIGURAÇÕES: padrões da operação e da conta.',

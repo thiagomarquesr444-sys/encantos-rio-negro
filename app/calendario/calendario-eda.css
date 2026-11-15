@@ -1,0 +1,194 @@
+/* EDA_CALENDARIO_V1 — Calendário Amazônico (padrão Encantos / Fablepremium).
+   Tokens de tema vêm de .eda-pg (padrao-paginas-eda.css): Noite e Claro. */
+
+.eda-cal {
+  --cal-ok: var(--p-verde);
+  --cal-at: var(--p-amar);
+  --cal-er: var(--p-verm);
+  --cal-info: var(--p-azul);
+  --cal-nt: var(--p-sec);
+}
+.eda-cal [data-tom="ok"] { --tom: var(--cal-ok); }
+.eda-cal [data-tom="at"] { --tom: var(--cal-at); }
+.eda-cal [data-tom="er"] { --tom: var(--cal-er); }
+.eda-cal [data-tom="info"] { --tom: var(--cal-info); }
+.eda-cal [data-tom="nt"] { --tom: var(--cal-nt); }
+
+/* Faixa amazônica */
+.eda-cal-amazonia {
+  display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; margin-top: 18px; overflow: hidden;
+  border-radius: 20px; border: 1px solid var(--p-borda); background: var(--p-borda);
+}
+.eda-cal-amazonia > div {
+  min-width: 0; padding: 16px 18px; background:
+    radial-gradient(120% 140% at 0% 0%, color-mix(in srgb, var(--p-ouro) 9%, transparent), transparent 60%), var(--p-painel);
+}
+.eda-cal-amazonia small { display: block; font-size: 11px; font-weight: 650; letter-spacing: .14em; text-transform: uppercase; color: var(--p-ouro); }
+.eda-cal-amazonia b { display: block; margin-top: 6px; font-size: 17px; font-weight: 650; letter-spacing: -.01em; }
+.eda-cal-amazonia span { display: block; margin-top: 4px; font-size: 12.5px; line-height: 1.5; color: var(--p-sec); }
+
+.eda-cal-kpis { margin-top: 14px; }
+.eda-cal-sugestao { justify-content: space-between; gap: 10px; }
+.eda-cal-acoes-linha { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* Barra de navegação, visões e camadas */
+.eda-cal-barra { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-top: 22px; }
+.eda-cal-nav { display: flex; align-items: center; gap: 8px; margin-right: auto; }
+.eda-cal-titulo { margin: 0 4px; font-size: 19px; font-weight: 650; letter-spacing: -.02em; text-transform: capitalize; }
+.eda-cal-camadas .eda-pg-chip i { width: 8px; height: 8px; border-radius: 50%; background: var(--c, var(--p-ouro)); opacity: .9; }
+.eda-cal-camadas .eda-pg-chip[aria-pressed="false"] i { opacity: .25; }
+.eda-cal-camadas [data-camada="operacao"] { --c: var(--p-ouro); }
+.eda-cal-camadas [data-camada="financeiro"] { --c: var(--p-verde); }
+.eda-cal-camadas [data-camada="recursos"] { --c: var(--p-azul); }
+.eda-cal-camadas [data-camada="amazonica"] { --c: #5fb8c9; }
+
+/* Conflitos */
+.eda-cal-conflitos { display: grid; gap: 6px; margin-top: 14px; }
+.eda-cal-conflito {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; border-radius: 14px;
+  font-size: 13px; line-height: 1.45; color: var(--p-texto);
+  border: 1px solid color-mix(in srgb, var(--p-amar) 28%, transparent); background: color-mix(in srgb, var(--p-amar) 8%, var(--p-painel));
+}
+.eda-cal-conflito[data-grave] { border-color: color-mix(in srgb, var(--p-verm) 34%, transparent); background: color-mix(in srgb, var(--p-verm) 9%, var(--p-painel)); }
+.eda-cal-conflito b { margin-right: 6px; color: var(--p-ouro); }
+
+.eda-cal-lk { padding: 0; border: 0; background: none; font: inherit; font-size: 13px; font-weight: 650; color: var(--p-ouro); cursor: pointer; text-decoration: none; white-space: nowrap; }
+.eda-cal-lk:hover { text-decoration: underline; }
+.eda-cal-lk:disabled { opacity: .5; cursor: wait; }
+.eda-cal-eda { margin-top: 16px; }
+
+.eda-cal-corpo { margin-top: 14px; }
+.eda-cal-carregando { display: flex; justify-content: center; gap: 8px; padding: 60px 0; }
+.eda-cal-carregando i { width: 8px; height: 8px; border-radius: 50%; background: var(--p-ouro); animation: eda-cal-pulso 1.1s infinite ease-in-out; }
+.eda-cal-carregando i:nth-child(2) { animation-delay: .15s; }
+.eda-cal-carregando i:nth-child(3) { animation-delay: .3s; }
+@keyframes eda-cal-pulso { 0%, 80%, 100% { opacity: .25; transform: scale(.8); } 40% { opacity: 1; transform: scale(1); } }
+
+/* Pílula de evento */
+.eda-cal-ev {
+  --tom: var(--p-ouro);
+  display: flex; align-items: center; gap: 5px; width: 100%; min-width: 0; padding: 3px 7px; border-radius: 8px;
+  border: 1px solid color-mix(in srgb, var(--tom) 26%, transparent);
+  background: color-mix(in srgb, var(--tom) 12%, transparent);
+  color: var(--p-texto); font: inherit; font-size: 11.5px; line-height: 1.35; text-align: left; cursor: pointer;
+  transition: transform .15s ease, background .15s ease;
+}
+.eda-cal-ev:hover { background: color-mix(in srgb, var(--tom) 20%, transparent); }
+.eda-cal-ev:focus-visible { outline: 2px solid var(--p-ouro); outline-offset: 1px; }
+.eda-cal-ev[draggable="true"] { cursor: grab; }
+.eda-cal-ev[data-arrastando] { opacity: .45; }
+.eda-cal-ev i { flex-shrink: 0; width: 6px; height: 6px; border-radius: 50%; background: var(--tom); }
+.eda-cal-ev time { flex-shrink: 0; font-variant-numeric: tabular-nums; color: var(--p-sec); }
+.eda-cal-ev span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eda-cal-ev b { flex-shrink: 0; margin-left: auto; min-width: 16px; padding: 0 4px; border-radius: 99px; font-size: 10px; text-align: center; color: #07110e; background: var(--tom); }
+.eda-cal-ev-bloqueio { border-style: dashed; background: repeating-linear-gradient(135deg, var(--p-suave) 0 6px, transparent 6px 12px); }
+.eda-cal-ev-pedido { border-style: dashed; opacity: .85; }
+.eda-cal-ev-financeiro span { font-variant-numeric: tabular-nums; }
+
+/* Marcas amazônicas do dia */
+.eda-cal-marcas { display: inline-flex; align-items: center; gap: 4px; min-width: 0; }
+.eda-cal-lua { font-size: 11px; line-height: 1; color: var(--p-ouro); }
+.eda-cal-clima, .eda-cal-feriado { padding: 1px 6px; border-radius: 99px; font-size: 9.5px; font-weight: 650; letter-spacing: .02em; white-space: nowrap; }
+.eda-cal-clima { color: var(--tom); background: color-mix(in srgb, var(--tom) 14%, transparent); }
+.eda-cal-feriado { color: var(--p-azul); background: color-mix(in srgb, var(--p-azul) 14%, transparent); }
+
+/* Visão Mês */
+.eda-cal-mes { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.eda-cal-sem { padding: 0 6px 4px; font-size: 11px; font-weight: 650; letter-spacing: .12em; text-transform: uppercase; color: var(--p-sec); }
+.eda-cal-dia {
+  --calor: 0%;
+  position: relative; display: flex; flex-direction: column; gap: 5px; min-width: 0; min-height: 118px; padding: 8px;
+  border-radius: 14px; border: 1px solid var(--p-borda); cursor: pointer;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--p-ouro) var(--calor), transparent), transparent 75%), var(--p-painel);
+  transition: border-color .15s ease, transform .15s ease, box-shadow .15s ease;
+}
+.eda-cal-dia:hover { border-color: color-mix(in srgb, var(--p-ouro) 40%, transparent); }
+.eda-cal-dia:focus-visible { outline: 2px solid var(--p-ouro); outline-offset: 2px; }
+.eda-cal-dia[data-calor="1"] { --calor: 6%; }
+.eda-cal-dia[data-calor="2"] { --calor: 11%; }
+.eda-cal-dia[data-calor="3"] { --calor: 17%; }
+.eda-cal-dia[data-calor="4"] { --calor: 24%; }
+.eda-cal-dia[data-fora] { opacity: .45; }
+.eda-cal-dia[data-passado] .eda-cal-num { color: var(--p-sec); }
+.eda-cal-dia[data-hoje] { border-color: var(--p-ouro); box-shadow: 0 0 0 1px var(--p-ouro) inset, 0 8px 24px color-mix(in srgb, var(--p-ouro) 14%, transparent); }
+.eda-cal-dia[data-bloqueado] { background: repeating-linear-gradient(135deg, var(--p-suave) 0 8px, transparent 8px 16px), var(--p-painel); }
+.eda-cal-dia[data-conflito="leve"] { border-color: color-mix(in srgb, var(--p-amar) 55%, transparent); }
+.eda-cal-dia[data-conflito="grave"] { border-color: color-mix(in srgb, var(--p-verm) 60%, transparent); }
+.eda-cal-dia[data-alvo], .eda-cal-rec td[data-alvo], .eda-cal-diaview[data-alvo] { border-color: var(--p-ouro); transform: scale(1.015); box-shadow: 0 10px 28px color-mix(in srgb, var(--p-ouro) 22%, transparent); }
+.eda-cal-dia-topo { display: flex; align-items: center; justify-content: space-between; gap: 4px; min-width: 0; }
+.eda-cal-num { font-size: 13px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.eda-cal-dia[data-hoje] .eda-cal-num { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%; color: #07110e; background: linear-gradient(180deg, #f7d595, #e3a144); }
+.eda-cal-evs { display: grid; gap: 3px; min-width: 0; }
+.eda-cal-mais { font-size: 11px; font-weight: 650; color: var(--p-sec); padding-left: 4px; }
+.eda-cal-ocup { position: absolute; right: 8px; bottom: 6px; font-size: 10px; font-variant-numeric: tabular-nums; color: var(--p-sec); }
+
+/* Visão Semana por recurso */
+.eda-cal-rec-rolagem { overflow-x: auto; border-radius: 18px; border: 1px solid var(--p-borda); background: var(--p-painel); }
+.eda-cal-rec { width: 100%; min-width: 920px; border-collapse: collapse; table-layout: fixed; }
+.eda-cal-rec th, .eda-cal-rec td { border-bottom: 1px solid var(--p-borda); border-right: 1px solid var(--p-borda); vertical-align: top; }
+.eda-cal-rec thead th { position: sticky; top: 0; z-index: 1; padding: 10px 8px; font-size: 12px; font-weight: 650; text-align: left; background: var(--p-elev); }
+.eda-cal-rec thead th span { text-transform: uppercase; letter-spacing: .1em; color: var(--p-sec); font-size: 10.5px; }
+.eda-cal-rec thead th[data-hoje] { color: var(--p-ouro); box-shadow: inset 0 -2px 0 var(--p-ouro); }
+.eda-cal-rec thead th:first-child, .eda-cal-rec tbody th[scope="row"] { width: 190px; }
+.eda-cal-rec tbody th[scope="row"] { padding: 10px 12px; text-align: left; font-weight: 400; }
+.eda-cal-rec tbody th b { display: block; font-size: 13px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eda-cal-rec tbody th small { display: block; margin-top: 2px; font-size: 11px; color: var(--p-sec); text-transform: capitalize; }
+.eda-cal-rec-grupo th { padding: 8px 12px; font-size: 10.5px; font-weight: 700; letter-spacing: .16em; text-transform: uppercase; text-align: left; color: var(--p-ouro); background: var(--p-suave); }
+.eda-cal-rec td { height: 58px; padding: 5px; transition: background .15s ease; }
+.eda-cal-rec td > .eda-cal-ev + .eda-cal-ev { margin-top: 3px; }
+.eda-cal-rec td[data-conflito="leve"] { background: color-mix(in srgb, var(--p-amar) 9%, transparent); }
+.eda-cal-rec td[data-conflito="grave"] { background: color-mix(in srgb, var(--p-verm) 11%, transparent); }
+.eda-cal-livre { width: 100%; height: 100%; min-height: 46px; border: 1px dashed transparent; border-radius: 10px; background: none; color: var(--p-sec); font-size: 16px; cursor: pointer; opacity: 0; transition: opacity .15s ease, border-color .15s ease; }
+.eda-cal-rec td:hover .eda-cal-livre, .eda-cal-livre:focus-visible { opacity: 1; border-color: var(--p-borda); }
+
+/* Visão Dia e Agenda */
+.eda-cal-diaview { border-radius: 18px; border: 1px solid transparent; transition: border-color .15s ease; }
+.eda-cal-dia-faixa { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+.eda-cal-lista { display: grid; gap: 8px; }
+.eda-cal-cartao { --tom: var(--p-ouro); border-radius: 16px; border: 1px solid var(--p-borda); background: var(--p-painel); box-shadow: inset 3px 0 0 var(--tom); }
+.eda-cal-cartao-bt { display: flex; align-items: center; gap: 14px; width: 100%; padding: 12px 14px; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.eda-cal-cartao-hora { flex-shrink: 0; min-width: 70px; font-size: 14px; font-weight: 650; font-variant-numeric: tabular-nums; color: var(--p-ouro); }
+.eda-cal-cartao-txt { flex: 1; min-width: 0; }
+.eda-cal-cartao-txt small { display: block; font-size: 10.5px; font-weight: 650; letter-spacing: .14em; text-transform: uppercase; color: var(--p-sec); }
+.eda-cal-cartao-txt b { display: block; margin-top: 2px; font-size: 14.5px; font-weight: 650; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eda-cal-cartao-txt span { display: block; margin-top: 2px; font-size: 12.5px; color: var(--p-sec); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.eda-cal-agenda { display: grid; gap: 18px; }
+.eda-cal-agenda-dia header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; padding: 0 4px; }
+.eda-cal-agenda-dia header b { font-size: 13px; font-weight: 650; text-transform: capitalize; }
+.eda-cal-agenda-dia header[data-hoje] b { color: var(--p-ouro); }
+
+/* Painel lateral */
+.eda-cal-pend { display: grid; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.eda-cal-pend li { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; font-size: 13px; line-height: 1.5; }
+.eda-cal-bloco-conf { border-color: color-mix(in srgb, var(--p-verm) 30%, transparent); }
+.eda-cal-remarcar { display: flex; align-items: flex-end; gap: 10px; }
+.eda-cal-remarcar .eda-pg-campo { flex: 1; }
+.eda-cal-desfazer { display: flex; align-items: center; gap: 14px; }
+
+/* Legenda */
+.eda-cal-legenda { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin: 18px 0 0; font-size: 12px; color: var(--p-sec); }
+.eda-cal-legenda span { display: inline-flex; align-items: center; gap: 6px; }
+.eda-cal-legenda span::before { content: ''; width: 8px; height: 8px; border-radius: 50%; background: var(--tom); }
+.eda-cal-legenda small { flex-basis: 100%; font-size: 11.5px; }
+
+@media (max-width: 980px) {
+  .eda-cal-amazonia { grid-template-columns: 1fr; }
+  .eda-cal-dia { min-height: 96px; padding: 6px; }
+}
+@media (max-width: 640px) {
+  .eda-cal-barra { gap: 10px; }
+  .eda-cal-nav { width: 100%; }
+  .eda-cal-titulo { font-size: 16px; flex: 1; text-align: center; }
+  .eda-cal-mes { gap: 3px; }
+  .eda-cal-dia { min-height: 64px; padding: 4px; border-radius: 10px; }
+  .eda-cal-dia .eda-cal-ev span, .eda-cal-dia .eda-cal-ev b, .eda-cal-ocup, .eda-cal-dia .eda-cal-marcas { display: none; }
+  .eda-cal-dia .eda-cal-ev { padding: 0; height: 6px; border: 0; }
+  .eda-cal-dia .eda-cal-ev i { width: 100%; height: 6px; border-radius: 3px; }
+  .eda-cal-sem { padding: 0 2px 2px; font-size: 9.5px; letter-spacing: .06em; }
+  .eda-cal-cartao-bt { flex-wrap: wrap; gap: 6px 12px; }
+  .eda-cal-remarcar { flex-direction: column; align-items: stretch; }
+  .eda-cal-conflito { flex-direction: column; align-items: flex-start; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .eda-cal-dia, .eda-cal-ev, .eda-cal-carregando i { transition: none; animation: none; }
+}

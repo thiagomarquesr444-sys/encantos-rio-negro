@@ -8,7 +8,7 @@ export type NomeIconeERN =
   | 'voucher' | 'satelite' | 'whatsapp' | 'mapa' | 'confirmado' | 'local'
   | 'peixe' | 'idiomas' | 'celular' | 'parceria' | 'rio'
   | 'casa' | 'lista' | 'documento' | 'cama' | 'mais' | 'menos' | 'grafico' | 'engrenagem'
-  | 'diamante' | 'perfil' | 'estrela' | 'sair' | 'busca' | 'menu' | 'exportar' | 'seta' | 'fechar';
+  | 'agenda' | 'diamante' | 'perfil' | 'estrela' | 'sair' | 'busca' | 'menu' | 'exportar' | 'seta' | 'fechar';
 
 const DESENHOS: Record<NomeIconeERN, ReactNode> = {
   operadora: <><path d="M6 22V4a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v18Z" /><path d="M6 12H4a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h2" /><path d="M18 9h2a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-2" /><path d="M10 6h4M10 10h4M10 14h4M10 18h4" /></>,
@@ -36,6 +36,7 @@ const DESENHOS: Record<NomeIconeERN, ReactNode> = {
   menos: <><circle cx="12" cy="12" r="10" /><path d="M8 12h8" /></>,
   grafico: <><path d="M3 3v18h18" /><path d="M7 15l4-4 3 3 5-6" /></>,
   engrenagem: <><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" /></>,
+  agenda: <><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /><path d="M6 16c1-.8 2-.8 3 0s2 .8 3 0 2-.8 3 0 2 .8 3 0" /></>,
   diamante: <><path d="M6 3h12l4 6-10 12L2 9Z" /><path d="M2 9h20M12 21 8 9l4-6 4 6-4 12" /></>,
   perfil: <><circle cx="12" cy="8" r="4" /><path d="M4 21v-1a6 6 0 0 1 6-6h4a6 6 0 0 1 6 6v1" /></>,
   estrela: <><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1Z" /></>,

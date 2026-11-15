@@ -81,7 +81,7 @@ const textos = {
 };
 
 const ROTAS_GESTAO_FEEDBACK = [
-  '/dashboard', '/clientes', '/reservas', '/passeios', '/vouchers',
+  '/dashboard', '/clientes', '/reservas', '/passeios', '/vouchers', '/calendario',
   '/hospedagens', '/embarcacoes', '/guias', '/parceiros', '/demandas',
   '/financeiro', '/relatorios', '/configuracoes', '/planos', '/comando',
 ];
@@ -89,7 +89,7 @@ const ROTAS_GESTAO_FEEDBACK = [
 const ROTAS = [
   '/destinos', '/rede', '/experiencias', '/contato', '/operadores',
   '/privacidade', '/termos', '/reembolso',
-  '/dashboard', '/clientes', '/reservas', '/passeios', '/vouchers',
+  '/dashboard', '/clientes', '/reservas', '/passeios', '/vouchers', '/calendario',
   '/hospedagens', '/embarcacoes', '/guias', '/parceiros', '/demandas',
   '/financeiro', '/relatorios', '/configuracoes', '/planos', '/comando',
 ];

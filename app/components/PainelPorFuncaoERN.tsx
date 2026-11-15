@@ -25,6 +25,11 @@ const ATALHOS = [
     href: '/passeios',
   },
   {
+    titulo: 'Calendário Amazônico',
+    descricao: 'Saídas, recursos e vencimentos no tempo.',
+    href: '/calendario',
+  },
+  {
     titulo: 'Embarques do dia',
     descricao: 'Check-in dos vouchers no embarque.',
     href: '/vouchers',

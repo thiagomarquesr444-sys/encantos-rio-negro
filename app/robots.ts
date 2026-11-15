@@ -12,7 +12,7 @@ export default function robots(): MetadataRoute.Robots {
         '/api/', '/login', '/acesso', '/auth/', '/dashboard', '/financeiro',
         '/clientes', '/reservas', '/hospedagens', '/passeios', '/configuracoes',
         '/embarcacoes', '/guias', '/parceiros', '/relatorios', '/vouchers',
-        '/documentos', '/fiscal', '/planos', '/demandas', '/comando',
+        '/documentos', '/calendario', '/fiscal', '/planos', '/demandas', '/comando',
         '/guia', '/fornecedor', '/ficha/', '/voucher/',
       ],
     },
