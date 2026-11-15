@@ -1843,6 +1843,15 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
           color: #f7d595; font-size: 10.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase;
         }
         .iara-modo::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #f4c77e; }
+        /* FABLEPREMIUM_MOBILE_V1: no celular a conversa ganha a altura que o cabeçalho ocupava. */
+        @media (max-width: 640px) {
+          .identidade p { display: none; }
+          .informacoes { padding: 8px 14px; }
+          .informacoes p { font-size: 10.5px; line-height: 1.45; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+          .mensagens { padding: 16px 12px 12px; }
+          .balao { max-width: 94%; }
+          .chat-rodape p { font-size: 10.5px; }
+        }
         /* Convite da Iara: discreto no celular, sem cobrir o conteúdo */
         @media (max-width: 640px) {
           .iara-oferta { left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom, 0px)); max-width: none; padding: 10px 12px; gap: 10px; }

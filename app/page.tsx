@@ -87,7 +87,7 @@ export default function Home() {
             aria-hidden="true"
             fetchPriority="high"
             decoding="async"
-            className="ern-fundo-respira absolute inset-0 h-full w-full object-cover object-[50%_35%]"
+            className="ern-fundo-respira ern-fundo-descubra absolute inset-0 h-full w-full object-cover object-[50%_35%]"
           />
         </picture>
         <div

@@ -425,3 +425,19 @@
 @keyframes ern-arco-puxa{0%{transform:translateX(0)}45%{transform:translateX(-7px)}55%{transform:translateX(-7px)}62%{transform:translateX(1px)}100%{transform:translateX(0)}}
 @keyframes ern-arco-dispara{0%,55%{transform:translateX(0);opacity:1}80%{transform:translateX(34px);opacity:0}81%{transform:translateX(-6px);opacity:0}100%{transform:translateX(0);opacity:1}}
 .ern-v-root .ern-v-stage .ern-v-tools button{display:inline-flex;align-items:center;white-space:nowrap}
+
+/* FABLEPREMIUM_MOBILE_V1: janelas do mapa dimensionadas para o celular. */
+@media(max-width:900px){
+  .ern-v-root .ern-v-mapwrap{scroll-margin-top:76px}
+  /* O mapa ocupa a tela inteira abaixo do cabeçalho: a viagem da Iara aparece por completo. */
+  .ern-v-root .ern-v-stage{grid-template-rows:auto calc(100svh - 84px)}
+}
+@media(max-width:640px){
+  .ern-v-root .ern-v-muni-card{left:8px;right:8px;bottom:8px;padding:14px 16px;border-radius:18px;max-height:44%;overflow:auto;overscroll-behavior:contain}
+  .ern-v-root .ern-v-muni-card h2{font-size:20px;margin-top:2px}
+  .ern-v-root .ern-v-muni-card>p:not(.ern-v-kicker){display:none}
+  .ern-v-root .ern-v-muni-acoes{grid-template-columns:1fr 1fr;gap:2px 10px;margin-top:10px}
+  .ern-v-root .ern-v-muni-acoes .ern-v-ouro-botao{grid-column:1 / -1;min-height:44px}
+  .ern-v-root .ern-v-muni-acoes .ern-v-network-link{min-height:36px;font-size:12.5px;justify-content:flex-start}
+  .ern-v-root .ern-v-stage .ern-v-drawer{left:8px;right:8px;bottom:8px;max-height:70%}
+}

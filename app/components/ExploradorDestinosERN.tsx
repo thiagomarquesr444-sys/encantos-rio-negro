@@ -283,6 +283,15 @@ function SceneImage({ src, alt, eager = false }: { src: string; alt: string; eag
   return <img src={src} alt={alt} loading={eager ? 'eager' : 'lazy'} decoding="async" onError={() => setFailed(true)} />;
 }
 
+// FABLEPREMIUM_MOBILE_V1: no celular o mapa fica abaixo da lista; quem escolhe um destino
+// (ou é levado pela Iara) precisa ver o mapa, então a página rola até ele. No computador,
+// lista e mapa ficam lado a lado e a página rola para o início do explorador.
+function rolarParaMapaERN(suave = false): void {
+  const empilhado = window.matchMedia('(max-width: 900px)').matches;
+  const alvo = empilhado ? document.querySelector('.ern-v-mapwrap') : document.getElementById('ern-v-explorar');
+  alvo?.scrollIntoView({ behavior: suave ? 'smooth' : 'auto', block: 'start' });
+}
+
 export default function ExploradorDestinosERN() {
   const { idioma } = useLanguage();
   const lang = idioma === 'EN' || idioma === 'ES' ? idioma : 'PT';
@@ -358,7 +367,7 @@ export default function ExploradorDestinosERN() {
     if (scene.coords) abrirSatelite(t.destinations[scene.id].titulo, scene.coords, 15);
     else abrirSatelite(base.name, base.coords);
     map.current?.setView(scene.coords ?? base.coords, scene.coords ? zoomLugar() : zoomCidade());
-    document.getElementById('ern-v-explorar')?.scrollIntoView({ block: 'start' });
+    rolarParaMapaERN();
     document.getElementById(`ern-v-item-${scene.id}`)?.scrollIntoView({ block: 'nearest' });
   }
   function chooseCity(id: CityId) {
@@ -369,7 +378,7 @@ export default function ExploradorDestinosERN() {
     const baseCidade = cities.find(item => item.id === id)!;
     abrirSatelite(baseCidade.name, baseCidade.coords);
     map.current?.setView(baseCidade.coords, zoomCidade());
-    document.getElementById('ern-v-explorar')?.scrollIntoView({ block: 'start' });
+    rolarParaMapaERN();
   }
   // ERN_NAVEGACAO_BUSCA_V3
   useEffect(() => {
@@ -406,7 +415,7 @@ export default function ExploradorDestinosERN() {
     setMunicipio(m);
     abrirSatelite(m.nome, m.coords);
     map.current?.setView(m.coords, zoomCidade());
-    document.getElementById('ern-v-explorar')?.scrollIntoView({ block: 'start' });
+    rolarParaMapaERN();
   }
   function chooseZona(value: ZonaERN) {
     setZona(value); setRegion('all'); setActiveId(null); setDrawer(null); setMunicipio(null); setSatelite(null);
@@ -441,7 +450,7 @@ export default function ExploradorDestinosERN() {
     const alvo = coords;
     setSatelite(null); setDrawer(null); setActiveId(null); setMunicipio(null);
     setRegion('all'); setZona('all'); setInterest('all'); setQuery('');
-    document.getElementById('ern-v-explorar')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    rolarParaMapaERN(true);
     // 1) o Amazonas inteiro; 2) o voo até o território; 3) o território aberto.
     motor.fitBounds(cities.map(item => item.coords), 65);
     const espera = window.setTimeout(() => {

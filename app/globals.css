@@ -1446,3 +1446,16 @@ html[data-eda-sinal="fraco"] *::after {
 .ern-menu-flutuante { animation: ern-menu-flutuante .16s ease-out; box-shadow: inset 2px 0 0 #e3a144, 0 24px 60px rgb(0 0 0 / 35%); }
 @keyframes ern-menu-flutuante { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .ern-menu-flutuante { animation: none; } }
+
+/* FABLEPREMIUM_MOBILE_V1: no celular a foto do Encontro das Águas ocupa só a primeira tela
+   (antes era esticada pela seção inteira e perdia a nitidez) e se desfaz no fundo da página. */
+@media (max-width: 767px) {
+  .ern-fundo-descubra {
+    height: min(100%, 100svh) !important;
+    object-position: 50% 22%;
+    -webkit-mask-image: linear-gradient(180deg, #000 68%, transparent);
+    mask-image: linear-gradient(180deg, #000 68%, transparent);
+  }
+  /* A faixa dos municípios deixa livre o canto do botão da Iara. */
+  :has(> .ern-selo-trilho) { margin-right: 62px; }
+}
