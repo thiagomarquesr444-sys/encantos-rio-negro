@@ -44,18 +44,72 @@ function lista(): Candidato[] {
     if (todos.some(c => c.termo === termo)) return;
     todos.push({ termo, destino: { tipo: 'municipio', id: m.ibge, nome: m.nome } });
   });
+  // IARA_DESTINOS_V2: jeitos curtos de dizer o município ("Figueiredo", "Olivença", "Airão").
+  Object.entries(APELIDOS_MUNICIPIOS).forEach(([apelido, nome]) => {
+    const m = MUNICIPIOS_AMAZONAS.find(x => normalizarDestino(x.nome) === nome);
+    if (!m || todos.some(c => c.termo === apelido)) return;
+    const jaTem = todos.find(c => c.termo === nome);
+    todos.push({ termo: apelido, destino: jaTem?.destino ?? { tipo: 'municipio', id: m.ibge, nome: m.nome } });
+  });
   // O nome mais longo vence ("Careiro da Várzea" antes de "Careiro").
   candidatos = todos.sort((a, b) => b.termo.length - a.termo.length);
   return candidatos;
 }
 
-/** Primeiro destino citado no texto (nome inteiro, sem pegar pedaço de palavra). */
-export function acharDestinoIara(texto: string): DestinoIara | null {
-  const n = ` ${normalizarDestino(texto).replace(/[^a-z0-9]+/g, ' ')} `;
+// Apelido (sem acento) → nome oficial do município (sem acento). Só formas que não se confundem.
+const APELIDOS_MUNICIPIOS: Record<string, string> = {
+  'airao': 'novo airao',
+  'figueiredo': 'presidente figueiredo',
+  'pres figueiredo': 'presidente figueiredo',
+  'atalaia': 'atalaia do norte',
+  'olivenca': 'sao paulo de olivenca',
+  'uatuma': 'sao sebastiao do uatuma',
+  'nova olinda': 'nova olinda do norte',
+  'aripuana': 'novo aripuana',
+  'sta isabel': 'santa isabel do rio negro',
+  'sao gabriel': 'sao gabriel da cachoeira',
+};
+
+function distancia(a: string, b: string, limite: number): number {
+  if (Math.abs(a.length - b.length) > limite) return limite + 1;
+  let ant = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const atual = [i];
+    for (let j = 1; j <= b.length; j++) {
+      atual[j] = Math.min(ant[j] + 1, atual[j - 1] + 1, ant[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    ant = atual;
+  }
+  return ant[b.length];
+}
+
+/**
+ * Primeiro destino citado no texto (nome inteiro, sem pegar pedaço de palavra).
+ * Com `aproximado`, aceita erro de digitação em nomes longos ("Parintis", "Manacapurú", "Barcelo")
+ * — usado só quando a pessoa pediu claramente para ser levada a um lugar.
+ */
+export function acharDestinoIara(texto: string, opcoes?: { aproximado?: boolean }): DestinoIara | null {
+  const limpo = normalizarDestino(texto).replace(/[^a-z0-9]+/g, ' ').trim();
+  const n = ` ${limpo} `;
   for (const c of lista()) {
     if (n.includes(` ${c.termo} `)) return c.destino;
   }
-  return null;
+  if (!opcoes?.aproximado) return null;
+  const palavras = limpo.split(' ').filter(Boolean);
+  let melhor: { destino: DestinoIara; nota: number } | null = null;
+  for (const c of lista()) {
+    // Nome curto exige grafia exata: "Maués" não pode casar com "mares".
+    if (c.termo.length < 7) continue;
+    const limite = c.termo.length >= 11 ? 2 : 1;
+    const tamanho = c.termo.split(' ').length;
+    for (let i = 0; i + tamanho <= palavras.length; i++) {
+      const trecho = palavras.slice(i, i + tamanho).join(' ');
+      if (trecho[0] !== c.termo[0]) continue;
+      const d = distancia(trecho, c.termo, limite);
+      if (d <= limite && (!melhor || d < melhor.nota)) melhor = { destino: c.destino, nota: d };
+    }
+  }
+  return melhor ? melhor.destino : null;
 }
 
 /** Valida um destino vindo de fora (URL, evento ou resposta do servidor). */

@@ -77,3 +77,32 @@ export function curiosidadesFichas(fichas: FichaCliente[], qtd = 4): { fala: str
   }
   return sorteia(itens.filter(i => i.fala.length <= 90), qtd);
 }
+
+// IARA_AGENDA_V1: festas que estão chegando (este mês e os 3 seguintes), da mais próxima para a mais distante.
+// A barra de busca anuncia essas primeiro: quem entra em novembro já ouve do festival de janeiro.
+const MESES_FICHA = ['janeiro', 'fevereiro', 'março', 'abril', 'maio', 'junho', 'julho', 'agosto', 'setembro', 'outubro', 'novembro', 'dezembro'];
+export function proximasFestasFichas(fichas: FichaCliente[], qtd = 2, agora = new Date()): { fala: string; pedido: string; municipio: string }[] {
+  const mesAtual = agora.getMonth();
+  const itens: { fala: string; pedido: string; municipio: string; falta: number }[] = [];
+  for (const f of fichas) {
+    for (const festa of f.festas ?? []) {
+      if (!festa?.nome || !festa.quando) continue;
+      const inicio = festa.quando.trim().toLowerCase();
+      const mes = MESES_FICHA.findIndex(m => inicio.startsWith(m) || inicio.startsWith(m.replace('ç', 'c')));
+      if (mes < 0) continue;
+      const falta = (mes - mesAtual + 12) % 12;
+      if (falta > 3) continue;
+      const nome = curta(festa.nome);
+      const fala = falta === 0 ? `É agora em ${MESES_FICHA[mes]}: ${nome}, em ${f.nome}. Bora?`
+        : falta === 1 ? `Mês que vem tem ${nome}, em ${f.nome}. Bora?`
+          : `Vem aí em ${MESES_FICHA[mes]}: ${nome}, em ${f.nome}. Bora?`;
+      if (fala.length > 96) continue;
+      itens.push({ fala, pedido: `Me fala do ${nome} de ${f.nome}`, municipio: f.nome, falta });
+    }
+  }
+  // Empate no mês: Barcelos (casa da plataforma) primeiro, depois ordem alfabética.
+  itens.sort((a, b) => a.falta - b.falta || Number(b.municipio === 'Barcelos') - Number(a.municipio === 'Barcelos') || a.municipio.localeCompare(b.municipio));
+  const vistos = new Set<string>();
+  return itens.filter(i => (vistos.has(i.municipio) ? false : (vistos.add(i.municipio), true))).slice(0, qtd)
+    .map(({ fala, pedido, municipio }) => ({ fala, pedido, municipio }));
+}

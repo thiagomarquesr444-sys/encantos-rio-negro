@@ -513,8 +513,26 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   const fichasIaraTela = useFichasMunicipios();
   const fichasIaraRef = useRef(fichasIaraTela);
   fichasIaraRef.current = fichasIaraTela;
+  // IARA_JANELA_POR_PAGINA_V1: cada página tem a sua janela. Ao trocar de página, a janela da
+  // página anterior (balão ou conversa) fecha e a Iara recebe o visitante na página nova.
+  // O histórico da conversa continua guardado; só a janela não atravessa de uma página para outra.
+  const paginaAnterior = useRef<string | null>(null);
+  const trocouPagina = useRef(false);
   useEffect(() => {
+    const anterior = paginaAnterior.current;
+    paginaAnterior.current = pathname;
+    if (anterior === null || anterior === pathname) return;
+    trocouPagina.current = true;
+    setOfertaIaraEstado(null);
+    setAberto(false);
+  }, [pathname]);
+  const estavaAberto = useRef(false);
+  useEffect(() => {
+    const fechouAgora = estavaAberto.current && !aberto;
+    estavaAberto.current = aberto;
     if (!memoriaPronta || aberto) return;
+    // Fechar a conversa na mesma página não chama a Iara de volta (iniciativa sem insistência).
+    if (fechouAgora && !trocouPagina.current) return;
     let paginas: string[] = [];
     let primeiraDaVisita = false;
     let momento: MomentoRecepcao = 'pagina';
@@ -529,7 +547,12 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
       else if (primeiraDaVisita) momento = visitou ? 'voltou' : 'primeira-visita';
     } catch { return; }
     const chave = chaveRecepcao(pathname);
-    if (momento === 'pagina' && paginas.includes(chave)) return;
+    const veioDeOutraPagina = trocouPagina.current;
+    trocouPagina.current = false;
+    // Página já recebida nesta visita só ganha a janela de novo quando a pessoa chega vinda de outra.
+    if (momento === 'pagina' && paginas.includes(chave) && !veioDeOutraPagina) return;
+    // Viagem conduzida pela Iara até o mapa: ela mesma fala na chegada, sem balão por cima do voo.
+    if (veioDeOutraPagina && /[?&]iara=/.test(window.location.search)) return;
     const regional = estiloIara === 'regional';
     const espera = momento === 'pagina' ? 4200 : 2600;
     const id = window.setTimeout(() => {
@@ -544,7 +567,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
     return () => window.clearTimeout(id);
     // Reage à troca de página e ao login; o resto é lido na hora.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, memoriaPronta, usuarioId]);
+  }, [pathname, memoriaPronta, usuarioId, aberto]);
   // Some sozinho depois de um tempo de leitura (sem insistir).
   useEffect(() => {
     if (!ofertaIara) return;

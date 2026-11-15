@@ -1080,6 +1080,7 @@ function conhecimentoDestino(d: DestinoIara, idioma: string): string {
 }
 
 const PEDIU_IR = /\b(me leva|me leve|leva(r)? (eu |a gente )?(pra|para|ate)|quero (ver|conhecer|ir)|mostra|mostre|abre|abrir|bora (la|ver|conhecer)|vamos (la|ver|conhecer)|no mapa|take me|show me|let'?s go|llevame|muestrame|vamos)\b/;
+const PEDIU_LEVAR = /\b(me leva|me leve|leva(r)? (eu |a gente )?(pra|para|ate)|quero ir (pra|para|a|ao|ate)|take me|llevame)\b/;
 const ACEITOU = /^\s*(sim|s|quero|bora|pode|pode ser|vamos|claro|com certeza|leva|me leva|manda|bora la|yes|sure|ok|okay|si|vale|dale)\b/;
 
 function sistemaPublico(o: {
@@ -1420,11 +1421,16 @@ Exemplo de formato: ["texto 1","texto 2","texto 3"]`;
       // IARA_DESTINOS_V1: destino citado → a Iara oferece (ou faz, se pedido) o voo no mapa.
       if (!modoComercial) {
         const ultimaIara = mensagens.filter(m => m.papel === 'eda').slice(-1)[0]?.texto ?? '';
-        let achado = acharDestinoIara(ultimaPergunta);
-        let auto = !!achado && PEDIU_IR.test(` ${normalizar(ultimaPergunta)} `);
+        // IARA_DESTINOS_V2: quem pede para ser levado tem o nome aceito mesmo com erro de digitação.
+        const pediuIr = PEDIU_IR.test(` ${normalizar(ultimaPergunta)} `);
+        let achado = acharDestinoIara(ultimaPergunta, { aproximado: pediuIr });
+        let auto = !!achado && pediuIr;
         if (!achado && ACEITOU.test(normalizar(ultimaPergunta)) && /\b(mapa|map|te levo|levar|llevo)\b/i.test(normalizar(ultimaIara))) {
           achado = acharDestinoIara(ultimaIara) ?? acharDestinoIara(mensagens.filter(m => m.papel === 'usuario').slice(-4, -1).reverse().map(m => m.texto).join(' . '));
           auto = !!achado;
+        }
+        if (!achado && PEDIU_LEVAR.test(` ${normalizar(ultimaPergunta)} `)) {
+          blocoDestino = `O visitante pediu para ser levado a um lugar que NÃO está entre os destinos do mapa. Se for uma PÁGINA do portal (Rede, Experiências, Destinos, Pesca, Planos), use [[ABRIR:CODIGO]]. Se for um lugar, NÃO diga que está levando: diga com sinceridade que esse ponto ainda não está no mapa, pergunte em qual município do Amazonas ele fica e ofereça levar até o município. Municípios do mapa: ${NOMES_MUNICIPIOS_IARA}.`;
         }
         if (achado) {
           destinoIara = { ...achado, auto };
