@@ -294,6 +294,19 @@ export default function Sidebar() {
   // ao passar o mouse ou ao navegar pelo teclado; recolhe sozinho ao sair.
   const [recolhido, setRecolhido] = useState(true);
   const temporizadorMenu = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  // EDA_MENU_FLUTUANTE_V1: passar o mouse num grupo fechado (Operação, Estrutura, Financeiro)
+  // abre os itens dele numa janela ao lado, sem precisar clicar. O clique continua abrindo no lugar.
+  const [flutuante, setFlutuante] = useState<{ id: string; topo: number } | null>(null);
+  const temporizadorFlutuante = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  function abrirFlutuante(id: string, alvo: HTMLElement, itens: number): void {
+    clearTimeout(temporizadorFlutuante.current);
+    const topo = Math.max(12, Math.min(alvo.getBoundingClientRect().top - 10, window.innerHeight - (itens * 42 + 64)));
+    setFlutuante({ id, topo });
+  }
+  function fecharFlutuanteEmBreve(): void {
+    clearTimeout(temporizadorFlutuante.current);
+    temporizadorFlutuante.current = setTimeout(() => setFlutuante(null), 220);
+  }
   useEffect(() => {
     document.documentElement.style.setProperty('--ern-menu-largura', '76px');
     return () => clearTimeout(temporizadorMenu.current);
@@ -441,11 +454,13 @@ export default function Sidebar() {
                 <button
                   type="button"
                   aria-expanded={aberto}
-                  onClick={() => setGruposAbertos(abertos => abertos.includes(grupo.id) ? abertos.filter(id => id !== grupo.id) : [...abertos, grupo.id])}
+                  onClick={() => { setFlutuante(null); setGruposAbertos(abertos => abertos.includes(grupo.id) ? abertos.filter(id => id !== grupo.id) : [...abertos, grupo.id]); }}
+                  onMouseEnter={evento => { if (contexto === 'lateral' && !aberto) abrirFlutuante(grupo.id, evento.currentTarget, grupo.itens.length); }}
+                  onMouseLeave={() => { if (contexto === 'lateral') fecharFlutuanteEmBreve(); }}
                   className={`flex min-h-8 w-full items-center justify-between rounded-lg px-3 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#7F968B] hover:text-[#CDD8D2] ${FOCO}`}
                 >
                   {grupo.label}
-                  <IconeERN nome="seta" tamanho={14} className={`transition-transform motion-reduce:transition-none ${aberto ? 'rotate-180' : ''}`} />
+                  <IconeERN nome="seta" tamanho={14} className={`transition-transform motion-reduce:transition-none ${aberto ? 'rotate-180' : contexto === 'lateral' && flutuante?.id === grupo.id ? '-rotate-90 text-[#F4C77E]' : ''}`} />
                 </button>
                 {aberto && <div className="grid gap-0.5">{grupo.itens.map(item => <LinkLateral key={item.href} item={item} pathname={pathname} aoNavegar={fecharMenus} />)}</div>}
               </div>
@@ -539,6 +554,26 @@ export default function Sidebar() {
           </div>
         ) : rodapeConta()}
       </aside>
+
+      {(() => {
+        const grupoFlutuante = flutuante && !recolhido ? gruposVisiveisERN.find(g => g.id === flutuante.id) : undefined;
+        if (!flutuante || !grupoFlutuante) return null;
+        return (
+          <div
+            role="group"
+            aria-label={grupoFlutuante.label}
+            style={{ top: flutuante.topo }}
+            onMouseEnter={() => { clearTimeout(temporizadorFlutuante.current); clearTimeout(temporizadorMenu.current); }}
+            onMouseLeave={() => { setFlutuante(null); recolherMenu(); }}
+            className="ern-menu-fixo ern-menu-flutuante fixed left-[270px] z-[61] hidden w-[236px] rounded-2xl border border-white/[0.09] bg-[#0B1814] p-2 text-[#EDEDE3] shadow-[0_24px_60px_rgb(0_0_0/0.45)] xl:block"
+          >
+            <p className="px-3 pb-1.5 pt-1 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#F4C77E]">{grupoFlutuante.label}</p>
+            <div className="grid gap-0.5">
+              {grupoFlutuante.itens.map(item => <LinkLateral key={item.href} item={item} pathname={pathname} aoNavegar={() => { setFlutuante(null); fecharMenus(); }} />)}
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Celular e tablet: barra superior */}
       <header className="ern-menu-fixo fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between gap-3 border-b border-white/[0.08] bg-[#08130F]/95 px-4 text-[#EDEDE3] backdrop-blur xl:hidden">

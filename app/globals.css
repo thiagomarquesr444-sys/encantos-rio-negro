@@ -1441,3 +1441,8 @@ html[data-eda-sinal="fraco"] *::after {
   transition-duration: 0.01ms !important;
   scroll-behavior: auto !important;
 }
+
+/* EDA_MENU_FLUTUANTE_V1: janela lateral dos grupos do menu (Operação, Estrutura, Financeiro). */
+.ern-menu-flutuante { animation: ern-menu-flutuante .16s ease-out; box-shadow: inset 2px 0 0 #e3a144, 0 24px 60px rgb(0 0 0 / 35%); }
+@keyframes ern-menu-flutuante { from { opacity: 0; transform: translateX(-8px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .ern-menu-flutuante { animation: none; } }
