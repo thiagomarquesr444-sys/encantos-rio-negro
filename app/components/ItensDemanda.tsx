@@ -20,6 +20,15 @@ import {
   type CategoriaItem,
   type SituacaoItem,
 } from '@/lib/itensDemanda';
+import {
+  KITS_MATERIAIS,
+  acharMaterial,
+  buscarMateriais,
+  chaveMaterial,
+  itemDoCatalogo,
+  quantidadeSugerida,
+  type MaterialPadrao,
+} from '@/lib/catalogoMateriaisEDA';
 
 type Linha = ItemDemanda & { chave: string };
 
@@ -29,10 +38,20 @@ type Props = {
   onItensChange?: (itens: ItemDemanda[]) => void;
   // EDA_DEMANDA_SAIDA_V1: itens sugeridos pela saída (uma vez por chave).
   acrescentar?: { chave: string; itens: ItemDemanda[] } | null;
+  // EDA_MATERIAIS_V2: base para sugerir quantidades (pessoas × dias).
+  pessoas?: number;
+  dias?: number;
 };
 
 const campo =
   'min-h-12 w-full min-w-0 rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-3 text-base text-[var(--ern-texto)] outline-none focus:ring-2 focus:ring-[var(--ern-destaque)] disabled:opacity-50 sm:text-sm';
+
+const campoCompacto =
+  'min-h-11 min-w-0 rounded-lg border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-2 text-sm text-[var(--ern-texto)] outline-none focus:ring-2 focus:ring-[var(--ern-destaque)] disabled:opacity-50';
+
+const PROXIMA_SITUACAO: Record<SituacaoItem, SituacaoItem> = {
+  pendente: 'em_separacao', em_separacao: 'atendido', atendido: 'pendente',
+};
 
 const categorias = Object.entries(CATEGORIAS_ITEM).map(([value, label]) => ({
   value, label,
@@ -46,11 +65,8 @@ function opcoesUnidade(atual: string) {
     : unidades;
 }
 
-const situacoes = Object.entries(SITUACOES_ITEM).map(([value, label]) => ({
-  value, label,
-}));
 
-export default function ItensDemanda({ demandaId, bloqueado, onItensChange, acrescentar }: Props) {
+export default function ItensDemanda({ demandaId, bloqueado, onItensChange, acrescentar, pessoas, dias }: Props) {
   const [itens, setItens] = useState<Linha[]>([]);
   const [versao, setVersao] = useState<number | null>(null);
   const [carregando, setCarregando] = useState(true);
@@ -64,6 +80,8 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange, acre
   const [filtroConferencia, setFiltroConferencia] = useState<'todos' | 'nao_atendidos' | SituacaoItem>('nao_atendidos');
   const trava = useRef(false);
   const [novaChave, setNovaChave] = useState('');
+  const [busca, setBusca] = useState('');
+  const [abertoChave, setAbertoChave] = useState('');
 
   useEffect(() => {
     if (!demandaId) {
@@ -142,6 +160,82 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange, acre
     ));
     setAlterado(true);
     setAviso('');
+  }
+
+  // EDA_MATERIAIS_V2 -------------------------------------------------------
+  const sugestoes = buscarMateriais(busca);
+
+  function adicionarMaterial(material: MaterialPadrao | null, texto: string) {
+    if (desabilitado || trava.current) return;
+    const nome = (material?.nome ?? texto).trim();
+    if (nome.length < 2) return;
+    if (itens.length >= 200) { setErro('Esta lista chegou ao limite de 200 itens.'); return; }
+    const repetido = itens.find((i) => chaveMaterial(i.descricao) === chaveMaterial(nome));
+    if (repetido) {
+      setNovaChave(repetido.chave);
+      setFiltroConferencia('todos');
+      setAviso(`“${repetido.descricao.trim()}” já está na lista. Ajuste a quantidade nele.`);
+      setBusca('');
+      return;
+    }
+    const chaveNova = crypto.randomUUID();
+    const base = material ? itemDoCatalogo(material, pessoas, dias) : { ...novoItemDemanda(), descricao: nome };
+    setNovaChave(chaveNova);
+    setItens((atuais) => [...atuais, { ...base, chave: chaveNova }]);
+    setAlterado(true);
+    setAviso('');
+    setBusca('');
+  }
+
+  function adicionarKit(id: string) {
+    if (desabilitado || trava.current) return;
+    const kit = KITS_MATERIAIS.find((k) => k.id === id);
+    if (!kit) return;
+    const novos: Linha[] = [];
+    for (const nome of kit.itens) {
+      const material = acharMaterial(nome);
+      if (!material) continue;
+      if (itens.some((i) => chaveMaterial(i.descricao) === chaveMaterial(material.nome))) continue;
+      novos.push({ ...itemDoCatalogo(material, pessoas, dias), chave: crypto.randomUUID() });
+    }
+    if (!novos.length) { setAviso(`O kit ${kit.nome} já está todo na lista.`); return; }
+    if (itens.length + novos.length > 200) { setErro('Esta lista chegou ao limite de 200 itens.'); return; }
+    setItens((atuais) => [...atuais, ...novos]);
+    setFiltroConferencia('todos');
+    setAlterado(true);
+    setAviso(`${novos.length} ${novos.length === 1 ? 'item adicionado' : 'itens adicionados'} do kit ${kit.nome}. Confira as quantidades e salve a lista.`);
+  }
+
+  // Itens repetidos (mesmo material e mesma unidade) que "Organizar lista" pode juntar.
+  const chaveJuncao = (i: ItemDemanda) => `${chaveMaterial(acharMaterial(i.descricao)?.nome ?? i.descricao)}|${normalizarUnidade(i.unidade)}`;
+  const duplicados = itens.length - new Set(itens.map(chaveJuncao)).size;
+
+  function organizar() {
+    if (desabilitado || trava.current) return;
+    const ordem: SituacaoItem[] = ['pendente', 'em_separacao', 'atendido'];
+    const juntos = new Map<string, Linha>();
+    for (const item of itens) {
+      const k = chaveJuncao(item);
+      const padrao = acharMaterial(item.descricao);
+      const atual = juntos.get(k);
+      if (!atual) {
+        juntos.set(k, { ...item, descricao: padrao?.nome ?? item.descricao.trim(), categoria: padrao?.categoria ?? item.categoria, unidade: normalizarUnidade(item.unidade) });
+        continue;
+      }
+      const a = Number(atual.quantidade.replace(',', '.'));
+      const b = Number(item.quantidade.replace(',', '.'));
+      juntos.set(k, {
+        ...atual,
+        quantidade: Number.isFinite(a) && Number.isFinite(b) ? String(Math.round((a + b) * 1000) / 1000) : atual.quantidade,
+        preco_unitario_estimado: atual.preco_unitario_estimado.trim() || item.preco_unitario_estimado,
+        // Fica na situação menos adiantada: só está embarcado se tudo estiver.
+        situacao: ordem[Math.min(ordem.indexOf(atual.situacao), ordem.indexOf(item.situacao))],
+        observacoes: [atual.observacoes.trim(), item.observacoes.trim()].filter(Boolean).join(' · ').slice(0, 2000),
+      });
+    }
+    setItens(Array.from(juntos.values()));
+    setAlterado(true);
+    setAviso('Itens repetidos foram juntados. Confira e salve a lista.');
   }
 
   async function salvar() {
@@ -226,6 +320,15 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange, acre
       : item.situacao === filtroConferencia)
   );
 
+  const grupos = (Object.keys(CATEGORIAS_ITEM) as CategoriaItem[])
+    .map((categoria) => {
+      const linhas = selecionados.filter(({ item }) => item.categoria === categoria);
+      let soma = BigInt(0);
+      for (const { item } of linhas) { const v = subtotal(item); if (v !== null) soma += v; }
+      return { categoria, linhas, soma };
+    })
+    .filter((g) => g.linhas.length > 0);
+
   return (
     <section
       aria-label="Lista interna de suprimentos"
@@ -258,7 +361,7 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange, acre
         <>
           <div className="mt-5 grid grid-cols-2 gap-3">
             <div className="rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-suave)] p-3">
-              <p className="text-xs text-[var(--ern-secundario)]">Itens atendidos</p>
+              <p className="text-xs text-[var(--ern-secundario)]">Itens embarcados</p>
               <p className="mt-1 text-lg font-semibold">{atendidos} de {itens.length}</p>
             </div>
             <div className="min-w-0 rounded-xl border border-[var(--ern-destaque)] bg-[var(--ern-suave)] p-3">
@@ -280,207 +383,226 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange, acre
             previa={!demandaId || alterado}
           />
 
-          <section aria-label="Conferencia rapida de materiais" className="mt-5 rounded-2xl border border-[#E3A144]/25 bg-[#101718] p-4 sm:p-5">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-semibold uppercase tracking-[.17em] text-[#E3A144]">Conferencia operacional</p>
-                <h3 className="mt-2 text-xl font-semibold text-[#F1EFE8]">Lista para separacao e compras</h3>
-                <p className="mt-2 max-w-2xl text-xs leading-6 text-[#B4C8BB]">Filtre os materiais e atualize a situacao sem procurar cada campo do formulario. Use Salvar lista para confirmar as mudancas.</p>
-              </div>
-              <span className="rounded-lg border border-white/10 px-3 py-2 text-xs text-[#F4C77E]">
-                {alterado ? 'Alteracoes ainda nao salvas' : 'Versao salva carregada'}
-              </span>
+          {/* EDA_MATERIAIS_V2: adicionar pelo catálogo, kits prontos e lista enxuta por categoria. */}
+          <section aria-label="Adicionar materiais" className="mt-5 rounded-2xl border border-[#E3A144]/25 bg-[var(--ern-suave)] p-4 sm:p-5">
+            <p className="text-[10px] font-semibold uppercase tracking-[.17em] text-[var(--ern-destaque)]">Adicionar material</p>
+            <div className="relative mt-3">
+              <input
+                value={busca}
+                maxLength={200}
+                disabled={desabilitado || itens.length >= 200}
+                onChange={(event) => setBusca(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key !== 'Enter') return;
+                  event.preventDefault();
+                  adicionarMaterial(sugestoes[0] ?? null, busca);
+                }}
+                placeholder="Digite o material: arroz, gelo, gasolina, colete…"
+                aria-label="Buscar material no catálogo"
+                className={campo}
+              />
+              {busca.trim().length > 0 && (
+                <ul className="mt-2 flex flex-wrap gap-2" aria-label="Sugestões do catálogo">
+                  {sugestoes.map((m) => (
+                    <li key={m.nome}>
+                      <button type="button" disabled={desabilitado} onClick={() => adicionarMaterial(m, m.nome)}
+                        className="min-h-11 rounded-full border border-[var(--ern-destaque)] px-4 text-sm font-semibold text-[var(--ern-destaque)] hover:bg-[var(--ern-destaque)]/10 disabled:opacity-50">
+                        {m.nome} <span className="font-normal opacity-70">· {m.unidade}</span>
+                      </button>
+                    </li>
+                  ))}
+                  {busca.trim().length >= 2 && !sugestoes.some((m) => chaveMaterial(m.nome) === chaveMaterial(busca)) && (
+                    <li>
+                      <button type="button" disabled={desabilitado} onClick={() => adicionarMaterial(null, busca)}
+                        className="min-h-11 rounded-full border border-[var(--ern-borda)] px-4 text-sm text-[var(--ern-texto)] hover:bg-white/5 disabled:opacity-50">
+                        Outro: “{busca.trim()}”
+                      </button>
+                    </li>
+                  )}
+                </ul>
+              )}
             </div>
-            <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {[
-                { nome: 'Total', numero: itens.length },
-                { nome: 'Pendentes', numero: pendentes },
-                { nome: 'Em separacao', numero: separacao },
-                { nome: 'Atendidos', numero: atendidos },
-              ].map((indicador) => (
-                <div key={indicador.nome} className="min-w-0 rounded-xl border border-white/10 bg-[#1D2526] p-3">
-                  <p className="text-[11px] text-[#B4C8BB]">{indicador.nome}</p>
-                  <p className="mt-1 text-2xl font-bold tabular-nums text-[#F4C77E]">{indicador.numero}</p>
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 flex flex-wrap items-center gap-2" role="group" aria-label="Filtrar situacao dos materiais">
-              {([
-                ['nao_atendidos', 'Nao atendidos'],
-                ['todos', 'Todos'],
-                ['pendente', 'Pendentes'],
-                ['em_separacao', 'Em separacao'],
-                ['atendido', 'Atendidos'],
-              ] as const).map(([valor, nome]) => (
-                <button key={valor} type="button" aria-pressed={filtroConferencia === valor}
-                  onClick={() => setFiltroConferencia(valor)}
-                  className={`min-h-11 rounded-xl border px-3 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E3A144] ${filtroConferencia === valor ? 'border-[#E3A144] bg-[#E3A144]/15 text-[#F4C77E]' : 'border-white/15 text-[#B4C8BB] hover:bg-white/5'}`}>
-                  {nome}
+            <div className="mt-4 flex flex-wrap items-center gap-2" role="group" aria-label="Kits prontos">
+              <span className="text-xs text-[var(--ern-secundario)]">Kits prontos:</span>
+              {KITS_MATERIAIS.map((kit) => (
+                <button key={kit.id} type="button" disabled={desabilitado} onClick={() => adicionarKit(kit.id)}
+                  className="min-h-11 rounded-xl border border-[var(--ern-borda)] px-3 text-xs font-semibold text-[var(--ern-texto)] hover:border-[var(--ern-destaque)] disabled:opacity-50">
+                  + {kit.nome}
                 </button>
               ))}
             </div>
-            <p role="status" className="mt-3 text-xs text-[#B4C8BB]">{selecionados.length} de {itens.length} materiais exibidos neste filtro.</p>
+            <p className="mt-3 text-xs leading-5 text-[var(--ern-secundario)]">
+              {pessoas && dias
+                ? `Quantidades sugeridas para ${pessoas} ${pessoas === 1 ? 'pessoa' : 'pessoas'} em ${dias} ${dias === 1 ? 'dia' : 'dias'}, com 10% de margem. Ajuste o que precisar.`
+                : 'Informe pessoas e dias na demanda para a quantidade já vir sugerida.'}
+            </p>
           </section>
-          <div className="mt-5 space-y-3">
-            {selecionados.map(({ item, indice }) => {
-              const valor = subtotal(item);
-              return (
-                <article key={item.chave} className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] p-3 sm:p-4">
-                  <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/10 bg-[#131B1C] p-2 sm:p-3">
-                    <span className="text-xs font-semibold text-[#F4C77E]">Conferencia rapida</span>
-                    <div className="flex flex-wrap gap-2">
-                      <button type="button" disabled={desabilitado || item.situacao === 'em_separacao'}
-                        onClick={() => editar(item.chave, { situacao: 'em_separacao' })}
-                        className="min-h-11 rounded-lg border border-white/20 px-3 text-xs text-[#EDEDE3] disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-[#E3A144]">
-                        Em separacao
-                      </button>
-                      <button type="button" disabled={desabilitado || item.situacao === 'atendido'}
-                        onClick={() => editar(item.chave, { situacao: 'atendido' })}
-                        className="min-h-11 rounded-lg border border-[#E3A144]/50 bg-[#E3A144]/15 px-3 text-xs font-semibold text-[#F4C77E] disabled:opacity-40 focus-visible:outline-2 focus-visible:outline-[#E3A144]">
-                        Marcar atendido
-                      </button>
-                    </div>
-                  </div>
-                  <div className="mb-3 flex items-center justify-between gap-3">
-                    <h3 className="text-sm font-semibold text-[var(--ern-destaque)]">Item {indice + 1}</h3>
-                    <button
-                      type="button"
-                      disabled={desabilitado}
-                      aria-label={`Remover item ${indice + 1}: ${item.descricao || 'sem descrição'}`}
-                      onClick={async () => {
-                        if (trava.current) return;
-                        if (!await confirmarERN('Remover este item da lista? A remoção será aplicada ao salvar a lista.')) return;
-                        setItens((atuais) => atuais.filter((linha) => linha.chave !== item.chave));
-                        setAlterado(true);
-                        setAviso('');
-                      }}
-                      className="min-h-11 rounded-xl px-3 text-xs text-[var(--ern-erro)] hover:bg-rose-400/10 disabled:opacity-50"
-                    >
-                      Remover
-                    </button>
-                  </div>
 
-                  <div className="grid min-w-0 gap-3 sm:grid-cols-2">
-                    <label className="block min-w-0 text-xs sm:col-span-2">
-                      <span className="mb-2 block">Produto ou material</span>
-                      <input
-                        value={item.descricao}
-                        autoFocus={item.chave === novaChave}
-                        maxLength={200}
-                        disabled={desabilitado}
-                        onChange={(event) => editar(item.chave, { descricao: event.target.value })}
-                        placeholder="Ex.: gelo — saco de 5 kg"
-                        className={campo}
-                      />
-                    </label>
+          <section aria-label="Lista de materiais" className="mt-5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Filtrar materiais">
+                {([
+                  ['nao_atendidos', `Falta embarcar (${pendentes + separacao})`],
+                  ['todos', `Todos (${itens.length})`],
+                  ['pendente', `A comprar (${pendentes})`],
+                  ['em_separacao', `Separado (${separacao})`],
+                  ['atendido', `Embarcado (${atendidos})`],
+                ] as const).map(([valor, nome]) => (
+                  <button key={valor} type="button" aria-pressed={filtroConferencia === valor}
+                    onClick={() => setFiltroConferencia(valor)}
+                    className={`min-h-11 rounded-full border px-3 text-xs font-semibold focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#E3A144] ${filtroConferencia === valor ? 'border-[var(--ern-destaque)] bg-[var(--ern-destaque)]/10 text-[var(--ern-destaque)]' : 'border-[var(--ern-borda)] text-[var(--ern-secundario)]'}`}>
+                    {nome}
+                  </button>
+                ))}
+              </div>
+              {duplicados > 0 && (
+                <button type="button" disabled={desabilitado} onClick={organizar}
+                  className="min-h-11 rounded-xl border border-[var(--ern-destaque)] px-3 text-xs font-semibold text-[var(--ern-destaque)] disabled:opacity-50">
+                  Organizar lista ({duplicados} {duplicados === 1 ? 'repetido' : 'repetidos'})
+                </button>
+              )}
+            </div>
 
-                    <SeletorERN
-                      label="Categoria"
-                      value={item.categoria}
-                      options={categorias}
-                      disabled={desabilitado}
-                      onChange={(categoria) => editar(item.chave, { categoria: categoria as CategoriaItem })}
-                    />
-
-                    <SeletorERN
-                      label="Situação do item"
-                      value={item.situacao}
-                      options={situacoes}
-                      disabled={desabilitado}
-                      onChange={(situacao) => editar(item.chave, { situacao: situacao as SituacaoItem })}
-                    />
-
-                    <div className="grid grid-cols-2 gap-3">
-                      <label className="min-w-0 text-xs">
-                        <span className="mb-2 block">Quantidade</span>
-                        <input
-                          value={item.quantidade}
-                          inputMode="decimal"
-                          maxLength={16}
-                          disabled={desabilitado}
-                          onChange={(event) => editar(item.chave, { quantidade: event.target.value })}
-                          className={campo}
-                        />
-                      </label>
-                      <SeletorERN
-                        label="Unidade"
-                        value={normalizarUnidade(item.unidade)}
-                        options={opcoesUnidade(normalizarUnidade(item.unidade))}
-                        disabled={desabilitado}
-                        onChange={(unidade) => editar(item.chave, { unidade })}
-                      />
-                    </div>
-
-                    <label className="min-w-0 text-xs">
-                      <span className="mb-2 block">Preço por unidade (R$) · opcional</span>
-                      <input
-                        value={item.preco_unitario_estimado}
-                        inputMode="decimal"
-                        maxLength={16}
-                        disabled={desabilitado}
-                        placeholder="Ex.: 12,50 — sem separador de milhar"
-                        onChange={(event) => editar(item.chave, { preco_unitario_estimado: event.target.value })}
-                        className={campo}
-                      />
-                    </label>
-
-                    <label className="block text-xs sm:col-span-2">
-                      <span className="mb-2 block">Observações do item · opcional</span>
-                      <textarea
-                        value={item.observacoes}
-                        maxLength={2000}
-                        rows={2}
-                        disabled={desabilitado}
-                        onChange={(event) => editar(item.chave, { observacoes: event.target.value })}
-                        className={`${campo} resize-y py-3`}
-                      />
-                    </label>
-                  </div>
-
-                  <p className="mt-3 text-right text-sm">
-                    Total estimado: <strong className="text-[var(--ern-destaque)]">
-                      {valor === null ? 'Não informado ou inválido' : moeda(valor)}
-                    </strong>
-                  </p>
-                </article>
-              );
-            })}
-          </div>
+            {grupos.map(({ categoria, linhas, soma }) => (
+              <div key={categoria} className="mt-5">
+                <div className="flex items-baseline justify-between gap-3 border-b border-[var(--ern-borda)] pb-2">
+                  <h3 className="text-sm font-semibold text-[var(--ern-destaque)]">{CATEGORIAS_ITEM[categoria]} <span className="font-normal text-[var(--ern-secundario)]">· {linhas.length}</span></h3>
+                  <span className="text-xs tabular-nums text-[var(--ern-secundario)]">{soma > BigInt(0) ? moeda(soma) : 'sem preço'}</span>
+                </div>
+                <ul className="mt-2 space-y-2">
+                  {linhas.map(({ item, indice }) => {
+                    const valor = subtotal(item);
+                    const aberto = abertoChave === item.chave;
+                    const padrao = acharMaterial(item.descricao);
+                    const sugerida = padrao ? quantidadeSugerida(padrao, pessoas, dias) : null;
+                    const qtd = Number(item.quantidade.replace(',', '.'));
+                    const exagero = sugerida !== null && sugerida > 0 && padrao !== null && normalizarUnidade(item.unidade) === padrao.unidade && Number.isFinite(qtd) && qtd > sugerida * 3;
+                    const tomSituacao = item.situacao === 'atendido'
+                      ? 'border-emerald-400/50 bg-emerald-400/15 text-emerald-200'
+                      : item.situacao === 'em_separacao'
+                        ? 'border-[#E3A144]/60 bg-[#E3A144]/15 text-[#F4C77E]'
+                        : 'border-[var(--ern-borda)] text-[var(--ern-secundario)]';
+                    return (
+                      <li key={item.chave} className={`rounded-xl border bg-[var(--ern-fundo)] p-2.5 sm:p-3 ${item.chave === novaChave ? 'border-[var(--ern-destaque)]' : 'border-[var(--ern-borda)]'}`}>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <button type="button" disabled={desabilitado}
+                            onClick={() => editar(item.chave, { situacao: PROXIMA_SITUACAO[item.situacao] })}
+                            aria-label={`${item.descricao || `Item ${indice + 1}`}: ${SITUACOES_ITEM[item.situacao]}. Toque para avançar.`}
+                            title="Toque para avançar: A comprar → Separado → Embarcado"
+                            className={`min-h-11 min-w-[104px] rounded-full border px-3 text-xs font-semibold disabled:opacity-50 ${tomSituacao}`}>
+                            {SITUACOES_ITEM[item.situacao]}
+                          </button>
+                          <span className={`min-w-[8rem] flex-1 break-words text-sm font-semibold ${item.situacao === 'atendido' ? 'opacity-70' : ''}`}>
+                            {item.descricao.trim() || 'Sem nome'}
+                          </span>
+                          <input
+                            value={item.quantidade}
+                            inputMode="decimal"
+                            maxLength={16}
+                            disabled={desabilitado}
+                            aria-label={`Quantidade de ${item.descricao || `item ${indice + 1}`}`}
+                            onChange={(event) => editar(item.chave, { quantidade: event.target.value })}
+                            className={`${campoCompacto} w-20 text-right tabular-nums`}
+                          />
+                          <select
+                            value={normalizarUnidade(item.unidade)}
+                            disabled={desabilitado}
+                            aria-label={`Unidade de ${item.descricao || `item ${indice + 1}`}`}
+                            onChange={(event) => editar(item.chave, { unidade: event.target.value })}
+                            className={`${campoCompacto} w-28`}
+                          >
+                            {opcoesUnidade(normalizarUnidade(item.unidade)).map((u) => <option key={u.value} value={u.value}>{u.label}</option>)}
+                          </select>
+                          <span className="w-24 text-right text-sm tabular-nums text-[var(--ern-destaque)]">{valor === null ? '—' : moeda(valor)}</span>
+                          <button type="button" aria-expanded={aberto} onClick={() => setAbertoChave(aberto ? '' : item.chave)}
+                            className="min-h-11 rounded-lg border border-[var(--ern-borda)] px-3 text-xs text-[var(--ern-secundario)] hover:text-[var(--ern-texto)]">
+                            {aberto ? 'Fechar' : 'Detalhes'}
+                          </button>
+                        </div>
+                        {exagero && (
+                          <p role="status" className="mt-2 text-xs leading-5 text-[#F4C77E]">
+                            Bem acima do sugerido (cerca de {sugerida} {padrao?.unidade}) para este grupo. Confira a quantidade.
+                          </p>
+                        )}
+                        {aberto && (
+                          <div className="mt-3 grid min-w-0 gap-3 border-t border-[var(--ern-borda)] pt-3 sm:grid-cols-2">
+                            <label className="block min-w-0 text-xs sm:col-span-2">
+                              <span className="mb-2 block">Produto ou material</span>
+                              <input
+                                value={item.descricao}
+                                maxLength={200}
+                                disabled={desabilitado}
+                                onChange={(event) => editar(item.chave, { descricao: event.target.value })}
+                                className={campo}
+                              />
+                            </label>
+                            <SeletorERN
+                              label="Categoria"
+                              value={item.categoria}
+                              options={categorias}
+                              disabled={desabilitado}
+                              onChange={(categoria) => editar(item.chave, { categoria: categoria as CategoriaItem })}
+                            />
+                            <label className="min-w-0 text-xs">
+                              <span className="mb-2 block">Preço por unidade (R$) · opcional</span>
+                              <input
+                                value={item.preco_unitario_estimado}
+                                inputMode="decimal"
+                                maxLength={16}
+                                disabled={desabilitado}
+                                placeholder="Ex.: 12,50"
+                                onChange={(event) => editar(item.chave, { preco_unitario_estimado: event.target.value })}
+                                className={campo}
+                              />
+                            </label>
+                            <label className="block text-xs sm:col-span-2">
+                              <span className="mb-2 block">Observações · opcional</span>
+                              <textarea
+                                value={item.observacoes}
+                                maxLength={2000}
+                                rows={2}
+                                disabled={desabilitado}
+                                onChange={(event) => editar(item.chave, { observacoes: event.target.value })}
+                                className={`${campo} resize-y py-3`}
+                              />
+                            </label>
+                            <div className="sm:col-span-2">
+                              <button
+                                type="button"
+                                disabled={desabilitado}
+                                aria-label={`Remover ${item.descricao || `item ${indice + 1}`}`}
+                                onClick={async () => {
+                                  if (trava.current) return;
+                                  if (!await confirmarERN('Remover este item da lista? A remoção será aplicada ao salvar a lista.')) return;
+                                  setItens((atuais) => atuais.filter((linha) => linha.chave !== item.chave));
+                                  setAlterado(true);
+                                  setAviso('');
+                                }}
+                                className="min-h-11 rounded-xl px-3 text-xs text-[var(--ern-erro)] hover:bg-rose-400/10 disabled:opacity-50"
+                              >
+                                Remover da lista
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </div>
+            ))}
+          </section>
 
           {itens.length > 0 && selecionados.length === 0 && (
-            <p className="rounded-xl border border-dashed border-white/15 p-5 text-sm text-[#B4C8BB]">
-              Nenhum material corresponde ao filtro. Escolha Todos para consultar a lista completa.
+            <p className="mt-4 rounded-xl border border-dashed border-[var(--ern-borda)] p-5 text-sm text-[var(--ern-secundario)]">
+              Nenhum material neste filtro. Escolha Todos para ver a lista completa.
             </p>
           )}
           {!itens.length && (
             <p className="mt-5 rounded-xl border border-dashed border-[var(--ern-borda)] p-4 text-sm text-[var(--ern-secundario)]">
-              Esta demanda ainda não possui materiais na lista.
+              Esta demanda ainda não possui materiais. Use a busca ou um kit pronto acima.
             </p>
           )}
-
-          {/* EDA_ADICIONAR_V1: só o "+"; o nome do material é digitado no item novo. */}
-          <div className="mt-4 flex justify-center">
-            <button
-              type="button"
-              aria-label="Adicionar material"
-              title="Adicionar material"
-              disabled={desabilitado || itens.length >= 200}
-              onClick={async () => {
-                if (trava.current) return;
-                const chaveNova = crypto.randomUUID();
-                setNovaChave(chaveNova);
-                setItens((atuais) => [
-                  ...atuais,
-                  { ...novoItemDemanda(), chave: chaveNova },
-                ]);
-                setAlterado(true);
-                setAviso('');
-              }}
-              className="grid h-12 w-12 place-items-center rounded-full border border-[var(--ern-destaque)] text-2xl font-semibold leading-none text-[var(--ern-destaque)] transition hover:bg-[var(--ern-destaque)]/10 disabled:opacity-50"
-            >
-              <span aria-hidden="true">+</span>
-            </button>
-          </div>
         </>
       )}
 
@@ -556,4 +678,4 @@ export default function ItensDemanda({ demandaId, bloqueado, onItensChange, acre
       )}
     </section>
   );
-}
+}

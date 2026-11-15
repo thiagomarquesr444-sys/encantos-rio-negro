@@ -706,6 +706,8 @@ export default function NovaDemandaPage() {
               bloqueado={bloqueado}
               onItensChange={setItensMateriais}
               acrescentar={sugestao}
+              pessoas={Number(formulario.pessoas_estimadas) > 0 ? Math.round(Number(formulario.pessoas_estimadas)) : undefined}
+              dias={Number(formulario.dias_estimados) > 0 ? Math.round(Number(formulario.dias_estimados)) : undefined}
             />
             <section className="rounded-2xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-5 md:p-7">
               <h2 className="text-2xl">
@@ -1344,4 +1346,4 @@ export default function NovaDemandaPage() {
       </div>
     </main>
   );
-}
+}

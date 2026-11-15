@@ -1007,6 +1007,8 @@ export default function EditarDemandaPage() {
           demandaId={id}
           bloqueado={terminal || salvando || excluindo}
           acrescentar={sugestaoSaida}
+          pessoas={Number(formularioAtual.pessoas_estimadas) > 0 ? Math.round(Number(formularioAtual.pessoas_estimadas)) : undefined}
+          dias={Number(formularioAtual.dias_estimados) > 0 ? Math.round(Number(formularioAtual.dias_estimados)) : undefined}
         />
       </div>
 
@@ -1864,4 +1866,4 @@ export default function EditarDemandaPage() {
       </form>
     </main>
   );
-}
+}

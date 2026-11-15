@@ -11,9 +11,9 @@ export const CATEGORIAS_ITEM = {
 } as const;
 
 export const SITUACOES_ITEM = {
-  pendente: 'Pendente',
-  em_separacao: 'Em separação',
-  atendido: 'Atendido',
+  pendente: 'A comprar',
+  em_separacao: 'Separado',
+  atendido: 'Embarcado',
 } as const;
 
 export type CategoriaItem = keyof typeof CATEGORIAS_ITEM;
@@ -239,4 +239,4 @@ export async function salvarItensDemanda(
   }
 
   return data;
-}
+}
