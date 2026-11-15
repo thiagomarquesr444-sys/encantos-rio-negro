@@ -100,8 +100,8 @@ export function proximasFestasFichas(fichas: FichaCliente[], qtd = 2, agora = ne
       itens.push({ fala, pedido: `Me fala do ${nome} de ${f.nome}`, municipio: f.nome, falta });
     }
   }
-  // Empate no mês: Barcelos (casa da plataforma) primeiro, depois ordem alfabética.
-  itens.sort((a, b) => a.falta - b.falta || Number(b.municipio === 'Barcelos') - Number(a.municipio === 'Barcelos') || a.municipio.localeCompare(b.municipio));
+  // Barcelos (casa da plataforma) é sempre anunciado primeiro; depois, a festa mais próxima.
+  itens.sort((a, b) => Number(b.municipio === 'Barcelos') - Number(a.municipio === 'Barcelos') || a.falta - b.falta || a.municipio.localeCompare(b.municipio));
   const vistos = new Set<string>();
   return itens.filter(i => (vistos.has(i.municipio) ? false : (vistos.add(i.municipio), true))).slice(0, qtd)
     .map(({ fala, pedido, municipio }) => ({ fala, pedido, municipio }));
