@@ -39,6 +39,8 @@ type DestinoBase = {
   municipio: string;
   interesses: InteresseERN[];
   imagem: string | null;
+  /** EDA_CARDS_VIDEO_V1: trecho curto, mudo, que roda no cartão quando visível. */
+  video?: string;
 };
 
 type DestinoMapeado = DestinoBase & {
@@ -61,6 +63,7 @@ export type DestinoExibicao = TextoDestino & {
   municipio: string;
   interesses: InteresseERN[];
   imagem: string | null;
+  video?: string;
   curadoria: boolean;
   href: string;
 };
@@ -90,7 +93,8 @@ export const CATALOGO_DESTINOS_ERN: DestinoCatalogo[] = [
     municipio: 'São Gabriel da Cachoeira',
     regiao: 'alto',
     interesses: ['natureza'],
-    imagem: null,
+    imagem: '/images/destinos/curadoria/pico-da-neblina.jpg',
+    video: '/videos/curadoria/pico-da-neblina.mp4',
     textos: {
       PT: { titulo: 'Pico da Neblina', local: 'São Gabriel da Cachoeira', descricao: 'O ponto mais alto do Brasil, em território indígena, com visitação organizada junto às comunidades.' },
       EN: { titulo: 'Pico da Neblina', local: 'São Gabriel da Cachoeira', descricao: 'The highest point in Brazil, on Indigenous land, with visits organized together with local communities.' },
@@ -140,7 +144,7 @@ export const CATALOGO_DESTINOS_ERN: DestinoCatalogo[] = [
     },
   },
   {
-    tipo: 'curadoria', id: 'festival-parintins', municipio: 'Parintins', regiao: 'baixo-amazonas', interesses: ['cultura', 'lendas'], imagem: null, mapa: 'cidade:parintins',
+    tipo: 'curadoria', id: 'festival-parintins', municipio: 'Parintins', regiao: 'baixo-amazonas', interesses: ['cultura', 'lendas'], imagem: '/images/destinos/curadoria/festival-parintins.jpg', video: '/videos/curadoria/festival-parintins.mp4', mapa: 'cidade:parintins',
     textos: {
       PT: { titulo: 'Festival de Parintins', local: 'Parintins', descricao: 'Garantido e Caprichoso no Bumbódromo, em junho: toadas, alegorias gigantes e as lendas da floresta contadas pelos bois.' },
       EN: { titulo: 'Parintins Festival', local: 'Parintins', descricao: 'Garantido and Caprichoso at the Bumbódromo in June: songs, giant floats and forest legends told by the bulls.' },
@@ -148,7 +152,7 @@ export const CATALOGO_DESTINOS_ERN: DestinoCatalogo[] = [
     },
   },
   {
-    tipo: 'curadoria', id: 'guarana-maues', municipio: 'Maués', regiao: 'baixo-amazonas', interesses: ['culinaria', 'cultura'], imagem: null, mapa: 'municipio:1302900',
+    tipo: 'curadoria', id: 'guarana-maues', municipio: 'Maués', regiao: 'baixo-amazonas', interesses: ['culinaria', 'cultura'], imagem: '/images/destinos/curadoria/guarana-maues.jpg', video: '/videos/curadoria/guarana-maues.mp4', mapa: 'municipio:1302900',
     textos: {
       PT: { titulo: 'Terra do guaraná', local: 'Maués', descricao: 'Berço do guaraná, domesticado pelo povo Sateré-Mawé, com praias de rio e a tradicional Festa do Guaraná.' },
       EN: { titulo: 'Land of guaraná', local: 'Maués', descricao: 'Birthplace of guaraná, domesticated by the Sateré-Mawé people, with river beaches and the Guaraná Festival.' },
@@ -164,7 +168,7 @@ export const CATALOGO_DESTINOS_ERN: DestinoCatalogo[] = [
     },
   },
   {
-    tipo: 'curadoria', id: 'farinha-uarini', municipio: 'Uarini', regiao: 'solimoes', interesses: ['culinaria'], imagem: null, mapa: 'municipio:1304260',
+    tipo: 'curadoria', id: 'farinha-uarini', municipio: 'Uarini', regiao: 'solimoes', interesses: ['culinaria'], imagem: '/images/destinos/curadoria/farinha-uarini.jpg', video: '/videos/curadoria/farinha-uarini.mp4', mapa: 'municipio:1304260',
     textos: {
       PT: { titulo: 'Farinha de Uarini', local: 'Uarini', descricao: 'A farinha ovinha, amarela e crocante, que acompanha o peixe frito e viaja na bagagem de quem passa pelo Solimões.' },
       EN: { titulo: 'Uarini flour', local: 'Uarini', descricao: 'The crunchy, golden "ovinha" cassava flour served with fried fish and carried home by every Solimões traveler.' },
@@ -172,7 +176,7 @@ export const CATALOGO_DESTINOS_ERN: DestinoCatalogo[] = [
     },
   },
   {
-    tipo: 'curadoria', id: 'triplice-fronteira', municipio: 'Tabatinga', regiao: 'solimoes', interesses: ['cultura', 'aguas'], imagem: null, mapa: 'municipio:1304062',
+    tipo: 'curadoria', id: 'triplice-fronteira', municipio: 'Tabatinga', regiao: 'solimoes', interesses: ['cultura', 'aguas'], imagem: '/images/destinos/curadoria/triplice-fronteira.jpg', video: '/videos/curadoria/triplice-fronteira.mp4', mapa: 'municipio:1304062',
     textos: {
       PT: { titulo: 'Tríplice fronteira', local: 'Tabatinga · Alto Solimões', descricao: 'Brasil, Colômbia e Peru se encontram no Alto Solimões, terra do povo Ticuna, de sua tecelagem e de suas máscaras rituais.' },
       EN: { titulo: 'Triple border', local: 'Tabatinga · Upper Solimões', descricao: 'Brazil, Colombia and Peru meet on the Upper Solimões, land of the Ticuna people, their weaving and ritual masks.' },
@@ -195,6 +199,7 @@ export function destinosParaExibicao(idioma: Idioma): DestinoExibicao[] {
         municipio: destino.municipio,
         interesses: destino.interesses,
         imagem: destino.imagem,
+        video: destino.video,
         curadoria: false,
         titulo: texto.titulo,
         local: texto.local,
@@ -211,6 +216,7 @@ export function destinosParaExibicao(idioma: Idioma): DestinoExibicao[] {
       municipio: destino.municipio,
       interesses: destino.interesses,
       imagem: destino.imagem,
+      video: destino.video,
       curadoria: !destino.mapa,
       titulo: texto.titulo,
       local: texto.local,

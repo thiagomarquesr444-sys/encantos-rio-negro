@@ -187,7 +187,7 @@ const cities: { id: CityId; name: string; coords: [number, number]; image?: stri
   { id: 'barcelos', name: 'Barcelos', coords: [-0.975, -62.924], image: '/images/regiao/barceloscapital.jpg.jpeg' },
   { id: 'santa-isabel', name: 'Santa Isabel do Rio Negro', coords: [-0.414, -65.019] },
   { id: 'sao-gabriel', name: 'São Gabriel da Cachoeira', coords: [-0.13, -67.089] },
-  { id: 'parintins', name: 'Parintins', coords: [-2.628, -56.736], image: '/images/cultura/festribal.jpg' },
+  { id: 'parintins', name: 'Parintins', coords: [-2.628, -56.736], image: '/images/destinos/curadoria/festival-parintins.jpg' },
 ];
 const scenes: Scene[] = [
   { id: 'cachoeira-eldorado', city: 'barcelos', image: '/images/destinos/eldorado-card.webp', interests: ['nature'], source: `${barcelosSource}serra-do-araca/` },
@@ -205,7 +205,7 @@ const scenes: Scene[] = [
   { id: 'sao-gabriel-da-cachoeira', city: 'sao-gabriel', image: '/images/destinos/sao-gabriel/sao-gabriel-aerea.jpg', interests: ['waters', 'nature', 'culture'], source: municipalSource },
   // ERN_DESTINOS_AMAZONAS_V1
   { id: 'encontro-das-aguas', city: 'manaus', image: '/images/fundo/encontro-das-aguas-celular.jpg', interests: ['waters', 'nature'], source: municipalSource, coords: [-3.136, -59.905] },
-  { id: 'parintins', city: 'parintins', image: '/images/cultura/festribal.jpg', context: true, interests: ['culture'], source: municipalSource },
+  { id: 'parintins', city: 'parintins', image: '/images/destinos/curadoria/festival-parintins.jpg', context: true, interests: ['culture'], source: municipalSource },
 ];
 
 // ERN_MARCOS_ALTO_RIO_NEGRO_V1

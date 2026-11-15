@@ -16,6 +16,7 @@
 .eda-reacoes-mini { display: grid; place-items: center; width: 22px; height: 22px; margin-right: -6px; border-radius: 50%; background: #fffaf0; border: 1px solid #e9dfbf; overflow: hidden; }
 .eda-reacoes-mini svg, .eda-reacoes-mini img, .eda-reacoes-mini .eda-reacao-tucunare { width: 18px !important; height: 14px !important; }
 .eda-reacoes-resumo b { margin-left: 10px; }
+.eda-reacoes-total { margin-left: 2px; font-weight: 700; }
 
 .eda-reacoes-menu {
   position: absolute; bottom: calc(100% + 6px); left: 0; z-index: 40; width: max-content; max-width: min(92vw, 360px);

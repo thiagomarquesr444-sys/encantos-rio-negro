@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import {
@@ -14,6 +14,53 @@ import {
 import { MUNICIPIOS_AMAZONAS } from '@/lib/municipiosAmazonasERN';
 import { acharDestinoIara, destinoParaParametro } from '@/lib/iaraDestinosERN';
 import { fichaPorNome, useFichasMunicipios } from '@/lib/fichasMunicipiosCliente';
+import { aoMudarSinalEDA, sinalFracoEDA } from '@/lib/conexaoEDA';
+
+// EDA_CARDS_VIDEO_V1 — trecho curto e mudo sobre a foto do cartão.
+// Só carrega/roda quando o cartão está visível, com sinal normal e sem
+// "reduzir movimento". Com sinal fraco fica só a foto (promessa de leveza).
+function VideoCartaoEDA({ src, poster }: { src: string; poster: string }) {
+  const ref = useRef<HTMLVideoElement>(null);
+  const [permitido, setPermitido] = useState(false);
+  const [rodando, setRodando] = useState(false);
+
+  useEffect(() => {
+    const movimento = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const avaliar = () => setPermitido(!movimento.matches && !sinalFracoEDA());
+    avaliar();
+    const parar = aoMudarSinalEDA(avaliar);
+    movimento.addEventListener('change', avaliar);
+    return () => { parar(); movimento.removeEventListener('change', avaliar); };
+  }, []);
+
+  useEffect(() => {
+    const v = ref.current;
+    if (!permitido || !v) return;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting) void v.play().catch(() => {});
+      else v.pause();
+    }, { threshold: 0.35 });
+    obs.observe(v);
+    return () => { obs.disconnect(); v.pause(); };
+  }, [permitido]);
+
+  if (!permitido) return null;
+  return (
+    <video
+      ref={ref}
+      src={src}
+      poster={poster}
+      muted
+      loop
+      playsInline
+      preload="none"
+      aria-hidden="true"
+      tabIndex={-1}
+      onPlaying={() => setRodando(true)}
+      className={`pointer-events-none absolute inset-0 h-full w-full object-cover transition-opacity duration-700 ${rodando ? 'opacity-100' : 'opacity-0'}`}
+    />
+  );
+}
 
 // ERN_VITRINE_DESTINOS_V1 → EDA_DESCUBRA_AMAZONAS_V1
 // "Descubra o território" agora cobre o Amazonas inteiro. Três filtros
@@ -327,14 +374,17 @@ export default function VitrineDestinosERN({
             const conteudo = (
               <>
                 {destino.imagem ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={destino.imagem}
-                    alt={destino.titulo}
-                    loading={destaque ? 'eager' : 'lazy'}
-                    decoding="async"
-                    className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.05] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
-                  />
+                  <>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={destino.imagem}
+                      alt={destino.titulo}
+                      loading={destaque ? 'eager' : 'lazy'}
+                      decoding="async"
+                      className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.05] motion-reduce:transition-none motion-reduce:group-hover:scale-100"
+                    />
+                    {destino.video && <VideoCartaoEDA src={destino.video} poster={destino.imagem} />}
+                  </>
                 ) : (
                   <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-[radial-gradient(ellipse_at_50%_30%,rgb(227_161_68/18%),transparent_65%),#10231B] text-[#B8C9BF]">
                     <span className="grid h-14 w-14 place-items-center rounded-full border border-[#F4C77E]/40 text-[#F4C77E]">
