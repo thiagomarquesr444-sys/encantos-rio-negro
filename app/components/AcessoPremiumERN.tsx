@@ -4,6 +4,7 @@ import Link from 'next/link';
 import LogoERN from './LogoERN';
 import ArcoFlechaERN from './ArcoFlechaERN';
 import IconeERN, { type NomeIconeERN } from './IconeERN';
+import VitrineGestaoAcessoEDA from './VitrineGestaoAcessoEDA';
 import './acesso-premium-ern.css';
 
 // ERN_ACESSO_PREMIUM_V2
@@ -69,6 +70,7 @@ export default function AcessoPremiumERN({ children, etapa, perfil }: Props) {
           <img src="/images/fundo/encontro-das-aguas-1920.jpg" alt="" />
         </picture>
         <div className="ern-acesso-manifesto-texto">
+          {!recuperar && <VitrineGestaoAcessoEDA />}
           <span className="ern-acesso-etiqueta"><i aria-hidden="true" />{nome}</span>
           <h2>{recuperar
             ? <>Retome seu acesso.<br /><em>Sua operação espera.</em></>

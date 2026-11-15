@@ -11,6 +11,8 @@ import RodapePublicoEDA from '@/app/components/RodapePublicoEDA';
 import VitrinePasseiosEDA from '@/app/components/VitrinePasseiosEDA';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import { HISTORIAS_MUNICIPIOS, type RegiaoHistoria } from '@/lib/historiasMunicipiosERN';
+import { acharDestinoIara, destinoParaParametro } from '@/lib/iaraDestinosERN';
+import VideoCartaoEDA from '@/app/components/VideoCartaoEDA';
 
 // ERN_EXPERIENCIAS_PREMIUM_V1
 // Página Experiências no padrão Encantos da Amazônia: abertura escura,
@@ -50,10 +52,12 @@ const textos = {
       ['Fale com quem opera', 'Guias, operadoras e pousadas da Rede EDA confirmam valores e disponibilidade.'],
     ],
     historiasEyebrow: 'Memória do território',
-    historiasTitulo: 'A história de cada município do Rio Negro.',
-    historiasIntro: 'Missões, fortes, povos e festas que formaram a região, do Alto ao Baixo Rio Negro.',
-    regioes: { todos: 'Todos', alto: 'Alto Rio Negro', medio: 'Médio Rio Negro', baixo: 'Baixo Rio Negro' },
-    fonte: 'Fontes: Portal Amazônia, IBGE e legislação municipal. Textos em revisão com pesquisas locais.',
+    historiasTitulo: 'A história de cada município, do Rio Negro ao Solimões.',
+    historiasIntro: 'Missões, fortes, povos e festas que formaram o Amazonas — do Alto Rio Negro ao Solimões e ao Baixo Amazonas.',
+    historiasMunicipios: (n: number) => `${n} municípios`,
+    historiasMapa: 'Ver no mapa',
+    regioes: { todos: 'Todos', alto: 'Alto Rio Negro', medio: 'Médio Rio Negro', baixo: 'Baixo Rio Negro', solimoes: 'Rio Solimões', 'baixo-amazonas': 'Baixo Amazonas' },
+    fonte: 'Fontes: IBGE (histórico dos municípios), Portal Amazônia, INPI e legislação municipal. Textos em revisão com pesquisas locais.',
     pescaEyebrow: 'Pesca esportiva',
     pescaTitulo: 'O Rio Negro é um dos grandes destinos do tucunaré-açu.',
     pescaTexto: 'Converse com guias e operadoras sobre temporada, equipamentos, regras e captura e soltura antes de fechar a viagem.',
@@ -103,10 +107,12 @@ const textos = {
       ['Talk to the operators', 'Guides, operators and lodges on the EDA Network confirm prices and availability.'],
     ],
     historiasEyebrow: 'Memory of the region',
-    historiasTitulo: 'The story of each Rio Negro town.',
-    historiasIntro: 'Missions, forts, peoples and festivals that shaped the region, from the Upper to the Lower Rio Negro.',
-    regioes: { todos: 'All', alto: 'Upper Rio Negro', medio: 'Middle Rio Negro', baixo: 'Lower Rio Negro' },
-    fonte: 'Sources: Portal Amazônia, IBGE and municipal law. Texts under review with local research.',
+    historiasTitulo: 'The story of each town, from the Rio Negro to the Solimões.',
+    historiasIntro: 'Missions, forts, peoples and festivals that shaped Amazonas — from the Upper Rio Negro to the Solimões and the Lower Amazon.',
+    historiasMunicipios: (n: number) => `${n} towns`,
+    historiasMapa: 'See on the map',
+    regioes: { todos: 'All', alto: 'Upper Rio Negro', medio: 'Middle Rio Negro', baixo: 'Lower Rio Negro', solimoes: 'Solimões River', 'baixo-amazonas': 'Lower Amazon' },
+    fonte: 'Sources: IBGE (municipal histories), Portal Amazônia, INPI and municipal law. Texts under review with local research.',
     pescaEyebrow: 'Sport fishing',
     pescaTitulo: 'The Rio Negro is one of the great peacock bass destinations.',
     pescaTexto: 'Talk to guides and operators about the season, gear, rules and catch-and-release before booking.',
@@ -156,10 +162,12 @@ const textos = {
       ['Habla con quien opera', 'Guías, operadores y posadas de la Red EDA confirman precios y disponibilidad.'],
     ],
     historiasEyebrow: 'Memoria del territorio',
-    historiasTitulo: 'La historia de cada municipio del Río Negro.',
-    historiasIntro: 'Misiones, fuertes, pueblos y fiestas que formaron la región, del Alto al Bajo Río Negro.',
-    regioes: { todos: 'Todos', alto: 'Alto Río Negro', medio: 'Medio Río Negro', baixo: 'Bajo Río Negro' },
-    fonte: 'Fuentes: Portal Amazônia, IBGE y legislación municipal. Textos en revisión con investigaciones locales.',
+    historiasTitulo: 'La historia de cada municipio, del Río Negro al Solimões.',
+    historiasIntro: 'Misiones, fuertes, pueblos y fiestas que formaron Amazonas — del Alto Río Negro al Solimões y al Bajo Amazonas.',
+    historiasMunicipios: (n: number) => `${n} municipios`,
+    historiasMapa: 'Ver en el mapa',
+    regioes: { todos: 'Todos', alto: 'Alto Río Negro', medio: 'Medio Río Negro', baixo: 'Bajo Río Negro', solimoes: 'Río Solimões', 'baixo-amazonas': 'Bajo Amazonas' },
+    fonte: 'Fuentes: IBGE (historia de los municipios), Portal Amazônia, INPI y legislación municipal. Textos en revisión con investigaciones locales.',
     pescaEyebrow: 'Pesca deportiva',
     pescaTitulo: 'El Río Negro es uno de los grandes destinos del tucunaré.',
     pescaTexto: 'Habla con guías y operadores sobre temporada, equipos, reglas y captura y suelta antes de cerrar el viaje.',
@@ -385,9 +393,13 @@ export default function ExperienciasPremiumERN({ abrirPasseio }: { abrirPasseio?
                 <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#F4C77E]">{t.historiasEyebrow}</p>
                 <h2 className="mt-3 text-[clamp(2rem,4vw,3rem)] leading-[1.08] tracking-[-0.035em] text-[#F5F3EA]">{t.historiasTitulo}</h2>
                 <p className="mt-4 text-base leading-7 text-[#B8C9BF] md:text-lg">{t.historiasIntro}</p>
+                <p className="mt-4 inline-flex items-center gap-2 rounded-full border border-[#F4C77E]/30 bg-[#F4C77E]/[0.06] px-3 py-1 text-xs font-semibold text-[#F7D595]">
+                  <span aria-hidden="true" className="h-1.5 w-1.5 rounded-full bg-[#E3A144]" />
+                  {t.historiasMunicipios(historias.length)}
+                </p>
               </div>
               <div role="group" aria-label={t.historiasEyebrow} className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                {(['todos', 'alto', 'medio', 'baixo'] as const).map((item) => (
+                {(['todos', 'alto', 'medio', 'baixo', 'solimoes', 'baixo-amazonas'] as const).map((item) => (
                   <button
                     key={item}
                     type="button"
@@ -403,22 +415,42 @@ export default function ExperienciasPremiumERN({ abrirPasseio }: { abrirPasseio?
               </div>
             </div>
 
-            <ul className="mt-10 grid gap-5 md:grid-cols-2">
+            {/* EDA_HISTORIAS_PREMIUM_V2 — cartões com mídia, marco no tempo e atalho para o mapa */}
+            <ul className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {historias.map((historia) => {
                 const h = historia.textos[idioma];
+                const destino = acharDestinoIara(historia.nome);
                 return (
-                  <li key={historia.id} className="ern-revela-rolagem flex flex-col overflow-hidden rounded-[22px] border border-white/10 bg-[#0A1713] sm:flex-row">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={historia.imagem} alt={historia.nome} loading="lazy" decoding="async" className="h-48 w-full object-cover sm:h-auto sm:w-[42%]" />
+                  <li key={historia.id} className="ern-revela-rolagem group flex flex-col overflow-hidden rounded-[24px] border border-white/10 bg-gradient-to-b from-[#0D1D18] to-[#08130F] shadow-[0_24px_60px_rgb(0_0_0/0.28)] transition duration-500 hover:-translate-y-1 hover:border-[#F4C77E]/45 motion-reduce:transition-none motion-reduce:hover:translate-y-0">
+                    <div className="relative aspect-[16/10] overflow-hidden bg-[#05100C]">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={historia.imagem} alt={historia.nome} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.05] motion-reduce:transition-none motion-reduce:group-hover:scale-100" />
+                      {historia.video && <VideoCartaoEDA src={historia.video} poster={historia.imagem} />}
+                      <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-[#08130F] via-[#08130F]/25 to-transparent" />
+                      <span className="absolute left-4 top-4 rounded-full bg-[#07110E]/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#F4C77E] backdrop-blur-md">
+                        {t.regioes[historia.regiao]}
+                      </span>
+                      <div className="absolute inset-x-5 bottom-3 flex items-end justify-between gap-3">
+                        <p className="text-sm font-semibold text-[#F5F3EA] drop-shadow">{historia.nome}</p>
+                        <p className="bg-gradient-to-b from-[#FBE3AE] to-[#E3A144] bg-clip-text text-3xl font-semibold leading-none tracking-[-0.03em] text-transparent">{historia.marco}</p>
+                      </div>
+                    </div>
                     <div className="flex flex-1 flex-col p-6">
-                      <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#F4C77E]">{historia.nome} · {t.regioes[historia.regiao]}</p>
-                      <h3 className="mt-2 text-xl font-semibold leading-snug tracking-[-0.02em] text-[#F5F3EA]">{h.titulo}</h3>
+                      <h3 className="text-xl font-semibold leading-snug tracking-[-0.02em] text-[#F5F3EA]">{h.titulo}</h3>
                       <p className="mt-3 text-sm leading-6 text-[#B8C9BF]">{h.texto}</p>
                       <ul className="mt-4 flex flex-wrap gap-2">
                         {h.fatos.map((fato) => (
-                          <li key={fato} className="rounded-full border border-[#F4C77E]/25 px-3 py-1 text-xs text-[#EDEDE3]">{fato}</li>
+                          <li key={fato} className="rounded-full border border-[#F4C77E]/25 bg-[#F4C77E]/[0.04] px-3 py-1 text-xs text-[#EDEDE3]">{fato}</li>
                         ))}
                       </ul>
+                      {destino && (
+                        <Link
+                          href={`/destinos?iara=${encodeURIComponent(destinoParaParametro(destino))}`}
+                          className={`mt-auto inline-flex w-fit items-center gap-2 pt-5 text-sm font-semibold text-[#F4C77E] hover:text-[#FBE3AE] ${FOCO}`}
+                        >
+                          {t.historiasMapa} <span aria-hidden="true" className="transition group-hover:translate-x-1">→</span>
+                        </Link>
+                      )}
                     </div>
                   </li>
                 );

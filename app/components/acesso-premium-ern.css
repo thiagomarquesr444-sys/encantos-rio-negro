@@ -194,3 +194,22 @@
 /* FABLEPREMIUM_V1: painel da foto com fundo enquanto a imagem carrega e menor no celular */
 .ern-acesso-v2 .ern-acesso-manifesto{background:linear-gradient(160deg,#143026,#07110e)}
 @media(max-width:767px){.ern-acesso-v2 .ern-acesso-manifesto{min-height:240px}}
+
+/* EDA_VITRINE_ACESSO_V1 — prévia real da gestão sobre a foto do Encontro das Águas */
+.eda-vitrine-acesso{margin:0 0 22px;max-width:540px;border-radius:18px;padding:0;overflow:hidden;background:rgb(7 17 14 / 72%);border:1px solid rgb(244 199 126 / 30%);box-shadow:0 30px 70px rgb(0 0 0 / 50%),0 0 0 1px rgb(255 255 255 / 4%) inset;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);animation:eda-vitrine-entra .9s cubic-bezier(.2,.8,.2,1) both}
+@keyframes eda-vitrine-entra{from{opacity:0;transform:translateY(18px) scale(.98)}}
+.eda-vitrine-acesso-barra{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid rgb(255 255 255 / 8%);font-size:12px;color:#cdd8d2}
+.eda-vitrine-acesso-pontos{display:inline-flex;gap:6px}
+.eda-vitrine-acesso-pontos i{width:9px;height:9px;border-radius:50%;background:rgb(255 255 255 / 18%)}
+.eda-vitrine-acesso-barra b{margin-left:auto;padding:3px 10px;border:1px solid rgb(244 199 126 / 55%);border-radius:999px;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#f7d595}
+.eda-vitrine-acesso-tela{position:relative;aspect-ratio:16/9;background:#05100c}
+.eda-vitrine-acesso-tela :is(video,img){display:block;width:100%;height:100%;object-fit:cover}
+.eda-vitrine-acesso figcaption{padding:10px 14px 12px;font-size:12px;line-height:1.5;color:#aebfb6}
+@media(min-width:768px) and (max-height:860px){.eda-vitrine-acesso{max-width:430px;margin-bottom:16px}.eda-vitrine-acesso figcaption{display:none}}
+@media(min-width:768px) and (max-height:720px){.eda-vitrine-acesso{max-width:360px}.ern-acesso-v2 .ern-acesso-beneficios{display:none}}
+@media(max-width:767px){
+  .ern-acesso-v2 .ern-acesso-manifesto{height:auto}
+  .ern-acesso-v2 .ern-acesso-manifesto-texto{position:relative;left:auto;right:auto;bottom:auto;padding:22px 18px}
+  .eda-vitrine-acesso{max-width:none;border-radius:14px}
+}
+@media(prefers-reduced-motion:reduce){.eda-vitrine-acesso{animation:none}}

@@ -83,4 +83,5 @@ export const HISTORIA_DA_CIDADE: Partial<Record<CidadeBaseERN, string>> = {
   barcelos: 'barcelos',
   'novo-airao': 'novo-airao',
   manaus: 'manaus',
+  parintins: 'parintins',
 };
