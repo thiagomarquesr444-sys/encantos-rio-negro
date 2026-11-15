@@ -45,7 +45,7 @@ export const MATERIAIS_PADRAO: MaterialPadrao[] = [
   { nome: 'Gelo', categoria: 'bebidas', unidade: 'kg', porPessoaDia: 2 },
   { nome: 'Refrigerante', categoria: 'bebidas', unidade: 'litro', porPessoaDia: 0.5 },
   { nome: 'Suco', categoria: 'bebidas', unidade: 'litro', porPessoaDia: 0.3 },
-  { nome: 'Cerveja', categoria: 'bebidas', unidade: 'lata', porPessoaDia: 3, apelidos: ['heineken', 'corona', 'brahma', 'skol'] },
+  { nome: 'Cerveja', categoria: 'bebidas', unidade: 'lata', porPessoaDia: 3 },
   // Combustível
   { nome: 'Gasolina', categoria: 'combustivel', unidade: 'litro' },
   { nome: 'Diesel', categoria: 'combustivel', unidade: 'litro', apelidos: ['oleo diesel'] },
