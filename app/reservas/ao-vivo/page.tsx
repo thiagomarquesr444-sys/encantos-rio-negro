@@ -15,7 +15,8 @@ import BordoEDA from '@/app/components/BordoEDA';
 import { copiarEDA } from '@/lib/copiarEDA';
 import {
   alertasViagem, faseViagem, ROTULO_EVENTO, tempoRelativo, minutosDesde,
-  type ViagemAoVivoEDA, type AlertaOperacaoEDA,
+  analisarRota, formatarDistancia, duracao,
+  type ViagemAoVivoEDA, type AlertaOperacaoEDA, type RotaEDA, type ParadaRotaEDA,
 } from '@/lib/operacaoAoVivoEDA';
 
 const BARCELOS: [number, number] = [-0.975, -62.924];
@@ -108,7 +109,7 @@ export default function OperacaoAoVivoPage() {
               ))}
             </section>
 
-            <MapaAoVivo lista={pontosMapa} selecionada={atual?.v.chave ?? null} aoSelecionar={setSelecionada} />
+            <MapaAoVivo lista={pontosMapa} selecionada={atual?.v.chave ?? null} aoSelecionar={setSelecionada} aoSalvarRota={carregar} />
           </div>
         )}
 
@@ -141,19 +142,40 @@ export default function OperacaoAoVivoPage() {
         .av-barra b { display: block; height: 100%; }
         .av-acoes { display: flex; flex-wrap: wrap; gap: 8px; }
         .av-largo { grid-column: 1 / -1; }
+        .av-mapa-barra { position: absolute; z-index: 500; top: 10px; right: 10px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; max-width: calc(100% - 70px); }
+        .av-mapa-barra button { font: inherit; font-size: 12px; font-weight: 600; padding: 7px 11px; border-radius: 999px; border: 1px solid rgba(255,255,255,.25); background: rgba(7,17,14,.82); color: #f4ead6; cursor: pointer; backdrop-filter: blur(6px); }
+        .av-mapa-barra button[aria-pressed="true"], .av-mapa-barra .av-ouro { background: #e3a144; color: #07110e; border-color: #e3a144; }
+        .av-editor { position: absolute; z-index: 500; left: 10px; bottom: 10px; width: min(320px, calc(100% - 20px)); max-height: 60%; overflow: auto; padding: 12px; border-radius: 14px; background: rgba(7,17,14,.9); color: #f4ead6; border: 1px solid rgba(227,161,68,.5); display: grid; gap: 8px; font-size: 12px; backdrop-filter: blur(8px); }
+        .av-editor b { font-size: 13px; }
+        .av-editor input { font: inherit; font-size: 12px; padding: 5px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.06); color: inherit; min-width: 0; }
+        .av-editor .av-par { display: grid; grid-template-columns: 1fr 64px auto; gap: 6px; align-items: center; }
+        .av-editor .av-par button, .av-editor .av-ed-acoes button { font: inherit; font-size: 12px; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.25); background: transparent; color: inherit; cursor: pointer; }
+        .av-editor .av-ed-acoes { display: flex; flex-wrap: wrap; gap: 6px; }
+        .av-editor .av-ed-acoes .av-ouro { background: #e3a144; color: #07110e; border-color: #e3a144; }
+        .av-marco { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; font-size: 11px; font-weight: 700; color: #07110e; box-shadow: 0 2px 8px rgba(0,0,0,.45); }
+        .av-rota-info { display: grid; gap: 6px; }
+        .av-rota-prog { height: 8px; border-radius: 8px; background: var(--p-suave); overflow: hidden; }
+        .av-rota-prog b { display: block; height: 100%; background: #e3a144; }
       `}</style>
     </PaginaEDA>
   );
 }
 
-function MapaAoVivo({ lista, selecionada, aoSelecionar }: { lista: { v: ViagemAoVivoEDA; tom: TomEDA }[]; selecionada: string | null; aoSelecionar: (c: string) => void }) {
+function MapaAoVivo({ lista, selecionada, aoSelecionar, aoSalvarRota }: { lista: { v: ViagemAoVivoEDA; tom: TomEDA }[]; selecionada: string | null; aoSelecionar: (c: string) => void; aoSalvarRota: () => Promise<void> | void }) {
   const caixa = useRef<HTMLDivElement | null>(null);
   const mapa = useRef<Mapa | null>(null);
   const camada = useRef<LayerGroup | null>(null);
   const L = useRef<typeof import('leaflet') | null>(null);
+  const bases = useRef<{ satelite: import('leaflet').TileLayer; rotulos: import('leaflet').TileLayer; ruas: import('leaflet').TileLayer } | null>(null);
   const [pronto, setPronto] = useState(false);
-  const enquadrado = useRef(false);
+  const [satelite, setSatelite] = useState(true);
+  const enquadrado = useRef('');
   const centro = useRef('');
+  // EDA_ROTA_PASSEIO_V1: editor do percurso (cliques no mapa marcam o caminho e as paradas).
+  const [editando, setEditando] = useState<null | { pontos: [number, number][]; paradas: ParadaRotaEDA[]; modo: 'caminho' | 'parada'; velocidade: number }>(null);
+  const [salvando, setSalvando] = useState(false);
+  const [avisoRota, setAvisoRota] = useState('');
+  const sel = lista.find((x) => x.v.chave === selecionada)?.v ?? null;
 
   useEffect(() => {
     let fim = false;
@@ -161,9 +183,15 @@ function MapaAoVivo({ lista, selecionada, aoSelecionar }: { lista: { v: ViagemAo
       if (fim || !caixa.current || mapa.current) return;
       L.current = lib;
       const m = lib.map(caixa.current, { zoomControl: true, minZoom: 4, maxZoom: 18 }).setView(BARCELOS, 8);
-      lib.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      const satelite = lib.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Imagens &copy; Esri, Maxar, Earthstar Geographics', maxZoom: 18,
+      });
+      const rotulos = lib.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, opacity: 0.9 });
+      const ruas = lib.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19,
-      }).addTo(m);
+      });
+      satelite.addTo(m); rotulos.addTo(m);
+      bases.current = { satelite, rotulos, ruas };
       camada.current = lib.layerGroup().addTo(m);
       mapa.current = m;
       setPronto(true);
@@ -172,34 +200,176 @@ function MapaAoVivo({ lista, selecionada, aoSelecionar }: { lista: { v: ViagemAo
   }, []);
 
   useEffect(() => {
+    const m = mapa.current, b = bases.current;
+    if (!pronto || !m || !b) return;
+    if (satelite) { m.removeLayer(b.ruas); b.satelite.addTo(m); b.rotulos.addTo(m); }
+    else { m.removeLayer(b.satelite); m.removeLayer(b.rotulos); b.ruas.addTo(m); }
+  }, [pronto, satelite]);
+
+  // Cliques no mapa enquanto edita o percurso.
+  useEffect(() => {
+    const m = mapa.current;
+    if (!pronto || !m || !editando) return;
+    const clique = (e: import('leaflet').LeafletMouseEvent) => {
+      const p: [number, number] = [Number(e.latlng.lat.toFixed(6)), Number(e.latlng.lng.toFixed(6))];
+      setEditando((ed) => {
+        if (!ed) return ed;
+        if (ed.modo === 'parada') {
+          if (ed.paradas.length >= 40) return ed;
+          return { ...ed, modo: 'caminho', paradas: [...ed.paradas, { lat: p[0], lng: p[1], nome: `Parada ${ed.paradas.length + 1}`, minutos: 30 }] };
+        }
+        if (ed.pontos.length >= 600) return ed;
+        return { ...ed, pontos: [...ed.pontos, p] };
+      });
+    };
+    m.on('click', clique);
+    m.getContainer().style.cursor = 'crosshair';
+    return () => { m.off('click', clique); m.getContainer().style.cursor = ''; };
+  }, [pronto, editando]);
+
+  useEffect(() => {
     const lib = L.current, m = mapa.current, c = camada.current;
     if (!pronto || !lib || !m || !c) return;
     c.clearLayers();
     const pts: [number, number][] = [];
+    const marco = (p: [number, number], cor: string, texto: string, titulo: string) => {
+      const ic = lib.divIcon({ className: '', iconSize: [22, 22], iconAnchor: [11, 11], html: `<span class="av-marco" style="background:${cor}">${texto}</span>` });
+      lib.marker(p, { icon: ic, title: titulo, interactive: true }).bindTooltip(titulo.replace(/</g, '&lt;')).addTo(c);
+    };
     for (const { v, tom } of lista) {
-      const sel = v.chave === selecionada;
-      if (sel && v.trilha.length > 1) lib.polyline(v.trilha, { color: '#e3a144', weight: 3, opacity: 0.85 }).addTo(c);
+      const ehSel = v.chave === selecionada;
+      // Percurso planejado (tracejado): completo na viagem escolhida, discreto nas demais.
+      const rota = ehSel && editando ? { pontos: editando.pontos, paradas: editando.paradas } : v.rota;
+      if (rota && rota.pontos.length > 1) {
+        lib.polyline(rota.pontos, { color: '#000', weight: ehSel ? 7 : 4, opacity: ehSel ? 0.35 : 0.15 }).addTo(c);
+        lib.polyline(rota.pontos, { color: '#f2c86b', weight: ehSel ? 4 : 2, opacity: ehSel ? 0.95 : 0.45, dashArray: '8 8' }).addTo(c);
+        if (ehSel) pts.push(...rota.pontos);
+      }
+      if (ehSel && rota) {
+        if (rota.pontos.length) marco(rota.pontos[0], '#5cc49a', 'S', 'Saída / embarque');
+        if (rota.pontos.length > 1) marco(rota.pontos[rota.pontos.length - 1], '#e3a144', 'D', `Destino${v.destino?.nome ? `: ${v.destino.nome}` : ''}`);
+        (rota.paradas ?? []).forEach((pa, i) => marco([pa.lat, pa.lng], '#8cc3f2', String(i + 1), `${pa.nome}${pa.minutos ? ` · ${pa.minutos} min` : ''}`));
+      }
+      if (ehSel && v.destino && !(rota && rota.pontos.length > 1)) { marco([v.destino.lat, v.destino.lng], '#e3a144', 'D', `Destino: ${v.destino.nome ?? ''}`); pts.push([v.destino.lat, v.destino.lng]); }
+      // Caminho feito (sólido).
+      if (ehSel && v.trilha.length > 1) lib.polyline(v.trilha, { color: '#5cc49a', weight: 4, opacity: 0.95 }).addTo(c);
       if (!v.posicao) continue;
       const p: [number, number] = [v.posicao.lat, v.posicao.lng];
       pts.push(p);
       const velho = (minutosDesde(v.posicao.em) ?? 0) > 30;
       const icone = lib.divIcon({
         className: '', iconSize: [34, 34], iconAnchor: [17, 17],
-        html: `<span class="av-pino" style="background:${COR[tom as keyof typeof COR] ?? '#5cc49a'};opacity:${velho ? 0.6 : 1};${sel ? 'transform:scale(1.2)' : ''}">⛵</span>`,
+        html: `<span class="av-pino" style="background:${COR[tom as keyof typeof COR] ?? '#5cc49a'};opacity:${velho ? 0.6 : 1};${ehSel ? 'transform:scale(1.2)' : ''}">⛵</span>`,
       });
       const mk = lib.marker(p, { icon: icone, title: v.passeio ?? 'Viagem' }).addTo(c);
       mk.bindTooltip(`${(v.passeio ?? 'Viagem').replace(/</g, '&lt;')} · ${tempoRelativo(v.posicao.em)}`);
-      mk.on('click', () => aoSelecionar(v.chave));
-      if (v.posicao.precisao && v.posicao.precisao > 50 && sel) lib.circle(p, { radius: v.posicao.precisao, color: '#8cc3f2', weight: 1, fillOpacity: 0.08 }).addTo(c);
+      mk.on('click', () => { if (!editando) aoSelecionar(v.chave); });
+      if (v.posicao.precisao && v.posicao.precisao > 50 && ehSel) lib.circle(p, { radius: v.posicao.precisao, color: '#8cc3f2', weight: 1, fillOpacity: 0.08 }).addTo(c);
     }
-    const s = lista.find((x) => x.v.chave === selecionada)?.v.posicao;
-    // Só recentraliza quando muda a viagem escolhida ou chega posição nova.
+    if (editando) return;
+    // Enquadra o percurso completo ao trocar de viagem; depois só acompanha posição nova.
+    const s = sel?.posicao;
     const marca = s ? `${selecionada}|${s.em}` : '';
-    if (s && marca !== centro.current) { centro.current = marca; m.setView([s.lat, s.lng], Math.max(m.getZoom(), 11), { animate: true }); }
-    else if (!enquadrado.current && pts.length) { m.fitBounds(lib.latLngBounds(pts), { padding: [40, 40], maxZoom: 12 }); enquadrado.current = true; }
-  }, [pronto, lista, selecionada, aoSelecionar]);
+    if (selecionada && enquadrado.current !== selecionada && pts.length) {
+      enquadrado.current = selecionada; centro.current = marca;
+      if (pts.length > 1) m.fitBounds(lib.latLngBounds(pts), { padding: [50, 50], maxZoom: 14 }); else m.setView(pts[0], 13);
+    } else if (s && marca !== centro.current) {
+      centro.current = marca;
+      if (!m.getBounds().contains([s.lat, s.lng])) m.panTo([s.lat, s.lng], { animate: true });
+    }
+  }, [pronto, lista, selecionada, aoSelecionar, editando, sel]);
 
-  return <div className="av-mapa" aria-label="Mapa das embarcações"><div ref={caixa} /></div>;
+  const comecar = () => {
+    if (!sel) return;
+    setAvisoRota('');
+    const r = sel.rota;
+    const inicio: [number, number][] = r?.pontos?.length ? r.pontos : [];
+    setEditando({ pontos: inicio, paradas: r?.paradas ?? [], modo: 'caminho', velocidade: r?.velocidade_kmh ?? 20 });
+  };
+  const salvar = async () => {
+    if (!sel?.passeio_id || !editando) return;
+    if (editando.pontos.length < 2) { setAvisoRota('Marque pelo menos a saída e o destino.'); return; }
+    setSalvando(true); setAvisoRota('');
+    const rota: RotaEDA = {
+      pontos: editando.pontos,
+      paradas: editando.paradas.map((p) => ({ lat: p.lat, lng: p.lng, nome: (p.nome || 'Parada').trim().slice(0, 80), minutos: Math.max(0, Math.min(1440, Math.round(Number(p.minutos) || 0))) })),
+      velocidade_kmh: Math.max(3, Math.min(120, Math.round(editando.velocidade) || 20)),
+    };
+    const { error } = await supabase.from('passeios').update({ rota }).eq('id', sel.passeio_id);
+    setSalvando(false);
+    if (error) { setAvisoRota('Não foi possível salvar o percurso. Confira sua conexão e tente de novo.'); return; }
+    setEditando(null);
+    enquadrado.current = '';
+    await aoSalvarRota();
+  };
+  const total = editando ? editando.pontos.reduce((t, p, i, a) => i ? t + distancia(a[i - 1], p) : 0, 0) : 0;
+
+  return (
+    <div className="av-mapa" aria-label="Mapa das embarcações">
+      <div ref={caixa} />
+      <div className="av-mapa-barra">
+        <button type="button" aria-pressed={satelite} onClick={() => setSatelite(true)}>Satélite</button>
+        <button type="button" aria-pressed={!satelite} onClick={() => setSatelite(false)}>Mapa</button>
+        {sel?.passeio_id && !editando && (
+          <button type="button" className="av-ouro" onClick={comecar}>{sel.rota?.pontos?.length ? 'Editar percurso' : 'Traçar percurso'}</button>
+        )}
+      </div>
+      {editando && (
+        <div className="av-editor" role="dialog" aria-label="Traçar percurso do passeio">
+          <b>Percurso de {sel?.passeio || 'passeio'}</b>
+          <span>{editando.modo === 'parada' ? 'Toque no mapa onde fica a parada prevista.' : 'Toque no mapa seguindo o rio, da saída até o destino.'}</span>
+          <span>{editando.pontos.length} ponto(s) · {formatarDistancia(total)}{editando.pontos.length > 1 ? ` · cerca de ${duracao(Math.round((total / 1000 / Math.max(3, editando.velocidade)) * 60))} de navegação` : ''}</span>
+          <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>Velocidade média
+            <input type="number" min={3} max={120} value={editando.velocidade} onChange={(e) => setEditando({ ...editando, velocidade: Number(e.target.value) })} style={{ width: 64 }} /> km/h
+          </label>
+          {editando.paradas.map((p, i) => (
+            <div key={i} className="av-par">
+              <input value={p.nome} maxLength={80} aria-label={`Nome da parada ${i + 1}`} onChange={(e) => setEditando({ ...editando, paradas: editando.paradas.map((x, j) => j === i ? { ...x, nome: e.target.value } : x) })} />
+              <input type="number" min={0} max={1440} value={p.minutos ?? 0} aria-label={`Minutos na parada ${i + 1}`} onChange={(e) => setEditando({ ...editando, paradas: editando.paradas.map((x, j) => j === i ? { ...x, minutos: Number(e.target.value) } : x) })} />
+              <button type="button" aria-label={`Remover parada ${i + 1}`} onClick={() => setEditando({ ...editando, paradas: editando.paradas.filter((_, j) => j !== i) })}>×</button>
+            </div>
+          ))}
+          {editando.paradas.length > 0 && <small style={{ opacity: 0.75 }}>Nome da parada e minutos previstos (sem alerta de parada nesses pontos).</small>}
+          <div className="av-ed-acoes">
+            <button type="button" onClick={() => setEditando({ ...editando, pontos: editando.pontos.slice(0, -1) })} disabled={!editando.pontos.length}>Desfazer ponto</button>
+            <button type="button" onClick={() => setEditando({ ...editando, modo: editando.modo === 'parada' ? 'caminho' : 'parada' })}>{editando.modo === 'parada' ? 'Voltar ao caminho' : 'Marcar parada'}</button>
+            <button type="button" onClick={() => setEditando({ ...editando, pontos: [], paradas: [] })}>Limpar</button>
+          </div>
+          {avisoRota && <span role="alert" style={{ color: '#f2c86b' }}>{avisoRota}</span>}
+          <div className="av-ed-acoes">
+            <button type="button" className="av-ouro" onClick={() => void salvar()} disabled={salvando}>{salvando ? 'Salvando…' : 'Salvar percurso'}</button>
+            <button type="button" onClick={() => { setEditando(null); setAvisoRota(''); }}>Cancelar</button>
+          </div>
+          <small style={{ opacity: 0.75 }}>O percurso fica salvo no passeio e vale para todas as saídas dele.</small>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function distancia(a: [number, number], b: [number, number]) {
+  const R = 6371000, r = Math.PI / 180;
+  const dLat = (b[0] - a[0]) * r, dLng = (b[1] - a[1]) * r;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a[0] * r) * Math.cos(b[0] * r) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+function PercursoEDA({ v }: { v: ViagemAoVivoEDA }) {
+  const r = analisarRota(v);
+  if (!r.temRota) return <p style={{ fontSize: 13, color: 'var(--p-sec)' }}>Percurso ainda não traçado. Use <b>Traçar percurso</b> no mapa para marcar o caminho pelo rio até o destino e as paradas previstas.</p>;
+  const pct = r.percorridoM !== null && r.totalM ? Math.min(100, Math.round((r.percorridoM / r.totalM) * 100)) : null;
+  const situacao = r.foraDaRota ? 'Fora do percurso' : r.noDestino ? 'No destino' : r.paradaPrevista ? `Em parada prevista: ${r.paradaPrevista.nome}` : r.paradoMin !== null && r.paradoMin >= 15 ? `Parada há ${duracao(r.paradoMin)}` : v.posicao ? 'No percurso' : 'Aguardando localização';
+  return (
+    <div className="av-rota-info">
+      <div className="av-kv">
+        <span>Percurso</span><b>{formatarDistancia(r.totalM)}{(v.rota?.paradas?.length ?? 0) ? ` · ${v.rota?.paradas?.length} parada(s) prevista(s)` : ''}</b>
+        <span>Situação</span><b>{situacao}</b>
+        {r.restanteM !== null && <><span>Falta</span><b>{formatarDistancia(r.restanteM)}</b></>}
+        {r.chegadaPrevista && <><span>Chegada prevista</span><b>{hora(r.chegadaPrevista)}{r.atrasoMin ? ` · atraso de ${duracao(r.atrasoMin)}` : ''}</b></>}
+      </div>
+      {pct !== null && <div className="av-rota-prog" aria-label={`${pct}% do percurso`}><b style={{ width: `${pct}%` }} /></div>}
+    </div>
+  );
 }
 
 function Detalhe({ v, alertas, bordoAberto, aoBordo }: { v: ViagemAoVivoEDA; alertas: AlertaOperacaoEDA[]; bordoAberto: boolean; aoBordo: () => void }) {
@@ -220,6 +390,11 @@ function Detalhe({ v, alertas, bordoAberto, aoBordo }: { v: ViagemAoVivoEDA; ale
             {alertas.map((a, i) => <li key={i}><i style={{ background: COR[a.tom] }} aria-hidden="true" />{a.texto}</li>)}
           </ul>
         )}
+      </section>
+
+      <section className="av-card">
+        <p className="eda-pg-eb">Percurso planejado</p>
+        <PercursoEDA v={v} />
       </section>
 
       <section className="av-card">

@@ -45,6 +45,7 @@ type ReservaOperacional = {
   pacote: string | null;
   guia: string | null;
   embarcacao_id: string | null;
+  saida_id: string | null;
 };
 
 type DemandaOperacional = {
@@ -297,7 +298,7 @@ async function carregarReservasDashboard(
       const { data, error, count } = await supabase
         .from('reservas')
         .select(
-          'id,data_reserva,horario,quantidade_pessoas,valor_total,status,cliente,pacote,guia,embarcacao_id',
+          'id,data_reserva,horario,quantidade_pessoas,valor_total,status,cliente,pacote,guia,embarcacao_id,saida_id',
           { count: 'exact' },
         )
         .gte('data_reserva', inicio)

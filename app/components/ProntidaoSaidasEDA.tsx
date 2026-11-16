@@ -49,7 +49,12 @@ export default function ProntidaoSaidasEDA({ hoje, financeiroLiberado }: { hoje:
       .select('id,passeio_id,data_inicio,horario,vagas_total,status')
       .gte('data_inicio', hoje).lte('data_inicio', somarDias(hoje, 7)).order('data_inicio').limit(6);
     if (error) return [];
-    const saidas = ((sd ?? []) as unknown as Saida[]).filter((s) => !/cancel|encerr/i.test(s.status ?? ''));
+    let saidas = ((sd ?? []) as unknown as Saida[]).filter((s) => !/cancel|encerr/i.test(s.status ?? ''));
+    if (!saidas.length) return [];
+    // EDA_SAIDA_PARTIU_PAINEL_V1: depois do embarque o aviso de prontidão sai; o acompanhamento é na Operação ao vivo.
+    const { data: fs } = await supabase.rpc('eda_saidas_operacao', { p_ids: saidas.map((s) => s.id) });
+    const jaSaiu = new Set(((fs ?? []) as { saida_id: string; fase: string }[]).filter((f) => f.fase !== 'programada').map((f) => f.saida_id));
+    saidas = saidas.filter((s) => !jaSaiu.has(s.id));
     if (!saidas.length) return [];
     const ids = saidas.map((s) => s.id);
     const passeioIds = Array.from(new Set(saidas.map((s) => s.passeio_id).filter((x): x is string => !!x)));

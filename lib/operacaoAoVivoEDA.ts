@@ -17,7 +17,16 @@ export type ViagemAoVivoEDA = {
   eventos: EventoOperacaoEDA[];
   saude: { graves: number; atencao: number; fichas: number; nao_nadam: number };
   suprimentos: { demandas: number; planejado_pessoas: number | null; planejado_dias: number | null; itens: number; pendentes: number; separacao: number; atendidos: number; combustivel: number; alimentacao: number; coletes: number };
+  // EDA_ROTA_PASSEIO_V1
+  passeio_id?: string | null;
+  rota?: RotaEDA | null;
+  destino?: { lat: number; lng: number; nome: string | null } | null;
+  embarque?: string | null;
+  recentes?: [number, number, string][];
 };
+
+export type ParadaRotaEDA = { lat: number; lng: number; nome: string; minutos?: number };
+export type RotaEDA = { pontos: [number, number][]; paradas?: ParadaRotaEDA[]; velocidade_kmh?: number };
 
 export const ROTULO_EVENTO: Record<TipoEventoEDA, string> = {
   embarque: 'Embarque concluído', partida: 'Partiu', parada: 'Parada', chegada: 'Chegou ao destino',
@@ -54,7 +63,7 @@ export function faseViagem(v: ViagemAoVivoEDA): { rotulo: string; tom: 'ok' | 'a
   return { rotulo: `Sai hoje${v.horario ? ` às ${v.horario.slice(0, 5)}` : ''}`, tom: 'nt', emCurso: false };
 }
 
-export type AlertaOperacaoEDA = { tom: 'er' | 'at' | 'nt'; area: 'sinal' | 'seguranca' | 'suprimentos' | 'equipe' | 'reserva'; texto: string };
+export type AlertaOperacaoEDA = { tom: 'er' | 'at' | 'nt'; area: 'sinal' | 'rota' | 'seguranca' | 'suprimentos' | 'equipe' | 'reserva'; texto: string };
 
 export function alertasViagem(v: ViagemAoVivoEDA): AlertaOperacaoEDA[] {
   const a: AlertaOperacaoEDA[] = [];
@@ -75,6 +84,27 @@ export function alertasViagem(v: ViagemAoVivoEDA): AlertaOperacaoEDA[] {
     else if (m > 120) a.push({ tom: 'er', area: 'sinal', texto: `Sem localização ${tempoRelativo(v.posicao?.em)}. Tente contato com o guia.` });
     else if (m > 30) a.push({ tom: 'at', area: 'sinal', texto: `Última localização ${tempoRelativo(v.posicao?.em)} (pode ser área sem sinal).` });
   }
+  // EDA_ROTA_PASSEIO_V1: percurso planejado, embarcação parada e desvio de rota.
+  const r = analisarRota(v);
+  const fresca = (minutosDesde(v.posicao?.em) ?? 9999) <= 30;
+  if (!r.temRota && (fase.emCurso || v.inicio <= hojeManaus())) {
+    a.push({ tom: 'at', area: 'rota', texto: 'Percurso não traçado: marque no mapa o caminho até o destino para a EDA acompanhar a embarcação.' });
+  }
+  if (fase.emCurso && fresca && r.paradoMin !== null && r.paradoMin >= 15) {
+    if (r.paradaPrevista) {
+      const lim = (r.paradaPrevista.minutos ?? 60) + 20;
+      if (r.paradoMin > lim) a.push({ tom: 'at', area: 'rota', texto: `Parada em ${r.paradaPrevista.nome} já dura ${duracao(r.paradoMin)} (previsto ${duracao(r.paradaPrevista.minutos ?? 60)}).` });
+    } else if (!r.noDestino && !r.noEmbarque) {
+      a.push({ tom: 'er', area: 'rota', texto: `Embarcação parada há ${duracao(r.paradoMin)} fora das paradas previstas. Pode ter ocorrido alguma coisa: tente contato com o guia.` });
+    }
+  }
+  if (fase.emCurso && fresca && r.foraDaRota && r.distanciaRotaM !== null) {
+    a.push({ tom: 'er', area: 'rota', texto: `Embarcação fora do percurso planejado (${formatarDistancia(r.distanciaRotaM)} do caminho).` });
+  }
+  if (fase.emCurso && r.atrasoMin !== null && r.atrasoMin >= 30) {
+    a.push({ tom: 'at', area: 'rota', texto: `Chegada ao destino atrasada em ${duracao(r.atrasoMin)} em relação ao previsto.` });
+  }
+
   if (v.posicao?.bateria != null && v.posicao.bateria <= 20 && fase.emCurso) a.push({ tom: 'at', area: 'sinal', texto: `Bateria do aparelho a bordo em ${v.posicao.bateria}%.` });
 
   // Ocorrências e suprimentos relatados nas últimas 24 h.
@@ -177,4 +207,99 @@ export function distanciaM(a: { lat: number; lng: number }, b: { lat: number; ln
   const dLat = (b.lat - a.lat) * r, dLng = (b.lng - a.lng) * r;
   const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * r) * Math.cos(b.lat * r) * Math.sin(dLng / 2) ** 2;
   return 2 * R * Math.asin(Math.sqrt(h));
+}
+
+// ---------------------------------------------------------------------------
+// EDA_ROTA_PASSEIO_V1: análise da posição em relação ao percurso planejado.
+// ---------------------------------------------------------------------------
+const RAIO_PARADO_M = 150;     // movimentos menores que isso contam como "parado"
+const RAIO_PARADA_M = 400;     // perto de uma parada prevista
+const RAIO_PONTA_M = 500;      // perto do embarque ou do destino
+const LIMITE_DESVIO_M = 500;   // distância máxima do caminho antes do alerta
+
+export function duracao(min: number): string {
+  if (min < 60) return `${min} min`;
+  const h = Math.floor(min / 60), m = min % 60;
+  return `${h} h${m ? ` ${m} min` : ''}`;
+}
+export function formatarDistancia(m: number): string {
+  return m < 1000 ? `${Math.round(m)} m` : `${(m / 1000).toFixed(m < 10000 ? 1 : 0).replace('.', ',')} km`;
+}
+
+// Ponto mais próximo de um segmento (projeção local, precisa para distâncias de rio).
+function projetar(p: { lat: number; lng: number }, a: [number, number], b: [number, number]) {
+  const k = Math.cos((p.lat * Math.PI) / 180);
+  const ax = a[1] * k, ay = a[0], bx = b[1] * k, by = b[0], px = p.lng * k, py = p.lat;
+  const dx = bx - ax, dy = by - ay;
+  const t = dx || dy ? Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / (dx * dx + dy * dy))) : 0;
+  const q = { lat: a[0] + (b[0] - a[0]) * t, lng: a[1] + (b[1] - a[1]) * t };
+  return { t, distancia: distanciaM(p, q) };
+}
+
+export type AnaliseRotaEDA = {
+  temRota: boolean; totalM: number; percorridoM: number | null; restanteM: number | null;
+  distanciaRotaM: number | null; foraDaRota: boolean;
+  paradoMin: number | null; paradaPrevista: ParadaRotaEDA | null; noDestino: boolean; noEmbarque: boolean;
+  chegadaPrevista: string | null; atrasoMin: number | null;
+};
+
+export function analisarRota(v: ViagemAoVivoEDA): AnaliseRotaEDA {
+  const pts = (v.rota?.pontos ?? []).filter((p) => Array.isArray(p) && p.length === 2);
+  const temRota = pts.length >= 2;
+  const seg: number[] = [];
+  for (let i = 1; i < pts.length; i++) seg.push(distanciaM({ lat: pts[i - 1][0], lng: pts[i - 1][1] }, { lat: pts[i][0], lng: pts[i][1] }));
+  const totalM = seg.reduce((t, d) => t + d, 0);
+  const pos = v.posicao;
+  const fim = v.destino ?? (temRota ? { lat: pts[pts.length - 1][0], lng: pts[pts.length - 1][1], nome: null } : null);
+  const inicio = temRota ? { lat: pts[0][0], lng: pts[0][1] } : null;
+
+  let percorridoM: number | null = null, distanciaRotaM: number | null = null;
+  if (pos && temRota) {
+    let melhor = Infinity, acumulado = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const pr = projetar(pos, pts[i - 1], pts[i]);
+      if (pr.distancia < melhor) { melhor = pr.distancia; percorridoM = acumulado + seg[i - 1] * pr.t; }
+      acumulado += seg[i - 1];
+    }
+    distanciaRotaM = melhor;
+  }
+  const folga = Math.max(LIMITE_DESVIO_M, (pos?.precisao ?? 0) * 1.5);
+  const foraDaRota = distanciaRotaM !== null && distanciaRotaM > folga;
+
+  // Parado: posições recentes todas dentro de um raio pequeno em volta da última.
+  let paradoMin: number | null = null;
+  const rec = (v.recentes ?? []).filter((x) => Array.isArray(x) && x.length === 3);
+  if (rec.length >= 2) {
+    const ult = { lat: rec[rec.length - 1][0], lng: rec[rec.length - 1][1] };
+    let desde = rec[rec.length - 1][2];
+    for (let i = rec.length - 2; i >= 0; i--) {
+      if (distanciaM(ult, { lat: rec[i][0], lng: rec[i][1] }) > RAIO_PARADO_M) break;
+      desde = rec[i][2];
+    }
+    const m = Math.round((Date.parse(rec[rec.length - 1][2]) - Date.parse(desde)) / 60000);
+    paradoMin = m > 0 ? m + (minutosDesde(rec[rec.length - 1][2]) ?? 0) : null;
+  }
+  const paradaPrevista = pos ? (v.rota?.paradas ?? []).find((p) => distanciaM(pos, p) <= RAIO_PARADA_M) ?? null : null;
+  const noDestino = !!(pos && fim && distanciaM(pos, fim) <= RAIO_PONTA_M);
+  const noEmbarque = !!(pos && inicio && distanciaM(pos, inicio) <= RAIO_PONTA_M);
+  const restanteM = percorridoM !== null ? Math.max(0, totalM - percorridoM) : null;
+
+  // Chegada prevista: partida (registro de etapa ou horário) + distância / velocidade + paradas.
+  let chegadaPrevista: string | null = null, atrasoMin: number | null = null;
+  if (temRota) {
+    const vel = Math.max(3, v.rota?.velocidade_kmh ?? 20);
+    const partida = [...v.eventos].reverse().find((e) => e.tipo === 'partida')?.em
+      ?? (v.horario ? new Date(`${v.inicio}T${v.horario.slice(0, 5)}:00-04:00`).toISOString() : null);
+    if (partida) {
+      const paradas = (v.rota?.paradas ?? []).reduce((t, p) => t + (p.minutos ?? 0), 0);
+      const previsto = Date.parse(partida) + ((totalM / 1000 / vel) * 60 + paradas) * 60000;
+      chegadaPrevista = new Date(previsto).toISOString();
+      const chegou = v.eventos.some((e) => e.tipo === 'chegada' || e.tipo === 'retorno');
+      if (!chegou && !noDestino && v.dias <= 1) {
+        const m = Math.round((Date.now() - previsto) / 60000);
+        atrasoMin = m > 0 ? m : null;
+      }
+    }
+  }
+  return { temRota, totalM, percorridoM, restanteM, distanciaRotaM, foraDaRota, paradoMin, paradaPrevista, noDestino, noEmbarque, chegadaPrevista, atrasoMin };
 }

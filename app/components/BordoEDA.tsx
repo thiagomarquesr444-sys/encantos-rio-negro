@@ -28,6 +28,8 @@ export default function BordoEDA({ reservaId, titulo, compacto = false }: { rese
   const [confirmarSos, setConfirmarSos] = useState(false);
   const watch = useRef<number | null>(null);
   const ultimoPonto = useRef<PontoFila | null>(null);
+  const pulso = useRef<number | null>(null);
+  const receber = useRef<((pos: GeolocationPosition) => void) | null>(null);
   const bateria = useRef<number | undefined>(undefined);
   const trava = useRef<WakeLock | null>(null);
   const chaveAtivo = `eda.bordo.ativo.${reservaId}`;
@@ -48,6 +50,8 @@ export default function BordoEDA({ reservaId, titulo, compacto = false }: { rese
   const parar = useCallback(() => {
     if (watch.current !== null) navigator.geolocation.clearWatch(watch.current);
     watch.current = null;
+    if (pulso.current !== null) window.clearInterval(pulso.current);
+    pulso.current = null;
     void trava.current?.release().catch(() => undefined);
     trava.current = null;
     setAtivo(false);
@@ -58,8 +62,17 @@ export default function BordoEDA({ reservaId, titulo, compacto = false }: { rese
   const iniciar = useCallback(() => {
     if (!('geolocation' in navigator)) { setAviso('Este aparelho não informa localização.'); return; }
     if (watch.current !== null) return;
-    watch.current = navigator.geolocation.watchPosition(
-      (pos) => {
+    // EDA_ROTA_PASSEIO_V1: com o barco parado o GPS quase não dispara; um "pulso" a cada 2 min
+    // garante posição nova para a base saber que está parado (e não sem sinal).
+    if (pulso.current === null) {
+      pulso.current = window.setInterval(() => {
+        const ant = ultimoPonto.current;
+        if (ant && Date.now() - Date.parse(ant.em) < INTERVALO_MS) return;
+        navigator.geolocation.getCurrentPosition((pos) => receber.current?.(pos), () => undefined,
+          { enableHighAccuracy: true, maximumAge: 60_000, timeout: 60_000 });
+      }, INTERVALO_MS);
+    }
+    receber.current = (pos: GeolocationPosition) => {
         const p: PontoFila = {
           lat: Number(pos.coords.latitude.toFixed(6)), lng: Number(pos.coords.longitude.toFixed(6)),
           precisao: Math.round(pos.coords.accuracy),
@@ -74,7 +87,9 @@ export default function BordoEDA({ reservaId, titulo, compacto = false }: { rese
         enfileirarPonto(reservaId, p);
         setUltimo({ em: p.em, precisao: p.precisao });
         setFila(tamanhoFila(reservaId));
-      },
+    };
+    watch.current = navigator.geolocation.watchPosition(
+      (pos) => receber.current?.(pos),
       (err) => {
         if (err.code === err.PERMISSION_DENIED) {
           setAviso('Localização bloqueada. Libere a localização para este site nas configurações do navegador.');
@@ -110,6 +125,8 @@ export default function BordoEDA({ reservaId, titulo, compacto = false }: { rese
       window.removeEventListener('online', online); document.removeEventListener('visibilitychange', visivel);
       if (watch.current !== null) navigator.geolocation.clearWatch(watch.current);
       watch.current = null;
+      if (pulso.current !== null) window.clearInterval(pulso.current);
+      pulso.current = null;
       void trava.current?.release().catch(() => undefined);
     };
   }, [chaveAtivo, enviar, iniciar, manterTelaAcesa, reservaId]);

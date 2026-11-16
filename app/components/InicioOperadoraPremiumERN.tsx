@@ -26,7 +26,7 @@ import CartaoMagneticoEDA from './CartaoMagneticoEDA';
 import DigitacaoEDA, { type TrechoDigitado } from './DigitacaoEDA';
 import { novaVisitaSaudacaoEDA, saudacaoEDA } from '@/lib/saudacaoEDA';
 import { conflitosEDA, lotacaoEDA, type ConflitoEDA, type LotacaoEDA } from '@/lib/recursosEDA';
-import { alertasViagem, type ViagemAoVivoEDA } from '@/lib/operacaoAoVivoEDA';
+import { alertasViagem, faseViagem, type ViagemAoVivoEDA } from '@/lib/operacaoAoVivoEDA';
 
 export type ReservaInicioERN = {
   id: string;
@@ -39,6 +39,7 @@ export type ReservaInicioERN = {
   pacote: string | null;
   guia: string | null;
   embarcacao_id: string | null;
+  saida_id?: string | null;
 };
 
 export type DemandaInicioERN = {
@@ -207,6 +208,25 @@ export default function InicioOperadoraPremiumERN({
     supabase.rpc('operacao_ao_vivo_eda').then(({ data, error }) => { if (ativo && !error) setAoVivo((data ?? []) as ViagemAoVivoEDA[]); });
     return () => { ativo = false; };
   }, [revisao]);
+  // EDA_SAIDA_PARTIU_PAINEL_V1: saída que já partiu (embarque/horário) sai da agenda e dos números
+  // de "próximas saídas"; o painel passa a mostrar quem está no rio e se prepara para a próxima.
+  const [fases, setFases] = useState<Record<string, { fase: string; a_bordo: number }>>({});
+  const idsSaidas = useMemo(() => Array.from(new Set([
+    ...reservas.map(r => r.saida_id).filter((x): x is string => !!x),
+    ...aoVivo.map(v => v.saida_id).filter((x): x is string => !!x),
+  ])).sort().join(','), [reservas, aoVivo]);
+  useEffect(() => {
+    if (!idsSaidas) return;
+    let ativo = true;
+    supabase.rpc('eda_saidas_operacao', { p_ids: idsSaidas.split(',') }).then(({ data, error }) => {
+      if (!ativo || error) return;
+      setFases(Object.fromEntries(((data ?? []) as { saida_id: string; fase: string; a_bordo: number }[]).map(f => [f.saida_id, { fase: f.fase, a_bordo: Number(f.a_bordo ?? 0) }])));
+    });
+    return () => { ativo = false; };
+  }, [idsSaidas, revisao]);
+  // Relógio do painel: a cada minuto reavalia o que já saiu pelo horário.
+  const [minuto, setMinuto] = useState(0);
+  useEffect(() => { const t = window.setInterval(() => setMinuto(m => m + 1), 60_000); return () => window.clearInterval(t); }, []);
   useEffect(() => {
     let ativo = true;
     supabase.rpc('alertas_proximas_viagens_eda', { p_dias: 7 })
@@ -288,7 +308,24 @@ export default function InicioOperadoraPremiumERN({
   }, [carregandoPlano, financeiroLiberado, empresaId]);
 
   // ---------- cálculos ----------
-  const operacionais = useMemo(() => reservas.filter(r => reservaOperacionalERN(r.status)), [reservas]);
+  const partiu = useMemo(() => {
+    void minuto;
+    const agora = new Intl.DateTimeFormat('en-GB', { timeZone: 'America/Manaus', hour: '2-digit', minute: '2-digit' }).format(new Date());
+    return (r: ReservaInicioERN) => {
+      const f = r.saida_id ? fases[r.saida_id]?.fase : undefined;
+      if (f) return f === 'em_operacao' || f === 'concluida';
+      // Sem saída vinculada (ou fase ainda carregando): vale o horário de embarque de hoje.
+      if (r.saida_id) return r.data_reserva < hoje;
+      return r.data_reserva < hoje || (r.data_reserva === hoje && !!r.horario && r.horario.slice(0, 5) <= agora);
+    };
+  }, [fases, hoje, minuto]);
+  const operacionais = useMemo(() => reservas.filter(r => reservaOperacionalERN(r.status) && !partiu(r)), [reservas, partiu]);
+  // Viagens no rio agora (uma por saída) e pessoas a bordo.
+  const noRio = useMemo(() => {
+    const lista = aoVivo.filter(v => v.saida_id && fases[v.saida_id] ? fases[v.saida_id].fase === 'em_operacao' : faseViagem(v).emCurso && v.inicio <= hoje);
+    const pessoas = lista.reduce((t, v) => t + (v.saida_id && fases[v.saida_id]?.a_bordo ? fases[v.saida_id].a_bordo : v.pessoas), 0);
+    return { viagens: lista, pessoas };
+  }, [aoVivo, fases, hoje]);
   const dia7 = hoje ? somarDias(hoje, 6) : '';
 
   const pagamentoPorReserva = useMemo(() => {
@@ -384,6 +421,7 @@ export default function InicioOperadoraPremiumERN({
     if (posVendaPendente) lista.push({ tom: 'nt', icone: 'calendario', titulo: posVendaPendente === 1 ? 'Mensagem de pós-venda para enviar' : `${posVendaPendente} mensagens de pós-venda para enviar`, detalhe: 'lembrete de véspera ou agradecimento pós-viagem', acao: 'Enviar', href: '/reservas/pos-venda', peso: 60 });
     for (const v of saude ?? []) {
       if (!v.graves && !v.pendentes) continue;
+      if (v.saida_id && fases[v.saida_id] && fases[v.saida_id].fase !== 'programada') continue;
       const quando = `${v.passeio || 'Viagem'} · ${rotuloDia(v.data_inicio, hoje).toLowerCase()}`;
       // Sempre a reserva: é lá que ficam o card Participantes e saúde e o link da ficha.
       const href = v.reserva_id ? `/reservas/editar/${v.reserva_id}#participantes` : '/reservas';
@@ -396,7 +434,7 @@ export default function InicioOperadoraPremiumERN({
       lista.push({ tom: 'nt', icone: 'lista', titulo: `${plural(rascunhos, 'demanda em rascunho', 'demandas em rascunho')}`, detalhe: 'ainda não abertas', acao: 'Ver demandas', href: '/demandas?status=rascunho', peso: 40 });
     }
     return lista.sort((a, b) => b.peso - a.peso);
-  }, [fin, resumo, demandas, hoje, dia7, chegadas, saude, conflitos, lotacao, aoVivo, pedidosNovos, pedidosParados, posVendaPendente]);
+  }, [fin, resumo, demandas, hoje, dia7, chegadas, saude, conflitos, lotacao, aoVivo, pedidosNovos, pedidosParados, posVendaPendente, fases]);
 
   const demandasDestaque = useMemo(() => [...demandas]
     .sort((a, b) => (a.status === 'aberta' ? -1 : 0) - (b.status === 'aberta' ? -1 : 0) || (a.data_inicio ?? '9999').localeCompare(b.data_inicio ?? '9999'))
@@ -508,7 +546,13 @@ export default function InicioOperadoraPremiumERN({
     return [{ texto: `A Iara me passou ${pedidosIara.length} pedidos novos do portal` }, { texto: nomes ? ` (${nomes}).` : '.' }, { texto: ' Me chama que eu te mostro e monto as reservas.' }];
   }, [pedidosIara]);
 
-  const proxima = resumo.hoje.find(r => r.horario) ?? resumo.semana[0];
+  const proxima = resumo.hoje.find(r => r.horario) ?? resumo.semana[0] ?? operacionais.find(r => r.data_reserva >= hoje);
+  const quandoProxima = proxima ? `${proxima.data_reserva === hoje ? 'hoje' : rotuloDia(proxima.data_reserva, hoje).toLowerCase()}${proxima.horario ? ` às ${proxima.horario.slice(0, 5)}` : ''}` : '';
+  const kpiSaida = noRio.viagens.length && !resumo.hoje.length
+    ? { rotulo: 'No rio agora', valor: String(noRio.viagens.length), etiqueta: `${plural(noRio.pessoas, 'pessoa a bordo', 'pessoas a bordo')}`, tom: 'ok' as Tom, href: '/reservas/ao-vivo' }
+    : { rotulo: 'Saídas hoje', valor: String(resumo.hoje.length),
+        etiqueta: resumo.hoje.length ? (proxima?.horario && proxima.data_reserva === hoje ? `Próxima às ${proxima.horario.slice(0, 5)}` : 'Sem horário definido') : proxima ? `Próxima: ${quandoProxima}` : 'Nenhuma saída hoje',
+        tom: (resumo.hoje.length ? 'ok' : 'nt') as Tom, href: `/reservas?inicio=${hoje}&fim=${hoje}` };
 
   // Gráfico de 6 meses (centavos).
   const meses = fin?.graficos.meses ?? [];
@@ -552,9 +596,8 @@ export default function InicioOperadoraPremiumERN({
       {erro && <p role="alert" className="eda-aviso">Alguns dados não foram carregados. {erro}</p>}
 
       <section className="eda-kpis" aria-label="Números principais">
-        <Kpi rotulo="Saídas hoje" icone="barco" valor={carregando ? '—' : String(resumo.hoje.length)}
-          etiqueta={proxima?.horario && proxima.data_reserva === hoje ? `Próxima às ${proxima.horario.slice(0, 5)}` : resumo.hoje.length ? 'Sem horário definido' : 'Nenhuma saída hoje'}
-          tom={resumo.hoje.length ? 'ok' : 'nt'} href={`/reservas?inicio=${hoje}&fim=${hoje}`} />
+        <Kpi rotulo={kpiSaida.rotulo} icone="barco" valor={carregando ? '—' : kpiSaida.valor}
+          etiqueta={kpiSaida.etiqueta} tom={kpiSaida.tom} href={kpiSaida.href} />
         <Kpi rotulo="Próximos 7 dias" icone="calendario" valor={carregando ? '—' : String(resumo.semana.length)}
           etiqueta={plural(resumo.pessoasSemana, 'pessoa', 'pessoas')} tom="ok" href={`/reservas?inicio=${hoje}&fim=${dia7}`} />
         <Kpi rotulo="Recebido no mês" icone="dinheiro"
@@ -580,6 +623,19 @@ export default function InicioOperadoraPremiumERN({
               ))}
             </div>
           </div>
+          {!carregando && noRio.viagens.length > 0 && (
+            <ul className="eda-lista" aria-label="Viagens no rio agora">
+              {noRio.viagens.slice(0, 3).map(v => (
+                <li key={v.chave}>
+                  <Link href="/reservas/ao-vivo" className="eda-item eda-item-agenda">
+                    <span className="eda-hora"><b><Icone nome="barco" tamanho={16} /></b><small>No rio</small></span>
+                    <span className="eda-txt"><b>{v.passeio || 'Viagem'}</b><small>{[v.embarcacao?.nome, v.guia ? `Guia ${v.guia.nome}` : '', v.fim && v.fim !== v.inicio ? `volta ${rotuloDia(v.fim, hoje).toLowerCase()}` : 'volta hoje'].filter(Boolean).join(' · ')}</small></span>
+                    <span className="eda-pill eda-ok"><i />Em operação</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
           {carregando ? <p className="eda-vazio">Carregando agenda…</p> : agenda.length === 0 ? (
             <div className="eda-vazio"><Icone nome="calendario" tamanho={22} /><span>Nenhuma saída neste período.</span><Link href="/reservas/nova" className="eda-lk">Registrar reserva <Icone nome="seta" tamanho={13} /></Link></div>
           ) : (
