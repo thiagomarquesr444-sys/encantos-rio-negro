@@ -5,6 +5,8 @@ interface Props {
   inicio?: string | null;
   fim?: string | null;
   horarioFim?: string | null;
+  // EDA_SAIDA_EM_OPERACAO_V1: horário de saída (sem ele, a plataforma usa 08:00).
+  horario?: string | null;
   referencia: string;
   detalhado?: boolean;
 }
@@ -51,6 +53,7 @@ export default function SituacaoPeriodoReservaERN({
   inicio,
   fim,
   horarioFim,
+  horario,
   referencia,
   detalhado = false,
 }: Props) {
@@ -81,14 +84,31 @@ export default function SituacaoPeriodoReservaERN({
     if (terminou) {
       rotulo = estado === 'confirmada'
         ? 'A finalizar'
-        : 'Data passada — revisar';
+        : 'Pendente na saída — revisar';
       explicacao =
-        'O término previsto passou. Confira o resultado da operação antes de alterar o status.';
+        estado === 'confirmada'
+          ? 'Reservas ligadas a uma saída são concluídas sozinhas na volta. Se esta continuar aqui, ficou sem check-in numa saída que teve check-in (ou sem saída): decida Concluída ou Não compareceu.'
+          : 'A embarcação já voltou e esta reserva continuou pendente. Decida se ela foi realizada ou cancelada.';
     }
   } else if (dataInicio && dataInicio < hoje) {
     rotulo = 'Data passada — revisar';
     explicacao =
       'A data inicial passou e não há término previsto válido. Confira o período e o resultado da operação.';
+  }
+
+  // Embarcação na água: começou e ainda não terminou (confirmada).
+  if (!rotulo && estado === 'confirmada' && dataInicio) {
+    const horaInicio = horaISO(horario) ?? '08:00:00';
+    const comecou = dataInicio < hoje || (dataInicio === hoje && horaInicio <= horaAtual);
+    if (comecou) {
+      return (
+        <span className="inline-flex items-center gap-1.5 text-xs font-semibold leading-5 text-emerald-400" title="A embarcação já saiu. A reserva será concluída automaticamente na volta.">
+          <span aria-hidden="true" className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-400" />
+          Em operação
+          {detalhado && <span className="font-normal text-[#C5D4CA]">· concluída automaticamente na volta</span>}
+        </span>
+      );
+    }
   }
 
   if (!rotulo) return null;

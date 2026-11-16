@@ -279,6 +279,16 @@ async function contextoOperadora(db: SupabaseClient, empresaId: string, hoje: st
     linhas.push(`\nSAÍDAS PROGRAMADAS (até +90 dias): código | passeio | ida-volta | hora | vagas | status`);
     for (const x of saidas.data) linhas.push(`- ${codS.get(String(x.id))} | ${codP.get(String(x.passeio_id)) ?? ''} ${nomePasseio.get(String(x.passeio_id)) ?? '—'} | ${dm(x.data_inicio)}${x.data_fim ? `-${dm(x.data_fim)}` : ''} | ${x.horario ? String(x.horario).slice(0, 5) : '—'} | ${x.vagas_total} | ${rotuloFase(String(x.id), String(x.status))}`);
   }
+  // EDA_ENCERRAMENTO_AUTO_V1: reservas que a plataforma não pode encerrar sozinha.
+  {
+    const { data: aguardando } = await db.rpc('eda_reservas_aguardando_encerramento');
+    const lista = (aguardando ?? []) as { reserva_id: string; cliente: string | null; passeio: string | null; data_reserva: string; situacao: string; motivo: string }[];
+    linhas.push(`\nREGRA DE ENCERRAMENTO: na volta da embarcação a plataforma conclui sozinha as reservas confirmadas com check-in (ou de saídas sem nenhum check-in). Nunca marque "Não compareceu" sem o operador mandar. Valores financeiros não mudam com o encerramento.`);
+    if (lista.length) {
+      linhas.push(`RESERVAS AGUARDANDO DECISÃO DO OPERADOR (embarcação já voltou): ${lista.length}`);
+      for (const r of lista.slice(0, 15)) linhas.push(`- ${r.cliente ?? 'Cliente'} · ${r.passeio ?? 'passeio'} ${dm(r.data_reserva)} · ${r.situacao} · ${r.motivo}`);
+    }
+  }
   if (!demandas.error) {
     const d = demandas.data ?? [];
     linhas.push(`\nDEMANDAS (${d.length}): código | título | categoria | local | início-fim | qtd | status`);

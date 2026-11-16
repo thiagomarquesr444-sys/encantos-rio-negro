@@ -524,10 +524,11 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
     (reserva) => reserva.status === 'Cancelada'
   );
 
-  const valorConfirmado = confirmadas.reduce(
-    (total, reserva) => total + reserva.valor,
-    0
-  );
+  // EDA_ENCERRAMENTO_AUTO_V1: reserva concluída continua sendo venda realizada
+  // (sem isso o valor "sumiria" quando a plataforma encerra a viagem sozinha).
+  const valorConfirmado = reservasDoDashboard
+    .filter((reserva) => reserva.status === 'Confirmada' || reserva.status === 'Concluída')
+    .reduce((total, reserva) => total + reserva.valor, 0);
 
   const reservasFiltradas = useMemo(() => {
     const termo = normalizarTexto(busca);
@@ -756,7 +757,7 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
     ? 'Carregando reservas…'
     : erroConsulta
       ? 'Listagem indisponível no momento.'
-      : <><b>{reservasDoDashboard.length}</b> {reservasDoDashboard.length === 1 ? 'reserva' : 'reservas'} no recorte · <b>{formatarMoeda(valorConfirmado)}</b> em reservas confirmadas</>;
+      : <><b>{reservasDoDashboard.length}</b> {reservasDoDashboard.length === 1 ? 'reserva' : 'reservas'} no recorte · <b>{formatarMoeda(valorConfirmado)}</b> em reservas confirmadas e concluídas</>;
 
   return (
     <PaginaEDA>
@@ -878,6 +879,7 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
                         inicio={reserva.dataOriginal}
                         fim={reserva.data_fim_prevista}
                         horarioFim={reserva.horario_fim_previsto}
+                        horario={reserva.horario}
                         referencia={referenciaPeriodoERN}
                       />
                     </span>
@@ -922,6 +924,7 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
                               inicio={reserva.dataOriginal}
                               fim={reserva.data_fim_prevista}
                               horarioFim={reserva.horario_fim_previsto}
+                        horario={reserva.horario}
                               referencia={referenciaPeriodoERN}
                             />
                           </div>
@@ -1034,6 +1037,7 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
                   inicio={selecionada.dataOriginal}
                   fim={selecionada.data_fim_prevista}
                   horarioFim={selecionada.horario_fim_previsto}
+                  horario={selecionada.horario}
                   referencia={referenciaPeriodoERN}
                   detalhado
                 />

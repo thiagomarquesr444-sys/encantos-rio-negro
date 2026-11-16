@@ -97,7 +97,8 @@ export default function GraficosReservas({
     let somaExcedida = false;
 
     for (const reserva of selecionadas) {
-      if (reserva.status !== 'Confirmada') continue;
+      // Concluída também é venda realizada (encerramento automático não pode zerar o valor).
+      if (reserva.status !== 'Confirmada' && reserva.status !== 'Concluída') continue;
 
       const centavos = Math.round(reserva.valor * 100);
 
@@ -234,7 +235,7 @@ export default function GraficosReservas({
             <p className="eda-pg-texto-mut" style={{ color: 'var(--g-texto)' }}>
               {analise.total} reserva(s): {analise.status[0].quantidade} confirmada(s), {analise.status[1].quantidade} pendente(s) e {analise.status[2].quantidade} cancelada(s).
               {analise.desconhecidos > 0 ? ` Há também ${analise.desconhecidos} com status não reconhecido.` : ''}
-              {' '}Valor comercial confirmado: <b>{valorConfirmado}</b>.
+              {' '}Valor comercial confirmado e concluído: <b>{valorConfirmado}</b>.
               {analise.status[1].quantidade > 0 ? ' As reservas pendentes precisam de definição operacional.' : ' Não há reservas pendentes neste recorte.'}
             </p>
             {analise.semData > 0 && <p className="eda-pg-aviso eda-pg-aviso-at">{analise.semData} reserva(s) sem data válida ficam fora dos recortes mensais.</p>}

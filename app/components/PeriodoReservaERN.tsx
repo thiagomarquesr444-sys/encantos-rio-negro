@@ -161,6 +161,7 @@ export default function PeriodoReservaERN({
           inicio={inicio}
           fim={fim}
           horarioFim={horarioFim}
+          horario={horarioInicio}
           referencia={referencia}
           detalhado
         />
