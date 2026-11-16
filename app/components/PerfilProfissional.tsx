@@ -7,6 +7,7 @@ import {
   type FormEvent,
 } from 'react';
 import Link from 'next/link';
+import VitrineFornecedorEDA from '@/app/components/VitrineFornecedorEDA';
 import { supabase } from '@/lib/supabase';
 import {
   carregarAcessosConta,
@@ -603,6 +604,10 @@ function FormularioPerfilProfissional({ tipo }: Props) {
               </div>
             </fieldset>
           </form>
+        )}
+
+        {!guia && existe && usuarioId && (
+          <VitrineFornecedorEDA usuarioId={usuarioId} atividade={dados.categoria} />
         )}
 
         <section className="mt-6 rounded-2xl border border-white/10 bg-white/[0.025] p-5">

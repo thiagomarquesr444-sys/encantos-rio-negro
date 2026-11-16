@@ -32,6 +32,7 @@ const textos = {
     experiences: 'Experiências',
     destinations: 'Destinos',
     network: 'Rede',
+    crafts: 'Artesanato',
     operators: 'Para operadores',
     plan: 'Planejar viagem',
     language: 'Idioma',
@@ -48,6 +49,7 @@ const textos = {
     experiences: 'Experiences',
     destinations: 'Destinations',
     network: 'Network',
+    crafts: 'Crafts',
     operators: 'For operators',
     plan: 'Plan your trip',
     language: 'Language',
@@ -64,6 +66,7 @@ const textos = {
     experiences: 'Experiencias',
     destinations: 'Destinos',
     network: 'Red',
+    crafts: 'Artesanía',
     operators: 'Para operadores',
     plan: 'Planificar viaje',
     language: 'Idioma',
@@ -127,6 +130,7 @@ export default function PublicHeader() {
     { href: '/experiencias', titulo: t.experiences },
     { href: '/destinos', titulo: t.destinations },
     { href: '/rede', titulo: t.network },
+    { href: '/artesanato', titulo: t.crafts },
 
   ];
 

@@ -79,7 +79,7 @@ export const ESPECIALIDADES_OPERADORA: readonly OpcaoEDA[] = [
 export const ATIVIDADES_FORNECEDOR: readonly OpcaoEDA[] = [
   ['Alimentação / refeições', 'Alimentação / refeições'], ['Mercado / suprimentos', 'Mercado / suprimentos'],
   ['Combustível', 'Combustível'], ['Transporte fluvial', 'Transporte fluvial'], ['Transporte terrestre', 'Transporte terrestre'],
-  ['Iscas e equipamentos de pesca', 'Iscas e equipamentos de pesca'], ['Gelo', 'Gelo'], ['Artesanato', 'Artesanato'],
+  ['Iscas e equipamentos de pesca', 'Iscas e equipamentos de pesca'], ['Gelo', 'Gelo'], ['Artesanato', 'Artesanato'], ['Bebidas / distribuidora', 'Bebidas / distribuidora'],
   ['Manutenção de barcos e motores', 'Manutenção de barcos e motores'], ['Lavanderia', 'Lavanderia'],
   ['Comunicação / internet', 'Comunicação / internet'], ['Saúde e primeiros socorros', 'Saúde e primeiros socorros'],
 ];
