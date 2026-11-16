@@ -20,6 +20,7 @@ import CampoOpcoesEDA from '@/app/components/CampoOpcoesEDA';
 import { CONDICAO_EMBARCACAO } from '@/lib/opcoesEDA';
 import AgendaRecursoEDA from '@/app/components/AgendaRecursoEDA';
 import { usoRecursosHojeEDA } from '@/lib/recursosEDA';
+import CamposMarinhaEDA, { marinhaDoRegistroEDA, marinhaParaSalvarEDA } from '@/app/components/CamposMarinhaEDA';
 
 type StatusEmbarcacao =
   | 'Disponível'
@@ -48,6 +49,11 @@ interface Embarcacao {
   status?: string | null;
 
   created_at?: string | null;
+
+  inscricao_capitania?: string | null;
+  seguro_dpem_validade?: string | null;
+  condutor_habilitacao?: string | null;
+  condutor_habilitacao_validade?: string | null;
 }
 
 /*
@@ -495,6 +501,8 @@ export default function EmbarcacoesPage() {
 
         status:
           statusEdicao,
+
+        ...marinhaParaSalvarEDA(marinhaDoRegistroEDA(embarcacaoEditando)),
       };
 
       const {
@@ -1727,6 +1735,13 @@ export default function EmbarcacoesPage() {
                   />
                 </div>
               </div>
+
+              <CamposMarinhaEDA
+                valor={marinhaDoRegistroEDA(embarcacaoEditando)}
+                onChange={(m) => setEmbarcacaoEditando({ ...embarcacaoEditando, ...m })}
+                inputClass={inputClass}
+                labelClass={labelClass}
+              />
 
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>

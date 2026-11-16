@@ -82,6 +82,14 @@ export async function listarSaidasGestaoEDA(
 
 // Traduz os bloqueios do banco para a operadora.
 export function mensagemSaidaEDA(mensagem: string): string | null {
+  // EDA_CONFORMIDADE_V1: lotação autorizada da embarcação no dia.
+  const embarcacaoLotada = mensagem.match(/EDA_EMBARCACAO_LOTADA: restam (\d+)/);
+  if (embarcacaoLotada) {
+    const n = Number(embarcacaoLotada[1]);
+    return n > 0
+      ? `Esta embarcação só tem ${n} lugar${n === 1 ? '' : 'es'} livre${n === 1 ? '' : 's'} neste dia (lotação autorizada). Reduza as pessoas ou escolha outra embarcação.`
+      : 'Esta embarcação já está com a lotação completa neste dia. Escolha outra embarcação ou outra data.';
+  }
   const lotada = mensagem.match(/EDA_SAIDA_LOTADA: restam (\d+)/);
   if (lotada) {
     const n = Number(lotada[1]);
