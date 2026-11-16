@@ -310,6 +310,9 @@ export default function PerfilEditorialEDA({ abas, voltar = true }: { abas?: Rea
               <Link href="/comando/planos" className="min-h-11 py-3 underline">
                 Planos e assinaturas
               </Link>
+              <Link href="/comando/observatorio" className="min-h-11 py-3 underline">
+                Observatório do Turismo
+              </Link>
               <Link href="/comando/treino-eda" className="min-h-11 py-3 underline">
                 Treino da EDA
               </Link>
