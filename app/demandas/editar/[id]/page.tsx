@@ -14,6 +14,7 @@ import {
 import Link from 'next/link';
 import { confirmarERN } from '@/lib/confirmarERN';
 import ItensDemanda from '@/app/components/ItensDemanda';
+import FornecedoresDemandaEDA from '@/app/components/FornecedoresDemandaEDA';
 import VinculoSaidaDemandaEDA from '@/app/components/VinculoSaidaDemandaEDA';
 import type { ItemDemanda } from '@/lib/itensDemanda';
 
@@ -1011,6 +1012,8 @@ export default function EditarDemandaPage() {
           dias={Number(formularioAtual.dias_estimados) > 0 ? Math.round(Number(formularioAtual.dias_estimados)) : undefined}
         />
       </div>
+
+      <FornecedoresDemandaEDA dataSaida={formularioAtual.data_inicio || null} />
 
       <form
         onSubmit={salvar}

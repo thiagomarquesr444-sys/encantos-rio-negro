@@ -71,6 +71,7 @@ export default function InicioFornecedorEDA() {
   }, []);
 
   const artesao = /artesanato/i.test(s?.atividade ?? '');
+  const bebidas = /bebida/i.test(s?.atividade ?? '');
   const primeiroNome = (s?.nome ?? '').split(' ')[0];
 
   const passos = s
@@ -95,11 +96,13 @@ export default function InicioFornecedorEDA() {
         <div className="fi-capa-veu" />
         <div className="fi-capa-txt">
           <p className="fi-eb">Encantos da Amazônia · Espaço do fornecedor</p>
-          <h1 className="fi-letreiro">{artesao ? 'Seu ofício, vitrine para o Brasil' : 'Seu negócio na rede do turismo'}</h1>
+          <h1 className="fi-letreiro">{artesao ? 'Seu ofício, vitrine para o Brasil' : bebidas ? 'Sua distribuidora na rota do turismo' : 'Seu negócio na rede do turismo'}</h1>
           <p className="fi-sub">
             {artesao
               ? 'Mostre o que suas mãos criam. Quem visita a Amazônia pelo portal fala direto com você, e a renda é toda sua.'
-              : 'Apareça para turistas e operadoras de todo o Amazonas. O contato e a venda são direto com você.'}
+              : bebidas
+                ? 'As operadoras encontram você ao montar os suprimentos de cada saída. Venda de bebida alcoólica só para maiores de 18 anos.'
+                : 'Apareça para turistas e operadoras de todo o Amazonas. O contato e a venda são direto com você.'}
           </p>
         </div>
       </header>
