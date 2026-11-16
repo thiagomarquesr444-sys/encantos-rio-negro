@@ -21,6 +21,7 @@ import OfflineBaseERN from '@/app/components/OfflineBaseERN';
 import MonitorSinalEDA from '@/app/components/SinalEDA';
 import FilaOfflineEDA from '@/app/components/FilaOfflineEDA';
 import LibrasERN from '@/app/components/LibrasERN';
+import EscVoltarEDA from '@/app/components/EscVoltarEDA';
 
 const fontes = {
   '--font-inter': '"Inter Variable"',
@@ -92,6 +93,7 @@ export default function RootLayout({
         <LanguageProvider>
           <AppProvider>
             <AppShell>{children}</AppShell>
+            <EscVoltarEDA />
             <FeedbackERN />
             <AvisoCopiaEDA />
             <DialogoEDA />
@@ -100,4 +102,4 @@ export default function RootLayout({
       </body>
     </html>
   );
-}
+}

@@ -15,6 +15,7 @@ import { chaveRecepcao, falaPaginaIara, recepcaoIara, type MomentoRecepcao, type
 import { curiosidadesFichas, useFichasMunicipios } from '@/lib/fichasMunicipiosCliente';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import { confirmarEDA } from '@/lib/dialogoEDA';
+import { acharPontoRua, listarPontosRua, type PontoRua } from '@/lib/pontosRuaIara';
 
 const textos = {
   PT: {
@@ -448,6 +449,9 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   const fichaIara = useRef<Record<string, unknown>>({});
   const linksResposta = useRef<LinkIara[]>([]);
   const destinoResposta = useRef<DestinoMsg | undefined>(undefined);
+  // IARA_PASSEIO_RUAS_V1: pontos com Vista da rua publicados no Comando EDA.
+  const pontosRua = useRef<PontoRua[]>([]);
+  useEffect(() => { void listarPontosRua().then((p) => { pontosRua.current = p; }).catch(() => undefined); }, []);
   const sessaoIara = useRef('');
   useEffect(() => {
     try {
@@ -890,6 +894,15 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
     }, 1100);
   }
 
+  function levarPelasRuas(p: PontoRua) {
+    window.setTimeout(() => {
+      if (gravadorRef.current?.state === 'recording') pararAudio(true);
+      setAberto(false);
+      if (window.location.pathname === '/destinos') window.dispatchEvent(new CustomEvent('iara:rua', { detail: { id: p.id } }));
+      else router.push(`/destinos?rua=${encodeURIComponent(p.id)}`);
+    }, 1400);
+  }
+
   function enviar(valor: string, origem?: 'busca') {
     const texto = valor.trim().slice(0, 300);
     if (!texto || limite || enviandoERN.current) return;
@@ -926,6 +939,18 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
 
     if (respostaPronta) {
       respostaTimerERN.current = setTimeout(() => responder(respostaPronta), 700);
+      return;
+    }
+
+    // "Quero ver o Bumbódromo": a Iara leva pelas ruas da cidade até o ponto.
+    const pontoRua = acharPontoRua(texto, pontosRua.current);
+    if (pontoRua) {
+      const fala = idioma === 'EN'
+        ? `Let's go! I'll take you through the streets of ${pontoRua.municipio} to ${pontoRua.nome}. First we fly there, then we walk the streets together.`
+        : idioma === 'ES'
+          ? `¡Vamos! Te llevo por las calles de ${pontoRua.municipio} hasta ${pontoRua.nome}. Primero volamos hasta allá y después recorremos las calles juntos.`
+          : `Bora! Vou te levar pelas ruas de ${pontoRua.municipio} até ${pontoRua.nome}. Primeiro a gente voa até lá, depois seguimos juntos pelas ruas.`;
+      respostaTimerERN.current = setTimeout(() => { responder(fala); levarPelasRuas(pontoRua); }, 700);
       return;
     }
 

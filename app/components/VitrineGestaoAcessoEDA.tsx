@@ -12,7 +12,8 @@ import { aoMudarSinalEDA, sinalFracoEDA } from '@/lib/conexaoEDA';
 const VIDEO = '/videos/gestao/amostra-gestao.mp4';
 const CAPA = '/videos/gestao/amostra-gestao.jpg';
 
-export default function VitrineGestaoAcessoEDA() {
+// EDA_VIDEO_OPERADORES_V1: a tela com o vídeo agora vive na vitrine "Para operadores".
+export function TelaVideoGestaoEDA({ className = '' }: { className?: string }) {
   const ref = useRef<HTMLVideoElement>(null);
   const [permitido, setPermitido] = useState(false);
 
@@ -37,13 +38,7 @@ export default function VitrineGestaoAcessoEDA() {
   }, [permitido]);
 
   return (
-    <figure className="eda-vitrine-acesso" aria-label="Prévia real da Encantos Gestão">
-      <div className="eda-vitrine-acesso-barra" aria-hidden="true">
-        <span className="eda-vitrine-acesso-pontos"><i /><i /><i /></span>
-        <span>Encantos Gestão · Painel</span>
-        <b>Prévia real</b>
-      </div>
-      <div className="eda-vitrine-acesso-tela">
+      <div className={className}>
         {permitido ? (
           <video
             ref={ref}
@@ -55,13 +50,12 @@ export default function VitrineGestaoAcessoEDA() {
             preload="none"
             aria-hidden="true"
             tabIndex={-1}
+            className="block h-full w-full object-cover"
           />
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={CAPA} alt="" loading="lazy" decoding="async" />
+          <img src={CAPA} alt="" loading="lazy" decoding="async" className="block h-full w-full object-cover" />
         )}
       </div>
-      <figcaption>O que você encontra ao entrar: agenda do rio, financeiro e a EDA cuidando da operação com você.</figcaption>
-    </figure>
   );
 }

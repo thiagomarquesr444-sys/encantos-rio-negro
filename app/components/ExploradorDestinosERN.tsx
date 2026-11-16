@@ -17,6 +17,8 @@ import ArcoFlechaERN from './ArcoFlechaERN';
 import { copiarEDA } from '@/lib/copiarEDA';
 import { destinoDoParametro, destinoIaraValido, type DestinoIara } from '@/lib/iaraDestinosERN';
 import { destinosParaExibicao } from '@/lib/catalogoDestinosERN';
+import PasseioRuasIaraEDA from './PasseioRuasIaraEDA';
+import { buscarPontoRua, type PontoRua } from '@/lib/pontosRuaIara';
 import SateliteCidadeERN, { chaveEmbedGoogle } from './SateliteCidadeERN';
 import { chaveGoogleMapas, criarMotorGoogle, criarMotorLeaflet, type MotorMapa, type PinMapa } from './motorMapaERN';
 import {
@@ -331,6 +333,8 @@ export default function ExploradorDestinosERN() {
   const [municipio, setMunicipio] = useState<MunicipioAM | null>(null);
   // ERN_SATELITE_CIDADE_V1: vista de satélite (Google Maps Embed) da cidade escolhida.
   const [satelite, setSatelite] = useState<{ nome: string; coords: [number, number]; zoom: number } | null>(null);
+  // IARA_PASSEIO_RUAS_V1: passeio pelas ruas até o ponto pedido à Iara.
+  const [passeioRua, setPasseioRua] = useState<PontoRua | null>(null);
   const abrirSatelite = (nome: string, coords: [number, number], zoom = 14) => {
     if (chaveEmbedGoogle()) setSatelite({ nome, coords, zoom });
   };
@@ -491,6 +495,20 @@ export default function ExploradorDestinosERN() {
   }
   const voarRef = useRef(voarComIara);
   voarRef.current = voarComIara;
+  function iniciarPasseioRua(p: PontoRua) {
+    setPasseioRua(null);
+    voarRef.current({ tipo: 'municipio', id: p.municipio_ibge, nome: p.municipio }, () => { setSatelite(null); setPasseioRua(p); });
+  }
+  const passeioRuaRef = useRef(iniciarPasseioRua);
+  passeioRuaRef.current = iniciarPasseioRua;
+  useEffect(() => {
+    const aoPedirRua = (e: Event) => {
+      const id = (e as CustomEvent<{ id?: unknown }>).detail?.id;
+      if (typeof id === 'string') void buscarPontoRua(id).then((p) => { if (p) passeioRuaRef.current(p); });
+    };
+    window.addEventListener('iara:rua', aoPedirRua);
+    return () => window.removeEventListener('iara:rua', aoPedirRua);
+  }, []);
   useEffect(() => {
     const aoPedir = (e: Event) => {
       const d = destinoIaraValido((e as CustomEvent).detail);
@@ -508,6 +526,12 @@ export default function ExploradorDestinosERN() {
     if (url.searchParams.has('iara')) { url.searchParams.delete('iara'); window.history.replaceState(window.history.state, '', url.toString()); }
     // EDA_VIDEO_NO_MAPA_V2: card com vídeo da Descubra -> faz a viagem até o destino
     // e, ao chegar, abre o vídeo tocando no painel do lugar.
+    const ruaParam = url.searchParams.get('rua');
+    if (ruaParam) {
+      url.searchParams.delete('rua'); window.history.replaceState(window.history.state, '', url.toString());
+      void buscarPontoRua(ruaParam).then((p) => { if (p) passeioRuaRef.current(p); });
+      return;
+    }
     const videoParam = url.searchParams.get('video');
     const comVideo = videoParam ? destinosParaExibicao(lang).find(d => d.id === videoParam && d.video) : undefined;
     if (comVideo) {
@@ -768,6 +792,7 @@ export default function ExploradorDestinosERN() {
       </aside>
       <div className="ern-v-mapwrap">
       <div className="ern-v-map" ref={container} aria-label={u.overview} />
+      {passeioRua && <PasseioRuasIaraEDA key={passeioRua.id} ponto={passeioRua} idioma={lang} aoFechar={() => setPasseioRua(null)} />}
       {satelite && <SateliteCidadeERN key={`${satelite.nome}-${satelite.coords.join(',')}`} nome={satelite.nome} coords={satelite.coords} zoom={satelite.zoom} idioma={lang} aoVoltar={() => setSatelite(null)} />}
       <div className="ern-v-tools">
         <button type="button" onClick={overview}>{u.overview}</button>

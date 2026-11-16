@@ -300,6 +300,19 @@ export default function PerfilEditorialEDA({ abas, voltar = true }: { abas?: Rea
               <Link href="/comando/iara" className="min-h-11 py-3 underline">
                 Funil da Iara (plataforma)
               </Link>
+              {/* EDA_COMANDO_ATALHOS_V2: todos os comandos do CEO num lugar só. */}
+              <Link href="/comando/municipios" className="min-h-11 py-3 underline">
+                Fichas dos municípios (Iara)
+              </Link>
+              <Link href="/comando/mapa-de-rua" className="min-h-11 py-3 underline">
+                Mapa de rua (Iara)
+              </Link>
+              <Link href="/comando/planos" className="min-h-11 py-3 underline">
+                Planos e assinaturas
+              </Link>
+              <Link href="/comando/treino-eda" className="min-h-11 py-3 underline">
+                Treino da EDA
+              </Link>
               <Link href="/dashboard" className="min-h-11 py-3 underline">
                 Abrir operadora
               </Link>

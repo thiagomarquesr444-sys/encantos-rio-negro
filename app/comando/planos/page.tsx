@@ -87,7 +87,7 @@ export default function PainelCeoPlanos() {
   const r = dados?.resumo;
   return (
     <main className="eda-pg eda-pg-auto eda-pg-legado min-h-screen px-4 py-8 sm:px-8"><div className="mx-auto max-w-5xl space-y-6">
-      <Link href="/comando/publicacoes" className="inline-flex min-h-11 items-center text-sm text-[var(--ern-destaque)]">← Comando EDA</Link>
+      <Link href="/comando" className="inline-flex min-h-11 items-center text-sm text-[var(--ern-destaque)]">← Comando EDA</Link>
       <header>
         <p className="text-xs uppercase tracking-[.2em] text-[var(--ern-destaque)]">Comando EDA · CEO</p>
         <h1 className="mt-2 text-3xl">Planos e cobranças da plataforma</h1>

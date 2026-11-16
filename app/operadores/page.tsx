@@ -12,11 +12,12 @@ import ArcoFlechaERN from '@/app/components/ArcoFlechaERN';
 import IconeERN, { type NomeIconeERN } from '@/app/components/IconeERN';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import NumerosRedeEDA from '@/app/components/NumerosRedeEDA';
+import { TelaVideoGestaoEDA } from '@/app/components/VitrineGestaoAcessoEDA';
 
 type Texto = {
   skip: string; eyebrow: string; title: [string, string, string]; intro: string;
   start: string; plans: string; checks: string[];
-  panelLabel: string; panelHello: string; panelExample: string; kpis: [string, string][];
+  panelLabel: string; panelHello: string; panelExample: string; panelReal: string; kpis: [string, string][];
   revenue: string; next: string; trips: string[]; menu: string[];
   flowEyebrow: string; flowTitle: string; step: string; flow: [NomeIconeERN | 'arco', string, string][];
   featEyebrow: string; featTitle: string; fishingTag: string; fishingTitle: string; fishingText: string;
@@ -34,7 +35,7 @@ const textos: Record<'PT' | 'EN' | 'ES', Texto> = {
     intro: 'Reservas, clientes, financeiro e vouchers num só lugar. E uma vitrine na Rede EDA e no mapa de Destinos, onde visitantes chamam você direto no WhatsApp.',
     start: 'Começar agora', plans: 'Ver planos e preços',
     checks: ['Português, inglês e espanhol', 'Funciona no celular', 'Feito no Rio Negro'],
-    panelLabel: 'Encantos Gestão · Painel', panelHello: 'Bom dia, equipe', panelExample: 'Exemplo',
+    panelLabel: 'Encantos Gestão · Painel', panelHello: 'Bom dia, equipe', panelExample: 'Exemplo', panelReal: 'Prévia real',
     kpis: [['12', 'reservas no mês'], ['R$ 48 mil', 'a receber'], ['86', 'flechadas na Rede'], ['23', 'chamadas no WhatsApp']],
     revenue: 'Receita · últimos 6 meses', next: 'Próximas saídas',
     trips: ['Mariuá · 5 dias · 4 pax', 'Anavilhanas · 2 pax', 'Serra do Aracá · 6 pax'],
@@ -76,7 +77,7 @@ const textos: Record<'PT' | 'EN' | 'ES', Texto> = {
     intro: 'Bookings, clients, finance and vouchers in one place. Plus a showcase on the EDA Network and the Destinations map, where visitors message you directly on WhatsApp.',
     start: 'Get started', plans: 'See plans and pricing',
     checks: ['Portuguese, English and Spanish', 'Works on mobile', 'Made on the Rio Negro'],
-    panelLabel: 'Encantos Gestão · Dashboard', panelHello: 'Good morning, team', panelExample: 'Example',
+    panelLabel: 'Encantos Gestão · Dashboard', panelHello: 'Good morning, team', panelExample: 'Example', panelReal: 'Real preview',
     kpis: [['12', 'bookings this month'], ['R$ 48k', 'receivable'], ['86', 'arrows on the Network'], ['23', 'WhatsApp contacts']],
     revenue: 'Revenue · last 6 months', next: 'Upcoming departures',
     trips: ['Mariuá · 5 days · 4 pax', 'Anavilhanas · 2 pax', 'Serra do Aracá · 6 pax'],
@@ -118,7 +119,7 @@ const textos: Record<'PT' | 'EN' | 'ES', Texto> = {
     intro: 'Reservas, clientes, finanzas y vouchers en un solo lugar. Y una vitrina en la Red EDA y en el mapa de Destinos, donde los visitantes te escriben directo por WhatsApp.',
     start: 'Empezar ahora', plans: 'Ver planes y precios',
     checks: ['Portugués, inglés y español', 'Funciona en el celular', 'Hecho en el Río Negro'],
-    panelLabel: 'Encantos Gestão · Panel', panelHello: 'Buenos días, equipo', panelExample: 'Ejemplo',
+    panelLabel: 'Encantos Gestão · Panel', panelHello: 'Buenos días, equipo', panelExample: 'Ejemplo', panelReal: 'Vista real',
     kpis: [['12', 'reservas del mes'], ['R$ 48 mil', 'por cobrar'], ['86', 'flechazos en la Red'], ['23', 'contactos por WhatsApp']],
     revenue: 'Ingresos · últimos 6 meses', next: 'Próximas salidas',
     trips: ['Mariuá · 5 días · 4 pax', 'Anavilhanas · 2 pax', 'Serra do Aracá · 6 pax'],
@@ -165,34 +166,14 @@ const CARTAO = 'rounded-[22px] border border-white/[0.08] bg-[#0A1713] p-6';
 
 function PainelExemplo({ t }: { t: Texto }) {
   return (
-    <div className="overflow-hidden rounded-[22px] border border-[#F4C77E]/30 bg-[#08130F] shadow-[0_40px_90px_rgb(0_0_0/55%)]" role="img" aria-label={`${t.panelLabel} · ${t.panelExample}`}>
+    <div className="overflow-hidden rounded-[22px] border border-[#F4C77E]/30 bg-[#08130F] shadow-[0_40px_90px_rgb(0_0_0/55%)]" role="img" aria-label={`${t.panelLabel} · ${t.panelReal}`}>
       <div className="flex items-center gap-2 border-b border-white/[0.08] px-4 py-3" aria-hidden="true">
         <span className="size-2.5 rounded-full bg-[#3A5047]" /><span className="size-2.5 rounded-full bg-[#3A5047]" /><span className="size-2.5 rounded-full bg-[#3A5047]" />
         <span className="ml-2 text-xs text-[#8FA39A]">{t.panelLabel}</span>
-        <span className="ml-auto rounded-full border border-[#F4C77E]/40 px-2.5 py-0.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#F4C77E]">{t.panelExample}</span>
+        <span className="ml-auto rounded-full border border-[#F4C77E]/40 px-2.5 py-0.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#F4C77E]">{t.panelReal}</span>
       </div>
-      <div className="grid grid-cols-[150px_minmax(0,1fr)] max-sm:grid-cols-1" aria-hidden="true">
-        <div className="grid content-start gap-1 border-r border-white/[0.06] p-3 max-sm:hidden">
-          {t.menu.map((item, i) => <span key={item} className={`rounded-[10px] px-3 py-2 text-xs ${i === 0 ? 'bg-gradient-to-b from-[#F7D595] to-[#E3A144] font-bold text-[#07110E]' : 'text-[#CDD8D2]'}`}>{item}</span>)}
-        </div>
-        <div className="p-4">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#F4C77E]">Barcelos · AM</p>
-          <b className="mt-1 block text-lg text-[#F5F3EA]">{t.panelHello}</b>
-          <div className="mt-3 grid grid-cols-4 gap-2 max-sm:grid-cols-2">
-            {t.kpis.map(([valor, rotulo]) => <div key={rotulo} className="rounded-[14px] border border-white/[0.08] bg-[#0D1C17] p-3"><b className="block text-xl text-[#F5F3EA]">{valor}</b><span className="text-[11px] leading-tight text-[#8FA39A]">{rotulo}</span></div>)}
-          </div>
-          <div className="mt-2 grid grid-cols-[1.4fr_1fr] gap-2 max-sm:grid-cols-1">
-            <div className="rounded-[14px] border border-white/[0.08] bg-[#0D1C17] p-3">
-              <span className="text-[11px] text-[#8FA39A]">{t.revenue}</span>
-              <svg viewBox="0 0 300 80" className="mt-1 h-20 w-full"><path d="M0 70 L50 58 L100 62 L150 40 L200 34 L250 18 L300 10 L300 80 L0 80Z" fill="rgb(227 161 68 / 12%)" /><path d="M0 70 L50 58 L100 62 L150 40 L200 34 L250 18 L300 10" fill="none" stroke="#E3A144" strokeWidth="3" /></svg>
-            </div>
-            <div className="rounded-[14px] border border-white/[0.08] bg-[#0D1C17] p-3">
-              <span className="text-[11px] text-[#8FA39A]">{t.next}</span>
-              {t.trips.map(viagem => <span key={viagem} className="mt-2 flex items-center gap-1.5 text-xs text-[#DBE3DE]"><IconeERN nome="rio" tamanho={13} className="text-[#F4C77E]" />{viagem}</span>)}
-            </div>
-          </div>
-        </div>
-      </div>
+      {/* EDA_VIDEO_OPERADORES_V1: prévia real (vídeo de telas da gestão, nomes borrados). */}
+      <TelaVideoGestaoEDA className="relative aspect-[16/9] bg-[#05100C]" />
     </div>
   );
 }
