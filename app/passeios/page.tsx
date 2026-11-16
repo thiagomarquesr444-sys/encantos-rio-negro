@@ -541,7 +541,7 @@ export default function PasseiosPage() {
         (
           passeio
         ) => {
-          if (encerrados.has(passeio.id) !== (aba === 'historico')) return false;
+          if (encerrados.has(passeio.id ?? '') !== (aba === 'historico')) return false;
           const atendeBusca =
             !termo ||
             passeio.nome
