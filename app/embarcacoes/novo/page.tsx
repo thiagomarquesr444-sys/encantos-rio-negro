@@ -12,7 +12,6 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import CampoOpcoesEDA from '@/app/components/CampoOpcoesEDA';
 import { CONDICAO_EMBARCACAO } from '@/lib/opcoesEDA';
-import CamposMarinhaEDA, { MARINHA_VAZIA_EDA, marinhaParaSalvarEDA, type MarinhaEDA } from '@/app/components/CamposMarinhaEDA';
 
 type StatusEmbarcacao =
   | 'Disponível'
@@ -42,7 +41,6 @@ const estadoInicial: EmbarcacaoForm = {
 
 export default function NovaEmbarcacaoPage() {
   const router = useRouter();
-  const [marinhaEDA, setMarinhaEDA] = React.useState<MarinhaEDA>(MARINHA_VAZIA_EDA);
   const envioFrotaERN = React.useRef(false);
   const gravadoFrotaERN = React.useRef(false);
   const idFrotaERN = React.useRef<string | null>(null);
@@ -189,8 +187,6 @@ export default function NovaEmbarcacaoPage() {
 
         status:
           formData.status,
-
-        ...marinhaParaSalvarEDA(marinhaEDA),
       };
 
       const { data: auth, error: erroAuth } =
@@ -484,13 +480,6 @@ export default function NovaEmbarcacaoPage() {
                   </p>
                 </div>
               </div>
-
-              <CamposMarinhaEDA
-                valor={marinhaEDA}
-                onChange={setMarinhaEDA}
-                inputClass={inputClass}
-                labelClass={labelClass}
-              />
 
               <div>
                 <label

@@ -6,7 +6,6 @@ import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties, FormEvent } from 'react';
 import { supabase } from '@/lib/supabase';
-import CadasturEmpresaEDA from '@/app/components/CadasturEmpresaEDA';
 import SegurancaContaERN from '@/app/components/SegurancaContaERN';
 import DuasEtapasContaEDA from '@/app/components/DuasEtapasContaEDA';
 import SeletorTemaERN from '@/app/components/SeletorTemaERN';
@@ -611,10 +610,6 @@ export default function ConfiguracoesPage() {
                 Alterações dessas referências exigem integração com os demais módulos.
               </p>
             </section>
-
-            {empresaId && (
-              <CadasturEmpresaEDA empresaId={empresaId} painel={painel} campo={campo} botao={botao} />
-            )}
 
             <section className={painel} aria-labelledby="titulo-padroes">
               <h2 id="titulo-padroes" className="text-lg font-semibold">
