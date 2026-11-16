@@ -6,9 +6,9 @@ import { useLanguage } from '@/app/components/LanguageProvider';
 import { TelaVideoGestaoEDA } from '@/app/components/VitrineGestaoAcessoEDA';
 
 const textos = {
-  PT: { janela: 'Encantos Gestão · Painel', selo: 'Prévia real' },
-  EN: { janela: 'Encantos Gestão · Dashboard', selo: 'Real preview' },
-  ES: { janela: 'Encantos Gestão · Panel', selo: 'Vista real' },
+  PT: { janela: 'Encantos Gestão · Painel' },
+  EN: { janela: 'Encantos Gestão · Dashboard' },
+  ES: { janela: 'Encantos Gestão · Panel' },
 } as const;
 
 export default function VideoGestaoEDA() {
@@ -22,7 +22,6 @@ export default function VideoGestaoEDA() {
         <span aria-hidden="true" className="size-2.5 rounded-full bg-[#3A5047]" />
         <span aria-hidden="true" className="size-2.5 rounded-full bg-[#3A5047]" />
         <span className="ml-2 text-xs text-[#8FA39A]">{t.janela}</span>
-        <span className="ml-auto rounded-full border border-[#F4C77E]/40 px-2.5 py-0.5 text-[10.5px] font-semibold uppercase tracking-[0.12em] text-[#F4C77E]">{t.selo}</span>
       </figcaption>
       <TelaVideoGestaoEDA className="relative aspect-[16/9] bg-[#05100C]" />
     </figure>
