@@ -128,6 +128,24 @@ export function cnpjValidoERN(valor: string | null | undefined): boolean {
   return calc(12) === Number(c[12]) && calc(13) === Number(c[13]);
 }
 
+// EDA_DOCUMENTO_COBRANCA_V1: CPF (11) ou CNPJ (14) com dígitos verificadores.
+export function cpfValidoERN(valor: string | null | undefined): boolean {
+  const c = String(valor ?? '').replace(/\D/g, '');
+  if (c.length !== 11 || /^(\d)\1{10}$/.test(c)) return false;
+  const dv = (n: number) => {
+    let soma = 0;
+    for (let i = 0; i < n; i++) soma += Number(c[i]) * (n + 1 - i);
+    const resto = (soma * 10) % 11;
+    return resto === 10 ? 0 : resto;
+  };
+  return dv(9) === Number(c[9]) && dv(10) === Number(c[10]);
+}
+
+export function documentoCobrancaValidoERN(valor: string | null | undefined): boolean {
+  const d = String(valor ?? '').replace(/\D/g, '');
+  return d.length === 11 ? cpfValidoERN(d) : d.length === 14 ? cnpjValidoERN(d) : false;
+}
+
 export type EmitenteFiscalERN = {
   razao_social: string;
   cnpj: string;

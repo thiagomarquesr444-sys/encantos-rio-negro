@@ -7,6 +7,8 @@ import {
   createClient,
 } from '@supabase/supabase-js';
 
+import { documentoCobrancaValidoERN } from '@/lib/fiscalERN';
+
 const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL;
 
@@ -820,6 +822,50 @@ async function executarCheckoutERN(
       9. CLIENTE ASAAS
       ========================================================
     */
+
+    // EDA_DOCUMENTO_COBRANCA_V1
+    // Sem documento na empresa: usa o informado na tela de planos
+    // ou o CNPJ do cadastro fiscal. Validado e gravado pelo servidor.
+    if (!assinatura.provedor_cliente_id && !empresa.cnpj) {
+      const documentoInformadoEDA = String(body?.documento ?? '').replace(/\D/g, '');
+      let documentoEDA = documentoInformadoEDA;
+
+      if (documentoInformadoEDA && !documentoCobrancaValidoERN(documentoInformadoEDA)) {
+        return respostaErro(
+          'CPF ou CNPJ inválido: confira os números digitados.',
+          400,
+          'ERN_DOCUMENTO_INVALIDO'
+        );
+      }
+
+      if (!documentoEDA) {
+        const { data: fiscalEDA } = await admin
+          .from('empresa_fiscal_ern')
+          .select('cnpj')
+          .eq('empresa_id', empresa.id)
+          .maybeSingle();
+        const cnpjFiscalEDA = String(fiscalEDA?.cnpj ?? '').replace(/\D/g, '');
+        if (documentoCobrancaValidoERN(cnpjFiscalEDA)) {
+          documentoEDA = cnpjFiscalEDA;
+        }
+      }
+
+      if (documentoEDA) {
+        const { error: erroDocumentoEDA } = await admin
+          .from('empresa')
+          .update({ cnpj: documentoEDA })
+          .eq('id', empresa.id)
+          .is('cnpj', null);
+        if (erroDocumentoEDA) {
+          return respostaErro(
+            'Não foi possível salvar o CPF/CNPJ. Tente novamente.',
+            500,
+            'ERN_DOCUMENTO_NAO_SALVO'
+          );
+        }
+        empresa.cnpj = documentoEDA;
+      }
+    }
 
     // ERN_CHECKOUT_RESERVA_V1
     // Requisitos locais conferidos antes de qualquer envio ao provedor.

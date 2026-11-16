@@ -11,6 +11,7 @@ import {
 import Link from 'next/link';
 
 import { supabase } from '@/lib/supabase';
+import { documentoCobrancaValidoERN } from '@/lib/fiscalERN';
 import UsoPlanoEDA from '@/app/components/UsoPlanoEDA';
 import CalculadoraTributosPlanosERN from '@/app/components/CalculadoraTributosPlanosERN';
 
@@ -261,6 +262,12 @@ export default function PlanosPage() {
     null
   );
 
+  // EDA_DOCUMENTO_COBRANCA_V1
+  const [pedirDocumentoEDA, setPedirDocumentoEDA] = useState(false);
+  const [documentoEDA, setDocumentoEDA] = useState('');
+  const [planoAguardandoDocumentoEDA, setPlanoAguardandoDocumentoEDA] =
+    useState<string | null>(null);
+
   useEffect(() => {
     carregarDados();
   }, []);
@@ -329,7 +336,8 @@ export default function PlanosPage() {
   }
 
   async function iniciarCheckout(
-    planoCodigo: string
+    planoCodigo: string,
+    documentoCobranca?: string
   ) {
     if (
       planoCodigo !== 'pro' &&
@@ -388,6 +396,10 @@ export default function PlanosPage() {
                   planoCodigo,
 
                 ciclo,
+
+                ...(documentoCobranca
+                  ? { documento: documentoCobranca }
+                  : {}),
               }),
           }
         );
@@ -398,6 +410,22 @@ export default function PlanosPage() {
           .catch(
             () => null
           );
+
+      if (
+        !response.ok &&
+        (payload?.codigo === 'ERN_CADASTRO_INCOMPLETO' ||
+          payload?.codigo === 'ERN_EMPRESA_SEM_DOCUMENTO' ||
+          payload?.codigo === 'ERN_DOCUMENTO_INVALIDO')
+      ) {
+        setPedirDocumentoEDA(true);
+        setPlanoAguardandoDocumentoEDA(planoCodigo);
+      }
+
+      if (response.ok) {
+        setPedirDocumentoEDA(false);
+        setPlanoAguardandoDocumentoEDA(null);
+        setDocumentoEDA('');
+      }
 
       if (!response.ok) {
         throw new Error(
@@ -798,6 +826,50 @@ export default function PlanosPage() {
           <div className="mb-6 rounded-[18px] border border-red-400/20 bg-red-400/[0.06] px-5 py-4 text-sm text-red-200">
             {checkoutErro}
           </div>
+        )}
+
+        {pedirDocumentoEDA && planoAguardandoDocumentoEDA && (
+          <form
+            className="mb-6 rounded-[18px] border border-[var(--ern-destaque)]/25 bg-white/[0.03] px-5 py-5"
+            onSubmit={(e) => {
+              e.preventDefault();
+              const digitos = documentoEDA.replace(/\D/g, '');
+              if (!documentoCobrancaValidoERN(digitos)) {
+                setCheckoutErro('CPF ou CNPJ inválido: confira os números digitados.');
+                return;
+              }
+              iniciarCheckout(planoAguardandoDocumentoEDA, digitos);
+            }}
+          >
+            <label
+              htmlFor="documento-cobranca-eda"
+              className="block text-sm font-semibold text-[var(--ern-texto)]"
+            >
+              CPF ou CNPJ para a cobrança
+            </label>
+            <p className="mt-1 text-xs text-[var(--ern-texto)]/55">
+              Usado só para emitir a cobrança do plano. Pode ser o CPF do responsável ou o CNPJ da empresa.
+            </p>
+            <div className="mt-3 flex flex-col gap-3 sm:flex-row">
+              <input
+                id="documento-cobranca-eda"
+                inputMode="numeric"
+                autoComplete="off"
+                maxLength={18}
+                value={documentoEDA}
+                onChange={(e) => setDocumentoEDA(e.target.value.replace(/[^\d./-]/g, ''))}
+                placeholder="Somente números"
+                className="min-h-[44px] flex-1 rounded-xl border border-white/10 bg-[var(--ern-painel)] px-4 text-sm text-[var(--ern-texto)] outline-none focus:border-[var(--ern-destaque)]/60"
+              />
+              <button
+                type="submit"
+                disabled={checkoutPlano !== null}
+                className="min-h-[44px] rounded-xl bg-[var(--ern-botao)] px-5 text-sm font-bold text-[var(--ern-painel)] disabled:opacity-50"
+              >
+                {checkoutPlano !== null ? 'Salvando…' : 'Salvar e continuar'}
+              </button>
+            </div>
+          </form>
         )}
 
         {checkoutMensagem && (
