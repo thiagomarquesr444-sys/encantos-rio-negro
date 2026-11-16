@@ -257,6 +257,10 @@ export default function PasseiosPage() {
   ] =
     useState('');
 
+  // EDA_SAIDA_HISTORICO_V1: passeio cuja última saída já partiu vai para o Histórico.
+  const [encerrados, setEncerrados] = useState<Map<string, string | null>>(new Map());
+  const [aba, setAba] = useState<'catalogo' | 'historico'>('catalogo');
+
   const [
     feedback,
     setFeedback,
@@ -373,6 +377,9 @@ export default function PasseiosPage() {
         usuarioId: auth.user.id,
         empresaId: String(perfil.empresa_id),
       };
+      const { data: fim, error: erroFim } = await supabase.rpc('eda_passeios_encerrados');
+      if (erroFim) console.error('Erro ao consultar histórico de passeios:', erroFim);
+      setEncerrados(new Map(((fim ?? []) as { passeio_id: string; ultima_saida: string | null }[]).map((f) => [f.passeio_id, f.ultima_saida])));
       setPasseios(registros);
     } catch (error) {
       console.error('Erro ao carregar passeios:', error);
@@ -396,7 +403,7 @@ export default function PasseiosPage() {
   }, []);
 
   // EDA_AO_VIVO_V1
-  useAoVivoEDA(['passeios', 'passeio_saidas', 'reservas'], () => void fetchPasseios(true));
+  useAoVivoEDA(['passeios', 'passeio_saidas', 'reservas', 'vouchers'], () => void fetchPasseios(true));
   // EDA_ABRIR_V1: a EDA abre um registro desta página direto.
   useAbrirRegistroEDA(passeios, abrirEdicao);
 
@@ -521,6 +528,8 @@ export default function PasseiosPage() {
     ============================================================
   */
 
+  const totalAba = aba === 'historico' ? encerrados.size : passeios.length - encerrados.size;
+
   const passeiosFiltrados =
     useMemo(() => {
       const termo =
@@ -532,6 +541,7 @@ export default function PasseiosPage() {
         (
           passeio
         ) => {
+          if (encerrados.has(passeio.id) !== (aba === 'historico')) return false;
           const atendeBusca =
             !termo ||
             passeio.nome
@@ -573,6 +583,8 @@ export default function PasseiosPage() {
       passeios,
       busca,
       filtroCategoria,
+      encerrados,
+      aba,
     ]);
 
   /*
@@ -1075,14 +1087,29 @@ export default function PasseiosPage() {
                   }{' '}
                   de{' '}
                   {
-                    passeios.length
+                    totalAba
                   }{' '}
                   passeio
-                  {passeios.length !==
+                  {totalAba !==
                   1
                     ? 's'
                     : ''}
+                  {aba === 'historico' ? ' no histórico' : ' em catálogo'}
                 </p>
+
+                <div className="mt-4 inline-flex rounded-full border border-[var(--ern-borda)] p-1" role="tablist" aria-label="Catálogo ou histórico">
+                  {([['catalogo', 'Em catálogo', passeios.length - encerrados.size], ['historico', 'Histórico', encerrados.size]] as const).map(([valor, rotulo, n]) => (
+                    <button key={valor} type="button" role="tab" aria-selected={aba === valor} onClick={() => setAba(valor)}
+                      className={`min-h-[36px] rounded-full px-4 text-xs font-semibold transition ${aba === valor ? 'bg-[var(--ern-destaque)] text-[#10140f]' : 'text-[var(--ern-secundario)] hover:text-[var(--ern-texto)]'}`}>
+                      {rotulo} <span className="opacity-70">{n}</span>
+                    </button>
+                  ))}
+                </div>
+                {aba === 'historico' && (
+                  <p className="mt-3 max-w-[520px] text-xs leading-relaxed text-[var(--ern-secundario)]">
+                    Passeios cuja última saída já partiu (horário de embarque passou ou houve check-in). Saem do portal público automaticamente. Para vender de novo, edite o passeio e abra uma nova saída: ele volta sozinho para o catálogo.
+                  </p>
+                )}
               </div>
 
               <div className="flex flex-col gap-3 sm:flex-row">
