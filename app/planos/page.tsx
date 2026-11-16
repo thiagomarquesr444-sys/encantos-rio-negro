@@ -1,6 +1,7 @@
 'use client';
 import '@/app/components/padrao-paginas-eda.css';
 import '@/app/components/padrao-formularios-eda.css';
+import '@/app/fablepremium.css';
 
 import {
   useEffect,
@@ -112,6 +113,9 @@ const CICLOS: {
   },
 ];
 
+// EDA_NF_EM_IMPLANTACAO_V1: sai da lista quando a emissão real estiver ligada.
+const RECURSOS_EM_IMPLANTACAO_EDA = new Set(['nota_fiscal']);
+
 const RECURSOS_LABELS: Record<
   string,
   string
@@ -133,6 +137,9 @@ const RECURSOS_LABELS: Record<
 
   concierge_ia:
     'Concierge com IA (Iara)',
+
+  nota_fiscal:
+    'Nota fiscal (NFS-e)',
 
   destaque_rede:
     'Destaque na Rede Encantos',
@@ -678,7 +685,7 @@ export default function PlanosPage() {
       : null;
 
   return (
-    <div className="eda-pg eda-pg-auto eda-pg-legado min-h-screen pb-20">
+    <div data-fable="gestao" className="eda-pg eda-pg-auto eda-pg-legado min-h-screen pb-20" style={{ ['--e-borda' as string]: 'rgb(255 255 255 / 8%)' }}>
       {/* =====================================================
           CABEÇALHO
       ====================================================== */}
@@ -1061,7 +1068,7 @@ export default function PlanosPage() {
                           );
                         }
                       }}
-                      className={`group relative cursor-pointer overflow-hidden rounded-[24px] border outline-none transition-all duration-300 ${
+                      className={`eda-card group relative cursor-pointer overflow-hidden rounded-[24px] border outline-none transition-all duration-300 ${
                         selecionado
                           ? 'border-[var(--ern-destaque)] bg-[var(--ern-painel)] shadow-[0_18px_48px_rgba(0,0,0,0.24)] -translate-y-0.5'
                           : premium
@@ -1372,7 +1379,7 @@ export default function PlanosPage() {
                               key={
                                 chave
                               }
-                              className={`flex min-h-[48px] items-center gap-3 rounded-[14px] border px-3 ${
+                              className={`eda-item flex min-h-[48px] items-center gap-3 rounded-[14px] border px-3 ${
                                 liberado
                                   ? 'border-emerald-400/12 bg-emerald-400/[0.035]'
                                   : 'border-white/[0.055] bg-white/[0.012]'
@@ -1400,6 +1407,12 @@ export default function PlanosPage() {
                                 {
                                   label
                                 }
+                                {liberado &&
+                                  RECURSOS_EM_IMPLANTACAO_EDA.has(chave) && (
+                                    <span className="ml-2 rounded-full border border-[var(--ern-destaque)]/40 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-[0.08em] text-[var(--ern-destaque)]">
+                                      em implantação
+                                    </span>
+                                  )}
                               </span>
                             </div>
                           );
@@ -1443,7 +1456,7 @@ export default function PlanosPage() {
                         checkoutPlano !==
                           null
                       }
-                      className={`inline-flex min-h-[42px] min-w-[180px] items-center justify-center rounded-xl px-5 text-xs font-bold transition ${
+                      className={`eda-bt-ouro inline-flex min-h-[42px] min-w-[180px] items-center justify-center rounded-xl px-5 text-xs font-bold transition ${
                         !precoSelecionado ||
                         precoSelecionado.valor ===
                           null ||
