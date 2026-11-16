@@ -11,7 +11,7 @@ import '@fontsource-variable/work-sans';
 
 import './globals.css';
 
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Geist, Geist_Mono, Bebas_Neue, Montserrat } from 'next/font/google';
 
 import { AppProvider } from '@/app/context/AppContext';
 import AppShell from '@/app/components/AppShell';
@@ -33,6 +33,10 @@ const fontes = {
 // build e hospeda junto com o site; nenhum visitante acessa o Google.
 const geist = Geist({ subsets: ['latin', 'latin-ext'], variable: '--font-geist', display: 'swap' });
 const geistMono = Geist_Mono({ subsets: ['latin'], variable: '--font-geist-mono', display: 'swap' });
+
+// EDA_FONTE_LETREIRO_V1: Bebas Neue (menu e títulos) + Montserrat (texto), hospedadas no build.
+const bebas = Bebas_Neue({ subsets: ['latin'], weight: '400', variable: '--font-bebas', display: 'swap' });
+const montserrat = Montserrat({ subsets: ['latin', 'latin-ext'], variable: '--font-montserrat', display: 'swap' });
 
 export const viewport: Viewport = {
   themeColor: '#07110e',
@@ -77,7 +81,7 @@ export default function RootLayout({
     <html lang="pt-BR" suppressHydrationWarning>
       <body
         style={fontes}
-        className={`${geist.variable} ${geistMono.variable} bg-slate-950 text-slate-100 antialiased`}
+        className={`${geist.variable} ${geistMono.variable} ${bebas.variable} ${montserrat.variable} bg-slate-950 text-slate-100 antialiased`}
       >
         <script
           dangerouslySetInnerHTML={{

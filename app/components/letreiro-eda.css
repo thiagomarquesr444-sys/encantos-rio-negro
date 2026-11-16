@@ -1,0 +1,101 @@
+/* EDA_LETREIRO_ESCURO_V2 — acabamento premium + celular em carrossel */
+.eda-letreiro {
+  position: relative; overflow: hidden; padding: 80px 20px;
+  background:
+    radial-gradient(ellipse at 15% 0%, rgb(71 176 135 / 7%), transparent 55%),
+    radial-gradient(ellipse at 90% 100%, rgb(210 135 63 / 8%), transparent 55%),
+    #0b0d0c;
+  border-top: 1px solid rgb(255 255 255 / 7%);
+}
+.eda-letreiro-miolo { max-width: 1180px; margin: 0 auto; }
+
+/* Seletor duplo vence o letter-spacing negativo do portal (fablepremium). */
+.eda-letreiro .eda-letreiro-titulo {
+  font-family: var(--font-bebas), 'Bebas Neue', Impact, sans-serif;
+  font-weight: 400; letter-spacing: 0.02em; text-transform: uppercase; text-align: center;
+  font-size: clamp(2.3rem, 5.2vw, 3.8rem); line-height: 1; color: #f5f3ea;
+  text-shadow: 0 2px 24px rgb(0 0 0 / 45%);
+}
+
+/* Veio do Rio Negro: preto com traços de Solimões e floresta. */
+.eda-letreiro-veio {
+  display: block; height: 4px; width: min(280px, 60%); margin: 18px auto 44px; border-radius: 4px;
+  background: linear-gradient(90deg, #1a1d1c 0 40%, #d2873f 40% 46%, #1a1d1c 46% 72%, #47b087 72% 78%, #1a1d1c 78%);
+}
+
+.eda-letreiro-grade { display: grid; gap: 24px; grid-template-columns: repeat(4, minmax(0, 1fr)); list-style: none; padding: 0; margin: 0; }
+
+.eda-letreiro-cartao {
+  position: relative; display: flex; flex-direction: column;
+  border-radius: 14px; padding: 6px 6px 18px;
+  background: linear-gradient(180deg, rgb(255 255 255 / 4%), rgb(255 255 255 / 1.5%));
+  border: 1px solid rgb(255 255 255 / 7%);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 35%), inset 0 1px 0 rgb(255 255 255 / 5%);
+  transition: transform .35s ease, border-color .35s ease, box-shadow .35s ease;
+}
+
+.eda-letreiro-foto {
+  position: relative; aspect-ratio: 4 / 3; overflow: hidden; border-radius: 10px; background: #050806;
+  isolation: isolate;
+}
+.eda-letreiro-foto img {
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  filter: saturate(1.08) contrast(1.05);
+  transition: transform .8s cubic-bezier(.2,.7,.2,1);
+}
+/* Véu escuro embaixo (o número fica legível) + brilho dourado suave no topo. */
+.eda-letreiro-foto::after {
+  content: ''; position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background:
+    linear-gradient(180deg, rgb(244 199 126 / 10%) 0%, transparent 28%, transparent 48%, rgb(5 8 6 / 82%) 100%);
+  box-shadow: inset 0 0 0 1px rgb(244 199 126 / 22%);
+  border-radius: inherit;
+}
+/* Faixa com os veios na base da foto. */
+.eda-letreiro-foto::before {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; z-index: 3;
+  background: linear-gradient(90deg, #050806 0 38%, #d2873f 38% 44%, #050806 44% 66%, #47b087 66% 72%, #050806 72%);
+}
+
+.eda-letreiro-numero {
+  position: absolute; left: 12px; bottom: -4px; z-index: 2;
+  font-family: var(--font-bebas), 'Bebas Neue', Impact, sans-serif;
+  font-size: 5.8rem; line-height: 1;
+  background: linear-gradient(180deg, #ffffff 30%, #f4c77e 100%);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  filter: drop-shadow(0 4px 14px rgb(0 0 0 / 60%));
+}
+
+.eda-letreiro-cartao p {
+  margin: 16px 8px 0; font-family: var(--font-montserrat), sans-serif;
+  font-size: 0.95rem; line-height: 1.65; color: #e6e9e4; text-align: justify; hyphens: auto;
+}
+
+@media (hover: hover) {
+  .eda-letreiro-cartao:hover { transform: translateY(-4px); border-color: rgb(244 199 126 / 28%); box-shadow: 0 26px 50px rgb(0 0 0 / 45%); }
+  .eda-letreiro-cartao:hover .eda-letreiro-foto img { transform: scale(1.06); }
+}
+.eda-letreiro-cartao:focus-within { outline: 2px solid #f4c77e; outline-offset: 4px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .eda-letreiro-cartao, .eda-letreiro-foto img { transition: none; }
+  .eda-letreiro-cartao:hover, .eda-letreiro-cartao:hover .eda-letreiro-foto img { transform: none; }
+}
+
+@media (max-width: 1023px) { .eda-letreiro-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* Celular: carrossel horizontal com encaixe, um cartão e meio à vista. */
+@media (max-width: 640px) {
+  .eda-letreiro { padding: 56px 0 48px; }
+  .eda-letreiro .eda-letreiro-titulo { padding: 0 16px; font-size: clamp(2.1rem, 9vw, 2.6rem); }
+  .eda-letreiro-veio { margin-bottom: 28px; }
+  .eda-letreiro-grade {
+    display: flex; gap: 14px; overflow-x: auto; padding: 4px 16px 16px;
+    scroll-snap-type: x mandatory; scroll-padding-left: 16px;
+    -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  }
+  .eda-letreiro-grade::-webkit-scrollbar { display: none; }
+  .eda-letreiro-cartao { flex: 0 0 82%; scroll-snap-align: start; }
+  .eda-letreiro-numero { font-size: 4.6rem; }
+  .eda-letreiro-cartao p { font-size: 0.92rem; text-align: left; hyphens: manual; }
+}

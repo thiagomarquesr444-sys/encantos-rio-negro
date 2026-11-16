@@ -221,11 +221,12 @@ export default function PublicHeader() {
   }, [idioma]);
 
   function classeLink(ativo: boolean) {
-    // ERN_MENU_PREMIUM_V1: cápsula de vidro; a seção ativa ganha botão dourado.
-    return `inline-flex min-h-10 items-center rounded-full px-4 text-sm font-semibold transition motion-reduce:transition-none ${FOCO} ${
+    // EDA_MENU_LETREIRO_V1: menu sem caixa, fonte condensada em maiúsculas;
+    // o item ativo fica verde com sublinhado fino.
+    return `eda-menu-link inline-flex items-center border-b-2 pb-1 transition-colors motion-reduce:transition-none ${FOCO} ${
       ativo
-        ? 'bg-gradient-to-b from-[#F7D595] to-[#E3A144] text-[#07130F] shadow-[0_6px_18px_rgb(227_161_68/35%),inset_0_1px_0_rgb(255_255_255/50%)]'
-        : 'text-[#EDEDE3]/80 hover:bg-white/[0.07] hover:text-white'
+        ? 'border-[#47B087] text-[#47B087]'
+        : 'border-transparent text-white hover:text-[#47B087]'
     }`;
   }
 
@@ -264,7 +265,7 @@ export default function PublicHeader() {
 
           <nav
             aria-label={t.navigation}
-            className="ern-menu-capsula hidden items-center gap-1 rounded-full border border-white/12 bg-white/[0.06] p-1.5 shadow-[inset_0_1px_0_rgb(255_255_255/8%),0_10px_30px_rgb(0_0_0/25%)] backdrop-blur-xl xl:flex"
+            className="hidden items-center gap-8 xl:flex"
           >
             {links.map((item) => {
               const ativo = rotaAtiva(pathname, item.href);
@@ -288,10 +289,10 @@ export default function PublicHeader() {
               aria-current={
                 paginaOperadores ? 'page' : undefined
               }
-              className={`ern-botao-fantasma inline-flex min-h-11 items-center gap-2 rounded-full border px-4 text-sm font-semibold backdrop-blur-md transition-colors motion-reduce:transition-none ${FOCO} ${
+              className={`eda-menu-link inline-flex items-center gap-2 border-b-2 pb-1 transition-colors motion-reduce:transition-none ${FOCO} ${
                 paginaOperadores
-                  ? 'border-[#F4C77E]/60 text-[#F4C77E]'
-                  : 'border-white/15 bg-white/[0.04] text-[#EDEDE3] hover:border-[#F4C77E]/60 hover:text-[#F4C77E]'
+                  ? 'border-[#47B087] text-[#47B087]'
+                  : 'border-transparent text-white hover:text-[#47B087]'
               }`}
             >
               <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -511,6 +512,14 @@ export default function PublicHeader() {
           background: #0a1713;
           color: #edede3;
           box-shadow: -20px 0 70px rgb(0 0 0 / 35%);
+        }
+
+        .eda-menu-link {
+          font-family: var(--font-bebas), 'Bebas Neue', Impact, sans-serif;
+          font-size: 1.45rem;
+          line-height: 1;
+          letter-spacing: 0.01em;
+          text-transform: uppercase;
         }
 
         .menu-publico::backdrop {

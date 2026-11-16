@@ -1,5 +1,6 @@
 'use client';
 import { ConfigurarVivenciaERN } from './VivenciasERN';
+import MoldeEDA from './MoldeEDA';
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { ContextoPerfilPublicoERN } from '@/lib/perfilPublicoEditorialERN';
@@ -145,13 +146,15 @@ export default function MidiasPublicacaoEditorialERN({
             {midias.map(midia => (
               <figure key={midia.id} className="min-w-0">
                 {midia.tipo === 'imagem' ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={midia.url}
-                    alt={midia.alt_text || 'Imagem da publicação'}
-                    loading="lazy"
-                    className="aspect-[4/3] w-full rounded-xl bg-[var(--ern-painel)] object-contain"
-                  />
+                  <MoldeEDA>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={midia.url}
+                      alt={midia.alt_text || 'Imagem da publicação'}
+                      loading="lazy"
+                      className="aspect-[4/3] w-full object-contain"
+                    />
+                  </MoldeEDA>
                 ) : (
                   <video
                     src={midia.url}

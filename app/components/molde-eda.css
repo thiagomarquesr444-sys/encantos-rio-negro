@@ -1,0 +1,58 @@
+/* EDA_MOLDE_MARCA_V1 */
+.eda-molde {
+  position: relative;
+  overflow: hidden;
+  border-radius: 14px;
+  padding: 4px 4px 0;
+  background:
+    linear-gradient(100deg,
+      #050806 0 46%, #d2873f 46% 48%, #050806 48% 71%,
+      #47b087 71% 73%, #050806 73% 100%);
+  box-shadow: 0 8px 22px rgb(0 0 0 / 28%);
+}
+
+.eda-molde-midia {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px 10px 0 0;
+  background: #050806;
+}
+
+.eda-molde-midia > img,
+.eda-molde-midia > video {
+  display: block;
+  width: 100%;
+  border-radius: 0;
+}
+
+.eda-molde-marca {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px 4px 4px;
+  border-radius: 999px;
+  background: rgb(5 8 6 / 72%);
+  backdrop-filter: blur(4px);
+  color: #f0f0e8;
+  font-family: var(--font-bebas), 'Bebas Neue', Impact, sans-serif;
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.eda-molde-marca svg { filter: none; }
+
+/* Faixa inferior: preto com veios das outras cores. */
+.eda-molde-faixa {
+  height: 6px;
+  margin: 0 -4px;
+  background:
+    linear-gradient(90deg,
+      #050806 0 38%, #d2873f 38% 41%, #050806 41% 64%,
+      #47b087 64% 67%, #050806 67% 100%);
+}

@@ -5,9 +5,10 @@ import { useState } from 'react';
 import PublicHeader from '@/app/components/PublicHeader';
 import FeedDescubraERN from '@/app/components/FeedDescubraERN';
 import CulturaAmazonicaERN from '@/app/components/CulturaAmazonicaERN';
-import PreviaGestaoEDA from '@/app/components/PreviaGestaoEDA';
+import VideoGestaoEDA from '@/app/components/VideoGestaoEDA';
 import RodapePublicoEDA from '@/app/components/RodapePublicoEDA';
 import HeroImersivoERN from '@/app/components/HeroImersivoERN';
+import LetreiroEDA from '@/app/components/LetreiroEDA';
 import VitrineDestinosERN from '@/app/components/VitrineDestinosERN';
 import IconeIara from '@/app/components/IconeIara';
 import { useLanguage } from '@/app/components/LanguageProvider';
@@ -155,6 +156,8 @@ export default function Home() {
 
       <CulturaAmazonicaERN />
 
+      <LetreiroEDA />
+
       <section id="vitrine-gestao" className="ern-publico-hero relative scroll-mt-28 overflow-hidden border-t border-white/[0.07] bg-[#07110E] px-5 py-24 md:px-8 md:py-28">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_85%_10%,rgb(227_161_68/10%),transparent_55%),radial-gradient(ellipse_at_10%_90%,rgb(71_176_135/8%),transparent_50%)]" />
         <div className="relative mx-auto grid max-w-[1180px] gap-12 rounded-[28px] border border-white/[0.08] bg-gradient-to-br from-[#0E1F19] to-[#08130F] p-7 shadow-[0_30px_80px_rgb(0_0_0/30%),inset_0_1px_0_rgb(255_255_255/5%)] md:p-12 lg:grid-cols-[1fr_1.05fr] lg:items-center">
@@ -197,7 +200,7 @@ export default function Home() {
             </ul>
           </div>
 
-          <PreviaGestaoEDA />
+          <VideoGestaoEDA />
         </div>
       </section>
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import MoldeEDA from './MoldeEDA';
 import { supabase } from '@/lib/supabase';
 import {
   carregarPerfilPublicoEditorialERN,
@@ -117,13 +118,17 @@ export default function PreviaPublicacaoEditorialERN({
           {previa.midias.map(midia => (
             <figure key={midia.id} className="mb-4">
               {midia.tipo === 'imagem' && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={midia.url}
-                  alt={midia.alt_text || 'Imagem da publicação'}
-                  loading="lazy"
-                  className="max-h-[65dvh] w-full object-contain"
-                />
+                <div className="px-3">
+                  <MoldeEDA>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={midia.url}
+                      alt={midia.alt_text || 'Imagem da publicação'}
+                      loading="lazy"
+                      className="max-h-[65dvh] w-full object-contain"
+                    />
+                  </MoldeEDA>
+                </div>
               )}
               {midia.tipo === 'video' && (
                 <video
