@@ -330,9 +330,14 @@ export default function PublicHeader() {
             aria-controls="menu-publico-ern"
             aria-haspopup="dialog"
             onClick={() => setMenuAberto(true)}
-            className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-white/20 bg-white/5 text-[#EDEDE3] xl:hidden ${FOCO}`}
+            className={`eda-pontos group inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-white/[0.04] text-[#EDEDE3] backdrop-blur-md transition-colors hover:border-[#F4C77E]/40 xl:hidden ${FOCO}`}
           >
-            <IconeMenu />
+            {/* EDA_MENU_PONTOS_V1: três pontos verticais discretos; o do meio em dourado. */}
+            <span aria-hidden="true" className="flex flex-col items-center gap-[4px]">
+              <i className="block h-[4px] w-[4px] rounded-full bg-[#EDEDE3] transition-transform duration-200 group-hover:-translate-y-[1px] motion-reduce:transition-none" />
+              <i className="block h-[5px] w-[5px] rounded-full bg-[#F4C77E] shadow-[0_0_8px_rgb(244_199_126/70%)]" />
+              <i className="block h-[4px] w-[4px] rounded-full bg-[#EDEDE3] transition-transform duration-200 group-hover:translate-y-[1px] motion-reduce:transition-none" />
+            </span>
           </button>
         </div>
       </header>
