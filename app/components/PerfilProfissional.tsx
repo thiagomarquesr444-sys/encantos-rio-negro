@@ -1,5 +1,7 @@
 'use client';
 
+import './inicio-fornecedor-eda.css';
+
 import {
   useEffect,
   useRef,
@@ -397,9 +399,32 @@ function FormularioPerfilProfissional({ tipo }: Props) {
   }
 
   return (
-    <main className="min-h-[calc(100dvh-82px)] bg-[#07110E] px-4 py-7 text-[#EDEDE3] sm:px-6 sm:py-10">
+    <main data-fable="portal" className="min-h-[calc(100dvh-82px)] bg-[#07110E] px-4 py-7 text-[#EDEDE3] sm:px-6 sm:py-10">
       <div className="mx-auto w-full max-w-[1000px]">
-        <header>
+        {/* EDA_FORNECEDOR_PERFIL_FABLE_V1: fornecedor ganha capa com paisagem e letreiro. */}
+        {!guia ? (
+          <header>
+            <div className="fi-capa" style={{ backgroundImage: "url('/images/fornecedor/experiencias.webp')", minHeight: 260 }}>
+              <div className="fi-capa-veu" />
+              <div className="fi-capa-txt">
+                <p className="fi-eb">Encantos da Amazônia · Meu perfil</p>
+                <h1 id="perfil-titulo" className="fi-letreiro">Quem faz, quem é você</h1>
+                <p className="fi-sub">
+                  Seu nome, sua cidade, o que você faz e o WhatsApp que recebe os contatos. É assim que o visitante
+                  e as operadoras vão te encontrar na Rede EDA.
+                </p>
+              </div>
+            </div>
+            <div className="fi-eda-guia">
+              <span className="fi-eda-selo" aria-hidden="true">EDA</span>
+              <p className="fi-eda-fala">
+                Só o nome é obrigatório, mas com <b>WhatsApp com DDD</b>, <b>cidade</b> e <b>atividade</b> o comprador
+                consegue falar com você. Se você faz artesanato, escolha <b>Artesanato</b> na atividade.
+              </p>
+            </div>
+          </header>
+        ) : (
+          <header>
           <Link
             href={raiz}
             className={`inline-flex min-h-11 items-center gap-2 rounded-xl text-sm font-semibold text-[#F4C77E] transition-colors hover:text-[#FFD18A] ${FOCO}`}
@@ -428,6 +453,7 @@ function FormularioPerfilProfissional({ tipo }: Props) {
               : 'Apresente seu negócio, sua atividade principal, seus produtos ou serviços e sua região de atendimento dentro da Rede EDA.'}
           </p>
         </header>
+        )}
 
         <div ref={avisoRef} className="scroll-mt-28">
           {erro && (
