@@ -18,7 +18,7 @@ type Props = { children: ReactNode; etapa: 'login' | 'cadastro' | 'recuperacao' 
 const PERFIS: { id: Perfil; nome: string }[] = [
   { id: 'operadora', nome: 'Operadora' },
   { id: 'guia', nome: 'Guia' },
-  { id: 'fornecedor', nome: 'Fornecedor' },
+  { id: 'fornecedor', nome: 'Fornecedor / Artesão' },
 ];
 
 // 'arco' usa o ícone de reação da marca; os demais vêm de IconeERN.
@@ -41,9 +41,9 @@ const BENEFICIOS: Record<Perfil | 'geral', [IconeBeneficio, string][]> = {
     ['whatsapp', 'Contato direto com visitantes pelo WhatsApp'],
   ],
   fornecedor: [
-    ['fornecedor', 'Barcos, hospedagens, transporte e serviços em destaque'],
+    ['diamante', 'Artesanato e produtos na vitrine "Feito na Amazônia"'],
+    ['whatsapp', 'Comprador falando direto com você, sem comissão'],
     ['parceria', 'Conexão com as operadoras da região'],
-    ['arco', 'Presença na Rede EDA para quem planeja a viagem'],
   ],
 };
 
@@ -51,7 +51,7 @@ export default function AcessoPremiumERN({ children, etapa, perfil }: Props) {
   const cadastrar = etapa === 'cadastro';
   const recuperar = etapa === 'recuperacao' || etapa === 'senha';
   const mostrarPerfis = etapa === 'login' || etapa === 'cadastro';
-  const nome = perfil === 'operadora' ? 'Operadora de turismo' : perfil === 'guia' ? 'Guia de turismo' : perfil === 'fornecedor' ? 'Fornecedor da Rede' : 'Acesso profissional';
+  const nome = perfil === 'operadora' ? 'Operadora de turismo' : perfil === 'guia' ? 'Guia de turismo' : perfil === 'fornecedor' ? 'Fornecedor e artesão' : 'Acesso profissional';
   const beneficios = BENEFICIOS[perfil ?? 'geral'];
 
   return <main className="ern-acesso-premium ern-acesso-v2" data-etapa={etapa}>
@@ -64,15 +64,25 @@ export default function AcessoPremiumERN({ children, etapa, perfil }: Props) {
     </header>
     <div className="ern-acesso-grade">
       {etapa !== 'acesso' && <aside className="ern-acesso-manifesto" aria-label="Boas-vindas à Encantos Gestão">
-        <picture className="ern-acesso-foto" aria-hidden="true">
-          <source media="(max-width: 767px)" srcSet="/images/fundo/encontro-das-aguas-celular.jpg" />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src="/images/fundo/encontro-das-aguas-1920.jpg" alt="" />
-        </picture>
+        {/* EDA_FORNECEDOR_ACESSO_V1: fornecedor/artesão com paisagem própria. */}
+        {perfil === 'fornecedor' ? (
+          <picture className="ern-acesso-foto" aria-hidden="true">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/fornecedor/eldorado.webp" alt="" />
+          </picture>
+        ) : (
+          <picture className="ern-acesso-foto" aria-hidden="true">
+            <source media="(max-width: 767px)" srcSet="/images/fundo/encontro-das-aguas-celular.jpg" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/fundo/encontro-das-aguas-1920.jpg" alt="" />
+          </picture>
+        )}
         <div className="ern-acesso-manifesto-texto">
           <span className="ern-acesso-etiqueta"><i aria-hidden="true" />{nome}</span>
           <h2>{recuperar
             ? <>Retome seu acesso.<br /><em>Sua operação espera.</em></>
+            : perfil === 'fornecedor'
+              ? <>Seu ofício na vitrine<br /><em>da Amazônia.</em></>
             : cadastrar
               ? <>Sua vitrine na Amazônia<br /><em>começa aqui.</em></>
               : <>A Amazônia conecta.<br /><em>Você faz acontecer.</em></>}</h2>

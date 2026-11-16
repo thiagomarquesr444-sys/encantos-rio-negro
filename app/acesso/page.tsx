@@ -30,7 +30,7 @@ const destinos: Record<TipoAcesso, string> = {
 const titulos: Record<TipoAcesso, string> = {
   operadora: 'Gestão da operadora',
   guia: 'Meu espaço de guia',
-  fornecedor: 'Meu espaço de fornecedor',
+  fornecedor: 'Meu espaço de fornecedor e artesão',
 };
 
 const nomes: Record<TipoAcesso, string> = {
@@ -45,7 +45,7 @@ const descricoes: Record<TipoAcesso, string> = {
   guia:
     'Acesse seu espaço independente e mantenha seu cadastro de guia na Rede EDA.',
   fornecedor:
-    'Acesse seu espaço independente e mantenha seu cadastro de comerciante ou prestador de serviços na Rede EDA.',
+    'Acesse seu espaço independente: sua vitrine de artesanato ou produtos, seu perfil e seus contatos na Rede EDA.',
 };
 
 function analisarConta(conta: AcessosConta) {
