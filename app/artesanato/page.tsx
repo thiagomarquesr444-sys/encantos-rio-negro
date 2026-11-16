@@ -110,7 +110,7 @@ export default function ArtesanatoPage() {
   return (
     <div data-fable="portal" className="min-h-dvh bg-[#07110E] text-[#EDEDE3]">
       <PublicHeader />
-      <main className="mx-auto max-w-[1180px] px-5 pb-24 pt-32 md:px-8 md:pt-40">
+      <main className="mx-auto max-w-[1180px] px-3 pb-24 pt-28 sm:px-5 md:px-8 md:pt-40">
         <div className="mx-auto max-w-[760px] text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#F4C77E]">{t.eb}</p>
           <h1 className="pr-eda-titulo mt-5 text-[#F0F0E8]">{t.titulo}</h1>
@@ -134,7 +134,7 @@ export default function ArtesanatoPage() {
         {erro && <p className="mt-10 text-center text-sm text-red-300">{t.erro}</p>}
         {itens && !visiveis.length && !erro && <p className="mt-10 text-center text-sm text-[#B8C9BF]">{t.vazio}</p>}
 
-        <ul className="mt-10 grid grid-cols-2 gap-3 sm:gap-5 lg:grid-cols-4">
+        <ul className="mt-8 grid grid-cols-2 gap-2.5 sm:mt-10 sm:gap-5 lg:grid-cols-4">
           {visiveis.map((item) => {
             const wa = linkWhatsApp(item);
             return (
@@ -150,7 +150,7 @@ export default function ArtesanatoPage() {
                       {Number(item.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
                     </p>
                   )}
-                  {item.descricao && <p className="line-clamp-2 text-xs leading-5 text-[#B8C9BF]">{item.descricao}</p>}
+                  {item.descricao && <p className="hidden line-clamp-2 text-xs leading-5 text-[#B8C9BF] sm:block">{item.descricao}</p>}
                   <div className="mt-1 flex flex-wrap gap-1.5">
                     {item.envia_correios && (
                       <span className="rounded-full border border-[#355043] px-2 py-0.5 text-[10px] text-[#B8C9BF]">{t.correios}</span>
