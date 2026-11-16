@@ -325,11 +325,12 @@ export default function ExperienciasPremiumERN({ abrirPasseio }: { abrirPasseio?
         <section id="passeios" className="scroll-mt-24 bg-[#07110E] py-16 md:py-20">
           <div className="mx-auto max-w-[1180px] px-5 md:px-8">
             <VitrinePasseiosEDA
+              catalogo
               abrirPasseio={abrirPasseio}
               interesse={interesse}
               rotuloInteresse={interesseAtual?.nome}
               onLimparInteresse={() => setInteresse(null)}
-              titulo="Passeios para reservar agora"
+              titulo="Catálogo de experiências"
               subtitulo="Publicados pelas operadoras da Rede EDA, com preço e contato direto."
             />
           </div>

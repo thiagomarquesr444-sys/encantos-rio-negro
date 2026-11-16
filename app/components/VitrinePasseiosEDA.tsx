@@ -33,7 +33,31 @@ type Props = {
   limite?: number;
   ocultarOperadora?: boolean;
   onVerTodos?: () => void;
+  // EDA_CATALOGO_PREMIUM_V1: vitrine completa (busca, filtros, ordenação e destaque).
+  catalogo?: boolean;
 };
+
+type Ordem = 'recomendados' | 'proximas' | 'menor' | 'maior';
+
+function ordenar(lista: PasseioPublicoEDA[], ordem: Ordem) {
+  const data = (p: PasseioPublicoEDA) => p.proxima_saida ?? '9999-12-31';
+  const valor = (p: PasseioPublicoEDA) => (p.preco && p.preco > 0 ? p.preco : null);
+  return [...lista].sort((a, b) => {
+    if (ordem === 'menor' || ordem === 'maior') {
+      const va = valor(a); const vb = valor(b);
+      if (va === null && vb === null) return 0;
+      if (va === null) return 1;
+      if (vb === null) return -1;
+      return ordem === 'menor' ? va - vb : vb - va;
+    }
+    if (ordem === 'recomendados' && a.destaque !== b.destaque) return a.destaque ? -1 : 1;
+    return data(a).localeCompare(data(b));
+  });
+}
+
+function semAcento(t: string) {
+  return t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+}
 
 // EDA_PASSEIOS_PREMIUM_V2: agenda real + pedido estruturado para a operadora.
 function Agenda({ passeio }: { passeio: PasseioPublicoEDA }) {
@@ -149,8 +173,11 @@ function Fotos({ passeio, grande }: { passeio: PasseioPublicoEDA; grande?: boole
 
 export default function VitrinePasseiosEDA({
   slug, titulo = 'Passeios das operadoras', subtitulo, compacta, limite, ocultarOperadora, onVerTodos,
-  interesse, rotuloInteresse, onLimparInteresse, abrirPasseio,
+  interesse, rotuloInteresse, onLimparInteresse, abrirPasseio, catalogo,
 }: Props) {
+  const [busca, setBusca] = useState('');
+  const [cidade, setCidade] = useState('');
+  const [ordem, setOrdem] = useState<Ordem>('recomendados');
   const [estado, setEstado] = useState<Estado>({ tipo: 'carregando' });
   const [categoria, setCategoria] = useState('');
   const [aberto, setAberto] = useState<PasseioPublicoEDA | null>(null);
@@ -193,10 +220,38 @@ export default function VitrinePasseiosEDA({
     () => [...new Set(itens.map((p) => p.categoria).filter(Boolean) as string[])],
     [itens],
   );
-  const visiveis = itens
+  const cidades = useMemo(
+    () => [...new Set(itens.map((p) => p.cidade).filter(Boolean) as string[])].sort((a, b) => a.localeCompare(b, 'pt-BR')),
+    [itens],
+  );
+  const contagem = useMemo(() => {
+    const mapa = new Map<string, number>();
+    itens.forEach((p) => { if (p.categoria) mapa.set(p.categoria, (mapa.get(p.categoria) ?? 0) + 1); });
+    return mapa;
+  }, [itens]);
+  const termo = semAcento(busca.trim());
+  const filtrados = itens
     .filter((p) => !categoria || p.categoria === categoria)
     .filter((p) => !interesse || passeioCombinaInteresseEDA(p, interesse))
-    .slice(0, limite ?? itens.length);
+    .filter((p) => !cidade || p.cidade === cidade)
+    .filter((p) => !termo || semAcento([p.nome, p.cidade, p.categoria, p.descricao, p.operadora_nome].filter(Boolean).join(' ')).includes(termo));
+  const visiveis = (catalogo ? ordenar(filtrados, ordem) : filtrados).slice(0, limite ?? itens.length);
+  const filtrando = Boolean(categoria || cidade || termo || interesse);
+  // Destaque grande só na visão geral, com catálogo suficiente para compor a grade.
+  const vitrine = catalogo && !filtrando && ordem === 'recomendados' && visiveis.length >= 3 ? visiveis[0] : null;
+  const resumo = useMemo(() => {
+    const precos = itens.map((p) => p.preco).filter((v): v is number => !!v && v > 0);
+    return {
+      destinos: new Set(itens.map((p) => p.cidade).filter(Boolean)).size,
+      operadoras: new Set(itens.map((p) => p.operadora_slug)).size,
+      menor: precos.length ? precoPasseioEDA(Math.min(...precos)) : null,
+      saidas: itens.reduce((t, p) => t + (p.saidas_abertas || 0), 0),
+    };
+  }, [itens]);
+  function limparFiltros() {
+    setCategoria(''); setCidade(''); setBusca('');
+    onLimparInteresse?.();
+  }
 
   if (estado.tipo === 'pronto' && !itens.length && (slug || compacta)) return null;
 
@@ -219,17 +274,62 @@ export default function VitrinePasseiosEDA({
           {onLimparInteresse && <button type="button" onClick={onLimparInteresse}>Ver todos</button>}
         </p>
       )}
+      {catalogo && estado.tipo === 'pronto' && itens.length > 0 && (
+        <>
+          <dl className="vp-resumo">
+            <div><dt>Passeios</dt><dd>{itens.length}</dd></div>
+            <div><dt>Destinos</dt><dd>{resumo.destinos}</dd></div>
+            <div><dt>Operadoras</dt><dd>{resumo.operadoras}</dd></div>
+            {resumo.saidas > 0 && <div><dt>Saídas abertas</dt><dd>{resumo.saidas}</dd></div>}
+            {resumo.menor && <div><dt>A partir de</dt><dd>{resumo.menor}</dd></div>}
+          </dl>
+          <div className="vp-barra">
+            <label className="vp-busca">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+              <input type="search" value={busca} onChange={(e) => setBusca(e.target.value)}
+                placeholder="Buscar passeio, destino ou operadora" aria-label="Buscar passeios" />
+            </label>
+            {cidades.length > 1 && (
+              <select className="vp-sel" value={cidade} onChange={(e) => setCidade(e.target.value)} aria-label="Filtrar por destino">
+                <option value="">Todos os destinos</option>
+                {cidades.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            )}
+            <select className="vp-sel" value={ordem} onChange={(e) => setOrdem(e.target.value as Ordem)} aria-label="Ordenar passeios">
+              <option value="recomendados">Recomendados</option>
+              <option value="proximas">Próximas saídas</option>
+              <option value="menor">Menor preço</option>
+              <option value="maior">Maior preço</option>
+            </select>
+          </div>
+        </>
+      )}
       {!compacta && categorias.length > 1 && (
         <div className="vp-filtros" role="group" aria-label="Filtrar por categoria">
-          <button type="button" aria-pressed={!categoria} onClick={() => setCategoria('')}>Todos</button>
+          <button type="button" aria-pressed={!categoria} onClick={() => setCategoria('')}>Todos{catalogo && <i>{itens.length}</i>}</button>
           {categorias.map((c) => (
-            <button key={c} type="button" aria-pressed={categoria === c} onClick={() => setCategoria(c)}>{c}</button>
+            <button key={c} type="button" aria-pressed={categoria === c} onClick={() => setCategoria(categoria === c ? '' : c)}>
+              {c}{catalogo && <i>{contagem.get(c)}</i>}
+            </button>
           ))}
+        </div>
+      )}
+      {catalogo && estado.tipo === 'pronto' && itens.length > 0 && (
+        <p className="vp-contagem" role="status" aria-live="polite">
+          {visiveis.length} {visiveis.length === 1 ? 'experiência' : 'experiências'}{filtrando ? ' encontrada' + (visiveis.length === 1 ? '' : 's') : ''}
+          {filtrando && <button type="button" onClick={limparFiltros}>Limpar filtros</button>}
+        </p>
+      )}
+      {catalogo && estado.tipo === 'pronto' && itens.length > 0 && visiveis.length === 0 && (
+        <div className="vp-vazio">
+          <span aria-hidden="true">✦</span>
+          <p>Nenhum passeio combina com esses filtros agora. A Iara pode montar um pedido sob medida para você.</p>
+          <button type="button" className="vp-limpar" onClick={limparFiltros}>Ver todos os passeios</button>
         </div>
       )}
 
       {estado.tipo === 'carregando' && (
-        <div className="vp-grade">{[0, 1, 2].map((i) => <div key={i} className="vp-card vp-esqueleto" />)}</div>
+        <div className="vp-grade" data-catalogo={catalogo || undefined}>{(catalogo ? [0, 1, 2, 3, 4, 5] : [0, 1, 2]).map((i) => <div key={i} className="vp-card vp-esqueleto" />)}</div>
       )}
 
       {estado.tipo === 'erro' && (
@@ -248,35 +348,45 @@ export default function VitrinePasseiosEDA({
       )}
 
       {visiveis.length > 0 && (
-        <div className="vp-grade">
+        <div className="vp-grade" data-catalogo={catalogo || undefined}>
           {visiveis.map((p) => {
             const preco = precoPasseioEDA(p.preco);
+            const grande = vitrine?.id === p.id;
             return (
-              <article key={p.id} className="vp-card">
+              <article key={p.id} className="vp-card" data-vitrine={grande || undefined}>
                 <button type="button" className="vp-abrir" onClick={() => setAberto(p)} aria-label={`Ver detalhes: ${p.nome}`} />
-                <Fotos passeio={p} />
-                {p.categoria && <span className="vp-selo">{p.categoria}</span>}
-                {p.destaque && <span className="vp-destaque">✦ Destaque</span>}
+                <div className="vp-midia">
+                  <Fotos passeio={p} />
+                  {p.categoria && <span className="vp-selo">{p.categoria}</span>}
+                  {p.destaque && <span className="vp-destaque">✦ Destaque</span>}
+                  {catalogo && (p.cidade || p.duracao) && (
+                    <span className="vp-local">{[p.cidade, p.duracao].filter(Boolean).join(' · ')}</span>
+                  )}
+                </div>
                 <div className="vp-corpo">
-                  <small>{[p.cidade, p.duracao].filter(Boolean).join(' · ')}</small>
+                  {!catalogo && <small>{[p.cidade, p.duracao].filter(Boolean).join(' · ')}</small>}
+                  {grande && <p className="vp-sobre">Experiência em destaque</p>}
                   <h3>{p.nome}</h3>
-                  {!compacta && p.descricao && <p>{p.descricao}</p>}
+                  {!compacta && p.descricao && <p className="vp-desc">{p.descricao}</p>}
                   <div className="vp-rodape">
                     <span>{preco ? <><small>a partir de</small><strong>{preco}</strong> <small>{rotuloModalidadeEDA(p.preco_modalidade)}</small></> : <strong>Consultar valor</strong>}</span>
                     {p.situacao === 'Em Breve'
                       ? <em>Em breve</em>
                       : p.proxima_saida
                         ? <em title="Próxima saída com vagas">{dataCurtaEDA(p.proxima_saida)} · {p.proxima_saida_vagas} vaga{p.proxima_saida_vagas === 1 ? '' : 's'}</em>
-                        : null}
+                        : catalogo ? <em data-suave>Datas sob consulta</em> : null}
                   </div>
                   {!ocultarOperadora && (
-                    <Link className="vp-oper" href={`/rede/perfil/${p.operadora_slug}`}>
-                      {p.operadora_logo
-                        // eslint-disable-next-line @next/next/no-img-element
-                        ? <img src={p.operadora_logo} alt="" />
-                        : <span aria-hidden="true">{p.operadora_nome.charAt(0)}</span>}
-                      {p.operadora_nome}{p.operadora_verificada && <b title="Verificada"> ✓</b>}
-                    </Link>
+                    <div className="vp-linha-oper">
+                      <Link className="vp-oper" href={`/rede/perfil/${p.operadora_slug}`}>
+                        {p.operadora_logo
+                          // eslint-disable-next-line @next/next/no-img-element
+                          ? <img src={p.operadora_logo} alt="" />
+                          : <span aria-hidden="true">{p.operadora_nome.charAt(0)}</span>}
+                        {p.operadora_nome}{p.operadora_verificada && <b title="Verificada"> ✓</b>}
+                      </Link>
+                      {catalogo && <span className="vp-ver-mais" aria-hidden="true">Ver experiência →</span>}
+                    </div>
                   )}
                 </div>
               </article>
@@ -361,7 +471,7 @@ export default function VitrinePasseiosEDA({
         .vp-corpo { padding: 14px 16px 16px; }
         .vp-corpo > small { font-size: 12px; color: var(--vp-sec); }
         .vp-corpo h3 { margin: 4px 0 6px; font-size: 18px; line-height: 1.25; font-weight: 700; overflow-wrap: anywhere; }
-        .vp-corpo p { margin: 0; font-size: 14px; line-height: 1.55; color: var(--vp-sec); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .vp-corpo .vp-desc { margin: 0; font-size: 14px; line-height: 1.55; color: var(--vp-sec); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
         .vp-rodape { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 12px; }
         .vp-rodape small { display: block; font-size: 11px; color: var(--vp-sec); }
         .vp-rodape strong { font-size: 19px; color: var(--vp-ouro); }
@@ -405,6 +515,64 @@ export default function VitrinePasseiosEDA({
         .vp-inclui { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); margin: 0 0 18px; }
         .vp-inclui ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 14px; color: var(--vp-texto); }
         .vp-inclui ul[data-nao] { color: var(--vp-sec); }
+        /* EDA_CATALOGO_PREMIUM_V1: cards sincronizados (mesma altura, foto em capa, rodapé alinhado). */
+        .vp-card { display: flex; flex-direction: column; }
+        .vp-midia { position: relative; flex: none; }
+        .vp-card .vp-fundo { display: none; }
+        .vp-card .vp-img { object-fit: cover; object-position: center 30%; transition: transform .6s cubic-bezier(.2,.8,.2,1); }
+        .vp-card:hover .vp-img { transform: scale(1.045); }
+        .vp-corpo { flex: 1; display: flex; flex-direction: column; }
+        .vp-corpo h3 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .vp:not([data-compacta]) .vp-corpo h3 { min-height: 2.5em; }
+        .vp:not([data-compacta]) .vp-desc { min-height: 3.1em; }
+        .vp-rodape { margin-top: auto; padding-top: 14px; gap: 10px; }
+        .vp-rodape em { white-space: nowrap; flex: none; }
+        .vp-rodape em[data-suave] { border-color: var(--vp-borda); color: var(--vp-sec); }
+        .vp-linha-oper { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--vp-borda); }
+        .vp-linha-oper .vp-oper { margin-top: 0; min-width: 0; }
+        .vp-ver-mais { flex: none; font-size: 12px; font-weight: 700; color: var(--vp-ouro); opacity: 0; transform: translateX(-6px); transition: opacity .25s, transform .25s; }
+        .vp-card:hover .vp-ver-mais { opacity: 1; transform: none; }
+        .vp-local { position: absolute; z-index: 2; left: 0; right: 0; bottom: 0; padding: 28px 14px 10px; font-size: 12px; font-weight: 600; letter-spacing: .02em; color: #fff; background: linear-gradient(transparent, rgb(4 10 8 / 82%)); pointer-events: none; }
+        .vp-grade[data-catalogo] { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
+        .vp-card[data-vitrine] { grid-column: span 2; display: grid; grid-template-columns: 1.25fr 1fr; min-height: 400px; }
+        .vp-card[data-vitrine] .vp-midia, .vp-card[data-vitrine] .vp-foto { height: 100%; }
+        .vp-card[data-vitrine] .vp-foto { aspect-ratio: auto; min-height: 100%; }
+        .vp-card[data-vitrine] .vp-corpo { padding: 26px 26px 22px; }
+        .vp-card[data-vitrine] .vp-sobre { margin-bottom: 8px; }
+        .vp-card[data-vitrine] h3 { font-size: clamp(22px, 2.4vw, 30px); line-height: 1.15; min-height: 0; }
+        .vp-card[data-vitrine] .vp-desc { -webkit-line-clamp: 5; min-height: 0; }
+        .vp-card[data-vitrine] .vp-rodape strong { font-size: 26px; }
+        .vp-card[data-vitrine] .vp-ver-mais { opacity: 1; transform: none; }
+        .vp-resumo { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 18px; }
+        .vp-resumo div { padding: 10px 16px; border-radius: 16px; border: 1px solid var(--vp-borda); background: rgb(255 255 255 / 3%); }
+        .vp-resumo dt { font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--vp-sec); }
+        .vp-resumo dd { margin: 2px 0 0; font-size: 18px; font-weight: 700; color: var(--vp-texto); font-variant-numeric: tabular-nums; }
+        .vp-resumo div:last-child dd { color: var(--vp-ouro); }
+        .vp-barra { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; }
+        .vp-busca { flex: 1 1 280px; display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--vp-borda); background: rgb(255 255 255 / 4%); transition: border-color .2s; }
+        .vp-busca:focus-within { border-color: var(--vp-ouro); }
+        .vp-busca svg { width: 18px; height: 18px; flex: none; fill: none; stroke: var(--vp-sec); stroke-width: 2; stroke-linecap: round; }
+        .vp-busca input { flex: 1; min-width: 0; border: 0; outline: 0; background: transparent; color: var(--vp-texto); font-size: 15px; }
+        .vp-busca input::placeholder { color: var(--vp-sec); opacity: .8; }
+        .vp-sel { flex: 0 1 200px; min-height: 48px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--vp-borda); background: var(--vp-painel); color: var(--vp-texto); font-size: 14px; cursor: pointer; }
+        .vp-sel:focus-visible { outline: 2px solid var(--vp-ouro); outline-offset: 2px; }
+        .vp-filtros button i { margin-left: 8px; font-style: normal; font-size: 11px; opacity: .7; font-variant-numeric: tabular-nums; }
+        .vp-contagem { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; font-size: 13px; color: var(--vp-sec); }
+        .vp-contagem button, .vp-limpar { background: none; border: 0; padding: 0; color: var(--vp-ouro); font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+        @media (max-width: 1023px) {
+          .vp-grade[data-catalogo] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+          .vp-card[data-vitrine] { grid-column: 1 / -1; }
+        }
+        @media (max-width: 679px) {
+          .vp-grade[data-catalogo] { grid-template-columns: 1fr; gap: 16px; }
+          .vp-card[data-vitrine] { display: flex; min-height: 0; }
+          .vp-card[data-vitrine] .vp-foto { aspect-ratio: 4 / 3; min-height: 0; }
+          .vp-card[data-vitrine] .vp-corpo { padding: 16px; }
+          .vp-sel { flex: 1 1 calc(50% - 5px); }
+          .vp-ver-mais { opacity: 1; transform: none; }
+        }
+        @media (hover: none) { .vp-ver-mais { opacity: 1; transform: none; } }
+        @media (prefers-reduced-motion: reduce) { .vp-card .vp-img { transition: none; } }
         @media (prefers-reduced-motion: reduce) { .vp-card, .vp-esqueleto { transition: none; animation: none; } }
       `}</style>
     </section>
