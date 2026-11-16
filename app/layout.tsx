@@ -1,4 +1,5 @@
 import PularConteudoEDA from './components/PularConteudoEDA';
+import Script from 'next/script';
 import FeedbackERN from '@/app/components/FeedbackERN';
 import AvisoCopiaEDA from '@/app/components/AvisoCopiaEDA';
 import DialogoEDA from '@/app/components/DialogoEDA';
@@ -83,7 +84,10 @@ export default function RootLayout({
         style={fontes}
         className={`${geist.variable} ${geistMono.variable} ${bebas.variable} ${montserrat.variable} bg-slate-950 text-slate-100 antialiased`}
       >
-        <script
+        {/* EDA_TEMA_INICIAL_V2: next/script evita o aviso de <script> dentro de componente React. */}
+        <Script
+          id="eda-tema-inicial"
+          strategy="beforeInteractive"
           dangerouslySetInnerHTML={{
             __html: `(function(){var r=document.documentElement,p=location.pathname;var publico=/^\\/(destinos|rede)(\\/|$)/.test(p);var gestao=/^\\/(dashboard|financeiro|clientes|reservas|hospedagens|passeios|configuracoes|embarcacoes|guias|parceiros|relatorios|vouchers|documentos|fiscal|planos|demandas)(\\/|$)/.test(p);var c={verde:['#07110e','#edede3'],azul:['#081525','#f0f6fc'],amarelo:['#fff7db','#30260d'],branco:['#f4f6f5','#14271e'],grafite:['#101214','#f0f1f2']};var t='grafite',n=true;try{t=localStorage.getItem('ern-tema-visual-v1')||'grafite';n=localStorage.getItem('ern.portal.tema.v1')!=='claro';}catch(e){}var cor=c.grafite;if(publico){r.setAttribute('data-ern-portal',n?'escuro':'claro');cor=n?c.grafite:c.amarelo;}else if(gestao){cor=Object.prototype.hasOwnProperty.call(c,t)?c[t]:c.grafite;}r.style.setProperty('--ern-fundo-inicial',cor[0]);r.style.setProperty('--ern-texto-inicial',cor[1]);})();`,
           }}
