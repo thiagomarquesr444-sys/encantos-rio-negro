@@ -211,7 +211,7 @@ function VideoCulturaERN({
             className="absolute inset-0 h-full w-full object-contain"
           />
           <span className="absolute inset-0 flex items-center justify-center bg-black/10 transition-colors group-hover:bg-black/20">
-            <span aria-hidden="true" className="flex h-16 w-16 items-center justify-center rounded-full border border-white/70 bg-black/45 text-2xl text-white">
+            <span aria-hidden="true" className="cc-play flex h-16 w-16 items-center justify-center rounded-full border border-white/70 bg-black/45 text-2xl text-white">
               ▶
             </span>
           </span>
@@ -280,7 +280,7 @@ export default function CulturaAmazonicaERN() {
         <div
           id="cultura-colecao"
           key={colecao.id}
-          className="cultura-entrada mt-10 grid items-start gap-6 md:grid-cols-2 lg:grid-cols-3"
+          className="cc-grade cultura-entrada mt-10 grid items-start gap-6 md:grid-cols-2 lg:grid-cols-3"
         >
           {(todos ? colecao.videos : colecao.videos.slice(0, 2)).map(item => {
             const vertical = item.altura > item.largura;
@@ -289,21 +289,22 @@ export default function CulturaAmazonicaERN() {
               <article
                 key={item.arquivo}
                 lang="pt-BR"
-                className={`ern-revela-rolagem relative min-w-0 overflow-hidden rounded-[22px] border border-[#e3dfd6] bg-white p-5 shadow-[0_1px_2px_rgb(15_28_23/5%),0_12px_32px_rgb(15_28_23/5%)] sm:p-7 ${vertical ? '' : 'md:col-span-2'}`}
+                data-vertical={vertical || undefined}
+                className={`cc-card ern-revela-rolagem relative min-w-0 overflow-hidden rounded-[22px] border border-[#e3dfd6] bg-white p-5 shadow-[0_1px_2px_rgb(15_28_23/5%),0_12px_32px_rgb(15_28_23/5%)] sm:p-7 ${vertical ? '' : 'md:col-span-2'}`}
               >
-                <span aria-hidden="true" className="absolute left-0 top-7 h-7 w-1 rounded-r-full bg-gradient-to-b from-[#F7D595] to-[#E3A144]" />
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8a4b12]">
+                <span aria-hidden="true" className="cc-fio absolute left-0 top-7 h-7 w-1 rounded-r-full bg-gradient-to-b from-[#F7D595] to-[#E3A144]" />
+                <p className="cc-eb text-[11px] font-semibold uppercase tracking-[0.16em] text-[#8a4b12]">
                   {colecao.municipio} · Amazonas
                 </p>
 
                 <h3
-                  className="mt-3 break-words text-2xl leading-tight sm:text-3xl"
+                  className="cc-titulo mt-3 break-words text-2xl leading-tight sm:text-3xl"
                   style={{ fontFamily: 'var(--font-fraunces), serif' }}
                 >
                   {item.titulo}
                 </h3>
 
-                <p className="mb-5 mt-4 max-w-2xl text-sm leading-7 text-[#4b5a53]">
+                <p className="cc-desc mb-5 mt-4 max-w-2xl text-sm leading-7 text-[#4b5a53]">
                   {item.descricao}
                 </p>
 

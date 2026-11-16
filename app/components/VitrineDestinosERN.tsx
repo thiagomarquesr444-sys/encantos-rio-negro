@@ -293,9 +293,9 @@ export default function VitrineDestinosERN({
         </div>
 
         {/* ERN_VITRINE_BENTO_V1: grade em mosaico; o primeiro cartão ganha destaque. */}
-        <ul className="mt-6 grid auto-rows-[240px] grid-flow-dense gap-4 sm:grid-cols-2 md:auto-rows-[260px] lg:grid-cols-4">
+        <ul className="dc-grade mt-6 grid auto-rows-[240px] grid-flow-dense gap-4 sm:grid-cols-2 md:auto-rows-[260px] lg:grid-cols-4">
           {municipio && (
-            <li className="ern-revela-rolagem group relative min-w-0 overflow-hidden rounded-[22px] bg-[radial-gradient(ellipse_at_30%_20%,rgb(244_199_126/22%),transparent_60%),linear-gradient(160deg,#10231B,#07110E)] ring-1 ring-[#F4C77E]/40 sm:col-span-2">
+            <li className="dc-iara ern-revela-rolagem group relative min-w-0 overflow-hidden rounded-[22px] bg-[radial-gradient(ellipse_at_30%_20%,rgb(244_199_126/22%),transparent_60%),linear-gradient(160deg,#10231B,#07110E)] ring-1 ring-[#F4C77E]/40 sm:col-span-2">
               <button
                 type="button"
                 onClick={() => chamarIara(t.pedido(municipio))}
@@ -349,7 +349,7 @@ export default function VitrineDestinosERN({
                   </div>
                 )}
                 <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-[#05100C] via-[#05100C]/45 to-transparent" />
-                <div className="absolute inset-x-3 top-3 flex items-start justify-between gap-2">
+                <div className="dc-topo absolute inset-x-3 top-3 flex items-start justify-between gap-2">
                   <span className="rounded-full bg-[#07110E]/70 px-3 py-1 text-xs font-semibold text-[#F4C77E] backdrop-blur-md">
                     {t.regiaoNomes[destino.regiao]}
                   </span>
@@ -358,7 +358,7 @@ export default function VitrineDestinosERN({
                       <span aria-hidden="true">▶</span> Vídeo
                     </span>
                   ) : destino.curadoria ? (
-                    <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-[#EDEDE3] backdrop-blur-md">
+                    <span className="dc-perguntar rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-[#EDEDE3] backdrop-blur-md">
                       {t.perguntar}
                     </span>
                   ) : (
@@ -367,15 +367,15 @@ export default function VitrineDestinosERN({
                     </span>
                   )}
                 </div>
-                <div className="absolute inset-x-0 bottom-0 p-5 text-left">
-                  <p className="text-xs font-medium uppercase tracking-[0.14em] text-[#B8C9BF]">{destino.local}</p>
+                <div className="dc-corpo absolute inset-x-0 bottom-0 p-5 text-left">
+                  <p className="dc-local text-xs font-medium uppercase tracking-[0.14em] text-[#B8C9BF]">{destino.local}</p>
                   <h3 className={`mt-1 font-semibold leading-tight tracking-[-0.02em] text-[#F0F0E8] ${destaque ? 'text-3xl md:text-4xl' : 'text-xl'}`}>
                     {destino.titulo}
                   </h3>
-                  <p className={`mt-2 max-w-[460px] text-sm leading-6 text-[#D6DFD9] ${destaque ? 'line-clamp-2' : 'line-clamp-2 transition lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100'}`}>
+                  <p className={`dc-desc mt-2 max-w-[460px] text-sm leading-6 text-[#D6DFD9] ${destaque ? 'line-clamp-2' : 'line-clamp-2 transition lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100'}`}>
                     {destino.descricao}
                   </p>
-                  <ul className="mt-3 flex flex-wrap gap-1.5" aria-label={t.rotuloInteresses}>
+                  <ul className="dc-tags mt-3 flex flex-wrap gap-1.5" aria-label={t.rotuloInteresses}>
                     {destino.interesses.map((interesse: InteresseERN) => (
                       <li key={interesse} className="rounded-full border border-white/20 px-2.5 py-0.5 text-[11px] text-[#EDEDE3]">
                         {t.bases[interesse]}
@@ -389,7 +389,8 @@ export default function VitrineDestinosERN({
             return (
               <li
                 key={destino.id}
-                className={`ern-revela-rolagem group relative min-w-0 overflow-hidden rounded-[22px] bg-[#0A1713] ring-1 ring-white/10 transition hover:ring-[#F4C77E]/50 ${
+                data-destaque={destaque || undefined}
+                className={`dc-card ern-revela-rolagem group relative min-w-0 overflow-hidden rounded-[22px] bg-[#0A1713] ring-1 ring-white/10 transition hover:ring-[#F4C77E]/50 ${
                   destaque ? 'sm:col-span-2 sm:row-span-2' : ''
                 }`}
               >

@@ -166,7 +166,7 @@ export default function FeedDescubraERN() {
         )}
 
         {estado.tipo === 'pronto' && estado.itens.length > 0 && (
-          <div className="mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          <div className="fd-grade mt-10 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {estado.itens.map((item, indice) => {
               const midia = item.midias.find(m => m.tipo === 'imagem')
                 ?? item.midias.find(m => m.tipo === 'video' && m.thumbnail_url);
@@ -176,7 +176,7 @@ export default function FeedDescubraERN() {
               return (
                 <article
                   key={item.id}
-                  className="ern-historia ern-revela-rolagem group flex min-w-0 flex-col overflow-hidden rounded-[22px] border border-[#e3dfd6] bg-white shadow-[0_1px_2px_rgb(15_28_23/5%),0_12px_32px_rgb(15_28_23/5%)] transition duration-300 hover:-translate-y-1 hover:border-[#E3A144]/50 hover:shadow-[0_28px_56px_rgb(15_28_23/12%)] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
+                  className="fd-card ern-historia ern-revela-rolagem group flex min-w-0 flex-col overflow-hidden rounded-[22px] border border-[#e3dfd6] bg-white shadow-[0_1px_2px_rgb(15_28_23/5%),0_12px_32px_rgb(15_28_23/5%)] transition duration-300 hover:-translate-y-1 hover:border-[#E3A144]/50 hover:shadow-[0_28px_56px_rgb(15_28_23/12%)] motion-reduce:transition-none motion-reduce:hover:translate-y-0"
                   style={{ animationDelay: `${indice * 55}ms` }}
                 >
                   {imagem && (
@@ -192,11 +192,11 @@ export default function FeedDescubraERN() {
                     </Link>
                   )}
 
-                  <div className="relative flex flex-1 flex-col px-6 pb-6">
-                  <span aria-hidden="true" className="absolute left-0 top-6 h-7 w-1 rounded-r-full bg-gradient-to-b from-[#F7D595] to-[#E3A144]" />
+                  <div className="fd-corpo relative flex flex-1 flex-col px-6 pb-6">
+                  <span aria-hidden="true" className="fd-fio absolute left-0 top-6 h-7 w-1 rounded-r-full bg-gradient-to-b from-[#F7D595] to-[#E3A144]" />
                   <Link
                     href={`/rede/perfil/${encodeURIComponent(item.autor.slug)}`}
-                    className={`mt-4 inline-flex min-h-11 max-w-full items-center text-sm font-semibold hover:underline ${foco}`}
+                    className={`fd-autor mt-4 inline-flex min-h-11 max-w-full items-center text-sm font-semibold hover:underline ${foco}`}
                   >
                     <span className="break-words">{item.autor.nome_publico}</span>
                     {item.autor.verificado && (
@@ -204,19 +204,19 @@ export default function FeedDescubraERN() {
                     )}
                   </Link>
 
-                  <h3 className="mt-1 break-words text-xl font-semibold leading-snug tracking-[-0.02em]">
+                  <h3 className="fd-titulo mt-1 break-words text-xl font-semibold leading-snug tracking-[-0.02em]">
                     <Link href={href} className={`hover:underline hover:underline-offset-4 ${foco}`}>
                       {item.titulo}
                     </Link>
                   </h3>
 
                   {item.resumo && (
-                    <p className="mt-4 line-clamp-3 break-words text-sm leading-7 text-[#4b5a53]">
+                    <p className="fd-resumo mt-4 line-clamp-3 break-words text-sm leading-7 text-[#4b5a53]">
                       {item.resumo}
                     </p>
                   )}
 
-                  <Link href={href} className={`mt-auto inline-flex min-h-11 items-center gap-2 pt-4 text-xs font-semibold text-[#8a4b12] transition group-hover:gap-3 ${foco}`}>
+                  <Link href={href} className={`fd-ler mt-auto inline-flex min-h-11 items-center gap-2 pt-4 text-xs font-semibold text-[#8a4b12] transition group-hover:gap-3 ${foco}`}>
                     {t.read} <span aria-hidden="true">→</span>
                   </Link>
                   </div>
