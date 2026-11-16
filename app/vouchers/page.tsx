@@ -15,6 +15,8 @@ import {
   CAMPOS_VOUCHER_EDA, baixarPDFVoucherEDA, checkinVoucherEDA, dataBR, hojeManausEDA, mensagemVoucherEDA, moedaBR,
   situacaoVoucherEDA, type SituacaoVoucherEDA, type VoucherEDA,
 } from '@/lib/voucherTuristaEDA';
+import { listarFichasReservaEDA } from '@/lib/fichaSaudeEDA';
+import { baixarDocumentoPremiumERN } from '@/lib/pdfSobDemandaEDA';
 
 const TOM: Record<SituacaoVoucherEDA, TomEDA> = { Ativo: 'ok', Utilizado: 'info', Cancelado: 'er', Substituído: 'nt', Expirado: 'at' };
 const sem = (v: string) => v.normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
@@ -179,6 +181,77 @@ export default function EmbarquesDoDiaPage() {
   const proxima = aEmbarcar.find((v) => v.horario_passeio) ?? aEmbarcar[0];
   const saldo = aEmbarcar.reduce((n, v) => n + Number(v.snapshot?.financeiro?.saldo ?? 0), 0);
 
+  // EDA_LISTA_PASSAGEIROS_V1: lista de embarque para a Capitania (por embarcação).
+  // Saúde e contato de emergência só entram para quem tem acesso às fichas.
+  const [gerandoLista, setGerandoLista] = useState(false);
+  async function listaPassageiros() {
+    const vouchers = [...aEmbarcar, ...feitos];
+    if (!vouchers.length || gerandoLista) return;
+    setGerandoLista(true); setErro(''); setAviso('');
+    try {
+      let semAcessoSaude = false;
+      const linhas: Array<Array<string | number>> = [];
+      const porBarco = new Map<string, number>();
+      for (const v of vouchers) {
+        const barco = v.snapshot?.passeio?.embarcacao || 'Embarcação não informada';
+        const horario = (v.horario_passeio ?? v.snapshot?.passeio?.horario ?? '').slice(0, 5);
+        let pessoas: Array<{ nome: string; nasc: string; doc: string; emerg: string; nada: string; alertas: string }> = [];
+        if (v.reserva_id && !semAcessoSaude) {
+          try {
+            const fichas = await listarFichasReservaEDA(v.reserva_id);
+            pessoas = fichas.map((f) => ({
+              nome: f.nome,
+              nasc: f.data_nascimento ? dataBR(f.data_nascimento) : '',
+              doc: f.documento ?? '',
+              emerg: [f.ficha?.contato_emergencia_nome, f.ficha?.contato_emergencia_telefone].filter(Boolean).join(' · '),
+              nada: f.ficha?.sabe_nadar === true ? 'Sim' : f.ficha?.sabe_nadar === false ? 'NÃO' : '',
+              alertas: f.alertas.join('; '),
+            }));
+          } catch {
+            semAcessoSaude = true;
+          }
+        }
+        if (!pessoas.length) {
+          pessoas = (v.snapshot?.passageiros ?? []).map((p) => ({
+            nome: p.nome, nasc: p.nascimento ? dataBR(p.nascimento) : '', doc: '', emerg: '', nada: '', alertas: '',
+          }));
+        }
+        if (!pessoas.length) {
+          pessoas = [{ nome: v.cliente_nome ?? v.codigo, nasc: '', doc: '', emerg: '', nada: '', alertas: `${v.quantidade_pessoas ?? 1} pessoa(s) sem lista nominal` }];
+        }
+        for (const p of pessoas) {
+          const n = (porBarco.get(barco) ?? 0) + 1;
+          porBarco.set(barco, n);
+          linhas.push([barco, n, p.nome, p.nasc, p.doc, p.emerg, p.nada, p.alertas || '—', horario]);
+        }
+      }
+      linhas.sort((a, b) => String(a[0]).localeCompare(String(b[0])) || Number(a[1]) - Number(b[1]));
+      baixarDocumentoPremiumERN({
+        titulo: 'Lista de passageiros',
+        subtitulo: `Embarques de ${dataBR(data)}`,
+        tipo: 'Lista de embarque',
+        nomeArquivo: `EDA-lista-passageiros-${data}.pdf`,
+        dados: [...porBarco.entries()].map(([barco, n]) => ({ campo: barco, valor: `${n} passageiro(s)` })),
+        tabela: {
+          titulo: 'Passageiros por embarcação',
+          colunas: ['Embarcação', 'Nº', 'Nome', 'Nascimento', 'Documento', 'Contato de emergência', 'Sabe nadar', 'Alertas', 'Saída'],
+          linhas,
+        },
+        observacoes: [
+          'Confira a lista com a tripulação antes de zarpar e mantenha uma cópia em terra.',
+          'A tripulação não está incluída nesta lista. Some-a para conferir a lotação autorizada da embarcação.',
+          semAcessoSaude
+            ? 'Sua função não tem acesso às fichas de saúde: documento, contato de emergência e alertas não foram incluídos.'
+            : 'Dados de saúde: uso restrito à segurança desta viagem (LGPD). Não compartilhe fora da operação.',
+        ],
+      });
+    } catch (e) {
+      setErro(mensagemVoucherEDA(e));
+    } finally {
+      setGerandoLista(false);
+    }
+  }
+
   async function acao(v: VoucherEDA, tipo: 'checkin' | 'pdf') {
     if (ocupado) return;
     setOcupado(v.id); setErro(''); setAviso('');
@@ -207,6 +280,7 @@ export default function EmbarquesDoDiaPage() {
             <input type="date" aria-label="Data do embarque" className="eda-pg-bt" value={data} onChange={(e) => e.target.value && setData(e.target.value)} />
             <button type="button" className="eda-pg-bt" onClick={() => setData((d) => somarDias(d, 1))}>Próximo dia →</button>
             {data !== hoje && <button type="button" className="eda-pg-bt eda-pg-bt-ouro" onClick={() => setData(hoje)}>Hoje</button>}
+            <button type="button" className="eda-pg-bt" disabled={gerandoLista || !(aEmbarcar.length + feitos.length)} onClick={() => void listaPassageiros()}>{gerandoLista ? 'Gerando…' : 'Lista de passageiros (PDF)'}</button>
           </>}
         />
 

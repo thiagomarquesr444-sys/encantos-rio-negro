@@ -59,6 +59,10 @@ const textos = {
     instagram: 'Instagram',
     direct:
       'O atendimento e a contratação são realizados diretamente com o anunciante.',
+    seloCadastur: 'Cadastur informado',
+    seloMarinha: 'Embarcação documentada na Marinha',
+    selosDica:
+      'Documentos informados pela operadora na Encantos da Amazônia, dentro da validade.',
     join: 'Sua operadora também pode fazer parte desta rede.',
     joinLink: 'Conhecer a EDA',
     message:
@@ -85,6 +89,10 @@ const textos = {
     instagram: 'Instagram',
     direct:
       'Service and bookings are handled directly by the advertiser.',
+    seloCadastur: 'Cadastur on file',
+    seloMarinha: 'Boat registered with the Brazilian Navy',
+    selosDica:
+      'Documents provided by the operator to Encantos da Amazônia, within their validity.',
     join: 'Your tour company can also be part of this network.',
     joinLink: 'Discover EDA',
     message:
@@ -111,6 +119,10 @@ const textos = {
     instagram: 'Instagram',
     direct:
       'La atención y la contratación se realizan directamente con el anunciante.',
+    seloCadastur: 'Cadastur informado',
+    seloMarinha: 'Embarcación registrada en la Marina',
+    selosDica:
+      'Documentos informados por la operadora a Encantos da Amazônia, dentro de su validez.',
     join: 'Tu operadora también puede formar parte de esta red.',
     joinLink: 'Conocer EDA',
     message:
@@ -273,6 +285,24 @@ export default function PerfilRedePage() {
   }, [slug, tentativa]);
 
   const perfil = estado.tipo === 'pronto' ? estado.perfil : null;
+
+  // EDA_SELOS_PERFIL_V1: só verdadeiro/falso; os documentos não são expostos.
+  const [selos, setSelos] = useState<{ cadastur: boolean; marinha: boolean } | null>(null);
+  useEffect(() => {
+    if (!perfil?.slug) return;
+    let ativo = true;
+    void supabase
+      .rpc('selos_perfil_publico_eda', { p_slug: perfil.slug })
+      .then(({ data }) => {
+        if (ativo && data && typeof data === 'object') {
+          const d = data as { cadastur?: boolean; marinha?: boolean };
+          setSelos({ cadastur: d.cadastur === true, marinha: d.marinha === true });
+        }
+      });
+    return () => {
+      ativo = false;
+    };
+  }, [perfil?.slug]);
   const editorialOficial =
     perfil?.id === '6d2be2c2-31f7-4f5a-b62b-db262177bdd3' &&
     perfil.categoria === 'ern_editorial';
@@ -399,6 +429,22 @@ export default function PerfilRedePage() {
                         .filter(Boolean)
                         .join(' · ')}
                     </p>
+                    {selos && (selos.cadastur || selos.marinha) && (
+                      <ul className="mt-4 flex flex-wrap gap-2" title={t.selosDica}>
+                        {selos.cadastur && (
+                          <li className="inline-flex items-center gap-1.5 rounded-full border border-[#185943]/25 bg-[#185943]/[0.06] px-3 py-1 text-xs font-semibold text-[#185943]">
+                            <span aria-hidden="true">✓</span>
+                            {t.seloCadastur}
+                          </li>
+                        )}
+                        {selos.marinha && (
+                          <li className="inline-flex items-center gap-1.5 rounded-full border border-[#185943]/25 bg-[#185943]/[0.06] px-3 py-1 text-xs font-semibold text-[#185943]">
+                            <span aria-hidden="true">⚓</span>
+                            {t.seloMarinha}
+                          </li>
+                        )}
+                      </ul>
+                    )}
                   </div>
 
                   {whatsapp && (
