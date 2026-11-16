@@ -16,6 +16,7 @@ import { MUNICIPIOS_AMAZONAS, type MunicipioAM } from '@/lib/municipiosAmazonasE
 import ArcoFlechaERN from './ArcoFlechaERN';
 import { copiarEDA } from '@/lib/copiarEDA';
 import { destinoDoParametro, destinoIaraValido, type DestinoIara } from '@/lib/iaraDestinosERN';
+import { destinosParaExibicao } from '@/lib/catalogoDestinosERN';
 import SateliteCidadeERN, { chaveEmbedGoogle } from './SateliteCidadeERN';
 import { chaveGoogleMapas, criarMotorGoogle, criarMotorLeaflet, type MotorMapa, type PinMapa } from './motorMapaERN';
 import {
@@ -311,7 +312,9 @@ export default function ExploradorDestinosERN() {
   const [interest, setInterest] = useState<Interest>('all');
   const [activeId, setActiveId] = useState<DestinationId | null>(null);
   const [cityId, setCityId] = useState<CityId>('barcelos');
-  const [drawer, setDrawer] = useState<'place' | 'saved' | null>(null);
+  const [drawer, setDrawer] = useState<'place' | 'saved' | 'video' | null>(null);
+  // EDA_VIDEO_NO_MAPA_V1: vídeo do card da Descubra aberto no painel, sem mexer no mapa.
+  const [videoId, setVideoId] = useState<string | null>(null);
   const [saved, setSaved] = useState<DestinationId[]>([]);
   const [status, setStatus] = useState<'loading' | 'ready' | 'error'>('loading');
   const [attempt, setAttempt] = useState(0);
@@ -339,6 +342,27 @@ export default function ExploradorDestinosERN() {
   const trigger = useRef<HTMLElement | null>(null);
 
   const active = scenes.find(scene => scene.id === activeId);
+  const videoDestino = useMemo(
+    () => (videoId ? destinosParaExibicao(lang).find(d => d.id === videoId && d.video) ?? null : null),
+    [videoId, lang],
+  );
+  const vt = lang === 'EN'
+    ? { kicker: 'Video of the place', map: 'See it on the map', iara: 'Ask Iara about it' }
+    : lang === 'ES'
+      ? { kicker: 'Video del lugar', map: 'Ver en el mapa', iara: 'Preguntar a Iara' }
+      : { kicker: 'Vídeo do lugar', map: 'Ver no mapa', iara: 'Perguntar à Iara' };
+  function verVideoNoMapa() {
+    if (!videoDestino) return;
+    const alvo = new URL(videoDestino.href, window.location.origin).searchParams;
+    const cena = scenes.find(scene => scene.id === alvo.get('lugar'));
+    const url = new URL(window.location.href);
+    url.searchParams.delete('video'); window.history.replaceState(window.history.state, '', url.toString());
+    setVideoId(null);
+    if (cena) { choose(cena); return; }
+    setDrawer(null);
+    const pedido = destinoDoParametro(alvo.get('iara'));
+    if (pedido) voarRef.current(pedido);
+  }
   const city = cities.find(item => item.id === (active?.city ?? cityId))!;
   const content = active ? t.destinations[active.id] : null;
   const filtered = useMemo(() => scenes.filter(scene => {
@@ -353,6 +377,11 @@ export default function ExploradorDestinosERN() {
     if (document.activeElement instanceof HTMLElement) trigger.current = document.activeElement;
   }
   function closeDrawer() {
+    if (drawer === 'video') {
+      setVideoId(null);
+      const url = new URL(window.location.href);
+      if (url.searchParams.has('video')) { url.searchParams.delete('video'); window.history.replaceState(window.history.state, '', url.toString()); }
+    }
     setDrawer(null); setShareUrl(''); setMessage(''); trigger.current?.focus({ preventScroll: true });
   }
   function choose(scene: Scene) {
@@ -509,6 +538,8 @@ export default function ExploradorDestinosERN() {
     const id = new URL(window.location.href).searchParams.get('lugar');
     const found = scenes.find(scene => scene.id === id);
     if (found) { setActiveId(found.id); setCityId(found.city); setDrawer('place'); }
+    const video = new URL(window.location.href).searchParams.get('video');
+    if (!found && video && destinosParaExibicao('PT').some(d => d.id === video && d.video)) { setVideoId(video); setDrawer('video'); }
     return () => { requestId.current += 1; };
   }, []);
 
@@ -748,7 +779,18 @@ export default function ExploradorDestinosERN() {
       </aside>}
       {drawer && <aside className="ern-v-drawer" aria-labelledby="ern-v-detail-title">
         <button type="button" className="ern-v-close" onClick={closeDrawer} aria-label={u.close}>×</button>
-        {drawer === 'saved' ? <div className="ern-v-detail-copy"><h2 ref={heading} tabIndex={-1} id="ern-v-detail-title">{u.selection}</h2><p>{u.selectionNote}</p>{saved.length ? saved.map(id => sceneCard(scenes.find(scene => scene.id === id)!, true)) : <p>{u.selectionEmpty}</p>}<Link className="ern-v-button" href="/#concierge">{u.plan} ↗</Link></div> : <>
+        {drawer === 'video' && videoDestino ? (
+          <div className="ern-v-detail-copy">
+            <p className="ern-v-kicker">{vt.kicker} · {videoDestino.local}</p>
+            <h2 ref={heading} tabIndex={-1} id="ern-v-detail-title">{videoDestino.titulo}</h2>
+            <VideoDestinoERN key={videoDestino.id} title={videoDestino.titulo} poster={videoDestino.imagem ?? ''} videos={[videoDestino.video!]} autoIniciar />
+            <p>{videoDestino.descricao}</p>
+            <div className="ern-v-detail-actions">
+              {!videoDestino.curadoria && <button type="button" className="ern-v-button" onClick={verVideoNoMapa}>{vt.map} ↗</button>}
+              <button type="button" className="ern-v-button ern-v-button-soft" onClick={() => window.dispatchEvent(new CustomEvent('iara:abrir', { detail: { texto: `Quero conhecer ${videoDestino.titulo} (${videoDestino.local})` } }))}>✦ {vt.iara}</button>
+            </div>
+          </div>
+        ) : drawer === 'saved' ? <div className="ern-v-detail-copy"><h2 ref={heading} tabIndex={-1} id="ern-v-detail-title">{u.selection}</h2><p>{u.selectionNote}</p>{saved.length ? saved.map(id => sceneCard(scenes.find(scene => scene.id === id)!, true)) : <p>{u.selectionEmpty}</p>}<Link className="ern-v-button" href="/#concierge">{u.plan} ↗</Link></div> : <>
           {active && <div className="ern-v-detail-photo"><SceneImage src={active.id === 'cachoeira-eldorado' ? '/images/destinos/eldorado-detalhe.webp' : active.image} alt={`${content!.titulo} · ${active.id === 'cachoeira-eldorado' ? eldoradoImagemLabel : active.context ? u.context : u.collection}`} eager /><span className="ern-v-photo-tag">{active.id === 'cachoeira-eldorado' ? eldoradoImagemLabel : active.context ? u.context : u.collection}</span></div>}
           <div className="ern-v-detail-copy"><p className="ern-v-kicker">{active ? content!.local : u.regional}</p><h2 ref={heading} tabIndex={-1} id="ern-v-detail-title">{interest === 'fishing' && active?.id === 'barcelos' ? fishing.title : content?.titulo ?? city.name}</h2>
             <div className="ern-v-abas" role="tablist" aria-label={content?.titulo ?? city.name}>

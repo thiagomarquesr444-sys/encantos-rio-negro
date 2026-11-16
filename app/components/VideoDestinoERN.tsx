@@ -8,6 +8,8 @@ type Props = {
   title: string;
   poster: string;
   videos: string[];
+  // EDA_VIDEO_NO_MAPA_V1: abre já tocando (veio do clique no card com vídeo).
+  autoIniciar?: boolean;
 };
 
 const copy = {
@@ -49,7 +51,7 @@ const copy = {
   },
 };
 
-export default function VideoDestinoERN({ title, poster, videos }: Props) {
+export default function VideoDestinoERN({ title, poster, videos, autoIniciar }: Props) {
   const { idioma } = useLanguage();
   const t = copy[idioma];
   const [selecionado, setSelecionado] = useState(0);
@@ -71,13 +73,19 @@ export default function VideoDestinoERN({ title, poster, videos }: Props) {
 
     video.focus({ preventScroll: true });
 
+    const bloquear = () => {
+      if (!encerrado) {
+        setCarregando(false);
+        setBloqueado(true);
+      }
+    };
     const tentativa = video.play();
     if (tentativa) {
       void tentativa.catch(() => {
-        if (!encerrado) {
-          setCarregando(false);
-          setBloqueado(true);
-        }
+        // Navegador barrou som automático: toca mudo (o visitante liga o som nos controles).
+        if (encerrado || !autoIniciar) { bloquear(); return; }
+        video.muted = true;
+        void video.play().catch(bloquear);
       });
     }
 
@@ -102,6 +110,12 @@ export default function VideoDestinoERN({ title, poster, videos }: Props) {
       document.removeEventListener('visibilitychange', pausarOculto);
     };
   }, [iniciado, selecionado]);
+
+  useEffect(() => {
+    if (autoIniciar) assistir();
+    // Só na abertura.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   function assistir() {
     setErro(false);
@@ -336,4 +350,4 @@ export default function VideoDestinoERN({ title, poster, videos }: Props) {
       `}</style>
     </section>
   );
-}
+}

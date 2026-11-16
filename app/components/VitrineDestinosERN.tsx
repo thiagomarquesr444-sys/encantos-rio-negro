@@ -353,7 +353,11 @@ export default function VitrineDestinosERN({
                   <span className="rounded-full bg-[#07110E]/70 px-3 py-1 text-xs font-semibold text-[#F4C77E] backdrop-blur-md">
                     {t.regiaoNomes[destino.regiao]}
                   </span>
-                  {destino.curadoria ? (
+                  {destino.video ? (
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-[#EDEDE3] backdrop-blur-md transition group-hover:bg-[#E3A144] group-hover:text-[#07110E]">
+                      <span aria-hidden="true">▶</span> Vídeo
+                    </span>
+                  ) : destino.curadoria ? (
                     <span className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-[#EDEDE3] backdrop-blur-md">
                       {t.perguntar}
                     </span>
@@ -389,7 +393,12 @@ export default function VitrineDestinosERN({
                   destaque ? 'sm:col-span-2 sm:row-span-2' : ''
                 }`}
               >
-                {destino.curadoria ? (
+                {destino.video ? (
+                  // EDA_VIDEO_NO_MAPA_V1: card com vídeo abre o vídeo no painel do lugar; o mapa fica na visão original.
+                  <Link href={`/destinos?video=${encodeURIComponent(destino.id)}`} aria-label={`${destino.titulo} · vídeo`} className={`absolute inset-0 block rounded-[22px] ${FOCO}`}>
+                    {conteudo}
+                  </Link>
+                ) : destino.curadoria ? (
                   <button
                     type="button"
                     onClick={() => chamarIara(`${t.pedido(destino.titulo)} (${destino.local})`)}
