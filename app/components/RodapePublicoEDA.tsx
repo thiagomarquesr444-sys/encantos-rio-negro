@@ -26,7 +26,7 @@ type Texto = {
 const textos: Record<'PT' | 'EN' | 'ES', Texto> = {
   PT: {
     lema: 'Nascida em Barcelos, no Rio Negro.',
-    sobre: 'Turismo receptivo da Amazônia com atendimento 24 horas: quem visita encontra o passeio certo, quem opera organiza a viagem inteira.',
+    sobre: 'Turismo receptivo da Amazônia com atendimento 24 horas: quem visita encontra o passeio certo, e quem opera organiza a viagem inteira.',
     feedback: 'Enviar feedback',
     aria: 'Informações e atendimento',
     chamada: 'A Amazônia começa com uma conversa.',
@@ -34,14 +34,14 @@ const textos: Record<'PT' | 'EN' | 'ES', Texto> = {
     falar: 'Falar com a Iara',
     colunas: [
       { titulo: 'Descubra', links: [['/', 'Portal'], ['/experiencias', 'Experiências'], ['/destinos', 'Destinos no mapa'], ['/rede', 'Rede EDA'], ['/pesca-esportiva', 'Pesca esportiva']] },
-      { titulo: 'Para quem faz o turismo', links: [['/operadores', 'Encantos Gestão'], ['/precos', 'Planos e preços'], ['/login', 'Entrar na plataforma']] },
+      { titulo: 'Para quem faz turismo', links: [['/operadores', 'Encantos Gestão'], ['/precos', 'Planos e preços'], ['/login', 'Entrar na plataforma']] },
     ],
     atendimento: 'Atendimento',
     feito: 'Feito na Amazônia, para a Amazônia.',
   },
   EN: {
     lema: 'Born in Barcelos, on the Rio Negro.',
-    sobre: 'Amazon inbound tourism with 24-hour service: visitors find the right experience, operators run the whole trip.',
+    sobre: 'Amazon inbound tourism with 24-hour service: visitors find the right experience, and operators run the whole trip.',
     feedback: 'Send feedback',
     aria: 'Information and support',
     chamada: 'The Amazon starts with a conversation.',
@@ -56,7 +56,7 @@ const textos: Record<'PT' | 'EN' | 'ES', Texto> = {
   },
   ES: {
     lema: 'Nacida en Barcelos, en el Río Negro.',
-    sobre: 'Turismo receptivo de la Amazonía con atención las 24 horas: quien visita encuentra el paseo ideal, quien opera organiza todo el viaje.',
+    sobre: 'Turismo receptivo de la Amazonía con atención las 24 horas: quien visita encuentra el paseo ideal, y quien opera organiza todo el viaje.',
     feedback: 'Enviar comentarios',
     aria: 'Información y atención',
     chamada: 'La Amazonía empieza con una conversación.',
@@ -64,7 +64,7 @@ const textos: Record<'PT' | 'EN' | 'ES', Texto> = {
     falar: 'Hablar con Iara',
     colunas: [
       { titulo: 'Descubre', links: [['/', 'Portal'], ['/experiencias', 'Experiencias'], ['/destinos', 'Destinos en el mapa'], ['/rede', 'Red EDA'], ['/pesca-esportiva', 'Pesca deportiva']] },
-      { titulo: 'Para quien hace el turismo', links: [['/operadores', 'Encantos Gestão'], ['/precos', 'Planes y precios'], ['/login', 'Entrar']] },
+      { titulo: 'Para quien hace turismo', links: [['/operadores', 'Encantos Gestão'], ['/precos', 'Planes y precios'], ['/login', 'Entrar']] },
     ],
     atendimento: 'Atención',
     feito: 'Hecho en la Amazonía, para la Amazonía.',
@@ -77,7 +77,7 @@ const LEGAIS: Record<'PT' | 'EN' | 'ES', readonly (readonly [string, string])[]>
   ES: [['/contato', 'Centro de atención'], ['/privacidade', 'Privacidad'], ['/termos', 'Términos de Servicio'], ['/reembolso', 'Cancelación y reembolso']],
 };
 
-const LINK = `inline-flex min-h-10 items-center text-sm text-[#C9D6CE] transition-colors hover:text-[#F4C77E] ${FOCO}`;
+const LINK = `inline-flex min-h-10 items-center text-left text-[13px] leading-5 sm:text-sm text-[#C9D6CE] transition-colors hover:text-[#F4C77E] ${FOCO}`;
 const TITULO = 'text-[11px] font-semibold uppercase tracking-[0.16em] text-[#F4C77E]';
 
 // EDA_RODAPE_PUBLICO_V2 (Fablepremium): chamada para a Iara, colunas de navegação,
@@ -93,35 +93,35 @@ export default function RodapePublicoEDA() {
       <div aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-64 bg-[radial-gradient(60%_100%_at_50%_0%,rgb(227_161_68/0.10),transparent_70%)]" />
 
       <div className="relative mx-auto max-w-[1180px] px-5 sm:px-8">
-        <div className="flex flex-col gap-5 border-b border-white/10 py-10 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 border-b border-white/10 py-8 sm:gap-5 sm:py-10 md:flex-row md:items-center md:justify-between">
           <div>
-            <p className="text-2xl font-semibold tracking-[-0.02em] text-[#F5F3EA] sm:text-[28px]">{t.chamada}</p>
+            <p className="text-xl font-semibold tracking-[-0.02em] text-[#F5F3EA] sm:text-[28px]">{t.chamada}</p>
             <p className="mt-2 text-sm leading-6 text-[#B8C9BF]">{t.chamadaSub}</p>
           </div>
           <button
             type="button"
             aria-haspopup="dialog"
             onClick={() => window.dispatchEvent(new Event('iara:abrir'))}
-            className={`inline-flex min-h-12 shrink-0 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#F7D595] to-[#E3A144] px-6 text-sm font-semibold text-[#07110E] shadow-[0_12px_30px_-10px_rgb(227_161_68/0.7)] transition-transform hover:-translate-y-0.5 motion-reduce:transition-none ${FOCO}`}
+            className={`inline-flex min-h-12 w-full shrink-0 items-center justify-center gap-2 rounded-full sm:w-auto bg-gradient-to-b from-[#F7D595] to-[#E3A144] px-6 text-sm font-semibold text-[#07110E] shadow-[0_12px_30px_-10px_rgb(227_161_68/0.7)] transition-transform hover:-translate-y-0.5 motion-reduce:transition-none ${FOCO}`}
           >
             {t.falar} <span aria-hidden="true">→</span>
           </button>
         </div>
 
-        <div className="grid gap-10 py-12 sm:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
-          <div className="sm:col-span-2 lg:col-span-1">
+        <div className="grid grid-cols-2 gap-x-6 gap-y-8 py-9 sm:gap-10 sm:py-12 lg:grid-cols-[1.4fr_1fr_1fr_1fr]">
+          <div className="col-span-2 lg:col-span-1">
             <div className="flex items-center gap-3">
-              <LogoERN tamanho={44} />
+              <LogoERN tamanho={40} />
               <span className="leading-tight">
                 <span className="flex items-center gap-1.5 text-lg font-semibold text-[#F5F3EA]">Encantos da Amazônia <SeloAIEDA /></span>
                 <span className="block text-xs text-[#F4C77E]">{t.lema}</span>
               </span>
             </div>
-            <p className="mt-5 max-w-sm text-sm leading-6">{t.sobre}</p>
+            <p className="mt-4 max-w-sm text-[13px] leading-6 sm:mt-5 sm:text-sm">{t.sobre}</p>
           </div>
 
           {t.colunas.map((coluna) => (
-            <nav key={coluna.titulo} aria-label={coluna.titulo}>
+            <nav key={coluna.titulo} aria-label={coluna.titulo} className="min-w-0">
               <p className={TITULO}>{coluna.titulo}</p>
               <ul className="mt-3 grid gap-0.5">
                 {coluna.links.map(([href, nome]) => (
@@ -131,9 +131,9 @@ export default function RodapePublicoEDA() {
             </nav>
           ))}
 
-          <nav aria-label={t.aria}>
+          <nav aria-label={t.aria} className="col-span-2 sm:col-span-1">
             <p className={TITULO}>{t.atendimento}</p>
-            <ul className="mt-3 grid gap-0.5">
+            <ul className="mt-3 grid grid-cols-2 gap-x-6 gap-y-0.5 sm:grid-cols-1">
               {LEGAIS[chave].map(([href, nome]) => (
                 <li key={href}><Link href={href} className={LINK}>{nome}</Link></li>
               ))}
@@ -152,8 +152,8 @@ export default function RodapePublicoEDA() {
           </nav>
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-white/10 py-6 text-xs text-[#8FA79A] sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} {EMPRESA_EDA.nomeFantasia} · CNPJ {EMPRESA_EDA.cnpj}</p>
+        <div className="flex flex-col gap-3 border-t border-white/10 pb-28 pt-6 text-[11px] leading-5 text-[#8FA79A] sm:flex-row sm:items-center sm:justify-between sm:pb-6 sm:text-xs">
+          <p>© {new Date().getFullYear()} {EMPRESA_EDA.nomeFantasia} <span className="whitespace-nowrap">· CNPJ {EMPRESA_EDA.cnpj}</span></p>
           <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
             <span>{t.feito}</span>
             {/* EDA_MODO_LEVE_V1 */}

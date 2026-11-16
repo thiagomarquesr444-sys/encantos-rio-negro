@@ -26,7 +26,7 @@ import './FeedRedeVisitanteERN.css';
 const PAGE = 12;
 const copy = {
   PT: {
-    title: 'Quem vive a Amazônia, mostra a Amazônia.', titleParts: ['Quem vive a', 'Amazônia', ', mostra a Amazônia.'], sub: 'Lugares, histórias e quem faz parte deles, do Rio Negro ao Solimões.',
+    title: 'Quem vive a Amazônia mostra a Amazônia.', titleParts: ['Quem vive a', 'Amazônia', ' mostra a Amazônia.'], sub: 'Lugares, histórias e quem faz parte deles, do Rio Negro ao Solimões.',
     flechar: 'Flechar', flechado: 'Flechado', whatsapp: 'Chamar no WhatsApp', whatsappMsg: (titulo: string) => `Olá! Vi a publicação "${titulo}" na Rede Encantos da Amazônia e quero saber mais.`,
     seeOnMap: 'Ver no mapa', featured: 'Destino em destaque', featuredName: 'Encontro das Águas', featuredText: 'Onde o Rio Negro encontra o Solimões, diante de Manaus.', openMap: 'Abrir no mapa',
     verifiedTitle: 'Operadores verificados', viewProfile: 'Ver perfil', conciergeText: 'Gostou de uma história? Transforme em viagem.', conciergeCta: 'Planejar agora',

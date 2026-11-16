@@ -168,7 +168,7 @@ export const homeTranslations = {
         'Embarcações',
         'Guias',
         'Financeiro',
-        'Vouchers',
+        'Embarques do dia',
       ],
     },
 
@@ -345,7 +345,7 @@ export const homeTranslations = {
         'Boats',
         'Guides',
         'Finance',
-        'Vouchers',
+        'Daily boarding',
       ],
     },
 
@@ -522,7 +522,7 @@ export const homeTranslations = {
         'Embarcaciones',
         'Guías',
         'Finanzas',
-        'Vouchers',
+        'Embarques del día',
       ],
     },
 

@@ -124,7 +124,7 @@
     -webkit-overflow-scrolling: touch; scrollbar-width: none;
   }
   .eda-letreiro-grade::-webkit-scrollbar { display: none; }
-  .eda-letreiro-cartao, .eda-letreiro-destaque { flex: 0 0 84%; height: 460px; min-height: 0; scroll-snap-align: start; }
+  .eda-letreiro-cartao, .eda-letreiro-destaque { flex: 0 0 84%; height: 420px; min-height: 0; scroll-snap-align: start; }
   .eda-letreiro-destaque .eda-letreiro-numero { font-size: 4.4rem; }
   .eda-letreiro-destaque .eda-letreiro-corpo { padding: 22px 20px 26px; }
   .eda-letreiro-destaque .eda-letreiro-nome { font-size: 2.1rem; }

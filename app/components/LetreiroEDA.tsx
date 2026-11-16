@@ -15,7 +15,7 @@ const F = '/images/letreiro/';
 const conteudo: Record<'PT' | 'EN' | 'ES', Bloco> = {
   PT: {
     olho: 'Turismo · Cultura · Conservação',
-    titulo: 'Por que a Encantos da Amazônia',
+    titulo: 'Por que a Encantos da Amazônia?',
     sub: 'Cinco frentes que transformam o território em experiência, renda local e conservação, alinhadas aos Objetivos de Desenvolvimento Sustentável da ONU.',
     lista: 'Motivos, deslize para ver todos',
     itens: [
@@ -23,13 +23,13 @@ const conteudo: Record<'PT' | 'EN' | 'ES', Bloco> = {
         texto: 'Parintins, as Cirandas de Manacapuru, o Festival do Peixe Ornamental de Barcelos e tantos outros viram roteiro: a EDA leva o calendário de festas ao visitante e a renda às cidades, o ano inteiro.',
         alt: 'Dançarinos com fantasias indígenas de penas verdes e laranja se apresentando à noite em um festival amazônico' },
       { foto: 'pesca-esportiva.webp', selo: 'Pesque e solte · ODS 15', titulo: 'Pesca esportiva sustentável',
-        texto: 'O tucunaré atrai pescadores do mundo todo. A EDA conecta operações de pesque e solte a quem cuida do rio, e dá espaço às mulheres na pesca.',
+        texto: 'O tucunaré atrai pescadores do mundo todo. A EDA conecta operações de pesque e solte a quem cuida do rio e abre espaço para as mulheres na pesca.',
         alt: 'Pescadora segurando um grande tucunaré dentro do rio, com a floresta ao fundo' },
       { foto: 'base-comunitaria.webp', selo: 'Base comunitária · ODS 8', titulo: 'Renda para quem vive aqui',
-        texto: 'Guias, barqueiros, cozinheiras e artesãos ganham vitrine própria e recebem o contato do visitante direto, sem intermediário.',
+        texto: 'Guias, barqueiros, cozinheiras e artesãos ganham vitrine própria e recebem o contato do visitante diretamente, sem intermediários.',
         alt: 'Guia local mostrando um tucunaré-açu no rio ao entardecer' },
       { foto: 'turismo-fluvial.webp', selo: 'Roteiros integrados', titulo: 'Do Rio Negro ao Solimões',
-        texto: 'Barcos-hotel, expedições e passeios de vários municípios reunidos num só mapa, com reserva e voucher organizados.',
+        texto: 'Barcos-hotel, expedições e passeios de vários municípios reunidos em um só mapa, com reservas e vouchers organizados.',
         alt: 'Convés de um barco navegando no rio ao pôr do sol' },
       { foto: 'inovacao-territorio.webp', selo: 'Inovação · ODS 9', titulo: 'Tecnologia feita para o interior',
         texto: 'Plataforma leve, em três idiomas, que funciona com sinal fraco: pronta para editais de inovação e turismo sustentável.',
@@ -38,7 +38,7 @@ const conteudo: Record<'PT' | 'EN' | 'ES', Bloco> = {
   },
   EN: {
     olho: 'Tourism · Culture · Conservation',
-    titulo: 'Why Encantos da Amazônia',
+    titulo: 'Why Encantos da Amazônia?',
     sub: 'Five fronts that turn the region into experiences, local income and conservation, aligned with the UN Sustainable Development Goals.',
     lista: 'Reasons, swipe to see all',
     itens: [
@@ -46,7 +46,7 @@ const conteudo: Record<'PT' | 'EN' | 'ES', Bloco> = {
         texto: 'Parintins, the Manacapuru Cirandas, the Barcelos Ornamental Fish Festival and many more become itineraries: EDA brings the festival calendar to visitors and income to the towns, all year long.',
         alt: 'Dancers in green and orange feathered Indigenous costumes performing at night at an Amazonian festival' },
       { foto: 'pesca-esportiva.webp', selo: 'Catch & release · SDG 15', titulo: 'Sustainable sport fishing',
-        texto: 'Peacock bass draw anglers from around the world. EDA connects catch-and-release operations with people who care for the river, and makes room for women in fishing.',
+        texto: 'Peacock bass draw anglers from around the world. EDA connects catch-and-release operations with people who care for the river and makes room for women in fishing.',
         alt: 'Woman angler holding a large peacock bass in the river, with the forest behind' },
       { foto: 'base-comunitaria.webp', selo: 'Community-based · SDG 8', titulo: 'Income for local people',
         texto: 'Guides, boat captains, cooks and artisans get their own showcase and receive visitor contacts directly, with no middleman.',
@@ -61,7 +61,7 @@ const conteudo: Record<'PT' | 'EN' | 'ES', Bloco> = {
   },
   ES: {
     olho: 'Turismo · Cultura · Conservación',
-    titulo: 'Por qué Encantos da Amazônia',
+    titulo: '¿Por qué Encantos da Amazônia?',
     sub: 'Cinco frentes que convierten el territorio en experiencias, ingresos locales y conservación, alineadas con los Objetivos de Desarrollo Sostenible de la ONU.',
     lista: 'Motivos, desliza para ver todos',
     itens: [
@@ -69,10 +69,10 @@ const conteudo: Record<'PT' | 'EN' | 'ES', Bloco> = {
         texto: 'Parintins, las Cirandas de Manacapuru, el Festival del Pez Ornamental de Barcelos y muchos más se vuelven itinerarios: EDA lleva el calendario de fiestas al visitante y los ingresos a las ciudades, todo el año.',
         alt: 'Bailarines con trajes indígenas de plumas verdes y naranjas actuando de noche en un festival amazónico' },
       { foto: 'pesca-esportiva.webp', selo: 'Pesca y suelta · ODS 15', titulo: 'Pesca deportiva sostenible',
-        texto: 'El tucunaré atrae pescadores de todo el mundo. EDA conecta operaciones de pesca y suelta con quienes cuidan el río, y abre espacio a las mujeres en la pesca.',
+        texto: 'El tucunaré atrae pescadores de todo el mundo. EDA conecta operaciones de pesca y suelta con quienes cuidan el río y abre espacio a las mujeres en la pesca.',
         alt: 'Pescadora sosteniendo un gran tucunaré dentro del río, con la selva al fondo' },
       { foto: 'base-comunitaria.webp', selo: 'Base comunitaria · ODS 8', titulo: 'Ingresos para quien vive aquí',
-        texto: 'Guías, barqueros, cocineras y artesanos tienen su propia vitrina y reciben el contacto del visitante directo, sin intermediarios.',
+        texto: 'Guías, barqueros, cocineras y artesanos tienen su propia vitrina y reciben el contacto del visitante directamente, sin intermediarios.',
         alt: 'Guía local mostrando un tucunaré en el río al atardecer' },
       { foto: 'turismo-fluvial.webp', selo: 'Rutas integradas', titulo: 'Del Río Negro al Solimões',
         texto: 'Barcos hotel, expediciones y paseos de varios municipios en un solo mapa, con reservas y vouchers organizados.',
