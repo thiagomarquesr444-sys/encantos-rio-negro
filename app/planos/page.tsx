@@ -264,6 +264,8 @@ export default function PlanosPage() {
 
   // EDA_DOCUMENTO_COBRANCA_V1
   const [pedirDocumentoEDA, setPedirDocumentoEDA] = useState(false);
+  // EDA_LINK_PAGAMENTO_V1: link da fatura do Asaas após iniciar o checkout.
+  const [linkPagamentoEDA, setLinkPagamentoEDA] = useState<string | null>(null);
   const [documentoEDA, setDocumentoEDA] = useState('');
   const [planoAguardandoDocumentoEDA, setPlanoAguardandoDocumentoEDA] =
     useState<string | null>(null);
@@ -352,6 +354,7 @@ export default function PlanosPage() {
 
     setCheckoutErro(null);
     setCheckoutMensagem(null);
+    setLinkPagamentoEDA(null);
 
     try {
       const {
@@ -422,6 +425,10 @@ export default function PlanosPage() {
       }
 
       if (response.ok) {
+        const linkFatura = String(payload?.checkout?.invoice_url ?? '');
+        setLinkPagamentoEDA(
+          /^https:\/\/([a-z0-9-]+\.)*asaas\.com\//i.test(linkFatura) ? linkFatura : null
+        );
         setPedirDocumentoEDA(false);
         setPlanoAguardandoDocumentoEDA(null);
         setDocumentoEDA('');
@@ -877,6 +884,23 @@ export default function PlanosPage() {
             {
               checkoutMensagem
             }
+          </div>
+        )}
+
+        {linkPagamentoEDA && (
+          <div className="mb-6 flex flex-col gap-3 rounded-[18px] border border-[var(--ern-destaque)]/30 bg-white/[0.03] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-[var(--ern-texto)]/80">
+              Falta só o pagamento. Escolha Pix, cartão ou boleto na página segura do Asaas.
+              O plano é liberado assim que o pagamento for confirmado.
+            </p>
+            <a
+              href={linkPagamentoEDA}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-[var(--ern-botao)] px-5 text-sm font-bold text-[var(--ern-painel)]"
+            >
+              Ir para o pagamento
+            </a>
           </div>
         )}
 
