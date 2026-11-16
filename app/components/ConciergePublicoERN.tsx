@@ -16,6 +16,7 @@ import { curiosidadesFichas, useFichasMunicipios } from '@/lib/fichasMunicipiosC
 import { useLanguage } from '@/app/components/LanguageProvider';
 import { confirmarEDA } from '@/lib/dialogoEDA';
 import { acharPontoRua, listarPontosRua, type PontoRua } from '@/lib/pontosRuaIara';
+import { MUNICIPIOS_AMAZONAS } from '@/lib/municipiosAmazonasERN';
 
 const textos = {
   PT: {
@@ -468,13 +469,13 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   // EDA_FASE_B_V1: pedido com consentimento (LGPD) — o visitante preenche os próprios dados.
   type PedidoIara = { passeio_slug: string | null; passeio_nome: string | null; adultos: number | null; criancas: number | null; periodo: string | null };
   const [pedidoIara, setPedidoIara] = useState<PedidoIara | null>(null);
-  const [formPedido, setFormPedido] = useState({ nome: '', whatsapp: '', email: '', adultos: '2', criancas: '0', periodo: '', mensagem: '', aceite: false });
+  const [formPedido, setFormPedido] = useState({ nome: '', whatsapp: '', email: '', adultos: '2', criancas: '0', periodo: '', municipio: '', mensagem: '', aceite: false });
   const [enviandoPedido, setEnviandoPedido] = useState(false);
   const [erroPedido, setErroPedido] = useState('');
   const tp = {
-    PT: { titulo: 'Levar meu pedido à operadora', nome: 'Seu nome', zap: 'WhatsApp (com DDD)', email: 'ou e-mail', adultos: 'Adultos', criancas: 'Crianças', periodo: 'Quando pretende ir', msg: 'Algo mais? (opcional)', aceite: 'Aceito que a Encantos da Amazônia e a operadora do passeio usem estes dados para entrar em contato sobre este pedido. Os dados são apagados em até 90 dias.', priv: 'Privacidade', enviar: 'Enviar pedido', cancelar: 'Agora não', ok: (n: string) => `Pronto, ${n}! 🌊 Seu pedido já está com a operadora. Ela vai te responder com valores e datas confirmados. Enquanto isso, posso te contar mais sobre a região?`, okGeral: (n: string) => `Pronto, ${n}! 🌊 Recebemos seu pedido e vamos indicar a operadora ideal para você. Quer continuar explorando enquanto isso?` },
-    EN: { titulo: 'Send my request to the operator', nome: 'Your name', zap: 'WhatsApp (with country code)', email: 'or email', adultos: 'Adults', criancas: 'Children', periodo: 'When do you plan to go', msg: 'Anything else? (optional)', aceite: 'I agree that Encantos da Amazônia and the tour operator may use this data to contact me about this request. Data is deleted within 90 days.', priv: 'Privacy', enviar: 'Send request', cancelar: 'Not now', ok: (n: string) => `Done, ${n}! 🌊 Your request is with the operator, who will reply with confirmed prices and dates. Shall I tell you more about the region meanwhile?`, okGeral: (n: string) => `Done, ${n}! 🌊 We received your request and will point you to the right operator. Want to keep exploring?` },
-    ES: { titulo: 'Llevar mi pedido a la operadora', nome: 'Tu nombre', zap: 'WhatsApp (con código)', email: 'o correo', adultos: 'Adultos', criancas: 'Niños', periodo: 'Cuándo piensas ir', msg: '¿Algo más? (opcional)', aceite: 'Acepto que Encantos da Amazônia y la operadora del paseo usen estos datos para contactarme sobre este pedido. Los datos se eliminan en hasta 90 días.', priv: 'Privacidad', enviar: 'Enviar pedido', cancelar: 'Ahora no', ok: (n: string) => `¡Listo, ${n}! 🌊 Tu pedido ya está con la operadora, que responderá con precios y fechas confirmados. ¿Te cuento más de la región mientras tanto?`, okGeral: (n: string) => `¡Listo, ${n}! 🌊 Recibimos tu pedido y te indicaremos la operadora ideal. ¿Seguimos explorando?` },
+    PT: { titulo: 'Levar meu pedido à operadora', nome: 'Seu nome', zap: 'WhatsApp (com DDD)', email: 'ou e-mail', adultos: 'Adultos', criancas: 'Crianças', periodo: 'Quando pretende ir', msg: 'Algo mais? (opcional)', aceite: 'Aceito que a Encantos da Amazônia e a operadora que atender meu pedido usem estes dados para entrar em contato sobre este pedido. Os dados são apagados em até 90 dias.', priv: 'Privacidade', enviar: 'Enviar pedido', cancelar: 'Agora não', ok: (n: string) => `Pronto, ${n}! 🌊 Seu pedido já está com a operadora. Ela vai te responder com valores e datas confirmados. Enquanto isso, posso te contar mais sobre a região?`, okGeral: (n: string) => `Pronto, ${n}! 🌊 Recebemos seu pedido e vamos indicar a operadora ideal para você. Quer continuar explorando enquanto isso?` },
+    EN: { titulo: 'Send my request to the operator', nome: 'Your name', zap: 'WhatsApp (with country code)', email: 'or email', adultos: 'Adults', criancas: 'Children', periodo: 'When do you plan to go', msg: 'Anything else? (optional)', aceite: 'I agree that Encantos da Amazônia and the operator who takes my request may use this data to contact me about this request. Data is deleted within 90 days.', priv: 'Privacy', enviar: 'Send request', cancelar: 'Not now', ok: (n: string) => `Done, ${n}! 🌊 Your request is with the operator, who will reply with confirmed prices and dates. Shall I tell you more about the region meanwhile?`, okGeral: (n: string) => `Done, ${n}! 🌊 We received your request and will point you to the right operator. Want to keep exploring?` },
+    ES: { titulo: 'Llevar mi pedido a la operadora', nome: 'Tu nombre', zap: 'WhatsApp (con código)', email: 'o correo', adultos: 'Adultos', criancas: 'Niños', periodo: 'Cuándo piensas ir', msg: '¿Algo más? (opcional)', aceite: 'Acepto que Encantos da Amazônia y la operadora que atienda mi pedido usen estos datos para contactarme sobre este pedido. Los datos se eliminan en hasta 90 días.', priv: 'Privacidad', enviar: 'Enviar pedido', cancelar: 'Ahora no', ok: (n: string) => `¡Listo, ${n}! 🌊 Tu pedido ya está con la operadora, que responderá con precios y fechas confirmados. ¿Te cuento más de la región mientras tanto?`, okGeral: (n: string) => `¡Listo, ${n}! 🌊 Recibimos tu pedido y te indicaremos la operadora ideal. ¿Seguimos explorando?` },
   }[idioma];
 
   async function enviarPedido() {
@@ -488,7 +489,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
         body: JSON.stringify({
           nome: formPedido.nome, whatsapp: formPedido.whatsapp || null, email: formPedido.email || null, idioma,
           periodo: formPedido.periodo || null, adultos: Number(formPedido.adultos) || 1, criancas: Number(formPedido.criancas) || 0,
-          mensagem: formPedido.mensagem || null, passeio_slug: pedidoIara.passeio_slug, consentimento: true, sessao: sessaoIara.current || undefined,
+          mensagem: formPedido.mensagem || null, passeio_slug: pedidoIara.passeio_slug, municipio: pedidoIara.passeio_slug ? null : (formPedido.municipio || null), consentimento: true, sessao: sessaoIara.current || undefined,
         }),
       });
       const j = await r.json().catch(() => ({})) as { ok?: boolean; erro?: string; operadora?: boolean };
@@ -1168,6 +1169,12 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
                   <label style={{ fontSize: 12 }}>{tp.adultos}<input type="number" min={1} max={99} value={formPedido.adultos} onChange={e => setFormPedido(f => ({ ...f, adultos: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid rgb(244 199 126 / 30%)', background: 'rgb(0 0 0 / 18%)', color: 'inherit', font: 'inherit', fontSize: 13.5 }} /></label>
                   <label style={{ fontSize: 12 }}>{tp.criancas}<input type="number" min={0} max={99} value={formPedido.criancas} onChange={e => setFormPedido(f => ({ ...f, criancas: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid rgb(244 199 126 / 30%)', background: 'rgb(0 0 0 / 18%)', color: 'inherit', font: 'inherit', fontSize: 13.5 }} /></label>
                 </div>
+                {!pedidoIara.passeio_slug && (
+                  <select aria-label={idioma === 'EN' ? 'Destination city' : idioma === 'ES' ? 'Ciudad de destino' : 'Cidade de destino'} value={formPedido.municipio} onChange={e => setFormPedido(f => ({ ...f, municipio: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid rgb(244 199 126 / 30%)', background: 'rgb(0 0 0 / 18%)', color: 'inherit', font: 'inherit', fontSize: 13.5 }}>
+                    <option value="">{idioma === 'EN' ? 'Destination city (optional)' : idioma === 'ES' ? 'Ciudad de destino (opcional)' : 'Cidade de destino (opcional)'}</option>
+                    {MUNICIPIOS_AMAZONAS.map(m => <option key={m.ibge} value={m.nome}>{m.nome}</option>)}
+                  </select>
+                )}
                 <input maxLength={60} placeholder={tp.periodo} aria-label={tp.periodo} value={formPedido.periodo} onChange={e => setFormPedido(f => ({ ...f, periodo: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid rgb(244 199 126 / 30%)', background: 'rgb(0 0 0 / 18%)', color: 'inherit', font: 'inherit', fontSize: 13.5 }} />
                 <textarea rows={2} maxLength={800} placeholder={tp.msg} aria-label={tp.msg} value={formPedido.mensagem} onChange={e => setFormPedido(f => ({ ...f, mensagem: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid rgb(244 199 126 / 30%)', background: 'rgb(0 0 0 / 18%)', color: 'inherit', font: 'inherit', fontSize: 13.5, resize: 'vertical' }} />
                 <label style={{ display: 'flex', gap: 8, alignItems: 'flex-start', fontSize: 12, lineHeight: 1.4 }}>

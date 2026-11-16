@@ -6,6 +6,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import PedidosAbertosEDA from '@/app/components/PedidosAbertosEDA';
 import { supabase } from '@/lib/supabase';
 import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import { copiarEDA } from '@/lib/copiarEDA';
@@ -85,6 +86,8 @@ export default function PedidosVisitantePage() {
         resumo="Visitantes que conversaram com a Iara e pediram contato. Cada pedido tem consentimento e é apagado em 90 dias (LGPD)."
         acoes={<Link className="eda-pg-bt" href="/reservas">Voltar às reservas</Link>}
       />
+
+      <PedidosAbertosEDA aoAtender={() => setRevisao((r) => r + 1)} />
 
       <div className="eda-pg-filtros">
         <ChipsEDA

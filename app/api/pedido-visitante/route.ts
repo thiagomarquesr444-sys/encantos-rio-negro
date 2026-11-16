@@ -1,4 +1,5 @@
 import { createHmac } from 'node:crypto';
+import { MUNICIPIOS_AMAZONAS } from '@/lib/municipiosAmazonasERN';
 import { isIP } from 'node:net';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
@@ -14,9 +15,9 @@ import { createClient } from '@supabase/supabase-js';
 export const runtime = 'nodejs';
 
 const CONSENTIMENTO: Record<string, string> = {
-  PT: 'Aceito que a Encantos da Amazônia e a operadora do passeio usem estes dados para entrar em contato sobre este pedido. Os dados são apagados em até 90 dias.',
-  EN: 'I agree that Encantos da Amazônia and the tour operator may use this data to contact me about this request. Data is deleted within 90 days.',
-  ES: 'Acepto que Encantos da Amazônia y la operadora del paseo usen estos datos para contactarme sobre este pedido. Los datos se eliminan en hasta 90 días.',
+  PT: 'Aceito que a Encantos da Amazônia e a operadora que atender meu pedido usem estes dados para entrar em contato sobre este pedido. Os dados são apagados em até 90 dias.',
+  EN: 'I agree that Encantos da Amazônia and the operator who takes my request may use this data to contact me about this request. Data is deleted within 90 days.',
+  ES: 'Acepto que Encantos da Amazônia y la operadora que atienda mi pedido usen estos datos para contactarme sobre este pedido. Los datos se eliminan en hasta 90 días.',
 };
 
 class Falha extends Error { constructor(public status: number, m: string) { super(m); } }
@@ -101,11 +102,19 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    // EDA_PEDIDOS_ABERTOS_V1: sem passeio, o pedido fica aberto para o município escolhido.
+    let municipio: string | null = null;
+    if (!empresaId) {
+      const pedido = texto(d.municipio, 2, 60);
+      const achado = pedido ? MUNICIPIOS_AMAZONAS.find((m) => m.nome.toLowerCase() === pedido.toLowerCase()) : undefined;
+      municipio = achado?.nome ?? null;
+    }
+
     await admin.rpc('limpar_pedidos_visitante_vencidos');
     const { error } = await admin.from('pedidos_visitante').insert({
       empresa_id: empresaId, passeio_id: passeioId, passeio_nome: passeioNome,
       nome, contato_whatsapp: whatsapp, contato_email: email, idioma, periodo,
-      adultos, criancas, mensagem,
+      adultos, criancas, mensagem, municipio,
       consentimento_em: new Date().toISOString(), consentimento_texto: CONSENTIMENTO[idioma],
     });
     if (error) throw new Falha(503, 'Não foi possível registrar o pedido. Tente de novo.');
