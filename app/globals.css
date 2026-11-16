@@ -1520,3 +1520,20 @@ html[data-eda-sinal="fraco"] *::after {
   .pm-papeis p { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
   .pm-papeis a { width: 100%; justify-content: center; margin-top: 10px !important; padding: 0 10px !important; min-height: 40px !important; font-size: 12px !important; }
 }
+
+/* Rede (publicações) compacta também fora da Descubra (ex.: Experiências). */
+@media (max-width: 639px) {
+  .fd-grade { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-top: 1.5rem; }
+  .fd-card { position: relative; border-radius: 16px; }
+  .fd-card:hover { transform: none; }
+  .fd-card img { aspect-ratio: 1 / 1; }
+  .fd-corpo { position: static; padding: 0 10px 10px; }
+  .fd-fio, .fd-resumo { display: none; }
+  .fd-autor { position: relative; z-index: 2; min-height: 32px; margin-top: 4px; font-size: 11px; color: #4b5a53; }
+  .fd-autor > span:last-child { width: 15px; height: 15px; margin-left: 4px; font-size: 9px; }
+  .fd-autor > span:first-child { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+  .fd-titulo { margin-top: 0; font-size: 13.5px; line-height: 1.28; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  .fd-titulo a::after { content: ''; position: absolute; inset: 0; z-index: 1; }
+  .fd-ler { min-height: 0; padding-top: 8px; font-size: 11px; }
+  .dc-corpo h3, .fd-titulo { font-size: 12.5px; }
+}
