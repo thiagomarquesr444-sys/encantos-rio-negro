@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
-import PainelProfissional from '@/app/components/PainelProfissional';
+import InicioFornecedorEDA from '@/app/components/InicioFornecedorEDA';
 
 export const metadata: Metadata = {
-  title: 'Painel do Fornecedor',
+  title: 'Espaço do fornecedor',
   robots: {
     index: false,
     follow: false,
@@ -11,7 +11,5 @@ export const metadata: Metadata = {
 };
 
 export default function FornecedorPage() {
-  return (
-    <PainelProfissional tipo="fornecedor" />
-  );
+  return <InicioFornecedorEDA />;
 }

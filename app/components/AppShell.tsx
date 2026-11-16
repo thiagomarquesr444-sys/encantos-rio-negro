@@ -14,6 +14,7 @@ import '@/app/components/cartao-magnetico-eda.css';
 import '@/app/components/capa-eda.css';
 import { EVENTO_ESTILO_PAINEL, lerEstiloPainel, type EstiloPainelERN } from '@/lib/estiloPainelERN';
 import SidebarProfissional from '@/app/components/SidebarProfissional';
+import MenuLateralFornecedorEDA from '@/app/components/MenuLateralFornecedorEDA';
 // ERN_TEMA_CLARO_GERADO_V1: versão clara dos estilos próprios das páginas da gestão.
 import '@/app/tema-claro-gestao.css';
 
@@ -385,9 +386,10 @@ export default function AppShell({
   if (rotaFornecedor) {
     return (
       <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]">
-        <SidebarProfissional tipo="fornecedor" />
+        {/* EDA_FORNECEDOR_MENU_V1: menu lateral no padrão da operadora. */}
+        <MenuLateralFornecedorEDA />
 
-        <div className="min-h-screen w-full pt-[82px]">
+        <div className="min-h-screen w-full min-w-0 pt-16 xl:pl-[264px] xl:pt-0">
           <ApresentacaoPaginaERN>{children}</ApresentacaoPaginaERN>
         </div>
       </div>

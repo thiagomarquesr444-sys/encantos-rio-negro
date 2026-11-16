@@ -7,7 +7,6 @@ import {
   type FormEvent,
 } from 'react';
 import Link from 'next/link';
-import VitrineFornecedorEDA from '@/app/components/VitrineFornecedorEDA';
 import { supabase } from '@/lib/supabase';
 import {
   carregarAcessosConta,
@@ -606,8 +605,11 @@ function FormularioPerfilProfissional({ tipo }: Props) {
           </form>
         )}
 
-        {!guia && existe && usuarioId && (
-          <VitrineFornecedorEDA usuarioId={usuarioId} atividade={dados.categoria} />
+        {!guia && existe && (
+          <Link href="/fornecedor/vitrine" className="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-[#E3A144]/40 bg-[#E3A144]/[0.06] p-5 text-sm text-[#F0F0E8]">
+            <span>Perfil pronto. Agora publique suas peças na <b>Minha vitrine</b>.</span>
+            <span aria-hidden="true" className="text-[#F4C77E]">→</span>
+          </Link>
         )}
 
         <section className="mt-6 rounded-2xl border border-white/10 bg-white/[0.025] p-5">
