@@ -105,7 +105,7 @@ export default function PublicacoesPerfilERN({
         </h2>
 
         {itens.length > 0 && (
-          <div className="mt-8 grid gap-x-7 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="pm-grade mt-8 grid gap-x-7 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
             {itens.map(item => {
               const midia = item.midias.find(m => m.tipo === 'imagem')
                 ?? item.midias.find(m => m.thumbnail_url);
@@ -139,7 +139,7 @@ export default function PublicacoesPerfilERN({
                   </h3>
 
                   {item.resumo && (
-                    <p className="mt-3 line-clamp-3 break-words text-sm leading-7 text-[#4b5a53]">
+                    <p className="pm-esconde mt-3 line-clamp-3 break-words text-sm leading-7 text-[#4b5a53]">
                       {item.resumo}
                     </p>
                   )}

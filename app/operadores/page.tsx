@@ -209,7 +209,7 @@ export default function OperadoresPage() {
           <div className="mx-auto max-w-[1280px]">
             <p className={EYEBROW}>{t.flowEyebrow}</p>
             <h2 className={`${TITULO} mt-3 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-tight`}>{t.flowTitle}</h2>
-            <ol className="mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <ol className="pm-grade pm-icones mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {t.flow.map(([icone, titulo, texto], i) => (
                 <li key={titulo} className={`${CARTAO} ern-revela-rolagem`}>
                   <span className="grid size-11 place-items-center rounded-xl bg-[#E3A144]/15 text-[#F4C77E]" aria-hidden="true">{icone === 'arco' ? <ArcoFlechaERN tamanho={24} /> : <IconeERN nome={icone} tamanho={22} />}</span>
@@ -226,8 +226,8 @@ export default function OperadoresPage() {
           <div className="mx-auto max-w-[1280px]">
             <p className={EYEBROW}>{t.featEyebrow}</p>
             <h2 className={`${TITULO} mt-3 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-tight`}>{t.featTitle}</h2>
-            <div className="mt-9 grid auto-rows-[minmax(190px,auto)] gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <article className="relative min-h-[320px] overflow-hidden rounded-[22px] border border-white/[0.08] md:col-span-2 lg:row-span-2">
+            <div className="pm-grade pm-icones mt-9 grid auto-rows-[minmax(190px,auto)] gap-4 md:grid-cols-2 lg:grid-cols-4">
+              <article className="pm-largo relative min-h-[320px] overflow-hidden rounded-[22px] border border-white/[0.08] md:col-span-2 lg:row-span-2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src="/images/regiao/mulhertucunare.png.jpeg" alt="" className="absolute inset-0 size-full object-cover" loading="lazy" />
                 <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[#07110E]/30 to-[#07110E]/95" />
@@ -244,12 +244,12 @@ export default function OperadoresPage() {
                   <p className="mt-1.5 text-sm leading-6 text-[#B8C9BF]">{texto}</p>
                 </article>
               ))}
-              <article className={`${CARTAO} md:col-span-2`}>
+              <article className={`${CARTAO} pm-largo md:col-span-2`}>
                 <span className="grid size-11 place-items-center rounded-xl bg-[#E3A144]/15 text-[#F4C77E]" aria-hidden="true"><IconeERN nome="satelite" tamanho={22} /></span>
                 <h3 className="mt-3 text-lg font-semibold text-[#F5F3EA]">{t.mapTitle}</h3>
                 <p className="mt-1.5 text-sm leading-6 text-[#B8C9BF]">{t.mapText}</p>
               </article>
-              <article className="rounded-[22px] border border-[#F4C77E]/30 bg-gradient-to-b from-[#14352A] to-[#0A1713] p-6 md:col-span-2">
+              <article className="pm-largo rounded-[22px] border border-[#F4C77E]/30 bg-gradient-to-b from-[#14352A] to-[#0A1713] p-6 md:col-span-2">
                 <span className="grid size-11 place-items-center rounded-xl bg-[#E3A144]/15 text-[#F4C77E]" aria-hidden="true"><ArcoFlechaERN tamanho={24} /></span>
                 <h3 className="mt-3 text-lg font-semibold text-[#F5F3EA]">{t.profileTitle}</h3>
                 <p className="mt-1.5 text-sm leading-6 text-[#B8C9BF]">{t.profileText}</p>
@@ -261,7 +261,7 @@ export default function OperadoresPage() {
         <section className="border-y border-white/[0.06] bg-[#08130F] px-5 py-20 sm:px-8" aria-labelledby="operadores-atuacao">
           <div className="mx-auto max-w-[1280px]">
             <h2 id="operadores-atuacao" className={`${TITULO} text-[clamp(1.8rem,3vw,2.3rem)]`}>{t.rolesTitle}</h2>
-            <div className="mt-8 grid gap-4 md:grid-cols-3">
+            <div className="pm-grade pm-papeis mt-8 grid gap-4 md:grid-cols-3">
               {t.roles.map(([id, imagem, titulo, texto, cta], i) => (
                 <article key={id} className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#0A1713]">
                   {/* eslint-disable-next-line @next/next/no-img-element */}

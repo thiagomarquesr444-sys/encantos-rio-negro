@@ -388,7 +388,7 @@ export default function HeroImersivoERN({
         ))}
       </div>
 
-      <ul className="ern-revela mt-16 grid w-full gap-8 text-left [animation-delay:1400ms] sm:grid-cols-2 lg:grid-cols-4">
+      <ul className="pm-grade pm-icones ern-revela mt-16 grid w-full gap-8 text-left [animation-delay:1400ms] sm:grid-cols-2 lg:grid-cols-4">
         {t.destaques.map((destaque, indice) => (
           <li key={destaque.titulo} className="flex flex-col gap-3">
             <span className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-[#F4C77E]/30 bg-[#07110E]/60 text-[#F4C77E]">

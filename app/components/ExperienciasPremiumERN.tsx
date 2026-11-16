@@ -340,11 +340,11 @@ export default function ExperienciasPremiumERN({ abrirPasseio }: { abrirPasseio?
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8a4b12]">{t.interessesEyebrow}</p>
           <h2 className="mt-3 text-[clamp(2rem,4vw,3rem)] leading-[1.08] tracking-[-0.035em]">{t.interessesTitulo}</h2>
           <p className="mt-4 max-w-[640px] text-base leading-7 text-[#4b5a53] md:text-lg">{t.interessesIntro}</p>
-          <ul className="mt-10 grid auto-rows-[220px] grid-flow-dense gap-4 sm:grid-cols-2 md:auto-rows-[250px] lg:grid-cols-4">
+          <ul className="pm-mosaico mt-10 grid auto-rows-[220px] grid-flow-dense gap-4 sm:grid-cols-2 md:auto-rows-[250px] lg:grid-cols-4">
             {t.interesses.map((item, indice) => {
               const grande = indice === 0;
               return (
-                <li key={item.id} className={`ern-revela-rolagem ${grande ? 'sm:col-span-2 sm:row-span-2' : ''}`}>
+                <li key={item.id} data-grande={grande || undefined} className={`ern-revela-rolagem ${grande ? 'sm:col-span-2 sm:row-span-2' : ''}`}>
                   <Link href={item.href} onClick={(e) => {
                     // Com passeios publicados, o card filtra a vitrine em vez de sair da página.
                     if (!contagem[item.id]) return;
@@ -355,13 +355,13 @@ export default function ExperienciasPremiumERN({ abrirPasseio }: { abrirPasseio?
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={item.imagem} alt={item.alt} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.05] motion-reduce:transition-none" />
                     <span aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-[#05100C]/90 via-[#05100C]/30 to-transparent" />
-                    <span className="ern-publico-hero absolute inset-x-3.5 top-3.5 flex items-start justify-between">
+                    <span className="pm-topo ern-publico-hero absolute inset-x-3.5 top-3.5 flex items-start justify-between">
                       <span className="rounded-full bg-[#07110E]/70 px-3 py-1 text-xs font-semibold text-[#F4C77E] backdrop-blur-md">{grande ? t.destaque : t.experiencia}</span>
                       <span aria-hidden="true" className="grid h-9 w-9 place-items-center rounded-full bg-white/15 text-[#F0F0E8] backdrop-blur-md transition group-hover:bg-[#E3A144] group-hover:text-[#07110E]">↗</span>
                     </span>
-                    <span className="ern-publico-hero absolute inset-x-5 bottom-5">
-                      <span className={`block font-semibold tracking-[-0.02em] text-[#F5F3EA] ${grande ? 'text-3xl md:text-4xl' : 'text-xl'}`}>{item.nome}</span>
-                      <span className="mt-1.5 block text-sm text-[#D6DFD9]">{item.texto}</span>
+                    <span className="pm-base ern-publico-hero absolute inset-x-5 bottom-5">
+                      <span className={`pm-tit block font-semibold tracking-[-0.02em] text-[#F5F3EA] ${grande ? 'text-3xl md:text-4xl' : 'text-xl'}`}>{item.nome}</span>
+                      <span className="pm-txt mt-1.5 block text-sm text-[#D6DFD9]">{item.texto}</span>
                       {contagem[item.id] > 0 && <span className="mt-2 inline-block rounded-full bg-[#E3A144] px-3 py-1 text-xs font-semibold text-[#07110E]">{contagem[item.id]} {contagem[item.id] === 1 ? 'passeio' : 'passeios'}</span>}
                     </span>
                   </Link>
@@ -375,7 +375,7 @@ export default function ExperienciasPremiumERN({ abrirPasseio }: { abrirPasseio?
         <section className="mx-auto max-w-[1180px] px-5 pb-20 md:px-8 md:pb-24">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8a4b12]">{t.passosEyebrow}</p>
           <h2 className="mt-3 text-[clamp(2rem,4vw,3rem)] leading-[1.08] tracking-[-0.035em]">{t.passosTitulo}</h2>
-          <ol className="mt-10 grid gap-5 md:grid-cols-3">
+          <ol className="pm-passos mt-10 grid gap-5 md:grid-cols-3">
             {t.passos.map(([titulo, texto], indice) => (
               <li key={titulo} className="ern-revela-rolagem rounded-[22px] border border-[#e3dfd6] bg-white p-7 shadow-[0_12px_32px_rgb(15_28_23/5%)]">
                 <span className="grid h-12 w-12 place-items-center rounded-2xl bg-gradient-to-b from-[#F7D595] to-[#E3A144] text-lg font-bold text-[#07110E]">{indice + 1}</span>
@@ -417,29 +417,29 @@ export default function ExperienciasPremiumERN({ abrirPasseio }: { abrirPasseio?
             </div>
 
             {/* EDA_HISTORIAS_PREMIUM_V2 — cartões com mídia, marco no tempo e atalho para o mapa */}
-            <ul className="mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <ul className="pm-grade pm-historias mt-10 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
               {historias.map((historia) => {
                 const h = historia.textos[idioma];
                 const destino = acharDestinoIara(historia.nome);
                 return (
                   <li key={historia.id} className="ern-revela-rolagem group flex flex-col overflow-hidden rounded-[24px] border border-white/10 bg-gradient-to-b from-[#0D1D18] to-[#08130F] shadow-[0_24px_60px_rgb(0_0_0/0.28)] transition duration-500 hover:-translate-y-1 hover:border-[#F4C77E]/45 motion-reduce:transition-none motion-reduce:hover:translate-y-0">
-                    <div className="relative aspect-[16/10] overflow-hidden bg-[#05100C]">
+                    <div className="pm-capa relative aspect-[16/10] overflow-hidden bg-[#05100C]">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={historia.imagem} alt={historia.nome} loading="lazy" decoding="async" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-[1.05] motion-reduce:transition-none motion-reduce:group-hover:scale-100" />
                       {historia.video && <VideoCartaoEDA src={historia.video} poster={historia.imagem} />}
                       <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-t from-[#08130F] via-[#08130F]/25 to-transparent" />
-                      <span className="absolute left-4 top-4 rounded-full bg-[#07110E]/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#F4C77E] backdrop-blur-md">
+                      <span className="pm-selo absolute left-4 top-4 rounded-full bg-[#07110E]/70 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#F4C77E] backdrop-blur-md">
                         {t.regioes[historia.regiao]}
                       </span>
-                      <div className="absolute inset-x-5 bottom-3 flex items-end justify-between gap-3">
+                      <div className="pm-legenda absolute inset-x-5 bottom-3 flex items-end justify-between gap-3">
                         <p className="text-sm font-semibold text-[#F5F3EA] drop-shadow">{historia.nome}</p>
                         <p className="bg-gradient-to-b from-[#FBE3AE] to-[#E3A144] bg-clip-text text-3xl font-semibold leading-none tracking-[-0.03em] text-transparent">{historia.marco}</p>
                       </div>
                     </div>
-                    <div className="flex flex-1 flex-col p-6">
+                    <div className="pm-pad flex flex-1 flex-col p-6">
                       <h3 className="text-xl font-semibold leading-snug tracking-[-0.02em] text-[#F5F3EA]">{h.titulo}</h3>
-                      <p className="mt-3 text-sm leading-6 text-[#B8C9BF]">{h.texto}</p>
-                      <ul className="mt-4 flex flex-wrap gap-2">
+                      <p className="pm-esconde mt-3 text-sm leading-6 text-[#B8C9BF]">{h.texto}</p>
+                      <ul className="pm-esconde mt-4 flex flex-wrap gap-2">
                         {h.fatos.map((fato) => (
                           <li key={fato} className="rounded-full border border-[#F4C77E]/25 bg-[#F4C77E]/[0.04] px-3 py-1 text-xs text-[#EDEDE3]">{fato}</li>
                         ))}
