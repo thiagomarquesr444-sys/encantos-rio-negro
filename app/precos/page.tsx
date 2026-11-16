@@ -3,6 +3,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import PublicHeader from '@/app/components/PublicHeader';
+import RodapePublicoEDA from '@/app/components/RodapePublicoEDA';
+import '@/app/fablepremium.css';
+import './precos-premium-eda.css';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import { supabase } from '@/lib/supabase';
 
@@ -165,12 +168,12 @@ export default function PrecosPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#07110E] text-[#EDEDE3]" style={{ fontFamily: 'var(--font-work-sans), sans-serif' }}>
+    <div data-fable="portal" className="pr-eda min-h-screen bg-[#07110E] text-[#EDEDE3]" style={{ fontFamily: 'var(--font-work-sans), sans-serif' }}>
       <PublicHeader />
       <main className="mx-auto max-w-[1180px] px-5 pb-24 pt-32 md:px-8 md:pt-40">
         <div className="mx-auto max-w-[720px] text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#F4C77E]">{t.eyebrow}</p>
-          <h1 className="mt-5 text-[clamp(2.25rem,5vw,3.75rem)] leading-[1.06] tracking-[-0.035em] text-[#F0F0E8]" style={{ fontFamily: 'var(--font-fraunces), serif' }}>
+          <h1 className="pr-eda-titulo mt-5 text-[#F0F0E8]">
             {t.titulo}
           </h1>
           <p className="mt-6 text-base leading-7 text-[#B8C9BF] md:text-lg md:leading-8">{t.descricao}</p>
@@ -208,10 +211,10 @@ export default function PrecosPage() {
               return (
                 <article
                   key={plano.codigo}
-                  className={`flex flex-col gap-5 rounded-[18px] border p-7 ${destaque ? 'border-[#E3A144] bg-[#10231B]' : 'border-[#355043] bg-[#0A1713]'}`}
+                  className={`pr-eda-card flex flex-col gap-5 rounded-[18px] border p-7 ${destaque ? 'pr-eda-destaque border-[#E3A144] bg-[#10231B]' : 'border-[#355043] bg-[#0A1713]'}`}
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <h2 className="text-[27px] font-medium text-[#F0F0E8]" style={{ fontFamily: 'var(--font-fraunces), serif' }}>{plano.nome}</h2>
+                    <h2 className="pr-eda-nome text-[#F0F0E8]">{plano.nome}</h2>
                     {destaque && <span className="rounded-full bg-[#F4C77E] px-3 py-1 text-xs font-semibold uppercase tracking-[0.08em] text-[#07110E]">{t.recomendado}</span>}
                   </div>
                   {plano.descricao && <p className="text-sm leading-6 text-[#B8C9BF]">{plano.descricao}</p>}
@@ -260,6 +263,7 @@ export default function PrecosPage() {
           </Link>
         </div>
       </main>
+      <RodapePublicoEDA />
     </div>
   );
 }

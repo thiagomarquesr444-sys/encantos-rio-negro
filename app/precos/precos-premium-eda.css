@@ -1,0 +1,57 @@
+/* EDA_PRECOS_FABLEPREMIUM_V1 — página pública de planos no padrão do portal:
+   título condensado estilo letreiro, cartões com profundidade e fio dourado. */
+
+.pr-eda-titulo {
+  font-family: var(--font-bebas), 'Bebas Neue', Impact, sans-serif;
+  font-weight: 400;
+  font-size: clamp(2.6rem, 6vw, 4.6rem);
+  line-height: 0.98;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+
+.pr-eda-nome {
+  font-family: var(--font-bebas), 'Bebas Neue', Impact, sans-serif;
+  font-weight: 400;
+  font-size: 2.1rem;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.pr-eda-card {
+  position: relative;
+  overflow: hidden;
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 5%),
+    0 1px 2px rgb(0 0 0 / 18%),
+    0 18px 40px -24px rgb(0 0 0 / 60%);
+  transition: border-color 0.2s ease, box-shadow 0.25s ease, transform 0.25s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+
+/* Fio de luz dourado no topo do cartão. */
+.pr-eda-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #e3a144 50%, transparent);
+  opacity: 0.35;
+  transition: opacity 0.25s ease;
+}
+.pr-eda-destaque::before { opacity: 1; }
+
+@media (hover: hover) {
+  .pr-eda-card:hover {
+    border-color: #e3a144;
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 7%),
+      0 2px 4px rgb(0 0 0 / 20%),
+      0 26px 50px -24px rgb(0 0 0 / 70%);
+  }
+  .pr-eda-card:hover::before { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-eda-sinal='fraco']) .pr-eda-card:hover { transform: translateY(-3px); }
+}

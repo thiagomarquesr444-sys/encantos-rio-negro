@@ -10,6 +10,8 @@ import {
 } from 'react';
 
 import Link from 'next/link';
+import { CabecalhoEDA, PaginaEDA } from '@/app/components/PadraoPaginaEDA';
+import CartaoMagneticoEDA from '@/app/components/CartaoMagneticoEDA';
 
 import { supabase } from '@/lib/supabase';
 import { documentoCobrancaValidoERN } from '@/lib/fiscalERN';
@@ -685,58 +687,28 @@ export default function PlanosPage() {
       : null;
 
   return (
-    <div data-fable="gestao" className="eda-pg eda-pg-auto eda-pg-legado min-h-screen pb-20" style={{ ['--e-borda' as string]: 'rgb(255 255 255 / 8%)' }}>
-      {/* =====================================================
-          CABEÇALHO
-      ====================================================== */}
-
-      <section className="border-b border-white/[0.07] bg-[var(--ern-painel)] px-5 py-8 md:px-8 md:py-10">
-        <div className="mx-auto max-w-[1180px]">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-            <div className="max-w-[720px]">
-              <div className="flex items-center gap-3">
-                <span className="h-px w-8 bg-[var(--ern-botao)]" />
-
-                <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--ern-destaque)]">
-                  Encantos Gestão
-                </span>
-              </div>
-
-              <h1
-                className="mt-4 text-3xl leading-tight tracking-[-0.025em] text-[var(--ern-texto)] md:text-4xl"
-                style={{
-                  fontFamily:
-                    'var(--font-fraunces), serif',
-                }}
-              >
-                Um plano para cada etapa da operação.
-              </h1>
-
-              <p className="mt-3 max-w-[650px] text-sm leading-6 text-[var(--ern-texto)]/42">
-                Compare capacidades, recursos e valores
-                para escolher a estrutura adequada à
-                evolução da sua operação.
-              </p>
-            </div>
-
-            <Link
-              href="/dashboard"
-              className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-white/[0.09] bg-white/[0.025] px-4 text-xs font-semibold text-[var(--ern-texto)]/60 transition hover:border-white/[0.15] hover:bg-white/[0.05] hover:text-[var(--ern-texto)]/80"
-            >
-              <span>←</span>
-              Voltar ao Dashboard
+    <div data-fable="gestao" className="min-h-screen pb-20" style={{ ['--e-borda' as string]: 'rgb(255 255 255 / 8%)' }}>
+    <PaginaEDA className="eda-pg-auto">
+      <div className="eda-pg-miolo" style={{ maxWidth: 1200 }}>
+        {/* EDA_PLANOS_FABLEPREMIUM_V2: capa e cartões no padrão Encantos. */}
+        <CabecalhoEDA
+          capa
+          etiqueta="Planos e assinatura"
+          titulo="Um plano para cada etapa da operação."
+          resumo="Compare capacidades, recursos e valores para escolher a estrutura adequada à evolução da sua operação."
+          acoes={
+            <Link href="/dashboard" className="eda-pg-bt">
+              ← Voltar ao Painel
             </Link>
-          </div>
-        </div>
-      </section>
-
-      <main className="mx-auto max-w-[1180px] px-5 py-7 md:px-8 md:py-9">
+          }
+        />
+      <main>
         {/* =====================================================
             PLANO ATUAL
         ====================================================== */}
 
         {planoAtual && (
-          <section className="mb-8 overflow-hidden rounded-[24px] border border-[var(--ern-destaque)] bg-[var(--ern-painel)]">
+          <CartaoMagneticoEDA as="section" forca={3} className="mb-8 overflow-hidden rounded-[24px] border border-[var(--ern-destaque)] bg-[var(--ern-painel)]">
             <div className="relative flex flex-col gap-5 px-5 py-5 md:flex-row md:items-center md:justify-between md:px-6">
               <div className="pointer-events-none absolute -left-14 -top-20 h-40 w-40 rounded-full border border-[var(--ern-destaque)]" />
 
@@ -790,7 +762,7 @@ export default function PlanosPage() {
                 </div>
               </div>
             </div>
-          </section>
+          </CartaoMagneticoEDA>
         )}
 
         {!carregando && planos.length > 0 && (
@@ -1038,7 +1010,9 @@ export default function PlanosPage() {
                     'premium';
 
                   return (
-                    <article
+                    <CartaoMagneticoEDA
+                      as="article"
+                      forca={6}
                       key={
                         plano.codigo
                       }
@@ -1222,7 +1196,7 @@ export default function PlanosPage() {
                           </div>
                         </div>
                       </div>
-                    </article>
+                    </CartaoMagneticoEDA>
                   );
                 }
               )}
@@ -1513,6 +1487,8 @@ export default function PlanosPage() {
         {/* ERN_CALCULADORA_TRIBUTOS_PLANOS_V1: só aparece para a conta Comando EDA. */}
         <CalculadoraTributosPlanosERN />
       </main>
+      </div>
+    </PaginaEDA>
     </div>
   );
 }
