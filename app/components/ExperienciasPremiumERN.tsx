@@ -322,7 +322,7 @@ export default function ExperienciasPremiumERN({ abrirPasseio }: { abrirPasseio?
 
         {/* 2. Interesses em mosaico */}
         {/* EDA_PASSEIOS_PORTAL_V1: passeios publicados pelas operadoras */}
-        <section id="passeios" className="scroll-mt-24 bg-[#07110E] py-16 md:py-20">
+        <section id="passeios" className="ern-publico-hero vp-palco scroll-mt-24 bg-[#07110E] py-16 md:py-24">
           <div className="mx-auto max-w-[1180px] px-5 md:px-8">
             <VitrinePasseiosEDA
               catalogo
@@ -331,7 +331,7 @@ export default function ExperienciasPremiumERN({ abrirPasseio }: { abrirPasseio?
               rotuloInteresse={interesseAtual?.nome}
               onLimparInteresse={() => setInteresse(null)}
               titulo="Catálogo de experiências"
-              subtitulo="Publicados pelas operadoras da Rede EDA, com preço e contato direto."
+              subtitulo="Cada passeio é publicado pela própria operadora que vai conduzir a sua viagem: preço real, datas reais e contato direto, sem intermediários."
             />
           </div>
         </section>

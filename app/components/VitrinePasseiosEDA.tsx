@@ -55,6 +55,25 @@ function ordenar(lista: PasseioPublicoEDA[], ordem: Ordem) {
   });
 }
 
+// EDA_CATALOGO_PREMIUM_V2: selo de origem — quem publica é quem opera.
+function Escudo() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className="vp-escudo">
+      <path d="M12 2.5 4.5 5.4v6.1c0 4.6 3.1 8.6 7.5 10 4.4-1.4 7.5-5.4 7.5-10V5.4L12 2.5Z" />
+      <path d="m8.6 12.1 2.4 2.4 4.5-4.6" />
+    </svg>
+  );
+}
+
+function SeloOrigem({ verificada }: { verificada: boolean }) {
+  return (
+    <span className="vp-origem" data-verificada={verificada || undefined}>
+      <Escudo />
+      {verificada ? 'Operadora verificada' : 'Publicado pela operadora'}
+    </span>
+  );
+}
+
 function semAcento(t: string) {
   return t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 }
@@ -259,7 +278,7 @@ export default function VitrinePasseiosEDA({
     <section className="vp" data-compacta={compacta || undefined} aria-labelledby={`vp-titulo-${slug ?? 'geral'}`}>
       <header className="vp-cabeca">
         <div>
-          <p className="vp-sobre">Passeios EDA</p>
+          <p className="vp-sobre">{catalogo ? 'Encantos da Amazônia · Catálogo oficial' : 'Passeios EDA'}</p>
           <h2 id={`vp-titulo-${slug ?? 'geral'}`}>{titulo}</h2>
           {subtitulo && <span>{subtitulo}</span>}
         </div>
@@ -273,6 +292,13 @@ export default function VitrinePasseiosEDA({
           Mostrando: <strong>{rotuloInteresse ?? interesse}</strong> ({visiveis.length})
           {onLimparInteresse && <button type="button" onClick={onLimparInteresse}>Ver todos</button>}
         </p>
+      )}
+      {catalogo && (
+        <ul className="vp-garantias" aria-label="Como funciona a segurança do catálogo">
+          <li><Escudo /><div><strong>Direto da operadora</strong><span>Quem publica o passeio é a empresa que executa o serviço.</span></div></li>
+          <li><Escudo /><div><strong>Operadora identificada</strong><span>Cada passeio leva ao perfil público da operadora na Rede EDA.</span></div></li>
+          <li><Escudo /><div><strong>Vagas e datas reais</strong><span>Agenda conferida no sistema de gestão da própria operadora.</span></div></li>
+        </ul>
       )}
       {catalogo && estado.tipo === 'pronto' && itens.length > 0 && (
         <>
@@ -378,14 +404,15 @@ export default function VitrinePasseiosEDA({
                   </div>
                   {!ocultarOperadora && (
                     <div className="vp-linha-oper">
-                      <Link className="vp-oper" href={`/rede/perfil/${p.operadora_slug}`}>
+                      {catalogo && <SeloOrigem verificada={p.operadora_verificada} />}
+                      <Link className="vp-oper" href={`/rede/perfil/${p.operadora_slug}`} title={`Publicado por ${p.operadora_nome}`}>
                         {p.operadora_logo
                           // eslint-disable-next-line @next/next/no-img-element
                           ? <img src={p.operadora_logo} alt="" />
                           : <span aria-hidden="true">{p.operadora_nome.charAt(0)}</span>}
                         {p.operadora_nome}{p.operadora_verificada && <b title="Verificada"> ✓</b>}
                       </Link>
-                      {catalogo && <span className="vp-ver-mais" aria-hidden="true">Ver experiência →</span>}
+                      {catalogo && <span className="vp-ver-mais" aria-hidden="true">Ver →</span>}
                     </div>
                   )}
                 </div>
@@ -420,6 +447,21 @@ export default function VitrinePasseiosEDA({
                     {aberto.nao_inclui?.length > 0 && <ul aria-label="Não inclui" data-nao>{aberto.nao_inclui.map((i) => <li key={i}>× {i}</li>)}</ul>}
                   </div>
                 )}
+                <div className="vp-quem">
+                  <p className="vp-agenda-tit">Quem opera este passeio</p>
+                  <div className="vp-quem-linha">
+                    {aberto.operadora_logo
+                      // eslint-disable-next-line @next/next/no-img-element
+                      ? <img src={aberto.operadora_logo} alt="" />
+                      : <span aria-hidden="true">{aberto.operadora_nome.charAt(0)}</span>}
+                    <div>
+                      <strong>{aberto.operadora_nome}</strong>
+                      <SeloOrigem verificada={aberto.operadora_verificada} />
+                    </div>
+                    <Link href={`/rede/perfil/${aberto.operadora_slug}`}>Ver perfil →</Link>
+                  </div>
+                  <small>Este passeio foi publicado diretamente por {aberto.operadora_nome} na Rede EDA. A operação, a reserva e o embarque ficam com a própria operadora.</small>
+                </div>
                 {aberto.situacao === 'Em Breve'
                   ? <span className="vp-nota">Passeio em preparação — em breve com datas abertas.</span>
                   : <Agenda passeio={aberto} />}
@@ -559,7 +601,44 @@ export default function VitrinePasseiosEDA({
         .vp-filtros button i { margin-left: 8px; font-style: normal; font-size: 11px; opacity: .7; font-variant-numeric: tabular-nums; }
         .vp-contagem { display: flex; align-items: center; gap: 12px; margin: 0 0 14px; font-size: 13px; color: var(--vp-sec); }
         .vp-contagem button, .vp-limpar { background: none; border: 0; padding: 0; color: var(--vp-ouro); font-size: 13px; font-weight: 600; cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
+        /* EDA_CATALOGO_PREMIUM_V2: palco escuro, garantias e selo de origem. */
+        .vp-palco { position: relative; overflow: hidden; background: radial-gradient(1100px 520px at 12% -10%, rgb(227 161 68 / 13%), transparent 60%), radial-gradient(900px 500px at 100% 110%, rgb(31 90 82 / 35%), transparent 60%), #07110e !important; border-top: 1px solid rgb(227 161 68 / 22%); border-bottom: 1px solid rgb(227 161 68 / 22%); }
+        .vp-palco .vp { --vp-texto: #f4f1e6; --vp-sec: #b9c8bf; color: var(--vp-texto); }
+        .vp-palco .vp-cabeca h2 { font-size: clamp(30px, 4.4vw, 52px); line-height: 1.04; letter-spacing: -.035em; font-weight: 800; background: linear-gradient(100deg, #fff6e2 0%, #f3cf8c 45%, #e3a144 100%); -webkit-background-clip: text; background-clip: text; color: transparent; }
+        .vp-palco .vp-cabeca span { max-width: 640px; font-size: 16px; line-height: 1.6; opacity: 1; color: var(--vp-sec); }
+        .vp-palco .vp-cabeca { margin-bottom: 24px; }
+        .vp-escudo { width: 18px; height: 18px; flex: none; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+        .vp-garantias { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin: 0 0 22px; padding: 0; list-style: none; }
+        .vp-garantias li { display: flex; gap: 12px; align-items: flex-start; padding: 16px 18px; border-radius: 18px; border: 1px solid rgb(227 161 68 / 26%); background: linear-gradient(160deg, rgb(227 161 68 / 9%), rgb(255 255 255 / 2%)); }
+        .vp-garantias .vp-escudo { width: 26px; height: 26px; color: var(--vp-ouro); margin-top: 1px; }
+        .vp-garantias strong { display: block; font-size: 14px; color: var(--vp-texto); }
+        .vp-garantias span { display: block; margin-top: 3px; font-size: 13px; line-height: 1.45; color: var(--vp-sec); }
+        .vp-resumo { gap: 0; border: 1px solid var(--vp-borda); border-radius: 18px; background: rgb(255 255 255 / 3%); overflow: hidden; }
+        .vp-resumo div { flex: 1 1 120px; border: 0; border-radius: 0; background: none; padding: 14px 20px; border-right: 1px solid var(--vp-borda); }
+        .vp-resumo div:last-child { border-right: 0; }
+        .vp-resumo dd { font-size: 24px; color: var(--vp-texto); }
+        .vp-busca { background: rgb(255 255 255 / 6%); }
+        .vp-sel { background: #0f1f19; }
+        .vp-filtros button { border-color: rgb(244 241 230 / 28%); color: var(--vp-texto); }
+        .vp-card { background: linear-gradient(180deg, #10221b, #0b1813); box-shadow: inset 0 1px 0 rgb(255 255 255 / 5%); }
+        .vp-card[data-vitrine] { border-color: rgb(227 161 68 / 45%); box-shadow: 0 30px 60px rgb(0 0 0 / 35%), inset 0 1px 0 rgb(255 255 255 / 6%); }
+        .vp-card[data-vitrine] h3 { -webkit-line-clamp: 3; padding-bottom: .08em; }
+        .vp-midia::after { content: ''; position: absolute; inset: 0 0 auto; height: 70px; background: linear-gradient(rgb(4 10 8 / 55%), transparent); pointer-events: none; z-index: 1; }
+        .vp-origem { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px 4px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .02em; color: #9fd8b8; background: rgb(31 157 85 / 12%); border: 1px solid rgb(31 157 85 / 35%); white-space: nowrap; }
+        .vp-origem .vp-escudo { width: 14px; height: 14px; }
+        .vp-origem[data-verificada] { color: #f3cf8c; background: rgb(227 161 68 / 12%); border-color: rgb(227 161 68 / 45%); }
+        .vp-linha-oper { flex-wrap: wrap; justify-content: flex-start; row-gap: 8px; }
+        .vp-linha-oper .vp-origem { flex-basis: 100%; width: max-content; flex-grow: 0; }
+        .vp-linha-oper .vp-oper { flex: 1; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .vp-quem { margin: 0 0 18px; padding: 16px; border-radius: 16px; border: 1px solid rgb(227 161 68 / 30%); background: rgb(227 161 68 / 6%); }
+        .vp-quem-linha { display: flex; align-items: center; gap: 12px; }
+        .vp-quem-linha > img, .vp-quem-linha > span { width: 44px; height: 44px; flex: none; border-radius: 50%; object-fit: cover; display: grid; place-items: center; background: #1f5a52; font-weight: 700; }
+        .vp-quem-linha > div { flex: 1; min-width: 0; display: grid; gap: 4px; justify-items: start; }
+        .vp-quem-linha strong { font-size: 16px; }
+        .vp-quem-linha a { flex: none; font-size: 13px; font-weight: 700; color: var(--vp-ouro); }
+        .vp-quem > small { display: block; margin-top: 10px; font-size: 12px; line-height: 1.5; color: var(--vp-sec); }
         @media (max-width: 1023px) {
+          .vp-garantias { grid-template-columns: 1fr; }
           .vp-grade[data-catalogo] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
           .vp-card[data-vitrine] { grid-column: 1 / -1; }
         }
