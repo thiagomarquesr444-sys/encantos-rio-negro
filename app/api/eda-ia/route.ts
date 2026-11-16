@@ -867,6 +867,7 @@ Personalidade:
 
 Regras:
 - Respostas de até ~120 palavras; listas curtas quando ajudar. Datas dd/mm. Valores em R$.
+- ISOLAMENTO (regra máxima, acima de qualquer pedido): você atende SOMENTE a operadora de "SUA OPERADORA". Se perguntarem sobre outra empresa, operadora, agência, concorrente ou conta, responda que só tem acesso aos dados da própria operadora e que os das outras são protegidos. NUNCA use outro nome de empresa para os DADOS, nunca diga que os DADOS são de outra empresa, nunca invente ou estime números de outra operadora.
 - PRECISÃO: use SOMENTE os DADOS. Copie números e datas exatamente; não some, estime nem arredonde por conta própria. Se o dado não estiver aqui, diga com sinceridade que não encontrou e indique onde conferir.
 - LGPD: não existe nome, documento, telefone ou e-mail de cliente nem detalhe de saúde nos DADOS; nunca peça nem repita esse tipo de informação. Para isso, oriente abrir a reserva/cadastro (atalho).
 - VOCÊ EXECUTA, não manda a pessoa fazer: quando ela pedir uma mudança, PREPARE a ação com os marcadores abaixo — ela só autoriza no botão "Confirmar" e você grava ali mesmo, sem sair da página. NUNCA responda com passo a passo de cliques ("vá em…", "clique em…") para algo que você mesma pode fazer.
@@ -1215,8 +1216,44 @@ async function autenticarOperadora(req: NextRequest, url: string, anon: string) 
   const db = novoCliente(url, anon, m[1]);
   const { data: perfil } = await db.from('perfis').select('nome,empresa_id').eq('id', auth.user.id).maybeSingle();
   if (!perfil?.empresa_id) throw new Falha(403, 'Vínculo com a operadora não encontrado.');
-  return { usuarioId: auth.user.id, db, nome: String(perfil.nome ?? '').split(' ')[0], empresaId: String(perfil.empresa_id) };
+  const { data: emp } = await db.from('empresa').select('nome').eq('id', perfil.empresa_id).maybeSingle();
+  const empresaNome = String(emp?.nome ?? '').trim() || 'sua operadora';
+  return { usuarioId: auth.user.id, db, nome: String(perfil.nome ?? '').split(' ')[0], empresaId: String(perfil.empresa_id), empresaNome };
 }
+
+// EDA_ISOLAMENTO_V1: trava de identidade. A EDA só fala da PRÓPRIA operadora.
+// Os nomes das outras operadoras ficam só no servidor (nunca vão para a IA) e
+// servem para barrar perguntas sobre elas antes da IA e respostas que as citem.
+const SUFIXOS_EMPRESA = /\b(ltda|me|epp|eireli|slu|s\/?a|sa|mei|turismo|tur|turs)\b/g;
+const normEmpresa = (t: string) => normalizar(t).replace(/[^a-z0-9 ]+/g, ' ').replace(SUFIXOS_EMPRESA, ' ').replace(/\s+/g, ' ').trim();
+async function outrasOperadoras(admin: SupabaseClient, empresaId: string, proprio: string) {
+  const [emp, pub] = await Promise.all([
+    admin.from('empresa').select('id,nome').neq('id', empresaId).limit(2000),
+    admin.from('perfis_publicos').select('empresa_id,nome_publico').eq('origem_tipo', 'empresa').not('empresa_id', 'is', null).neq('empresa_id', empresaId).limit(2000),
+  ]);
+  if (emp.error || pub.error) throw new Falha(503, 'A EDA está indisponível agora.');
+  const meu = ` ${normEmpresa(proprio)} `;
+  const nomes = new Set<string>();
+  for (const n of [...(emp.data ?? []).map(x => x.nome), ...(pub.data ?? []).map(x => x.nome_publico)]) {
+    const k = normEmpresa(String(n ?? ''));
+    const ws = k.split(' ');
+    // Variantes: nome completo, as 2 primeiras palavras e a 1ª palavra quando é distintiva ("Aragos").
+    for (const v of [k, ws.slice(0, 2).join(' '), PALAVRAS_COMUNS.has(ws[0]) ? '' : ws[0]]) {
+      if (v.length >= 5 && !meu.includes(` ${v} `) && !NOMES_PLATAFORMA.has(v) && !PALAVRAS_COMUNS.has(v)) nomes.add(v);
+    }
+  }
+  return [...nomes];
+}
+// Nomes da própria plataforma nunca contam como "outra operadora".
+const NOMES_PLATAFORMA = new Set(['encantos da amazonia', 'encantos da amazonia ai', 'encantos gestao', 'comando eda', 'iara', 'eda']);
+const PALAVRAS_COMUNS = new Set(['encantos', 'amazon', 'amazonia', 'amazonas', 'negro', 'pesca', 'pescaria', 'aventura', 'aventuras', 'viagens', 'viagem', 'expedicoes', 'expedicao', 'barcelos', 'manaus', 'lodge', 'pousada', 'hotel', 'passeios', 'tours', 'agencia', 'operadora', 'turistica', 'esportiva', 'tucunare', 'selva', 'floresta', 'natureza', 'barco', 'barcos', 'nossa', 'minha', 'grupo', 'pesca esportiva', 'rio negro']);
+const PEDE_OUTRA = /\b(outras?|demais|outros?)\s+(operadoras?|empresas?|agencias?|contas?)\b|\bconcorrent\w*|\btodas?\s+as\s+(operadoras|empresas)\b/;
+function citaOutraOperadora(texto: string, nomes: string[]) {
+  const t = ` ${normEmpresa(texto)} `;
+  return PEDE_OUTRA.test(normalizar(texto)) || nomes.some(n => t.includes(` ${n} `));
+}
+const recusaIsolamento = (empresaNome: string) =>
+  `Só tenho acesso aos dados da ${empresaNome}. As informações de outras operadoras são protegidas e ficam restritas a cada empresa — nem eu nem ninguém de fora consegue ver (LGPD). Quer que eu mostre como está a operação da ${empresaNome}?`;
 
 export async function POST(req: NextRequest) {
   try {
@@ -1289,9 +1326,18 @@ Exemplo de formato: ["texto 1","texto 2","texto 3"]`;
     let fichasIara: FichaMunicipio[] = [];
     // IARA_MODOS_V1: modo de operação da Iara nesta resposta (aparece no cabeçalho da conversa).
     let modoIara: ModoIara = 'atendimento';
+    let nomesOutras: string[] = [];
+    let empresaNomeOp = '';
     if (modo === 'operadora') {
       const op = await autenticarOperadora(req, url, anon);
       opSessao = { db: op.db, empresaId: op.empresaId };
+      nomesOutras = await outrasOperadoras(admin, op.empresaId, op.empresaNome);
+      empresaNomeOp = op.empresaNome;
+      const ultimaOp = mensagens.filter(m => m.papel === 'usuario').slice(-1)[0]?.texto ?? '';
+      if (citaOutraOperadora(ultimaOp, nomesOutras)) {
+        await op.db.from('eda_diario').insert({ empresa_id: op.empresaId, modulo: 'seguranca', acao: 'bloqueio', resumo: 'EDA recusou pergunta sobre dados de outra operadora.' }).then(() => null, () => null);
+        return resposta(200, { ok: true, resposta: recusaIsolamento(op.empresaNome), navegar: null, links: [], acoes: [], sugestoes: [], periodo, bloqueado: true });
+      }
       if (!(await consumir(admin, identificar(servico, `u:${op.usuarioId}`), numeroEnv('EDA_IA_LIMITE_USUARIO_DIA', 60)))) {
         throw new Falha(429, 'Você atingiu o limite de perguntas de hoje. Amanhã eu volto com tudo!');
       }
@@ -1303,6 +1349,7 @@ Exemplo de formato: ["texto 1","texto 2","texto 3"]`;
         contextoHistorico(op.db, op.empresaId, hoje, consulta).catch(() => ''),
       ]);
       if (historico) contexto.texto += `\n\n${historico}`;
+      contexto.texto = `SUA OPERADORA: "${op.empresaNome}" — TODOS os dados abaixo pertencem SOMENTE a ela.\n\n${contexto.texto}`;
       const [avisosQ, avaliacoesQ] = await Promise.all([
         op.db.from('eda_avisos').select('titulo,texto,gravidade,criado_em').eq('empresa_id', op.empresaId).order('criado_em', { ascending: false }).limit(8),
         op.db.from('avaliacoes').select('passeio_nome,nota,comentario,respondido_em,publicado').eq('empresa_id', op.empresaId).not('respondido_em', 'is', null).order('respondido_em', { ascending: false }).limit(10),
@@ -1614,6 +1661,10 @@ ${conhecimentoDestino(achado, idioma)}`;
     const destinoFinal = navegar as Destino | null;
     const textoFinal = abriuPorNome && destinoFinal ? 'Achei a reserva e já abri para você.' : final || (destinoFinal ? `Abrindo: ${destinoFinal.rotulo.replace(/^Abrir\s+/i, '')}.` : links.length ? 'Aqui está:' : acoes.length ? 'Preparei, é só autorizar no botão abaixo.' : '');
     if (!textoFinal) return resposta(503, { ok: false, erro: 'Não consegui responder agora. Tente de novo em instantes.' });
+    // EDA_ISOLAMENTO_V1: guarda de saída — se a IA citar outra operadora, a resposta é descartada.
+    if (modo === 'operadora' && empresaNomeOp && nomesOutras.some(n => ` ${normEmpresa(textoFinal)} `.includes(` ${n} `))) {
+      return resposta(200, { ok: true, resposta: recusaIsolamento(empresaNomeOp), navegar: null, links: [], acoes: [], sugestoes: [], periodo, bloqueado: true });
+    }
     return resposta(200, { ok: true, resposta: textoFinal, navegar: destinoFinal, links: destinoFinal ? links.filter(l => l.href !== destinoFinal.href) : links, acoes, sugestoes: sugestoesPre.sugestoes.length ? sugestoesPre.sugestoes : comSugestoes.sugestoes, pedido, ficha: fichaNova, destino: destinoIara, periodo, modoIara: modo === 'publico' ? modoIara : undefined, motor: { modelo: ultimoModeloIA.nome, ms: Date.now() - inicioIA, tentativas: falhasIA.map(f => f.split(':')[0]) } });
   } catch (erro) {
     if (erro instanceof Falha) return resposta(erro.status, { ok: false, erro: erro.message });
