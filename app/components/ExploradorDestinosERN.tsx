@@ -347,21 +347,17 @@ export default function ExploradorDestinosERN() {
     [videoId, lang],
   );
   const vt = lang === 'EN'
-    ? { kicker: 'Video of the place', map: 'See it on the map', iara: 'Ask Iara about it' }
+    ? { kicker: 'Video of the place', map: 'Place details', iara: 'Ask Iara about it' }
     : lang === 'ES'
-      ? { kicker: 'Video del lugar', map: 'Ver en el mapa', iara: 'Preguntar a Iara' }
-      : { kicker: 'Vídeo do lugar', map: 'Ver no mapa', iara: 'Perguntar à Iara' };
+      ? { kicker: 'Video del lugar', map: 'Detalles del lugar', iara: 'Preguntar a Iara' }
+      : { kicker: 'Vídeo do lugar', map: 'Detalhes do lugar', iara: 'Perguntar à Iara' };
+  const videoTemLugar = !!videoDestino && scenes.some(scene => scene.id === new URL(videoDestino.href, 'https://x.local').searchParams.get('lugar'));
   function verVideoNoMapa() {
     if (!videoDestino) return;
     const alvo = new URL(videoDestino.href, window.location.origin).searchParams;
     const cena = scenes.find(scene => scene.id === alvo.get('lugar'));
-    const url = new URL(window.location.href);
-    url.searchParams.delete('video'); window.history.replaceState(window.history.state, '', url.toString());
     setVideoId(null);
-    if (cena) { choose(cena); return; }
-    setDrawer(null);
-    const pedido = destinoDoParametro(alvo.get('iara'));
-    if (pedido) voarRef.current(pedido);
+    if (cena) choose(cena);
   }
   const city = cities.find(item => item.id === (active?.city ?? cityId))!;
   const content = active ? t.destinations[active.id] : null;
@@ -455,7 +451,7 @@ export default function ExploradorDestinosERN() {
   // até o lugar e o território já aberto (painel + vista de satélite).
   const vooRef = useRef<{ n: number; cancelar: () => void }>({ n: 0, cancelar: () => undefined });
   const vooPendente = useRef<DestinoIara | null>(null);
-  function voarComIara(d: DestinoIara) {
+  function voarComIara(d: DestinoIara, aoChegar?: () => void) {
     const motor = map.current;
     if (!motor || status !== 'ready') { vooPendente.current = d; return; }
     vooRef.current.cancelar();
@@ -487,6 +483,7 @@ export default function ExploradorDestinosERN() {
       vooRef.current.cancelar = motor.voarPara(alvo, zoomFinal, () => {
         if (vooRef.current.n !== n) return;
         abrir();
+        aoChegar?.();
         window.dispatchEvent(new CustomEvent('iara:chegou', { detail: { nome: d.nome } }));
       });
     }, 1100);
@@ -509,6 +506,22 @@ export default function ExploradorDestinosERN() {
     const pedido = destinoDoParametro(url.searchParams.get('iara')) ?? vooPendente.current;
     vooPendente.current = null;
     if (url.searchParams.has('iara')) { url.searchParams.delete('iara'); window.history.replaceState(window.history.state, '', url.toString()); }
+    // EDA_VIDEO_NO_MAPA_V2: card com vídeo da Descubra -> faz a viagem até o destino
+    // e, ao chegar, abre o vídeo tocando no painel do lugar.
+    const videoParam = url.searchParams.get('video');
+    const comVideo = videoParam ? destinosParaExibicao(lang).find(d => d.id === videoParam && d.video) : undefined;
+    if (comVideo) {
+      url.searchParams.delete('video'); window.history.replaceState(window.history.state, '', url.toString());
+      const alvo = new URL(comVideo.href, window.location.origin).searchParams;
+      const cena = scenes.find(scene => scene.id === alvo.get('lugar'));
+      const destinoVideo: DestinoIara | null = cena
+        ? { tipo: 'lugar', id: cena.id, nome: comVideo.titulo }
+        : destinoDoParametro(alvo.get('iara'));
+      const abrirVideo = () => { setVideoId(comVideo.id); setDrawer('video'); };
+      if (destinoVideo) voarRef.current(destinoVideo, abrirVideo);
+      else abrirVideo();
+      return;
+    }
     if (pedido) voarRef.current(pedido);
   }, [status, motorTipo]);
 
@@ -538,8 +551,6 @@ export default function ExploradorDestinosERN() {
     const id = new URL(window.location.href).searchParams.get('lugar');
     const found = scenes.find(scene => scene.id === id);
     if (found) { setActiveId(found.id); setCityId(found.city); setDrawer('place'); }
-    const video = new URL(window.location.href).searchParams.get('video');
-    if (!found && video && destinosParaExibicao('PT').some(d => d.id === video && d.video)) { setVideoId(video); setDrawer('video'); }
     return () => { requestId.current += 1; };
   }, []);
 
@@ -786,7 +797,7 @@ export default function ExploradorDestinosERN() {
             <VideoDestinoERN key={videoDestino.id} title={videoDestino.titulo} poster={videoDestino.imagem ?? ''} videos={[videoDestino.video!]} autoIniciar />
             <p>{videoDestino.descricao}</p>
             <div className="ern-v-detail-actions">
-              {!videoDestino.curadoria && <button type="button" className="ern-v-button" onClick={verVideoNoMapa}>{vt.map} ↗</button>}
+              {videoTemLugar && <button type="button" className="ern-v-button" onClick={verVideoNoMapa}>{vt.map} ↗</button>}
               <button type="button" className="ern-v-button ern-v-button-soft" onClick={() => window.dispatchEvent(new CustomEvent('iara:abrir', { detail: { texto: `Quero conhecer ${videoDestino.titulo} (${videoDestino.local})` } }))}>✦ {vt.iara}</button>
             </div>
           </div>
