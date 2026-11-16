@@ -14,8 +14,9 @@ const SUPABASE_URL =
 const SUPABASE_SERVICE_ROLE_KEY =
   process.env.SUPABASE_SERVICE_ROLE_KEY;
 
+// EDA_TOKEN_SEM_ESPACOS_V1: espaços nas pontas (cópia de terminal) não invalidam o token.
 const ASAAS_WEBHOOK_TOKEN =
-  process.env.ASAAS_WEBHOOK_TOKEN;
+  process.env.ASAAS_WEBHOOK_TOKEN?.trim() || undefined;
 
 const ASAAS_API_KEY =
   process.env.ASAAS_API_KEY;
@@ -67,6 +68,9 @@ type AsaasWebhookPayload = {
   event?: string;
   dateCreated?: string;
   payment?: AsaasPayment;
+  subscription?: {
+    id?: string;
+  };
 };
 
 type AssinaturaERN = {
@@ -773,6 +777,118 @@ async function localizarOuCriarCobranca(
   return criada;
 }
 
+/*
+  ============================================================
+  EDA_ASSINATURA_ENCERRADA_NO_ASAAS_V1
+  Assinatura inativada/removida direto no painel do Asaas.
+  Não rebaixa na hora: agenda a volta ao Grátis para o fim do
+  período já pago (o cron diário conclui). Ignora encerramentos
+  feitos pela própria plataforma (cancelamento ou troca de plano).
+  ============================================================
+*/
+async function tratarFimAssinaturaAsaasEDA(
+  admin: ReturnType<typeof criarAdminClient>,
+  assinaturaAsaasId: string | null
+) {
+  if (!assinaturaAsaasId) {
+    return { ignorado: true, motivo: 'Assinatura não informada.' };
+  }
+
+  const { data: local, error: erroLocal } = await admin
+    .from('assinaturas_empresas')
+    .select('id, empresa_id, fim_em, cancelamento_solicitado_em, plano_pos_cancelamento_id')
+    .eq('provedor_assinatura_id', assinaturaAsaasId)
+    .maybeSingle();
+
+  if (erroLocal) {
+    throw new Error('Não foi possível localizar a assinatura local.');
+  }
+  if (!local) {
+    return { ignorado: true, motivo: 'Não é a assinatura vigente de nenhuma empresa.' };
+  }
+  if (local.cancelamento_solicitado_em || local.plano_pos_cancelamento_id) {
+    return { ignorado: true, motivo: 'Encerramento já agendado pela plataforma.' };
+  }
+
+  const { count: operacoesPlataforma, error: erroOperacoes } = await admin
+    .from('ern_operacoes_assinatura_v1')
+    .select('id', { count: 'exact', head: true })
+    .eq('tipo', 'cancelamento')
+    .eq('provedor_assinatura_id', assinaturaAsaasId)
+    .not('estado', 'in', '(cancelado,falhou_confirmado)');
+
+  if (erroOperacoes) {
+    throw new Error('Não foi possível conferir operações de cancelamento.');
+  }
+  if ((operacoesPlataforma ?? 0) > 0) {
+    return { ignorado: true, motivo: 'Cancelamento iniciado pela plataforma.' };
+  }
+
+  // Confirma no Asaas que a assinatura realmente foi encerrada.
+  if (!ASAAS_API_KEY) {
+    throw new Error('ASAAS_API_KEY não configurada.');
+  }
+  const consulta = await fetch(
+    `${ASAAS_API_URL}/subscriptions/${encodeURIComponent(assinaturaAsaasId)}`,
+    {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'EncantosRioNegro/1.0',
+        access_token: ASAAS_API_KEY,
+      },
+      cache: 'no-store',
+    }
+  );
+  if (!consulta.ok && consulta.status !== 404) {
+    throw new Error(`Asaas indisponível ao conferir assinatura (${consulta.status}).`);
+  }
+  const dados = consulta.ok
+    ? ((await consulta.json()) as { deleted?: boolean; status?: string })
+    : { deleted: true };
+  const encerrada =
+    dados.deleted === true || String(dados.status ?? '').toUpperCase() === 'INACTIVE';
+  if (!encerrada) {
+    return { ignorado: true, motivo: 'Assinatura segue ativa no Asaas.' };
+  }
+
+  const { data: planoFree, error: erroFree } = await admin
+    .from('planos')
+    .select('id')
+    .eq('codigo', 'free')
+    .single();
+  if (erroFree || !planoFree) {
+    throw new Error('Plano Grátis não está configurado.');
+  }
+
+  const agora = new Date();
+  const fimPago = local.fim_em ? new Date(local.fim_em) : null;
+  const efetivo = fimPago && fimPago > agora ? fimPago : agora;
+
+  const { error: erroAgenda } = await admin
+    .from('assinaturas_empresas')
+    .update({
+      renovacao_automatica: false,
+      cancelamento_solicitado_em: agora.toISOString(),
+      cancelamento_efetivo_em: efetivo.toISOString(),
+      plano_pos_cancelamento_id: planoFree.id,
+      updated_at: agora.toISOString(),
+    })
+    .eq('id', local.id)
+    .eq('provedor_assinatura_id', assinaturaAsaasId)
+    .is('plano_pos_cancelamento_id', null);
+
+  if (erroAgenda) {
+    throw new Error('Não foi possível agendar a volta ao plano Grátis.');
+  }
+
+  return {
+    agendado: true,
+    motivo: 'Assinatura encerrada no Asaas; volta ao Grátis no fim do período pago.',
+    efetivo_em: efetivo.toISOString(),
+  };
+}
+
 export async function POST(
   request: NextRequest
 ) {
@@ -811,7 +927,7 @@ export async function POST(
     const tokenRecebido =
       request.headers.get(
         'asaas-access-token'
-      );
+      )?.trim() ?? null;
 
     // ERN_WEBHOOK_COMPARACAO_SEGURA_V1: comparação em tempo constante.
     const recebido = Buffer.from(tokenRecebido ?? '', 'utf8');
@@ -867,6 +983,18 @@ export async function POST(
         },
         400
       );
+    }
+
+    if (
+      evento === 'SUBSCRIPTION_INACTIVATED' ||
+      evento === 'SUBSCRIPTION_DELETED'
+    ) {
+      const resultadoEDA = await tratarFimAssinaturaAsaasEDA(
+        admin,
+        payload.subscription?.id ?? null
+      );
+      console.info('[ASAAS WEBHOOK]', evento, resultadoEDA);
+      return resposta({ ok: true, ...resultadoEDA });
     }
 
     if (

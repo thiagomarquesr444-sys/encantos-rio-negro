@@ -1935,6 +1935,35 @@ async function retomarEventosPagamentoERN(
   Testes grátis vencidos também voltam ao Grátis.
   ============================================================
 */
+/*
+  EDA_CHAVE_ASAAS_ATIVA_V1
+  O Asaas desativa chaves de API sem uso por 3 meses.
+  Uma consulta leve por dia mantém a chave ativa, mesmo sem vendas.
+*/
+async function manterChaveAsaasAtivaEDA() {
+  if (!ASAAS_API_KEY) {
+    return { ok: false, motivo: 'ASAAS_API_KEY ausente.' };
+  }
+  try {
+    const r = await fetch(`${ASAAS_API_URL}/customers?limit=1`, {
+      method: 'GET',
+      headers: {
+        Accept: 'application/json',
+        'User-Agent': 'EncantosRioNegro/1.0',
+        access_token: ASAAS_API_KEY,
+      },
+      cache: 'no-store',
+    });
+    if (!r.ok) {
+      console.error('[EDA CRON CHAVE ASAAS] Consulta recusada:', r.status);
+    }
+    return { ok: r.ok, status: r.status };
+  } catch (erro) {
+    console.error('[EDA CRON CHAVE ASAAS] Falha de rede:', erro);
+    return { ok: false, motivo: 'Falha de rede.' };
+  }
+}
+
 const CARENCIA_DIAS_EDA = 5;
 
 async function processarCarenciaETestesEDA(
@@ -2081,6 +2110,8 @@ async function processar(
 
     const carenciaEDA = await processarCarenciaETestesEDA(admin);
 
+    const chaveAsaasEDA = await manterChaveAsaasAtivaEDA();
+
     /*
       ========================================================
       4. RESULTADO GERAL
@@ -2135,6 +2166,7 @@ async function processar(
         recuperacao_checkouts: recuperacaoCheckoutsERN,
         retomada_eventos: retomadaEventosERN,
         carencia_testes: carenciaEDA,
+        chave_asaas: chaveAsaasEDA,
 
         resumo: {
           checkouts_encontrados:
