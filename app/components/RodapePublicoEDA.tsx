@@ -3,6 +3,7 @@
 import Link from 'next/link';
 
 import LogoERN from '@/app/components/LogoERN';
+import SeloAIEDA from '@/app/components/SeloAIEDA';
 import ModoEconomicoEDA from '@/app/components/ModoEconomicoEDA';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import { EMPRESA_EDA } from '@/lib/empresaEDA';
@@ -112,7 +113,7 @@ export default function RodapePublicoEDA() {
             <div className="flex items-center gap-3">
               <LogoERN tamanho={44} />
               <span className="leading-tight">
-                <span className="block text-lg font-semibold text-[#F5F3EA]">Encantos da Amazônia</span>
+                <span className="flex items-center gap-1.5 text-lg font-semibold text-[#F5F3EA]">Encantos da Amazônia <SeloAIEDA /></span>
                 <span className="block text-xs text-[#F4C77E]">{t.lema}</span>
               </span>
             </div>

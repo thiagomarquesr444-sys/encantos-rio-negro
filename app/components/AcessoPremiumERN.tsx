@@ -2,6 +2,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import LogoERN from './LogoERN';
+import SeloAIEDA from '@/app/components/SeloAIEDA';
 import ArcoFlechaERN from './ArcoFlechaERN';
 import IconeERN, { type NomeIconeERN } from './IconeERN';
 import './acesso-premium-ern.css';
@@ -57,7 +58,7 @@ export default function AcessoPremiumERN({ children, etapa, perfil }: Props) {
     <header className="ern-acesso-topo">
       <Link href="/" className="ern-acesso-marca" aria-label="Encantos da Amazônia — voltar ao portal">
         <LogoERN tamanho={44} prioridade />
-        <span><strong>Encantos Gestão</strong><small>PARA QUEM FAZ O TURISMO NO AMAZONAS</small></span>
+        <span><strong>Encantos Gestão <SeloAIEDA /></strong><small>PARA QUEM FAZ O TURISMO NO AMAZONAS</small></span>
       </Link>
       <Link href="/operadores" className="ern-acesso-voltar"><span aria-hidden="true">←</span> Conhecer a plataforma</Link>
     </header>

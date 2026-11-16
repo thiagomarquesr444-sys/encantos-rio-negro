@@ -11,6 +11,7 @@ import { usePathname } from 'next/navigation';
 import { useAppConfig } from '@/app/context/AppContext';
 import { supabase } from '@/lib/supabase';
 import LogoERN from '@/app/components/LogoERN';
+import SeloAIEDA from '@/app/components/SeloAIEDA';
 import IconeERN, { type NomeIconeERN } from '@/app/components/IconeERN';
 import TemaRapidoOperadoraERN from '@/app/components/TemaRapidoOperadoraERN';
 import EstiloPainelSeletorERN from '@/app/components/EstiloPainelERN';
@@ -538,7 +539,7 @@ export default function Sidebar() {
           <Link href="/dashboard" onClick={fecharMenus} aria-label={recolhido ? nomeSistema : undefined} className={`flex min-w-0 flex-1 items-center gap-2.5 rounded-xl ${recolhido ? 'justify-center' : 'px-1.5'} ${FOCO}`}>
             <LogoERN tamanho={38} prioridade />
             {!recolhido && <span className="min-w-0">
-              <span className="block truncate font-[family-name:var(--font-inter)] text-base font-semibold text-[#F0F0E8]">{nomeSistema}</span>
+              <span className="flex min-w-0 items-center gap-1.5 font-[family-name:var(--font-inter)] text-base font-semibold text-[#F0F0E8]"><span className="truncate">{nomeSistema}</span><SeloAIEDA /></span>
               <span className="block whitespace-nowrap text-[8.5px] font-semibold uppercase tracking-[0.13em] text-[#F4C77E]">Gestão da operadora</span>
             </span>}
           </Link>
@@ -581,7 +582,7 @@ export default function Sidebar() {
         <Link href="/dashboard" onClick={fecharMenus} className={`flex min-w-0 items-center gap-2.5 rounded-xl ${FOCO}`}>
           <LogoERN tamanho={36} prioridade />
           <span className="min-w-0">
-            <span className="block truncate font-[family-name:var(--font-inter)] text-[15px] font-semibold text-[#F0F0E8]">{nomeSistema}</span>
+            <span className="flex min-w-0 items-center gap-1.5 font-[family-name:var(--font-inter)] text-[15px] font-semibold text-[#F0F0E8]"><span className="truncate">{nomeSistema}</span><SeloAIEDA /></span>
             <span className="block whitespace-nowrap text-[8.5px] font-semibold uppercase tracking-[0.13em] text-[#F4C77E]">Gestão da operadora</span>
           </span>
         </Link>
@@ -636,7 +637,7 @@ export default function Sidebar() {
           <div className="flex shrink-0 items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
               <LogoERN tamanho={34} />
-              <h2 id="titulo-menu-mobile" className="font-[family-name:var(--font-inter)] text-base font-semibold text-[#F0F0E8]">{nomeSistema}</h2>
+              <h2 id="titulo-menu-mobile" className="flex items-center gap-1.5 font-[family-name:var(--font-inter)] text-base font-semibold text-[#F0F0E8]">{nomeSistema} <SeloAIEDA /></h2>
             </div>
             <button type="button" aria-label="Fechar menu de navegação" onClick={() => setMobileAberto(false)} className={`grid size-11 place-items-center rounded-xl border border-white/15 ${FOCO}`}>
               <IconeERN nome="fechar" tamanho={20} />

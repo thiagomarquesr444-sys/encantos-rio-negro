@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 import LogoERN from '@/app/components/LogoERN';
+import SeloAIEDA from '@/app/components/SeloAIEDA';
 import { supabase } from '@/lib/supabase';
 import type { TipoAcessoProfissional } from '@/lib/acessos';
 
@@ -466,7 +467,7 @@ function NavegacaoProfissional({
                   fontFamily: 'var(--font-fraunces), serif',
                 }}
               >
-                Encantos Gestão
+                Encantos Gestão <SeloAIEDA className="ml-1" />
               </span>
               <span className="mt-1 block truncate text-[10px] uppercase tracking-widest text-[#B4C8BB]">
                 {navegacao.subtitulo}

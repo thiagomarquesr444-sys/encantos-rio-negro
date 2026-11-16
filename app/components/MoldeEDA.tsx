@@ -3,6 +3,7 @@
 // marrons (Solimões) e verdes (floresta), e a marca no canto da imagem.
 import type { ReactNode } from 'react';
 import LogoERN from './LogoERN';
+import SeloAIEDA from '@/app/components/SeloAIEDA';
 import './molde-eda.css';
 
 export default function MoldeEDA({ children }: { children: ReactNode }) {
@@ -12,6 +13,7 @@ export default function MoldeEDA({ children }: { children: ReactNode }) {
       <div className="eda-molde-marca" aria-hidden="true">
         <LogoERN tamanho={26} />
         <span>Encantos da Amazônia</span>
+        <SeloAIEDA />
       </div>
       <div className="eda-molde-faixa" aria-hidden="true" />
     </div>
