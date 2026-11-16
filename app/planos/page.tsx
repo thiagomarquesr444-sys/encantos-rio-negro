@@ -270,6 +270,66 @@ export default function PlanosPage() {
   const [planoAguardandoDocumentoEDA, setPlanoAguardandoDocumentoEDA] =
     useState<string | null>(null);
 
+  // EDA_CHECKOUT_PENDENTE_V1
+  type CheckoutPendenteTelaEDA = {
+    plano_nome: string | null;
+    ciclo: string;
+    valor: number;
+    vencimento: string | null;
+    link_pagamento: string | null;
+  };
+  const [pendenteEDA, setPendenteEDA] = useState<CheckoutPendenteTelaEDA | null>(null);
+  const [desistindoEDA, setDesistindoEDA] = useState(false);
+
+  async function tokenSessaoEDA() {
+    const { data } = await supabase.auth.getSession();
+    return data.session?.access_token ?? null;
+  }
+
+  async function carregarPendenteEDA() {
+    try {
+      const token = await tokenSessaoEDA();
+      if (!token) return;
+      const r = await fetch('/api/assinatura/checkout-pendente', {
+        headers: { Authorization: `Bearer ${token}` },
+        cache: 'no-store',
+      });
+      const corpo = await r.json().catch(() => null);
+      setPendenteEDA(r.ok ? corpo?.pendente ?? null : null);
+    } catch {
+      setPendenteEDA(null);
+    }
+  }
+
+  async function desistirPendenteEDA() {
+    setDesistindoEDA(true);
+    setCheckoutErro(null);
+    setCheckoutMensagem(null);
+    try {
+      const token = await tokenSessaoEDA();
+      if (!token) throw new Error('Sua sessão expirou. Entre novamente para continuar.');
+      const r = await fetch('/api/assinatura/checkout-pendente', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ acao: 'desistir' }),
+      });
+      const corpo = await r.json().catch(() => null);
+      if (!r.ok) throw new Error(corpo?.erro ?? 'Não foi possível cancelar a contratação.');
+      setLinkPagamentoEDA(null);
+      setCheckoutMensagem(corpo?.mensagem ?? 'Contratação cancelada.');
+      await carregarPendenteEDA();
+      await carregarDados();
+    } catch (e: any) {
+      setCheckoutErro(e?.message ?? 'Não foi possível cancelar a contratação.');
+    } finally {
+      setDesistindoEDA(false);
+    }
+  }
+
+  useEffect(() => {
+    carregarPendenteEDA();
+  }, []);
+
   useEffect(() => {
     carregarDados();
   }, []);
@@ -448,6 +508,7 @@ export default function PlanosPage() {
       );
 
       await carregarDados();
+      await carregarPendenteEDA();
     } catch (error: any) {
       console.error(
         'Erro ao iniciar checkout:',
@@ -887,20 +948,44 @@ export default function PlanosPage() {
           </div>
         )}
 
-        {linkPagamentoEDA && (
-          <div className="mb-6 flex flex-col gap-3 rounded-[18px] border border-[var(--ern-destaque)]/30 bg-white/[0.03] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-[var(--ern-texto)]/80">
-              Falta só o pagamento. Escolha Pix, cartão ou boleto na página segura do Asaas.
-              O plano é liberado assim que o pagamento for confirmado.
+        {pendenteEDA && (
+          <div className="mb-6 rounded-[18px] border border-[var(--ern-destaque)]/30 bg-white/[0.03] px-5 py-5">
+            <span className="text-[10px] font-semibold uppercase tracking-[0.22em] text-[var(--ern-destaque)]">
+              Pagamento pendente
+            </span>
+            <p className="mt-2 text-sm text-[var(--ern-texto)]">
+              Plano <strong>{pendenteEDA.plano_nome ?? 'escolhido'}</strong> ({pendenteEDA.ciclo}) ·{' '}
+              <strong>
+                {pendenteEDA.valor.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+              </strong>
+              {pendenteEDA.vencimento
+                ? ` · vence em ${pendenteEDA.vencimento.split('-').reverse().join('/')}`
+                : ''}
             </p>
-            <a
-              href={linkPagamentoEDA}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-[var(--ern-botao)] px-5 text-sm font-bold text-[var(--ern-painel)]"
-            >
-              Ir para o pagamento
-            </a>
+            <p className="mt-1 text-xs text-[var(--ern-texto)]/55">
+              Pague por Pix, cartão ou boleto na página segura do Asaas. O plano é liberado assim que o pagamento for confirmado.
+              Sem pagamento em 24h, a contratação é cancelada sozinha.
+            </p>
+            <div className="mt-4 flex flex-col gap-3 sm:flex-row">
+              {(pendenteEDA.link_pagamento ?? linkPagamentoEDA) && (
+                <a
+                  href={(pendenteEDA.link_pagamento ?? linkPagamentoEDA) as string}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-[var(--ern-botao)] px-5 text-sm font-bold text-[var(--ern-painel)]"
+                >
+                  Ir para o pagamento
+                </a>
+              )}
+              <button
+                type="button"
+                onClick={desistirPendenteEDA}
+                disabled={desistindoEDA}
+                className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-white/10 px-5 text-sm font-semibold text-[var(--ern-texto)]/80 disabled:opacity-50"
+              >
+                {desistindoEDA ? 'Cancelando…' : 'Cancelar esta contratação'}
+              </button>
+            </div>
           </div>
         )}
 

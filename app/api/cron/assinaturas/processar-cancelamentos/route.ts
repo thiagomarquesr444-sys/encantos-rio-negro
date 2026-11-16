@@ -9,6 +9,8 @@ import {
   createClient,
 } from '@supabase/supabase-js';
 
+import { desistirCheckoutEDA } from '@/lib/checkoutPendenteEDA';
+
 /*
   ============================================================
   CONFIGURAÇÃO
@@ -1936,6 +1938,49 @@ async function retomarEventosPagamentoERN(
   ============================================================
 */
 /*
+  EDA_CHECKOUT_ABANDONADO_V1
+  Contratações do fluxo novo aguardando pagamento há mais de 24h:
+  remove a assinatura pendente no Asaas e libera a empresa.
+  Nunca mexe se houver pagamento iniciado ou concluído.
+*/
+async function limparCheckoutsAbandonadosEDA(
+  admin: ReturnType<typeof criarAdminClient>
+) {
+  const resultado = { encontrados: 0, liberados: 0, protegidos: 0, falhas: 0 };
+  const limite = new Date(Date.now() - CHECKOUT_EXPIRADO_HORAS * 60 * 60 * 1000).toISOString();
+
+  const { data: ops, error } = await admin
+    .from('ern_operacoes_assinatura_v1')
+    .select('id, provedor_assinatura_id')
+    .eq('tipo', 'checkout')
+    .eq('estado', 'aguardando_pagamento')
+    .lte('criado_em', limite)
+    .limit(50);
+
+  if (error) {
+    console.error('[EDA CRON CHECKOUT ABANDONADO] Falha ao listar:', error.message);
+    resultado.falhas += 1;
+    return resultado;
+  }
+
+  for (const op of ops ?? []) {
+    resultado.encontrados += 1;
+    try {
+      const r = await desistirCheckoutEDA(admin as any, {
+        operacao_id: op.id,
+        assinatura_asaas_id: op.provedor_assinatura_id ?? null,
+      });
+      if (r.ok) resultado.liberados += 1;
+      else resultado.protegidos += 1;
+    } catch (e) {
+      console.error('[EDA CRON CHECKOUT ABANDONADO]', op.id, e);
+      resultado.falhas += 1;
+    }
+  }
+  return resultado;
+}
+
+/*
   EDA_CHAVE_ASAAS_ATIVA_V1
   O Asaas desativa chaves de API sem uso por 3 meses.
   Uma consulta leve por dia mantém a chave ativa, mesmo sem vendas.
@@ -2112,6 +2157,8 @@ async function processar(
 
     const chaveAsaasEDA = await manterChaveAsaasAtivaEDA();
 
+    const abandonadosEDA = await limparCheckoutsAbandonadosEDA(admin);
+
     /*
       ========================================================
       4. RESULTADO GERAL
@@ -2119,7 +2166,7 @@ async function processar(
     */
 
     const totalFalhas =
-      checkouts.falhas + cancelamentos.falhas + recuperacaoCancelamentosERN.falhas + recuperacaoCheckoutsERN.falhas + retomadaEventosERN.falhas + carenciaEDA.falhas;
+      checkouts.falhas + abandonadosEDA.falhas + cancelamentos.falhas + recuperacaoCancelamentosERN.falhas + recuperacaoCheckoutsERN.falhas + retomadaEventosERN.falhas + carenciaEDA.falhas;
 
     const houveTrabalho = carenciaEDA.encontrados > 0 || carenciaEDA.testes_expirados > 0 || retomadaEventosERN.encontrados > 0 || recuperacaoCheckoutsERN.encontrados > 0 || recuperacaoCancelamentosERN.encontrados > 0 ||
       checkouts.encontrados >
@@ -2167,6 +2214,7 @@ async function processar(
         retomada_eventos: retomadaEventosERN,
         carencia_testes: carenciaEDA,
         chave_asaas: chaveAsaasEDA,
+        checkouts_abandonados_eda: abandonadosEDA,
 
         resumo: {
           checkouts_encontrados:
