@@ -125,7 +125,6 @@ export default function PerfilProfissional({ tipo }: Props) {
 
 function FormularioPerfilProfissional({ tipo }: Props) {
   const guia = tipo === 'guia';
-  const raiz = guia ? '/guia' : '/fornecedor';
 
   const [dados, setDados] = useState<DadosPerfil>({
     ...DADOS_INICIAIS,
@@ -402,58 +401,36 @@ function FormularioPerfilProfissional({ tipo }: Props) {
     <main data-fable="portal" className="min-h-[calc(100dvh-82px)] bg-[#07110E] px-4 py-7 text-[#EDEDE3] sm:px-6 sm:py-10">
       <div className="mx-auto w-full max-w-[1000px]">
         {/* EDA_FORNECEDOR_PERFIL_FABLE_V1: fornecedor ganha capa com paisagem e letreiro. */}
-        {!guia ? (
-          <header>
-            <div className="fi-capa" style={{ backgroundImage: "url('/images/fornecedor/experiencias.webp')", minHeight: 260 }}>
-              <div className="fi-capa-veu" />
-              <div className="fi-capa-txt">
-                <p className="fi-eb">Encantos da Amazônia · Meu perfil</p>
-                <h1 id="perfil-titulo" className="fi-letreiro">Quem faz, quem é você</h1>
-                <p className="fi-sub">
-                  Seu nome, sua cidade, o que você faz e o WhatsApp que recebe os contatos. É assim que o visitante
-                  e as operadoras vão te encontrar na Rede EDA.
-                </p>
-              </div>
-            </div>
-            <div className="fi-eda-guia">
-              <span className="fi-eda-selo" aria-hidden="true">EDA</span>
-              <p className="fi-eda-fala">
-                Só o nome é obrigatório, mas com <b>WhatsApp com DDD</b>, <b>cidade</b> e <b>atividade</b> o comprador
-                consegue falar com você. Se você faz artesanato, escolha <b>Artesanato</b> na atividade.
+        {/* EDA_PROFISSIONAL_PERFIL_FABLE_V2: capa com letreiro e EDA para fornecedor e guia. */}
+        <header>
+          <div
+            className={`fi-capa ${guia ? 'fi-card-rio' : ''}`}
+            style={guia ? { minHeight: 260 } : { backgroundImage: "url('/images/fornecedor/experiencias.webp')", minHeight: 260 }}
+          >
+            <div className="fi-capa-veu" />
+            <div className="fi-capa-txt">
+              <p className="fi-eb">Encantos da Amazônia · Meu perfil</p>
+              <h1 id="perfil-titulo" className="fi-letreiro">
+                {guia ? 'O guia que o visitante procura' : 'Quem faz, quem é você'}
+              </h1>
+              <p className="fi-sub">
+                {guia
+                  ? 'Seus idiomas, sua região, seu Cadastur e o WhatsApp que recebe os contatos. É assim que visitantes e operadoras vão te encontrar na Rede EDA.'
+                  : 'Seu nome, sua cidade, o que você faz e o WhatsApp que recebe os contatos. É assim que o visitante e as operadoras vão te encontrar na Rede EDA.'}
               </p>
             </div>
-          </header>
-        ) : (
-          <header>
-          <Link
-            href={raiz}
-            className={`inline-flex min-h-11 items-center gap-2 rounded-xl text-sm font-semibold text-[#F4C77E] transition-colors hover:text-[#FFD18A] ${FOCO}`}
-          >
-            <span aria-hidden="true">←</span>
-            Voltar ao painel
-          </Link>
-
-          <p className="mt-5 text-xs font-semibold uppercase tracking-[0.18em] text-[#E3A144]">
-            {guia ? 'Guia independente' : 'Fornecedor independente'}
-          </p>
-
-          <h1
-            id="perfil-titulo"
-            className="mt-3 text-3xl leading-tight text-[#F0F0E8] sm:text-4xl"
-            style={{
-              fontFamily: 'var(--font-fraunces), serif',
-            }}
-          >
-            Meu perfil profissional
-          </h1>
-
-          <p className="mt-3 max-w-3xl text-sm leading-7 text-[#EDEDE3]/75 sm:text-base">
-            {guia
-              ? 'Apresente sua atuação como guia, seus idiomas, sua região de atendimento e as informações profissionais que representarão você dentro da Rede EDA.'
-              : 'Apresente seu negócio, sua atividade principal, seus produtos ou serviços e sua região de atendimento dentro da Rede EDA.'}
-          </p>
+          </div>
+          <div className="fi-eda-guia">
+            <span className="fi-eda-selo" aria-hidden="true">EDA</span>
+            <p className="fi-eda-fala">
+              {guia ? (
+                <>Só o nome é obrigatório, mas com <b>WhatsApp com DDD</b>, <b>idiomas</b> e <b>Cadastur</b> você passa confiança e recebe mais contatos.</>
+              ) : (
+                <>Só o nome é obrigatório, mas com <b>WhatsApp com DDD</b>, <b>cidade</b> e <b>atividade</b> o comprador consegue falar com você. Se você faz artesanato, escolha <b>Artesanato</b> na atividade.</>
+              )}
+            </p>
+          </div>
         </header>
-        )}
 
         <div ref={avisoRef} className="scroll-mt-28">
           {erro && (

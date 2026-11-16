@@ -14,22 +14,46 @@ import IconeERN, { type NomeIconeERN } from '@/app/components/IconeERN';
 
 type Item = { href: string; label: string; icone: NomeIconeERN; externo?: boolean };
 
-const PRINCIPAL: Item[] = [
-  { href: '/fornecedor', label: 'Início', icone: 'casa' },
-  { href: '/fornecedor/vitrine', label: 'Minha vitrine', icone: 'diamante' },
-  { href: '/fornecedor/perfil', label: 'Meu perfil', icone: 'perfil' },
-];
+// EDA_PROFISSIONAL_MENU_V1: mesmo menu para fornecedor/artesão e guia independente
+// (não confundir com "Guias" do menu da operadora).
+type Tipo = 'fornecedor' | 'guia';
 
-const PORTAL: Item[] = [
-  { href: '/artesanato', label: 'Ver no Portal', icone: 'estrela', externo: true },
-  { href: '/rede', label: 'Rede EDA', icone: 'rio', externo: true },
-];
+const MENUS: Record<Tipo, { principal: Item[]; portal: Item[]; rotulo: string; conta: string }> = {
+  fornecedor: {
+    rotulo: 'Espaço do fornecedor',
+    conta: 'Fornecedor independente',
+    principal: [
+      { href: '/fornecedor', label: 'Início', icone: 'casa' },
+      { href: '/fornecedor/vitrine', label: 'Minha vitrine', icone: 'diamante' },
+      { href: '/fornecedor/perfil', label: 'Meu perfil', icone: 'perfil' },
+    ],
+    portal: [
+      { href: '/artesanato', label: 'Ver no Portal', icone: 'estrela', externo: true },
+      { href: '/rede', label: 'Rede EDA', icone: 'rio', externo: true },
+    ],
+  },
+  guia: {
+    rotulo: 'Espaço do guia',
+    conta: 'Guia independente',
+    principal: [
+      { href: '/guia', label: 'Início', icone: 'casa' },
+      { href: '/guia/perfil', label: 'Meu perfil', icone: 'perfil' },
+    ],
+    portal: [
+      { href: '/destinos', label: 'Destinos', icone: 'mapa', externo: true },
+      { href: '/rede', label: 'Rede EDA', icone: 'rio', externo: true },
+    ],
+  },
+};
 
-function ativo(pathname: string, href: string) {
-  return href === '/fornecedor' ? pathname === href : pathname === href || pathname.startsWith(href + '/');
-}
+export default function MenuLateralProfissionalEDA({ tipo = 'fornecedor' }: { tipo?: Tipo }) {
+  const menu = MENUS[tipo];
+  const PRINCIPAL = menu.principal;
+  const PORTAL = menu.portal;
+  const raiz = `/${tipo}`;
+  const ativo = (pathname: string, href: string) =>
+    href === raiz ? pathname === href : pathname === href || pathname.startsWith(href + '/');
 
-export default function MenuLateralFornecedorEDA() {
   const pathname = usePathname() ?? '';
   const [aberto, setAberto] = useState(false);
   const [nome, setNome] = useState('');
@@ -45,7 +69,7 @@ export default function MenuLateralFornecedorEDA() {
         .from('perfis_profissionais')
         .select('nome')
         .eq('usuario_id', data.user.id)
-        .eq('tipo', 'fornecedor')
+        .eq('tipo', tipo)
         .maybeSingle();
       if (vivo) setNome(perfil?.nome ?? '');
     })();
@@ -62,7 +86,7 @@ export default function MenuLateralFornecedorEDA() {
     setSaindo(true);
     try {
       await supabase.auth.signOut();
-      window.location.assign('/login?acesso=fornecedor');
+      window.location.assign(`/login?acesso=${tipo}`);
     } finally {
       saida.current = false;
       setSaindo(false);
@@ -91,15 +115,15 @@ export default function MenuLateralFornecedorEDA() {
 
   const conteudo = (
     <div className="flex h-full flex-col">
-      <Link href="/fornecedor" className="flex items-center gap-3 px-2 py-1">
+      <Link href={raiz} className="flex items-center gap-3 px-2 py-1">
         <LogoERN tamanho={40} />
         <span className="min-w-0">
           <span className="block truncate text-base font-semibold text-[#F0F0E8]">Encantos da Amazônia AI</span>
-          <span className="block text-[8.5px] font-semibold uppercase tracking-[0.13em] text-[#F4C77E]">Espaço do fornecedor</span>
+          <span className="block text-[8.5px] font-semibold uppercase tracking-[0.13em] text-[#F4C77E]">{menu.rotulo}</span>
         </span>
       </Link>
 
-      <nav aria-label="Navegação do fornecedor" className="mt-6 grid gap-0.5">
+      <nav aria-label={`Navegação: ${menu.rotulo}`} className="mt-6 grid gap-0.5">
         {PRINCIPAL.map(link)}
       </nav>
       <p className="mt-6 px-3 text-[10.5px] font-semibold uppercase tracking-[0.16em] text-[#7F968B]">Portal público</p>
@@ -114,7 +138,7 @@ export default function MenuLateralFornecedorEDA() {
           </span>
           <span className="min-w-0 flex-1">
             <span className="block truncate text-[13px] font-semibold text-[#F5F3EA]">{nome || 'Minha conta'}</span>
-            <span className="block text-[11px] text-[#8FA39A]">Fornecedor independente</span>
+            <span className="block text-[11px] text-[#8FA39A]">{menu.conta}</span>
           </span>
         </div>
         <button
@@ -139,9 +163,9 @@ export default function MenuLateralFornecedorEDA() {
 
       {/* Celular/tablet: barra no topo + gaveta */}
       <header className="fixed inset-x-0 top-0 z-40 flex h-16 items-center justify-between border-b border-white/[0.07] bg-[#08130F]/95 px-4 backdrop-blur xl:hidden">
-        <Link href="/fornecedor" className="flex items-center gap-2">
+        <Link href={raiz} className="flex items-center gap-2">
           <LogoERN tamanho={34} />
-          <span className="text-sm font-semibold text-[#F0F0E8]">Espaço do fornecedor</span>
+          <span className="text-sm font-semibold text-[#F0F0E8]">{menu.rotulo}</span>
         </Link>
         <button
           type="button"
@@ -154,7 +178,7 @@ export default function MenuLateralFornecedorEDA() {
         </button>
       </header>
       {aberto && (
-        <div className="fixed inset-0 z-50 xl:hidden" role="dialog" aria-modal="true" aria-label="Menu do fornecedor">
+        <div className="fixed inset-0 z-50 xl:hidden" role="dialog" aria-modal="true" aria-label={menu.rotulo}>
           <button type="button" aria-label="Fechar menu" className="absolute inset-0 bg-black/60" onClick={() => setAberto(false)} />
           <div className="absolute inset-y-0 left-0 w-[280px] max-w-[85vw] bg-[#08130F] p-4 shadow-2xl">{conteudo}</div>
         </div>

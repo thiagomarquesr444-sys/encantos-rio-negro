@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
-import PainelProfissional from '@/app/components/PainelProfissional';
+import InicioGuiaEDA from '@/app/components/InicioGuiaEDA';
 
 export const metadata: Metadata = {
-  title: 'Painel do Guia',
+  title: 'Espaço do guia',
   robots: {
     index: false,
     follow: false,
@@ -11,7 +11,5 @@ export const metadata: Metadata = {
 };
 
 export default function GuiaPage() {
-  return (
-    <PainelProfissional tipo="guia" />
-  );
+  return <InicioGuiaEDA />;
 }
