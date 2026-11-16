@@ -467,7 +467,7 @@ function NavegacaoProfissional({
                   fontFamily: 'var(--font-fraunces), serif',
                 }}
               >
-                Encantos Gestão <SeloAIEDA className="ml-1" />
+                Encantos Gestão <SeloAIEDA />
               </span>
               <span className="mt-1 block truncate text-[10px] uppercase tracking-widest text-[#B4C8BB]">
                 {navegacao.subtitulo}

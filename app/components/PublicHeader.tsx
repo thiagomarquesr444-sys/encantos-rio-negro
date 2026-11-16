@@ -254,12 +254,12 @@ export default function PublicHeader() {
             <LogoERN tamanho={44} prioridade />
 
             <span className="min-w-0 leading-none">
-              <span className="flex items-center gap-1.5 text-lg font-semibold tracking-[-0.02em] text-[#F0F0E8] sm:text-xl">
-                Encantos <SeloAIEDA />
+              <span className="block text-lg font-semibold tracking-[-0.02em] text-[#F0F0E8] sm:text-xl">
+                Encantos
               </span>
 
-              <span className="mt-1 block text-[9.5px] font-semibold uppercase tracking-[0.24em] text-[#F4C77E]">
-                da Amazônia
+              <span className="mt-1 block text-[9.5px] font-semibold uppercase tracking-[0.24em] text-[#F0F0E8]">
+                da Amazônia <SeloAIEDA />
               </span>
             </span>
           </Link>
