@@ -267,8 +267,17 @@ async function contextoOperadora(db: SupabaseClient, empresaId: string, hoje: st
   }
   if (!saidas.error && saidas.data?.length) {
     const codS = registrar('passeio_saidas', saidas.data, x => `${nomePasseio.get(String(x.passeio_id)) || 'saída'} ${dm(x.data_inicio as string)}`);
+    // EDA_SAIDA_EM_OPERACAO_V1: a EDA sabe quais saídas já partiram (travadas).
+    const { data: ops } = await db.rpc('eda_saidas_operacao', { p_ids: saidas.data.map((x) => x.id) });
+    const fase = new Map(((ops ?? []) as { saida_id: string; fase: string; a_bordo: number }[]).map((o) => [o.saida_id, o]));
+    const rotuloFase = (id: string, status: string) => {
+      const f = fase.get(id);
+      if (f?.fase === 'em_operacao') return `EM OPERAÇÃO (partiu; ${f.a_bordo} a bordo; travada: não alterar, cancelar nem reservar)`;
+      if (f?.fase === 'concluida') return 'CONCLUÍDA (travada)';
+      return status;
+    };
     linhas.push(`\nSAÍDAS PROGRAMADAS (até +90 dias): código | passeio | ida-volta | hora | vagas | status`);
-    for (const x of saidas.data) linhas.push(`- ${codS.get(String(x.id))} | ${codP.get(String(x.passeio_id)) ?? ''} ${nomePasseio.get(String(x.passeio_id)) ?? '—'} | ${dm(x.data_inicio)}${x.data_fim ? `-${dm(x.data_fim)}` : ''} | ${x.horario ? String(x.horario).slice(0, 5) : '—'} | ${x.vagas_total} | ${x.status}`);
+    for (const x of saidas.data) linhas.push(`- ${codS.get(String(x.id))} | ${codP.get(String(x.passeio_id)) ?? ''} ${nomePasseio.get(String(x.passeio_id)) ?? '—'} | ${dm(x.data_inicio)}${x.data_fim ? `-${dm(x.data_fim)}` : ''} | ${x.horario ? String(x.horario).slice(0, 5) : '—'} | ${x.vagas_total} | ${rotuloFase(String(x.id), String(x.status))}`);
   }
   if (!demandas.error) {
     const d = demandas.data ?? [];

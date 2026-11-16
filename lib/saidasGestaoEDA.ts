@@ -12,6 +12,9 @@ export type SaidaGestaoEDA = {
   status: 'aberta' | 'fechada' | 'cancelada';
   ocupadas: number;
   restantes: number;
+  // EDA_SAIDA_EM_OPERACAO_V1: fase real (o banco decide: horário passou ou houve check-in).
+  fase: 'programada' | 'em_operacao' | 'concluida' | 'cancelada';
+  a_bordo: number;
 };
 
 export function hojeManausEDA() {
@@ -22,8 +25,9 @@ export function hojeManausEDA() {
 // incluirId: garante que a saída já vinculada apareça mesmo se passada/fechada.
 export async function listarSaidasGestaoEDA(
   passeioId: string,
-  opcoes: { ignorarReservaId?: string; incluirId?: string } = {},
+  opcoes: { ignorarReservaId?: string; incluirId?: string; incluirEmOperacao?: boolean } = {},
 ) {
+  const hoje = hojeManausEDA();
   let consulta = supabase
     .from('passeio_saidas')
     .select('id,passeio_id,data_inicio,data_fim,horario,vagas_total,status')
@@ -31,9 +35,11 @@ export async function listarSaidasGestaoEDA(
     .order('data_inicio')
     .limit(60);
 
+  // Inclui a saída que está na água (começou antes de hoje e volta hoje ou depois).
+  const filtro = `data_inicio.gte.${hoje},data_fim.gte.${hoje}`;
   consulta = opcoes.incluirId
-    ? consulta.or(`data_inicio.gte.${hojeManausEDA()},id.eq.${opcoes.incluirId}`)
-    : consulta.gte('data_inicio', hojeManausEDA());
+    ? consulta.or(`${filtro},id.eq.${opcoes.incluirId}`)
+    : consulta.or(filtro);
 
   const { data: lista, error } = await consulta;
   if (error) throw new Error('Não foi possível carregar a agenda de saídas.');
@@ -55,10 +61,23 @@ export async function listarSaidasGestaoEDA(
     }
   }
 
-  return (lista ?? []).map((s) => {
-    const ocupadas = ocupacao.get(s.id) ?? 0;
-    return { ...s, ocupadas, restantes: Math.max(s.vagas_total - ocupadas, 0) } as SaidaGestaoEDA;
-  });
+  const fases = new Map<string, { fase: SaidaGestaoEDA['fase']; a_bordo: number }>();
+  if (ids.length) {
+    const { data: ops, error: erroOps } = await supabase.rpc('eda_saidas_operacao', { p_ids: ids });
+    if (erroOps) throw new Error('Não foi possível conferir a situação das saídas.');
+    for (const o of (ops ?? []) as { saida_id: string; fase: SaidaGestaoEDA['fase']; a_bordo: number }[]) {
+      fases.set(o.saida_id, { fase: o.fase, a_bordo: o.a_bordo ?? 0 });
+    }
+  }
+
+  return (lista ?? [])
+    .map((s) => {
+      const ocupadas = ocupacao.get(s.id) ?? 0;
+      const f = fases.get(s.id) ?? { fase: s.status === 'cancelada' ? 'cancelada' : 'programada', a_bordo: 0 };
+      return { ...s, ocupadas, restantes: Math.max(s.vagas_total - ocupadas, 0), ...f } as SaidaGestaoEDA;
+    })
+    // Para escolher saída de reserva, a que já partiu não aparece (exceto a já vinculada).
+    .filter((s) => opcoes.incluirEmOperacao || s.id === opcoes.incluirId || (s.fase !== 'em_operacao' && s.fase !== 'concluida'));
 }
 
 // Traduz os bloqueios do banco para a operadora.
@@ -69,6 +88,9 @@ export function mensagemSaidaEDA(mensagem: string): string | null {
     return n > 0
       ? `Esta saída só tem ${n} vaga${n === 1 ? '' : 's'}. Reduza as pessoas ou escolha outra data.`
       : 'Esta saída está lotada. Escolha outra data ou abra uma nova saída no passeio.';
+  }
+  if (mensagem.includes('EDA_SAIDA_EM_OPERACAO')) {
+    return 'Esta saída já partiu e está em operação: data, vagas e reservas novas ficam travadas. Escolha outra data ou abra uma nova saída.';
   }
   if (mensagem.includes('não está aberta para novas reservas')) {
     return 'Esta saída foi fechada ou cancelada. Escolha outra data.';

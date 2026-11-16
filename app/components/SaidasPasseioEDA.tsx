@@ -8,7 +8,8 @@ import { useCallback, useEffect, useState, type FormEvent } from 'react';
 import { supabase } from '@/lib/supabase';
 import { dataCurtaEDA } from '@/lib/passeiosPublicosEDA';
 import { mensagemFichaEDA, resumoSegurancaEDA, type LinhaResumoEDA } from '@/lib/fichaSaudeEDA';
-import { hojeManausEDA, listarSaidasGestaoEDA, type SaidaGestaoEDA } from '@/lib/saidasGestaoEDA';
+import { hojeManausEDA, listarSaidasGestaoEDA, mensagemSaidaEDA, type SaidaGestaoEDA } from '@/lib/saidasGestaoEDA';
+import Link from 'next/link';
 import { confirmarEDA } from '@/lib/dialogoEDA';
 
 type Saida = SaidaGestaoEDA;
@@ -70,7 +71,7 @@ export default function SaidasPasseioEDA({ passeioId, vagasPadrao }: { passeioId
   const carregar = useCallback(async () => {
     setErro('');
     try {
-      setSaidas(await listarSaidasGestaoEDA(passeioId));
+      setSaidas(await listarSaidasGestaoEDA(passeioId, { incluirEmOperacao: true }));
     } catch (e) {
       setErro((e as Error).message);
       setSaidas([]);
@@ -104,10 +105,11 @@ export default function SaidasPasseioEDA({ passeioId, vagasPadrao }: { passeioId
   }
 
   async function alterarStatus(s: Saida, status: Saida['status']) {
+    if (s.fase === 'em_operacao' || s.fase === 'concluida') return;
     if (status === 'cancelada' && s.ocupadas > 0 &&
       !(await confirmarEDA(`Esta saída tem ${s.ocupadas} pessoa(s) reservada(s). As reservas continuam e precisam ser tratadas.`, { titulo: 'Cancelar esta saída?', confirmar: 'Cancelar saída', cancelar: 'Voltar', perigo: true }))) return;
     const { error } = await supabase.from('passeio_saidas').update({ status }).eq('id', s.id);
-    if (error) { setErro('Não foi possível atualizar a saída.'); return; }
+    if (error) { setErro(mensagemSaidaEDA(error.message) ?? 'Não foi possível atualizar a saída.'); void carregar(); return; }
     void carregar();
   }
 
@@ -129,12 +131,19 @@ export default function SaidasPasseioEDA({ passeioId, vagasPadrao }: { passeioId
           {saidas.map((s) => {
             const restantes = s.restantes;
             const pct = Math.min(100, Math.round((s.ocupadas / s.vagas_total) * 100));
+            const naAgua = s.fase === 'em_operacao' || s.fase === 'concluida';
             return (
-              <li key={s.id} data-status={s.status}>
+              <li key={s.id} data-status={s.status} data-fase={s.fase}>
                 <div>
                   <strong>{dataCurtaEDA(s.data_inicio)}{s.data_fim && s.data_fim !== s.data_inicio ? ` – ${dataCurtaEDA(s.data_fim)}` : ''}{s.horario ? ` · ${s.horario.slice(0, 5)}` : ''}</strong>
+                  {naAgua && (
+                    <span className="eda-saidas-fase">
+                      <i aria-hidden="true" />
+                      {s.fase === 'em_operacao' ? 'Em operação · embarcação na água' : 'Concluída'}
+                    </span>
+                  )}
                   <small>
-                    {s.status === 'aberta' ? `${s.ocupadas}/${s.vagas_total} ocupadas · ${restantes} livre${restantes === 1 ? '' : 's'}` : s.status === 'fechada' ? 'Fechada para novas reservas' : 'Cancelada'}
+                    {naAgua ? `${s.a_bordo} de ${s.ocupadas} reservado${s.ocupadas === 1 ? '' : 's'} com check-in a bordo · data e vagas travadas` : s.status === 'aberta' ? `${s.ocupadas}/${s.vagas_total} ocupadas · ${restantes} livre${restantes === 1 ? '' : 's'}` : s.status === 'fechada' ? 'Fechada para novas reservas' : 'Cancelada'}
                   </small>
                   <i aria-hidden="true"><b style={{ width: `${pct}%` }} /></i>
                 </div>
@@ -144,9 +153,15 @@ export default function SaidasPasseioEDA({ passeioId, vagasPadrao }: { passeioId
                       Segurança
                     </button>
                   )}
-                  {s.status === 'aberta' && <button type="button" onClick={() => alterarStatus(s, 'fechada')}>Fechar</button>}
-                  {s.status === 'fechada' && <button type="button" onClick={() => alterarStatus(s, 'aberta')}>Reabrir</button>}
-                  {s.status !== 'cancelada' && <button type="button" data-perigo onClick={() => alterarStatus(s, 'cancelada')}>Cancelar</button>}
+                  {naAgua ? (
+                    <Link className="eda-saidas-link" href="/vouchers">Embarques do dia →</Link>
+                  ) : (
+                    <>
+                      {s.status === 'aberta' && <button type="button" onClick={() => alterarStatus(s, 'fechada')}>Fechar</button>}
+                      {s.status === 'fechada' && <button type="button" onClick={() => alterarStatus(s, 'aberta')}>Reabrir</button>}
+                      {s.status !== 'cancelada' && <button type="button" data-perigo onClick={() => alterarStatus(s, 'cancelada')}>Cancelar</button>}
+                    </>
+                  )}
                 </div>
                 {resumo === s.id && <div className="eda-saidas-resumo"><ResumoSeguranca saidaId={s.id} /></div>}
               </li>
@@ -171,6 +186,15 @@ export default function SaidasPasseioEDA({ passeioId, vagasPadrao }: { passeioId
         ul { list-style: none; margin: 12px 0 0; padding: 0; display: grid; gap: 8px; }
         li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px; border-radius: 14px; border: 1px solid var(--ern-borda); background: var(--ern-painel); }
         li[data-status='cancelada'] { opacity: .5; }
+        li[data-fase='em_operacao'] { border-color: rgb(34 197 94 / 45%); background: linear-gradient(135deg, rgb(34 197 94 / 9%), var(--ern-painel) 60%); }
+        li[data-fase='em_operacao'] i b { background: #22c55e; }
+        .eda-saidas-fase { display: inline-flex; align-items: center; gap: 7px; margin: 4px 0 2px; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; letter-spacing: .02em; color: #4ade80; border: 1px solid rgb(34 197 94 / 45%); }
+        .eda-saidas-fase i { width: 7px !important; height: 7px !important; margin: 0 !important; border-radius: 50%; background: #22c55e !important; box-shadow: 0 0 0 0 rgb(34 197 94 / 60%); animation: eda-pulso 1.8s ease-out infinite; }
+        li[data-fase='concluida'] .eda-saidas-fase { color: var(--ern-secundario); border-color: var(--ern-borda); }
+        li[data-fase='concluida'] .eda-saidas-fase i { background: var(--ern-secundario) !important; animation: none; }
+        @keyframes eda-pulso { to { box-shadow: 0 0 0 8px rgb(34 197 94 / 0%); } }
+        @media (prefers-reduced-motion: reduce) { .eda-saidas-fase i { animation: none; } }
+        :global(.eda-saidas-link) { display: inline-flex; align-items: center; min-height: 34px; padding: 0 12px; border-radius: 10px; border: 1px solid rgb(34 197 94 / 45%); color: #4ade80; font-size: 12px; font-weight: 700; }
         li strong { display: block; font-size: 14px; }
         li small { display: block; font-size: 12px; color: var(--ern-secundario); }
         li i { display: block; width: 160px; max-width: 100%; height: 4px; margin-top: 6px; border-radius: 4px; background: var(--ern-borda); overflow: hidden; }
