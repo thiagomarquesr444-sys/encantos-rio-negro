@@ -161,6 +161,9 @@ export default function BordoEDA({ reservaId, titulo, compacto = false }: { rese
             {ativo ? `Transmitindo localização${ultimo ? ` · último ponto ${new Date(ultimo.em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}` : ' · aguardando GPS'}` : 'Localização desligada'}
             {fila > 0 && ` · ${fila} aguardando envio`}
           </small>
+          {ativo && ultimo?.precisao != null && (ultimo.precisao > 300
+            ? <small className="bd-gps-ruim">Sem GPS: este aparelho só dá localização aproximada (±{ultimo.precisao} m) e ela não move o barco no mapa. Use o celular com a localização precisa ligada, ao ar livre.</small>
+            : <small className="bd-gps-ok">GPS preciso (±{ultimo.precisao} m)</small>)}
         </div>
         {ativo
           ? <button type="button" className="eda-pg-bt" onClick={parar}>Parar</button>
@@ -213,6 +216,7 @@ export default function BordoEDA({ reservaId, titulo, compacto = false }: { rese
         .bd { display: grid; gap: 10px; padding: 14px; border-radius: 16px; border: 1px solid var(--ern-borda, rgba(255,255,255,.12)); }
         .bd-topo { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
         .bd-tit { display: grid; flex: 1; min-width: 160px; } .bd-tit small { font-size: 12px; color: var(--ern-secundario, #b4c8bb); }
+        .bd-tit .bd-gps-ruim { color: #e3a144; font-weight: 600; line-height: 1.4; margin-top: 2px; } .bd-tit .bd-gps-ok { color: #5cc49a; font-weight: 600; }
         .bd-led { width: 12px; height: 12px; border-radius: 50%; background: #6b7280; flex: none; }
         .bd-led-on { background: #22c55e; box-shadow: 0 0 0 0 rgba(34,197,94,.6); animation: bd-pulso 1.8s infinite; }
         @keyframes bd-pulso { 70% { box-shadow: 0 0 0 10px rgba(34,197,94,0); } 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); } }

@@ -166,6 +166,7 @@ export default function OperacaoAoVivoPage() {
         .av-hud-kv div { display: grid; gap: 1px; } .av-hud-kv dt { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: #93a79d; } .av-hud-kv dd { margin: 0; font-weight: 700; font-size: 13px; }
         .av-hud-kv em { font-style: normal; color: #ff8a8a; font-size: 11px; }
         .av-hud-velho { color: #f2c86b; }
+        .av-hud-aprox { margin: 0; padding: 7px 9px; border-radius: 10px; background: rgb(242 200 107 / 12%); color: #f2c86b; font-size: 11.5px; line-height: 1.4; }
         .av-hud-leg { display: flex; flex-wrap: wrap; gap: 4px 12px; padding-top: 8px; border-top: 1px solid rgb(255 255 255 / 10%); font-size: 10.5px; color: #c9c2ae; }
         .av-hud-leg span { display: inline-flex; align-items: center; gap: 5px; } .av-hud-leg i { display: inline-block; width: 14px; height: 4px; border-radius: 3px; }
         .av-hud-leg .av-leg-tr { background: repeating-linear-gradient(90deg, #f2c86b 0 4px, transparent 4px 7px); }
@@ -290,6 +291,7 @@ function MapaAoVivo({ lista, selecionada, aoSelecionar }: { lista: { v: ViagemAo
     if (sel.trilha.length) pts.push(...sel.trilha);
     if (fimSel) pts.push([fimSel.lat, fimSel.lng]);
     if (sel.posicao) pts.push([sel.posicao.lat, sel.posicao.lng]);
+    if (sel.aproximada) pts.push([sel.aproximada.lat, sel.aproximada.lng]);
     return pts;
   }, [sel, fimSel]);
 
@@ -336,6 +338,12 @@ function MapaAoVivo({ lista, selecionada, aoSelecionar }: { lista: { v: ViagemAo
             lib.polyline([[v.posicao.lat, v.posicao.lng], [fim.lat, fim.lng]], { color: '#ffffff', weight: 2, opacity: 0.75, dashArray: '2 8', interactive: false }).addTo(c);
           }
         }
+      }
+      // Posição aproximada (sem GPS): só um círculo cinza com o raio de erro, sem mover o barco.
+      if (ehSel && v.aproximada) {
+        const ap: [number, number] = [v.aproximada.lat, v.aproximada.lng];
+        lib.circle(ap, { radius: Math.min(v.aproximada.precisao, 5000), color: '#c9c2ae', weight: 1.5, dashArray: '3 6', fillColor: '#c9c2ae', fillOpacity: 0.08, interactive: false }).addTo(c);
+        marco(ap, marcoHTML('#c9c2ae', '?'), 22, `Posição aproximada, sem GPS (±${v.aproximada.precisao} m) · ${tempoRelativo(v.aproximada.em)}`);
       }
       if (!v.posicao) continue;
       const p: [number, number] = [v.posicao.lat, v.posicao.lng];
@@ -420,8 +428,9 @@ function HudViagem({ v, tom }: { v: ViagemAoVivoEDA; tom: TomEDA }) {
         <div><dt>Falta</dt><dd>{r.restanteM !== null ? formatarDistancia(r.restanteM) : retaM !== null ? `${formatarDistancia(retaM)} em linha reta` : '—'}</dd></div>
         <div><dt>Chegada</dt><dd>{r.chegadaPrevista ? hora(r.chegadaPrevista).split(', ').pop() : '—'}{r.atrasoMin ? <em> +{duracao(r.atrasoMin)}</em> : null}</dd></div>
         <div><dt>Velocidade</dt><dd>{v.posicao?.velocidade != null ? `${v.posicao.velocidade.toFixed(1).replace('.', ',')} km/h` : '—'}</dd></div>
-        <div><dt>Sinal</dt><dd className={velho ? 'av-hud-velho' : undefined}>{v.posicao ? tempoRelativo(v.posicao.em) : 'sem posição'}</dd></div>
+        <div><dt>GPS</dt><dd className={velho ? 'av-hud-velho' : undefined}>{v.posicao ? tempoRelativo(v.posicao.em) : 'sem posição'}</dd></div>
       </dl>
+      {v.aproximada && <p className="av-hud-aprox">Sem GPS a bordo: última posição aproximada (±{v.aproximada.precisao} m) {tempoRelativo(v.aproximada.em)}. Ela não move o barco.</p>}
       <div className="av-hud-leg" aria-label="Legenda">
         <span><i style={{ background: '#5cc49a' }} />Feito</span>
         <span><i className="av-leg-tr" />Planejado</span>
@@ -433,7 +442,7 @@ function HudViagem({ v, tom }: { v: ViagemAoVivoEDA; tom: TomEDA }) {
 }
 
 function situacaoRota(v: ViagemAoVivoEDA, r: ReturnType<typeof analisarRota>): { texto: string; tom: 'ok' | 'at' | 'er' | 'nt' } {
-  if (!v.posicao) return { texto: 'Aguardando localização de bordo', tom: 'nt' };
+  if (!v.posicao) return { texto: v.aproximada ? 'Só posição aproximada (sem GPS)' : 'Aguardando localização de bordo', tom: v.aproximada ? 'at' : 'nt' };
   if ((minutosDesde(v.posicao.em) ?? 0) > 120) return { texto: `Sem sinal ${tempoRelativo(v.posicao.em)}`, tom: 'er' };
   if (r.foraDaRota && r.distanciaRotaM !== null) return { texto: `Fora do percurso (${formatarDistancia(r.distanciaRotaM)})`, tom: 'er' };
   if (r.noDestino) return { texto: 'No destino', tom: 'ok' };

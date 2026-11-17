@@ -23,6 +23,8 @@ export type ViagemAoVivoEDA = {
   destino?: { lat: number; lng: number; nome: string | null } | null;
   embarque?: string | null;
   embarque_pos?: { lat: number; lng: number } | null; // EDA_LOGISTICA_PASSEIO_V1
+  // EDA_POSICAO_PRECISA_V1: última posição sem GPS (±300 m ou pior), mais nova que a última precisa.
+  aproximada?: { lat: number; lng: number; em: string; precisao: number } | null;
   recentes?: [number, number, string][];
 };
 
@@ -106,6 +108,10 @@ export function alertasViagem(v: ViagemAoVivoEDA): AlertaOperacaoEDA[] {
     a.push({ tom: 'at', area: 'rota', texto: `Chegada ao destino atrasada em ${duracao(r.atrasoMin)} em relação ao previsto.` });
   }
 
+  // EDA_POSICAO_PRECISA_V1: aparelho a bordo sem GPS (computador, Wi-Fi/Starlink).
+  if (fase.emCurso && v.aproximada && (minutosDesde(v.aproximada.em) ?? 9999) <= 120) {
+    a.push({ tom: 'at', area: 'sinal', texto: `O aparelho a bordo está mandando só localização aproximada (±${v.aproximada.precisao} m), sem GPS — ela não move o barco no mapa. Transmita pelo celular do guia ou do prático, com a localização precisa ligada e ao ar livre.` });
+  }
   if (v.posicao?.bateria != null && v.posicao.bateria <= 20 && fase.emCurso) a.push({ tom: 'at', area: 'sinal', texto: `Bateria do aparelho a bordo em ${v.posicao.bateria}%.` });
 
   // Ocorrências e suprimentos relatados nas últimas 24 h.
