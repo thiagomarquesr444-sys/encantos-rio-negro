@@ -18,7 +18,7 @@ import {
 } from '@/lib/acessos';
 import CampoLocalEDA from '@/app/components/CampoLocalEDA';
 import CampoOpcoesEDA, { CampoChipsEDA } from '@/app/components/CampoOpcoesEDA';
-import { ATIVIDADES_FORNECEDOR, IDIOMAS } from '@/lib/opcoesEDA';
+import { ATIVIDADES_FORNECEDOR, ATUACOES_GUIA, IDIOMAS, ehPratico, ehGuiaTurismo } from '@/lib/opcoesEDA';
 
 interface DadosPerfil {
   nome: string;
@@ -28,6 +28,7 @@ interface DadosPerfil {
   idiomas: string;
   cadastur: string;
   categoria: string;
+  habilitacao: string;
 }
 
 interface RegistroPerfil {
@@ -38,6 +39,7 @@ interface RegistroPerfil {
   idiomas: string | null;
   cadastur: string | null;
   categoria: string | null;
+  habilitacao: string | null;
 }
 
 interface CampoPerfil {
@@ -55,7 +57,7 @@ interface Props {
 }
 
 const CAMPOS =
-  'nome,telefone,cidade,descricao,idiomas,cadastur,categoria';
+  'nome,telefone,cidade,descricao,idiomas,cadastur,categoria,habilitacao';
 
 const DADOS_INICIAIS: DadosPerfil = {
   nome: '',
@@ -65,6 +67,7 @@ const DADOS_INICIAIS: DadosPerfil = {
   idiomas: '',
   cadastur: '',
   categoria: '',
+  habilitacao: '',
 };
 
 const FOCO =
@@ -91,6 +94,7 @@ function normalizarPerfil(registro: RegistroPerfil): DadosPerfil {
     idiomas: registro.idiomas ?? '',
     cadastur: registro.cadastur ?? '',
     categoria: registro.categoria ?? '',
+    habilitacao: registro.habilitacao ?? '',
   };
 }
 
@@ -129,6 +133,7 @@ function FormularioPerfilProfissional({ tipo }: Props) {
   const [dados, setDados] = useState<DadosPerfil>({
     ...DADOS_INICIAIS,
   });
+  const pratico = guia && ehPratico(dados.categoria);
   const [usuarioId, setUsuarioId] = useState<string | null>(null);
   const [existe, setExiste] = useState(false);
   const [carregando, setCarregando] = useState(true);
@@ -239,14 +244,20 @@ function FormularioPerfilProfissional({ tipo }: Props) {
 
       validarModalidade(conta, tipo);
 
+      if (guia && !dados.categoria.trim()) {
+        throw new Error('Escolha em "Como você atua" se você é guia, prático ou os dois.');
+      }
+
       const payload = {
         nome,
         telefone: textoOpcional(dados.telefone),
         cidade: textoOpcional(dados.cidade),
         descricao: textoOpcional(dados.descricao),
         idiomas: guia ? textoOpcional(dados.idiomas) : null,
-        cadastur: guia ? textoOpcional(dados.cadastur) : null,
-        categoria: guia ? null : textoOpcional(dados.categoria),
+        // EDA_GUIA_PRATICO_V1: no acesso Guia/Prático, categoria = atuação.
+        cadastur: guia && ehGuiaTurismo(dados.categoria) ? textoOpcional(dados.cadastur) : null,
+        categoria: textoOpcional(dados.categoria),
+        habilitacao: guia && pratico ? textoOpcional(dados.habilitacao) : null,
       };
 
       if (existe) {
@@ -325,20 +336,28 @@ function FormularioPerfilProfissional({ tipo }: Props) {
 
   const camposAtividade: CampoPerfil[] = guia
     ? [
+        { campo: 'categoria', label: 'Como você atua *', limite: 60 },
+        ...(pratico ? [{
+          campo: 'habilitacao' as const,
+          label: 'Habilitação náutica',
+          limite: 80,
+          placeholder: 'Ex.: Arrais-Amador, Mestre-Amador, MOC',
+          ajuda: 'Habilitação da Marinha para conduzir a embarcação. Informada por você, ainda sem verificação pela EDA.',
+        }] : []),
         {
           campo: 'idiomas',
           label: 'Idiomas',
           limite: 300,
           placeholder: 'Ex.: Português, Inglês',
         },
-        {
-          campo: 'cadastur',
+        ...(ehGuiaTurismo(dados.categoria) ? [{
+          campo: 'cadastur' as const,
           label: 'Registro CADASTUR',
           limite: 100,
           placeholder: 'Número do registro',
           ajuda:
             'O registro informado ainda não representa verificação pela EDA.',
-        },
+        }] : []),
       ]
     : [
         {
@@ -364,6 +383,9 @@ function FormularioPerfilProfissional({ tipo }: Props) {
             placeholder="Digite a cidade (ex.: Barcelos)" onChange={(l) => alterar('cidade', l.texto)} />
         ) : campo.campo === 'idiomas' ? (
           <CampoChipsEDA valor={dados.idiomas} opcoes={IDIOMAS} onChange={(v) => alterar('idiomas', v)} />
+        ) : campo.campo === 'categoria' && guia ? (
+          <CampoOpcoesEDA id={id} valor={dados.categoria} opcoes={ATUACOES_GUIA} className={INPUT}
+            placeholder="Guia, prático ou os dois" onChange={(v) => alterar('categoria', v)} />
         ) : campo.campo === 'categoria' ? (
           <CampoOpcoesEDA id={id} valor={dados.categoria} opcoes={ATIVIDADES_FORNECEDOR} className={INPUT}
             placeholder="Selecione a atividade" onChange={(v) => alterar('categoria', v)} />
@@ -411,11 +433,11 @@ function FormularioPerfilProfissional({ tipo }: Props) {
             <div className="fi-capa-txt">
               <p className="fi-eb">Encantos da Amazônia · Meu perfil</p>
               <h1 id="perfil-titulo" className="fi-letreiro">
-                {guia ? 'O guia que o visitante procura' : 'Quem faz, quem é você'}
+                {guia ? (pratico && !ehGuiaTurismo(dados.categoria) ? 'Quem conhece o canal, conduz o barco' : 'O guia que o visitante procura') : 'Quem faz, quem é você'}
               </h1>
               <p className="fi-sub">
                 {guia
-                  ? 'Seus idiomas, sua região, seu Cadastur e o WhatsApp que recebe os contatos. É assim que visitantes e operadoras vão te encontrar na Rede EDA.'
+                  ? 'Guia ou prático: sua atuação, sua região, seus registros e o WhatsApp que recebe os contatos. É assim que visitantes e operadoras vão te encontrar na Rede EDA.'
                   : 'Seu nome, sua cidade, o que você faz e o WhatsApp que recebe os contatos. É assim que o visitante e as operadoras vão te encontrar na Rede EDA.'}
               </p>
             </div>
@@ -424,7 +446,7 @@ function FormularioPerfilProfissional({ tipo }: Props) {
             <span className="fi-eda-selo" aria-hidden="true">EDA</span>
             <p className="fi-eda-fala">
               {guia ? (
-                <>Só o nome é obrigatório, mas com <b>WhatsApp com DDD</b>, <b>idiomas</b> e <b>Cadastur</b> você passa confiança e recebe mais contatos.</>
+                <>Escolha em <b>Como você atua</b> se é guia, prático ou os dois. Com <b>WhatsApp com DDD</b>{pratico ? <>, <b>habilitação náutica</b></> : null}{ehGuiaTurismo(dados.categoria) ? <>, <b>idiomas</b> e <b>Cadastur</b></> : null} você passa confiança e recebe mais contatos.</>
               ) : (
                 <>Só o nome é obrigatório, mas com <b>WhatsApp com DDD</b>, <b>cidade</b> e <b>atividade</b> o comprador consegue falar com você. Se você faz artesanato, escolha <b>Artesanato</b> na atividade.</>
               )}
@@ -565,7 +587,7 @@ function FormularioPerfilProfissional({ tipo }: Props) {
                   }
                   placeholder={
                     guia
-                      ? 'Descreva sua experiência, especialidades e regiões de atendimento.'
+                      ? (pratico ? 'Rios e canais que você conhece, embarcações que já conduziu, anos de experiência.' : 'Descreva sua experiência, especialidades e regiões de atendimento.')
                       : 'Descreva seu negócio, o que você oferece e sua região de atendimento.'
                   }
                   aria-describedby="descricao-contagem"

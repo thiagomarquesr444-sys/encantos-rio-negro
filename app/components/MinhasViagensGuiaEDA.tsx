@@ -9,7 +9,7 @@ import { hojeManaus } from '@/lib/operacaoAoVivoEDA';
 
 type Viagem = { reserva_id: string; operadora: string | null; passeio: string | null; inicio: string; fim: string;
   horario: string | null; pessoas: number; ponto_embarque: string | null; embarcacao: string | null;
-  alertas_graves: number; fichas_pendentes: number };
+  alertas_graves: number; fichas_pendentes: number; papel?: string | null };
 
 const dt = (d: string) => d.split('-').reverse().slice(0, 2).join('/');
 // EDA_OPERACAO_AO_VIVO_V1: painel de bordo liberado de um dia antes até um dia depois da viagem.
@@ -28,13 +28,13 @@ export default function MinhasViagensGuiaEDA() {
       <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[#E3A144]">Minhas viagens · próximos 60 dias</p>
       {lista === null ? <p className="mt-4 text-sm text-[#EDEDE3]/70">Carregando…</p> : lista.length === 0 ? (
         <p className="mt-4 text-sm leading-6 text-[#EDEDE3]/70">
-          Nenhuma viagem escalada. Quando uma operadora vincular você a uma reserva, ela aparece aqui com data, embarque e grupo.
+          Nenhuma viagem por enquanto. Passe seu código EDA para a operadora: quando ela te escalar como guia ou te vincular à embarcação como prático, a viagem aparece aqui com data, embarque e grupo, e o painel de bordo abre no dia.
         </p>
       ) : (
         <ul className="mt-4 grid gap-3">
           {lista.map((v) => (
             <li key={v.reserva_id} className="rounded-2xl border border-white/10 p-4">
-              <p className="text-base font-semibold">{v.passeio || 'Viagem'} <span className="font-normal text-[#EDEDE3]/60">· {v.operadora}</span></p>
+              <p className="text-base font-semibold">{v.passeio || 'Viagem'} <span className="font-normal text-[#EDEDE3]/60">· {v.operadora}</span>{v.papel && <span className="ml-2 rounded-full border border-[#E3A144]/50 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wide text-[#E3A144]">{v.papel}</span>}</p>
               <p className="mt-1 text-sm text-[#EDEDE3]/75">
                 {v.inicio === v.fim ? dt(v.inicio) : `${dt(v.inicio)} a ${dt(v.fim)}`}{v.horario ? ` · ${v.horario.slice(0, 5)}` : ''}
                 {' · '}{v.pessoas} pessoa(s){v.embarcacao ? ` · ${v.embarcacao}` : ''}{v.ponto_embarque ? ` · embarque: ${v.ponto_embarque}` : ''}

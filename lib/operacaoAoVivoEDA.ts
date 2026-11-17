@@ -2,7 +2,8 @@
 
 import { supabase } from '@/lib/supabase';
 
-export type TipoEventoEDA = 'embarque' | 'partida' | 'parada' | 'chegada' | 'retorno' | 'ocorrencia' | 'suprimento' | 'emergencia' | 'nota' | 'resolvido';
+export type TipoEventoEDA = 'embarque' | 'partida' | 'parada' | 'chegada' | 'retorno' | 'ocorrencia' | 'suprimento' | 'emergencia' | 'nota' | 'resolvido' | 'bote_saida' | 'bote_retorno';
+export type UnidadeEDA = 'barco' | 'bote';
 export type GravidadeEDA = 'info' | 'atencao' | 'grave';
 
 export type EventoOperacaoEDA = { id: string; tipo: TipoEventoEDA; gravidade: GravidadeEDA; texto: string | null; autor: string | null; em: string; lat: number | null; lng: number | null };
@@ -10,7 +11,7 @@ export type ViagemAoVivoEDA = {
   chave: string; saida_id: string | null; reservas: string[]; passeio: string | null;
   inicio: string; fim: string; horario: string | null; dias: number; pessoas: number;
   clientes: string | null; nao_confirmadas: number;
-  embarcacao: { nome: string; capacidade: number | null; marinheiro: string | null } | null;
+  embarcacao: { nome: string; capacidade: number | null; marinheiro: string | null; pratico?: string | null; tem_pratico?: boolean } | null;
   guia: { nome: string; telefone: string | null; tem_conta: boolean } | null;
   posicao: { lat: number; lng: number; em: string; precisao: number | null; velocidade: number | null; bateria: number | null } | null;
   trilha: [number, number][];
@@ -25,6 +26,8 @@ export type ViagemAoVivoEDA = {
   embarque_pos?: { lat: number; lng: number } | null; // EDA_LOGISTICA_PASSEIO_V1
   // EDA_POSICAO_PRECISA_V1: última posição sem GPS (±300 m ou pior), mais nova que a última precisa.
   aproximada?: { lat: number; lng: number; em: string; precisao: number } | null;
+  // EDA_BARCO_BOTE_V1: bote fora do barco com um grupo (guia).
+  bote?: { desde: string; texto: string | null; posicao: { lat: number; lng: number; em: string; precisao: number | null; velocidade: number | null; bateria: number | null } | null; trilha: [number, number][] } | null;
   recentes?: [number, number, string][];
 };
 
@@ -34,6 +37,7 @@ export type RotaEDA = { pontos: [number, number][]; paradas?: ParadaRotaEDA[]; v
 export const ROTULO_EVENTO: Record<TipoEventoEDA, string> = {
   embarque: 'Embarque concluído', partida: 'Partiu', parada: 'Parada', chegada: 'Chegou ao destino',
   retorno: 'Retornou', ocorrencia: 'Ocorrência', suprimento: 'Suprimento', emergencia: 'EMERGÊNCIA', nota: 'Nota', resolvido: 'Situação resolvida',
+  bote_saida: 'Bote saiu com grupo', bote_retorno: 'Bote voltou ao barco',
 };
 const FASES: TipoEventoEDA[] = ['embarque', 'partida', 'parada', 'chegada', 'retorno'];
 
@@ -127,7 +131,22 @@ export function alertasViagem(v: ViagemAoVivoEDA): AlertaOperacaoEDA[] {
   if (!v.embarcacao) a.push({ tom: 'at', area: 'equipe', texto: 'Viagem sem embarcação vinculada.' });
   else if (v.embarcacao.capacidade && v.pessoas > v.embarcacao.capacidade) a.push({ tom: 'er', area: 'seguranca', texto: `Lotação: ${v.pessoas} pessoas para ${v.embarcacao.capacidade} lugares em ${v.embarcacao.nome}.` });
   if (!v.guia) a.push({ tom: 'at', area: 'equipe', texto: 'Viagem sem guia escalado.' });
-  else if (!v.guia.tem_conta) a.push({ tom: 'nt', area: 'equipe', texto: `${v.guia.nome} não tem conta na EDA: a localização precisa ser enviada por alguém da equipe a bordo.` });
+  // EDA_GUIA_PRATICO_V1: alguém a bordo precisa ter conta vinculada para mandar a localização.
+  if (!v.guia?.tem_conta && !v.embarcacao?.tem_pratico) a.push({ tom: 'nt', area: 'equipe', texto: 'Nem o guia nem o prático têm conta vinculada: peça o código EDA deles e vincule em Guias ou Embarcações, para a localização sair do celular de quem está a bordo.' });
+
+  // EDA_BARCO_BOTE_V1: bote fora com grupo.
+  if (v.bote) {
+    const fora = minutosDesde(v.bote.desde) ?? 0;
+    const sinal = minutosDesde(v.bote.posicao?.em);
+    const grupo = v.bote.texto ? ` (${v.bote.texto})` : '';
+    if (sinal === null && fora >= 20) a.push({ tom: 'at', area: 'sinal', texto: `Bote saiu${grupo} há ${duracao(fora)} e ainda não mandou localização.` });
+    else if (sinal !== null && sinal > 45) a.push({ tom: sinal > 120 ? 'er' : 'at', area: 'sinal', texto: `Bote${grupo} sem localização ${tempoRelativo(v.bote.posicao?.em)}.` });
+    if (v.bote.posicao && v.posicao) {
+      const d = distanciaM(v.bote.posicao, v.posicao);
+      if (d > 5000) a.push({ tom: 'at', area: 'rota', texto: `Bote${grupo} está a ${formatarDistancia(d)} do barco.` });
+    }
+    if (fora > 300) a.push({ tom: 'at', area: 'seguranca', texto: `Bote${grupo} fora do barco há ${duracao(fora)}.` });
+  }
 
   // Saúde (só contagens).
   if (v.saude.graves) a.push({ tom: 'at', area: 'seguranca', texto: `${v.saude.graves} alerta(s) grave(s) de saúde a bordo — confira o resumo de segurança.` });
@@ -157,7 +176,7 @@ export function alertasViagem(v: ViagemAoVivoEDA): AlertaOperacaoEDA[] {
 // ---------------------------------------------------------------------------
 // Fila sem sinal: posições e registros ficam no aparelho até a conexão voltar.
 // ---------------------------------------------------------------------------
-export type PontoFila = { lat: number; lng: number; precisao?: number; velocidade?: number; rumo?: number; bateria?: number; em: string };
+export type PontoFila = { lat: number; lng: number; precisao?: number; velocidade?: number; rumo?: number; bateria?: number; em: string; unidade?: UnidadeEDA };
 type EventoFila = { tipo: TipoEventoEDA; texto?: string; gravidade?: GravidadeEDA; lat?: number; lng?: number; em: string };
 type Fila = { pontos: PontoFila[]; eventos: EventoFila[] };
 

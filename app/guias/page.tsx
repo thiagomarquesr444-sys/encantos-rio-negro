@@ -7,6 +7,7 @@ import './guias-premium.css';
 import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import VinculoContaEDA from '@/app/components/VinculoContaEDA';
 import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import { useAbrirRegistroEDA } from '@/lib/abrirRegistroEDA';
 import {
@@ -1072,6 +1073,8 @@ export default function GuiasPage() {
                 </div>
               ))}
             </div>
+
+            {itemVisualizar.id && <div className="px-6 pb-5"><VinculoContaEDA alvo="guia" id={itemVisualizar.id} /></div>}
 
             <div className="flex justify-end border-t border-[var(--ern-borda)] px-6 py-4">
               <button

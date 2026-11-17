@@ -13,6 +13,7 @@ import React, {
 import Link from 'next/link';
 
 import { supabase } from '@/lib/supabase';
+import VinculoContaEDA from '@/app/components/VinculoContaEDA';
 import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import { useAbrirRegistroEDA } from '@/lib/abrirRegistroEDA';
 import { CabecalhoEDA } from '@/app/components/PadraoPaginaEDA';
@@ -1566,6 +1567,8 @@ export default function EmbarcacoesPage() {
                 </div>
               ))}
             </div>
+
+            {embarcacaoVisualizando.id && <div className="px-6 pb-5"><VinculoContaEDA alvo="embarcacao" id={embarcacaoVisualizando.id} /></div>}
 
             <div className="flex justify-end border-t border-[var(--ern-borda)] px-6 py-4">
               <button

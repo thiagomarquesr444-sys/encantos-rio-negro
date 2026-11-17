@@ -33,10 +33,11 @@ const MENUS: Record<Tipo, { principal: Item[]; portal: Item[]; rotulo: string; c
     ],
   },
   guia: {
-    rotulo: 'Espaço do guia',
-    conta: 'Guia independente',
+    rotulo: 'Guia / Prático',
+    conta: 'Guia ou prático independente',
     principal: [
       { href: '/guia', label: 'Início', icone: 'casa' },
+      { href: '/guia#viagens', label: 'Minhas viagens', icone: 'rio' },
       { href: '/guia/perfil', label: 'Meu perfil', icone: 'perfil' },
     ],
     portal: [

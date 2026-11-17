@@ -8,7 +8,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   distanciaM, enfileirarEvento, enfileirarPonto, enviarFila, ROTULO_EVENTO, tamanhoFila,
-  type GravidadeEDA, type PontoFila, type TipoEventoEDA,
+  type GravidadeEDA, type PontoFila, type TipoEventoEDA, type UnidadeEDA,
 } from '@/lib/operacaoAoVivoEDA';
 
 const INTERVALO_MS = 2 * 60_000;   // ponto a cada 2 min parado…
@@ -33,6 +33,15 @@ export default function BordoEDA({ reservaId, titulo, compacto = false }: { rese
   const bateria = useRef<number | undefined>(undefined);
   const trava = useRef<WakeLock | null>(null);
   const chaveAtivo = `eda.bordo.ativo.${reservaId}`;
+  // EDA_BARCO_BOTE_V1: este aparelho está no barco principal ou no bote com um grupo.
+  const chaveUnidade = `eda.bordo.unidade.${reservaId}`;
+  const [unidade, setUnidade] = useState<UnidadeEDA>('barco');
+  const unidadeRef = useRef<UnidadeEDA>('barco');
+  const [grupoBote, setGrupoBote] = useState('');
+  const [escolhendoBote, setEscolhendoBote] = useState(false);
+  useEffect(() => {
+    try { const u = localStorage.getItem(chaveUnidade); if (u === 'bote') { unidadeRef.current = 'bote'; setUnidade('bote'); } } catch { /* */ }
+  }, [chaveUnidade]);
   // EDA_OPERACAO_AO_VIVO_V2: evita registrar a mesma etapa duas vezes por toque repetido.
   const ultimaEtapa = useRef<Partial<Record<TipoEventoEDA, number>>>({});
 
@@ -80,7 +89,7 @@ export default function BordoEDA({ reservaId, titulo, compacto = false }: { rese
           precisao: Math.round(pos.coords.accuracy),
           velocidade: pos.coords.speed != null && pos.coords.speed >= 0 ? Number((pos.coords.speed * 3.6).toFixed(1)) : undefined,
           rumo: pos.coords.heading != null && !Number.isNaN(pos.coords.heading) ? Math.round(pos.coords.heading) : undefined,
-          bateria: bateria.current, em: new Date(pos.timestamp).toISOString(),
+          bateria: bateria.current, em: new Date(pos.timestamp).toISOString(), unidade: unidadeRef.current,
         };
         const ant = ultimoPonto.current;
         const passou = !ant || Date.parse(p.em) - Date.parse(ant.em) >= INTERVALO_MS || distanciaM(ant, p) >= DISTANCIA_M;
@@ -134,7 +143,7 @@ export default function BordoEDA({ reservaId, titulo, compacto = false }: { rese
   }, [chaveAtivo, enviar, iniciar, manterTelaAcesa, reservaId]);
 
   function registrar(tipo: TipoEventoEDA, detalhe?: string, gravidade?: GravidadeEDA) {
-    const etapa = ['embarque', 'partida', 'parada', 'chegada', 'retorno', 'resolvido'].includes(tipo);
+    const etapa = ['embarque', 'partida', 'parada', 'chegada', 'retorno', 'resolvido', 'bote_saida', 'bote_retorno'].includes(tipo);
     const antes = ultimaEtapa.current[tipo];
     if (etapa && antes && Date.now() - antes < 3 * 60000) { setAviso(`${ROTULO_EVENTO[tipo]} já foi registrado agora há pouco.`); return; }
     if (etapa) ultimaEtapa.current[tipo] = Date.now();
@@ -143,6 +152,19 @@ export default function BordoEDA({ reservaId, titulo, compacto = false }: { rese
     setFila(tamanhoFila(reservaId));
     setAviso(`${ROTULO_EVENTO[tipo]} registrado${navigator.onLine ? '' : ' (será enviado quando o sinal voltar)'}.`);
     void enviar();
+  }
+
+  function trocarUnidade(u: UnidadeEDA, grupo?: string) {
+    if (u === unidadeRef.current) return;
+    unidadeRef.current = u; setUnidade(u); setEscolhendoBote(false);
+    try { localStorage.setItem(chaveUnidade, u); } catch { /* */ }
+    // Força um ponto novo já na unidade certa.
+    ultimoPonto.current = null;
+    if (u === 'bote') registrar('bote_saida', grupo?.trim().slice(0, 200) || undefined);
+    else registrar('bote_retorno');
+    if (!ativo) iniciar();
+    else navigator.geolocation.getCurrentPosition((pos) => receber.current?.(pos), () => undefined, { enableHighAccuracy: true, maximumAge: 0, timeout: 60_000 });
+    setGrupoBote('');
   }
 
   function enviarTexto() {
@@ -169,6 +191,22 @@ export default function BordoEDA({ reservaId, titulo, compacto = false }: { rese
           ? <button type="button" className="eda-pg-bt" onClick={parar}>Parar</button>
           : <button type="button" className="eda-pg-bt eda-pg-bt-ouro" onClick={iniciar}>Transmitir localização</button>}
       </div>
+
+      <div className="bd-unidade" role="radiogroup" aria-label="Onde este aparelho está">
+        <span>Este celular está no</span>
+        <button type="button" role="radio" aria-checked={unidade === 'barco'} onClick={() => trocarUnidade('barco')}>Barco principal</button>
+        <button type="button" role="radio" aria-checked={unidade === 'bote'} onClick={() => (unidade === 'bote' ? undefined : setEscolhendoBote(true))}>Bote com grupo</button>
+      </div>
+      {escolhendoBote && (
+        <div className="bd-texto">
+          <input value={grupoBote} maxLength={200} autoFocus onChange={(e) => setGrupoBote(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') trocarUnidade('bote', grupoBote); }}
+            placeholder="Quem vai e para onde (ex.: 4 turistas, pesca no lago do Aracá)" />
+          <button type="button" className="eda-pg-bt eda-pg-bt-ouro" onClick={() => trocarUnidade('bote', grupoBote)}>Bote saiu</button>
+          <button type="button" className="eda-pg-bt" onClick={() => setEscolhendoBote(false)}>Cancelar</button>
+        </div>
+      )}
+      {unidade === 'bote' && <p className="bd-bote">No bote: a localização deste celular aparece como o bote no mapa da operadora. Ao voltar, toque em <b>Barco principal</b>.</p>}
 
       <div className="bd-etapas" role="group" aria-label="Etapas da viagem">
         {(['embarque', 'partida', 'parada', 'chegada', 'retorno'] as TipoEventoEDA[]).map((t) => (
@@ -221,6 +259,11 @@ export default function BordoEDA({ reservaId, titulo, compacto = false }: { rese
         .bd-led-on { background: #22c55e; box-shadow: 0 0 0 0 rgba(34,197,94,.6); animation: bd-pulso 1.8s infinite; }
         @keyframes bd-pulso { 70% { box-shadow: 0 0 0 10px rgba(34,197,94,0); } 100% { box-shadow: 0 0 0 0 rgba(34,197,94,0); } }
         .bd-etapas { display: flex; flex-wrap: wrap; gap: 6px; }
+        .bd-unidade { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 4px; border-radius: 14px; background: rgb(255 255 255 / 5%); }
+        .bd-unidade span { font-size: 12px; color: var(--ern-secundario, #b4c8bb); padding: 0 6px; }
+        .bd-unidade button { min-height: 40px; padding: 0 14px; border-radius: 11px; border: 0; background: transparent; color: inherit; font-weight: 700; cursor: pointer; }
+        .bd-unidade button[aria-checked='true'] { background: #e3a144; color: #07110e; }
+        .bd-bote { margin: 0; font-size: 12.5px; color: #8cc3f2; }
         .bd-sel { outline: 2px solid #e3a144; }
         .bd-texto { display: flex; flex-wrap: wrap; gap: 6px; }
         .bd-texto input { flex: 1; min-width: 200px; min-height: 40px; padding: 0 12px; border-radius: 12px; border: 1px solid var(--ern-borda); background: transparent; color: inherit; }

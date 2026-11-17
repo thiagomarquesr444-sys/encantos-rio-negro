@@ -118,3 +118,12 @@ export function valorPorFaixasEDA(preco: number, adultos: number, criancas: numb
   const pct = p?.crianca_percentual != null ? Number(p.crianca_percentual) / 100 : 1;
   return Math.round((preco * adultos + preco * pct * criancas) * 100) / 100;
 }
+
+// EDA_GUIA_PRATICO_V1: o acesso "Guia/Prático" atende os dois segmentos.
+export const ATUACOES_GUIA: readonly OpcaoEDA[] = [
+  ['Guia de turismo', 'Guia de turismo'],
+  ['Prático de embarcação', 'Prático de embarcação (piloto do barco)'],
+  ['Guia e prático', 'Guia e prático'],
+];
+export const ehPratico = (atuacao: string | null | undefined) => /pr[aá]tico/i.test(atuacao ?? '');
+export const ehGuiaTurismo = (atuacao: string | null | undefined) => !atuacao || /guia/i.test(atuacao);

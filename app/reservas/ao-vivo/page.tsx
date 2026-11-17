@@ -166,6 +166,7 @@ export default function OperacaoAoVivoPage() {
         .av-hud-kv div { display: grid; gap: 1px; } .av-hud-kv dt { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: #93a79d; } .av-hud-kv dd { margin: 0; font-weight: 700; font-size: 13px; }
         .av-hud-kv em { font-style: normal; color: #ff8a8a; font-size: 11px; }
         .av-hud-velho { color: #f2c86b; }
+        .av-hud-bote { margin: 0; padding: 7px 9px; border-radius: 10px; background: rgb(140 195 242 / 14%); color: #cfe6fb; font-size: 11.5px; line-height: 1.45; } .av-hud-bote b { color: #8cc3f2; }
         .av-hud-aprox { margin: 0; padding: 7px 9px; border-radius: 10px; background: rgb(242 200 107 / 12%); color: #f2c86b; font-size: 11.5px; line-height: 1.4; }
         .av-hud-leg { display: flex; flex-wrap: wrap; gap: 4px 12px; padding-top: 8px; border-top: 1px solid rgb(255 255 255 / 10%); font-size: 10.5px; color: #c9c2ae; }
         .av-hud-leg span { display: inline-flex; align-items: center; gap: 5px; } .av-hud-leg i { display: inline-block; width: 14px; height: 4px; border-radius: 3px; }
@@ -292,6 +293,7 @@ function MapaAoVivo({ lista, selecionada, aoSelecionar }: { lista: { v: ViagemAo
     if (fimSel) pts.push([fimSel.lat, fimSel.lng]);
     if (sel.posicao) pts.push([sel.posicao.lat, sel.posicao.lng]);
     if (sel.aproximada) pts.push([sel.aproximada.lat, sel.aproximada.lng]);
+    if (sel.bote?.posicao) pts.push([sel.bote.posicao.lat, sel.bote.posicao.lng]);
     return pts;
   }, [sel, fimSel]);
 
@@ -337,6 +339,20 @@ function MapaAoVivo({ lista, selecionada, aoSelecionar }: { lista: { v: ViagemAo
           if (v.posicao && !(v.rota && v.rota.pontos.length > 1)) {
             lib.polyline([[v.posicao.lat, v.posicao.lng], [fim.lat, fim.lng]], { color: '#ffffff', weight: 2, opacity: 0.75, dashArray: '2 8', interactive: false }).addTo(c);
           }
+        }
+      }
+      // EDA_BARCO_BOTE_V1: bote fora com o grupo (azul).
+      if (ehSel && v.bote) {
+        if (v.bote.trilha.length > 1) {
+          lib.polyline(v.bote.trilha, { color: '#07110e', weight: 6, opacity: 0.45, interactive: false }).addTo(c);
+          lib.polyline(v.bote.trilha, { color: '#8cc3f2', weight: 3.5, opacity: 1, interactive: false }).addTo(c);
+        }
+        if (v.bote.posicao) {
+          const bp: [number, number] = [v.bote.posicao.lat, v.bote.posicao.lng];
+          const bVelho = (minutosDesde(v.bote.posicao.em) ?? 0) > 30;
+          const ic = lib.divIcon({ className: '', iconSize: [32, 32], iconAnchor: [16, 16], html: barcoHTML('#8cc3f2', rumoTrilha(v.bote.trilha), bVelho, false) });
+          lib.marker(bp, { icon: ic, title: 'Bote', zIndexOffset: 900 }).addTo(c)
+            .bindTooltip(`Bote${v.bote.texto ? ` · ${esc(v.bote.texto)}` : ''} · ${tempoRelativo(v.bote.posicao.em)}`, { className: 'av-dica', direction: 'top', offset: [0, -16] });
         }
       }
       // Posição aproximada (sem GPS): só um círculo cinza com o raio de erro, sem mover o barco.
@@ -430,12 +446,19 @@ function HudViagem({ v, tom }: { v: ViagemAoVivoEDA; tom: TomEDA }) {
         <div><dt>Velocidade</dt><dd>{v.posicao?.velocidade != null ? `${v.posicao.velocidade.toFixed(1).replace('.', ',')} km/h` : '—'}</dd></div>
         <div><dt>GPS</dt><dd className={velho ? 'av-hud-velho' : undefined}>{v.posicao ? tempoRelativo(v.posicao.em) : 'sem posição'}</dd></div>
       </dl>
+      {v.bote && (
+        <p className="av-hud-bote">
+          <b>Bote fora</b> há {duracao(minutosDesde(v.bote.desde) ?? 0)}{v.bote.texto ? ` · ${v.bote.texto}` : ''}
+          {v.bote.posicao ? <> · {v.posicao ? `${formatarDistancia(distanciaM(v.bote.posicao, v.posicao))} do barco · ` : ''}sinal {tempoRelativo(v.bote.posicao.em)}</> : ' · aguardando localização do bote'}
+        </p>
+      )}
       {v.aproximada && <p className="av-hud-aprox">Sem GPS a bordo: última posição aproximada (±{v.aproximada.precisao} m) {tempoRelativo(v.aproximada.em)}. Ela não move o barco.</p>}
       <div className="av-hud-leg" aria-label="Legenda">
         <span><i style={{ background: '#5cc49a' }} />Feito</span>
         <span><i className="av-leg-tr" />Planejado</span>
         <span><i style={{ background: '#e3a144', borderRadius: '50%' }} />Destino</span>
         <span><i style={{ background: '#8cc3f2', borderRadius: '50%' }} />Parada</span>
+        {v.bote && <span><i style={{ background: '#8cc3f2' }} />Bote</span>}
       </div>
     </div>
   );
@@ -524,7 +547,8 @@ function Detalhe({ v, alertas, bordoAberto, aoBordo }: { v: ViagemAoVivoEDA; ale
           {v.posicao?.velocidade != null && <><span>Velocidade</span><b>{v.posicao.velocidade.toFixed(1)} km/h</b></>}
           {v.posicao?.bateria != null && <><span>Bateria</span><b>{v.posicao.bateria}%</b></>}
           <span>Embarcação</span><b>{v.embarcacao ? `${v.embarcacao.nome}${v.embarcacao.capacidade ? ` · ${v.pessoas}/${v.embarcacao.capacidade} lugares` : ''}${v.embarcacao.marinheiro ? ` · ${v.embarcacao.marinheiro}` : ''}` : '—'}</b>
-          <span>Guia</span><b>{v.guia ? v.guia.nome : '—'}</b>
+          <span>Guia</span><b>{v.guia ? `${v.guia.nome}${v.guia.tem_conta ? ' · conta vinculada' : ''}` : '—'}</b>
+          <span>Prático</span><b>{v.embarcacao?.pratico ? `${v.embarcacao.pratico} · conta vinculada` : v.embarcacao?.marinheiro || '—'}</b>
           <span>Clientes</span><b>{v.clientes || '—'}</b>
         </div>
         <div className="av-acoes">
@@ -575,7 +599,7 @@ function Detalhe({ v, alertas, bordoAberto, aoBordo }: { v: ViagemAoVivoEDA; ale
 
       <section className="av-card av-largo">
         <p className="eda-pg-eb">Linha do tempo a bordo</p>
-        {v.eventos.length === 0 ? <p style={{ fontSize: 13, color: 'var(--p-sec)' }}>Nenhum registro ainda. O guia registra pelo Painel do Guia; a equipe a bordo pode usar “Estou a bordo” abaixo.</p> : (
+        {v.eventos.length === 0 ? <p style={{ fontSize: 13, color: 'var(--p-sec)' }}>Nenhum registro ainda. O guia e o prático registram pelo espaço Guia / Prático (conta vinculada pelo código EDA); a equipe a bordo pode usar “Estou a bordo” abaixo.</p> : (
           <ul className="av-tl">
             {agruparEventos(v.eventos).map((e) => (
               <li key={e.id} style={{ borderLeftColor: e.gravidade === 'grave' ? '#ef4444' : e.gravidade === 'atencao' ? '#f2c86b' : undefined }}>
@@ -589,7 +613,7 @@ function Detalhe({ v, alertas, bordoAberto, aoBordo }: { v: ViagemAoVivoEDA; ale
 
       <section className="av-card av-largo">
         <div className="av-acoes" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
-          <div><p className="eda-pg-eb">Estou a bordo</p><p style={{ fontSize: 13, color: 'var(--p-sec)' }}>Use este aparelho para transmitir a localização e registrar a viagem (quando o guia não tem conta na EDA).</p></div>
+          <div><p className="eda-pg-eb">Estou a bordo</p><p style={{ fontSize: 13, color: 'var(--p-sec)' }}>Use este aparelho para transmitir a localização e registrar a viagem (quando o guia ou o prático não têm conta vinculada).</p></div>
           <button type="button" className="eda-pg-bt" onClick={aoBordo}>{bordoAberto ? 'Fechar painel de bordo' : 'Abrir painel de bordo'}</button>
         </div>
         {bordoAberto && reserva && <BordoEDA reservaId={reserva} titulo={`A bordo: ${v.passeio || 'viagem'}`} />}

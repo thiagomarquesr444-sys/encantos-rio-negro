@@ -17,7 +17,7 @@ type Props = { children: ReactNode; etapa: 'login' | 'cadastro' | 'recuperacao' 
 
 const PERFIS: { id: Perfil; nome: string }[] = [
   { id: 'operadora', nome: 'Operadora' },
-  { id: 'guia', nome: 'Guia' },
+  { id: 'guia', nome: 'Guia / Prático' },
   { id: 'fornecedor', nome: 'Fornecedor / Artesão' },
 ];
 

@@ -19,10 +19,10 @@ const textos = {
       },
       {
         id: 'guia',
-        titulo: 'Sou guia de turismo',
+        titulo: 'Sou guia ou prático',
         descricao:
-          'Tenha seu próprio cadastro profissional na EDA, com identidade independente das operadoras.',
-        botao: 'Acesso do guia',
+          'Guia de turismo ou prático de embarcação: seu cadastro profissional na EDA, independente das operadoras, e o painel de bordo das viagens em que você for escalado.',
+        botao: 'Acesso do guia / prático',
       },
       {
         id: 'fornecedor',
@@ -51,10 +51,10 @@ const textos = {
       },
       {
         id: 'guia',
-        titulo: 'I am a tour guide',
+        titulo: 'I am a guide or boat pilot',
         descricao:
-          'Create your own professional profile on EDA, with an identity independent of tour operators.',
-        botao: 'Guide access',
+          'Tour guide or boat pilot: your own professional profile on EDA, independent of operators, plus the onboard panel for the trips you are assigned to.',
+        botao: 'Guide / pilot access',
       },
       {
         id: 'fornecedor',
@@ -83,10 +83,10 @@ const textos = {
       },
       {
         id: 'guia',
-        titulo: 'Soy guía de turismo',
+        titulo: 'Soy guía o práctico',
         descricao:
-          'Ten tu propio perfil profesional en EDA, con una identidad independiente de los operadores.',
-        botao: 'Acceso del guía',
+          'Guía de turismo o práctico de embarcación: tu perfil profesional en EDA, independiente de los operadores, y el panel de a bordo de los viajes en que te asignen.',
+        botao: 'Acceso de guía / práctico',
       },
       {
         id: 'fornecedor',

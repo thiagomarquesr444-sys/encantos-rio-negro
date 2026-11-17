@@ -29,13 +29,13 @@ const destinos: Record<TipoAcesso, string> = {
 
 const titulos: Record<TipoAcesso, string> = {
   operadora: 'Gestão da operadora',
-  guia: 'Meu espaço de guia',
+  guia: 'Meu espaço de guia / prático',
   fornecedor: 'Meu espaço de fornecedor e artesão',
 };
 
 const nomes: Record<TipoAcesso, string> = {
   operadora: 'operadora de turismo',
-  guia: 'guia autônomo da Rede EDA',
+  guia: 'guia ou prático autônomo da Rede EDA',
   fornecedor: 'fornecedor da Rede EDA',
 };
 
@@ -43,7 +43,7 @@ const descricoes: Record<TipoAcesso, string> = {
   operadora:
     'Acesse a operação da sua empresa conforme as permissões do seu usuário.',
   guia:
-    'Acesse seu espaço independente e mantenha seu cadastro de guia na Rede EDA.',
+    'Acesse seu espaço independente, mantenha seu cadastro de guia ou prático na Rede EDA e o painel de bordo das suas viagens.',
   fornecedor:
     'Acesse seu espaço independente: sua vitrine de artesanato ou produtos, seu perfil e seus contatos na Rede EDA.',
 };
@@ -610,7 +610,7 @@ function ConteudoAcesso() {
                 href="/operadores#acessos-profissionais"
                 className={`mt-4 inline-flex min-h-12 w-full items-center justify-center rounded-xl border border-white/15 px-5 py-3 text-center text-sm ${focoClass}`}
               >
-                Sou guia ou fornecedor independente
+                Sou guia, prático ou fornecedor independente
               </Link>
             </>
           )}
