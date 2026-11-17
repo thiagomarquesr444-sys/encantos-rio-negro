@@ -21,6 +21,8 @@ import SaidasPasseioEDA from '@/app/components/SaidasPasseioEDA';
 import PoliticaPrecoPasseioEDA from '@/app/components/PoliticaPrecoPasseioEDA';
 import CampoOpcoesEDA, { CampoDuracaoEDA } from '@/app/components/CampoOpcoesEDA';
 import CampoLocalEDA from '@/app/components/CampoLocalEDA';
+import LogisticaPasseioEDA, { logisticaDoPasseio, logisticaParaGravar } from '@/app/components/LogisticaPasseioEDA';
+import type { RotaEDA } from '@/lib/operacaoAoVivoEDA';
 import { CATEGORIAS_PASSEIO } from '@/lib/opcoesEDA';
 
 type Passeio = {
@@ -38,6 +40,14 @@ type Passeio = {
   publicado_portal?: boolean | null;
   situacao?: string | null;
   created_at?: string;
+  // EDA_LOGISTICA_PASSEIO_V1
+  ponto_embarque?: string | null;
+  embarque_lat?: number | null;
+  embarque_lng?: number | null;
+  destino_nome?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
+  rota?: RotaEDA | null;
 };
 
 type Feedback = {
@@ -771,6 +781,9 @@ export default function PasseiosPage() {
         situacao:
           passeioSelecionado.situacao ||
           'Ativo',
+
+        // EDA_LOGISTICA_PASSEIO_V1: embarque, destino e percurso da viagem.
+        ...logisticaParaGravar(logisticaDoPasseio(passeioSelecionado)),
       };
 
       const {
@@ -1803,6 +1816,15 @@ export default function PasseiosPage() {
                     }
                     className="w-full resize-none rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 py-3 text-sm leading-6 text-[var(--ern-texto)] outline-none focus:border-[var(--ern-borda)] disabled:opacity-50"
                   />
+                </div>
+
+                {/* EDA_LOGISTICA_PASSEIO_V1 */}
+                <div className="border-t border-[var(--ern-borda)] pt-5">
+                  <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-destaque)]">Logística da viagem</p>
+                  <p className="mb-4 text-xs leading-5 text-[var(--ern-secundario)]">Embarque, caminho pelo rio e destino. A Operação ao vivo e a EDA acompanham a embarcação por aqui.</p>
+                  <LogisticaPasseioEDA key={passeioSelecionado.id} disabled={salvando}
+                    valor={logisticaDoPasseio(passeioSelecionado)}
+                    onChange={(l) => setPasseioSelecionado((p) => (p ? { ...p, ...l } : p))} />
                 </div>
 
                 <div className="flex flex-col-reverse gap-3 border-t border-[var(--ern-borda)] pt-5 sm:flex-row sm:justify-end">

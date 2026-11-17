@@ -22,6 +22,7 @@ export type ViagemAoVivoEDA = {
   rota?: RotaEDA | null;
   destino?: { lat: number; lng: number; nome: string | null } | null;
   embarque?: string | null;
+  embarque_pos?: { lat: number; lng: number } | null; // EDA_LOGISTICA_PASSEIO_V1
   recentes?: [number, number, string][];
 };
 
@@ -88,7 +89,7 @@ export function alertasViagem(v: ViagemAoVivoEDA): AlertaOperacaoEDA[] {
   const r = analisarRota(v);
   const fresca = (minutosDesde(v.posicao?.em) ?? 9999) <= 30;
   if (!r.temRota && (fase.emCurso || v.inicio <= hojeManaus())) {
-    a.push({ tom: 'at', area: 'rota', texto: 'Percurso não traçado: marque no mapa o caminho até o destino para a EDA acompanhar a embarcação.' });
+    a.push({ tom: 'at', area: 'rota', texto: 'Percurso não marcado no passeio: abra o passeio e marque, em Logística da viagem, o caminho pelo rio até o destino para a EDA acompanhar a embarcação.' });
   }
   if (fase.emCurso && fresca && r.paradoMin !== null && r.paradoMin >= 15) {
     if (r.paradaPrevista) {
@@ -252,7 +253,7 @@ export function analisarRota(v: ViagemAoVivoEDA): AnaliseRotaEDA {
   const totalM = seg.reduce((t, d) => t + d, 0);
   const pos = v.posicao;
   const fim = v.destino ?? (temRota ? { lat: pts[pts.length - 1][0], lng: pts[pts.length - 1][1], nome: null } : null);
-  const inicio = temRota ? { lat: pts[0][0], lng: pts[0][1] } : null;
+  const inicio = v.embarque_pos ?? (temRota ? { lat: pts[0][0], lng: pts[0][1] } : null);
 
   let percorridoM: number | null = null, distanciaRotaM: number | null = null;
   if (pos && temRota) {
@@ -362,7 +363,7 @@ export function alertasDestino(v: ViagemAoVivoEDA): AlertaOperacaoEDA[] {
   const a: AlertaOperacaoEDA[] = [];
   const fim = destinoViagem(v);
   if (!fim) {
-    a.push({ tom: 'at', area: 'rota', texto: 'Passeio sem local de destino: cadastre o destino no passeio ou trace o percurso no mapa.' });
+    a.push({ tom: 'at', area: 'rota', texto: 'Passeio sem destino marcado: abra o passeio e marque o destino em Logística da viagem.' });
     return a;
   }
   const ch = v.eventos.find((e) => e.tipo === 'chegada');

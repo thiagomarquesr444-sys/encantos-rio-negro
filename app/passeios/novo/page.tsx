@@ -11,6 +11,7 @@ import { supabase } from '@/lib/supabase';
 import PortalPasseioEDA, { type FotoLocalEDA } from '@/app/components/PortalPasseioEDA';
 import { enviarFotosPasseioEDA } from '@/lib/passeiosPublicosEDA';
 import CampoLocalEDA from '@/app/components/CampoLocalEDA';
+import LogisticaPasseioEDA, { LOGISTICA_VAZIA, logisticaParaGravar, type LogisticaPasseioEDA as LogisticaTipo } from '@/app/components/LogisticaPasseioEDA';
 import { CampoDuracaoEDA } from '@/app/components/CampoOpcoesEDA';
 
 type Mensagem = {
@@ -142,6 +143,8 @@ export default function NovoPasseioPage() {
 
   // EDA_PASSEIOS_PORTAL_V1
   const [fotos, setFotos] = useState<FotoLocalEDA[]>([]);
+  // EDA_LOGISTICA_PASSEIO_V1: embarque, destino e percurso.
+  const [logistica, setLogistica] = useState<LogisticaTipo>(LOGISTICA_VAZIA);
   const [publicarPortal, setPublicarPortal] = useState(true);
   const [nomeOperadora, setNomeOperadora] = useState<string | null>(null);
   const [perfilPublicado, setPerfilPublicado] = useState<boolean | null>(null);
@@ -598,6 +601,8 @@ export default function NovoPasseioPage() {
 
                 situacao:
                   formData.situacao,
+
+                ...logisticaParaGravar(logistica),
               }]).select('id').single();
 
         if (error) {
@@ -1253,6 +1258,20 @@ export default function NovoPasseioPage() {
                 placeholder="Descrição completa da experiência, operação e principais características..."
                 className="w-full resize-none rounded-xl border border-[var(--ern-borda)] bg-[var(--ern-fundo)] px-4 py-3 text-sm leading-6 text-[var(--ern-texto)] outline-none transition placeholder:text-[var(--ern-secundario)] focus:border-[var(--ern-borda)] focus:ring-1 focus:ring-[var(--ern-destaque)] disabled:cursor-not-allowed disabled:opacity-45"
               />
+            </div>
+
+            {/* LOGÍSTICA DA VIAGEM — EDA_LOGISTICA_PASSEIO_V1 */}
+            <div className="md:col-span-2 border-t border-[var(--ern-borda)] pt-6">
+              <p className="mb-1 text-[10px] font-semibold uppercase tracking-[0.13em] text-[var(--ern-destaque)]">
+                Logística da viagem
+              </p>
+              <h3 className="mb-2 text-lg font-semibold text-[var(--ern-texto)]">
+                Embarque, caminho pelo rio e destino
+              </h3>
+              <p className="mb-5 text-sm leading-6 text-[var(--ern-secundario)]">
+                Marque uma vez e vale para todas as saídas: a Operação ao vivo mostra o caminho completo e a EDA avisa se a embarcação parar fora do previsto, sair do caminho ou atrasar.
+              </p>
+              <LogisticaPasseioEDA valor={logistica} onChange={setLogistica} disabled={salvando || limiteAtingido} />
             </div>
 
             {/* PORTAL PÚBLICO — EDA_PASSEIOS_PORTAL_V1 */}
