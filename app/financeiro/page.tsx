@@ -14,7 +14,7 @@ import { supabase } from '@/lib/supabase';
 import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import { useModulosEquipeERN } from '@/app/components/ModulosEquipeERN';
 import { SeletorPeriodoMensalERN, SeloExpiracaoERN } from '@/app/components/PeriodoMensalERN';
-import { HISTORICO_ERN, dataNoPeriodoERN, mesAtualERN, periodoDaURLERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
+import { HISTORICO_ERN, dataNoPeriodoERN, mesAtualERN, periodoDaURLERN, rotuloMesERN, type PeriodoMensalERN } from '@/lib/periodoMensalERN';
 import {
   consultarFinanceiroERN,
   filtrarFinanceiroERN,
@@ -328,7 +328,7 @@ export default function FinanceiroPage() {
     }
 
     return { recebido, pago, receber, pagar, saldo: recebido - pago };
-  }, [lancamentos]);
+  }, [lancamentosDoPeriodo]);
 
   const lancamentosFiltrados = useMemo(
     () =>
@@ -645,7 +645,7 @@ export default function FinanceiroPage() {
           </>}
         />
 
-        <section className="eda-pg-kpis" aria-label="Resumo de todo o histórico">
+        <section className="eda-pg-kpis" aria-label={`Resumo de ${rotuloMesERN(periodoMes)}`}>
           {cards.slice(0, 4).map((card) => (
             <div key={card.titulo} className={`eda-pg-kpi ${card.titulo === 'Saldo realizado' ? (financeiro.saldo >= 0 ? 'eda-pg-kpi-ok' : 'eda-pg-kpi-er') : ''}`}>
               <small>{card.titulo}</small>
@@ -655,7 +655,7 @@ export default function FinanceiroPage() {
           ))}
         </section>
         <p className="eda-pg-nota">
-          Totais de todo o histórico acessível à sua conta. O saldo realizado é receitas recebidas menos despesas pagas; não é saldo bancário nem lucro. A pagar: <b>{carregando || erroConsulta ? '—' : formatarMoeda(financeiro.pagar)}</b>.
+          Totais de <b>{rotuloMesERN(periodoMes)}</b>, pelo mês de vencimento dos lançamentos. O saldo realizado é receitas recebidas menos despesas pagas; não é saldo bancário nem lucro. A pagar: <b>{carregando || erroConsulta ? '—' : formatarMoeda(financeiro.pagar)}</b>.
         </p>
 
         {/* EDA_FINANCEIRO_CONECTADO_V1: o que as viagens do mês geram e custam. */}

@@ -140,7 +140,10 @@ export default function PrivacidadePage() {
           artificial (como Google Gemini e Groq) para gerar as
           respostas da Iara e da EDA. Google participa quando
           você utiliza o login com Google ou envia mensagens
-          ao atendimento pelo Gmail.
+          ao atendimento pelo Gmail. Nos campos de endereço,
+          apenas o texto digitado na busca é enviado aos serviços
+          de mapas (OpenStreetMap/Photon e, quando ativo, Google
+          Maps) para sugerir o local.
         </p>
 
         <p>

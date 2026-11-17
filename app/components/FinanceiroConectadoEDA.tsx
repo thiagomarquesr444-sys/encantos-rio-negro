@@ -251,9 +251,9 @@ export function PainelOperacaoFinanceiraEDA() {
         <div>
           <p className="po-eb">Operação do mês · viagens</p>
           <div className="po-kpis">
-            <div><span>A receber</span><b style={{ color: 'var(--ern-destaque)' }}>{moeda(aReceber)}</b></div>
+            <div><span>A receber das reservas</span><b style={{ color: 'var(--ern-destaque)' }}>{moeda(aReceber)}</b></div>
             <div><span>Recebido das reservas</span><b style={{ color: '#4ade80' }}>{moeda(recebidoMes)}</b></div>
-            <div><span>Margem das saídas</span><b>{moeda(margem)}</b></div>
+            <div title="Receita total das reservas (recebida + a receber) menos custos e comissões. Só vira lucro real quando tudo for recebido e pago."><span>Margem prevista</span><b>{moeda(margem)}</b></div>
           </div>
         </div>
         <div className="po-nav">

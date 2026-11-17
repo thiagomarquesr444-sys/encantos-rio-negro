@@ -579,7 +579,7 @@ export default function NovoClientePage() {
                     {item.titulo}{item.obrigatorio ? ' *' : ''}
                   </label>
                   {item.chave === 'cidade' ? (
-                    <CampoLocalEDA id="cidade" modo="cidade" valor={{ texto: form.cidade }} className={campo}
+                    <CampoLocalEDA id="cidade" modo="cidade" origens valor={{ texto: form.cidade }} className={campo}
                       placeholder="Cidade de origem do cliente" onChange={(l) => alterar('cidade', l.texto)} />
                   ) : item.chave === 'nacionalidade' ? (
                     <CampoOpcoesEDA id="nacionalidade" valor={form.nacionalidade} opcoes={NACIONALIDADES}
