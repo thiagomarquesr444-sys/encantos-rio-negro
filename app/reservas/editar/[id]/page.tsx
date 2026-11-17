@@ -19,6 +19,7 @@ import PeriodoReservaERN, { validarPeriodoReservaERN } from '@/app/components/Pe
 import { CabecalhoEDA, PaginaEDA, PillEDA, type TomEDA } from '@/app/components/PadraoPaginaEDA';
 import { FormChegadaEDA } from '@/app/components/ChegadaReservaEDA';
 import type { PoliticaCriancasEDA } from '@/lib/opcoesEDA';
+import PacoteGrupoReservaEDA, { PACOTE_VAZIO, erroPacote, pacoteDaReserva, pacoteParaGravar, type PacoteGrupoEDA } from '@/app/components/PacoteGrupoReservaEDA';
 
 import {
   normalizarStatusReservaERN,
@@ -245,6 +246,8 @@ function EditarReservaConteudo({ id }: { id?: string }) {
   const router = useRouter();
 
   const [form, setForm] = useState<ReservaForm>(formInicial);
+  // EDA_PACOTE_GRUPO_V1
+  const [pacote, setPacote] = useState<PacoteGrupoEDA>(PACOTE_VAZIO);
   // EDA_FAMILIA_RESERVA_V1: política de crianças do passeio vinculado.
   const [politicaEdicao, setPoliticaEdicao] = useState<PoliticaCriancasEDA | null>(null);
   useEffect(() => {
@@ -346,6 +349,7 @@ function EditarReservaConteudo({ id }: { id?: string }) {
         if (!ativo) return;
 
         const reserva = data as ReservaBanco;
+        setPacote(pacoteDaReserva(data as Record<string, unknown>));
         const status = normalizarStatus(reserva.status || reserva.Status);
         const dataBruta = reserva.data_reserva || reserva.data || '';
 
@@ -483,6 +487,12 @@ function EditarReservaConteudo({ id }: { id?: string }) {
       return;
     }
 
+    const erroGrupo = erroPacote(pacote);
+    if (erroGrupo) {
+      setFeedback({ tipo: 'erro', mensagem: erroGrupo });
+      return;
+    }
+
     const valorTratado = converterValorMonetario(form.valor);
 
     if (!Number.isFinite(valorTratado) || valorTratado < 0) {
@@ -546,6 +556,7 @@ function EditarReservaConteudo({ id }: { id?: string }) {
         valor_total: valorTratado,
         status: form.status,
         observacoes: form.observacoes.trim() || null,
+        ...pacoteParaGravar(pacote),
       };
 
       const { data, error } = await supabase
@@ -665,6 +676,13 @@ function EditarReservaConteudo({ id }: { id?: string }) {
         <form onSubmit={handleAtualizar} aria-busy={salvando}>
           <fieldset disabled={bloqueado} style={{ margin: 0, padding: 0, border: 0, minWidth: 0 }}>
             <div className="eda-pg-grade-form">
+              <section className="eda-pg-secao eda-pg-largo">
+                <p className="eda-pg-secao-eb">Venda</p>
+                <h2>Tipo de venda</h2>
+                <div className="mt-4">
+                  <PacoteGrupoReservaEDA valor={pacote} onChange={setPacote} bloqueado={bloqueado} inputClass={inputClass} labelClass={labelClass} />
+                </div>
+              </section>
               <section className="eda-pg-secao">
                 <p className="eda-pg-secao-eb">Atendimento</p>
                 <h2>Cliente e passeio</h2>
@@ -859,7 +877,7 @@ function EditarReservaConteudo({ id }: { id?: string }) {
 
         {/* EDA_FICHA_SAUDE_V1: participantes e ficha de saúde, salvos à parte. */}
         <div className="eda-pg-grade-form" style={{ marginTop: 16 }}>
-          <ParticipantesReservaEDA reservaId={id} bloqueado={somenteConsultaERN || salvando || gravada} pessoas={form.quantidade_pessoas} />
+          <ParticipantesReservaEDA reservaId={id} bloqueado={somenteConsultaERN || salvando || gravada} pessoas={form.quantidade_pessoas} grupo={pacote.modalidade === 'pacote_grupo'} />
         </div>
 
         {/* EDA_HOSPEDAGENS_PREMIUM_V1: noites reservadas, salvas à parte. */}

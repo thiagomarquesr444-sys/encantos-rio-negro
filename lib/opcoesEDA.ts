@@ -87,7 +87,7 @@ export const ATIVIDADES_FORNECEDOR: readonly OpcaoEDA[] = [
 // EDA_FAMILIA_RESERVA_V1: relação do acompanhante com o titular da reserva.
 export const RELACOES_PARTICIPANTE: readonly OpcaoEDA[] = [
   ['conjuge', 'Cônjuge'], ['filho', 'Filho(a)'], ['pai_mae', 'Pai / mãe'], ['irmao', 'Irmão(ã)'],
-  ['parente', 'Outro parente'], ['amigo', 'Amigo(a)'], ['colega', 'Colega'], ['outro', 'Outro'],
+  ['parente', 'Outro parente'], ['amigo', 'Amigo(a)'], ['colega', 'Colega'], ['grupo', 'Mesmo grupo / pacote'], ['outro', 'Outro'],
 ];
 
 export type PoliticaCriancasEDA = {
@@ -127,3 +127,11 @@ export const ATUACOES_GUIA: readonly OpcaoEDA[] = [
 ];
 export const ehPratico = (atuacao: string | null | undefined) => /pr[aá]tico/i.test(atuacao ?? '');
 export const ehGuiaTurismo = (atuacao: string | null | undefined) => !atuacao || /guia/i.test(atuacao);
+
+// EDA_PACOTE_GRUPO_V1: origem do grupo que fecha o pacote.
+export const ORIGENS_GRUPO: readonly OpcaoEDA[] = [
+  'Acre', 'Alagoas', 'Amapá', 'Amazonas', 'Bahia', 'Ceará', 'Distrito Federal', 'Espírito Santo', 'Goiás',
+  'Maranhão', 'Mato Grosso', 'Mato Grosso do Sul', 'Minas Gerais', 'Pará', 'Paraíba', 'Paraná', 'Pernambuco',
+  'Piauí', 'Rio de Janeiro', 'Rio Grande do Norte', 'Rio Grande do Sul', 'Rondônia', 'Roraima', 'Santa Catarina',
+  'São Paulo', 'Sergipe', 'Tocantins', 'Exterior',
+].map((x) => [x, x] as const);

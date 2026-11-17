@@ -60,6 +60,7 @@ interface Reserva {
   valor: number;
   status: StatusReserva;
   observacoes: string;
+  grupoRotulo?: string | null; // EDA_PACOTE_GRUPO_V1
 }
 
 interface ReservaBanco {
@@ -78,6 +79,9 @@ interface ReservaBanco {
   data?: string | null;
   agencia?: string | null;
   parceiro?: string | null;
+  modalidade?: string | null;
+  grupo_nome?: string | null;
+  grupo_origem?: string | null;
   guia?: string | null;
   valor?: number | string | null;
   valor_total?: number | string | null;
@@ -441,6 +445,7 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
           valor: normalizarValor(valorBruto),
           status: normalizarStatus(item.status || item.Status),
           observacoes: item.observacoes || '',
+          grupoRotulo: item.modalidade === 'pacote_grupo' ? `Pacote · ${item.grupo_nome || 'grupo'}${item.grupo_origem ? ` (${item.grupo_origem})` : ''}` : null,
         };
       });
 
@@ -863,6 +868,7 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
                       <span style={{ minWidth: 0 }}>
                         <b>{reserva.cliente}</b>
                         <small>{reserva.pacote}</small>
+                        {reserva.grupoRotulo && <small className="eda-res-grupo">{reserva.grupoRotulo}</small>}
                         <VinculosDaReserva v={vinculos[String(reserva.id)]} />
                       </span>
                       <strong className="eda-pg-num">{formatarMoeda(reserva.valor)}</strong>
@@ -903,6 +909,7 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
                           <button type="button" className="eda-pg-linha-bt" disabled={excluindo} onClick={() => abrirModal('detalhes', reserva)}>
                             <b>{reserva.cliente}</b>
                             <small>{reserva.pacote}</small>
+                            {reserva.grupoRotulo && <small className="eda-res-grupo">{reserva.grupoRotulo}</small>}
                             <VinculosDaReserva v={vinculos[String(reserva.id)]} />
                           </button>
                         </td>
@@ -1049,6 +1056,7 @@ function ReservasConteudo({ parametros }: { parametros: string }) {
                   <DadoEDA rotulo="Guia">{selecionada.guia}</DadoEDA>
                   <DadoEDA rotulo="Embarcação">{selecionada.embarcacao_id ? 'Vinculada' : 'Não vinculada'}</DadoEDA>
                   <DadoEDA rotulo="Agência / Parceiro" largo>{selecionada.agencia}</DadoEDA>
+                  {selecionada.grupoRotulo && <DadoEDA rotulo="Pacote de grupo" largo>{selecionada.grupoRotulo}</DadoEDA>}
                   <DadoEDA rotulo="Observações" largo>{selecionada.observacoes || 'Nenhuma observação registrada.'}</DadoEDA>
                 </dl>
               </div>

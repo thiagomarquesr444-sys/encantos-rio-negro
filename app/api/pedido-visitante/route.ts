@@ -56,7 +56,7 @@ export async function POST(req: NextRequest) {
     try { d = JSON.parse(bruto); } catch { throw new Falha(400, 'Dados inválidos.'); }
     if (!d || typeof d !== 'object' || Array.isArray(d)) throw new Falha(400, 'Dados inválidos.');
 
-    const permitidos = new Set(['nome', 'whatsapp', 'email', 'idioma', 'periodo', 'adultos', 'criancas', 'mensagem', 'passeio_slug', 'consentimento', 'sessao']);
+    const permitidos = new Set(['nome', 'whatsapp', 'email', 'idioma', 'periodo', 'adultos', 'criancas', 'mensagem', 'passeio_slug', 'consentimento', 'sessao', 'municipio', 'tipo', 'grupo_origem']);
     if (Object.keys(d).some(k => !permitidos.has(k))) throw new Falha(400, 'Campos desconhecidos.');
     if (d.consentimento !== true) throw new Falha(400, 'É preciso aceitar o uso dos dados para enviar.');
 
@@ -69,7 +69,13 @@ export async function POST(req: NextRequest) {
     if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Falha(400, 'Confira o e-mail.');
     if (!whatsapp && !email) throw new Falha(400, 'Informe um WhatsApp ou e-mail para contato.');
     const periodo = texto(d.periodo, 1, 60);
-    const mensagem = texto(d.mensagem, 1, 800);
+    // EDA_PACOTE_GRUPO_V1: pacote para grupo fechado (vai junto na mensagem para quem vê só o resumo).
+    const tipo = d.tipo === 'pacote_grupo' ? 'pacote_grupo' : 'individual';
+    const grupoOrigem = tipo === 'pacote_grupo' ? texto(d.grupo_origem, 2, 80) : null;
+    const msgBruta = texto(d.mensagem, 1, 800);
+    const mensagem = tipo === 'pacote_grupo'
+      ? `Pacote de grupo${grupoOrigem ? ` (origem: ${grupoOrigem})` : ''}.${msgBruta ? ` ${msgBruta}` : ''}`.slice(0, 900)
+      : msgBruta;
     const adultos = inteiro(d.adultos, 1, 99, 1);
     const criancas = inteiro(d.criancas, 0, 99, 0);
     const slug = texto(d.passeio_slug, 1, 160);
@@ -114,7 +120,7 @@ export async function POST(req: NextRequest) {
     const { error } = await admin.from('pedidos_visitante').insert({
       empresa_id: empresaId, passeio_id: passeioId, passeio_nome: passeioNome,
       nome, contato_whatsapp: whatsapp, contato_email: email, idioma, periodo,
-      adultos, criancas, mensagem, municipio,
+      adultos, criancas, mensagem, municipio, tipo, grupo_origem: grupoOrigem,
       consentimento_em: new Date().toISOString(), consentimento_texto: CONSENTIMENTO[idioma],
     });
     if (error) throw new Falha(503, 'Não foi possível registrar o pedido. Tente de novo.');

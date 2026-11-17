@@ -16,6 +16,7 @@ import LogisticaReserva from '@/app/components/LogisticaReserva';
 import PeriodoReservaERN, { validarPeriodoReservaERN } from '@/app/components/PeriodoReservaERN';
 import { CabecalhoEDA, PaginaEDA } from '@/app/components/PadraoPaginaEDA';
 import { valorPorFaixasEDA, type PoliticaCriancasEDA } from '@/lib/opcoesEDA';
+import PacoteGrupoReservaEDA, { PACOTE_VAZIO, erroPacote, pacoteParaGravar, type PacoteGrupoEDA } from '@/app/components/PacoteGrupoReservaEDA';
 
 type StatusReserva = 'Pendente' | 'Confirmada' | 'Cancelada';
 
@@ -185,6 +186,8 @@ export default function NovaReservaPage() {
   const router = useRouter();
 
   const [form, setForm] = useState<FormReserva>(ESTADO_INICIAL);
+  // EDA_PACOTE_GRUPO_V1
+  const [pacote, setPacote] = useState<PacoteGrupoEDA>(PACOTE_VAZIO);
 
   // EDA_RESERVA_COESA_V1: preço do passeio sugere o valor (por pessoa x quantidade, ou por grupo).
   const [precoPasseio, setPrecoPasseio] = useState<{ preco: number; modalidade: string } | null>(null);
@@ -255,11 +258,15 @@ export default function NovaReservaPage() {
     if (!id || !/^[0-9a-f-]{36}$/i.test(id)) return;
     let ativo = true;
     supabase.from('pedidos_visitante')
-      .select('id,nome,passeio_id,passeio_nome,adultos,criancas,periodo,mensagem,contato_whatsapp,contato_email')
+      .select('id,nome,passeio_id,passeio_nome,adultos,criancas,periodo,mensagem,contato_whatsapp,contato_email,tipo,grupo_origem')
       .eq('id', id).maybeSingle()
       .then(({ data }) => {
         if (!ativo || !data) return;
         setPedidoOrigem(data.id);
+        if (data.tipo === 'pacote_grupo') {
+          setPacote({ modalidade: 'pacote_grupo', grupo_nome: `Grupo de ${data.nome ?? 'visitante'}`.slice(0, 120), grupo_origem: data.grupo_origem ?? '',
+            grupo_responsavel: data.nome ?? '', grupo_contato: data.contato_whatsapp ?? '' });
+        }
         const obs = [
           'Pedido do portal (Iara).',
           data.periodo ? `Período desejado: ${data.periodo}.` : '',
@@ -536,6 +543,12 @@ export default function NovaReservaPage() {
       return;
     }
 
+    const erroGrupo = erroPacote(pacote);
+    if (erroGrupo) {
+      setFeedback({ tipo: 'erro', mensagem: erroGrupo });
+      return;
+    }
+
     const valorTratado = converterValor(form.valor);
 
     if (valorTratado === null || valorTratado < 0) {
@@ -605,6 +618,7 @@ export default function NovaReservaPage() {
           valor_total: valorTratado,
           status: form.status,
           observacoes: form.observacoes.trim() || null,
+          ...pacoteParaGravar(pacote),
         })
         .select('id')
         .single();
@@ -805,6 +819,12 @@ export default function NovaReservaPage() {
             style={{ margin: 0, padding: 0, border: 0, minWidth: 0 }}
           >
             <div className="eda-pg-grade-form">
+            <section className="eda-pg-secao eda-pg-largo">
+              <h2 className="text-2xl">Tipo de venda</h2>
+              <div className="mt-4">
+                <PacoteGrupoReservaEDA valor={pacote} onChange={setPacote} bloqueado={bloqueado} inputClass={inputClass} labelClass={labelClass} />
+              </div>
+            </section>
             <section className="eda-pg-secao">
               <h2 className="text-2xl" >
                 Atendimento e passeio
@@ -1105,4 +1125,4 @@ export default function NovaReservaPage() {
       </div>
     </PaginaEDA>
   );
-}
+}

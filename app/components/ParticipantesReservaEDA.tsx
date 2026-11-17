@@ -26,9 +26,12 @@ type ContextoReserva = {
 
 const ROTULO_NIVEL = { grave: 'Alerta grave', atencao: 'Atenção', ok: 'Sem alertas', pendente: 'Ficha pendente' } as const;
 
-export default function ParticipantesReservaEDA({ reservaId, bloqueado, pessoas }: {
-  reservaId?: string; bloqueado: boolean; pessoas: string;
+export default function ParticipantesReservaEDA({ reservaId, bloqueado, pessoas, grupo = false }: {
+  reservaId?: string; bloqueado: boolean; pessoas: string; grupo?: boolean;
 }) {
+  // EDA_PACOTE_GRUPO_V1: colar a lista do grupo de uma vez.
+  const [colando, setColando] = useState(false);
+  const [lote, setLote] = useState('');
   const [lista, setLista] = useState<ParticipanteEDA[] | null>(null);
   const [erro, setErro] = useState('');
   const [semPermissao, setSemPermissao] = useState(false);
@@ -91,6 +94,39 @@ export default function ParticipantesReservaEDA({ reservaId, bloqueado, pessoas 
     setSalvando(false);
     if (!perfil.user || error) { setErro(mensagemFichaEDA(error)); return; }
     setNome(''); setNascimento(''); setRelacao('');
+    void carregar();
+  }
+
+  function lerLote(txt: string) {
+    const hoje = new Date().toISOString().slice(0, 10);
+    return txt.split(/\r?\n/).map((l) => l.trim()).filter(Boolean).map((l) => {
+      const m = l.match(/(\d{1,2})[/.-](\d{1,2})[/.-](\d{4})|(\d{4})-(\d{2})-(\d{2})/);
+      let nasc: string | null = null;
+      if (m) {
+        const [d, mo, a] = m[1] ? [m[1], m[2], m[3]] : [m[6], m[5], m[4]];
+        const iso = `${a}-${String(mo).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        if (!Number.isNaN(Date.parse(iso)) && iso >= '1900-01-01' && iso <= hoje) nasc = iso;
+      }
+      const nomeL = (m ? l.replace(m[0], '') : l).replace(/[;,\t|–-]+\s*$/, '').replace(/^\s*\d+[.)-]\s*/, '').replace(/\s+/g, ' ').trim();
+      return { nome: nomeL.slice(0, 120), nasc };
+    }).filter((x) => x.nome.length >= 2);
+  }
+
+  async function importarLote() {
+    if (!reservaId) return;
+    const itens = lerLote(lote).slice(0, faltam);
+    if (!itens.length) { setErro('Cole um nome por linha (pode ter a data de nascimento: Maria Souza; 12/03/1985).'); return; }
+    setSalvando(true); setErro('');
+    const { data: dono } = await supabase.from('reservas').select('empresa_id').eq('id', reservaId).single();
+    const temTitular = !!lista?.some((p) => p.titular);
+    const { error } = await supabase.from('reserva_participantes').insert(itens.map((x, i) => ({
+      reserva_id: reservaId, empresa_id: dono?.empresa_id, nome: x.nome, data_nascimento: x.nasc,
+      titular: !temTitular && i === 0,
+      relacao: !temTitular && i === 0 ? 'titular' : grupo ? 'grupo' : null,
+    })));
+    setSalvando(false);
+    if (error) { setErro(mensagemFichaEDA(error)); return; }
+    setLote(''); setColando(false);
     void carregar();
   }
 
@@ -216,6 +252,26 @@ export default function ParticipantesReservaEDA({ reservaId, bloqueado, pessoas 
         </form>
       )}
 
+      {faltam > 0 && (
+        <div className="pr-lote">
+          {!colando ? (
+            <button type="button" className="eda-pg-bt" disabled={bloqueado} onClick={() => setColando(true)}>
+              {grupo ? 'Colar lista do grupo' : 'Colar vários nomes'}
+            </button>
+          ) : (
+            <>
+              <textarea rows={6} value={lote} onChange={(e) => setLote(e.target.value)} disabled={bloqueado || salvando}
+                placeholder={'Um turista por linha. A data de nascimento é opcional:\nMaria Souza; 12/03/1985\nJoão Pereira; 1979-08-30\nAna Lima'} aria-label="Lista de turistas" />
+              <span className="pr-nota">{lerLote(lote).length} nome(s) reconhecido(s){lerLote(lote).length > faltam ? ` — só entram ${faltam}, a quantidade da reserva` : ''}. Datas no formato dd/mm/aaaa ou aaaa-mm-dd.</span>
+              <div className="pr-lote-acoes">
+                <button type="button" className="eda-pg-bt eda-pg-bt-ouro" disabled={bloqueado || salvando || !lote.trim()} onClick={() => void importarLote()}>{salvando ? 'Incluindo…' : 'Incluir na reserva'}</button>
+                <button type="button" className="eda-pg-bt" onClick={() => { setColando(false); setLote(''); }}>Cancelar</button>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
       <div className="pr-link">
         <button type="button" className="eda-pg-bt" disabled={bloqueado} onClick={gerarLink}>
           {link ? 'Gerar novo link' : 'Gerar link para o turista preencher'}
@@ -251,6 +307,9 @@ export default function ParticipantesReservaEDA({ reservaId, bloqueado, pessoas 
         .pr-acoes { display: flex; gap: 6px; flex: none; }
         .pr-form { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--ern-borda); }
         .pr-novo, .pr-link { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; }
+        .pr-lote { display: grid; gap: 8px; margin-top: 14px; justify-items: start; }
+        .pr-lote textarea { width: 100%; min-height: 140px; padding: 12px; border-radius: 12px; border: 1px solid var(--p-borda); background: transparent; color: inherit; font: inherit; font-size: 14px; line-height: 1.5; resize: vertical; }
+        .pr-lote-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
         .pr-novo .pr-nota { flex-basis: 100%; }
         .pr-faixa { display: block; margin-top: 2px; font-size: 12px; color: var(--ern-secundario, #b4c8bb); }
         .pr-relacao, .pr-novo select { min-height: 36px; margin-top: 6px; padding: 0 10px; border-radius: 10px; border: 1px solid var(--ern-borda); background: transparent; color: inherit; font-size: 12px; }

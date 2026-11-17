@@ -1,5 +1,6 @@
 'use client';
 
+import { ORIGENS_GRUPO } from '@/lib/opcoesEDA';
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -469,7 +470,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
   // EDA_FASE_B_V1: pedido com consentimento (LGPD) — o visitante preenche os próprios dados.
   type PedidoIara = { passeio_slug: string | null; passeio_nome: string | null; adultos: number | null; criancas: number | null; periodo: string | null };
   const [pedidoIara, setPedidoIara] = useState<PedidoIara | null>(null);
-  const [formPedido, setFormPedido] = useState({ nome: '', whatsapp: '', email: '', adultos: '2', criancas: '0', periodo: '', municipio: '', mensagem: '', aceite: false });
+  const [formPedido, setFormPedido] = useState({ nome: '', whatsapp: '', email: '', adultos: '2', criancas: '0', periodo: '', municipio: '', mensagem: '', aceite: false, grupo: false, origem: '' });
   const [enviandoPedido, setEnviandoPedido] = useState(false);
   const [erroPedido, setErroPedido] = useState('');
   const tp = {
@@ -489,7 +490,8 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
         body: JSON.stringify({
           nome: formPedido.nome, whatsapp: formPedido.whatsapp || null, email: formPedido.email || null, idioma,
           periodo: formPedido.periodo || null, adultos: Number(formPedido.adultos) || 1, criancas: Number(formPedido.criancas) || 0,
-          mensagem: formPedido.mensagem || null, passeio_slug: pedidoIara.passeio_slug, municipio: pedidoIara.passeio_slug ? null : (formPedido.municipio || null), consentimento: true, sessao: sessaoIara.current || undefined,
+          mensagem: formPedido.mensagem || null, passeio_slug: pedidoIara.passeio_slug,
+          tipo: formPedido.grupo ? 'pacote_grupo' : 'individual', grupo_origem: formPedido.grupo ? (formPedido.origem || null) : null, municipio: pedidoIara.passeio_slug ? null : (formPedido.municipio || null), consentimento: true, sessao: sessaoIara.current || undefined,
         }),
       });
       const j = await r.json().catch(() => ({})) as { ok?: boolean; erro?: string; operadora?: boolean };
@@ -1165,6 +1167,17 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
                 <input required maxLength={80} autoComplete="name" placeholder={tp.nome} aria-label={tp.nome} value={formPedido.nome} onChange={e => setFormPedido(f => ({ ...f, nome: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid rgb(244 199 126 / 30%)', background: 'rgb(0 0 0 / 18%)', color: 'inherit', font: 'inherit', fontSize: 13.5 }} />
                 <input type="tel" maxLength={25} autoComplete="tel" placeholder={tp.zap} aria-label={tp.zap} value={formPedido.whatsapp} onChange={e => setFormPedido(f => ({ ...f, whatsapp: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid rgb(244 199 126 / 30%)', background: 'rgb(0 0 0 / 18%)', color: 'inherit', font: 'inherit', fontSize: 13.5 }} />
                 <input type="email" maxLength={254} autoComplete="email" placeholder={tp.email} aria-label={tp.email} value={formPedido.email} onChange={e => setFormPedido(f => ({ ...f, email: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid rgb(244 199 126 / 30%)', background: 'rgb(0 0 0 / 18%)', color: 'inherit', font: 'inherit', fontSize: 13.5 }} />
+                {/* EDA_PACOTE_GRUPO_V1: grupo fechado (pacote) — direto ou por agência. */}
+                <label style={{ display: 'flex', gap: 8, alignItems: 'center', fontSize: 12.5 }}>
+                  <input type="checkbox" checked={formPedido.grupo} onChange={e => setFormPedido(f => ({ ...f, grupo: e.target.checked, adultos: e.target.checked && Number(f.adultos) < 6 ? '10' : f.adultos }))} />
+                  {idioma === 'EN' ? 'We are a closed group (package)' : idioma === 'ES' ? 'Somos un grupo cerrado (paquete)' : 'Somos um grupo fechado (pacote para grupo)'}
+                </label>
+                {formPedido.grupo && (
+                  <select aria-label={idioma === 'EN' ? 'Where the group comes from' : idioma === 'ES' ? 'De dónde viene el grupo' : 'De onde vem o grupo'} value={formPedido.origem} onChange={e => setFormPedido(f => ({ ...f, origem: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid rgb(244 199 126 / 30%)', background: 'rgb(0 0 0 / 18%)', color: 'inherit', font: 'inherit', fontSize: 13.5 }}>
+                    <option value="">{idioma === 'EN' ? 'Where the group comes from' : idioma === 'ES' ? 'De dónde viene el grupo' : 'De onde vem o grupo'}</option>
+                    {ORIGENS_GRUPO.map(([v, r]) => <option key={v} value={v}>{r}</option>)}
+                  </select>
+                )}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   <label style={{ fontSize: 12 }}>{tp.adultos}<input type="number" min={1} max={99} value={formPedido.adultos} onChange={e => setFormPedido(f => ({ ...f, adultos: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid rgb(244 199 126 / 30%)', background: 'rgb(0 0 0 / 18%)', color: 'inherit', font: 'inherit', fontSize: 13.5 }} /></label>
                   <label style={{ fontSize: 12 }}>{tp.criancas}<input type="number" min={0} max={99} value={formPedido.criancas} onChange={e => setFormPedido(f => ({ ...f, criancas: e.target.value }))} style={{ width: '100%', padding: '8px 10px', borderRadius: 10, border: '1px solid rgb(244 199 126 / 30%)', background: 'rgb(0 0 0 / 18%)', color: 'inherit', font: 'inherit', fontSize: 13.5 }} /></label>
