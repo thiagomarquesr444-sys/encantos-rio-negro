@@ -20,7 +20,7 @@ export default function CartaoMagneticoEDA({
   className?: string;
   forca?: number;
   style?: CSSProperties;
-  as?: 'div' | 'section' | 'article' | 'header' | 'button';
+  as?: 'div' | 'section' | 'article' | 'header' | 'button' | 'li';
   type?: 'button';
 }) {
   const ref = useRef<HTMLElement | null>(null);
