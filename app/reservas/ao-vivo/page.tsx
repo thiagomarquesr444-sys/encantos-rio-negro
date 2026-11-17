@@ -6,7 +6,7 @@
 // quem viaja e por quantos dias. Atualiza sozinha a cada 30 segundos.
 
 import 'leaflet/dist/leaflet.css';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import type { Map as Mapa, LayerGroup } from 'leaflet';
 import { supabase } from '@/lib/supabase';
@@ -15,7 +15,7 @@ import BordoEDA from '@/app/components/BordoEDA';
 import { copiarEDA } from '@/lib/copiarEDA';
 import {
   alertasViagem, faseViagem, ROTULO_EVENTO, tempoRelativo, minutosDesde,
-  analisarRota, formatarDistancia, duracao,
+  analisarRota, formatarDistancia, duracao, distanciaM, rumoTrilha, destinoViagem, etapasViagem, agruparEventos,
   type ViagemAoVivoEDA, type AlertaOperacaoEDA, type RotaEDA, type ParadaRotaEDA,
 } from '@/lib/operacaoAoVivoEDA';
 
@@ -124,9 +124,81 @@ export default function OperacaoAoVivoPage() {
         .av-item-sel { background: var(--p-elev); outline: 1px solid var(--p-ouro); }
         .av-item-topo { display: flex; justify-content: space-between; gap: 8px; align-items: center; }
         .av-item small { font-size: 12px; color: var(--p-sec); }
-        .av-mapa { min-height: 460px; border-radius: 18px; overflow: hidden; border: 1px solid var(--p-borda); background: var(--p-painel); position: relative; }
-        .av-mapa > div { position: absolute; inset: 0; }
-        .av-pino { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 50%; border: 3px solid #fff; color: #07110e; font-size: 16px; box-shadow: 0 4px 14px rgba(0,0,0,.4); }
+        .av-mapa { min-height: 560px; border-radius: 20px; overflow: hidden; border: 1px solid var(--p-borda); background: #0b1512; position: relative; isolation: isolate; z-index: 0; box-shadow: 0 18px 50px rgb(0 0 0 / 22%); }
+        .av-mapa-tela { position: absolute; inset: 0; z-index: 0; }
+        .av-mapa-cheia { border-radius: 0; min-height: 100vh; }
+        .av-mapa .leaflet-control-zoom { border: 0; box-shadow: 0 6px 18px rgb(0 0 0 / 35%); border-radius: 12px; overflow: hidden; }
+        .av-mapa .leaflet-control-zoom a { background: rgb(7 17 14 / 88%); color: #f4ead6; border-color: rgb(255 255 255 / 12%); width: 34px; height: 34px; line-height: 34px; }
+        .av-mapa .leaflet-control-zoom a:hover { background: #e3a144; color: #07110e; }
+        .av-mapa .leaflet-control-attribution { background: rgb(7 17 14 / 70%); color: #c9c2ae; font-size: 10px; }
+        .av-mapa .leaflet-control-attribution a { color: #f2c86b; }
+        .av-dica { background: rgb(7 17 14 / 92%); color: #f4ead6; border: 1px solid rgb(227 161 68 / 55%); border-radius: 10px; font: 600 12px/1.35 var(--font-gestao, system-ui); padding: 5px 9px; box-shadow: 0 6px 18px rgb(0 0 0 / 35%); }
+        .av-dica::before { display: none; }
+        .av-barco { position: relative; display: grid; place-items: center; width: 100%; height: 100%; filter: drop-shadow(0 4px 8px rgb(0 0 0 / 55%)); }
+        .av-barco svg { position: relative; z-index: 1; transition: transform .6s ease; width: 78%; height: 78%; }
+        .av-barco-onda { position: absolute; inset: 0; border-radius: 50%; border: 2px solid var(--c); opacity: 0; }
+        @media (prefers-reduced-motion: no-preference) { .av-barco-onda { animation: av-onda 2.2s ease-out infinite; } }
+        @keyframes av-onda { 0% { transform: scale(.55); opacity: .9; } 100% { transform: scale(1.5); opacity: 0; } }
+        .av-barco-velho { filter: grayscale(.7) drop-shadow(0 3px 6px rgb(0 0 0 / 45%)); opacity: .7; }
+        .av-marco { display: grid; place-items: center; width: 100%; height: 100%; border-radius: 50%; border: 2px solid #fff; font-size: 11px; font-weight: 800; color: #07110e; box-shadow: 0 2px 10px rgba(0,0,0,.5); }
+        .av-marco-g { border-width: 3px; box-shadow: 0 0 0 4px rgb(227 161 68 / 30%), 0 4px 12px rgba(0,0,0,.5); }
+        .av-ponto-ini { display: block; width: 100%; height: 100%; border-radius: 50%; background: #5cc49a; border: 2px solid #07110e; }
+        .av-mapa-barra { position: absolute; z-index: 600; top: 12px; right: 12px; left: 12px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; align-items: center; pointer-events: none; }
+        .av-mapa-barra > * { pointer-events: auto; }
+        .av-mapa-barra button:hover { border-color: #e3a144; }
+        .av-seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 999px; background: rgb(7 17 14 / 86%); border: 1px solid rgb(255 255 255 / 18%); backdrop-filter: blur(8px); box-shadow: 0 4px 14px rgb(0 0 0 / 30%); }
+        .av-seg button { height: 28px; border: 0; background: transparent; box-shadow: none; padding: 0 12px; backdrop-filter: none; }
+        .av-mapa-barra button[aria-pressed="true"], .av-mapa-barra .av-ouro { background: #e3a144; color: #07110e; border-color: #e3a144; }
+        .av-hud { position: absolute; z-index: 600; left: 12px; bottom: 12px; width: min(330px, calc(100% - 70px)); padding: 14px 15px 12px; border-radius: 18px; background: rgb(7 17 14 / 90%); color: #f4ead6; border: 1px solid rgb(227 161 68 / 35%); border-left: 4px solid var(--c); backdrop-filter: blur(10px); box-shadow: 0 16px 40px rgb(0 0 0 / 45%); display: grid; gap: 9px; font-size: 12px; }
+        .av-hud-topo { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; }
+        .av-hud-topo b { font-size: 14px; }
+        .av-hud-fase { font-size: 10.5px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: #f2c86b; white-space: nowrap; }
+        .av-hud-sit { margin: 0; display: flex; align-items: center; gap: 7px; font-weight: 600; font-size: 13px; }
+        .av-hud-sit i { width: 9px; height: 9px; border-radius: 50%; flex: none; background: #93a79d; }
+        .av-hud-sit-ok i { background: #5cc49a; box-shadow: 0 0 0 4px rgb(92 196 154 / 22%); }
+        .av-hud-sit-at i { background: #f2c86b; box-shadow: 0 0 0 4px rgb(242 200 107 / 22%); }
+        .av-hud-sit-er { color: #ff8a8a; } .av-hud-sit-er i { background: #ef4444; box-shadow: 0 0 0 4px rgb(239 68 68 / 25%); }
+        .av-hud-prog { position: relative; height: 18px; border-radius: 999px; background: rgb(255 255 255 / 10%); overflow: hidden; }
+        .av-hud-prog b { display: block; height: 100%; background: linear-gradient(90deg, #5cc49a, #e3a144); border-radius: 999px; transition: width .6s ease; }
+        .av-hud-prog span { position: absolute; inset: 0; display: grid; place-items: center; font-size: 10.5px; font-weight: 800; color: #fff; text-shadow: 0 1px 2px rgb(0 0 0 / 70%); }
+        .av-hud-kv { margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; }
+        .av-hud-kv div { display: grid; gap: 1px; } .av-hud-kv dt { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: #93a79d; } .av-hud-kv dd { margin: 0; font-weight: 700; font-size: 13px; }
+        .av-hud-kv em { font-style: normal; color: #ff8a8a; font-size: 11px; }
+        .av-hud-velho { color: #f2c86b; }
+        .av-hud-leg { display: flex; flex-wrap: wrap; gap: 4px 12px; padding-top: 8px; border-top: 1px solid rgb(255 255 255 / 10%); font-size: 10.5px; color: #c9c2ae; }
+        .av-hud-leg span { display: inline-flex; align-items: center; gap: 5px; } .av-hud-leg i { display: inline-block; width: 14px; height: 4px; border-radius: 3px; }
+        .av-hud-leg .av-leg-tr { background: repeating-linear-gradient(90deg, #f2c86b 0 4px, transparent 4px 7px); }
+        .av-editor { position: absolute; z-index: 650; left: 12px; top: 58px; width: min(340px, calc(100% - 24px)); max-height: calc(100% - 70px); overflow: auto; padding: 14px; border-radius: 18px; background: rgb(7 17 14 / 93%); color: #f4ead6; border: 1px solid rgb(227 161 68 / 55%); display: grid; gap: 10px; font-size: 12px; backdrop-filter: blur(10px); box-shadow: 0 18px 44px rgb(0 0 0 / 50%); }
+        .av-ed-topo { display: flex; justify-content: space-between; gap: 8px; align-items: center; } .av-ed-topo b { font-size: 13.5px; }
+        .av-ed-modo { font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; padding: 4px 8px; border-radius: 999px; background: rgb(92 196 154 / 18%); color: #5cc49a; white-space: nowrap; }
+        .av-ed-modo-p { background: rgb(140 195 242 / 18%); color: #8cc3f2; }
+        .av-ed-dica { margin: 0; color: #c9c2ae; }
+        .av-ed-num { display: flex; gap: 14px; padding: 8px 10px; border-radius: 12px; background: rgb(255 255 255 / 6%); } .av-ed-num b { color: #f2c86b; font-size: 13px; }
+        .av-ed-vel { display: flex; gap: 8px; align-items: center; }
+        .av-editor input { font: inherit; font-size: 12px; height: 32px; padding: 0 9px; border-radius: 9px; border: 1px solid rgb(255 255 255 / 20%); background: rgb(255 255 255 / 6%); color: inherit; min-width: 0; }
+        .av-ed-vel input { width: 70px; }
+        .av-editor .av-par { display: grid; grid-template-columns: 1fr 64px 32px; gap: 6px; align-items: center; }
+        .av-editor .av-par button, .av-editor .av-ed-acoes button { font: inherit; font-size: 12px; font-weight: 600; min-height: 32px; padding: 0 12px; border-radius: 999px; border: 1px solid rgb(255 255 255 / 22%); background: transparent; color: inherit; cursor: pointer; }
+        .av-editor button:disabled { opacity: .45; cursor: default; }
+        .av-editor .av-ed-acoes { display: flex; flex-wrap: wrap; gap: 6px; } .av-editor .av-ed-acoes:empty { display: none; }
+        .av-editor .av-ed-fim { padding-top: 4px; border-top: 1px solid rgb(255 255 255 / 10%); }
+        .av-editor .av-ed-acoes .av-ouro { background: #e3a144; color: #07110e; border-color: #e3a144; }
+        .av-ed-nota { opacity: .72; } .av-ed-erro { color: #f2c86b; font-weight: 600; }
+        @media (max-width: 860px) {
+          .av-mapa { min-height: 520px; }
+          .av-mapa-barra { justify-content: flex-start; } .av-mapa-barra button { height: 32px; font-size: 11.5px; padding: 0 10px; }
+          .av-hud { left: 8px; right: 52px; bottom: 8px; width: auto; padding: 11px 12px; }
+          .av-editor { left: 8px; right: 8px; top: auto; bottom: 8px; width: auto; max-height: 62%; }
+        }
+        .av-etapas { grid-column: 1 / -1; margin: 0; display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; padding: 14px 16px; border-radius: 18px; border: 1px solid var(--p-borda); background: var(--p-painel); }
+        .av-etapa { position: relative; display: grid; justify-items: center; gap: 4px; text-align: center; font-size: 12px; color: var(--p-sec); }
+        .av-etapa::before { content: ''; position: absolute; top: 10px; left: -50%; width: 100%; height: 3px; background: var(--p-borda); z-index: 0; }
+        .av-etapa:first-child::before { display: none; }
+        .av-etapa i { position: relative; z-index: 1; width: 22px; height: 22px; border-radius: 50%; border: 3px solid var(--p-borda); background: var(--p-painel); }
+        .av-etapa-feita { color: var(--p-texto); } .av-etapa-feita i { background: #5cc49a; border-color: #5cc49a; } .av-etapa-feita::before { background: #5cc49a; }
+        .av-etapa-atual i { border-color: #e3a144; box-shadow: 0 0 0 5px rgb(227 161 68 / 22%); } .av-etapa-atual { color: var(--p-texto); }
+        .av-etapa b { font-size: 12.5px; } .av-etapa small { font-size: 11px; }
+        .av-vezes { display: inline-block; margin-left: 6px; padding: 1px 7px; border-radius: 999px; font-size: 10.5px; background: var(--p-suave); color: var(--p-sec); }
         .av-det { margin-top: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
         .av-card { padding: 16px; border-radius: 18px; border: 1px solid var(--p-borda); background: var(--p-painel); display: grid; gap: 10px; align-content: start; }
         .av-card h2 { font-size: 15px; } .av-card p { margin: 0; }
@@ -142,17 +214,7 @@ export default function OperacaoAoVivoPage() {
         .av-barra b { display: block; height: 100%; }
         .av-acoes { display: flex; flex-wrap: wrap; gap: 8px; }
         .av-largo { grid-column: 1 / -1; }
-        .av-mapa-barra { position: absolute; z-index: 500; top: 10px; right: 10px; display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; max-width: calc(100% - 70px); }
         .av-mapa-barra button { font: inherit; font-size: 12px; font-weight: 600; padding: 7px 11px; border-radius: 999px; border: 1px solid rgba(255,255,255,.25); background: rgba(7,17,14,.82); color: #f4ead6; cursor: pointer; backdrop-filter: blur(6px); }
-        .av-mapa-barra button[aria-pressed="true"], .av-mapa-barra .av-ouro { background: #e3a144; color: #07110e; border-color: #e3a144; }
-        .av-editor { position: absolute; z-index: 500; left: 10px; bottom: 10px; width: min(320px, calc(100% - 20px)); max-height: 60%; overflow: auto; padding: 12px; border-radius: 14px; background: rgba(7,17,14,.9); color: #f4ead6; border: 1px solid rgba(227,161,68,.5); display: grid; gap: 8px; font-size: 12px; backdrop-filter: blur(8px); }
-        .av-editor b { font-size: 13px; }
-        .av-editor input { font: inherit; font-size: 12px; padding: 5px 8px; border-radius: 8px; border: 1px solid rgba(255,255,255,.2); background: rgba(255,255,255,.06); color: inherit; min-width: 0; }
-        .av-editor .av-par { display: grid; grid-template-columns: 1fr 64px auto; gap: 6px; align-items: center; }
-        .av-editor .av-par button, .av-editor .av-ed-acoes button { font: inherit; font-size: 12px; padding: 6px 10px; border-radius: 999px; border: 1px solid rgba(255,255,255,.25); background: transparent; color: inherit; cursor: pointer; }
-        .av-editor .av-ed-acoes { display: flex; flex-wrap: wrap; gap: 6px; }
-        .av-editor .av-ed-acoes .av-ouro { background: #e3a144; color: #07110e; border-color: #e3a144; }
-        .av-marco { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; border: 2px solid #fff; font-size: 11px; font-weight: 700; color: #07110e; box-shadow: 0 2px 8px rgba(0,0,0,.45); }
         .av-rota-info { display: grid; gap: 6px; }
         .av-rota-prog { height: 8px; border-radius: 8px; background: var(--p-suave); overflow: hidden; }
         .av-rota-prog b { display: block; height: 100%; background: #e3a144; }
@@ -161,7 +223,25 @@ export default function OperacaoAoVivoPage() {
   );
 }
 
+// EDA_OPERACAO_AO_VIVO_V2: mapa de comando — barco com rumo, percurso planejado x feito,
+// destino sempre visível, painel de situação (HUD), tela cheia e enquadramentos rápidos.
+// O mapa fica isolado (isolation) para nunca cobrir a EDA nem menus da gestão.
+function barcoHTML(cor: string, rumo: number | null, velho: boolean, sel: boolean) {
+  return `<span class="av-barco${velho ? ' av-barco-velho' : ''}${sel ? ' av-barco-sel' : ''}" style="--c:${cor}">`
+    + (velho ? '' : '<i class="av-barco-onda"></i>')
+    + `<svg viewBox="0 0 40 40" width="40" height="40" aria-hidden="true" style="transform:rotate(${rumo ?? 0}deg)">`
+    + `<path d="M20 3C26.5 9.5 28.5 17.5 28.5 25.5V33Q20 37.5 11.5 33V25.5C11.5 17.5 13.5 9.5 20 3Z" fill="${cor}" stroke="#fff" stroke-width="2.4" stroke-linejoin="round"/>`
+    + `<path d="M15.5 25.5H24.5" stroke="#07110e" stroke-width="2" stroke-linecap="round" opacity=".55"/>`
+    + (rumo === null ? '' : '<path d="M20 9V19" stroke="#07110e" stroke-width="2.2" stroke-linecap="round" opacity=".7"/>')
+    + '</svg></span>';
+}
+const marcoHTML = (cor: string, texto: string, grande = false) =>
+  `<span class="av-marco${grande ? ' av-marco-g' : ''}" style="background:${cor}">${texto}</span>`;
+const DESTINO_SVG = '<svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M6 21V4M6 4h11l-2.5 4L17 12H6" fill="none" stroke="#07110e" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const esc = (t: string) => t.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c] as string));
+
 function MapaAoVivo({ lista, selecionada, aoSelecionar, aoSalvarRota }: { lista: { v: ViagemAoVivoEDA; tom: TomEDA }[]; selecionada: string | null; aoSelecionar: (c: string) => void; aoSalvarRota: () => Promise<void> | void }) {
+  const moldura = useRef<HTMLDivElement | null>(null);
   const caixa = useRef<HTMLDivElement | null>(null);
   const mapa = useRef<Mapa | null>(null);
   const camada = useRef<LayerGroup | null>(null);
@@ -169,20 +249,24 @@ function MapaAoVivo({ lista, selecionada, aoSelecionar, aoSalvarRota }: { lista:
   const bases = useRef<{ satelite: import('leaflet').TileLayer; rotulos: import('leaflet').TileLayer; ruas: import('leaflet').TileLayer } | null>(null);
   const [pronto, setPronto] = useState(false);
   const [satelite, setSatelite] = useState(true);
+  const [cheia, setCheia] = useState(false);
   const enquadrado = useRef('');
   const centro = useRef('');
   // EDA_ROTA_PASSEIO_V1: editor do percurso (cliques no mapa marcam o caminho e as paradas).
   const [editando, setEditando] = useState<null | { pontos: [number, number][]; paradas: ParadaRotaEDA[]; modo: 'caminho' | 'parada'; velocidade: number }>(null);
   const [salvando, setSalvando] = useState(false);
   const [avisoRota, setAvisoRota] = useState('');
-  const sel = lista.find((x) => x.v.chave === selecionada)?.v ?? null;
+  const selItem = lista.find((x) => x.v.chave === selecionada) ?? null;
+  const sel = selItem?.v ?? null;
+  const fimSel = sel ? destinoViagem(sel) : null;
 
   useEffect(() => {
     let fim = false;
     void import('leaflet').then((lib) => {
       if (fim || !caixa.current || mapa.current) return;
       L.current = lib;
-      const m = lib.map(caixa.current, { zoomControl: true, minZoom: 4, maxZoom: 18 }).setView(BARCELOS, 8);
+      const m = lib.map(caixa.current, { zoomControl: false, minZoom: 4, maxZoom: 18 }).setView(BARCELOS, 8);
+      lib.control.zoom({ position: 'bottomright', zoomInTitle: 'Aproximar', zoomOutTitle: 'Afastar' }).addTo(m);
       const satelite = lib.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
         attribution: 'Imagens &copy; Esri, Maxar, Earthstar Geographics', maxZoom: 18,
       });
@@ -198,6 +282,17 @@ function MapaAoVivo({ lista, selecionada, aoSelecionar, aoSalvarRota }: { lista:
     });
     return () => { fim = true; mapa.current?.remove(); mapa.current = null; };
   }, []);
+
+  // Mantém o mapa no tamanho certo (tela cheia, giro do celular, sidebar).
+  useEffect(() => {
+    const el = moldura.current;
+    if (!pronto || !el) return;
+    const ro = new ResizeObserver(() => mapa.current?.invalidateSize());
+    ro.observe(el);
+    const fs = () => { setCheia(document.fullscreenElement === el); window.setTimeout(() => mapa.current?.invalidateSize(), 120); };
+    document.addEventListener('fullscreenchange', fs);
+    return () => { ro.disconnect(); document.removeEventListener('fullscreenchange', fs); };
+  }, [pronto]);
 
   useEffect(() => {
     const m = mapa.current, b = bases.current;
@@ -227,64 +322,98 @@ function MapaAoVivo({ lista, selecionada, aoSelecionar, aoSalvarRota }: { lista:
     return () => { m.off('click', clique); m.getContainer().style.cursor = ''; };
   }, [pronto, editando]);
 
+  const pontosSel = useCallback((): [number, number][] => {
+    if (!sel) return [];
+    const pts: [number, number][] = [];
+    if (sel.rota?.pontos?.length) pts.push(...sel.rota.pontos);
+    if (sel.trilha.length) pts.push(...sel.trilha);
+    if (fimSel) pts.push([fimSel.lat, fimSel.lng]);
+    if (sel.posicao) pts.push([sel.posicao.lat, sel.posicao.lng]);
+    return pts;
+  }, [sel, fimSel]);
+
+  const verTudo = useCallback(() => {
+    const lib = L.current, m = mapa.current, pts = pontosSel();
+    if (!lib || !m || !pts.length) return;
+    if (pts.length > 1) m.fitBounds(lib.latLngBounds(pts), { padding: [60, 60], maxZoom: 15 }); else m.setView(pts[0], 14);
+  }, [pontosSel]);
+
   useEffect(() => {
     const lib = L.current, m = mapa.current, c = camada.current;
     if (!pronto || !lib || !m || !c) return;
     c.clearLayers();
-    const pts: [number, number][] = [];
-    const marco = (p: [number, number], cor: string, texto: string, titulo: string) => {
-      const ic = lib.divIcon({ className: '', iconSize: [22, 22], iconAnchor: [11, 11], html: `<span class="av-marco" style="background:${cor}">${texto}</span>` });
-      lib.marker(p, { icon: ic, title: titulo, interactive: true }).bindTooltip(titulo.replace(/</g, '&lt;')).addTo(c);
+    const marco = (p: [number, number], html: string, tam: number, titulo: string, fixo = false) => {
+      const ic = lib.divIcon({ className: '', iconSize: [tam, tam], iconAnchor: [tam / 2, tam / 2], html });
+      const mk = lib.marker(p, { icon: ic, title: titulo, keyboard: false }).addTo(c);
+      mk.bindTooltip(esc(titulo), fixo ? { permanent: true, direction: 'top', offset: [0, -tam / 2], className: 'av-dica' } : { className: 'av-dica' });
     };
     for (const { v, tom } of lista) {
       const ehSel = v.chave === selecionada;
-      // Percurso planejado (tracejado): completo na viagem escolhida, discreto nas demais.
+      const fim = destinoViagem(v);
+      // Percurso planejado (tracejado dourado com contorno): completo na viagem escolhida, discreto nas demais.
       const rota = ehSel && editando ? { pontos: editando.pontos, paradas: editando.paradas } : v.rota;
       if (rota && rota.pontos.length > 1) {
-        lib.polyline(rota.pontos, { color: '#000', weight: ehSel ? 7 : 4, opacity: ehSel ? 0.35 : 0.15 }).addTo(c);
-        lib.polyline(rota.pontos, { color: '#f2c86b', weight: ehSel ? 4 : 2, opacity: ehSel ? 0.95 : 0.45, dashArray: '8 8' }).addTo(c);
-        if (ehSel) pts.push(...rota.pontos);
+        lib.polyline(rota.pontos, { color: '#07110e', weight: ehSel ? 8 : 4, opacity: ehSel ? 0.45 : 0.15, interactive: false }).addTo(c);
+        lib.polyline(rota.pontos, { color: '#f2c86b', weight: ehSel ? 4 : 2, opacity: ehSel ? 1 : 0.45, dashArray: '10 9', interactive: false }).addTo(c);
       }
-      if (ehSel && rota) {
-        if (rota.pontos.length) marco(rota.pontos[0], '#5cc49a', 'S', 'Saída / embarque');
-        if (rota.pontos.length > 1) marco(rota.pontos[rota.pontos.length - 1], '#e3a144', 'D', `Destino${v.destino?.nome ? `: ${v.destino.nome}` : ''}`);
-        (rota.paradas ?? []).forEach((pa, i) => marco([pa.lat, pa.lng], '#8cc3f2', String(i + 1), `${pa.nome}${pa.minutos ? ` · ${pa.minutos} min` : ''}`));
+      // Caminho já feito (sólido verde com contorno).
+      if (ehSel && v.trilha.length > 1) {
+        lib.polyline(v.trilha, { color: '#07110e', weight: 8, opacity: 0.5, interactive: false }).addTo(c);
+        lib.polyline(v.trilha, { color: '#5cc49a', weight: 4.5, opacity: 1, interactive: false }).addTo(c);
+        marco(v.trilha[0], '<span class="av-ponto-ini"></span>', 12, `Primeira posição registrada`);
       }
-      if (ehSel && v.destino && !(rota && rota.pontos.length > 1)) { marco([v.destino.lat, v.destino.lng], '#e3a144', 'D', `Destino: ${v.destino.nome ?? ''}`); pts.push([v.destino.lat, v.destino.lng]); }
-      // Caminho feito (sólido).
-      if (ehSel && v.trilha.length > 1) lib.polyline(v.trilha, { color: '#5cc49a', weight: 4, opacity: 0.95 }).addTo(c);
+      if (ehSel) {
+        if (rota && rota.pontos.length) marco(rota.pontos[0], marcoHTML('#5cc49a', 'S'), 24, `Saída${v.embarque ? `: ${v.embarque}` : ''}`);
+        (rota?.paradas ?? []).forEach((pa, i) => marco([pa.lat, pa.lng], marcoHTML('#8cc3f2', String(i + 1)), 24, `${pa.nome}${pa.minutos ? ` · ${pa.minutos} min previstos` : ''}`));
+        if (editando && rota && rota.pontos.length > 1) marco(rota.pontos[rota.pontos.length - 1], marcoHTML('#e3a144', '•'), 24, 'Último ponto marcado');
+        // Destino sempre visível, com nome fixo e raio de chegada.
+        if (fim) {
+          lib.circle([fim.lat, fim.lng], { radius: 500, color: '#e3a144', weight: 1.5, opacity: 0.8, fillColor: '#e3a144', fillOpacity: 0.08, dashArray: '4 6', interactive: false }).addTo(c);
+          marco([fim.lat, fim.lng], marcoHTML('#e3a144', DESTINO_SVG, true), 30, `Destino${fim.nome ? `: ${fim.nome}` : ''}`, !editando);
+          // Sem percurso traçado: linha reta tênue do barco ao destino (direção e distância).
+          if (v.posicao && !(v.rota && v.rota.pontos.length > 1) && !editando) {
+            lib.polyline([[v.posicao.lat, v.posicao.lng], [fim.lat, fim.lng]], { color: '#ffffff', weight: 2, opacity: 0.75, dashArray: '2 8', interactive: false }).addTo(c);
+          }
+        }
+      }
       if (!v.posicao) continue;
       const p: [number, number] = [v.posicao.lat, v.posicao.lng];
-      pts.push(p);
       const velho = (minutosDesde(v.posicao.em) ?? 0) > 30;
-      const icone = lib.divIcon({
-        className: '', iconSize: [34, 34], iconAnchor: [17, 17],
-        html: `<span class="av-pino" style="background:${COR[tom as keyof typeof COR] ?? '#5cc49a'};opacity:${velho ? 0.6 : 1};${ehSel ? 'transform:scale(1.2)' : ''}">⛵</span>`,
-      });
-      const mk = lib.marker(p, { icon: icone, title: v.passeio ?? 'Viagem' }).addTo(c);
-      mk.bindTooltip(`${(v.passeio ?? 'Viagem').replace(/</g, '&lt;')} · ${tempoRelativo(v.posicao.em)}`);
+      const tam = ehSel ? 46 : 36;
+      const icone = lib.divIcon({ className: '', iconSize: [tam, tam], iconAnchor: [tam / 2, tam / 2], html: barcoHTML(COR[tom as keyof typeof COR] ?? '#5cc49a', rumoTrilha(v.trilha), velho, ehSel) });
+      const mk = lib.marker(p, { icon: icone, title: v.passeio ?? 'Viagem', zIndexOffset: ehSel ? 1000 : 500 }).addTo(c);
+      mk.bindTooltip(`${esc(v.passeio ?? 'Viagem')}${v.embarcacao ? ` · ${esc(v.embarcacao.nome)}` : ''} · ${tempoRelativo(v.posicao.em)}`, { className: 'av-dica', direction: 'top', offset: [0, -tam / 2] });
       mk.on('click', () => { if (!editando) aoSelecionar(v.chave); });
-      if (v.posicao.precisao && v.posicao.precisao > 50 && ehSel) lib.circle(p, { radius: v.posicao.precisao, color: '#8cc3f2', weight: 1, fillOpacity: 0.08 }).addTo(c);
+      if (v.posicao.precisao && v.posicao.precisao > 50 && ehSel) lib.circle(p, { radius: v.posicao.precisao, color: '#8cc3f2', weight: 1, fillOpacity: 0.08, interactive: false }).addTo(c);
     }
     if (editando) return;
     // Enquadra o percurso completo ao trocar de viagem; depois só acompanha posição nova.
     const s = sel?.posicao;
     const marca = s ? `${selecionada}|${s.em}` : '';
-    if (selecionada && enquadrado.current !== selecionada && pts.length) {
+    if (selecionada && enquadrado.current !== selecionada) {
       enquadrado.current = selecionada; centro.current = marca;
-      if (pts.length > 1) m.fitBounds(lib.latLngBounds(pts), { padding: [50, 50], maxZoom: 14 }); else m.setView(pts[0], 13);
+      verTudo();
     } else if (s && marca !== centro.current) {
       centro.current = marca;
-      if (!m.getBounds().contains([s.lat, s.lng])) m.panTo([s.lat, s.lng], { animate: true });
+      if (!m.getBounds().pad(-0.1).contains([s.lat, s.lng])) m.panTo([s.lat, s.lng], { animate: true });
     }
-  }, [pronto, lista, selecionada, aoSelecionar, editando, sel]);
+  }, [pronto, lista, selecionada, aoSelecionar, editando, sel, verTudo]);
+
+  const irPara = (lat: number, lng: number, zoom: number) => { const m = mapa.current; if (m) m.setView([lat, lng], Math.max(m.getZoom(), zoom), { animate: true }); };
+  const irAoBarco = () => { if (sel?.posicao) irPara(sel.posicao.lat, sel.posicao.lng, 15); };
+  const irAoDestino = () => { if (fimSel) irPara(fimSel.lat, fimSel.lng, 14); };
+  const telaCheia = () => {
+    const el = moldura.current;
+    if (!el) return;
+    if (document.fullscreenElement) void document.exitFullscreen().catch(() => undefined);
+    else void el.requestFullscreen?.().catch(() => undefined);
+  };
 
   const comecar = () => {
     if (!sel) return;
     setAvisoRota('');
     const r = sel.rota;
-    const inicio: [number, number][] = r?.pontos?.length ? r.pontos : [];
-    setEditando({ pontos: inicio, paradas: r?.paradas ?? [], modo: 'caminho', velocidade: r?.velocidade_kmh ?? 20 });
+    setEditando({ pontos: r?.pontos?.length ? r.pontos : [], paradas: r?.paradas ?? [], modo: 'caminho', velocidade: r?.velocidade_kmh ?? 20 });
   };
   const salvar = async () => {
     if (!sel?.passeio_id || !editando) return;
@@ -303,24 +432,51 @@ function MapaAoVivo({ lista, selecionada, aoSelecionar, aoSalvarRota }: { lista:
     await aoSalvarRota();
   };
   const total = editando ? editando.pontos.reduce((t, p, i, a) => i ? t + distancia(a[i - 1], p) : 0, 0) : 0;
+  const ultimoEd = editando?.pontos[editando.pontos.length - 1];
+  const fimLigado = !!(editando && fimSel && ultimoEd && distancia(ultimoEd, [fimSel.lat, fimSel.lng]) < 30);
 
   return (
-    <div className="av-mapa" aria-label="Mapa das embarcações">
-      <div ref={caixa} />
-      <div className="av-mapa-barra">
-        <button type="button" aria-pressed={satelite} onClick={() => setSatelite(true)}>Satélite</button>
-        <button type="button" aria-pressed={!satelite} onClick={() => setSatelite(false)}>Mapa</button>
+    <div ref={moldura} className={`av-mapa${cheia ? ' av-mapa-cheia' : ''}`} aria-label="Mapa das embarcações">
+      <div ref={caixa} className="av-mapa-tela" />
+
+      <div className="av-mapa-barra" role="toolbar" aria-label="Controles do mapa">
+        <span className="av-seg" role="group" aria-label="Tipo de mapa">
+          <button type="button" aria-pressed={satelite} onClick={() => setSatelite(true)}>Satélite</button>
+          <button type="button" aria-pressed={!satelite} onClick={() => setSatelite(false)}>Mapa</button>
+        </span>
+        {!editando && sel?.posicao && <button type="button" onClick={irAoBarco} title="Centralizar na embarcação">Embarcação</button>}
+        {!editando && fimSel && <button type="button" onClick={irAoDestino} title="Mostrar o destino">Destino</button>}
+        {!editando && sel && <button type="button" onClick={verTudo} title="Ver percurso completo">Percurso completo</button>}
+        <button type="button" onClick={telaCheia} aria-pressed={cheia} title={cheia ? 'Sair da tela cheia' : 'Tela cheia'}>{cheia ? 'Sair da tela cheia' : 'Tela cheia'}</button>
         {sel?.passeio_id && !editando && (
           <button type="button" className="av-ouro" onClick={comecar}>{sel.rota?.pontos?.length ? 'Editar percurso' : 'Traçar percurso'}</button>
         )}
       </div>
+
+      {sel && !editando && <HudViagem v={sel} tom={selItem?.tom ?? 'ok'} />}
+
       {editando && (
         <div className="av-editor" role="dialog" aria-label="Traçar percurso do passeio">
-          <b>Percurso de {sel?.passeio || 'passeio'}</b>
-          <span>{editando.modo === 'parada' ? 'Toque no mapa onde fica a parada prevista.' : 'Toque no mapa seguindo o rio, da saída até o destino.'}</span>
-          <span>{editando.pontos.length} ponto(s) · {formatarDistancia(total)}{editando.pontos.length > 1 ? ` · cerca de ${duracao(Math.round((total / 1000 / Math.max(3, editando.velocidade)) * 60))} de navegação` : ''}</span>
-          <label style={{ display: 'flex', gap: 6, alignItems: 'center' }}>Velocidade média
-            <input type="number" min={3} max={120} value={editando.velocidade} onChange={(e) => setEditando({ ...editando, velocidade: Number(e.target.value) })} style={{ width: 64 }} /> km/h
+          <div className="av-ed-topo">
+            <b>Percurso · {sel?.passeio || 'passeio'}</b>
+            <span className={`av-ed-modo${editando.modo === 'parada' ? ' av-ed-modo-p' : ''}`}>{editando.modo === 'parada' ? 'Marcando parada' : 'Marcando caminho'}</span>
+          </div>
+          <p className="av-ed-dica">{editando.modo === 'parada' ? 'Toque no mapa onde fica a parada prevista.' : editando.pontos.length ? 'Siga o rio tocando no mapa, até o destino.' : 'Primeiro toque: ponto de saída (embarque).'}</p>
+          <div className="av-ed-num">
+            <span><b>{editando.pontos.length}</b> pontos</span>
+            <span><b>{formatarDistancia(total)}</b></span>
+            {editando.pontos.length > 1 && <span>≈ <b>{duracao(Math.round((total / 1000 / Math.max(3, editando.velocidade)) * 60))}</b></span>}
+          </div>
+          <div className="av-ed-acoes">
+            {!editando.pontos.length && sel?.posicao && (
+              <button type="button" onClick={() => setEditando({ ...editando, pontos: [[sel.posicao!.lat, sel.posicao!.lng]] })}>Sair da posição da embarcação</button>
+            )}
+            {fimSel && editando.pontos.length > 0 && !fimLigado && (
+              <button type="button" onClick={() => setEditando({ ...editando, pontos: [...editando.pontos, [fimSel.lat, fimSel.lng]] })}>Ligar ao destino{fimSel.nome ? ` (${fimSel.nome})` : ''}</button>
+            )}
+          </div>
+          <label className="av-ed-vel">Velocidade média
+            <input type="number" min={3} max={120} value={editando.velocidade} onChange={(e) => setEditando({ ...editando, velocidade: Number(e.target.value) })} /> km/h
           </label>
           {editando.paradas.map((p, i) => (
             <div key={i} className="av-par">
@@ -329,22 +485,71 @@ function MapaAoVivo({ lista, selecionada, aoSelecionar, aoSalvarRota }: { lista:
               <button type="button" aria-label={`Remover parada ${i + 1}`} onClick={() => setEditando({ ...editando, paradas: editando.paradas.filter((_, j) => j !== i) })}>×</button>
             </div>
           ))}
-          {editando.paradas.length > 0 && <small style={{ opacity: 0.75 }}>Nome da parada e minutos previstos (sem alerta de parada nesses pontos).</small>}
+          {editando.paradas.length > 0 && <small className="av-ed-nota">Nome e minutos previstos de cada parada (a EDA não alerta parada nesses pontos dentro do tempo).</small>}
           <div className="av-ed-acoes">
             <button type="button" onClick={() => setEditando({ ...editando, pontos: editando.pontos.slice(0, -1) })} disabled={!editando.pontos.length}>Desfazer ponto</button>
             <button type="button" onClick={() => setEditando({ ...editando, modo: editando.modo === 'parada' ? 'caminho' : 'parada' })}>{editando.modo === 'parada' ? 'Voltar ao caminho' : 'Marcar parada'}</button>
-            <button type="button" onClick={() => setEditando({ ...editando, pontos: [], paradas: [] })}>Limpar</button>
+            <button type="button" onClick={() => setEditando({ ...editando, pontos: [], paradas: [] })} disabled={!editando.pontos.length && !editando.paradas.length}>Limpar</button>
           </div>
-          {avisoRota && <span role="alert" style={{ color: '#f2c86b' }}>{avisoRota}</span>}
-          <div className="av-ed-acoes">
+          {avisoRota && <span role="alert" className="av-ed-erro">{avisoRota}</span>}
+          <div className="av-ed-acoes av-ed-fim">
             <button type="button" className="av-ouro" onClick={() => void salvar()} disabled={salvando}>{salvando ? 'Salvando…' : 'Salvar percurso'}</button>
             <button type="button" onClick={() => { setEditando(null); setAvisoRota(''); }}>Cancelar</button>
           </div>
-          <small style={{ opacity: 0.75 }}>O percurso fica salvo no passeio e vale para todas as saídas dele.</small>
+          <small className="av-ed-nota">O percurso fica salvo no passeio e vale para todas as saídas dele.</small>
         </div>
       )}
     </div>
   );
+}
+
+// Painel de situação sobre o mapa: onde está, quanto falta, quando chega.
+function HudViagem({ v, tom }: { v: ViagemAoVivoEDA; tom: TomEDA }) {
+  const r = analisarRota(v);
+  const fim = destinoViagem(v);
+  const fase = faseViagem(v);
+  const retaM = v.posicao && fim ? distanciaM(v.posicao, fim) : null;
+  const pct = r.percorridoM !== null && r.totalM ? Math.min(100, Math.round((r.percorridoM / r.totalM) * 100)) : null;
+  const velho = (minutosDesde(v.posicao?.em) ?? 9999) > 30;
+  const sit = situacaoRota(v, r);
+  return (
+    <div className="av-hud" style={{ '--c': COR[tom as keyof typeof COR] ?? '#5cc49a' } as CSSProperties}>
+      <div className="av-hud-topo">
+        <b>{v.passeio || 'Viagem'}</b>
+        <span className="av-hud-fase">{fase.rotulo}</span>
+      </div>
+      <p className={`av-hud-sit av-hud-sit-${sit.tom}`}><i aria-hidden="true" />{sit.texto}</p>
+      {pct !== null && (
+        <div className="av-hud-prog" aria-label={`${pct}% do percurso`}>
+          <b style={{ width: `${pct}%` }} /><span>{pct}%</span>
+        </div>
+      )}
+      <dl className="av-hud-kv">
+        <div><dt>Falta</dt><dd>{r.restanteM !== null ? formatarDistancia(r.restanteM) : retaM !== null ? `${formatarDistancia(retaM)} em linha reta` : '—'}</dd></div>
+        <div><dt>Chegada</dt><dd>{r.chegadaPrevista ? hora(r.chegadaPrevista).split(', ').pop() : '—'}{r.atrasoMin ? <em> +{duracao(r.atrasoMin)}</em> : null}</dd></div>
+        <div><dt>Velocidade</dt><dd>{v.posicao?.velocidade != null ? `${v.posicao.velocidade.toFixed(1).replace('.', ',')} km/h` : '—'}</dd></div>
+        <div><dt>Sinal</dt><dd className={velho ? 'av-hud-velho' : undefined}>{v.posicao ? tempoRelativo(v.posicao.em) : 'sem posição'}</dd></div>
+      </dl>
+      <div className="av-hud-leg" aria-label="Legenda">
+        <span><i style={{ background: '#5cc49a' }} />Feito</span>
+        <span><i className="av-leg-tr" />Planejado</span>
+        <span><i style={{ background: '#e3a144', borderRadius: '50%' }} />Destino</span>
+        <span><i style={{ background: '#8cc3f2', borderRadius: '50%' }} />Parada</span>
+      </div>
+    </div>
+  );
+}
+
+function situacaoRota(v: ViagemAoVivoEDA, r: ReturnType<typeof analisarRota>): { texto: string; tom: 'ok' | 'at' | 'er' | 'nt' } {
+  if (!v.posicao) return { texto: 'Aguardando localização de bordo', tom: 'nt' };
+  if ((minutosDesde(v.posicao.em) ?? 0) > 120) return { texto: `Sem sinal ${tempoRelativo(v.posicao.em)}`, tom: 'er' };
+  if (r.foraDaRota && r.distanciaRotaM !== null) return { texto: `Fora do percurso (${formatarDistancia(r.distanciaRotaM)})`, tom: 'er' };
+  if (r.noDestino) return { texto: 'No destino', tom: 'ok' };
+  if (r.paradaPrevista) return { texto: `Em parada prevista: ${r.paradaPrevista.nome}`, tom: 'ok' };
+  if (r.paradoMin !== null && r.paradoMin >= 15) return { texto: `Parada há ${duracao(r.paradoMin)}${r.noEmbarque ? ' no embarque' : ''}`, tom: r.noEmbarque ? 'at' : 'er' };
+  if (r.noEmbarque) return { texto: 'No ponto de embarque', tom: 'nt' };
+  if (!r.temRota) return { texto: 'Navegando · percurso não traçado', tom: 'at' };
+  return { texto: 'Navegando no percurso', tom: 'ok' };
 }
 
 function distancia(a: [number, number], b: [number, number]) {
@@ -356,12 +561,22 @@ function distancia(a: [number, number], b: [number, number]) {
 
 function PercursoEDA({ v }: { v: ViagemAoVivoEDA }) {
   const r = analisarRota(v);
-  if (!r.temRota) return <p style={{ fontSize: 13, color: 'var(--p-sec)' }}>Percurso ainda não traçado. Use <b>Traçar percurso</b> no mapa para marcar o caminho pelo rio até o destino e as paradas previstas.</p>;
+  const fim = destinoViagem(v);
+  if (!r.temRota) return (
+    <div className="av-rota-info">
+      {fim && <div className="av-kv">
+        <span>Destino</span><b>{fim.nome || 'Local cadastrado no passeio'}</b>
+        {v.posicao && <><span>Distância</span><b>{formatarDistancia(distanciaM(v.posicao, fim))} em linha reta</b></>}
+      </div>}
+      <p style={{ fontSize: 13, color: 'var(--p-sec)' }}>Percurso ainda não traçado. Use <b>Traçar percurso</b> no mapa para marcar o caminho pelo rio até o destino e as paradas previstas — assim a EDA avisa se a embarcação sair do caminho ou parar fora do previsto.</p>
+    </div>
+  );
   const pct = r.percorridoM !== null && r.totalM ? Math.min(100, Math.round((r.percorridoM / r.totalM) * 100)) : null;
   const situacao = r.foraDaRota ? 'Fora do percurso' : r.noDestino ? 'No destino' : r.paradaPrevista ? `Em parada prevista: ${r.paradaPrevista.nome}` : r.paradoMin !== null && r.paradoMin >= 15 ? `Parada há ${duracao(r.paradoMin)}` : v.posicao ? 'No percurso' : 'Aguardando localização';
   return (
     <div className="av-rota-info">
       <div className="av-kv">
+        {fim?.nome && <><span>Destino</span><b>{fim.nome}</b></>}
         <span>Percurso</span><b>{formatarDistancia(r.totalM)}{(v.rota?.paradas?.length ?? 0) ? ` · ${v.rota?.paradas?.length} parada(s) prevista(s)` : ''}</b>
         <span>Situação</span><b>{situacao}</b>
         {r.restanteM !== null && <><span>Falta</span><b>{formatarDistancia(r.restanteM)}</b></>}
@@ -382,6 +597,16 @@ function Detalhe({ v, alertas, bordoAberto, aoBordo }: { v: ViagemAoVivoEDA; ale
 
   return (
     <div className="av-det">
+      <ol className="av-etapas" aria-label="Etapas da viagem">
+        {etapasViagem(v).map((e) => (
+          <li key={e.tipo} className={`av-etapa av-etapa-${e.estado}`} style={{ listStyle: 'none' }}>
+            <i aria-hidden="true" />
+            <b>{e.rotulo}</b>
+            <small>{e.em ? hora(e.em) : e.estado === 'atual' ? 'próxima etapa' : '—'}</small>
+          </li>
+        ))}
+      </ol>
+
       <section className="av-card">
         <p className="eda-pg-eb">Alertas da viagem</p>
         <h2>{v.passeio || 'Viagem'}</h2>
@@ -457,9 +682,9 @@ function Detalhe({ v, alertas, bordoAberto, aoBordo }: { v: ViagemAoVivoEDA; ale
         <p className="eda-pg-eb">Linha do tempo a bordo</p>
         {v.eventos.length === 0 ? <p style={{ fontSize: 13, color: 'var(--p-sec)' }}>Nenhum registro ainda. O guia registra pelo Painel do Guia; a equipe a bordo pode usar “Estou a bordo” abaixo.</p> : (
           <ul className="av-tl">
-            {v.eventos.map((e) => (
+            {agruparEventos(v.eventos).map((e) => (
               <li key={e.id} style={{ borderLeftColor: e.gravidade === 'grave' ? '#ef4444' : e.gravidade === 'atencao' ? '#f2c86b' : undefined }}>
-                <b>{ROTULO_EVENTO[e.tipo]}{e.texto ? ` — ${e.texto}` : ''}</b>
+                <b>{ROTULO_EVENTO[e.tipo]}{e.texto ? ` — ${e.texto}` : ''}{e.vezes > 1 && <span className="av-vezes" title="Registros repetidos em sequência">{e.vezes}×</span>}</b>
                 <small>{hora(e.em)} · {e.autor || 'Equipe'}{e.lat != null && e.lng != null ? ` · ${e.lat.toFixed(4)}, ${e.lng.toFixed(4)}` : ''}</small>
               </li>
             ))}

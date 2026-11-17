@@ -140,6 +140,7 @@ export function alertasViagem(v: ViagemAoVivoEDA): AlertaOperacaoEDA[] {
     if (s.itens && !s.combustivel && v.embarcacao) a.push({ tom: 'at', area: 'suprimentos', texto: 'Lista sem combustível.' });
     if (s.itens && !s.alimentacao && v.dias > 1) a.push({ tom: 'at', area: 'suprimentos', texto: 'Lista sem alimentação/bebidas para viagem de mais de um dia.' });
   }
+  a.push(...alertasDestino(v));
   if (v.nao_confirmadas) a.push({ tom: 'at', area: 'reserva', texto: `${v.nao_confirmadas} reserva(s) desta viagem ainda não confirmada(s).` });
 
   const peso = { er: 0, at: 1, nt: 2 };
@@ -302,4 +303,72 @@ export function analisarRota(v: ViagemAoVivoEDA): AnaliseRotaEDA {
     }
   }
   return { temRota, totalM, percorridoM, restanteM, distanciaRotaM, foraDaRota, paradoMin, paradaPrevista, noDestino, noEmbarque, chegadaPrevista, atrasoMin };
+}
+
+// ---------------------------------------------------------------------------
+// EDA_OPERACAO_AO_VIVO_V2: rumo do barco, etapas, registros agrupados e destino.
+// ---------------------------------------------------------------------------
+
+// Rumo (graus, 0 = norte) pelos últimos pontos da trilha que realmente se moveram.
+export function rumoTrilha(trilha: [number, number][]): number | null {
+  if (trilha.length < 2) return null;
+  const b = trilha[trilha.length - 1];
+  for (let i = trilha.length - 2; i >= 0; i--) {
+    const a = trilha[i];
+    if (distanciaM({ lat: a[0], lng: a[1] }, { lat: b[0], lng: b[1] }) < 25) continue;
+    const r = Math.PI / 180;
+    const y = Math.sin((b[1] - a[1]) * r) * Math.cos(b[0] * r);
+    const x = Math.cos(a[0] * r) * Math.sin(b[0] * r) - Math.sin(a[0] * r) * Math.cos(b[0] * r) * Math.cos((b[1] - a[1]) * r);
+    return Math.round(((Math.atan2(y, x) / r) + 360) % 360);
+  }
+  return null;
+}
+
+// Destino efetivo: o do passeio ou, sem ele, o fim do percurso traçado.
+export function destinoViagem(v: ViagemAoVivoEDA): { lat: number; lng: number; nome: string | null } | null {
+  if (v.destino) return v.destino;
+  const p = v.rota?.pontos ?? [];
+  return p.length >= 2 ? { lat: p[p.length - 1][0], lng: p[p.length - 1][1], nome: null } : null;
+}
+
+export type EtapaEDA = { tipo: TipoEventoEDA; rotulo: string; em: string | null; estado: 'feita' | 'atual' | 'proxima' };
+const ROTULO_ETAPA: Partial<Record<TipoEventoEDA, string>> = { embarque: 'Embarque', partida: 'Partida', chegada: 'No destino', retorno: 'Retorno' };
+
+export function etapasViagem(v: ViagemAoVivoEDA): EtapaEDA[] {
+  const ordem: TipoEventoEDA[] = ['embarque', 'partida', 'chegada', 'retorno'];
+  const quando = (t: TipoEventoEDA) => [...v.eventos].reverse().find((e) => e.tipo === t)?.em ?? null;
+  let ultima = -1;
+  ordem.forEach((t, i) => { if (quando(t)) ultima = i; });
+  return ordem.map((t, i) => ({
+    tipo: t, rotulo: ROTULO_ETAPA[t] ?? ROTULO_EVENTO[t], em: quando(t),
+    estado: i <= ultima ? 'feita' : i === ultima + 1 ? 'atual' : 'proxima',
+  }));
+}
+
+// Registros repetidos em sequência (ex.: dois toques no mesmo botão) viram um só, com contagem.
+export function agruparEventos(eventos: EventoOperacaoEDA[]): (EventoOperacaoEDA & { vezes: number })[] {
+  const out: (EventoOperacaoEDA & { vezes: number })[] = [];
+  for (const e of eventos) {
+    const ant = out[out.length - 1];
+    if (ant && ant.tipo === e.tipo && (ant.texto ?? '') === (e.texto ?? '')
+        && Math.abs(Date.parse(ant.em) - Date.parse(e.em)) <= 10 * 60000) { ant.vezes++; continue; }
+    out.push({ ...e, vezes: 1 });
+  }
+  return out;
+}
+
+// Alertas extras de destino: sem destino cadastrado e "chegou" registrado longe do destino.
+export function alertasDestino(v: ViagemAoVivoEDA): AlertaOperacaoEDA[] {
+  const a: AlertaOperacaoEDA[] = [];
+  const fim = destinoViagem(v);
+  if (!fim) {
+    a.push({ tom: 'at', area: 'rota', texto: 'Passeio sem local de destino: cadastre o destino no passeio ou trace o percurso no mapa.' });
+    return a;
+  }
+  const ch = v.eventos.find((e) => e.tipo === 'chegada');
+  if (ch && ch.lat != null && ch.lng != null) {
+    const d = distanciaM({ lat: ch.lat, lng: ch.lng }, fim);
+    if (d > 1500) a.push({ tom: 'at', area: 'rota', texto: `“Chegou ao destino” foi registrado a ${formatarDistancia(d)} do destino planejado. Confirme com o guia onde a embarcação está.` });
+  }
+  return a;
 }

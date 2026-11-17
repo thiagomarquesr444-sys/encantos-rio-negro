@@ -33,6 +33,8 @@ export default function BordoEDA({ reservaId, titulo, compacto = false }: { rese
   const bateria = useRef<number | undefined>(undefined);
   const trava = useRef<WakeLock | null>(null);
   const chaveAtivo = `eda.bordo.ativo.${reservaId}`;
+  // EDA_OPERACAO_AO_VIVO_V2: evita registrar a mesma etapa duas vezes por toque repetido.
+  const ultimaEtapa = useRef<Partial<Record<TipoEventoEDA, number>>>({});
 
   const enviar = useCallback(async () => {
     const r = await enviarFila(reservaId);
@@ -132,6 +134,10 @@ export default function BordoEDA({ reservaId, titulo, compacto = false }: { rese
   }, [chaveAtivo, enviar, iniciar, manterTelaAcesa, reservaId]);
 
   function registrar(tipo: TipoEventoEDA, detalhe?: string, gravidade?: GravidadeEDA) {
+    const etapa = ['embarque', 'partida', 'parada', 'chegada', 'retorno', 'resolvido'].includes(tipo);
+    const antes = ultimaEtapa.current[tipo];
+    if (etapa && antes && Date.now() - antes < 3 * 60000) { setAviso(`${ROTULO_EVENTO[tipo]} já foi registrado agora há pouco.`); return; }
+    if (etapa) ultimaEtapa.current[tipo] = Date.now();
     const p = ultimoPonto.current;
     enfileirarEvento(reservaId, { tipo, texto: detalhe, gravidade, lat: p?.lat, lng: p?.lng, em: new Date().toISOString() });
     setFila(tamanhoFila(reservaId));
