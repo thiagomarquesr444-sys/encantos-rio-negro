@@ -55,7 +55,6 @@ export default function HeroExperienciasERN({
               className="ern-portal-cta ern-portal-cta--secundario"
             >
               {destinations}
-              <span aria-hidden="true">→</span>
             </Link>
           </div>
         </div>

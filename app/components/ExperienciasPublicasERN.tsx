@@ -279,7 +279,7 @@ export default function ExperienciasPublicasERN() {
                   <h3>{item.title}</h3>
                   <p className="descricao">{item.text}</p>
                   <Link href={item.href} className="texto-link">
-                    {item.link}<span aria-hidden="true">→</span>
+                    {item.link}
                   </Link>
 
                   {item.id === 'pesca' && (
@@ -311,7 +311,7 @@ export default function ExperienciasPublicasERN() {
               <p className="descricao">{t.encounterText}</p>
               <p className="orientacao">{t.encounterNote}</p>
               <Link href="/rede" className="texto-link">
-                {t.network}<span aria-hidden="true">→</span>
+                {t.network}
               </Link>
             </div>
           </div>
@@ -324,7 +324,7 @@ export default function ExperienciasPublicasERN() {
               <h2>{t.territoryTitle}</h2>
               <p>{t.territoryText}</p>
               <Link href="/destinos" className="texto-link">
-                {t.destinations}<span aria-hidden="true">→</span>
+                {t.destinations}
               </Link>
             </header>
             <div>
@@ -345,7 +345,7 @@ export default function ExperienciasPublicasERN() {
               <h2>{t.peopleTitle}</h2>
               <p className="descricao">{t.peopleText}</p>
               <Link href="/rede" className="principal">
-                {t.peopleButton}<span aria-hidden="true">→</span>
+                {t.peopleButton}
               </Link>
             </div>
             <div className="rede-caminhos">
@@ -354,7 +354,7 @@ export default function ExperienciasPublicasERN() {
               </ul>
               <p className="nota">{t.business}</p>
               <Link href="/operadores" className="texto-link">
-                {t.businessLink}<span aria-hidden="true">→</span>
+                {t.businessLink}
               </Link>
             </div>
           </div>

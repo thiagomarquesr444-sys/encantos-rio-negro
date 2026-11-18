@@ -1029,7 +1029,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
             <span className="iara-oferta-nome">Iara <small>· Encantos da Amazônia</small></span>
             <p><TextoDigitadoIA texto={ofertaIara.texto} animar msPorLetra={34} render={(t2) => comIconesIara(t2)} /></p>
             <div className="iara-oferta-opcoes">
-              <button type="button" className="iara-oferta-acao" onClick={() => { setOfertaIara(null); setAberto(true); }}>{c.open} <span aria-hidden="true">→</span></button>
+              <button type="button" className="iara-oferta-acao" onClick={() => { setOfertaIara(null); setAberto(true); }}>{c.open}</button>
             </div>
           </div>
           <button type="button" className="iara-oferta-fechar" aria-label={c.close} onClick={fecharOfertaIara}>×</button>
@@ -1135,7 +1135,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
                   {mensagem.autor === 'ern' && animandoIara !== indice && !!mensagem.links?.length && (
                     <div className="iara-links" style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 8 }}>
                       {mensagem.links.map(l => l.href.startsWith('/')
-                        ? <Link key={l.href} href={l.href} className="iara-link">{l.rotulo} →</Link>
+                        ? <Link key={l.href} href={l.href} className="iara-link">{l.rotulo}</Link>
                         : <a key={l.href} href={l.href} target="_blank" rel="noopener noreferrer" className="iara-link">{l.rotulo} ↗</a>)}
                     </div>
                   )}
@@ -1648,12 +1648,12 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
         .compositor input::placeholder { color: #7a857f; }
         .compositor .principal {
           min-height: 44px; padding: 10px 18px;
-          border: 0; border-radius: 999px;
-          background: linear-gradient(180deg, #f7d595, #e3a144);
-          color: #07110e; font-weight: 700;
-          box-shadow: inset 0 1px 0 rgb(255 255 255 / 55%);
+          border: 0; border-radius: 10px;
+          background: #1d5a44;
+          color: #ffffff; font-weight: 600;
+          box-shadow: none;
         }
-        .compositor .principal:hover:not(:disabled) { background: linear-gradient(180deg, #fbe3ae, #eaa94d); }
+        .compositor .principal:hover:not(:disabled) { background: #236b51; }
         /* EDA_IARA_AUDIO_V1 + links mais sóbrios */
         .mensagens :global(.iara-link) {
           display: inline-flex; align-items: center; gap: 6px;
@@ -1758,13 +1758,13 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
         .iara-oferta-acao {
           display: inline-flex; align-items: center; gap: 6px;
           min-height: 36px; margin-top: 10px; padding: 7px 16px;
-          border: 0; border-radius: 999px;
-          font-size: 13px; font-weight: 700; color: #07110e;
-          background: linear-gradient(180deg, #f7d595, #e3a144);
-          box-shadow: 0 8px 20px rgb(227 161 68 / 30%), inset 0 1px 0 rgb(255 255 255 / 55%);
-          transition: filter .2s, transform .2s;
+          border: 0; border-radius: 10px;
+          font-size: 13px; font-weight: 600; color: #ffffff;
+          background: #1d5a44;
+          box-shadow: none;
+          transition: background-color .15s;
         }
-        .iara-oferta-acao:hover { filter: brightness(1.06); transform: translateY(-1px); }
+        .iara-oferta-acao:hover { background: #236b51; }
         .iara-oferta-fechar {
           flex: none; display: grid; place-items: center;
           width: 28px; height: 28px; border: 0; border-radius: 50%;
@@ -1880,7 +1880,7 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
           transition: border-color .2s, box-shadow .2s;
         }
         .compositor:focus-within { border-color: #f4c77e; box-shadow: inset 0 1px 0 rgb(255 255 255 / 8%), 0 0 0 4px rgb(244 199 126 / 16%); }
-        .compositor .principal { box-shadow: inset 0 1px 0 rgb(255 255 255 / 55%), 0 10px 22px -8px rgb(227 161 68 / 60%); }
+        .compositor .principal { box-shadow:none, 0 10px 22px -8px rgb(227 161 68 / 60%); }
         .chat-rodape button { text-underline-offset: 3px; }
         .iara-modo {
           display: inline-flex; align-items: center; gap: 6px; margin-top: 6px; padding: 3px 10px;

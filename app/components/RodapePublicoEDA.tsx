@@ -104,7 +104,7 @@ export default function RodapePublicoEDA() {
             onClick={() => window.dispatchEvent(new Event('iara:abrir'))}
             className={`inline-flex min-h-12 w-full shrink-0 items-center justify-center gap-2 rounded-full sm:w-auto bg-gradient-to-b from-[#F7D595] to-[#E3A144] px-6 text-sm font-semibold text-[#07110E] shadow-[0_12px_30px_-10px_rgb(227_161_68/0.7)] transition-transform hover:-translate-y-0.5 motion-reduce:transition-none ${FOCO}`}
           >
-            {t.falar} <span aria-hidden="true">→</span>
+            {t.falar}
           </button>
         </div>
 

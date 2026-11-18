@@ -145,7 +145,7 @@ export default function PublicacoesPerfilERN({
                   )}
 
                   <Link href={href} className={`mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[#8a4b12] ${foco}`}>
-                    {t.read} <span aria-hidden="true">→</span>
+                    {t.read}
                   </Link>
                 </article>
               );

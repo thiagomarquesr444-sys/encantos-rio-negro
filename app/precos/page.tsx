@@ -259,7 +259,7 @@ export default function PrecosPage() {
         <p className="mx-auto mt-10 max-w-[640px] text-center text-sm leading-6 text-[#B8C9BF]">{t.pagamento}</p>
         <div className="mt-6 flex justify-center">
           <Link href="/operadores" className={`inline-flex min-h-[44px] items-center gap-2 text-sm font-semibold text-[#F4C77E] hover:underline ${FOCO}`}>
-            {t.conhecer} <span aria-hidden="true">→</span>
+            {t.conhecer}
           </Link>
         </div>
       </main>

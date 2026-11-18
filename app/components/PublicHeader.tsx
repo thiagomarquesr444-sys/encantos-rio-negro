@@ -323,7 +323,6 @@ export default function PublicHeader() {
               className={`ern-botao-ouro group inline-flex min-h-11 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#F7D595] to-[#E3A144] px-5 text-sm font-bold text-[#07130F] shadow-[0_10px_26px_rgb(227_161_68/35%),inset_0_1px_0_rgb(255_255_255/55%)] transition hover:brightness-105 ${FOCO}`}
             >
               {t.plan}
-              <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none">→</span>
             </Link>
           </div>
 
@@ -440,7 +439,6 @@ export default function PublicHeader() {
               className={`mp-oper mt-4 flex min-h-[48px] items-center justify-between gap-3 rounded-2xl border px-4 text-sm font-semibold ${FOCO}`}
             >
               <span>{t.operators}</span>
-              <span aria-hidden="true">→</span>
             </Link>
 
             <fieldset className="mt-5 min-w-0">
@@ -482,7 +480,6 @@ export default function PublicHeader() {
                 <span className="block text-[15px] font-bold">{t.plan}</span>
                 <span className="block text-[11.5px] font-medium text-[#07110E]/70">{t.planSub}</span>
               </span>
-              <span aria-hidden="true" className="text-lg">→</span>
             </Link>
           </div>
         </div>

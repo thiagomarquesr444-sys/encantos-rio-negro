@@ -56,7 +56,6 @@ export function LinkInstitucionalERN({
       className={`inline-flex min-h-12 max-w-full items-center gap-2 rounded-full border border-[#E3A144]/50 bg-[#fffaf0] px-4 py-2 font-semibold text-[#6e3a0c] transition hover:border-[#E3A144] hover:bg-[#F7D595] ${FOCO}`}
     >
       <span className="break-all">{children}</span>
-      <span aria-hidden="true">→</span>
     </a>
   );
 }
@@ -100,7 +99,7 @@ export default function PaginaInstitucionalERN({
             href={`mailto:${EMAIL_ATENDIMENTO_ERN}`}
             className={`ern-publico-hero mt-4 flex min-h-12 items-center justify-center gap-2 rounded-full bg-gradient-to-b from-[#F7D595] to-[#E3A144] px-5 text-sm font-bold text-[#07110E] shadow-[0_10px_26px_rgb(227_161_68/30%),inset_0_1px_0_rgb(255_255_255/55%)] transition hover:brightness-105 ${FOCO}`}
           >
-            Escrever para a equipe <span aria-hidden="true">→</span>
+            Escrever para a equipe
           </a>
           <div className="mt-4 rounded-[18px] border border-[#e3dfd6] bg-white p-4 text-sm leading-6 text-[#4b5a53]">
             <span className="flex items-center gap-2">

@@ -263,7 +263,7 @@
 .ern-v-root .ern-v-zonas{display:flex;gap:3px;margin-top:14px;padding:4px;border-radius:999px;background:rgb(255 255 255 / 5%);border:1px solid rgb(255 255 255 / 10%);overflow-x:auto;scrollbar-width:none}
 .ern-v-root .ern-v-zonas button{flex:1 0 auto;min-height:34px;padding:0 12px;border:0;border-radius:999px;background:transparent;color:#cdd8d2;font-size:12.5px;font-weight:600;white-space:nowrap;transition:background .2s,color .2s}
 .ern-v-root .ern-v-zonas button:hover{color:#fff;background:rgb(255 255 255 / 6%)}
-.ern-v-root .ern-v-zonas button[aria-pressed=true]{color:#07110e;background:linear-gradient(180deg,#f7d595,#e3a144);box-shadow:inset 0 1px 0 rgb(255 255 255 / 55%)}
+.ern-v-root .ern-v-zonas button[aria-pressed=true]{color:#fff;background:var(--eda-acao);box-shadow:none}
 .ern-v-root .ern-v-stage .ern-v-interests{gap:6px;margin-top:12px}
 .ern-v-root .ern-v-stage .ern-v-interests button{min-height:34px;padding:0 13px;border:1px solid rgb(255 255 255 / 14%);border-radius:999px;background:transparent;color:#dbe3de;font-size:12px;font-weight:600}
 .ern-v-root .ern-v-stage .ern-v-interests button[aria-pressed=true]{background:rgb(227 161 68 / 14%);border-color:#e3a144;color:#f7d595}
@@ -284,7 +284,7 @@
 .ern-v-root .ern-v-item-destaque{margin-top:4px;font-size:12.5px;line-height:1.4;color:#a9bbb1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .ern-v-root .ern-v-item-coracao{position:absolute;top:50%;right:10px;transform:translateY(-50%);display:grid;place-items:center;width:36px;height:36px;border:0;border-radius:50%;background:transparent;color:#f4c77e;font-size:20px;line-height:1}
 .ern-v-root .ern-v-item-coracao:hover{background:rgb(255 255 255 / 6%)}
-.ern-v-root .ern-v-item-coracao[aria-pressed=true]{color:#07110e;background:linear-gradient(180deg,#f7d595,#e3a144)}
+.ern-v-root .ern-v-item-coracao[aria-pressed=true]{color:#fff;background:var(--eda-acao)}
 .ern-v-root .ern-v-panel .ern-v-empty{background:rgb(255 255 255 / 4%);border-color:rgb(255 255 255 / 10%);color:#dbe3de}
 .ern-v-root .ern-v-panel-note{margin-top:16px;padding-top:14px;border-top:1px solid rgb(255 255 255 / 8%);font-size:11.5px;line-height:1.6;color:#8fa39a}
 
@@ -294,7 +294,7 @@
 .ern-v-root .ern-v-stage .ern-v-tools{top:18px;right:18px;left:auto;max-width:calc(100% - 36px)}
 .ern-v-root .ern-v-stage .ern-v-tools button{min-height:42px;padding:0 16px;border:1px solid rgb(255 255 255 / 18%);border-radius:999px;background:rgb(7 17 14 / 78%);color:#f0f0e8;font-size:12.5px;font-weight:600;box-shadow:0 10px 30px rgb(0 0 0 / 30%);backdrop-filter:blur(10px)}
 .ern-v-root .ern-v-stage .ern-v-tools button:hover{border-color:rgb(244 199 126 / 55%)}
-.ern-v-root .ern-v-stage .ern-v-tools button:last-child{color:#07110e;border-color:transparent;background:linear-gradient(180deg,#f7d595,#e3a144)}
+.ern-v-root .ern-v-stage .ern-v-tools button:last-child{color:#fff;border-color:transparent;background:var(--eda-acao)}
 .ern-v-root .ern-v-stage .ern-v-notice{top:72px;right:18px;background:#0d1c17;border-color:#24382f;color:#dbe3de}
 .ern-v-root .ern-v-stage .ern-v-map-status{background:#0d1c17;color:#dbe3de;border:1px solid #24382f}
 
@@ -342,7 +342,7 @@
 .ern-v-root .ern-v-drawer .ern-v-ops .ern-v-kicker{color:#f4c77e}
 .ern-v-root .ern-v-ops h3{margin:6px 0 0;font-size:20px;color:#f5f3ea}
 .ern-v-root .ern-v-drawer .ern-v-ops p:not(.ern-v-kicker){margin:6px 0 14px;font-size:13.5px;line-height:1.6;color:#b8c9bf}
-.ern-v-root .ern-v-ouro-botao{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border-radius:999px;background:linear-gradient(180deg,#f7d595,#e3a144);color:#07110e;font-size:14px;font-weight:700;box-shadow:0 10px 26px rgb(227 161 68 / 30%),inset 0 1px 0 rgb(255 255 255 / 55%)}
+.ern-v-root .ern-v-ouro-botao{display:flex;align-items:center;justify-content:center;gap:8px;min-height:48px;border-radius:10px;background:var(--eda-acao);color:#fff;font-size:14px;font-weight:700;box-shadow:none}
 .ern-v-root .ern-v-ouro-botao:hover{filter:brightness(1.05)}
 .ern-v-root .ern-v-ops .ern-v-network-link{width:100%;color:#f4c77e}
 
@@ -352,7 +352,7 @@
 .ern-v-root .ern-v-gallery .ern-v-card-copy h3{font-family:"Inter Variable",Inter,system-ui,sans-serif;font-weight:650;color:#f5f3ea}
 .ern-v-root .ern-v-gallery .ern-v-photo-tag{background:rgb(7 17 14 / 82%);color:#dbe3de}
 .ern-v-root .ern-v-gallery .ern-v-heart{background:rgb(7 17 14 / 70%);border-color:rgb(255 255 255 / 18%)}
-.ern-v-root .ern-v-gallery .ern-v-heart[aria-pressed=true],.ern-v-root>section:not(.ern-v-stage) .ern-v-button{background:linear-gradient(180deg,#f7d595,#e3a144);border-color:transparent;color:#07110e;border-radius:999px}
+.ern-v-root .ern-v-gallery .ern-v-heart[aria-pressed=true],.ern-v-root>section:not(.ern-v-stage) .ern-v-button{background:var(--eda-acao);border-color:transparent;color:#fff;border-radius:10px}
 .ern-v-root .ern-v-footer{border-color:#24382f;color:#8fa39a}
 
 @media(max-width:900px){
@@ -391,7 +391,7 @@
 .ern-v-root .ern-v-cidades{margin-top:16px;border:1px solid rgb(255 255 255 / 8%);border-radius:18px;background:rgb(255 255 255 / 3%)}
 .ern-v-root .ern-v-cidades summary{display:flex;align-items:center;justify-content:space-between;min-height:48px;padding:0 16px;cursor:pointer;font-size:14px;font-weight:650;color:#f5f3ea;list-style:none}
 .ern-v-root .ern-v-cidades summary::-webkit-details-marker{display:none}
-.ern-v-root .ern-v-cidades summary span{display:grid;place-items:center;min-width:30px;height:24px;padding:0 8px;border-radius:999px;background:linear-gradient(180deg,#f7d595,#e3a144);color:#07110e;font-size:12px}
+.ern-v-root .ern-v-cidades summary span{display:grid;place-items:center;min-width:30px;height:24px;padding:0 8px;border-radius:999px;background:var(--eda-acao);color:#fff;font-size:12px}
 .ern-v-root .ern-v-cidades div{display:flex;flex-wrap:wrap;gap:6px;padding:4px 14px 16px}
 .ern-v-root .ern-v-stage .ern-v-map .gm-style{font-family:var(--font-work-sans),Arial,sans-serif}
 @media(max-width:900px){.ern-v-root .ern-v-muni-card{left:10px;right:10px;bottom:10px;width:auto}}
@@ -407,7 +407,7 @@
 .ern-v-root .ern-v-satelite-externo{margin-left:auto;color:#f4c77e}
 .ern-v-root .ern-v-satelite-visoes{display:flex;gap:3px;padding:3px}
 .ern-v-root .ern-v-satelite-visoes button{min-height:34px;padding:0 13px;border:0;border-radius:999px;background:transparent;color:#dbe3de;font-size:12.5px;font-weight:600;white-space:nowrap}
-.ern-v-root .ern-v-satelite-visoes button[aria-pressed=true]{color:#07110e;background:linear-gradient(180deg,#f7d595,#e3a144)}
+.ern-v-root .ern-v-satelite-visoes button[aria-pressed=true]{color:#fff;background:var(--eda-acao)}
 .ern-v-root .ern-v-ops button.ern-v-network-link,.ern-v-root .ern-v-muni-acoes button.ern-v-network-link{border:0;background:transparent;cursor:pointer}
 @media(max-width:900px){.ern-v-root .ern-v-satelite-barra{top:10px;left:10px;right:10px}.ern-v-root .ern-v-satelite-externo{display:none}.ern-v-root .ern-v-satelite-visoes button{padding:0 9px;font-size:11.5px}}
 .ern-v-root .ern-v-satelite ~ .ern-v-tools{display:none}

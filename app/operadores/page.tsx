@@ -193,7 +193,7 @@ export default function OperadoresPage() {
               <h1 className={`${TITULO} mt-4 text-[clamp(2.4rem,5vw,3.75rem)] leading-[1.04]`}>{t.title[0]}<br />{t.title[1]} <span className={DOURADO}>{t.title[2]}</span></h1>
               <p className="mt-5 max-w-[540px] text-[17px] leading-7 text-[#B8C9BF]">{t.intro}</p>
               <div className="mt-7 flex flex-wrap gap-3">
-                <Link href="/login?acesso=operadora" className={`${OURO} ${FOCO}`}>{t.start} <span aria-hidden="true">→</span></Link>
+                <Link href="/login?acesso=operadora" className={`${OURO} ${FOCO}`}>{t.start}</Link>
                 <Link href="/planos" className={`${VIDRO} ${FOCO}`}>{t.plans}</Link>
               </div>
               <ul className="mt-7 flex flex-wrap gap-x-5 gap-y-2 text-[13px] text-[#8FA39A]">{t.checks.map((item, i) => <li key={item} className="flex items-center gap-1.5"><IconeERN nome={(['idiomas', 'celular', 'rio'] as const)[i] ?? 'confirmado'} tamanho={15} className="text-[#F4C77E]" />{item}</li>)}</ul>
@@ -268,7 +268,7 @@ export default function OperadoresPage() {
                   <div className="p-6">
                     <h3 className="text-lg font-semibold text-[#F5F3EA]">{titulo}</h3>
                     <p className="mt-1.5 text-sm leading-6 text-[#B8C9BF]">{texto}</p>
-                    <Link href={`/login?acesso=${id}`} className={`${i === 0 ? OURO : VIDRO} ${FOCO} mt-5 min-h-11 px-5 text-sm`}>{cta} <span aria-hidden="true">→</span></Link>
+                    <Link href={`/login?acesso=${id}`} className={`${i === 0 ? OURO : VIDRO} ${FOCO} mt-5 min-h-11 px-5 text-sm`}>{cta}</Link>
                   </div>
                 </article>
               ))}
@@ -282,7 +282,7 @@ export default function OperadoresPage() {
             <h2 className={`${TITULO} mt-5 text-[clamp(2rem,4vw,2.75rem)] leading-[1.1]`}>{t.finalTitle[0]} <span className={DOURADO}>{t.finalTitle[1]}</span>{t.finalTitle[2]}</h2>
             <p className="mt-4 max-w-[560px] text-base leading-7 text-[#B8C9BF]">{t.finalText}</p>
             <div className="mt-7 flex flex-wrap justify-center gap-3">
-              <Link href="/login?acesso=operadora" className={`${OURO} ${FOCO}`}>{t.start} <span aria-hidden="true">→</span></Link>
+              <Link href="/login?acesso=operadora" className={`${OURO} ${FOCO}`}>{t.start}</Link>
               <Link href="/planos" className={`${VIDRO} ${FOCO}`}>{t.plans}</Link>
               <Link href="/contato" className={`${VIDRO} ${FOCO}`}>{t.contact}</Link>
             </div>

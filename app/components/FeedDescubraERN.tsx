@@ -217,7 +217,7 @@ export default function FeedDescubraERN() {
                   )}
 
                   <Link href={href} className={`fd-ler mt-auto inline-flex min-h-11 items-center gap-2 pt-4 text-xs font-semibold text-[#8a4b12] transition group-hover:gap-3 ${foco}`}>
-                    {t.read} <span aria-hidden="true">→</span>
+                    {t.read}
                   </Link>
                   </div>
                 </article>

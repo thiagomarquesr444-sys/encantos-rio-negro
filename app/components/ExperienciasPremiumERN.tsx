@@ -449,7 +449,7 @@ export default function ExperienciasPremiumERN({ abrirPasseio }: { abrirPasseio?
                           href={`/destinos?iara=${encodeURIComponent(destinoParaParametro(destino))}`}
                           className={`mt-auto inline-flex w-fit items-center gap-2 pt-5 text-sm font-semibold text-[#F4C77E] hover:text-[#FBE3AE] ${FOCO}`}
                         >
-                          {t.historiasMapa} <span aria-hidden="true" className="transition group-hover:translate-x-1">→</span>
+                          {t.historiasMapa}
                         </Link>
                       )}
                     </div>
@@ -469,7 +469,7 @@ export default function ExperienciasPremiumERN({ abrirPasseio }: { abrirPasseio?
               <h2 className="mt-3 text-[clamp(1.8rem,3.4vw,2.6rem)] leading-[1.1] tracking-[-0.035em] text-[#F5F3EA]">{t.pescaTitulo}</h2>
               <p className="mt-4 text-base leading-7 text-[#B8C9BF]">{t.pescaTexto}</p>
               <div className="mt-8 flex flex-wrap items-center gap-3">
-                <Link href="/pesca-esportiva" className={BOTAO_OURO}>{t.pescaBotao} <span aria-hidden="true">→</span></Link>
+                <Link href="/pesca-esportiva" className={BOTAO_OURO}>{t.pescaBotao}</Link>
                 <BotaoCopaPescaERN idioma={idioma} />
               </div>
             </div>

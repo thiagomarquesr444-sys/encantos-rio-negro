@@ -122,7 +122,6 @@ export default function Home() {
           >
             <span aria-hidden="true" className="block h-10 w-10 overflow-hidden rounded-full shadow-[0_4px_12px_rgb(0_0_0/35%)]"><IconeIara /></span>
             {conciergeCta[idioma]}
-            <span aria-hidden="true" className="transition-transform group-hover:translate-x-0.5 motion-reduce:transition-none">→</span>
           </a>
         </div>
 
@@ -137,7 +136,7 @@ export default function Home() {
                 href="/precos"
                 className={`inline-flex min-h-[44px] items-center gap-2 text-sm font-semibold text-[#F4C77E] hover:underline hover:underline-offset-4 ${FOCO}`}
               >
-                {faixa.precos} <span aria-hidden="true">→</span>
+                {faixa.precos}
               </a>
               <a
                 href="/operadores"
@@ -184,7 +183,6 @@ export default function Home() {
               className={`mt-8 inline-flex min-h-[50px] items-center gap-2 rounded-xl border border-[#E3A144]/30 bg-[#E3A144]/10 px-6 text-sm font-semibold text-[#F4C77E] transition hover:bg-[#E3A144]/15 ${FOCO}`}
             >
               {t.management.button}
-              <span aria-hidden="true">→</span>
             </a>
 
             <ul className="mt-8 flex flex-wrap gap-2">

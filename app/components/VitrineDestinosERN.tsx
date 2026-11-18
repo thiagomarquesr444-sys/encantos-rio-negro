@@ -310,7 +310,7 @@ export default function VitrineDestinosERN({
                   </span>
                 )}
                 <span className="mt-4 inline-flex w-fit items-center gap-2 rounded-full bg-gradient-to-b from-[#F7D595] to-[#E3A144] px-4 py-2 text-sm font-bold text-[#07110E]">
-                  {destinoMunicipio ? t.verMapa : t.perguntar} <span aria-hidden="true">→</span>
+                  {destinoMunicipio ? t.verMapa : t.perguntar}
                 </span>
               </button>
               {destinoMunicipio && (
