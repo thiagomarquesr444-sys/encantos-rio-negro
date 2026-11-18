@@ -412,11 +412,11 @@ export default function ConversaEDA() {
   return (
     <div className="cv-eda" data-aberto={aberto || undefined}>
       {aberto && (
-        <section className="cv-eda-painel" role="dialog" aria-label="Conversa com a EDA">
+        <section className="cv-eda-painel" role="dialog" aria-label="Conversa com o Jurupari, assistente EDA">
           <header className="cv-eda-topo">
             <span className="cv-eda-avatar" aria-hidden="true"><IconeEDA /></span>
             <div>
-              <p className="cv-eda-nome">EDA</p>
+              <p className="cv-eda-nome">Jurupari <span style={{ opacity: .6, fontWeight: 500, fontSize: '.78em' }}>· EDA</span></p>
               <p className="cv-eda-status">{periodoManaus() === 'madrugada' ? 'De vigia na madrugada' : `Cuidando de ${ROTULO_PAGINA[pagina] ?? 'toda a operação'}`}</p>
             </div>
             <button
@@ -551,8 +551,8 @@ export default function ConversaEDA() {
         className="cv-eda-botao"
         onClick={() => setAberto(v => !v)}
         aria-expanded={aberto}
-        aria-label={aberto ? 'Fechar conversa com a EDA' : 'Pergunte à EDA'}
-        title="Pergunte à EDA"
+        aria-label={aberto ? 'Fechar conversa com o Jurupari' : 'Pergunte ao Jurupari'}
+        title="Pergunte ao Jurupari"
       >
         <IconeEDA />
         {!aberto && avisos.length > 0 && <span className="cv-eda-badge" aria-label={`${avisos.length} aviso(s) novo(s)`}>{avisos.length}</span>}
