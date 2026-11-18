@@ -1573,3 +1573,14 @@ html[data-eda-sinal="fraco"] *::after {
   border: 1px solid var(--eda-acao-borda) !important;
   box-shadow: none !important;
 }
+/* EDA_ACAO_SOBRIA_V3: sobre fundo escuro (hero, cabeçalho, busca da Descubra)
+   o texto do botão é sempre branco, com o contorno transparente em volta. */
+.ern-publico-hero :is([class*="from-[#F7D595]"], [class*="to-[#F7D595]"], .ern-botao-ouro, [class~="bg-[#E3A144]"], [class~="bg-[#F4C77E]"]):not(.ern-gestao *) {
+  color: #ffffff !important;
+  background: rgb(255 255 255 / 5%) !important;
+  border-color: rgb(255 255 255 / 28%) !important;
+}
+.ern-publico-hero :is([class*="from-[#F7D595]"], [class*="to-[#F7D595]"], .ern-botao-ouro, [class~="bg-[#E3A144]"], [class~="bg-[#F4C77E]"]):not(.ern-gestao *):hover {
+  background: rgb(255 255 255 / 12%) !important;
+  border-color: rgb(255 255 255 / 55%) !important;
+}
