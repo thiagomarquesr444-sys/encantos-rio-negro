@@ -633,7 +633,6 @@ function FormularioPerfilProfissional({ tipo }: Props) {
         {!guia && existe && (
           <Link href="/fornecedor/vitrine" className="mt-6 flex items-center justify-between gap-3 rounded-2xl border border-[#E3A144]/40 bg-[#E3A144]/[0.06] p-5 text-sm text-[#F0F0E8]">
             <span>Perfil pronto. Agora publique suas peças na <b>Minha vitrine</b>.</span>
-            <span aria-hidden="true" className="text-[#F4C77E]">→</span>
           </Link>
         )}
 

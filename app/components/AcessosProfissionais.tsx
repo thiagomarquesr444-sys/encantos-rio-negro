@@ -161,7 +161,6 @@ export default function AcessosProfissionais() {
                 className="mt-6 inline-flex min-h-[48px] items-center justify-between gap-3 rounded-xl border border-[#E3A144]/25 bg-[#E3A144]/10 px-4 py-3 text-sm font-semibold text-[#F4C77E] transition hover:border-[#E3A144]/50 hover:bg-[#E3A144]/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E3A144] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0D1B16]"
               >
                 <span>{acesso.botao}</span>
-                <span aria-hidden="true">→</span>
               </Link>
             </article>
           ))}
@@ -177,7 +176,6 @@ export default function AcessosProfissionais() {
             className="inline-flex min-h-[44px] items-center gap-2 self-start font-semibold text-[#E3A144] transition hover:text-[#F4C77E]"
           >
             {t.portal}
-            <span aria-hidden="true">→</span>
           </Link>
         </div>
       </div>

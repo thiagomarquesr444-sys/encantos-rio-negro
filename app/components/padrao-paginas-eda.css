@@ -73,8 +73,8 @@
 }
 .eda-pg-bt:hover { background: var(--p-elev); }
 .eda-pg-bt:disabled { opacity: .5; cursor: not-allowed; }
-.eda-pg-bt-ouro { color: #07110e !important; border-color: transparent; background: linear-gradient(180deg, #f7d595, #e3a144); box-shadow: 0 6px 18px rgb(227 161 68 / 26%); }
-.eda-pg-bt-ouro:hover { background: linear-gradient(180deg, #f9dca6, #e8a94f); transform: translateY(-1px); }
+.eda-pg-bt-ouro { color: var(--eda-acao-texto) !important; border-color: var(--eda-acao-borda); background: var(--eda-acao); box-shadow: none; }
+.eda-pg-bt-ouro:hover { background: var(--eda-acao-hover); }
 .eda-pg-bt-perigo { color: var(--p-verm) !important; border-color: color-mix(in srgb, var(--p-verm) 35%, transparent); background: color-mix(in srgb, var(--p-verm) 8%, transparent); }
 .eda-pg-bt-p { min-height: 34px; padding: 0 12px; font-size: 12.5px; }
 .eda-pg :is(.eda-pg-bt, .eda-pg-chip, .eda-pg-fechar, .eda-pg-linha-bt, .eda-pg-cartao):focus-visible,

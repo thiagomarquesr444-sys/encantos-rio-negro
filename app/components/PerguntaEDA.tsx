@@ -229,7 +229,7 @@ export default function PerguntaEDA() {
         .eda-perg-opcoes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; margin-top: 14px; }
         .eda-perg-op { min-height: 40px; padding: 0 6px; border-radius: 12px; border: 1px solid rgb(255 255 255 / 14%); background: rgb(255 255 255 / 5%); color: inherit; font: inherit; font-size: 13px; font-weight: 600; cursor: pointer; }
         .eda-perg-op:hover { border-color: rgb(244 199 126 / 50%); }
-        .eda-perg-op[aria-checked="true"] { color: #07110e; border-color: transparent; background: linear-gradient(180deg, #f7d595, #e3a144); }
+        .eda-perg-op[aria-checked="true"] { color: var(--eda-acao-texto); border-color: var(--eda-acao-borda-hover); background: var(--eda-acao-ativo); }
         .eda-perg-op-0[aria-checked="true"] { color: #fff; background: #c2554f; }
         .eda-perg-detalhe { margin-top: 14px; }
         .eda-perg-detalhe label { display: block; font-size: 13.5px; font-weight: 600; line-height: 1.5; }
@@ -247,7 +247,7 @@ export default function PerguntaEDA() {
         }
         :global(.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"])) .eda-perg-eb { color: #9a5d14; }
         :global(.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"])) :is(.eda-perg-x, .eda-perg-op, .eda-perg-detalhe textarea) { border-color: rgb(19 36 29 / 14%); background: rgb(255 255 255 / 70%); }
-        :global(.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"])) .eda-perg-op[aria-checked="true"] { background: linear-gradient(180deg, #f7d595, #e3a144); }
+        :global(.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"])) .eda-perg-op[aria-checked="true"] { background: var(--eda-acao-ativo); }
         @keyframes eda-perg-entra { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: none; } }
         @media (max-width: 767px) {
           .eda-perg { left: 12px; right: 12px; width: auto; bottom: calc(96px + env(safe-area-inset-bottom, 0px)); }

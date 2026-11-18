@@ -107,9 +107,10 @@
   font-weight: 650 !important;
 }
 .eda-pg-auto :is(button, a)[class*="bg-[#E3A144]"]:not(.eda-pg-bt) {
-  border-color: transparent !important;
-  background: linear-gradient(180deg, #f7d595, #e3a144) !important;
-  color: #07110e !important;
+  border: 1px solid var(--eda-acao-borda) !important;
+  background: var(--eda-acao) !important;
+  color: var(--eda-acao-texto) !important;
+  border-radius: 999px !important;
 }
 
 /* Barra de ações dos formulários */
@@ -250,9 +251,10 @@
 /* Botões antigos */
 .eda-pg-legado :is(button, a)[class*="rounded-xl"]:not(.eda-pg-bt):not([role="tab"]) { border-radius: 999px !important; }
 .eda-pg-legado :is(button, a)[class*="bg-[var(--ern-botao)]"] {
-  border-color: transparent !important;
-  background: linear-gradient(180deg, #f7d595, #e3a144) !important;
-  color: #07110e !important;
+  border: 1px solid var(--eda-acao-borda) !important;
+  background: var(--eda-acao) !important;
+  color: var(--eda-acao-texto) !important;
+  border-radius: 999px !important;
   box-shadow: 0 6px 18px rgb(227 161 68 / 24%);
 }
 

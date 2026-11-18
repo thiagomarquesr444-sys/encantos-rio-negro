@@ -219,7 +219,6 @@ export default function PainelPorFuncaoERN({
                 >
                   <h3 className="text-base font-semibold">
                     {item.titulo}
-                    <span aria-hidden="true" className="ml-2">→</span>
                   </h3>
 
                   <p
