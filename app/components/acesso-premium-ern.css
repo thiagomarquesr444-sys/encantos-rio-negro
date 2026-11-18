@@ -40,8 +40,8 @@
 .ern-acesso-form input::placeholder{color:#819b8e!important}
 .ern-acesso-form input:focus{border-color:#e7be7d!important;box-shadow:0 0 0 3px #e7be7d10!important}
 .ern-acesso-form input:-webkit-autofill{-webkit-text-fill-color:#f1f2eb;-webkit-box-shadow:0 0 0 1000px #0c171b inset}
-.ern-acesso-form form :is(button[type="submit"]),.ern-acesso-form :is(button,a)[class*="bg-[#E3A144]"]{background:var(--eda-acao)!important;border:0!important;border-radius:9px!important;color:#fff!important;font-size:13px!important;font-weight:600!important;min-height:49px!important;box-shadow:0 4px 16px #b1853015}
-.ern-acesso-form form :is(button[type="submit"]):hover:not(:disabled),.ern-acesso-form :is(button,a)[class*="bg-[#E3A144]"]:hover:not(:disabled){background:var(--eda-acao-hover)!important;color:#fff!important}
+.ern-acesso-form form :is(button[type="submit"]),.ern-acesso-form :is(button,a)[class*="bg-[#E3A144]"]{background:var(--eda-acao);box-shadow:inset 0 0 0 1px var(--eda-acao-borda);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)!important;border:0!important;border-radius:999px!important;color:inherit!important;font-size:13px!important;font-weight:600!important;min-height:49px!important;box-shadow:0 4px 16px #b1853015}
+.ern-acesso-form form :is(button[type="submit"]):hover:not(:disabled),.ern-acesso-form :is(button,a)[class*="bg-[#E3A144]"]:hover:not(:disabled){background:var(--eda-acao-hover)!important;color:inherit!important}
 .ern-acesso-form button[class~="bg-white"]{color:#202124!important;background:#fafafa!important;border-color:#ddd!important;font-size:12px!important;min-height:46px!important;border-radius:8px!important}
 .ern-acesso-form button[class~="bg-white"]:hover:not(:disabled){background:#e9ece9!important}
 .ern-acesso-form :is(button,a)[class*="text-[#F4C77E]"]{color:#e7be7d}
@@ -169,11 +169,11 @@
 .ern-acesso-v2 .ern-acesso-form>section h1{font-size:28px!important;color:#f5f3ea!important}
 .ern-acesso-v2 .ern-acesso-form input{border-radius:14px!important;background:rgb(255 255 255 / 5%)!important;border-color:rgb(255 255 255 / 14%)!important}
 .ern-acesso-v2 .ern-acesso-form input:focus{border-color:#e3a144!important;box-shadow:0 0 0 3px rgb(227 161 68 / 18%)!important}
-.ern-acesso-v2 .ern-acesso-form form :is(button[type="submit"]),.ern-acesso-v2 .ern-acesso-form :is(button,a)[class*="bg-[#E3A144]"]{min-height:52px!important;border:0!important;border-radius:10px!important;background:var(--eda-acao)!important;color:#fff!important;font-weight:700!important;box-shadow:none!important}
+.ern-acesso-v2 .ern-acesso-form form :is(button[type="submit"]),.ern-acesso-v2 .ern-acesso-form :is(button,a)[class*="bg-[#E3A144]"]{min-height:52px!important;border:0!important;border-radius:999px!important;background:var(--eda-acao);box-shadow:inset 0 0 0 1px var(--eda-acao-borda);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px)!important;color:inherit!important;font-weight:700!important;!important}
 .ern-acesso-v2 .ern-acesso-form form :is(button[type="submit"]):hover:not(:disabled){background:linear-gradient(180deg,#fbe3ae,#e8ad55)!important}
 .ern-acesso-v2 .ern-acesso-modos{border-radius:999px;background:rgb(255 255 255 / 5%)}
 .ern-acesso-v2 .ern-acesso-modos button{border-radius:999px}
-.ern-acesso-v2 .ern-acesso-modos button[aria-pressed="true"]{background:var(--eda-acao);color:#fff;box-shadow:none;font-weight:700}
+.ern-acesso-v2 .ern-acesso-modos button[aria-pressed="true"]{background:var(--eda-acao-ativo);box-shadow:inset 0 0 0 1px var(--eda-acao-borda-hover);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);color:inherit;font-weight:700}
 .ern-acesso-v2 .ern-acesso-base{font-size:11.5px;color:#8fa39a}
 @media(max-width:1000px){.ern-acesso-v2 .ern-acesso-grade{grid-template-columns:minmax(0,1fr) minmax(340px,420px)}}
 @media(max-width:767px){
@@ -189,7 +189,7 @@
 @media(max-width:767px){.ern-acesso-v2 .ern-acesso-manifesto{position:relative;top:auto;height:auto;min-height:340px}}
 .ern-acesso-v2 .ern-acesso-beneficios li>span{color:#f7d595}
 .ern-acesso-v2 .ern-acesso-perfis a>span{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:rgb(255 255 255 / 5%);color:#cdd8d2;font-size:0}
-.ern-acesso-v2 .ern-acesso-perfis a[aria-current=true]>span{background:var(--eda-acao);color:#fff}
+.ern-acesso-v2 .ern-acesso-perfis a[aria-current=true]>span{background:var(--eda-acao-ativo);box-shadow:inset 0 0 0 1px var(--eda-acao-borda-hover);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);color:inherit}
 
 /* FABLEPREMIUM_V1: painel da foto com fundo enquanto a imagem carrega e menor no celular */
 .ern-acesso-v2 .ern-acesso-manifesto{background:linear-gradient(160deg,#143026,#07110e)}

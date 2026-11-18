@@ -205,9 +205,10 @@ export default function TemaPortalERN({ children }: { children: ReactNode }) {
           .ern-r-verified,
           .ern-r-skip
         ) {
-          background:#30363e!important;
+          background:rgb(255 255 255 / 5%)!important;
           color:#f0f1f2!important;
-          border-color:#66717e;
+          border-color:rgb(255 255 255 / 28%);
+          border-radius:999px;
         }
 
         .ern-tema-portal[data-portal-tema="escuro"]
@@ -221,7 +222,7 @@ export default function TemaPortalERN({ children }: { children: ReactNode }) {
           .ern-v-button:hover,
           .ern-r-root .ern-r-button:hover
         ) {
-          background:#424b56!important;
+          background:rgb(255 255 255 / 11%)!important;
           color:#fff!important;
         }
 

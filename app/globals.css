@@ -1538,32 +1538,38 @@ html[data-eda-sinal="fraco"] *::after {
   .dc-corpo h3, .fd-titulo { font-size: 12.5px; }
 }
 
-/* EDA_ACAO_SOBRIA_V1 (17/11/2026): fim dos botões dourados com degradê e brilho
-   no portal público. A ação principal passa a ser chapada e discreta, no verde
-   da marca (o mesmo do item ativo do menu), igual em fundo claro e escuro.
-   Sem degradê, sem brilho, sem pílula — cantos de 10px. Gestão não é afetada. */
+/* EDA_ACAO_SOBRIA_V2 (18/11/2026): botões do portal no mesmo formato das
+   cidades populares da Descubra — transparentes, borda fina, pílula, desfoque.
+   Sem dourado, sem degradê, sem brilho. A cor vem do texto ao redor
+   (currentColor): vidro claro sobre fundo escuro, contorno escuro sobre fundo
+   claro, sem precisar saber onde o botão está. Gestão (.ern-gestao) não muda. */
 :root {
-  --eda-acao: #1d5a44;
-  --eda-acao-hover: #236b51;
-  --eda-sobre-acao: #ffffff;
-  --eda-acao-borda: rgb(255 255 255 / 14%);
+  --eda-acao: color-mix(in srgb, currentColor 5%, transparent);
+  --eda-acao-hover: color-mix(in srgb, currentColor 11%, transparent);
+  --eda-acao-ativo: color-mix(in srgb, currentColor 14%, transparent);
+  --eda-acao-borda: color-mix(in srgb, currentColor 28%, transparent);
+  --eda-acao-borda-hover: color-mix(in srgb, currentColor 55%, transparent);
 }
 :is([class*="from-[#F7D595]"], [class*="to-[#F7D595]"], .ern-botao-ouro):not(.ern-gestao, .ern-gestao *) {
+  color: inherit !important;
   background: var(--eda-acao) !important;
-  color: var(--eda-sobre-acao) !important;
   border: 1px solid var(--eda-acao-borda) !important;
   box-shadow: none !important;
   filter: none !important;
-  border-radius: 10px !important;
+  border-radius: 999px !important;
   font-weight: 600 !important;
-  transition: background-color .15s ease;
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  transition: background-color .15s ease, border-color .15s ease;
 }
 :is([class*="from-[#F7D595]"], [class*="to-[#F7D595]"], .ern-botao-ouro):not(.ern-gestao, .ern-gestao *):hover {
   background: var(--eda-acao-hover) !important;
+  border-color: var(--eda-acao-borda-hover) !important;
   transform: none !important;
 }
 .ern-publico-hero :is([class~="bg-[#E3A144]"], [class~="bg-[#F4C77E]"]):not(.ern-gestao *) {
-  background-color: var(--eda-acao) !important;
-  color: var(--eda-sobre-acao) !important;
+  color: inherit !important;
+  background: var(--eda-acao) !important;
+  border: 1px solid var(--eda-acao-borda) !important;
   box-shadow: none !important;
 }

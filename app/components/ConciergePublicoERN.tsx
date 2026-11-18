@@ -1648,12 +1648,14 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
         .compositor input::placeholder { color: #7a857f; }
         .compositor .principal {
           min-height: 44px; padding: 10px 18px;
-          border: 0; border-radius: 10px;
-          background: #1d5a44;
-          color: #ffffff; font-weight: 600;
+          border-radius: 999px;
+          background: rgb(255 255 255 / 4%);
+          border: 1px solid rgb(255 255 255 / 22%);
+          -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+          color: #f0f0e8; font-weight: 600;
           box-shadow: none;
         }
-        .compositor .principal:hover:not(:disabled) { background: #236b51; }
+        .compositor .principal:hover:not(:disabled) { background: rgb(255 255 255 / 10%); border-color: rgb(255 255 255 / 45%); }
         /* EDA_IARA_AUDIO_V1 + links mais sóbrios */
         .mensagens :global(.iara-link) {
           display: inline-flex; align-items: center; gap: 6px;
@@ -1758,13 +1760,15 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
         .iara-oferta-acao {
           display: inline-flex; align-items: center; gap: 6px;
           min-height: 36px; margin-top: 10px; padding: 7px 16px;
-          border: 0; border-radius: 10px;
-          font-size: 13px; font-weight: 600; color: #ffffff;
-          background: #1d5a44;
+          border-radius: 999px;
+          font-size: 13px; font-weight: 600; color: #f0f0e8;
+          background: rgb(255 255 255 / 4%);
+          border: 1px solid rgb(255 255 255 / 22%);
+          -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
           box-shadow: none;
           transition: background-color .15s;
         }
-        .iara-oferta-acao:hover { background: #236b51; }
+        .iara-oferta-acao:hover { background: rgb(255 255 255 / 10%); border-color: rgb(255 255 255 / 45%); }
         .iara-oferta-fechar {
           flex: none; display: grid; place-items: center;
           width: 28px; height: 28px; border: 0; border-radius: 50%;
