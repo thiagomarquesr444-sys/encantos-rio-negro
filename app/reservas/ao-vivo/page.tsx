@@ -251,9 +251,9 @@ function MapaAoVivo({ lista, selecionada, aoSelecionar }: { lista: { v: ViagemAo
       const m = lib.map(caixa.current, { zoomControl: false, minZoom: 4, maxZoom: 18 }).setView(BARCELOS, 8);
       lib.control.zoom({ position: 'bottomright', zoomInTitle: 'Aproximar', zoomOutTitle: 'Afastar' }).addTo(m);
       const satelite = lib.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Imagens &copy; Esri, Maxar, Earthstar Geographics', maxZoom: 18,
+        attribution: 'Imagens &copy; Esri, Maxar, Earthstar Geographics', maxZoom: 18, maxNativeZoom: 16,
       });
-      const rotulos = lib.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, opacity: 0.9 });
+      const rotulos = lib.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, maxNativeZoom: 16, opacity: 0.9 });
       const ruas = lib.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19,
       });

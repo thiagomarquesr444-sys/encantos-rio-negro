@@ -251,7 +251,7 @@ export async function criarMotorLeaflet(
   L.control.zoom({ position: 'bottomright' }).addTo(mapa);
   L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
     attribution: 'Imagens &copy; <a href="https://www.esri.com/">Esri</a>, Maxar, Earthstar Geographics',
-    maxZoom: 18, keepBuffer: 2, updateWhenIdle: true,
+    maxZoom: 18, maxNativeZoom: 16, keepBuffer: 2, updateWhenIdle: true,
   }).on('tileerror', aoErroDeBlocos).addTo(mapa);
   const camadaPins = L.layerGroup().addTo(mapa);
   const camadaPosicao = L.layerGroup().addTo(mapa);

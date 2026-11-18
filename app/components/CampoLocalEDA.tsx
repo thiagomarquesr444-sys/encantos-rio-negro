@@ -194,9 +194,9 @@ export default function CampoLocalEDA({
       const m = lib.map(caixaMapa.current, { zoomControl: false, scrollWheelZoom: false, attributionControl: true, minZoom: 2, maxZoom: 19 });
       lib.control.zoom({ position: 'bottomright' }).addTo(m);
       const sat = lib.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-        attribution: 'Imagens &copy; Esri, Maxar', maxZoom: 19, maxNativeZoom: 18,
+        attribution: 'Imagens &copy; Esri, Maxar', maxZoom: 19, maxNativeZoom: 16,
       });
-      const rot = lib.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, maxNativeZoom: 18, opacity: 0.9 });
+      const rot = lib.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 19, maxNativeZoom: 16, opacity: 0.9 });
       const ruas = lib.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>', maxZoom: 19,
       });

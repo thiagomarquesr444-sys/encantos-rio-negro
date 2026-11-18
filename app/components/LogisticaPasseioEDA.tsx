@@ -97,8 +97,8 @@ export default function LogisticaPasseioEDA({ valor, onChange, disabled }: { val
       L.current = lib;
       const m = lib.map(caixa.current, { zoomControl: false, minZoom: 4, maxZoom: 18 }).setView(BARCELOS, 11);
       lib.control.zoom({ position: 'bottomright' }).addTo(m);
-      const sat = lib.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Imagens &copy; Esri, Maxar', maxZoom: 18 });
-      const rot = lib.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, opacity: 0.9 });
+      const sat = lib.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution: 'Imagens &copy; Esri, Maxar', maxZoom: 18, maxNativeZoom: 16 });
+      const rot = lib.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { maxZoom: 18, maxNativeZoom: 16, opacity: 0.9 });
       const ruas = lib.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '&copy; OpenStreetMap', maxZoom: 19 });
       sat.addTo(m); rot.addTo(m);
       bases.current = { sat, rot, ruas };
