@@ -708,9 +708,8 @@ export default function PlanosPage() {
         ====================================================== */}
 
         {planoAtual && (
-          <CartaoMagneticoEDA as="section" forca={3} className="mb-8 overflow-hidden rounded-[24px] border border-[var(--ern-destaque)] bg-[var(--ern-painel)]">
+          <section className="mb-8 overflow-hidden rounded-[24px] border border-white/[0.09] bg-[var(--ern-painel)]">
             <div className="relative flex flex-col gap-5 px-5 py-5 md:flex-row md:items-center md:justify-between md:px-6">
-              <div className="pointer-events-none absolute -left-14 -top-20 h-40 w-40 rounded-full border border-[var(--ern-destaque)]" />
 
               <div className="relative">
                 <div className="flex items-center gap-3">
@@ -745,7 +744,7 @@ export default function PlanosPage() {
                 </p>
               </div>
 
-              <div className="relative flex items-center gap-3 rounded-[16px] border border-[var(--ern-destaque)] bg-[var(--ern-botao)]/[0.035] px-4 py-3">
+              <div className="relative flex items-center gap-3 rounded-full border border-white/[0.16] bg-transparent py-2 pl-2 pr-5">
                 <span className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--ern-destaque)] bg-[var(--ern-suave)] text-[10px] font-bold text-[var(--ern-destaque)]">
                   EDA
                 </span>
@@ -762,7 +761,7 @@ export default function PlanosPage() {
                 </div>
               </div>
             </div>
-          </CartaoMagneticoEDA>
+          </section>
         )}
 
         {!carregando && planos.length > 0 && (
@@ -796,7 +795,7 @@ export default function PlanosPage() {
               </p>
             </div>
 
-            <div className="rounded-[22px] border border-white/[0.075] bg-[var(--ern-painel)] p-2 shadow-[0_14px_40px_rgba(0,0,0,0.2)]">
+            <div className="rounded-full border border-white/[0.09] bg-[var(--ern-painel)] p-1.5">
               <div className="grid grid-cols-3 gap-2">
                 {CICLOS.map(
                   (item) => {
@@ -819,9 +818,9 @@ export default function PlanosPage() {
                           checkoutPlano !==
                           null
                         }
-                        className={`group relative min-h-[66px] rounded-[16px] border px-3 py-3 text-center transition-all duration-200 ${
+                        className={`group relative min-h-[56px] rounded-full border px-3 py-2.5 text-center transition-all duration-200 ${
                           ativo
-                            ? 'border-[var(--ern-destaque)] bg-[var(--ern-botao)] text-[#07130F] shadow-[0_8px_25px_rgba(227,161,68,0.22)]'
+                            ? 'eda-botao-ativo'
                             : 'border-transparent bg-transparent text-[var(--ern-texto)]/42 hover:border-white/[0.065] hover:bg-white/[0.03] hover:text-[var(--ern-texto)]/75'
                         } ${
                           checkoutPlano
@@ -829,10 +828,6 @@ export default function PlanosPage() {
                             : ''
                         }`}
                       >
-                        {ativo && (
-                          <span className="absolute left-1/2 top-0 h-[2px] w-10 -translate-x-1/2 rounded-full bg-[#07130F]/55" />
-                        )}
-
                         <span className="block text-[13px] font-bold">
                           {
                             item.nome
@@ -842,7 +837,7 @@ export default function PlanosPage() {
                         <span
                           className={`mt-1 block text-[8px] font-semibold ${
                             ativo
-                              ? 'text-[#07130F]/58'
+                              ? 'opacity-60'
                               : 'text-[var(--ern-texto)]/19 group-hover:text-[var(--ern-texto)]/40'
                           }`}
                         >
