@@ -48,6 +48,9 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
   const [verificado, setVerificado] = useState(false);
   const [avisoPix, setAvisoPix] = useState('');
   const [ocupado, setOcupado] = useState(false);
+  // EDA_VITRINE_EDITAR_V1: peça em edição (null = nova peça).
+  const [editando, setEditando] = useState<Item | null>(null);
+  const [chaveFoto, setChaveFoto] = useState(0);
   const [aviso, setAviso] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null);
 
   const bebidas = /bebida/i.test(atividade);
@@ -91,16 +94,21 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
   async function adicionar() {
     setAviso(null);
     if (titulo.trim().length < 2) return setAviso({ tipo: 'erro', texto: 'Dê um nome à peça.' });
-    if (!foto) return setAviso({ tipo: 'erro', texto: 'Escolha uma foto da peça.' });
-    if (!TIPOS.includes(foto.type)) return setAviso({ tipo: 'erro', texto: 'Use foto JPG, PNG ou WebP.' });
-    if (foto.size > 8 * 1024 * 1024) return setAviso({ tipo: 'erro', texto: 'A foto passa de 8 MB.' });
+    if (!foto && !editando) return setAviso({ tipo: 'erro', texto: 'Escolha uma foto da peça.' });
+    if (foto && !TIPOS.includes(foto.type)) return setAviso({ tipo: 'erro', texto: 'Use foto JPG, PNG ou WebP.' });
+    if (foto && foto.size > 8 * 1024 * 1024) return setAviso({ tipo: 'erro', texto: 'A foto passa de 8 MB.' });
     const valor = preco.trim() ? Number(preco.replace(',', '.')) : null;
     if (valor !== null && (!Number.isFinite(valor) || valor < 0)) {
       return setAviso({ tipo: 'erro', texto: 'Preço inválido.' });
     }
 
     setOcupado(true);
+    if (editando) {
+      await salvarEdicao(editando, valor);
+      return;
+    }
     try {
+      if (!foto) throw new Error('Escolha uma foto da peça.');
       const arquivo = await prepararFotoEnvioEDA(foto);
       const ext = arquivo.type === 'image/png' ? 'png' : arquivo.type === 'image/webp' ? 'webp' : 'jpg';
       const caminho = `vitrine/${usuarioId}/${crypto.randomUUID()}.${ext}`;
@@ -141,6 +149,77 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
     }
   }
 
+  function limparFormulario() {
+    setTitulo('');
+    setDescricao('');
+    setPreco('');
+    setFoto(null);
+    setEnviaCorreios(false);
+    setEntregaPasseio(false);
+    setMaior18(false);
+    setEditando(null);
+    setChaveFoto((k) => k + 1);
+  }
+
+  function editar(item: Item) {
+    setAviso(null);
+    setEditando(item);
+    setTitulo(item.titulo);
+    setDescricao(item.descricao ?? '');
+    setPreco(item.preco !== null ? String(item.preco).replace('.', ',') : '');
+    setFoto(null);
+    setEnviaCorreios(item.envia_correios);
+    setEntregaPasseio(item.entrega_passeio);
+    setMaior18(item.maior_18);
+    setChaveFoto((k) => k + 1);
+    document.getElementById('vitrine-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  async function salvarEdicao(item: Item, valor: number | null) {
+    let novoCaminho: string | null = null;
+    try {
+      let fotoUrl = item.foto_url;
+      if (foto) {
+        const arquivo = await prepararFotoEnvioEDA(foto);
+        const ext = arquivo.type === 'image/png' ? 'png' : arquivo.type === 'image/webp' ? 'webp' : 'jpg';
+        novoCaminho = `vitrine/${usuarioId}/${crypto.randomUUID()}.${ext}`;
+        const { error: erroFoto } = await supabase.storage
+          .from(BUCKET)
+          .upload(novoCaminho, arquivo, { contentType: arquivo.type, upsert: false });
+        if (erroFoto) { novoCaminho = null; throw new Error('Não foi possível enviar a foto.'); }
+        fotoUrl = supabase.storage.from(BUCKET).getPublicUrl(novoCaminho).data.publicUrl;
+      }
+      const { error } = await supabase
+        .from('vitrine_itens')
+        .update({
+          titulo: titulo.trim().slice(0, 90),
+          descricao: descricao.trim().slice(0, 600) || null,
+          preco: valor,
+          foto_url: fotoUrl,
+          envia_correios: enviaCorreios,
+          entrega_passeio: entregaPasseio,
+          maior_18: bebidas || maior18,
+        })
+        .eq('id', item.id)
+        .eq('usuario_id', usuarioId);
+      if (error) throw new Error('Não foi possível salvar as alterações.');
+      // Foto trocada: apaga a antiga (só se for da pasta do próprio artesão).
+      if (novoCaminho) {
+        const antigo = caminhoDaUrl(item.foto_url);
+        if (antigo?.startsWith(`vitrine/${usuarioId}/`)) await supabase.storage.from(BUCKET).remove([antigo]);
+        novoCaminho = null;
+      }
+      limparFormulario();
+      setAviso({ tipo: 'ok', texto: 'Alterações salvas na vitrine.' });
+      await carregar();
+    } catch (e) {
+      if (novoCaminho) await supabase.storage.from(BUCKET).remove([novoCaminho]);
+      setAviso({ tipo: 'erro', texto: (e as Error).message });
+    } finally {
+      setOcupado(false);
+    }
+  }
+
   async function alternar(item: Item) {
     await supabase.from('vitrine_itens').update({ publicado: !item.publicado }).eq('id', item.id);
     await carregar();
@@ -149,6 +228,7 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
   async function remover(item: Item) {
     if (!(await confirmarEDA(`Remover "${item.titulo}" da vitrine?`))) return;
     const { error } = await supabase.from('vitrine_itens').delete().eq('id', item.id);
+    if (!error && editando?.id === item.id) limparFormulario();
     if (!error) {
       const caminho = caminhoDaUrl(item.foto_url);
       if (caminho?.startsWith(`vitrine/${usuarioId}/`)) await supabase.storage.from(BUCKET).remove([caminho]);
@@ -186,7 +266,10 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
         {avisoPix && <p className="mt-2 text-xs text-[#F4C77E]">{avisoPix}</p>}
       </div>
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+      {editando && (
+        <p className="mt-6 text-sm font-semibold text-[#F4C77E]">Editando: {editando.titulo}</p>
+      )}
+      <div id="vitrine-form" className="mt-6 grid scroll-mt-24 gap-4 sm:grid-cols-2">
         <label className="text-sm text-[#EDEDE3]">
           Nome da peça ou produto
           <input value={titulo} maxLength={90} onChange={(e) => setTitulo(e.target.value)} className={INPUT}
@@ -203,8 +286,8 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
             className={`${INPUT} py-3`} placeholder="Material, tamanho, quem fez, a história da peça…" />
         </label>
         <label className="text-sm text-[#EDEDE3] sm:col-span-2">
-          Foto
-          <input type="file" accept="image/jpeg,image/png,image/webp" capture="environment"
+          {editando ? 'Trocar foto (opcional)' : 'Foto'}
+          <input key={chaveFoto} type="file" accept="image/jpeg,image/png,image/webp" capture="environment"
             onChange={(e) => setFoto(e.target.files?.[0] ?? null)} className={`${INPUT} py-2.5`} />
         </label>
         <label className="flex min-h-12 items-center gap-3 text-sm text-[#EDEDE3]">
@@ -232,8 +315,14 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <button type="button" onClick={() => void adicionar()} disabled={ocupado}
           className="inline-flex min-h-12 items-center rounded-xl bg-[#E3A144] px-5 text-sm font-bold text-[#07110E] disabled:opacity-50">
-          {ocupado ? 'Publicando…' : 'Publicar na vitrine'}
+          {ocupado ? 'Salvando…' : editando ? 'Salvar alterações' : 'Publicar na vitrine'}
         </button>
+        {editando && (
+          <button type="button" onClick={limparFormulario} disabled={ocupado}
+            className="inline-flex min-h-12 items-center rounded-full border border-white/20 px-5 text-sm text-[#EDEDE3]/75">
+            Cancelar edição
+          </button>
+        )}
         {aviso && (
           <span className={`text-sm ${aviso.tipo === 'ok' ? 'text-emerald-300' : 'text-red-300'}`}>{aviso.texto}</span>
         )}
@@ -266,6 +355,9 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
                   </p>
                 )}
                 <div className="mt-2 flex gap-2 text-xs">
+                  <button type="button" onClick={() => editar(item)} className="rounded-lg border border-white/10 px-2 py-1 text-[#EDEDE3]/75">
+                    Editar
+                  </button>
                   <button type="button" onClick={() => void alternar(item)} className="rounded-lg border border-white/10 px-2 py-1 text-[#EDEDE3]/75">
                     {item.publicado ? 'Ocultar' : 'Mostrar'}
                   </button>
