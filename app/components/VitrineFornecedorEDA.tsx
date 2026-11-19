@@ -40,7 +40,7 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
   const [preco, setPreco] = useState('');
   const [foto, setFoto] = useState<File | null>(null);
   const [enviaCorreios, setEnviaCorreios] = useState(false);
-  const [maior18, setMaior18] = useState(false);
+  const [maior18, setMaior18] = useState(() => /bebida/i.test(atividade));
   const [entregaPasseio, setEntregaPasseio] = useState(false);
   // EDA_ARTESANATO_V2: nome do titular do Pix, mostrado na vitrine para o turista conferir.
   const [pixTitular, setPixTitular] = useState('');
@@ -53,6 +53,7 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
   const [chaveFoto, setChaveFoto] = useState(0);
   const [aviso, setAviso] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null);
 
+  // EDA_VITRINE_18_V1: o aviso +18 só existe para bebidas alcoólicas (atividade Bebidas).
   const bebidas = /bebida/i.test(atividade);
   const artesanato = /artesanato/i.test(atividade);
 
@@ -126,7 +127,7 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
         foto_url: pub.publicUrl,
         envia_correios: enviaCorreios,
         entrega_passeio: entregaPasseio,
-        maior_18: bebidas || maior18,
+        maior_18: bebidas && maior18,
       });
       if (error) {
         await supabase.storage.from(BUCKET).remove([caminho]);
@@ -156,7 +157,7 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
     setFoto(null);
     setEnviaCorreios(false);
     setEntregaPasseio(false);
-    setMaior18(false);
+    setMaior18(bebidas);
     setEditando(null);
     setChaveFoto((k) => k + 1);
   }
@@ -170,7 +171,7 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
     setFoto(null);
     setEnviaCorreios(item.envia_correios);
     setEntregaPasseio(item.entrega_passeio);
-    setMaior18(item.maior_18);
+    setMaior18(bebidas && item.maior_18);
     setChaveFoto((k) => k + 1);
     document.getElementById('vitrine-form')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
@@ -198,7 +199,7 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
           foto_url: fotoUrl,
           envia_correios: enviaCorreios,
           entrega_passeio: entregaPasseio,
-          maior_18: bebidas || maior18,
+          maior_18: bebidas && maior18,
         })
         .eq('id', item.id)
         .eq('usuario_id', usuarioId);
@@ -298,19 +299,13 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
           <input type="checkbox" checked={entregaPasseio} onChange={(e) => setEntregaPasseio(e.target.checked)} />
           Posso entregar ao turista durante o passeio, por uma operadora
         </label>
-        {!bebidas && (
+        {bebidas && (
           <label className="flex min-h-12 items-center gap-3 text-sm text-[#EDEDE3]">
             <input type="checkbox" checked={maior18} onChange={(e) => setMaior18(e.target.checked)} />
-            Venda só para maiores de 18 anos
+            É bebida alcoólica (venda proibida para menores de 18 anos)
           </label>
         )}
       </div>
-
-      {bebidas && (
-        <p className="mt-3 text-xs text-[#F4C77E]">
-          Bebidas aparecem com o aviso &quot;Venda proibida para menores de 18 anos&quot;.
-        </p>
-      )}
 
       <div className="mt-5 flex flex-wrap items-center gap-3">
         <button type="button" onClick={() => void adicionar()} disabled={ocupado}
