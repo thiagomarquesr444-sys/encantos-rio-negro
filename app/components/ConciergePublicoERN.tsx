@@ -846,6 +846,20 @@ function ConversaERN({ idioma }: { idioma: IdiomaERN }) {
     if (lista && aberto) lista.scrollTop = lista.scrollHeight;
   }, [mensagens, aberto, digitandoERN]);
 
+  // IARA_ROLAGEM_V1: como na conversa da operadora, a última mensagem fica
+  // sempre à vista — inclusive enquanto a Iara "digita" letra por letra.
+  // Se o visitante subir para reler, a rolagem automática respeita e pausa.
+  useEffect(() => {
+    const lista = listaRef.current;
+    if (!lista || !aberto) return;
+    let noFim = true;
+    const aoRolar = () => { noFim = lista.scrollHeight - lista.scrollTop - lista.clientHeight < 80; };
+    const observador = new MutationObserver(() => { if (noFim) lista.scrollTop = lista.scrollHeight; });
+    observador.observe(lista, { childList: true, subtree: true, characterData: true });
+    lista.addEventListener('scroll', aoRolar, { passive: true });
+    return () => { observador.disconnect(); lista.removeEventListener('scroll', aoRolar); };
+  }, [aberto]);
+
   function fechar() {
     if (gravadorRef.current?.state === 'recording') pararAudio(true);
     setAberto(false);
