@@ -5,6 +5,7 @@ import PublicHeader from '@/app/components/PublicHeader';
 import RodapePublicoEDA from '@/app/components/RodapePublicoEDA';
 import MenuInstitucionalERN from '@/app/components/MenuInstitucionalERN';
 import { EMPRESA_EDA } from '@/lib/empresaEDA';
+import RevelarTextoEDA from '@/app/components/RevelarTextoEDA';
 
 // ERN_INSTITUCIONAL_PREMIUM_V1
 // Modelo das páginas de Atendimento, Privacidade, Termos e Reembolso no
@@ -34,7 +35,7 @@ export function SecaoInstitucionalERN({
     <section className="ern-revela-rolagem relative min-w-0 overflow-hidden rounded-[22px] border border-[#e3dfd6] bg-white p-6 shadow-[0_1px_2px_rgb(15_28_23/5%),0_12px_32px_rgb(15_28_23/5%)] sm:p-8">
       <span aria-hidden="true" className="absolute left-0 top-7 h-8 w-1 rounded-r-full bg-gradient-to-b from-[#F7D595] to-[#E3A144]" />
       <h2 className="text-xl font-semibold leading-snug tracking-[-0.02em] text-[#0f1c17] sm:text-2xl">
-        {titulo}
+        <RevelarTextoEDA texto={titulo} />
       </h2>
       <div className="mt-4 space-y-4 break-words text-base leading-7 text-[#4b5a53]">
         {children}
@@ -81,7 +82,7 @@ export default function PaginaInstitucionalERN({
           Central de atendimento
         </p>
         <h1 className="mt-3 max-w-[820px] text-[clamp(2rem,4vw,3rem)] leading-[1.08] tracking-[-0.035em] text-[#0f1c17]">
-          {titulo}
+          <RevelarTextoEDA texto={titulo} />
         </h1>
         <p className="mt-4 max-w-[680px] text-base leading-7 text-[#4b5a53] md:text-lg md:leading-8">
           {descricao}

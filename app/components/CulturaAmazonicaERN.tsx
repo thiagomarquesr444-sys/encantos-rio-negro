@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import { sinalFracoEDA, videoLeveEDA } from '@/lib/conexaoEDA';
+import RevelarTextoEDA from '@/app/components/RevelarTextoEDA';
 
 const colecoes = [
   {
@@ -255,7 +256,7 @@ export default function CulturaAmazonicaERN() {
           className="mt-4 max-w-3xl text-4xl leading-[1.08] tracking-[-0.035em] md:text-6xl"
           style={{ fontFamily: 'var(--font-fraunces), serif' }}
         >
-          {t.title}
+          <RevelarTextoEDA texto={t.title} />
         </h2>
 
         <p className="mt-5 max-w-2xl text-sm leading-7 text-[#4b5a53]">

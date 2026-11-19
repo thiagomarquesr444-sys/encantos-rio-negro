@@ -9,6 +9,7 @@ import {
   type CategoriaPublicacao,
   type PublicacaoPublica,
 } from '@/lib/redePublica';
+import RevelarTextoEDA from '@/app/components/RevelarTextoEDA';
 
 const textos = {
   PT: {
@@ -112,7 +113,7 @@ export default function FeedDescubraERN() {
               className="mt-4 text-4xl leading-[1.08] tracking-[-0.03em] md:text-5xl"
               style={{ fontFamily: 'var(--font-fraunces), serif' }}
             >
-              {t.title}
+              <RevelarTextoEDA texto={t.title} />
             </h2>
             <p className="mt-5 max-w-xl text-sm leading-7 text-[#4b5a53]">
               {t.description}

@@ -6,6 +6,7 @@
 // Fotos em WebP leve (≤100 KB) e carregamento preguiçoso para o interior.
 import { useLanguage } from '@/app/components/LanguageProvider';
 import './letreiro-eda.css';
+import RevelarTextoEDA from '@/app/components/RevelarTextoEDA';
 
 type Item = { foto: string; selo: string; titulo: string; texto: string; alt: string };
 type Bloco = { olho: string; titulo: string; sub: string; lista: string; itens: Item[] };
@@ -92,7 +93,7 @@ export default function LetreiroEDA() {
     <section className="eda-letreiro ern-publico-hero" aria-labelledby="titulo-letreiro-eda">
       <div className="eda-letreiro-miolo">
         <p className="eda-letreiro-olho">{c.olho}</p>
-        <h2 id="titulo-letreiro-eda" className="eda-letreiro-titulo">{c.titulo}</h2>
+        <h2 id="titulo-letreiro-eda" className="eda-letreiro-titulo"><RevelarTextoEDA texto={c.titulo} /></h2>
         <span className="eda-letreiro-veio" aria-hidden="true" />
         <p className="eda-letreiro-sub">{c.sub}</p>
         <ol className="eda-letreiro-grade" tabIndex={0} aria-label={c.lista}>

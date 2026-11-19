@@ -26,6 +26,7 @@ import {
   type CidadeBaseERN, type ZonaERN,
 } from '@/lib/fatosDestinosERN';
 import './DestinosVisitanteERN.css';
+import RevelarTextoEDA from '@/app/components/RevelarTextoEDA';
 
 const copy = {
   PT: {
@@ -804,7 +805,7 @@ export default function ExploradorDestinosERN() {
       {municipio && !drawer && <aside className="ern-v-muni-card" aria-labelledby="ern-v-muni-titulo">
         <button type="button" className="ern-v-close" onClick={() => setMunicipio(null)} aria-label={p.muniFechar}>×</button>
         <p className="ern-v-kicker">{p.muniKicker}</p>
-        <h2 id="ern-v-muni-titulo">{municipio.nome}</h2>
+        <h2 id="ern-v-muni-titulo"><RevelarTextoEDA texto={municipio.nome} /></h2>
         <p>{p.muniTexto}</p>
         <div className="ern-v-muni-acoes">
           <Link className="ern-v-ouro-botao" href="/#concierge">✦ {p.opsConcierge}</Link>

@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import RevelarTextoEDA from '@/app/components/RevelarTextoEDA';
 
 type Props = {
   eyebrow: string;
@@ -39,7 +40,7 @@ export default function HeroExperienciasERN({
       <div className="conteudo-abertura">
         <div className="letreiro">
           <p className="chamada">{eyebrow}</p>
-          <h1>{title}</h1>
+          <h1><RevelarTextoEDA texto={title} /></h1>
           <p className="introducao">{intro}</p>
 
           <div className="botoes">
@@ -310,4 +311,4 @@ export default function HeroExperienciasERN({
       `}</style>
     </section>
   );
-}
+}

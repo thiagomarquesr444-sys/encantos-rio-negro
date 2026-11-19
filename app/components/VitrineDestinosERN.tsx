@@ -15,6 +15,7 @@ import { MUNICIPIOS_AMAZONAS } from '@/lib/municipiosAmazonasERN';
 import { acharDestinoIara, destinoParaParametro } from '@/lib/iaraDestinosERN';
 import { fichaPorNome, useFichasMunicipios } from '@/lib/fichasMunicipiosCliente';
 import VideoCartaoEDA from './VideoCartaoEDA';
+import RevelarTextoEDA from '@/app/components/RevelarTextoEDA';
 
 
 // ERN_VITRINE_DESTINOS_V1 → EDA_DESCUBRA_AMAZONAS_V1
@@ -197,7 +198,7 @@ export default function VitrineDestinosERN({
               className="mt-5 text-[clamp(2rem,4vw,3.25rem)] leading-[1.08] tracking-[-0.035em] text-[#F0F0E8]"
               style={{ fontFamily: 'var(--font-fraunces), serif' }}
             >
-              {t.titulo}
+              <RevelarTextoEDA texto={t.titulo} />
             </h2>
           </div>
           <p className="max-w-[460px] text-base leading-7 text-[#B8C9BF]">

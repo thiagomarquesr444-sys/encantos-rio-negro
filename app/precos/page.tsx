@@ -8,6 +8,7 @@ import '@/app/fablepremium.css';
 import './precos-premium-eda.css';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import { supabase } from '@/lib/supabase';
+import RevelarTextoEDA from '@/app/components/RevelarTextoEDA';
 
 // ERN_PRECOS_PUBLICOS_V1
 // Página pública de planos e preços. Lê o catálogo pela função
@@ -174,7 +175,7 @@ export default function PrecosPage() {
         <div className="mx-auto max-w-[720px] text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#F4C77E]">{t.eyebrow}</p>
           <h1 className="pr-eda-titulo mt-5 text-[#F0F0E8]">
-            {t.titulo}
+            <RevelarTextoEDA texto={t.titulo} />
           </h1>
           <p className="mt-6 text-base leading-7 text-[#B8C9BF] md:text-lg md:leading-8">{t.descricao}</p>
         </div>

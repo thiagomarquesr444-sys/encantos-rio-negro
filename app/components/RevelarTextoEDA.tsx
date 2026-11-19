@@ -39,9 +39,9 @@ export default function RevelarTextoEDA({ texto, como: Tag = 'span', className =
   return (
     <Tag
       ref={ref}
-      aria-label={texto}
       className={`eda-revelar ${visivel ? 'eda-revelar-visivel' : ''} ${className}`}
     >
+      <span className="sr-only">{texto}</span>
       {palavras.map((p, i) => (
         <span key={i} aria-hidden="true" className="eda-revelar-palavra" style={{ ['--i' as string]: i }}>
           {p}

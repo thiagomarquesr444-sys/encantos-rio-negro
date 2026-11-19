@@ -13,6 +13,7 @@ import { useLanguage } from '@/app/components/LanguageProvider';
 import { HISTORIAS_MUNICIPIOS, type RegiaoHistoria } from '@/lib/historiasMunicipiosERN';
 import { acharDestinoIara, destinoParaParametro } from '@/lib/iaraDestinosERN';
 import VideoCartaoEDA from '@/app/components/VideoCartaoEDA';
+import RevelarTextoEDA from '@/app/components/RevelarTextoEDA';
 
 // ERN_EXPERIENCIAS_PREMIUM_V1
 // Página Experiências no padrão Encantos da Amazônia: abertura escura,
@@ -338,7 +339,7 @@ export default function ExperienciasPremiumERN({ abrirPasseio }: { abrirPasseio?
 
         <section id="interesses" className="mx-auto max-w-[1180px] scroll-mt-24 px-5 py-20 md:px-8 md:py-24">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8a4b12]">{t.interessesEyebrow}</p>
-          <h2 className="mt-3 text-[clamp(2rem,4vw,3rem)] leading-[1.08] tracking-[-0.035em]">{t.interessesTitulo}</h2>
+          <h2 className="mt-3 text-[clamp(2rem,4vw,3rem)] leading-[1.08] tracking-[-0.035em]"><RevelarTextoEDA texto={t.interessesTitulo} /></h2>
           <p className="mt-4 max-w-[640px] text-base leading-7 text-[#4b5a53] md:text-lg">{t.interessesIntro}</p>
           <ul className="pm-mosaico mt-10 grid auto-rows-[220px] grid-flow-dense gap-4 sm:grid-cols-2 md:auto-rows-[250px] lg:grid-cols-4">
             {t.interesses.map((item, indice) => {
@@ -374,7 +375,7 @@ export default function ExperienciasPremiumERN({ abrirPasseio }: { abrirPasseio?
         {/* 3. Como funciona */}
         <section className="mx-auto max-w-[1180px] px-5 pb-20 md:px-8 md:pb-24">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#8a4b12]">{t.passosEyebrow}</p>
-          <h2 className="mt-3 text-[clamp(2rem,4vw,3rem)] leading-[1.08] tracking-[-0.035em]">{t.passosTitulo}</h2>
+          <h2 className="mt-3 text-[clamp(2rem,4vw,3rem)] leading-[1.08] tracking-[-0.035em]"><RevelarTextoEDA texto={t.passosTitulo} /></h2>
           <ol className="pm-passos mt-10 grid gap-5 md:grid-cols-3">
             {t.passos.map(([titulo, texto], indice) => (
               <li key={titulo} className="ern-revela-rolagem rounded-[22px] border border-[#e3dfd6] bg-white p-7 shadow-[0_12px_32px_rgb(15_28_23/5%)]">

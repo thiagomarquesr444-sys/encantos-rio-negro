@@ -13,6 +13,7 @@ import IconeERN, { type NomeIconeERN } from '@/app/components/IconeERN';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import NumerosRedeEDA from '@/app/components/NumerosRedeEDA';
 import { TelaVideoGestaoEDA } from '@/app/components/VitrineGestaoAcessoEDA';
+import RevelarTextoEDA from '@/app/components/RevelarTextoEDA';
 
 type Texto = {
   skip: string; eyebrow: string; title: [string, string, string]; intro: string;
@@ -207,7 +208,7 @@ export default function OperadoresPage() {
         <section className="border-y border-white/[0.06] bg-[#08130F] px-5 py-20 sm:px-8">
           <div className="mx-auto max-w-[1280px]">
             <p className={EYEBROW}>{t.flowEyebrow}</p>
-            <h2 className={`${TITULO} mt-3 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-tight`}>{t.flowTitle}</h2>
+            <h2 className={`${TITULO} mt-3 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-tight`}><RevelarTextoEDA texto={t.flowTitle} /></h2>
             <ol className="pm-grade pm-icones mt-9 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {t.flow.map(([icone, titulo, texto], i) => (
                 <li key={titulo} className={`${CARTAO} ern-revela-rolagem`}>
@@ -224,7 +225,7 @@ export default function OperadoresPage() {
         <section className="px-5 py-20 sm:px-8">
           <div className="mx-auto max-w-[1280px]">
             <p className={EYEBROW}>{t.featEyebrow}</p>
-            <h2 className={`${TITULO} mt-3 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-tight`}>{t.featTitle}</h2>
+            <h2 className={`${TITULO} mt-3 text-[clamp(1.9rem,3.4vw,2.6rem)] leading-tight`}><RevelarTextoEDA texto={t.featTitle} /></h2>
             <div className="pm-grade pm-icones mt-9 grid auto-rows-[minmax(190px,auto)] gap-4 md:grid-cols-2 lg:grid-cols-4">
               <article className="pm-largo relative min-h-[320px] overflow-hidden rounded-[22px] border border-white/[0.08] md:col-span-2 lg:row-span-2">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -259,7 +260,7 @@ export default function OperadoresPage() {
 
         <section className="border-y border-white/[0.06] bg-[#08130F] px-5 py-20 sm:px-8" aria-labelledby="operadores-atuacao">
           <div className="mx-auto max-w-[1280px]">
-            <h2 id="operadores-atuacao" className={`${TITULO} text-[clamp(1.8rem,3vw,2.3rem)]`}>{t.rolesTitle}</h2>
+            <h2 id="operadores-atuacao" className={`${TITULO} text-[clamp(1.8rem,3vw,2.3rem)]`}><RevelarTextoEDA texto={t.rolesTitle} /></h2>
             <div className="pm-grade pm-papeis mt-8 grid gap-4 md:grid-cols-3">
               {t.roles.map(([id, imagem, titulo, texto, cta], i) => (
                 <article key={id} className="overflow-hidden rounded-[22px] border border-white/[0.08] bg-[#0A1713]">

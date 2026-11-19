@@ -30,6 +30,9 @@
 /* ---------- Faixa rolante: itens passam devagar, pausa ao passar o dedo/mouse ---------- */
 .eda-faixa {
   overflow: hidden;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
   mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
 }

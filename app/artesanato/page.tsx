@@ -14,6 +14,7 @@ import PublicHeader from '@/app/components/PublicHeader';
 import RodapePublicoEDA from '@/app/components/RodapePublicoEDA';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import { supabase } from '@/lib/supabase';
+import RevelarTextoEDA from '@/app/components/RevelarTextoEDA';
 
 type ItemVitrine = {
   id: string;
@@ -212,7 +213,7 @@ export default function ArtesanatoPage() {
       <main className="mx-auto max-w-[1180px] px-3 pb-24 pt-28 sm:px-5 md:px-8 md:pt-40">
         <div className="mx-auto max-w-[760px] text-center">
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#F4C77E]">{t.eb}</p>
-          <h1 className="pr-eda-titulo mt-5 text-[#F0F0E8]">{t.titulo}</h1>
+          <h1 className="pr-eda-titulo mt-5 text-[#F0F0E8]"><RevelarTextoEDA texto={t.titulo} /></h1>
           <p className="mt-6 text-base leading-7 text-[#B8C9BF] md:text-lg md:leading-8">{t.sub}</p>
           <ol aria-label={t.eb} className="mx-auto mt-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#B8C9BF]">
             {t.cadeia.map((e, i) => (
