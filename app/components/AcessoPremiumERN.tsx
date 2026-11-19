@@ -68,7 +68,7 @@ export default function AcessoPremiumERN({ children, etapa, perfil }: Props) {
         {perfil === 'fornecedor' ? (
           <picture className="ern-acesso-foto" aria-hidden="true">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/fornecedor/eldorado.webp" alt="" />
+            <img src="/images/fornecedor/artesao-acesso.webp" alt="" style={{ objectPosition: 'center 30%' }} />
           </picture>
         ) : (
           <picture className="ern-acesso-foto" aria-hidden="true">

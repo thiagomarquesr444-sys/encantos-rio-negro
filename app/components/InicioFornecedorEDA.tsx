@@ -107,7 +107,7 @@ export default function InicioFornecedorEDA() {
         </div>
       </header>
 
-      <section className="fi-eda-guia" aria-live="polite">
+      <section className={`fi-eda-guia${artesao ? ' fi-eda-guia-foto' : ''}`} aria-live="polite">
         <span className="fi-eda-selo" aria-hidden="true">EDA</span>
         <div className="min-w-0 flex-1">
           <p className="fi-eda-fala"><Digitando texto={fala} /></p>
@@ -141,7 +141,12 @@ export default function InicioFornecedorEDA() {
             <em>Nome, cidade, atividade e o WhatsApp que recebe os contatos.</em>
           </span>
         </Link>
-        <Link href="/artesanato" target="_blank" className="fi-card fi-card-rio">
+        <Link
+          href="/artesanato"
+          target="_blank"
+          className={artesao ? 'fi-card' : 'fi-card fi-card-rio'}
+          style={artesao ? { backgroundImage: "url('/images/fornecedor/artesao-card-cestaria.webp')" } : undefined}
+        >
           <span className="fi-card-veu" />
           <span className="fi-card-txt">
             <small>Portal público ↗</small>

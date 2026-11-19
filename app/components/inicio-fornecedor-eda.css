@@ -88,3 +88,10 @@
   .fi-card em { font-size: 11.5px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
   .fi-rodape { font-size: 11.5px; }
 }
+
+/* EDA_ARTESAO_GUIA_FOTO_V1: trançado de palha ao fundo do card da EDA (artesão). */
+.fi-eda-guia-foto {
+  background:
+    linear-gradient(90deg, rgb(7 17 14 / 93%) 0%, rgb(7 17 14 / 80%) 55%, rgb(7 17 14 / 55%) 100%),
+    url('/images/fornecedor/artesao-eda-trancado.webp') center / cover no-repeat;
+}
