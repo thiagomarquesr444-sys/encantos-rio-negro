@@ -55,7 +55,7 @@ function corpoBoasVindas(pagina: string): string {
     : [
       area ? `Tô cuidando de ${area} contigo. Me diz o que precisa mudar que eu faço aqui mesmo — você só autoriza.` : 'Me diz o que precisa que eu resolvo aqui mesmo — você só autoriza.',
       area ? `${area.charAt(0).toUpperCase()}${area.slice(1)} está comigo. Pode pedir do seu jeito: eu confiro, preparo e você confirma.` : 'Pode pedir do seu jeito: eu confiro, preparo e você confirma.',
-      'Aqui é a EDA. Peça a mudança ou a dúvida que eu cuido sem você sair desta página.',
+      'Aqui é o Jurupari, o organizador da sua operação. Peça a mudança ou a dúvida que eu cuido sem você sair desta página.',
     ];
   return op[Math.floor(Math.random() * op.length)];
 }
@@ -355,7 +355,7 @@ export default function ConversaEDA() {
       setAnimando(historico.length);
       setMsgs(m => [...m, { papel: 'eda', texto: j.resposta || j.erro || 'Não consegui responder agora. Tente de novo em instantes.', links, acoes, estados: acoes.map(() => 'pendente' as EstadoAcao) }]);
     } catch (e) {
-      setMsgs(m => [...m, { papel: 'eda', texto: e instanceof Error && e.message.includes('sessão') ? e.message : 'Sem conexão com a EDA agora. Confira a internet e tente de novo.' }]);
+      setMsgs(m => [...m, { papel: 'eda', texto: e instanceof Error && e.message.includes('sessão') ? e.message : 'Sem conexão com o Jurupari agora. Confira a internet e tente de novo.' }]);
     } finally {
       setEnviando(false);
     }
@@ -526,8 +526,8 @@ export default function ConversaEDA() {
                   rows={1}
                   value={entrada}
                   maxLength={1000}
-                  placeholder="Pergunte à EDA…"
-                  aria-label="Mensagem para a EDA"
+                  placeholder="Pergunte ao Jurupari…"
+                  aria-label="Mensagem para o Jurupari"
                   onChange={e => { setEntrada(e.target.value); if (erroAudio) setErroAudio(null); }}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void enviar(entrada); } }}
                 />
@@ -541,7 +541,7 @@ export default function ConversaEDA() {
               </>
             )}
           </form>
-          <p className="cv-eda-nota">A EDA lê só dados da sua operadora. Dados pessoais de clientes (nome, CPF, contato, saúde) não saem da plataforma — LGPD.</p>
+          <p className="cv-eda-nota">O Jurupari lê só dados da sua operadora. Dados pessoais de clientes (nome, CPF, contato, saúde) não saem da plataforma — LGPD.</p>
         </section>
       )}
 
