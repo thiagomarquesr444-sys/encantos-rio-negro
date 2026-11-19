@@ -1,0 +1,60 @@
+/* SPELL_EDA_V1 (19/11/2026) — componentes discretos inspirados no Spell UI,
+   refeitos em CSS puro (sem biblioteca Motion, para não pesar no sinal fraco).
+   Seguem o DESIGN.md: sem brilho, sem degradê animado.
+   Com "reduzir movimento" ou sinal fraco, tudo aparece parado. */
+
+/* ---------- Revelar texto: palavras sobem e ganham foco ao entrar na tela ---------- */
+.eda-revelar-palavra {
+  display: inline-block;
+  white-space: pre;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-eda-sinal='fraco']) .eda-revelar .eda-revelar-palavra {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(0.35em);
+    transition:
+      opacity 0.6s ease,
+      filter 0.6s ease,
+      transform 0.6s cubic-bezier(0.2, 0.7, 0.2, 1);
+    transition-delay: calc(var(--i) * 55ms);
+  }
+  html:not([data-eda-sinal='fraco']) .eda-revelar.eda-revelar-visivel .eda-revelar-palavra {
+    opacity: 1;
+    filter: none;
+    transform: none;
+  }
+}
+
+/* ---------- Faixa rolante: itens passam devagar, pausa ao passar o dedo/mouse ---------- */
+.eda-faixa {
+  overflow: hidden;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.eda-faixa-trilho {
+  display: flex;
+  width: max-content;
+  gap: 0.5rem;
+}
+@media (prefers-reduced-motion: no-preference) {
+  html:not([data-eda-sinal='fraco']) .eda-faixa-trilho {
+    animation: eda-faixa-rolar var(--duracao, 40s) linear infinite;
+  }
+  html:not([data-eda-sinal='fraco']) .eda-faixa:hover .eda-faixa-trilho,
+  html:not([data-eda-sinal='fraco']) .eda-faixa:focus-within .eda-faixa-trilho {
+    animation-play-state: paused;
+  }
+}
+@keyframes eda-faixa-rolar {
+  to { transform: translateX(calc(-50% - 0.25rem)); }
+}
+/* Parado: vira lista normal quebrando linha, sem a cópia repetida. */
+@media (prefers-reduced-motion: reduce) {
+  .eda-faixa { -webkit-mask-image: none; mask-image: none; }
+  .eda-faixa-trilho { flex-wrap: wrap; width: auto; }
+  .eda-faixa-copia { display: none; }
+}
+html[data-eda-sinal='fraco'] .eda-faixa { -webkit-mask-image: none; mask-image: none; }
+html[data-eda-sinal='fraco'] .eda-faixa-trilho { flex-wrap: wrap; width: auto; }
+html[data-eda-sinal='fraco'] .eda-faixa-copia { display: none; }

@@ -11,6 +11,8 @@ import HeroImersivoERN from '@/app/components/HeroImersivoERN';
 import LetreiroEDA from '@/app/components/LetreiroEDA';
 import VitrineDestinosERN from '@/app/components/VitrineDestinosERN';
 import IconeIara from '@/app/components/IconeIara';
+import RevelarTextoEDA from '@/app/components/RevelarTextoEDA';
+import FaixaRolanteEDA from '@/app/components/FaixaRolanteEDA';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import '@/app/fablepremium.css';
 
@@ -108,9 +110,11 @@ export default function Home() {
           className="relative z-10 mx-auto flex max-w-[1180px] scroll-mt-28 flex-col items-start gap-8 px-5 pb-20 md:px-8 lg:flex-row lg:items-center lg:justify-between lg:pb-24"
         >
           <div className="max-w-[560px]">
-            <h2 className="text-[clamp(1.875rem,3.4vw,2.75rem)] leading-[1.1] tracking-[-0.03em] text-[#F5F3EA]">
-              {t.territory.unsure}
-            </h2>
+            <RevelarTextoEDA
+              como="h2"
+              texto={t.territory.unsure}
+              className="text-[clamp(1.875rem,3.4vw,2.75rem)] leading-[1.1] tracking-[-0.03em] text-[#F5F3EA]"
+            />
             <p className="mt-5 text-base leading-7 text-[#DBE3DE]">
               {t.territory.unsureDescription}
             </p>
@@ -172,7 +176,7 @@ export default function Home() {
                 fontFamily: 'var(--font-fraunces), serif',
               }}
             >
-              {t.management.title}
+              <RevelarTextoEDA texto={t.management.title} />
             </h2>
 
             <p className="mt-6 max-w-[620px] text-base leading-8 text-[#C8D6CD]">
@@ -181,22 +185,23 @@ export default function Home() {
 
             <a
               href="/operadores"
-              className={`mt-8 inline-flex min-h-[50px] items-center gap-2 rounded-xl border border-[#E3A144]/30 bg-[#E3A144]/10 px-6 text-sm font-semibold text-[#F4C77E] transition hover:bg-[#E3A144]/15 ${FOCO}`}
+              className={`eda-botao mt-8 inline-flex min-h-[50px] items-center gap-2 px-6 text-sm ${FOCO}`}
             >
               {t.management.button}
             </a>
 
-            <ul className="mt-8 flex flex-wrap gap-2">
-              {t.management.modules.map((item) => (
-                <li
-                  key={item}
-                  className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3.5 py-1.5 text-xs font-medium text-[#DBE3DE]"
-                >
-                  <span aria-hidden="true" className="text-[#E3A144]">✦</span>
-                  {item}
-                </li>
-              ))}
-            </ul>
+            <div className="mt-8">
+              <FaixaRolanteEDA
+                itens={t.management.modules}
+                duracaoSegundos={36}
+                render={(item) => (
+                  <span className="inline-flex items-center gap-2 rounded-full border border-white/[0.08] bg-white/[0.03] px-3.5 py-1.5 text-xs font-medium text-[#DBE3DE]">
+                    <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[#DBE3DE]/50" />
+                    {item}
+                  </span>
+                )}
+              />
+            </div>
           </div>
 
           <VideoGestaoEDA />
