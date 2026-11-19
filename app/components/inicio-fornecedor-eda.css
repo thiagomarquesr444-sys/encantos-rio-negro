@@ -95,3 +95,6 @@
     linear-gradient(90deg, rgb(7 17 14 / 93%) 0%, rgb(7 17 14 / 80%) 55%, rgb(7 17 14 / 55%) 100%),
     url('/images/fornecedor/artesao-eda-trancado.webp') center / cover no-repeat;
 }
+
+/* Enquanto a atividade carrega: fundo escuro neutro, sem foto antiga. */
+.fi-capa.fi-carregando, .fi-card.fi-carregando { background: #0c1a15; }

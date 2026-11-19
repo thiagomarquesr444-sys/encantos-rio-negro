@@ -72,6 +72,9 @@ export default function InicioFornecedorEDA() {
 
   const artesao = /artesanato/i.test(s?.atividade ?? '');
   const bebidas = /bebida/i.test(s?.atividade ?? '');
+  // EDA_FORNECEDOR_FOTO_SEM_PISCAR_V1: a foto só entra depois de saber a atividade (evita mostrar a imagem antiga ao recarregar).
+  const foto = (deArtesao: string, padrao: string) =>
+    s ? { backgroundImage: `url('/images/fornecedor/${artesao ? deArtesao : padrao}.webp')` } : undefined;
   const primeiroNome = (s?.nome ?? '').split(' ')[0];
 
   const passos = s
@@ -92,7 +95,7 @@ export default function InicioFornecedorEDA() {
 
   return (
     <div data-fable="portal" className="fi-eda">
-      <header className="fi-capa" style={{ backgroundImage: `url('/images/fornecedor/${artesao ? 'artesao-capa-madeira' : 'eldorado'}.webp')` }}>
+      <header className={`fi-capa${s ? '' : ' fi-carregando'}`} style={foto('artesao-capa-madeira', 'eldorado')}>
         <div className="fi-capa-veu" />
         <div className="fi-capa-txt">
           <p className="fi-eb">Encantos da Amazônia · Espaço do fornecedor</p>
@@ -125,7 +128,7 @@ export default function InicioFornecedorEDA() {
       </section>
 
       <div className="fi-cards">
-        <Link href="/fornecedor/vitrine" className="fi-card" style={{ backgroundImage: `url('/images/fornecedor/${artesao ? 'artesao-card-biojoias' : 'serra-araca-hero'}.webp')` }}>
+        <Link href="/fornecedor/vitrine" className={`fi-card${s ? '' : ' fi-carregando'}`} style={foto('artesao-card-biojoias', 'serra-araca-hero')}>
           <span className="fi-card-veu" />
           <span className="fi-card-txt">
             <small>{s ? `${s.publicadas} no ar` : 'Vitrine'}</small>
@@ -133,7 +136,7 @@ export default function InicioFornecedorEDA() {
             <em>{artesao ? 'Fotos das suas peças com preço e história.' : 'Seus produtos com foto e preço.'}</em>
           </span>
         </Link>
-        <Link href="/fornecedor/perfil" className="fi-card" style={{ backgroundImage: `url('/images/fornecedor/${artesao ? 'artesao-card-colar' : 'experiencias'}.webp')` }}>
+        <Link href="/fornecedor/perfil" className={`fi-card${s ? '' : ' fi-carregando'}`} style={foto('artesao-card-colar', 'experiencias')}>
           <span className="fi-card-veu" />
           <span className="fi-card-txt">
             <small>Quem eu sou</small>
@@ -144,7 +147,7 @@ export default function InicioFornecedorEDA() {
         <Link
           href="/artesanato"
           target="_blank"
-          className={artesao ? 'fi-card' : 'fi-card fi-card-rio'}
+          className={!s ? 'fi-card fi-carregando' : artesao ? 'fi-card' : 'fi-card fi-card-rio'}
           style={artesao ? { backgroundImage: "url('/images/fornecedor/artesao-card-cestaria.webp')" } : undefined}
         >
           <span className="fi-card-veu" />
