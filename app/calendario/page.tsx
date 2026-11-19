@@ -633,19 +633,19 @@ export default function CalendarioAmazonicoPage() {
 
         {camadas.has('amazonica') && (
           <CartaoMagneticoEDA as="section" forca={2} className="eda-cal-amazonia" aria-label="Ritmo amazônico do período">
-            <div><small>Rio Negro · referência</small><b>{rio.nome}</b><span>{rio.texto}</span></div>
-            <div><small>Pesca esportiva</small><b>{pesca.ativa ? 'Em temporada' : 'Fora da temporada'}</b><span>{pesca.texto}</span></div>
-            <div><small>Festas de {MESES_CAL[mesRef]}</small><b>{festasMes.length ? `${festasMes.length} no Amazonas` : 'Sem festa cadastrada'}</b><span>{festasMes.slice(0, 3).join(' · ') || 'As fichas dos municípios alimentam esta faixa.'}</span></div>
+            <div data-arte="rio"><small>Rio Negro · referência</small><b>{rio.nome}</b><span>{rio.texto}</span></div>
+            <div data-arte="pesca"><small>Pesca esportiva</small><b>{pesca.ativa ? 'Em temporada' : 'Fora da temporada'}</b><span>{pesca.texto}</span></div>
+            <div data-arte="festas"><small>Festas de {MESES_CAL[mesRef]}</small><b>{festasMes.length ? `${festasMes.length} no Amazonas` : 'Sem festa cadastrada'}</b><span>{festasMes.slice(0, 3).join(' · ') || 'As fichas dos municípios alimentam esta faixa.'}</span></div>
           </CartaoMagneticoEDA>
         )}
 
         <div className="eda-pg-kpis eda-cal-kpis">
-          <div className={`eda-pg-kpi ${resumo.comPend ? 'eda-pg-kpi-at' : 'eda-pg-kpi-ok'}`}><small>Saídas nos próximos 7 dias</small><b>{resumo.semana}</b><span>{resumo.comPend ? `${resumo.comPend} com pendência` : 'Todas em dia'}</span></div>
-          <div className={`eda-pg-kpi ${conflitos.some((c) => c.grave) ? 'eda-pg-kpi-er' : ''}`}><small>Conflitos no período</small><b>{conflitos.length}</b><span>{conflitos.length ? 'Barco, guia ou bloqueio' : 'Nenhum encontrado'}</span></div>
-          <div className="eda-pg-kpi"><small>Pessoas em saídas</small><b>{resumo.pessoas}</b><span>{resumo.saidas} saída(s) no período</span></div>
+          <div data-arte="saidas" className={`eda-pg-kpi ${resumo.comPend ? 'eda-pg-kpi-at' : 'eda-pg-kpi-ok'}`}><small>Saídas nos próximos 7 dias</small><b>{resumo.semana}</b><span>{resumo.comPend ? `${resumo.comPend} com pendência` : 'Todas em dia'}</span></div>
+          <div data-arte="conflitos" className={`eda-pg-kpi ${conflitos.some((c) => c.grave) ? 'eda-pg-kpi-er' : ''}`}><small>Conflitos no período</small><b>{conflitos.length}</b><span>{conflitos.length ? 'Barco, guia ou bloqueio' : 'Nenhum encontrado'}</span></div>
+          <div data-arte="pessoas" className="eda-pg-kpi"><small>Pessoas em saídas</small><b>{resumo.pessoas}</b><span>{resumo.saidas} saída(s) no período</span></div>
           {financeiroLiberado
-            ? <div className="eda-pg-kpi"><small>A receber · a pagar</small><b>{moedaCal(resumo.receber)}</b><span>A pagar: {moedaCal(resumo.pagar)}</span></div>
-            : <div className="eda-pg-kpi"><small>Dias livres (14 dias)</small><b>{resumo.livres}</b><span>Oportunidade de nova saída</span></div>}
+            ? <div data-arte="financeiro" className="eda-pg-kpi"><small>A receber · a pagar</small><b>{moedaCal(resumo.receber)}</b><span>A pagar: {moedaCal(resumo.pagar)}</span></div>
+            : <div data-arte="saidas" className="eda-pg-kpi"><small>Dias livres (14 dias)</small><b>{resumo.livres}</b><span>Oportunidade de nova saída</span></div>}
         </div>
 
         {(resumo.livres >= 3 || (dados?.pedidosSemData ?? 0) > 0) && (

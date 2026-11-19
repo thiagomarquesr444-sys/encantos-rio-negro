@@ -192,3 +192,54 @@
 @media (prefers-reduced-motion: reduce) {
   .eda-cal-dia, .eda-cal-ev, .eda-cal-carregando i { transition: none; animation: none; }
 }
+
+/* EDA_CALENDARIO_ARTE_V1 — cards com ilustração de calendário ao fundo (SVG leve
+   em /images/calendario, pintada pela cor do tema via mask: funciona em Noite e Claro). */
+.eda-cal [data-arte] { position: relative; isolation: isolate; overflow: hidden; }
+.eda-cal [data-arte]::before {
+  content: ''; position: absolute; z-index: -1; right: -6px; bottom: -4px; width: 64%; height: 100%;
+  background: linear-gradient(135deg, var(--p-ouro), color-mix(in srgb, #5fb8c9 70%, var(--p-ouro)));
+  -webkit-mask: var(--arte) right bottom / contain no-repeat; mask: var(--arte) right bottom / contain no-repeat;
+  opacity: .34; transition: opacity .35s ease, transform .6s cubic-bezier(.2, .7, .2, 1); pointer-events: none;
+}
+.eda-cal [data-arte]::after {
+  content: ''; position: absolute; z-index: -1; inset: 0; pointer-events: none;
+  background:
+    linear-gradient(90deg, var(--p-painel) 26%, color-mix(in srgb, var(--p-painel) 45%, transparent) 58%, transparent 82%),
+    linear-gradient(180deg, color-mix(in srgb, var(--p-ouro) 7%, transparent), transparent 40%);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--p-ouro) 22%, transparent);
+}
+.eda-cal [data-arte]:hover::before { opacity: .48; transform: translateX(-4px) scale(1.03); }
+.eda-cal [data-arte="rio"] { --arte: url('/images/calendario/cal-rio.svg'); }
+.eda-cal [data-arte="pesca"] { --arte: url('/images/calendario/cal-pesca.svg'); }
+.eda-cal [data-arte="festas"] { --arte: url('/images/calendario/cal-festas.svg'); }
+.eda-cal [data-arte="saidas"] { --arte: url('/images/calendario/cal-saidas.svg'); }
+.eda-cal [data-arte="conflitos"] { --arte: url('/images/calendario/cal-conflitos.svg'); }
+.eda-cal [data-arte="pessoas"] { --arte: url('/images/calendario/cal-pessoas.svg'); }
+.eda-cal [data-arte="financeiro"] { --arte: url('/images/calendario/cal-financeiro.svg'); }
+.eda-cal .eda-pg-kpi-er[data-arte]::before { background: linear-gradient(135deg, var(--p-verm), var(--p-ouro)); }
+
+/* Refino premium: faixa e KPIs */
+.eda-cal-amazonia > div { min-height: 128px; background: var(--p-painel); }
+.eda-cal-kpis .eda-pg-kpi { min-height: 132px; transition: border-color .25s ease, transform .25s ease, box-shadow .25s ease; }
+.eda-cal-kpis .eda-pg-kpi:hover { border-color: color-mix(in srgb, var(--p-ouro) 34%, transparent); transform: translateY(-2px); box-shadow: 0 14px 34px rgb(0 0 0 / 22%); }
+.eda-cal-kpis .eda-pg-kpi small { font-size: 11px; font-weight: 650; letter-spacing: .12em; text-transform: uppercase; }
+.eda-cal-kpis .eda-pg-kpi b { font-size: clamp(24px, 2.4vw, 32px); }
+
+/* Refino premium: dias do mês (sem imagem, para manter a leitura dos eventos) */
+.eda-cal-dia { box-shadow: inset 0 1px 0 color-mix(in srgb, var(--p-ouro) 10%, transparent); }
+.eda-cal-dia:hover { transform: translateY(-1px); box-shadow: inset 0 1px 0 color-mix(in srgb, var(--p-ouro) 18%, transparent), 0 10px 24px rgb(0 0 0 / 18%); }
+
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-cal [data-arte]::before { opacity: .24; }
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-cal-kpis .eda-pg-kpi:hover,
+.ern-gestao:is([data-ern-tema="branco"], [data-ern-tema="amarelo"]) .eda-cal-dia:hover { box-shadow: 0 10px 24px rgb(19 36 29 / 10%); }
+
+@media (max-width: 640px) {
+  .eda-cal [data-arte]::before { width: 58%; opacity: .16; }
+  .eda-cal-amazonia > div, .eda-cal-kpis .eda-pg-kpi { min-height: 0; }
+  .eda-cal-kpis .eda-pg-kpi small { font-size: 9.5px; letter-spacing: .08em; }
+  .eda-cal-kpis .eda-pg-kpi b { font-size: 22px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .eda-cal [data-arte]::before, .eda-cal-kpis .eda-pg-kpi { transition: none; }
+}
