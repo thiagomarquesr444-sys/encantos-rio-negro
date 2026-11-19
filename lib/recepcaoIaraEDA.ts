@@ -16,6 +16,7 @@ function grupoPagina(caminho: string): string {
   if (/^\/experiencias\/[^/]+$/.test(caminho)) return 'passeio';
   if (caminho.startsWith('/experiencias')) return 'experiencias';
   if (caminho.startsWith('/destinos')) return 'destinos';
+  if (caminho.startsWith('/artesanato')) return 'artesanato';
   if (caminho.startsWith('/rede/perfil')) return 'perfil';
   if (caminho.startsWith('/rede/publicacao')) return 'publicacao';
   if (caminho.startsWith('/rede')) return 'rede';
@@ -52,6 +53,9 @@ function falasPT(grupo: string, regional: boolean): Fala {
     case 'destinos':
       return { texto: tu('Fala uma cidade do Amazonas que eu te levo no mapa 🗺️', 'Diga uma cidade do Amazonas e eu levo você no mapa 🗺️'),
         opcoes: [{ rotulo: 'Barcelos', pedido: 'Me leva para Barcelos' }, { rotulo: 'Parintins', pedido: 'Me leva para Parintins' }] };
+    case 'artesanato':
+      return { texto: tu('Peças feitas por artesãos do Amazonas. Tu fala e paga direto pra quem fez, e a renda fica na comunidade.', 'Peças feitas por artesãos do Amazonas. Você fala e paga direto a quem fez, e a renda fica na comunidade.'),
+        opcoes: [{ rotulo: 'Como comprar com segurança', pedido: 'Como compro uma peça de artesanato com segurança?' }, { rotulo: 'Conhecer o artesão no passeio', pedido: 'Posso conhecer o artesão e receber a peça durante o meu passeio?' }] };
     case 'rede':
       return { texto: tu('O que tá rolando agora no rio. Toca em “Quero ir!” no que te encantar.', 'O que acontece agora no rio. Toque em “Quero ir!” no que encantar você.'),
         opcoes: [{ rotulo: 'Quem tá na Rede?', pedido: 'Quem são as operadoras e guias da Rede?' }, { rotulo: 'Ver passeios', href: '/experiencias' }] };
@@ -87,6 +91,7 @@ function falasEN(grupo: string): Fala {
     case 'experiencias': return { texto: 'Real tours, real prices and dates. What would you like to live?', opcoes: [{ rotulo: 'Day trips', pedido: 'I want a day trip' }, { rotulo: 'Sport fishing', pedido: 'I want a sport fishing expedition' }] };
     case 'passeio': return { texto: 'Like it? I can check availability and price for your group.', opcoes: [{ rotulo: 'Check availability', pedido: 'Check availability and prices for this tour' }] };
     case 'destinos': return { texto: 'Name a town in Amazonas and I will take you there 🗺️', opcoes: [{ rotulo: 'Take me to Barcelos', pedido: 'Take me to Barcelos' }, { rotulo: 'Take me to Parintins', pedido: 'Take me to Parintins' }] };
+    case 'artesanato': return { texto: 'Pieces made by artisans from Amazonas. You talk and pay the maker directly, and the income stays in the community.', opcoes: [{ rotulo: 'How to buy safely', pedido: 'How do I buy a craft piece safely?' }, { rotulo: 'Meet the artisan on my tour', pedido: 'Can I meet the artisan and receive the piece during my tour?' }] };
     case 'rede': return { texto: 'What is happening on the river right now.', opcoes: [{ rotulo: 'See tours', href: '/experiencias' }] };
     case 'operadores': case 'precos': return { texto: 'Automated 24/7 management for your operation.', opcoes: [{ rotulo: 'How does it work?', pedido: 'How does the platform work for operators?' }, { rotulo: 'See plans', href: '/precos' }] };
     default: return { texto: 'I am right here if you need me 🌊', opcoes: [] };
@@ -97,6 +102,7 @@ function falasES(grupo: string): Fala {
   switch (grupo) {
     case 'descubra': return { texto: 'Elige un tema o uno de los 62 municipios y te llevo 🌊', opcoes: [{ rotulo: 'Sugiéreme una ruta', pedido: 'Sugiéreme una ruta por la Amazonía' }, { rotulo: 'Cuéntame una leyenda', pedido: 'Cuéntame una leyenda amazónica' }] };
     case 'experiencias': return { texto: 'Paseos reales, con precio y fecha. ¿Qué quieres vivir?', opcoes: [{ rotulo: 'Paseos de un día', pedido: 'Quiero un paseo de un día' }, { rotulo: 'Pesca deportiva', pedido: 'Quiero una expedición de pesca' }] };
+    case 'artesanato': return { texto: 'Piezas hechas por artesanos de Amazonas. Hablas y pagas directo a quien lo hizo, y el ingreso queda en la comunidad.', opcoes: [{ rotulo: 'Cómo comprar seguro', pedido: '¿Cómo compro una pieza de artesanía con seguridad?' }, { rotulo: 'Conocer al artesano', pedido: '¿Puedo conocer al artesano y recibir la pieza durante mi paseo?' }] };
     case 'destinos': return { texto: 'Dime una ciudad de Amazonas y te llevo en el mapa 🗺️', opcoes: [{ rotulo: 'Llévame a Barcelos', pedido: 'Llévame a Barcelos' }] };
     case 'operadores': case 'precos': return { texto: 'Gestión automatizada 24 h para tu operación.', opcoes: [{ rotulo: '¿Cómo funciona?', pedido: '¿Cómo funciona la plataforma para operadores?' }, { rotulo: 'Ver planes', href: '/precos' }] };
     default: return { texto: 'Aquí estoy si me necesitas 🌊', opcoes: [] };
