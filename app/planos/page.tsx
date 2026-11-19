@@ -16,6 +16,7 @@ import CartaoMagneticoEDA from '@/app/components/CartaoMagneticoEDA';
 import { supabase } from '@/lib/supabase';
 import { documentoCobrancaValidoERN } from '@/lib/fiscalERN';
 import UsoPlanoEDA from '@/app/components/UsoPlanoEDA';
+import SeloAssinaturaEDA from '@/app/components/SeloAssinaturaEDA';
 import CalculadoraTributosPlanosERN from '@/app/components/CalculadoraTributosPlanosERN';
 
 type Ciclo =
@@ -745,9 +746,7 @@ export default function PlanosPage() {
               </div>
 
               <div className="relative flex items-center gap-3 rounded-full border border-white/[0.16] bg-transparent py-2 pl-2 pr-5">
-                <span className="flex h-8 w-8 items-center justify-center rounded-full border border-[var(--ern-destaque)] bg-[var(--ern-suave)] text-[10px] font-bold text-[var(--ern-destaque)]">
-                  EDA
-                </span>
+                <SeloAssinaturaEDA plano={codigoAtual} tamanho={32} />
 
                 <div>
                   <p className="text-[8px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-destaque)]">
