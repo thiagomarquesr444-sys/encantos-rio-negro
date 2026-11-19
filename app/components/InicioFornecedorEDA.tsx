@@ -92,7 +92,7 @@ export default function InicioFornecedorEDA() {
 
   return (
     <div data-fable="portal" className="fi-eda">
-      <header className="fi-capa" style={{ backgroundImage: "url('/images/fornecedor/eldorado.webp')" }}>
+      <header className="fi-capa" style={{ backgroundImage: `url('/images/fornecedor/${artesao ? 'artesao-capa-madeira' : 'eldorado'}.webp')` }}>
         <div className="fi-capa-veu" />
         <div className="fi-capa-txt">
           <p className="fi-eb">Encantos da Amazônia · Espaço do fornecedor</p>
@@ -125,7 +125,7 @@ export default function InicioFornecedorEDA() {
       </section>
 
       <div className="fi-cards">
-        <Link href="/fornecedor/vitrine" className="fi-card" style={{ backgroundImage: "url('/images/fornecedor/serra-araca-hero.webp')" }}>
+        <Link href="/fornecedor/vitrine" className="fi-card" style={{ backgroundImage: `url('/images/fornecedor/${artesao ? 'artesao-card-biojoias' : 'serra-araca-hero'}.webp')` }}>
           <span className="fi-card-veu" />
           <span className="fi-card-txt">
             <small>{s ? `${s.publicadas} no ar` : 'Vitrine'}</small>
@@ -133,7 +133,7 @@ export default function InicioFornecedorEDA() {
             <em>{artesao ? 'Fotos das suas peças com preço e história.' : 'Seus produtos com foto e preço.'}</em>
           </span>
         </Link>
-        <Link href="/fornecedor/perfil" className="fi-card" style={{ backgroundImage: "url('/images/fornecedor/experiencias.webp')" }}>
+        <Link href="/fornecedor/perfil" className="fi-card" style={{ backgroundImage: `url('/images/fornecedor/${artesao ? 'artesao-card-colar' : 'experiencias'}.webp')` }}>
           <span className="fi-card-veu" />
           <span className="fi-card-txt">
             <small>Quem eu sou</small>
