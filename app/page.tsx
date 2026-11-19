@@ -96,7 +96,8 @@ export default function Home() {
           className="absolute inset-0"
           style={{
             background:
-              'radial-gradient(ellipse at 50% 32%, rgb(3 16 11 / 62%), rgb(3 16 11 / 25%) 60%, rgb(3 16 11 / 10%) 80%), linear-gradient(180deg, rgb(3 16 11 / 55%) 0%, rgb(3 16 11 / 25%) 30%, rgb(7 17 14 / 70%) 70%, #07110E 100%)',
+              // DESCUBRA_CORES_VIVAS_V1: véu mais leve para a foto respirar com cor.
+              'radial-gradient(ellipse at 50% 32%, rgb(3 16 11 / 44%), rgb(3 16 11 / 14%) 60%, rgb(3 16 11 / 0%) 80%), linear-gradient(180deg, rgb(3 16 11 / 38%) 0%, rgb(3 16 11 / 8%) 30%, rgb(7 17 14 / 55%) 72%, #07110E 100%)',
           }}
         />
 

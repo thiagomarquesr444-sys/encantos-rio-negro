@@ -1615,3 +1615,15 @@ html:root .eda-botao-ativo {
   border: 1px solid var(--eda-acao-borda-hover) !important;
   box-shadow: none !important;
 }
+
+/* DESCUBRA_CORES_VIVAS_V1: Encontro das Águas mais vivo (água, floresta e céu
+   com mais cor e contraste) e textos do hero com sombra suave para manter a
+   leitura com o véu escuro mais leve. */
+.ern-fundo-descubra {
+  filter: saturate(1.32) contrast(1.1) brightness(1.04);
+}
+.ern-publico-hero .ern-titulo-animado,
+.ern-publico-hero h2,
+.ern-publico-hero p {
+  text-shadow: 0 2px 18px rgb(0 0 0 / 45%), 0 1px 3px rgb(0 0 0 / 35%);
+}
