@@ -43,6 +43,8 @@ const TEXTOS = {
     filtros: { todos: 'Tudo', Artesanato: 'Artesanato', 'Alimentação / refeições': 'Alimentos', 'Bebidas / distribuidora': 'Bebidas' },
     cidade: 'Todas as cidades',
     falar: 'Falar com quem fez',
+    verMais: 'Ver mais',
+    verMenos: 'Ver menos',
     correios: 'Envia pelos Correios',
     passeio: 'Entrega no passeio',
     verificado: 'Artesão verificado',
@@ -71,6 +73,8 @@ const TEXTOS = {
     filtros: { todos: 'All', Artesanato: 'Crafts', 'Alimentação / refeições': 'Food', 'Bebidas / distribuidora': 'Drinks' },
     cidade: 'All cities',
     falar: 'Talk to the maker',
+    verMais: 'See more',
+    verMenos: 'See less',
     correios: 'Ships via Brazilian Post',
     passeio: 'Delivered on your tour',
     verificado: 'Verified artisan',
@@ -99,6 +103,8 @@ const TEXTOS = {
     filtros: { todos: 'Todo', Artesanato: 'Artesanía', 'Alimentação / refeições': 'Alimentos', 'Bebidas / distribuidora': 'Bebidas' },
     cidade: 'Todas las ciudades',
     falar: 'Hablar con quien lo hizo',
+    verMais: 'Ver más',
+    verMenos: 'Ver menos',
     correios: 'Envía por Correos',
     passeio: 'Entrega en el paseo',
     verificado: 'Artesano verificado',
@@ -141,6 +147,16 @@ export default function ArtesanatoPage() {
   const [filtro, setFiltro] = useState<Filtro>('todos');
   const [cidade, setCidade] = useState('');
   const [destaque, setDestaque] = useState('');
+  const [abertos, setAbertos] = useState<Set<string>>(() => new Set());
+
+  function alternarDescricao(id: string) {
+    setAbertos((atual) => {
+      const novo = new Set(atual);
+      if (novo.has(id)) novo.delete(id);
+      else novo.add(id);
+      return novo;
+    });
+  }
 
   useEffect(() => {
     // Links da Iara: /artesanato?cidade=Barcelos ou /artesanato?peca=<id>
@@ -279,7 +295,23 @@ export default function ArtesanatoPage() {
                   )}
                   <h2 className="line-clamp-2 min-h-[2.5em] text-[13.5px] font-bold leading-[1.25] text-[#F0F0E8] sm:text-lg">{item.titulo}</h2>
                   {item.descricao && (
-                    <p className="mt-1.5 hidden min-h-[3.1em] text-sm leading-[1.55] text-[#B8C9BF] sm:line-clamp-2">{item.descricao}</p>
+                    <>
+                      <p
+                        id={`desc-${item.id}`}
+                        className={`mt-1.5 whitespace-pre-line text-xs leading-[1.55] text-[#B8C9BF] sm:text-sm ${abertos.has(item.id) ? 'block' : 'hidden min-h-[3.1em] sm:line-clamp-2'}`}
+                      >
+                        {item.descricao}
+                      </p>
+                      <button
+                        type="button"
+                        aria-expanded={abertos.has(item.id)}
+                        aria-controls={`desc-${item.id}`}
+                        onClick={() => alternarDescricao(item.id)}
+                        className="mt-1 self-start text-[11px] font-semibold text-[#F4C77E] underline-offset-4 hover:underline sm:text-xs"
+                      >
+                        {abertos.has(item.id) ? t.verMenos : t.verMais}
+                      </button>
+                    </>
                   )}
                   <div className="mt-auto pt-2.5 sm:pt-3.5">
                     <p className="text-[15px] font-bold text-[#F4C77E] sm:text-[19px]">
