@@ -10,7 +10,6 @@ import './dashboard-premium.css';
 import '@/app/fablepremium.css';
 import Link from 'next/link';
 import GraficosOperadora from '@/app/components/GraficosOperadora';
-import MapaTerritorioERN from '@/app/components/MapaTerritorioERN';
 
 import { supabase } from '@/lib/supabase';
 import { useAoVivoEDA } from '@/lib/aoVivoEDA';
@@ -676,7 +675,7 @@ function DashboardAdministrativoERN() {
   }, [plano, uso]);
 
   // ERN_INICIO_OPERADORA_PREMIUM_V1: a página inicial nova concentra o dia
-  // da operadora; mapa e análises completas seguem logo abaixo.
+  // da operadora; análises completas seguem logo abaixo (o mapa fica só no menu Mapa operacional).
   return (
     <div data-fable="gestao" className="eda-inicio-fundo min-w-0 w-full break-words">
       <InicioOperadoraPremiumERN
@@ -693,13 +692,7 @@ function DashboardAdministrativoERN() {
 
       <div className="ern-premium-dashboard eda-analises min-w-0 w-full">
         <div className="mx-auto min-w-0 w-full max-w-[1360px] px-4 pb-12 pt-6 sm:px-5 md:px-8">
-          <section aria-labelledby="eda-territorio" id="mapa-ern" className="scroll-mt-28">
-            <p className="eda-sec-eb">Operação</p>
-            <h2 id="eda-territorio" className="eda-sec-titulo">Mapa operacional</h2>
-            <MapaTerritorioERN demandas={demandasOperacionais} carregando={loading} somenteOperacao />
-          </section>
-
-          <section aria-labelledby="eda-analises" id="ern-v446-graficos" className="mt-10 scroll-mt-28">
+          <section aria-labelledby="eda-analises" id="ern-v446-graficos" className="scroll-mt-28">
             <p className="eda-sec-eb">Análises</p>
             <h2 id="eda-analises" className="eda-sec-titulo">Reservas e financeiro em detalhe</h2>
             <GraficosOperadora
