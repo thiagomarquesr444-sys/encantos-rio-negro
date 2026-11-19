@@ -15,6 +15,7 @@ import RodapePublicoEDA from '@/app/components/RodapePublicoEDA';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import { supabase } from '@/lib/supabase';
 import RevelarTextoEDA from '@/app/components/RevelarTextoEDA';
+import FaixaRolanteEDA from '@/app/components/FaixaRolanteEDA';
 
 type ItemVitrine = {
   id: string;
@@ -43,6 +44,7 @@ const TEXTOS = {
     cadeia: ['Turismo', 'Economia criativa', 'Artesanato', 'Comunidades', 'Renda'],
     filtros: { todos: 'Tudo', Artesanato: 'Artesanato', 'Alimentação / refeições': 'Alimentos', 'Bebidas / distribuidora': 'Bebidas' },
     cidade: 'Todas as cidades',
+    quemFaz: 'Quem faz · toque para ver as peças da cidade',
     falar: 'Falar com quem fez',
     verMais: 'Ver mais',
     verMenos: 'Ver menos',
@@ -73,6 +75,7 @@ const TEXTOS = {
     cadeia: ['Tourism', 'Creative economy', 'Crafts', 'Communities', 'Income'],
     filtros: { todos: 'All', Artesanato: 'Crafts', 'Alimentação / refeições': 'Food', 'Bebidas / distribuidora': 'Drinks' },
     cidade: 'All cities',
+    quemFaz: 'Who makes it · tap to see pieces from the town',
     falar: 'Talk to the maker',
     verMais: 'See more',
     verMenos: 'See less',
@@ -103,6 +106,7 @@ const TEXTOS = {
     cadeia: ['Turismo', 'Economía creativa', 'Artesanía', 'Comunidades', 'Ingresos'],
     filtros: { todos: 'Todo', Artesanato: 'Artesanía', 'Alimentação / refeições': 'Alimentos', 'Bebidas / distribuidora': 'Bebidas' },
     cidade: 'Todas las ciudades',
+    quemFaz: 'Quién lo hace · toca para ver las piezas de la ciudad',
     falar: 'Hablar con quien lo hizo',
     verMais: 'Ver más',
     verMenos: 'Ver menos',
@@ -190,6 +194,18 @@ export default function ArtesanatoPage() {
     [itens]
   );
 
+  // SPELL_EDA_V1: faixa rolante "Quem faz" (artesão · cidade), só com dados reais.
+  const quemFaz = useMemo(() => {
+    const mapa = new Map<string, string>();
+    for (const i of itens ?? []) {
+      const nome = (i.fornecedor ?? '').trim();
+      const local = (i.cidade ?? '').trim();
+      if (!nome) continue;
+      mapa.set(local ? `${nome} · ${local}` : nome, local);
+    }
+    return mapa;
+  }, [itens]);
+
   const visiveis = useMemo(
     () =>
       (itens ?? []).filter(
@@ -254,6 +270,27 @@ export default function ArtesanatoPage() {
 
         {erro && <p className="mt-10 text-center text-sm text-red-300">{t.erro}</p>}
         {itens && !visiveis.length && !erro && <p className="mt-10 text-center text-sm text-[#B8C9BF]">{t.vazio}</p>}
+
+        {quemFaz.size >= 3 && (
+          <div className="mx-auto mt-8 max-w-[1100px]">
+            <p className="mb-2 text-center text-[11px] font-semibold uppercase tracking-[0.16em] text-[#B8C9BF]">{t.quemFaz}</p>
+            <FaixaRolanteEDA
+              itens={[...quemFaz.keys()]}
+              duracaoSegundos={Math.max(30, quemFaz.size * 5)}
+              rotulo={t.quemFaz}
+              render={(rotulo) => (
+                <button
+                  type="button"
+                  onClick={() => setCidade(quemFaz.get(rotulo) ?? '')}
+                  className="inline-flex min-h-[36px] items-center gap-2 whitespace-nowrap rounded-full border border-white/[0.12] bg-white/[0.03] px-3.5 text-xs font-medium text-[#DBE3DE] transition-colors hover:border-white/40"
+                >
+                  <span aria-hidden="true" className="h-1 w-1 rounded-full bg-[#DBE3DE]/50" />
+                  {rotulo}
+                </button>
+              )}
+            />
+          </div>
+        )}
 
         {/* EDA_VITRINE_V3: mesmo padrão dos cards do catálogo de Passeios
             (3 colunas no desktop, 2 no celular, foto 4:3 / 1:1, textos com corte). */}

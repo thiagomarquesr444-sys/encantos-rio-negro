@@ -19,7 +19,7 @@ export default function FaixaRolanteEDA({ itens, render, duracaoSegundos = 40, r
           <li key={item} className="shrink-0">{render(item)}</li>
         ))}
         {itens.map((item) => (
-          <li key={`copia-${item}`} aria-hidden="true" className="eda-faixa-copia shrink-0">{render(item)}</li>
+          <li key={`copia-${item}`} aria-hidden="true" inert className="eda-faixa-copia shrink-0">{render(item)}</li>
         ))}
       </ul>
     </div>
