@@ -6,6 +6,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import VitrineFornecedorEDA from '@/app/components/VitrineFornecedorEDA';
+import EntregasArtesaoEDA from '@/app/components/EntregasArtesaoEDA';
 
 export default function VitrinePaginaFornecedorEDA() {
   const [ctx, setCtx] = useState<{ usuarioId: string; atividade: string; temPerfil: boolean } | null>(null);
@@ -52,6 +53,7 @@ export default function VitrinePaginaFornecedorEDA() {
       )}
 
       {ctx?.temPerfil && <VitrineFornecedorEDA usuarioId={ctx.usuarioId} atividade={ctx.atividade} />}
+      {ctx?.temPerfil && <EntregasArtesaoEDA usuarioId={ctx.usuarioId} />}
     </div>
   );
 }

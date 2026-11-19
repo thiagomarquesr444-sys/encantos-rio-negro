@@ -16,6 +16,7 @@ import { useAoVivoEDA } from '@/lib/aoVivoEDA';
 import BotaoCopaPescaERN from '@/app/components/BotaoCopaPescaERN';
 import PainelPorFuncaoERN from '@/app/components/PainelPorFuncaoERN';
 import InicioOperadoraPremiumERN from '@/app/components/InicioOperadoraPremiumERN';
+import EntregasArtesanatoOperadoraEDA from '@/app/components/EntregasArtesanatoOperadoraEDA';
 
 
 import {
@@ -692,6 +693,7 @@ function DashboardAdministrativoERN() {
 
       <div className="ern-premium-dashboard eda-analises min-w-0 w-full">
         <div className="mx-auto min-w-0 w-full max-w-[1360px] px-4 pb-12 pt-6 sm:px-5 md:px-8">
+          <EntregasArtesanatoOperadoraEDA />
           <section aria-labelledby="eda-analises" id="ern-v446-graficos" className="scroll-mt-28">
             <p className="eda-sec-eb">Análises</p>
             <h2 id="eda-analises" className="eda-sec-titulo">Reservas e financeiro em detalhe</h2>

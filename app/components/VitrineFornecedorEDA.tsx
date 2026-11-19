@@ -18,6 +18,7 @@ type Item = {
   foto_url: string;
   maior_18: boolean;
   envia_correios: boolean;
+  entrega_passeio: boolean;
   publicado: boolean;
 };
 
@@ -40,6 +41,12 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
   const [foto, setFoto] = useState<File | null>(null);
   const [enviaCorreios, setEnviaCorreios] = useState(false);
   const [maior18, setMaior18] = useState(false);
+  const [entregaPasseio, setEntregaPasseio] = useState(false);
+  // EDA_ARTESANATO_V2: nome do titular do Pix, mostrado na vitrine para o turista conferir.
+  const [pixTitular, setPixTitular] = useState('');
+  const [pixSalvo, setPixSalvo] = useState('');
+  const [verificado, setVerificado] = useState(false);
+  const [avisoPix, setAvisoPix] = useState('');
   const [ocupado, setOcupado] = useState(false);
   const [aviso, setAviso] = useState<{ tipo: 'ok' | 'erro'; texto: string } | null>(null);
 
@@ -49,11 +56,33 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
   const carregar = useCallback(async () => {
     const { data } = await supabase
       .from('vitrine_itens')
-      .select('id,titulo,descricao,preco,foto_url,maior_18,envia_correios,publicado')
+      .select('id,titulo,descricao,preco,foto_url,maior_18,envia_correios,entrega_passeio,publicado')
       .eq('usuario_id', usuarioId)
       .order('criado_em', { ascending: false });
     setItens((data ?? []) as Item[]);
+    const { data: perfil } = await supabase
+      .from('perfis_profissionais')
+      .select('pix_titular,verificado_em')
+      .eq('usuario_id', usuarioId)
+      .eq('tipo', 'fornecedor')
+      .maybeSingle();
+    setPixTitular(perfil?.pix_titular ?? '');
+    setPixSalvo(perfil?.pix_titular ?? '');
+    setVerificado(Boolean(perfil?.verificado_em));
   }, [usuarioId]);
+
+  async function salvarPix() {
+    const nome = pixTitular.trim().replace(/\s+/g, ' ');
+    if (nome && (nome.length < 3 || nome.length > 120)) return setAvisoPix('Escreva o nome completo do titular do Pix.');
+    if (verificado && !(await confirmarEDA('Trocar o titular do Pix tira o selo de verificado até a nova conferência. Continuar?'))) return;
+    const { error } = await supabase
+      .from('perfis_profissionais')
+      .update({ pix_titular: nome || null })
+      .eq('usuario_id', usuarioId)
+      .eq('tipo', 'fornecedor');
+    setAvisoPix(error ? 'Não foi possível salvar agora.' : 'Salvo.');
+    if (!error) await carregar();
+  }
 
   useEffect(() => {
     void carregar();
@@ -88,6 +117,7 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
         preco: valor,
         foto_url: pub.publicUrl,
         envia_correios: enviaCorreios,
+        entrega_passeio: entregaPasseio,
         maior_18: bebidas || maior18,
       });
       if (error) {
@@ -137,6 +167,25 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
         pelo WhatsApp do seu perfil. A venda e o dinheiro são só seus.
       </p>
 
+      <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+        <p className="text-sm font-semibold text-[#F0F0E8]">
+          Recebimento por Pix {verificado ? <span className="ml-1 text-xs font-semibold text-emerald-300">· Artesão verificado</span> : null}
+        </p>
+        <p className="mt-1 text-xs leading-5 text-[#EDEDE3]/65">
+          O nome do titular da sua chave Pix aparece na vitrine para o turista conferir antes de pagar. Isso evita golpe
+          com o seu nome. Com nome, WhatsApp e titular do Pix completos, a Encantos confere e coloca o selo de verificado.
+        </p>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row">
+          <input value={pixTitular} maxLength={120} onChange={(e) => setPixTitular(e.target.value)} className={`${INPUT} mt-0`}
+            placeholder="Nome completo do titular do Pix" aria-label="Nome do titular do Pix" />
+          <button type="button" onClick={() => void salvarPix()} disabled={pixTitular.trim() === pixSalvo.trim()}
+            className="min-h-12 shrink-0 rounded-full border border-white/35 px-5 text-sm font-semibold text-white disabled:opacity-40">
+            Salvar
+          </button>
+        </div>
+        {avisoPix && <p className="mt-2 text-xs text-[#F4C77E]">{avisoPix}</p>}
+      </div>
+
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <label className="text-sm text-[#EDEDE3]">
           Nome da peça ou produto
@@ -161,6 +210,10 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
         <label className="flex min-h-12 items-center gap-3 text-sm text-[#EDEDE3]">
           <input type="checkbox" checked={enviaCorreios} onChange={(e) => setEnviaCorreios(e.target.checked)} />
           Envio para outros estados pelos Correios
+        </label>
+        <label className="flex min-h-12 items-center gap-3 text-sm text-[#EDEDE3]">
+          <input type="checkbox" checked={entregaPasseio} onChange={(e) => setEntregaPasseio(e.target.checked)} />
+          Posso entregar ao turista durante o passeio, por uma operadora
         </label>
         {!bebidas && (
           <label className="flex min-h-12 items-center gap-3 text-sm text-[#EDEDE3]">
@@ -206,6 +259,7 @@ export default function VitrineFornecedorEDA({ usuarioId, atividade }: { usuario
               <img src={item.foto_url} alt={item.titulo} loading="lazy" className="aspect-square w-full object-cover" />
               <div className="p-3">
                 <p className="text-sm font-semibold text-[#F0F0E8]">{item.titulo}</p>
+                {item.entrega_passeio && <p className="text-[10px] text-[#EDEDE3]/60">Entrega no passeio</p>}
                 {item.preco !== null && (
                   <p className="text-xs text-[#F4C77E]">
                     {Number(item.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}

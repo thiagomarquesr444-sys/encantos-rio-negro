@@ -174,6 +174,7 @@ const ROTULOS_MODO_IARA: Record<string, [string, string, string]> = {
   proposta: ['Proposta', 'Proposal', 'Propuesta'],
   reservas: ['Reservas', 'Bookings', 'Reservas'],
   parceiros: ['Parceiros', 'Partners', 'Socios'],
+  artesanato: ['Feito na Amazônia', 'Made in the Amazon', 'Hecho en la Amazonía'],
 };
 
 type MensagemERN = { autor: 'ern' | 'visitante'; texto: string; sugestoes?: string[]; links?: LinkIara[]; destino?: DestinoMsg; lenta?: boolean };
