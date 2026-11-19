@@ -191,7 +191,7 @@ export default function OperadoresPage() {
           <div className="mx-auto grid max-w-[1280px] items-center gap-12 lg:grid-cols-[1fr_1.05fr]">
             <div>
               <p className={EYEBROW}>{t.eyebrow}</p>
-              <h1 className={`${TITULO} mt-4 text-[clamp(2.4rem,5vw,3.75rem)] leading-[1.04]`}>{t.title[0]}<br />{t.title[1]} <span className={DOURADO}>{t.title[2]}</span></h1>
+              <h1 className={`${TITULO} mt-4 text-[clamp(2.4rem,5vw,3.75rem)] leading-[1.04]`}><RevelarTextoEDA partes={[{ texto: t.title[0] }, 'br', { texto: `${t.title[1]} ` }, { texto: t.title[2], className: DOURADO }]} /></h1>
               <p className="mt-5 max-w-[540px] text-[17px] leading-7 text-[#B8C9BF]">{t.intro}</p>
               <div className="mt-7 flex flex-wrap gap-3">
                 <Link href="/login?acesso=operadora" className={`${OURO} ${FOCO}`}>{t.start}</Link>
@@ -280,7 +280,7 @@ export default function OperadoresPage() {
         <section className="bg-[radial-gradient(60%_80%_at_50%_0%,rgb(227_161_68/14%),transparent_70%)] px-5 py-24 text-center sm:px-8">
           <div className="mx-auto flex max-w-[820px] flex-col items-center">
             <LogoERN tamanho={56} />
-            <h2 className={`${TITULO} mt-5 text-[clamp(2rem,4vw,2.75rem)] leading-[1.1]`}>{t.finalTitle[0]} <span className={DOURADO}>{t.finalTitle[1]}</span>{t.finalTitle[2]}</h2>
+            <h2 className={`${TITULO} mt-5 text-[clamp(2rem,4vw,2.75rem)] leading-[1.1]`}><RevelarTextoEDA partes={[{ texto: `${t.finalTitle[0]} ` }, { texto: t.finalTitle[1], className: DOURADO }, { texto: t.finalTitle[2] }]} /></h2>
             <p className="mt-4 max-w-[560px] text-base leading-7 text-[#B8C9BF]">{t.finalText}</p>
             <div className="mt-7 flex flex-wrap justify-center gap-3">
               <Link href="/login?acesso=operadora" className={`${OURO} ${FOCO}`}>{t.start}</Link>

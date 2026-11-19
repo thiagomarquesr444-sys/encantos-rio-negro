@@ -22,6 +22,7 @@ import {
   type TerritorioPublico, type TipoInteracaoPublicacao,
 } from '@/lib/redePublica';
 import './FeedRedeVisitanteERN.css';
+import RevelarTextoEDA from '@/app/components/RevelarTextoEDA';
 
 const PAGE = 12;
 const copy = {
@@ -505,7 +506,7 @@ export default function FeedRedeVisitanteERN() {
     <div className="ern-r-layout">
       <aside className="ern-r-left" aria-label="EDA"><div className="ern-r-sticky"><Link className="ern-r-brand" href="/rede"><LogoERN tamanho={44} /><span>Rede EDA<small>Encantos da Amazônia</small></span></Link><nav className="ern-r-nav"><button type="button" aria-current={abaERN === 'rede' && !filtered ? 'page' : undefined} onClick={() => { selecionarAbaERN('rede'); clear(); beforeFeed.current?.focus(); }}><Icon name="compass" />{ui.feed}</button><button type="button" aria-current={abaERN === 'vivencias' ? 'page' : undefined} onClick={() => selecionarAbaERN('vivencias')}><span aria-hidden="true">▶</span>Vivências EDA</button><button type="button" aria-current={abaERN === 'passeios' ? 'page' : undefined} onClick={() => selecionarAbaERN('passeios')}><span aria-hidden="true">✦</span>Passeios</button><Link href="/destinos"><Icon name="map" />{ui.map}</Link><Link href="/experiencias"><Icon name="go" />{ui.experiences}</Link></nav><div className="ern-r-left-note"><strong>{ui.opsTitle}</strong><p>{ui.opsText}</p><Link className="ern-r-ouro" href="/acesso?acesso=operadora">{ui.opsCta} →</Link><span className="ern-r-left-links"><Link href="/acesso?acesso=guia">{ui.guide} ↗</Link><Link href="/acesso?acesso=fornecedor">{ui.supplier} ↗</Link></span></div><div className="ern-r-legal"><Link href="/privacidade">{ui.privacy}</Link><Link href="/termos">{ui.terms}</Link></div></div></aside>
       <div className="ern-r-main">
-        <header className="ern-r-intro"><p>REDE EDA</p><h1 ref={beforeFeed} tabIndex={-1} id="ern-r-feed-title" aria-label={ui.title}><span aria-hidden="true">{ui.titleParts[0]} <span className="ern-r-dourado">{ui.titleParts[1]}</span>{ui.titleParts[2]}</span></h1><span>{ui.sub}</span><nav className="ern-r-mobile-nav"><Link href="/destinos"><Icon name="map" />{ui.map}</Link><Link href="/experiencias">{ui.experiences} ↗</Link></nav></header>
+        <header className="ern-r-intro"><p>REDE EDA</p><h1 ref={beforeFeed} tabIndex={-1} id="ern-r-feed-title" ><RevelarTextoEDA partes={[{ texto: `${ui.titleParts[0]} ` }, { texto: ui.titleParts[1], className: 'ern-r-dourado' }, { texto: ui.titleParts[2] }]} /></h1><span>{ui.sub}</span><nav className="ern-r-mobile-nav"><Link href="/destinos"><Icon name="map" />{ui.map}</Link><Link href="/experiencias">{ui.experiences} ↗</Link></nav></header>
         <div className="ern-r-abas" role="group" aria-label={ui.feed}>
           <button type="button" aria-pressed={abaERN === 'rede'} onClick={() => selecionarAbaERN('rede')}>{ui.feed}</button>
           <button type="button" aria-pressed={abaERN === 'vivencias'} onClick={() => selecionarAbaERN('vivencias')}><span aria-hidden="true">▶ </span>Vivências EDA</button>
