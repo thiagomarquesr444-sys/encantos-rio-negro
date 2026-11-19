@@ -238,53 +238,79 @@ export default function ArtesanatoPage() {
         {erro && <p className="mt-10 text-center text-sm text-red-300">{t.erro}</p>}
         {itens && !visiveis.length && !erro && <p className="mt-10 text-center text-sm text-[#B8C9BF]">{t.vazio}</p>}
 
-        <ul className="mt-8 grid grid-cols-2 gap-2.5 sm:mt-10 sm:gap-5 lg:grid-cols-4">
+        {/* EDA_VITRINE_V3: mesmo padrão dos cards do catálogo de Passeios
+            (3 colunas no desktop, 2 no celular, foto 4:3 / 1:1, textos com corte). */}
+        <ul className="mx-auto mt-8 grid max-w-[1100px] grid-cols-2 gap-2.5 sm:mt-10 sm:gap-[22px] lg:grid-cols-3">
           {visiveis.map((item) => {
             const wa = linkWhatsApp(item);
+            const local = [item.fornecedor, item.cidade].filter(Boolean).join(' · ');
             return (
               <li
                 key={item.id}
                 id={`peca-${item.id}`}
-                className={`pr-eda-card flex scroll-mt-28 flex-col overflow-hidden rounded-[18px] border bg-[#0A1713] ${destaque === item.id ? 'border-[#F4C77E]/70' : 'border-[#355043]'}`}
+                className={`group flex scroll-mt-28 flex-col overflow-hidden rounded-[16px] border bg-gradient-to-b from-[#10221b] to-[#0b1813] shadow-[inset_0_1px_0_rgb(255_255_255/5%)] transition duration-300 sm:rounded-[22px] sm:hover:-translate-y-1 sm:hover:border-[#E3A144]/45 sm:hover:shadow-[0_22px_44px_rgb(0_0_0/35%)] motion-reduce:transition-none ${destaque === item.id ? 'border-[#F4C77E]/70' : 'border-[#355043]'}`}
               >
-                <img src={item.foto_url} alt={item.titulo} loading="lazy" className="aspect-square w-full object-cover" />
-                <div className="flex flex-1 flex-col gap-1.5 p-3 sm:p-4">
-                  <p className="text-[10px] font-semibold uppercase tracking-[0.12em] text-[#F4C77E]">
-                    {[item.fornecedor, item.cidade].filter(Boolean).join(' · ')}
-                  </p>
+                <div className="relative aspect-square overflow-hidden bg-[#07110E] sm:aspect-[4/3]">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={item.foto_url}
+                    alt={item.titulo}
+                    loading="lazy"
+                    decoding="async"
+                    className="h-full w-full object-cover object-[center_30%] transition duration-700 group-hover:scale-[1.045] motion-reduce:transition-none"
+                  />
+                  <span aria-hidden="true" className="pointer-events-none absolute inset-x-0 top-0 h-[70px] bg-gradient-to-b from-[#040A08]/55 to-transparent" />
+                  {item.atividade && (
+                    <span className="pointer-events-none absolute left-2 top-2 rounded-full bg-black/55 px-2.5 py-1 text-[10px] font-bold text-white backdrop-blur-sm sm:left-3 sm:top-3 sm:text-[11px]">
+                      {t.filtros[item.atividade as Filtro] ?? item.atividade}
+                    </span>
+                  )}
+                  {local && (
+                    <span className="pointer-events-none absolute inset-x-0 bottom-0 truncate bg-gradient-to-b from-transparent to-[#040A08]/80 px-2.5 pb-2 pt-7 text-[10px] font-semibold tracking-[0.02em] text-white sm:px-3.5 sm:pb-2.5 sm:text-xs">
+                      {local}
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-1 flex-col px-2.5 pb-2.5 pt-2 sm:px-4 sm:pb-4 sm:pt-3.5">
                   {item.verificado && (
-                    <p className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-200">
+                    <p className="mb-1 inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-200">
                       <IconeSelo /> {t.verificado}
                     </p>
                   )}
-                  <h2 className="text-sm font-semibold leading-snug text-[#F0F0E8] sm:text-base">{item.titulo}</h2>
-                  {item.preco !== null && (
-                    <p className="text-sm text-[#EDEDE3]">
-                      {Number(item.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                    </p>
+                  <h2 className="line-clamp-2 min-h-[2.5em] text-[13.5px] font-bold leading-[1.25] text-[#F0F0E8] sm:text-lg">{item.titulo}</h2>
+                  {item.descricao && (
+                    <p className="mt-1.5 hidden min-h-[3.1em] text-sm leading-[1.55] text-[#B8C9BF] sm:line-clamp-2">{item.descricao}</p>
                   )}
-                  {item.descricao && <p className="hidden line-clamp-2 text-xs leading-5 text-[#B8C9BF] sm:block">{item.descricao}</p>}
-                  {item.pix_titular && (
-                    <p className="text-[10px] leading-4 text-[#B8C9BF]">
-                      {t.pix}: <span className="text-[#EDEDE3]">{item.pix_titular}</span>
+                  <div className="mt-auto pt-2.5 sm:pt-3.5">
+                    <p className="text-[15px] font-bold text-[#F4C77E] sm:text-[19px]">
+                      {item.preco !== null
+                        ? Number(item.preco).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+                        : '—'}
                     </p>
-                  )}
-                  <div className="mt-1 flex flex-wrap gap-1.5">
-                    {item.envia_correios && (
-                      <span className="rounded-full border border-[#355043] px-2 py-0.5 text-[10px] text-[#B8C9BF]">{t.correios}</span>
+                    {item.pix_titular && (
+                      <p className="mt-0.5 truncate text-[10px] leading-4 text-[#B8C9BF]" title={item.pix_titular}>
+                        {t.pix}: <span className="text-[#EDEDE3]">{item.pix_titular}</span>
+                      </p>
                     )}
-                    {item.entrega_passeio && (
-                      <span className="rounded-full border border-[#355043] px-2 py-0.5 text-[10px] text-[#B8C9BF]">{t.passeio}</span>
+                    {(item.envia_correios || item.entrega_passeio || item.maior_18) && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {item.envia_correios && (
+                          <span className="rounded-full border border-[#355043] px-2 py-0.5 text-[10px] text-[#B8C9BF]">{t.correios}</span>
+                        )}
+                        {item.entrega_passeio && (
+                          <span className="rounded-full border border-[#355043] px-2 py-0.5 text-[10px] text-[#B8C9BF]">{t.passeio}</span>
+                        )}
+                        {item.maior_18 && (
+                          <span className="rounded-full border border-red-400/40 px-2 py-0.5 text-[10px] text-red-300" title={t.maior} aria-label={t.maior}>18+</span>
+                        )}
+                      </div>
                     )}
-                    {item.maior_18 && (
-                      <span className="rounded-full border border-red-400/40 px-2 py-0.5 text-[10px] text-red-300">{t.maior}</span>
+                    {wa && (
+                      <a href={wa} target="_blank" rel="noopener noreferrer" className={`${PILULA} mt-2.5 w-full !min-h-[36px] !px-2 text-[11px] sm:mt-3 sm:!min-h-[40px] sm:text-xs`}>
+                        {t.falar}
+                      </a>
                     )}
                   </div>
-                  {wa && (
-                    <a href={wa} target="_blank" rel="noopener noreferrer" className={`${PILULA} mt-auto`}>
-                      {t.falar}
-                    </a>
-                  )}
                 </div>
               </li>
             );
