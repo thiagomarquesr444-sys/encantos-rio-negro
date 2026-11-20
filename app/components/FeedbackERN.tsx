@@ -135,7 +135,7 @@ export default function FeedbackERN() {
   function abrir() {
     origemFoco.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const escopo =
-      document.querySelector('.ern-tema-portal') ??
+      document.querySelector('.eda-rede-noite') ??
       document.querySelector('.ern-gestao') ??
       document.querySelector('.ern-publico');
 
