@@ -1631,3 +1631,31 @@ html:root .eda-botao-ativo {
   text-shadow: none;
   filter: drop-shadow(0 2px 10px rgb(0 0 0 / 45%));
 }
+
+
+/* EDA_REDE_NOITE_V1 (20/11/2026) — publicação e perfil da Rede no padrão
+   oficial (DESIGN.md, tema Noite): fundo escuro, texto branco, botões
+   .eda-botao transparentes. Substitui o antigo seletor de tema
+   (TemaPortalERN / modo claro amarelo), removido. */
+.eda-rede-noite {
+  --ern-fundo: #07110e;
+  --ern-painel: #0a1713;
+  --ern-elevado: #10231b;
+  --ern-texto: #edede3;
+  --ern-secundario: #b8c9bf;
+  --ern-borda: #355043;
+  --ern-destaque: #f4c77e;
+  --eda-acao: rgb(255 255 255 / 5%);
+  --eda-acao-hover: rgb(255 255 255 / 12%);
+  --eda-acao-ativo: rgb(255 255 255 / 14%);
+  --eda-acao-borda: rgb(255 255 255 / 28%);
+  --eda-acao-borda-hover: rgb(255 255 255 / 55%);
+  --eda-acao-texto: #ffffff;
+  background: var(--ern-fundo);
+  color: var(--ern-texto);
+  color-scheme: dark;
+}
+.eda-rede-noite :is(a, button, input, select):focus-visible {
+  outline: 2px solid var(--ern-texto);
+  outline-offset: 4px;
+}

@@ -6,7 +6,6 @@ import { useParams } from 'next/navigation';
 
 import PublicHeader from '@/app/components/PublicHeader';
 import RodapePublicoEDA from '@/app/components/RodapePublicoEDA';
-import TemaPortalERN from '@/app/components/TemaPortalERN';
 import LogoERN from '@/app/components/LogoERN';
 import PublicacoesPerfilERN from '@/app/components/PublicacoesPerfilERN';
 import VitrinePasseiosEDA from '@/app/components/VitrinePasseiosEDA';
@@ -324,8 +323,7 @@ export default function PerfilRedePage() {
     : null;
 
   return (
-    <TemaPortalERN>
-    <div className="ern-perfil-publico ern-rede-detalhe min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <div className="eda-rede-noite ern-perfil-publico ern-rede-detalhe min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
       <PublicHeader />
 
       <main className="pb-12 pt-[76px]">
@@ -412,7 +410,7 @@ export default function PerfilRedePage() {
 
                 <div className="ern-perfil-apresentacao mt-6 flex flex-col justify-between gap-6 sm:flex-row sm:items-start">
                   <div className="min-w-0">
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--ern-destaque)]">
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--ern-secundario)]">
                       {estado.perfil.categoria === 'operadora'
                         ? t.operator
                         : t.profile}
@@ -639,6 +637,5 @@ export default function PerfilRedePage() {
         }
       `}</style>
     </div>
-    </TemaPortalERN>
   );
 }

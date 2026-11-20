@@ -176,13 +176,9 @@ export default function AppShell({
     let cores = paletas.grafite;
 
     if (portal) {
-      let escuro = true;
-      try {
-        escuro = localStorage.getItem('ern.portal.tema.v1') !== 'claro';
-      } catch {}
-
-      raiz.setAttribute('data-ern-portal', escuro ? 'escuro' : 'claro');
-      cores = escuro ? paletas.grafite : paletas.amarelo;
+      // Portal público sempre no tema noite (o antigo modo claro saiu).
+      raiz.setAttribute('data-ern-portal', 'escuro');
+      cores = paletas.grafite;
     } else {
       raiz.removeAttribute('data-ern-portal');
 

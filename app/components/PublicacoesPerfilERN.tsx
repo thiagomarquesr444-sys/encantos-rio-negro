@@ -144,7 +144,7 @@ export default function PublicacoesPerfilERN({
                     </p>
                   )}
 
-                  <Link href={href} className={`mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[var(--ern-destaque)] ${foco}`}>
+                  <Link href={href} className={`mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[var(--ern-secundario)] ${foco}`}>
                     {t.read}
                   </Link>
                 </article>

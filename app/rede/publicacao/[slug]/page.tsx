@@ -7,7 +7,6 @@ import { useParams } from 'next/navigation';
 import PublicHeader from '@/app/components/PublicHeader';
 import RodapePublicoEDA from '@/app/components/RodapePublicoEDA';
 import OfertaPasseioEDA from '@/app/components/OfertaPasseioEDA';
-import TemaPortalERN from '@/app/components/TemaPortalERN';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import {
   listarFeedPublico,
@@ -100,12 +99,11 @@ export default function PublicacaoRedePage() {
   const imagens = item?.midias ?? [];
 
   return (
-    <TemaPortalERN>
-    <div className="ern-rede-detalhe ern-rede-publicacao min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
+    <div className="eda-rede-noite ern-rede-detalhe ern-rede-publicacao min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
       <PublicHeader />
 
       <main className="mx-auto max-w-5xl px-5 pb-16 pt-28 sm:px-8">
-        <Link href="/rede" className={`inline-flex min-h-12 items-center gap-3 text-sm font-semibold text-[var(--ern-destaque)] ${foco}`}>
+        <Link href="/rede" className={`inline-flex min-h-12 items-center gap-3 text-sm font-semibold text-[var(--ern-secundario)] ${foco}`}>
           {t.back}
         </Link>
 
@@ -138,7 +136,7 @@ export default function PublicacaoRedePage() {
             <header className="border-b border-[var(--ern-borda)] pb-8">
               <Link
                 href={`/rede/perfil/${encodeURIComponent(item.autor.slug)}`}
-                className={`inline-flex min-h-11 items-center text-sm font-semibold text-[var(--ern-destaque)] hover:underline ${foco}`}
+                className={`inline-flex min-h-11 items-center text-sm font-semibold text-[var(--ern-secundario)] hover:underline ${foco}`}
               >
                 {item.autor.nome_publico}
               </Link>
@@ -219,6 +217,5 @@ export default function PublicacaoRedePage() {
       </main>
       <RodapePublicoEDA />
     </div>
-    </TemaPortalERN>
   );
 }
