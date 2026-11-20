@@ -474,7 +474,7 @@ export default function InicioOperadoraPremiumERN({
         const { data } = await supabase.auth.getSession();
         const token = data.session?.access_token;
         if (!token) return;
-        const r = await fetch('/api/eda-ia', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ modo: 'recepcao', estilo: (() => { try { return localStorage.getItem('eda.estilo') === 'formal' ? 'formal' : 'regional'; } catch { return 'regional'; } })() }) });
+        const r = await fetch('/api/eda-ia', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` }, body: JSON.stringify({ modo: 'recepcao' }) });
         const j = await r.json().catch(() => ({})) as { variacoes?: unknown };
         const lista = Array.isArray(j.variacoes) ? j.variacoes.filter((x): x is string => typeof x === 'string' && x.length > 0) : [];
         // EDA_FRASE_FIXA_V1: se a digitação já começou (resposta lenta), não troca a frase.
@@ -509,12 +509,12 @@ export default function InicioOperadoraPremiumERN({
     const hora = Number(new Intl.DateTimeFormat('en-US', { hour: 'numeric', hour12: false, timeZone: 'America/Manaus' }).format(new Date())) % 24;
     const diaMes = Number((hoje || '').slice(8, 10)) || 0;
     const op = hora < 5
-      ? ['O rio está quieto e Barcelos dorme, mas eu sigo de vigia com você. Quer que eu adiante algo para amanhã?', 'Madrugada de trabalho? Fico aqui do seu lado. Posso te ajudar em quê?']
+      ? ['O rio dorme e eu velo do alto. Quer que eu deixe pronto o que vem amanhã?', 'Nem o trovão acorda a esta hora, mas eu sigo de vigia. Em que posso ajudar?']
       : hora < 12
-        ? ['Que bom te ver cedo por aqui. Vamos ver juntos o que o dia pede?', 'Dia começando no Rio Negro. Quer que eu te conte como está a operação?']
+        ? ['Do alto eu vejo o dia nascer sobre a operação. Vamos ver o que ele pede?', 'O céu abriu sobre o Rio Negro. Quer saber o que eu enxergo na operação?']
         : hora < 18
-          ? ['Tarde seguindo por aqui. Como está indo o dia na operação?', 'Voltou para dar uma olhada? Me conta o que você precisa agora.']
-          : ['Fim de dia chegando no Rio Negro. Quer que eu deixe o amanhã organizado com você?', 'Noite tranquila por aqui. Como foi o dia na operação?'];
+          ? ['O vento segue firme sobre o rio. Como corre o dia na operação?', 'Eu vigio o céu da operação. O que você precisa agora?']
+          : ['O dia se recolhe sobre o rio. Quer que eu deixe o amanhã em ordem?', 'Céu calmo por aqui. Como foi o dia na operação?'];
     return [{ texto: op[(diaMes + sorteioVisita) % op.length] }];
   }, [pronto, recepcao, hoje, sorteioVisita]);
 
@@ -581,7 +581,7 @@ export default function InicioOperadoraPremiumERN({
               className="eda-responder"
               onClick={() => window.dispatchEvent(new CustomEvent('eda:abrir', { detail: { texto: [...trechosFrase, ...(trechosIara.length ? [{ texto: '\n' }, ...trechosIara] : [])].map(x => x.texto).join(''), saudacao: trechosSaudacao.map(x => x.texto).join('') } }))}
             >
-              Responder à EDA
+              Responder a Tupã
             </button>
           )}
         </div>

@@ -48,14 +48,14 @@ function corpoBoasVindas(pagina: string): string {
   const area = ROTULO_PAGINA[pagina];
   const op = p === 'madrugada'
     ? [
-      'O rio está quieto a esta hora, mas eu sigo de vigia por aqui. O que você precisa?',
-      'Fico contigo nessa madrugada. Me diz o que mudar ou conferir que eu resolvo.',
-      'Enquanto Barcelos dorme, eu adianto o que você pedir. Por onde começamos?',
+      'O rio dorme e o céu está quieto. Eu sigo de vigia lá do alto. O que você precisa?',
+      'Nesta madrugada, eu velo a operação com você. Diga o que mudar ou conferir.',
+      'Enquanto Barcelos dorme, o trovão espera em silêncio. Por onde começamos?',
     ]
     : [
-      area ? `Tô cuidando de ${area} contigo. Me diz o que precisa mudar que eu faço aqui mesmo — você só autoriza.` : 'Me diz o que precisa que eu resolvo aqui mesmo — você só autoriza.',
-      area ? `${area.charAt(0).toUpperCase()}${area.slice(1)} está comigo. Pode pedir do seu jeito: eu confiro, preparo e você confirma.` : 'Pode pedir do seu jeito: eu confiro, preparo e você confirma.',
-      'Aqui é o Jurupari, o organizador da sua operação. Peça a mudança ou a dúvida que eu cuido sem você sair desta página.',
+      area ? `Do alto eu vejo ${area}. Diga o que precisa mudar e eu preparo aqui mesmo — você só autoriza.` : 'Do alto eu vejo a operação inteira. Diga o que precisa e eu preparo aqui mesmo — você só autoriza.',
+      area ? `${area.charAt(0).toUpperCase()}${area.slice(1)} está sob o meu céu. Peça do seu jeito: eu confiro, preparo e você confirma.` : 'Peça do seu jeito: eu confiro, preparo e você confirma.',
+      'Sou Tupã, o trovão que guarda o céu da sua operação. Diga a mudança ou a dúvida e eu cuido sem você sair desta página.',
     ];
   return op[Math.floor(Math.random() * op.length)];
 }
@@ -129,7 +129,6 @@ export default function ConversaEDA() {
   const [entrada, setEntrada] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [animando, setAnimando] = useState<number | null>(null);
-  const [estilo, setEstilo] = useState<'regional' | 'formal'>('regional');
   const [avisos, setAvisos] = useState<AvisoEDA[]>([]);
   const [copiado, setCopiado] = useState<number | null>(null);
   const [nome, setNome] = useState('');
@@ -189,15 +188,6 @@ export default function ConversaEDA() {
     // A chamada só executa quando é aguardada (.then); antes ficava pendente e o aviso voltava.
     void supabase.rpc('marcar_avisos_lidos_eda', { p_ids: lista.map(a => a.id) }).then(() => undefined);
   }, [aberto, avisos]);
-  // EDA_PADROES_OPERACAO_V1: o jeito de falar vem das Configurações da empresa (vale em todos os aparelhos).
-  useEffect(() => {
-    void supabase.rpc('config_operacao_eda').then(({ data }) => {
-      if ((data as { tom_eda?: string } | null)?.tom_eda === 'formal') setEstilo('formal');
-    });
-    const salvo = (e: Event) => setEstilo((e as CustomEvent<{ tom_eda?: string }>).detail?.tom_eda === 'formal' ? 'formal' : 'regional');
-    window.addEventListener('eda:padroes-salvos', salvo);
-    return () => window.removeEventListener('eda:padroes-salvos', salvo);
-  }, []);
   const fimRef = useRef<HTMLDivElement>(null);
   const campoRef = useRef<HTMLTextAreaElement>(null);
 
@@ -346,7 +336,7 @@ export default function ConversaEDA() {
       const r = await fetch('/api/eda-ia', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ modo: 'operadora', pagina, estilo, mensagens: historico.slice(-12).map(({ papel, texto }) => ({ papel, texto })) }),
+        body: JSON.stringify({ modo: 'operadora', pagina, mensagens: historico.slice(-12).map(({ papel, texto }) => ({ papel, texto })) }),
       });
       const j = await r.json().catch(() => ({})) as { resposta?: string; erro?: string; links?: LinkEDA[]; acoes?: unknown[]; navegar?: LinkEDA | null };
       if (j.navegar && linkSeguro(j.navegar)) irPara(j.navegar.href);
@@ -355,7 +345,7 @@ export default function ConversaEDA() {
       setAnimando(historico.length);
       setMsgs(m => [...m, { papel: 'eda', texto: j.resposta || j.erro || 'Não consegui responder agora. Tente de novo em instantes.', links, acoes, estados: acoes.map(() => 'pendente' as EstadoAcao) }]);
     } catch (e) {
-      setMsgs(m => [...m, { papel: 'eda', texto: e instanceof Error && e.message.includes('sessão') ? e.message : 'Sem conexão com o Jurupari agora. Confira a internet e tente de novo.' }]);
+      setMsgs(m => [...m, { papel: 'eda', texto: e instanceof Error && e.message.includes('sessão') ? e.message : 'Sem conexão com Tupã agora. Confira a internet e tente de novo.' }]);
     } finally {
       setEnviando(false);
     }
@@ -412,20 +402,13 @@ export default function ConversaEDA() {
   return (
     <div className="cv-eda" data-aberto={aberto || undefined}>
       {aberto && (
-        <section className="cv-eda-painel" role="dialog" aria-label="Conversa com o Jurupari, assistente EDA">
+        <section className="cv-eda-painel" role="dialog" aria-label="Conversa com Tupã, assistente da Encantos Gestão">
           <header className="cv-eda-topo">
             <span className="cv-eda-avatar" aria-hidden="true"><IconeEDA /></span>
             <div>
-              <p className="cv-eda-nome">Jurupari <span style={{ opacity: .6, fontWeight: 500, fontSize: '.78em' }}>· EDA</span></p>
-              <p className="cv-eda-status">{periodoManaus() === 'madrugada' ? 'De vigia na madrugada' : `Cuidando de ${ROTULO_PAGINA[pagina] ?? 'toda a operação'}`}</p>
+              <p className="cv-eda-nome">Tupã <span style={{ opacity: .6, fontWeight: 500, fontSize: '.78em' }}>· EDA</span></p>
+              <p className="cv-eda-status">{periodoManaus() === 'madrugada' ? 'Velando o rio na madrugada' : `Guardião do céu · ${ROTULO_PAGINA[pagina] ?? 'toda a operação'}`}</p>
             </div>
-            <button
-              type="button"
-              className="cv-eda-estilo"
-              aria-pressed={estilo === 'formal'}
-              title="Alternar entre jeito regional e linguagem formal"
-              onClick={() => setEstilo(e => (e === 'regional' ? 'formal' : 'regional'))}
-            >{estilo === 'regional' ? 'Jeito regional' : 'Formal'}</button>
             <button type="button" className="cv-eda-x" onClick={() => setAberto(false)} aria-label="Fechar conversa">×</button>
           </header>
 
@@ -526,8 +509,8 @@ export default function ConversaEDA() {
                   rows={1}
                   value={entrada}
                   maxLength={1000}
-                  placeholder="Pergunte ao Jurupari…"
-                  aria-label="Mensagem para o Jurupari"
+                  placeholder="Fale com Tupã…"
+                  aria-label="Mensagem para Tupã"
                   onChange={e => { setEntrada(e.target.value); if (erroAudio) setErroAudio(null); }}
                   onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); void enviar(entrada); } }}
                 />
@@ -541,7 +524,7 @@ export default function ConversaEDA() {
               </>
             )}
           </form>
-          <p className="cv-eda-nota">O Jurupari lê só dados da sua operadora. Dados pessoais de clientes (nome, CPF, contato, saúde) não saem da plataforma — LGPD.</p>
+          <p className="cv-eda-nota">Tupã lê só dados da sua operadora. Dados pessoais de clientes (nome, CPF, contato, saúde) não saem da plataforma — LGPD.</p>
         </section>
       )}
 
@@ -551,8 +534,8 @@ export default function ConversaEDA() {
         className="cv-eda-botao"
         onClick={() => setAberto(v => !v)}
         aria-expanded={aberto}
-        aria-label={aberto ? 'Fechar conversa com o Jurupari' : 'Pergunte ao Jurupari'}
-        title="Pergunte ao Jurupari"
+        aria-label={aberto ? 'Fechar conversa com Tupã' : 'Fale com Tupã'}
+        title="Fale com Tupã"
       >
         <IconeEDA />
         {!aberto && avisos.length > 0 && <span className="cv-eda-badge" aria-label={`${avisos.length} aviso(s) novo(s)`}>{avisos.length}</span>}

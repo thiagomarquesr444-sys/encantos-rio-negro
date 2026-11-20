@@ -1,5 +1,5 @@
-// EDA_JURUPARI_V2: selo do Jurupari (legislador e organizador do folclore do
-// Rio Negro) como rosto da EDA, assistente da gestão. Retrato realista próprio
+// EDA_TUPA_V1: selo de Tupã (o trovão do folclore tupi-guarani, guardião do
+// céu, do tempo e dos ventos) como rosto do assistente da gestão. Retrato realista próprio
 // recortado em círculo, aro dourado duplo e brilho — mesmo padrão da Iara.
 import { useId } from 'react';
 
@@ -30,7 +30,7 @@ export default function IconeEDA({ tamanho = '100%' }: { tamanho?: number | stri
         <circle cx="24" cy="24" r="23.6" fill="#07140f" />
         {/* retrato */}
         <image
-          href="/images/marcos/jurupari-avatar.webp"
+          href="/images/marcos/tupa-avatar.webp"
           x="2.8" y="2.8" width="42.4" height="42.4"
           preserveAspectRatio="xMidYMid slice"
           clipPath={`url(#c${id})`}

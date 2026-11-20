@@ -195,7 +195,7 @@
   .cv-eda-desfazer, .cv-eda-desfazer svg, .cv-eda-arco-gira, .cv-eda-arco-gira svg { animation: none; }
 }
 
-/* JURUPARI_CAMPO_V1: campo de conversa com um só contorno (dourado) no foco —
+/* TUPA_CAMPO_V1: campo de conversa com um só contorno (dourado) no foco —
    tira o anel verde global que somava com a borda e deixava a barra pesada. */
 .ern-gestao .cv-eda-form textarea:focus-visible { outline: none; }
 .cv-eda-form textarea:focus { box-shadow: 0 0 0 3px rgb(227 161 68 / 16%); }

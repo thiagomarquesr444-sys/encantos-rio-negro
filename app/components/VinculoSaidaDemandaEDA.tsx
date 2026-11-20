@@ -127,7 +127,7 @@ export default function VinculoSaidaDemandaEDA({ demandaId, bloqueado, onSaida, 
           )}
           {analise && (
             <div className="vsd-analise" aria-live="polite">
-              <p className="vsd-eb">Análise da EDA para esta saída</p>
+              <p className="vsd-eb">Análise de Tupã para esta saída</p>
               <ul className="vsd-alertas">
                 {analise.alertas.map((a, i) => (
                   <li key={i} data-n={TOM_ALERTA[a.nivel]}><b>{a.titulo}.</b> {a.texto}</li>

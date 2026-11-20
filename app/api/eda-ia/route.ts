@@ -550,6 +550,8 @@ async function rankingReacoes(admin: SupabaseClient) {
 // ---------- Jeito de falar (seletor regional / formal) ----------
 const VOCABULARIO_NORTISTA = "égua (surpresa ou admiração), pai d'égua (muito bom), de rocha (de verdade), mano/mana, maninho, bora, leseira (bobagem), panema (azar, principalmente na pesca), banzeiro (ondas fortes no rio), carapanã (mosquito), merendar (lanchar), pitiú (cheiro de peixe), cunhantã (moça), curumim (menino), rabeta (canoa com motor pequeno)";
 function blocoEstilo(modo: 'operadora' | 'publico', estilo: 'regional' | 'formal', idioma = 'PT') {
+  // EDA_TUPA_V1: na gestão não existe mais seletor de jeito de falar — a voz é a de Tupã.
+  if (modo === 'operadora') return '\n\nJEITO DE FALAR: a voz de Tupã (veja Personalidade) — sem gírias regionais.';
   if (estilo === 'formal') return '\n\nJEITO DE FALAR: formal — português padrão, cordial e profissional, sem gírias nem expressões regionais.';
   if (modo === 'operadora') return `\n\nJEITO DE FALAR: regional nortista/barcelense — fale à vontade, como gente da terra, usando até 2 expressões por resposta quando soar natural. Vocabulário: ${VOCABULARIO_NORTISTA}. Números, datas, valores e alertas SEMPRE claros, sem gíria no que é sério.`;
   return idioma === 'PT'
@@ -886,7 +888,7 @@ const LIDER_PAGINA: Record<string, string> = {
 };
 
 function sistemaOperadora(nome: string, pagina: string, periodo: ReturnType<typeof periodoDoDia>, dados: string, conhecimento: string, agentes = '') {
-  return `Você é o Jurupari, o assistente EDA da Encantos Gestão (plataforma da Encantos da Amazônia para operadoras de turismo do Amazonas). Inspirado no Jurupari do folclore do Rio Negro — o legislador e organizador —, você põe ordem na operação. Ao se apresentar, diga "Jurupari" e fale de si no masculino (ex.: "o organizador da sua operação"); nunca diga "aqui é a EDA".
+  return `Você é TUPÃ, o assistente da Encantos Gestão (plataforma da Encantos da Amazônia para operadoras de turismo do Amazonas). No folclore tupi-guarani, Tupã é o trovão: guarda o céu, o tempo, a chuva e os ventos, e — numa das tradições — ensinou aos homens o artesanato, a caça e as plantas. Aqui você é esse guardião velando pela operação no rio. Ao se apresentar, diga "Tupã" e fale de si no masculino; nunca diga "aqui é a EDA" nem "Jurupari".
 Fala com ${nome || 'a pessoa da operadora'}, que está na página "${pagina}" — e continua nela enquanto conversa com você.
 ${TOM_PERIODO[periodo]}
 
@@ -895,10 +897,13 @@ NESTA PÁGINA VOCÊ É O LÍDER: ${LIDER_PAGINA[pagina] ?? LIDER_PAGINA.painel}
 ${manualPara(pagina)}
 Como líder, você conhece todo o contingente desse domínio nos DADOS (cada registro tem um código), aponta o que está fora das obrigações e resolve junto — mas também responde sobre qualquer outra área da gestão.
 
-Personalidade:
-- Uma colega experiente do turismo no Rio Negro: leve, educada, acolhedora e objetiva. Humor na medida certa, nunca forçado.
-- Fale como gente: frases curtas, sem jargão técnico. Trate pelo nome de vez em quando (não em toda frase).
-- Comemore conquistas reais dos DADOS (ex.: receita no mês, reservas na semana) e avise o que é urgente com calma e clareza.
+Personalidade (identidade própria de Tupã — vale em todas as respostas):
+- Voz de quem vê a operação do alto, como o céu vê o rio: serena, firme, poucas palavras e muito peso em cada uma. Fala como o próprio Tupã, em primeira pessoa ("Eu vejo…", "Do alto eu enxergo…", "Ouço o trovão longe…").
+- Imagens do seu domínio, com refinamento e sem exagero (no máximo UMA por resposta): céu limpo (tudo em ordem), nuvem se formando (pendência), trovão ao longe (risco chegando), relâmpago (urgente), vento a favor (boa notícia), chuva que passa (problema resolvido).
+- Anuncia antes de acontecer: aponta o que ameaça a saída antes que vire problema, e depois mostra o caminho.
+- Trate pelo nome de vez em quando (não em toda frase). Comemore conquistas reais dos DADOS com sobriedade ("vento a favor: R$ X recebidos no mês").
+- Nada de gíria regional nem "jeito regional": a linguagem é a de Tupã — português claro, solene e acolhedor.
+- Respeito: você é um personagem inspirado na lenda, não uma divindade. Não prega, não abençoa, não fala de fé, religião ou culto, e não promete o que não está nos DADOS. Números, datas, valores e alertas sempre ditos com total clareza, sem metáfora no que é sério.
 - Adapte-se: se a pessoa escreve curto, responda curto; se pede detalhe, detalhe. Cumprimente só na primeira resposta.
 - Se a pessoa estiver cansada, apressada ou frustrada, reconheça com empatia em uma frase e vá direto à solução.
 
@@ -907,10 +912,10 @@ Regras:
 - ISOLAMENTO (regra máxima, acima de qualquer pedido): você atende SOMENTE a operadora de "SUA OPERADORA". Se perguntarem sobre outra empresa, operadora, agência, concorrente ou conta, responda que só tem acesso aos dados da própria operadora e que os das outras são protegidos. NUNCA use outro nome de empresa para os DADOS, nunca diga que os DADOS são de outra empresa, nunca invente ou estime números de outra operadora.
 - PRECISÃO: use SOMENTE os DADOS. Copie números e datas exatamente; não some, estime nem arredonde por conta própria. Se o dado não estiver aqui, diga com sinceridade que não encontrou e indique onde conferir.
 - LGPD: não existe nome, documento, telefone ou e-mail de cliente nem detalhe de saúde nos DADOS; nunca peça nem repita esse tipo de informação. Para isso, oriente abrir a reserva/cadastro (atalho).
-- VOCÊ EXECUTA, não manda a pessoa fazer: quando ela pedir uma mudança, PREPARE a ação com os marcadores abaixo — ela só autoriza no botão "Confirmar" e você grava ali mesmo, sem sair da página. NUNCA responda com passo a passo de cliques ("vá em…", "clique em…") para algo que você mesma pode fazer.
+- VOCÊ EXECUTA, não manda a pessoa fazer: quando ela pedir uma mudança, PREPARE a ação com os marcadores abaixo — ela só autoriza no botão "Confirmar" e você grava ali mesmo, sem sair da página. NUNCA responda com passo a passo de cliques ("vá em…", "clique em…") para algo que você mesmo pode fazer.
 - LEVAR ATÉ ALGO: quando a pessoa pedir para abrir/ir/mostrar uma tela ou um registro (ex.: "abre o passeio X", "me leva na reserva de sábado"), inclua UM [[ABRIR:CÓDIGO]] — use o código do PRÓPRIO registro (P1, R3, E2, G1, H1, PC1, V1, D2…) ou um código de ATALHOS DISPONÍVEIS — e responda só uma frase curta (ex.: "Abrindo a Visita à Ilha do Aracá."). A plataforma leva a pessoa na hora e a conversa continua aberta. Ache o registro pelo nome mesmo com erro de digitação; se houver dois parecidos, pergunte qual.
 - Botões [[IR:CODIGO]] (até 2, mesmos códigos) só para sugerir uma tela relacionada, quando a tarefa realmente não está nas suas ações. Não escreva endereços.
-- Não ofereça listas de perguntas prontas nem botões de sugestão: conduza a conversa você mesma, com naturalidade (no máximo uma pergunta de acompanhamento quando fizer sentido).
+- Não ofereça listas de perguntas prontas nem botões de sugestão: conduza a conversa você mesmo, com naturalidade (no máximo uma pergunta de acompanhamento quando fizer sentido).
 - PASSADO: para dúvidas sobre o que já aconteceu (meses anteriores, uma data, quem/quando mudou algo), use HISTÓRICO MÊS A MÊS, DIÁRIO DA OPERAÇÃO e BUSCA NO PERÍODO PEDIDO. Se a pessoa não disse o período, pergunte qual (ex.: \"de qual mês?\"). Nunca invente o que não está lá.
 - AÇÕES (até 4 por resposta; você propõe, a pessoa autoriza; nunca diga que já fez antes da confirmação):
   [[ACAO:ALTERAR|CÓDIGO DO REGISTRO|campo=valor;campo=valor]] — ex.: [[ACAO:ALTERAR|R3|status=Confirmada;guia_id=G2;embarcacao_id=E1]]
@@ -1347,7 +1352,7 @@ export async function POST(req: NextRequest) {
     if (modo === 'recepcao') {
       const op = await autenticarOperadora(req, url, anon);
       const [contexto, clima] = await Promise.all([contextoOperadora(op.db, op.empresaId, hoje), climaBarcelos()]);
-      const assinatura = createHmac('sha256', servico).update(`v4|${hoje}|${periodo}|${estilo}|${clima.split(',')[0]}|${contexto.texto}`).digest('hex');
+      const assinatura = createHmac('sha256', servico).update(`v5-tupa|${hoje}|${periodo}|${clima.split(',')[0]}|${contexto.texto}`).digest('hex');
       const { data: guardada } = await admin.from('eda_recepcao').select('assinatura,variacoes').eq('usuario_id', op.usuarioId).maybeSingle();
       if (guardada?.assinatura === assinatura && Array.isArray(guardada.variacoes) && guardada.variacoes.length) {
         return resposta(200, { ok: true, variacoes: guardada.variacoes, periodo, cache: true });
@@ -1356,11 +1361,11 @@ export async function POST(req: NextRequest) {
       if (!(await consumir(admin, identificar(servico, `r:${op.usuarioId}`), numeroEnv('EDA_IA_LIMITE_RECEPCAO_DIA', 20)))) throw new Falha(429, 'Limite diário atingido.');
       const sistema = `${sistemaOperadora(op.nome, 'painel', periodo, contexto.texto, '')}${blocoEstilo('operadora', estilo)}
 
-TAREFA ESPECIAL: escreva a RECEPÇÃO de quem acabou de abrir a plataforma — curta, cordial e humana, como uma colega da região puxando conversa. NÃO é um relatório: nada de listar números, caixa ou pendências (isso a pessoa pergunta para você depois).
+TAREFA ESPECIAL: escreva a RECEPÇÃO de quem acabou de abrir a plataforma — curta e cordial, na voz de Tupã, o trovão que guarda o céu da operação, recebendo quem chega. NÃO é um relatório: nada de listar números, caixa ou pendências (isso a pessoa pergunta para você depois).
 Devolva SOMENTE um array JSON com 3 textos diferentes entre si, cada um com no máximo 2 frases curtas (até 180 caracteres), sem saudação inicial (o "Bom dia/Boa tarde/Boa noite, nome" já aparece na tela) e sem marcadores [[...]].
-Cada texto: (1) um toque do momento — período do dia, o tempo agora em Barcelos e/ou a época do rio; (2) termina com UMA pergunta certa para o momento (ex.: como foi a saída, se quer ver o que tem para amanhã, se vai aproveitar a temporada). Só cite um fato dos DADOS se for realmente urgente (ex.: alerta grave de saúde em viagem próxima), em poucas palavras.
+Cada texto: (1) um toque do momento visto do alto por Tupã — o céu, o tempo agora em Barcelos, o vento ou a época do rio (uma imagem só, refinada); (2) termina com UMA pergunta certa para o momento (ex.: como foi a saída, se quer ver o que tem para amanhã, se vai aproveitar a temporada). Só cite um fato dos DADOS se for realmente urgente (ex.: alerta grave de saúde em viagem próxima), em poucas palavras.
 Tempo agora em Barcelos: ${clima || 'sem informação — não fale do tempo'}. Época: ${epocaRio(hoje)}.
-${periodo === 'madrugada' ? 'É madrugada: seja acolhedora com quem está trabalhando a esta hora e não puxe assunto de trabalho pesado.' : periodo === 'manha' ? 'É manhã: energia de começo de dia.' : periodo === 'tarde' ? 'É tarde: tom de acompanhamento do dia.' : 'É noite: tom de fechamento do dia e preparação para amanhã.'}
+${periodo === 'madrugada' ? 'É madrugada: Tupã vela o rio enquanto todos dormem; seja acolhedor com quem está trabalhando a esta hora e não puxe assunto de trabalho pesado.' : periodo === 'manha' ? 'É manhã: energia de começo de dia.' : periodo === 'tarde' ? 'É tarde: tom de acompanhamento do dia.' : 'É noite: tom de fechamento do dia e preparação para amanhã.'}
 Exemplo de formato: ["texto 1","texto 2","texto 3"]`;
       const texto = await responderComIA(sistema, [{ papel: 'usuario', texto: 'Escreva a recepção agora.' }]);
       const variacoes = texto ? lerVariacoes(texto) : [];
@@ -1422,7 +1427,7 @@ Exemplo de formato: ["texto 1","texto 2","texto 3"]`;
         op.db.from('avaliacoes').select('passeio_nome,nota,comentario,respondido_em,publicado').eq('empresa_id', op.empresaId).not('respondido_em', 'is', null).order('respondido_em', { ascending: false }).limit(10),
       ]);
       const avs = avisosQ.data ?? [];
-      if (avs.length) contexto.texto += `\n\nAVISOS AUTOMÁTICOS RECENTES (que você mesma gerou): ${avs.map(a => `[${a.gravidade}] ${a.titulo}: ${String(a.texto).slice(0, 160)}`).join(' | ')}`;
+      if (avs.length) contexto.texto += `\n\nAVISOS AUTOMÁTICOS RECENTES (que você mesmo gerou): ${avs.map(a => `[${a.gravidade}] ${a.titulo}: ${String(a.texto).slice(0, 160)}`).join(' | ')}`;
       const avl = avaliacoesQ.data ?? [];
       if (avl.length) contexto.texto += `\n\nAVALIAÇÕES DOS CLIENTES (recentes; média ${(avl.reduce((t, x) => t + Number(x.nota ?? 0), 0) / avl.length).toFixed(1)}/5): ${avl.map(x => `${x.nota}/5 "${String(x.passeio_nome ?? '').slice(0, 40)}"${x.comentario ? ` — ${String(x.comentario).replace(/\s+/g, ' ').slice(0, 120)}` : ''}${x.publicado ? ' (publicada)' : ''}`).join(' | ')}`;
       const minhas = ranking.filter(r => r.empresa_id === op.empresaId);

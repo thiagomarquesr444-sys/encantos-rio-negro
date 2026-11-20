@@ -226,7 +226,7 @@ export default function ProntidaoSaidasEDA({ hoje, financeiroLiberado }: { hoje:
                   ))}
                 </ul>
                 <div className="eda-pront-acoes">
-                  <button type="button" className="eda-bt eda-bt-ouro eda-bt-p" onClick={() => pedirEDA(c)}>Preparar com a EDA</button>
+                  <button type="button" className="eda-bt eda-bt-ouro eda-bt-p" onClick={() => pedirEDA(c)}>Preparar com Tupã</button>
                   {justificando === c.id ? (
                     <form className="eda-pront-motivo" onSubmit={(e) => {
                       e.preventDefault();

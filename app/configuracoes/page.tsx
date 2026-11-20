@@ -673,7 +673,7 @@ export default function ConfiguracoesPage() {
                     className={campo}>
                     {PRAZOS_CONFIRMACAO.map((h) => <option key={h} value={h}>{h < 24 ? `${h} horas` : h === 24 ? '1 dia' : `${h / 24} dias`}</option>)}
                   </select>
-                  <span className="mt-1 block text-xs text-[var(--cfg-secundario)]">Passou disso, a EDA avisa você para não perder o cliente.</span>
+                  <span className="mt-1 block text-xs text-[var(--cfg-secundario)]">Passou disso, Tupã avisa você para não perder o cliente.</span>
                 </label>
                 <label className="min-w-0 text-sm">
                   Horário de saída mais comum
@@ -682,20 +682,6 @@ export default function ConfiguracoesPage() {
                     className={campo} />
                   <span className="mt-1 block text-xs text-[var(--cfg-secundario)]">Já vem preenchido ao programar uma nova saída.</span>
                 </label>
-              </div>
-
-              <h3 className="mt-6 text-sm font-semibold">Jeito de falar da EDA</h3>
-              <div className="mt-3 flex flex-wrap gap-3" role="radiogroup" aria-label="Jeito de falar da EDA">
-                {([['regional', 'Jeito regional', 'Conversa leve, com o jeito da nossa região.'], ['formal', 'Formal', 'Português padrão, cordial e profissional.']] as const).map(([v, nome, texto]) => (
-                  <label key={v} className={`min-w-0 flex-1 cursor-pointer rounded-xl border p-4 text-sm ${config.tom_eda === v ? 'border-[var(--cfg-destaque)]' : 'border-[var(--cfg-borda)]'}`}>
-                    <span className="flex items-center gap-2 font-semibold">
-                      <input type="radio" name="tom_eda" value={v} checked={config.tom_eda === v}
-                        onChange={() => alterar('tom_eda', v)} className="h-4 w-4 accent-[var(--cfg-destaque)]" />
-                      {nome}
-                    </span>
-                    <span className="mt-2 block text-xs leading-5 text-[var(--cfg-secundario)]">{texto}</span>
-                  </label>
-                ))}
               </div>
             </section>
 

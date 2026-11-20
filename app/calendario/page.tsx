@@ -572,8 +572,8 @@ export default function CalendarioAmazonicoPage() {
           </div>
         )}
         {evs.length ? <div className="eda-cal-lista">{evs.map((e) => cartaoEvento(e))}</div>
-          : <p className="eda-pg-texto-mut">Dia livre. {dia >= hoje ? 'Que tal abrir uma saída ou pedir uma ideia de oferta à EDA?' : ''}</p>}
-        {dia >= hoje && <button type="button" className="eda-cal-lk eda-cal-eda" onClick={() => { pedirEDA(`O que tenho em ${dmCal(dia)}? Confira saídas, reservas, guias, barcos e pendências desse dia e me diga o que preparar.`); setPainel(null); }}>Perguntar à EDA sobre este dia</button>}
+          : <p className="eda-pg-texto-mut">Dia livre. {dia >= hoje ? 'Que tal abrir uma saída ou pedir uma ideia de oferta a Tupã?' : ''}</p>}
+        {dia >= hoje && <button type="button" className="eda-cal-lk eda-cal-eda" onClick={() => { pedirEDA(`O que tenho em ${dmCal(dia)}? Confira saídas, reservas, guias, barcos e pendências desse dia e me diga o que preparar.`); setPainel(null); }}>Perguntar a Tupã sobre este dia</button>}
       </PainelLateralEDA>
     );
   }
@@ -627,7 +627,7 @@ export default function CalendarioAmazonicoPage() {
           acoes={<>
             <button type="button" className="eda-pg-bt" onClick={() => novoBloqueio()}>Bloquear agenda</button>
             <Link className="eda-pg-bt" href="/passeios">Abrir saídas</Link>
-            <button type="button" className="eda-pg-bt eda-pg-bt-ouro" onClick={() => pedirEDA(`Estou no Calendário Amazônico vendo ${titulo}. Me dê um resumo do período: saídas, pendências, conflitos de barco e guia, dias livres e o que eu devo preparar primeiro.`)}>Resumo da EDA</button>
+            <button type="button" className="eda-pg-bt eda-pg-bt-ouro" onClick={() => pedirEDA(`Estou no Calendário Amazônico vendo ${titulo}. Me dê um resumo do período: saídas, pendências, conflitos de barco e guia, dias livres e o que eu devo preparar primeiro.`)}>Resumo de Tupã</button>
           </>}
         />
 

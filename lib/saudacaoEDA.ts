@@ -2,7 +2,7 @@
 
 // EDA_SAUDACAO_V3: a saudação da EDA muda a cada visita.
 // - Primeira entrada no período (manhã/tarde/noite/madrugada): cumprimento do período, com variações.
-// - Recarregou ou voltou no mesmo período: no lugar do "Bom dia", uma interação descontraída do período (café, almoço, jantar, sono).
+// - Recarregou ou voltou no mesmo período: no lugar do "Bom dia", uma fala curta de Tupã sobre o momento.
 // A mesma frase vale para o painel e para a abertura da conversa (calculada uma vez por carregamento).
 
 export type PeriodoEDA = 'madrugada' | 'manha' | 'tarde' | 'noite';
@@ -13,39 +13,34 @@ export function periodoEDA(): PeriodoEDA {
 }
 
 // 1ª entrada no período: o cumprimento clássico. Depois dele, a EDA puxa conversa do jeito do momento.
+// EDA_TUPA_V1: as saudações têm a voz de Tupã, o trovão que guarda o céu da operação.
 const PRIMEIRA: Record<PeriodoEDA, ((n: string) => string)[]> = {
-  manha: [n => `Bom dia${n ? `, ${n}` : ''}.`],
-  tarde: [n => `Boa tarde${n ? `, ${n}` : ''}.`],
-  noite: [n => `Boa noite${n ? `, ${n}` : ''}.`],
-  madrugada: [n => `Boa madrugada${n ? `, ${n}` : ''}.`],
+  manha: [n => `Bom dia${n ? `, ${n}` : ''}. O céu abriu sobre o rio.`, n => `Bom dia${n ? `, ${n}` : ''}. O sol já subiu sobre o Rio Negro.`],
+  tarde: [n => `Boa tarde${n ? `, ${n}` : ''}. O vento segue sobre o rio.`, n => `Boa tarde${n ? `, ${n}` : ''}. O céu segue de vigia.`],
+  noite: [n => `Boa noite${n ? `, ${n}` : ''}. O céu escureceu sobre o rio.`, n => `Boa noite${n ? `, ${n}` : ''}. As estrelas já cobrem o rio.`],
+  madrugada: [n => `Boa madrugada${n ? `, ${n}` : ''}. O rio dorme, eu velo.`],
 };
 
 const v = (n: string) => (n ? `, ${n}` : '');
 const RETORNO: Record<PeriodoEDA, ((n: string) => string)[]> = {
   manha: [
-    n => `Como foi o café hoje${v(n)}?`,
-    n => `Já tomou aquele cafezinho${v(n)}?`,
-    n => `E aí${v(n)}, a manhã tá rendendo?`,
-    n => `Dormiu bem${v(n)}?`,
-    n => `Café com tapioca ou com pão hoje${v(n)}?`,
+    n => `Voltou${v(n)}. A manhã segue clara?`,
+    n => `O dia mal nasceu e você já está aqui${v(n)}.`,
+    n => `De novo sob o meu céu${v(n)}. A manhã rende?`,
   ],
   tarde: [
-    n => `E o almoço, foi de quê hoje${v(n)}?`,
-    n => `Já merendou${v(n)}?`,
-    n => `Bateu a leseira depois do almoço${v(n)}?`,
-    n => `Como tá a tarde por aí${v(n)}?`,
-    n => `Teve peixinho no almoço${v(n)}?`,
+    n => `Voltou${v(n)}. Como corre a tarde no rio?`,
+    n => `O sol ainda está alto${v(n)}. O que mais pede o dia?`,
+    n => `De volta sob o meu céu${v(n)}. A tarde vai bem?`,
   ],
   noite: [
     n => `Como foi o dia${v(n)}?`,
-    n => `Já jantou${v(n)}?`,
-    n => `Dia puxado hoje${v(n)}?`,
-    n => `Bora fechar o dia${v(n)}?`,
+    n => `O dia se recolhe${v(n)}. Fechamos juntos?`,
+    n => `Voltou${v(n)}. A noite está calma por aqui.`,
   ],
   madrugada: [
-    n => `Perdeu o sono${v(n)}?`,
-    n => `Madrugada adentro, hein${v(n)}?`,
-    n => `Tá sem sono${v(n)}? Fico contigo.`,
+    n => `Ainda acordado${v(n)}? Eu velo com você.`,
+    n => `A madrugada é longa${v(n)}. Estou aqui.`,
   ],
 };
 

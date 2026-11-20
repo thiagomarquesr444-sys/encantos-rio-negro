@@ -2,7 +2,7 @@
 
 /*
   EDA_ARTESANATO_V2 — o artesão combinou com o turista que a peça será entregue
-  durante o passeio. Ele registra aqui e a operadora recebe o aviso (e o Jurupari
+  durante o passeio. Ele registra aqui e a operadora recebe o aviso (e Tupã
   lembra na véspera). Só o primeiro nome do comprador; apagado 120 dias após o passeio.
 */
 import { useCallback, useEffect, useState } from 'react';

@@ -1821,7 +1821,7 @@ export default function PasseiosPage() {
                 {/* EDA_LOGISTICA_PASSEIO_V1 */}
                 <div className="border-t border-[var(--ern-borda)] pt-5">
                   <p className="mb-1 text-[9px] font-semibold uppercase tracking-[0.16em] text-[var(--ern-destaque)]">Logística da viagem</p>
-                  <p className="mb-4 text-xs leading-5 text-[var(--ern-secundario)]">Embarque, caminho pelo rio e destino. A Operação ao vivo e a EDA acompanham a embarcação por aqui.</p>
+                  <p className="mb-4 text-xs leading-5 text-[var(--ern-secundario)]">Embarque, caminho pelo rio e destino. A Operação ao vivo e Tupã acompanham a embarcação por aqui.</p>
                   <LogisticaPasseioEDA key={passeioSelecionado.id} disabled={salvando}
                     valor={logisticaDoPasseio(passeioSelecionado)}
                     onChange={(l) => setPasseioSelecionado((p) => (p ? { ...p, ...l } : p))} />
