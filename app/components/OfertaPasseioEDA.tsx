@@ -42,14 +42,15 @@ export default function OfertaPasseioEDA({ passeioId, operadoraSlug }: { passeio
         {zap && <a href={zap} target="_blank" rel="noopener noreferrer">Quero esta experiência</a>}
       </div>
       <style jsx>{`
-        .op { display: grid; grid-template-columns: minmax(0, 160px) 1fr; gap: 16px; margin: 32px auto 0; max-width: 768px; padding: 14px; border-radius: 20px; border: 1px solid #d6d2c8; background: #fffaf2; color: #0f1c17; }
+        .op { display: grid; grid-template-columns: minmax(0, 160px) 1fr; gap: 16px; margin: 32px auto 0; max-width: 768px; padding: 14px; border-radius: 20px; border: 1px solid var(--ern-borda, #d6d2c8); background: var(--ern-painel, #fffaf2); color: var(--ern-texto, #0f1c17); }
         @media (max-width: 560px) { .op { grid-template-columns: 1fr; } }
         img { width: 100%; height: 100%; min-height: 120px; object-fit: cover; border-radius: 14px; }
         div { display: grid; gap: 4px; align-content: center; }
-        small { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: #8a4b12; font-weight: 700; }
-        b { font-size: 20px; } span { font-size: 14px; color: #3d4a43; }
-        .op-data { color: #0f5132; font-weight: 600; }
-        a { justify-self: start; margin-top: 8px; padding: 10px 18px; border-radius: 999px; background: #8a4b12; color: #fff; font-weight: 700; text-decoration: none; }
+        small { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; color: var(--ern-destaque, #8a4b12); font-weight: 700; }
+        b { font-size: 20px; } span { font-size: 14px; color: var(--ern-secundario, #3d4a43); }
+        .op-data { color: var(--ern-texto, #0f5132); font-weight: 600; }
+        a { justify-self: start; margin-top: 8px; padding: 10px 18px; border-radius: 999px; border: 1px solid color-mix(in srgb, currentColor 28%, transparent); background: transparent; color: var(--ern-texto, #0f1c17); font-weight: 600; text-decoration: none; backdrop-filter: blur(12px); }
+        a:hover { border-color: color-mix(in srgb, currentColor 55%, transparent); background: color-mix(in srgb, currentColor 9%, transparent); }
       `}</style>
     </aside>
   );

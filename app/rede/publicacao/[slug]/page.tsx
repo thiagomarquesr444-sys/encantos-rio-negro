@@ -59,7 +59,7 @@ type Estado =
   | { tipo: 'ausente' }
   | { tipo: 'pronto'; item: PublicacaoPublica };
 
-const foco = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8a4b12] focus-visible:ring-offset-4';
+const foco = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ern-destaque)] focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--ern-fundo)]';
 
 export default function PublicacaoRedePage() {
   const { slug } = useParams<{ slug: string }>();
@@ -101,12 +101,12 @@ export default function PublicacaoRedePage() {
 
   return (
     <TemaPortalERN>
-    <div className="ern-rede-detalhe min-h-screen bg-[#f3f1ec] text-[#0f1c17]">
+    <div className="ern-rede-detalhe ern-rede-publicacao min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
       <PublicHeader />
 
       <main className="mx-auto max-w-5xl px-5 pb-16 pt-28 sm:px-8">
-        <Link href="/rede" className={`inline-flex min-h-12 items-center gap-3 text-sm font-semibold text-[#8a4b12] ${foco}`}>
-          <span aria-hidden="true">←</span> {t.back}
+        <Link href="/rede" className={`inline-flex min-h-12 items-center gap-3 text-sm font-semibold text-[var(--ern-destaque)] ${foco}`}>
+          {t.back}
         </Link>
 
         {estado.tipo === 'carregando' && (
@@ -119,7 +119,7 @@ export default function PublicacaoRedePage() {
             <button
               type="button"
               onClick={() => setTentativa(valor => valor + 1)}
-              className={`mt-6 min-h-12 rounded-xl bg-[#8a4b12] px-5 font-semibold text-white ${foco}`}
+              className={`eda-botao mt-6 min-h-12 px-5 ${foco}`}
             >
               {t.retry}
             </button>
@@ -129,16 +129,16 @@ export default function PublicacaoRedePage() {
         {estado.tipo === 'ausente' && (
           <section className="py-16">
             <h1 className="text-3xl">{t.missing}</h1>
-            <p className="mt-4 text-sm leading-7 text-[#4b5a53]">{t.missingText}</p>
+            <p className="mt-4 text-sm leading-7 text-[var(--ern-secundario)]">{t.missingText}</p>
           </section>
         )}
 
         {item && (
           <article className="pt-8">
-            <header className="border-b border-[#d6d2c8] pb-8">
+            <header className="border-b border-[var(--ern-borda)] pb-8">
               <Link
                 href={`/rede/perfil/${encodeURIComponent(item.autor.slug)}`}
-                className={`inline-flex min-h-11 items-center text-sm font-semibold text-[#8a4b12] hover:underline ${foco}`}
+                className={`inline-flex min-h-11 items-center text-sm font-semibold text-[var(--ern-destaque)] hover:underline ${foco}`}
               >
                 {item.autor.nome_publico}
               </Link>
@@ -151,12 +151,12 @@ export default function PublicacaoRedePage() {
               </h1>
 
               {item.resumo && (
-                <p className="mt-6 whitespace-pre-wrap break-words text-lg leading-8 text-[#4b5a53]">
+                <p className="mt-6 whitespace-pre-wrap break-words text-lg leading-8 text-[var(--ern-secundario)]">
                   {item.resumo}
                 </p>
               )}
 
-              <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[#4b5a53]">
+              <div className="mt-6 flex flex-wrap gap-x-5 gap-y-2 text-xs text-[var(--ern-secundario)]">
                 {item.localidade_texto && <span>{item.localidade_texto}</span>}
                 {data && Number.isFinite(data.getTime()) && (
                   <time dateTime={item.publicado_em}>
@@ -177,7 +177,7 @@ export default function PublicacaoRedePage() {
                   <figure key={midia.id}>
                     <MidiaVivenciaERN midia={midia} />
                     {midia.credito && (
-                      <figcaption className="mt-3 text-xs leading-6 text-[#4b5a53]">
+                      <figcaption className="mt-3 text-xs leading-6 text-[var(--ern-secundario)]">
                         {t.credit}: {midia.credito}
                       </figcaption>
                     )}
@@ -186,30 +186,32 @@ export default function PublicacaoRedePage() {
               </section>
             )}
 
+            <div className="mt-6 flex flex-wrap items-start gap-3">
             <CompartilharVivenciaERN post={item} />
             {item.destino_slug && (
               <Link
-                className="inline-flex min-h-12 items-center rounded-xl border border-[#d6d2c8] px-4 py-3"
+                className={`eda-botao inline-flex min-h-12 items-center px-5 py-3 ${foco}`}
                 href={`/destinos?lugar=${encodeURIComponent(item.destino_slug)}&publicacao=${encodeURIComponent(item.slug)}`}
               >
-                {idioma === 'EN' ? 'View on map' : idioma === 'ES' ? 'Ver en el mapa' : 'Ver no mapa'} ↗
+                {idioma === 'EN' ? 'View on map' : idioma === 'ES' ? 'Ver en el mapa' : 'Ver no mapa'}
               </Link>
             )}
+            </div>
             {item.conteudo && (
-              <div className="mx-auto mt-10 max-w-3xl whitespace-pre-wrap break-words text-base leading-8 text-[#0f1c17] sm:text-lg sm:leading-9">
+              <div className="mx-auto mt-10 max-w-3xl whitespace-pre-wrap break-words text-base leading-8 text-[var(--ern-texto)] sm:text-lg sm:leading-9">
                 {item.conteudo}
               </div>
             )}
 
             {item.passeio_id && <OfertaPasseioEDA passeioId={item.passeio_id} operadoraSlug={item.autor.slug} />}
 
-            <footer className="mt-12 flex flex-wrap items-center justify-between gap-5 border-t border-[#d6d2c8] pt-7">
+            <footer className="mt-12 flex flex-wrap items-center justify-between gap-5 border-t border-[var(--ern-borda)] pt-7">
               <p className="break-words font-semibold">{item.autor.nome_publico}</p>
               <Link
                 href={`/rede/perfil/${encodeURIComponent(item.autor.slug)}`}
-                className={`inline-flex min-h-12 items-center gap-3 text-sm font-semibold text-[#8a4b12] ${foco}`}
+                className={`eda-botao inline-flex min-h-12 items-center px-5 text-sm ${foco}`}
               >
-                {t.author} <span aria-hidden="true">↗</span>
+                {t.author}
               </Link>
             </footer>
           </article>

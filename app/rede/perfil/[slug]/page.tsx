@@ -177,7 +177,7 @@ const TEXTOS_EDITORIAL = {
 
 const FOCO =
   'focus-visible:outline-none focus-visible:ring-2 ' +
-  'focus-visible:ring-[#987027] focus-visible:ring-offset-2';
+  'focus-visible:ring-[var(--ern-destaque)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--ern-fundo)]';
 
 function urlSegura(valor: string | null): string | null {
   if (!valor) return null;
@@ -325,7 +325,7 @@ export default function PerfilRedePage() {
 
   return (
     <TemaPortalERN>
-    <div className="ern-perfil-publico ern-rede-detalhe min-h-screen bg-[#F6F5F0] text-[#18352C]">
+    <div className="ern-perfil-publico ern-rede-detalhe min-h-screen bg-[var(--ern-fundo)] text-[var(--ern-texto)]">
       <PublicHeader />
 
       <main className="pb-12 pt-[76px]">
@@ -334,14 +334,13 @@ export default function PerfilRedePage() {
             href="/rede"
             className={`inline-flex min-h-11 items-center gap-2 rounded-lg text-sm font-semibold ${FOCO}`}
           >
-            <span aria-hidden="true">←</span>
             {t.back}
           </Link>
         </div>
 
         {estado.tipo !== 'pronto' ? (
           <section className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-            <div className="rounded-3xl border border-[#18352C]/15 bg-white p-6 sm:p-10">
+            <div className="rounded-3xl border border-[var(--ern-borda)] bg-[var(--ern-painel)] p-6 sm:p-10">
               {estado.tipo === 'carregando' ? (
                 <p role="status">{t.loading}</p>
               ) : estado.tipo === 'erro' ? (
@@ -350,7 +349,7 @@ export default function PerfilRedePage() {
                   <button
                     type="button"
                     onClick={() => setTentativa((atual) => atual + 1)}
-                    className={`mt-5 min-h-12 rounded-xl bg-[#18352C] px-5 font-semibold text-white ${FOCO}`}
+                    className={`mt-5 min-h-12 eda-botao px-5 ${FOCO}`}
                   >
                     {t.retry}
                   </button>
@@ -360,7 +359,7 @@ export default function PerfilRedePage() {
                   <h1 className="text-2xl font-semibold">
                     {t.unavailable}
                   </h1>
-                  <p className="mt-3 leading-7 text-[#53685F]">
+                  <p className="mt-3 leading-7 text-[var(--ern-secundario)]">
                     {t.unavailableText}
                   </p>
                 </>
@@ -384,7 +383,7 @@ export default function PerfilRedePage() {
 
               <div className="relative px-2 sm:px-7">
                 <div
-                  className={`relative -mt-10 flex h-24 w-24 items-center justify-center overflow-hidden border-4 border-[#F6F5F0] bg-white shadow-lg sm:-mt-14 sm:h-32 sm:w-32 ${
+                  className={`relative -mt-10 flex h-24 w-24 items-center justify-center overflow-hidden border-4 border-[var(--ern-fundo)] bg-[var(--ern-painel)] shadow-lg sm:-mt-14 sm:h-32 sm:w-32 ${
                     editorialOficial ? 'rounded-full' : 'rounded-3xl'
                   }`}
                 >
@@ -396,7 +395,7 @@ export default function PerfilRedePage() {
                     </div>
                   ) : (
                     <>
-                      <span aria-hidden="true" className="text-3xl font-semibold text-[#18352C]">
+                      <span aria-hidden="true" className="text-3xl font-semibold text-[var(--ern-texto)]">
                         {estado.perfil.nome_publico.trim().slice(0, 1)}
                       </span>
                       {logo && (
@@ -413,7 +412,7 @@ export default function PerfilRedePage() {
 
                 <div className="ern-perfil-apresentacao mt-6 flex flex-col justify-between gap-6 sm:flex-row sm:items-start">
                   <div className="min-w-0">
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[#76602D]">
+                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-[var(--ern-destaque)]">
                       {estado.perfil.categoria === 'operadora'
                         ? t.operator
                         : t.profile}
@@ -424,7 +423,7 @@ export default function PerfilRedePage() {
                     >
                       {estado.perfil.nome_publico}
                     </h1>
-                    <p className="mt-3 text-sm text-[#53685F]">
+                    <p className="mt-3 text-sm text-[var(--ern-secundario)]">
                       {[estado.perfil.cidade, estado.perfil.uf]
                         .filter(Boolean)
                         .join(' · ')}
@@ -432,13 +431,13 @@ export default function PerfilRedePage() {
                     {selos && (selos.cadastur || selos.marinha) && (
                       <ul className="mt-4 flex flex-wrap gap-2" title={t.selosDica}>
                         {selos.cadastur && (
-                          <li className="inline-flex items-center gap-1.5 rounded-full border border-[#185943]/25 bg-[#185943]/[0.06] px-3 py-1 text-xs font-semibold text-[#185943]">
+                          <li className="inline-flex items-center gap-1.5 rounded-full border border-[var(--ern-borda)] px-3 py-1 text-xs font-semibold text-[var(--ern-texto)]">
                             <span aria-hidden="true">✓</span>
                             {t.seloCadastur}
                           </li>
                         )}
                         {selos.marinha && (
-                          <li className="inline-flex items-center gap-1.5 rounded-full border border-[#185943]/25 bg-[#185943]/[0.06] px-3 py-1 text-xs font-semibold text-[#185943]">
+                          <li className="inline-flex items-center gap-1.5 rounded-full border border-[var(--ern-borda)] px-3 py-1 text-xs font-semibold text-[var(--ern-texto)]">
                             <span aria-hidden="true">⚓</span>
                             {t.seloMarinha}
                           </li>
@@ -452,15 +451,15 @@ export default function PerfilRedePage() {
                       href={whatsapp}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`inline-flex min-h-12 shrink-0 items-center justify-center rounded-2xl bg-[#185943] px-5 text-sm font-bold text-white transition-colors hover:bg-[#114432] ${FOCO}`}
+                      className={`inline-flex min-h-12 shrink-0 items-center justify-center eda-botao px-5 text-sm ${FOCO}`}
                     >
-                      {t.whatsapp} ↗
+                      {t.whatsapp}
                     </a>
                   )}
                 </div>
 
                 {estado.perfil.descricao_curta && (
-                  <p className="mt-5 max-w-3xl whitespace-pre-wrap break-words text-base leading-8 text-[#53685F] sm:text-lg">
+                  <p className="mt-5 max-w-3xl whitespace-pre-wrap break-words text-base leading-8 text-[var(--ern-secundario)] sm:text-lg">
                     {estado.perfil.descricao_curta}
                   </p>
                 )}
@@ -468,7 +467,7 @@ export default function PerfilRedePage() {
             </section>
 
             <div className="mx-auto mt-12 grid max-w-6xl gap-10 px-4 sm:px-6 lg:mt-16 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-16">
-              <section className="min-w-0 border-t border-[#18352C]/15 py-7 sm:py-9">
+              <section className="min-w-0 border-t border-[var(--ern-borda)] py-7 sm:py-9">
                 <h2
                   className="text-2xl"
                   style={{ fontFamily: 'var(--font-fraunces), serif' }}
@@ -478,20 +477,20 @@ export default function PerfilRedePage() {
 
                 {(estado.perfil.descricao_completa ||
                   estado.perfil.descricao_curta) && (
-                  <p className="mt-5 whitespace-pre-wrap break-words text-sm leading-8 text-[#53685F] sm:text-base">
+                  <p className="mt-5 whitespace-pre-wrap break-words text-sm leading-8 text-[var(--ern-secundario)] sm:text-base">
                     {estado.perfil.descricao_completa ||
                       estado.perfil.descricao_curta}
                   </p>
                 )}
 
                 {estado.perfil.especialidades?.length > 0 && (
-                  <div className="mt-7 border-t border-[#18352C]/10 pt-6">
+                  <div className="mt-7 border-t border-[var(--ern-borda)] pt-6">
                     <h3 className="text-sm font-bold">{t.specialties}</h3>
                     <ul className="mt-3 flex flex-wrap gap-2">
                       {estado.perfil.especialidades.map((item, indice) => (
                         <li
                           key={`${item}-${indice}`}
-                          className="max-w-full break-words border-b border-[#987027]/35 px-1 py-2 text-sm text-[#285343]"
+                          className="max-w-full break-words border-b border-[var(--ern-borda)] px-1 py-2 text-sm text-[var(--ern-texto)]"
                         >
                           {item}
                         </li>
@@ -501,20 +500,20 @@ export default function PerfilRedePage() {
                 )}
 
                 {estado.perfil.idiomas?.length > 0 && (
-                  <div className="mt-7 border-t border-[#18352C]/10 pt-6">
+                  <div className="mt-7 border-t border-[var(--ern-borda)] pt-6">
                     <h3 className="text-sm font-bold">{t.languages}</h3>
-                    <p className="mt-3 break-words text-sm leading-7 text-[#53685F]">
+                    <p className="mt-3 break-words text-sm leading-7 text-[var(--ern-secundario)]">
                       {estado.perfil.idiomas.join(' · ')}
                     </p>
                   </div>
                 )}
               </section>
 
-              <aside className="min-w-0 self-start border-t border-[#18352C]/15 py-7 sm:py-9 lg:border-l lg:border-t-0 lg:pl-8">
+              <aside className="min-w-0 self-start border-t border-[var(--ern-borda)] py-7 sm:py-9 lg:border-l lg:border-t-0 lg:pl-8">
                 <h2 className="text-xl font-semibold leading-8">
                   {t.contact}
                 </h2>
-                <p className="mt-3 text-sm leading-7 text-[#53685F]">
+                <p className="mt-3 text-sm leading-7 text-[var(--ern-secundario)]">
                   {t.contactText}
                 </p>
 
@@ -524,9 +523,9 @@ export default function PerfilRedePage() {
                       href={whatsapp}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`inline-flex min-h-12 items-center justify-center rounded-xl bg-[#185943] px-4 text-center text-sm font-bold text-white ${FOCO}`}
+                      className={`inline-flex min-h-12 items-center justify-center eda-botao px-4 text-center text-sm ${FOCO}`}
                     >
-                      {t.whatsapp} ↗
+                      {t.whatsapp}
                     </a>
                   )}
 
@@ -535,9 +534,9 @@ export default function PerfilRedePage() {
                       href={site}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`inline-flex min-h-12 items-center justify-center rounded-xl border border-[#18352C]/20 px-4 text-sm font-semibold ${FOCO}`}
+                      className={`inline-flex min-h-12 items-center justify-center eda-botao px-4 text-sm ${FOCO}`}
                     >
-                      {t.website} ↗
+                      {t.website}
                     </a>
                   )}
 
@@ -546,14 +545,14 @@ export default function PerfilRedePage() {
                       href={instagram}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className={`inline-flex min-h-12 items-center justify-center rounded-xl border border-[#18352C]/20 px-4 text-sm font-semibold ${FOCO}`}
+                      className={`inline-flex min-h-12 items-center justify-center eda-botao px-4 text-sm ${FOCO}`}
                     >
-                      {t.instagram} ↗
+                      {t.instagram}
                     </a>
                   )}
                 </div>
 
-                <p className="mt-5 text-xs leading-6 text-[#53685F]">
+                <p className="mt-5 text-xs leading-6 text-[var(--ern-secundario)]">
                   {t.direct}
                 </p>
               </aside>
@@ -575,13 +574,13 @@ export default function PerfilRedePage() {
             />
 
             <section className="mx-auto mt-12 max-w-6xl px-4 sm:px-6">
-              <div className="flex flex-col justify-between gap-6 border-y border-[#987027]/30 py-8 text-[#18352C] sm:flex-row sm:items-center sm:py-10">
+              <div className="flex flex-col justify-between gap-6 border-y border-[var(--ern-borda)] py-8 text-[var(--ern-texto)] sm:flex-row sm:items-center sm:py-10">
                 <p className="max-w-xl text-lg leading-8">{t.join}</p>
                 <Link
                   href="/operadores"
-                  className={`inline-flex min-h-12 shrink-0 items-center justify-center rounded-xl bg-[#E3B567] px-5 text-sm font-bold text-[#18352C] ${FOCO}`}
+                  className={`inline-flex min-h-12 shrink-0 items-center justify-center eda-botao px-5 text-sm ${FOCO}`}
                 >
-                  {t.joinLink} →
+                  {t.joinLink}
                 </Link>
               </div>
             </section>

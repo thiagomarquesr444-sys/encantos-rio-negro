@@ -294,6 +294,16 @@ export default function TemaPortalERN({ children }: { children: ReactNode }) {
           --ern-botao:#30363e;
           --ern-sobre-botao:#f0f1f2;
         }
+        /* EDA_REDE_BOTAO_V1: botões .eda-botao da Rede (publicação e perfil)
+           seguem a cor do texto do tema — branco na noite, escuro no claro. */
+        .ern-tema-portal .ern-rede-detalhe {
+          --eda-acao: color-mix(in srgb, var(--ern-texto) 4%, transparent);
+          --eda-acao-hover: color-mix(in srgb, var(--ern-texto) 9%, transparent);
+          --eda-acao-ativo: color-mix(in srgb, var(--ern-texto) 12%, transparent);
+          --eda-acao-borda: color-mix(in srgb, var(--ern-texto) 30%, transparent);
+          --eda-acao-borda-hover: color-mix(in srgb, var(--ern-texto) 55%, transparent);
+          --eda-acao-texto: var(--ern-texto);
+        }
         /* ERN_REDE_DETALHES_TEMA_V1 */
         .ern-tema-portal[data-portal-tema="escuro"] .ern-rede-detalhe {
           background:var(--ern-fundo);

@@ -358,21 +358,21 @@ export function CompartilharVivenciaERN({ post }: { post: PublicacaoPublica }) {
   }
 
   return (
-    <div style={{ margin: '14px 0' }}>
-      <button type="button" style={button} aria-expanded={aberto} onClick={() => setAberto(value => !value)}>
+    <div style={{ margin: 0, color: 'var(--ern-texto)' }}>
+      <button type="button" className="eda-botao" style={button} aria-expanded={aberto} onClick={() => setAberto(value => !value)}>
         {tr('Compartilhar · EDA', 'Share · EDA', 'Compartir · EDA')}
       </button>
       {aberto && (
         <div style={panel}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
             {base && <>
-              <a style={button} href={`https://wa.me/?text=${encodeURIComponent(texto)}`} target="_blank" rel="noopener noreferrer">WhatsApp</a>
-              <a style={button} href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`} target="_blank" rel="noopener noreferrer">Facebook</a>
+              <a className="eda-botao" style={button} href={`https://wa.me/?text=${encodeURIComponent(texto)}`} target="_blank" rel="noopener noreferrer">WhatsApp</a>
+              <a className="eda-botao" style={button} href={`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`} target="_blank" rel="noopener noreferrer">Facebook</a>
             </>}
-            <button type="button" style={button} onClick={() => void compartilhar()}>
+            <button type="button" className="eda-botao" style={button} onClick={() => void compartilhar()}>
               {tr('Compartilhar link', 'Share link', 'Compartir enlace')}
             </button>
-            <button type="button" style={button} disabled={gerando || !base} onClick={() => void cartao()}>
+            <button type="button" className="eda-botao" style={button} disabled={gerando || !base} onClick={() => void cartao()}>
               {gerando ? '…' : tr('Cartão EDA / Instagram', 'EDA card / Instagram', 'Tarjeta EDA / Instagram')}
             </button>
           </div>

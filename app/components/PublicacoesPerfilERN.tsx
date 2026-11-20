@@ -39,7 +39,7 @@ const textos = {
   },
 };
 
-const foco = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#8a4b12] focus-visible:ring-offset-4';
+const foco = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ern-destaque)] focus-visible:ring-offset-4 focus-visible:ring-offset-[var(--ern-fundo)]';
 
 export default function PublicacoesPerfilERN({
   perfilId,
@@ -95,7 +95,7 @@ export default function PublicacoesPerfilERN({
       aria-busy={carregando}
       className="mx-auto mt-12 max-w-6xl px-4 sm:px-6"
     >
-      <div className="border-t border-[#d6d2c8] pt-8">
+      <div className="border-t border-[var(--ern-borda)] pt-8">
         <h2
           id="publicacoes-perfil-titulo"
           className="text-3xl sm:text-4xl"
@@ -115,9 +115,9 @@ export default function PublicacoesPerfilERN({
               const href = `/rede/publicacao/${encodeURIComponent(item.slug)}`;
 
               return (
-                <article key={item.id} className="min-w-0 border-b border-[#d6d2c8]/60 pb-6">
+                <article key={item.id} className="min-w-0 border-b border-[var(--ern-borda)]/60 pb-6">
                   {imagem && (
-                    <div className="overflow-hidden rounded-lg bg-[#ffffff]">
+                    <div className="overflow-hidden rounded-lg bg-[var(--ern-painel)]">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img
                         src={imagem}
@@ -139,12 +139,12 @@ export default function PublicacoesPerfilERN({
                   </h3>
 
                   {item.resumo && (
-                    <p className="pm-esconde mt-3 line-clamp-3 break-words text-sm leading-7 text-[#4b5a53]">
+                    <p className="pm-esconde mt-3 line-clamp-3 break-words text-sm leading-7 text-[var(--ern-secundario)]">
                       {item.resumo}
                     </p>
                   )}
 
-                  <Link href={href} className={`mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[#8a4b12] ${foco}`}>
+                  <Link href={href} className={`mt-4 inline-flex min-h-11 items-center gap-2 text-sm font-semibold text-[var(--ern-destaque)] ${foco}`}>
                     {t.read}
                   </Link>
                 </article>
@@ -154,16 +154,16 @@ export default function PublicacoesPerfilERN({
         )}
 
         {carregando && (
-          <p role="status" className="mt-6 text-sm text-[#4b5a53]">{t.loading}</p>
+          <p role="status" className="mt-6 text-sm text-[var(--ern-secundario)]">{t.loading}</p>
         )}
 
         {!carregando && !erro && itens.length === 0 && (
-          <p className="mt-6 text-sm leading-7 text-[#4b5a53]">{t.empty}</p>
+          <p className="mt-6 text-sm leading-7 text-[var(--ern-secundario)]">{t.empty}</p>
         )}
 
         {erro && (
           <div role="alert" className="mt-6">
-            <p className="text-sm text-[#4b5a53]">{t.error}</p>
+            <p className="text-sm text-[var(--ern-secundario)]">{t.error}</p>
             <button
               type="button"
               disabled={carregando}
@@ -186,7 +186,7 @@ export default function PublicacoesPerfilERN({
               setCarregando(true);
               setPagina(valor => valor + 1);
             }}
-            className={`mt-8 min-h-12 rounded-xl border border-[#d6d2c8] px-6 text-sm font-semibold disabled:opacity-50 ${foco}`}
+            className={`mt-8 min-h-12 rounded-xl border border-[var(--ern-borda)] px-6 text-sm font-semibold disabled:opacity-50 ${foco}`}
           >
             {t.more}
           </button>
