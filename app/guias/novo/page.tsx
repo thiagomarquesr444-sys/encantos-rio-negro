@@ -23,6 +23,7 @@ interface GuiaForm {
   idiomas: string;
   cadastur: string;
   status: StatusGuia;
+  codigoEda: string;
 }
 
 interface Mensagem {
@@ -37,6 +38,7 @@ const estadoInicial: GuiaForm = {
   idiomas: 'Português',
   cadastur: '',
   status: 'Ativo',
+  codigoEda: '',
 };
 
 function somenteNumeros(valor: string) {
@@ -146,6 +148,14 @@ export default function NovoGuiaPage() {
   ) {
     const { name, value } = event.target;
 
+    if (name === 'codigoEda') {
+      setFormData((atual) => ({
+        ...atual,
+        codigoEda: value.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 12),
+      }));
+      return;
+    }
+
     if (name === 'cpf') {
       setFormData((atual) => ({
         ...atual,
@@ -227,6 +237,15 @@ export default function NovoGuiaPage() {
       return;
     }
 
+    const codigoEda = formData.codigoEda.trim();
+    if (codigoEda && !/^EDA-[A-Z0-9]{6}$/.test(codigoEda)) {
+      setMensagem({
+        tipo: 'erro',
+        texto: 'O código EDA do guia tem o formato EDA-XXXXXX. Confira com o guia ou deixe em branco.',
+      });
+      return;
+    }
+
     if (somenteNumeros(telefone).length < 10) {
       setMensagem({
         tipo: 'erro',
@@ -275,10 +294,31 @@ export default function NovoGuiaPage() {
 
       gravadoGuiaERN.current = true;
 
+      // EDA_VINCULO_NO_CADASTRO_V1: liga a conta do guia já no cadastro.
+      if (codigoEda) {
+        const { error: erroVinculo } = await supabase.rpc(
+          'vincular_conta_profissional_eda',
+          { p_alvo: 'guia', p_id: idGuiaERN.current, p_codigo: codigoEda }
+        );
+
+        if (erroVinculo) {
+          setConcluido(true);
+          setMensagem({
+            tipo: 'erro',
+            texto: erroVinculo.message.includes('EDA_CODIGO_INVALIDO')
+              ? 'Guia cadastrado, mas o código EDA não foi encontrado. Confira com o guia e vincule em Guias > Editar.'
+              : 'Guia cadastrado, mas o vínculo com a conta não foi salvo. Tente em Guias > Editar.',
+          });
+          return;
+        }
+      }
+
       setConcluido(true);
       setMensagem({
         tipo: 'sucesso',
-        texto: 'Guia cadastrado com sucesso na sua operadora.',
+        texto: codigoEda
+          ? 'Guia cadastrado e conta EDA vinculada. As viagens em que ele for escalado aparecem no espaço dele.'
+          : 'Guia cadastrado com sucesso na sua operadora.',
       });
 
       router.replace('/guias');
@@ -546,6 +586,28 @@ export default function NovoGuiaPage() {
                 utilizados pela sua operadora. Ele não cria
                 uma conta de acesso para o guia.
               </p>
+
+              <div className="mt-5">
+                <label htmlFor="guia-codigo-eda" className={labelClass}>
+                  Código EDA do guia (opcional)
+                </label>
+                <input
+                  id="guia-codigo-eda"
+                  name="codigoEda"
+                  type="text"
+                  autoComplete="off"
+                  placeholder="EDA-XXXXXX"
+                  disabled={bloqueado}
+                  value={formData.codigoEda}
+                  onChange={handleChange}
+                  className={`${inputClass} tracking-[0.1em]`}
+                />
+                <p className="mt-2 text-xs leading-6 text-[var(--ern-secundario)]">
+                  Se o guia tem conta na Encantos, peça o código que aparece no
+                  espaço dele. Com o vínculo, ele recebe as viagens em que for
+                  escalado e envia a localização na Operação ao vivo.
+                </p>
+              </div>
 
               <div className="mt-5 space-y-2">
                 {[

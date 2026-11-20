@@ -46,14 +46,14 @@ export default function VinculoContaEDA({ alvo, id }: { alvo: Alvo; id: string }
         <div className="vc-linha">
           <p className="vc-txt"><b>{vinculo.nome}</b>{vinculo.atuacao ? ` · ${vinculo.atuacao}` : ''}<br />
             Recebe as viagens {alvo === 'embarcacao' ? 'desta embarcação' : 'em que for escalado'} e manda a localização e as etapas pelo painel de bordo.</p>
-          <button type="button" className="vc-bt" disabled={ocupado} onClick={() => void enviar(null)}>Remover vínculo</button>
+          <button type="button" className="vc-bt eda-botao" disabled={ocupado} onClick={() => void enviar(null)}>Remover vínculo</button>
         </div>
       ) : (
         <>
           <p className="vc-txt">Peça ao {papel} o <b>código EDA</b> que aparece no espaço dele (acesso “Guia / Prático”). Com o vínculo, ele recebe as viagens e manda a localização {alvo === 'embarcacao' ? 'do barco' : 'do barco ou do bote'}.</p>
           <form className="vc-linha" onSubmit={(e) => { e.preventDefault(); if (codigo.trim()) void enviar(codigo); }}>
             <input value={codigo} onChange={(e) => setCodigo(e.target.value.toUpperCase())} placeholder="EDA-XXXXXX" maxLength={12} aria-label={`Código EDA do ${papel}`} autoComplete="off" />
-            <button type="submit" className="vc-bt vc-ouro" disabled={ocupado || codigo.trim().length < 6}>{ocupado ? 'Vinculando…' : 'Vincular'}</button>
+            <button type="submit" className="vc-bt eda-botao" disabled={ocupado || codigo.trim().length < 6}>{ocupado ? 'Vinculando…' : 'Vincular'}</button>
           </form>
         </>
       )}
@@ -65,7 +65,6 @@ export default function VinculoContaEDA({ alvo, id }: { alvo: Alvo; id: string }
         .vc-linha { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
         .vc-linha input { flex: 1 1 160px; min-height: 42px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--ern-borda); background: var(--ern-fundo); color: var(--ern-texto); font-size: 15px; letter-spacing: .1em; }
         .vc-bt { min-height: 42px; padding: 0 16px; border-radius: 999px; border: 1px solid var(--ern-borda); background: transparent; color: var(--ern-texto); font-size: 13px; font-weight: 600; cursor: pointer; }
-        .vc-ouro { background: var(--ern-destaque, #e3a144); border-color: transparent; color: #07110e; }
         .vc-bt:disabled { opacity: .5; cursor: default; }
         .vc-aviso { margin: 0; font-size: 12.5px; font-weight: 600; } .vc-ok { color: #5cc49a; } .vc-er { color: #ef6b6b; }
       `}</style>

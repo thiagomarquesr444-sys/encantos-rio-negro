@@ -1296,6 +1296,7 @@ export default function GuiasPage() {
                 </button>
               </div>
             </form>
+            {itemEditar.id && <div className="px-6"><VinculoContaEDA alvo="guia" id={itemEditar.id} /></div>}
             {itemEditar.id && <AgendaRecursoEDA tipo="guia" id={itemEditar.id} />}
           </div>
         </div>

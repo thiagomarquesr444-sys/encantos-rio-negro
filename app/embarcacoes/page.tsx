@@ -1882,6 +1882,7 @@ export default function EmbarcacoesPage() {
                 </button>
               </div>
             </form>
+            {embarcacaoEditando.id && <div className="px-6"><VinculoContaEDA alvo="embarcacao" id={embarcacaoEditando.id} /></div>}
             {embarcacaoEditando.id && <AgendaRecursoEDA tipo="embarcacao" id={embarcacaoEditando.id} capacidade={Number(embarcacaoEditando.capacidade) || null} />}
           </div>
         </div>
