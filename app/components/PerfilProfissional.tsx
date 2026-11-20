@@ -269,6 +269,12 @@ function FormularioPerfilProfissional({ tipo }: Props) {
           .select(CAMPOS)
           .single();
 
+        if (error?.code === '23514') {
+          throw new Error(
+            'Uma informação não está no formato aceito. Em "Como você atua", escolha uma opção da lista e salve de novo.',
+          );
+        }
+
         if (error || !data) {
           throw new Error(
             'Não foi possível confirmar a atualização. Recarregue a página e confira os dados antes de tentar novamente.',
@@ -289,6 +295,12 @@ function FormularioPerfilProfissional({ tipo }: Props) {
         if (error?.code === '23505') {
           throw new Error(
             'Já existe um cadastro para esta modalidade. Recarregue a página para consultá-lo.',
+          );
+        }
+
+        if (error?.code === '23514') {
+          throw new Error(
+            'Uma informação não está no formato aceito. Em "Como você atua", escolha uma opção da lista e salve de novo.',
           );
         }
 
