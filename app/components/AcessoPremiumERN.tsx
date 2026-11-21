@@ -71,10 +71,46 @@ export default function AcessoPremiumERN({ children, etapa, perfil }: Props) {
             <img src="/images/fornecedor/artesao-acesso.webp" alt="" style={{ objectPosition: 'center 30%' }} />
           </picture>
         ) : perfil === 'guia' ? (
-          /* EDA_GUIA_ACESSO_V2: guia/prático com a guia e o tucunaré no barco. */
-          <picture className="ern-acesso-foto" aria-hidden="true">
+          /* EDA_GUIA_ACESSO_V3: foto no tamanho real (sem esticar), à direita, fundindo no escuro como a capa do perfil. */
+          <picture className="ern-acesso-foto" aria-hidden="true" style={{ background: '#07110e' }}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/guia/guia-acesso-tucunare-barco.webp" alt="" decoding="async" style={{ objectPosition: 'center 30%', animation: 'none', imageRendering: 'auto' }} />
+            <img
+              src="/images/guia/guia-acesso-barco-hd.webp"
+              alt=""
+              width={736}
+              height={736}
+              decoding="async"
+              style={{
+                inset: '0 0 auto auto',
+                width: 'min(100%, 736px)',
+                height: 'auto',
+                objectFit: 'contain',
+                animation: 'none',
+                WebkitMaskImage: 'radial-gradient(ellipse 85% 85% at 70% 35%, #000 55%, transparent 100%)',
+                maskImage: 'radial-gradient(ellipse 85% 85% at 70% 35%, #000 55%, transparent 100%)',
+              }}
+            />
+          </picture>
+        ) : perfil === 'operadora' ? (
+          /* EDA_OPERADORA_ACESSO_V1: convés do barco no pôr do sol, mesmo padrão do guia (tamanho real, sem esticar). */
+          <picture className="ern-acesso-foto" aria-hidden="true" style={{ background: '#07110e' }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/images/operadora/operadora-acesso-barco-por-do-sol.webp"
+              alt=""
+              width={736}
+              height={1308}
+              decoding="async"
+              style={{
+                inset: '0 0 auto auto',
+                width: 'min(100%, 736px)',
+                height: 'auto',
+                objectFit: 'contain',
+                animation: 'none',
+                WebkitMaskImage: 'radial-gradient(ellipse 85% 70% at 70% 35%, #000 55%, transparent 100%)',
+                maskImage: 'radial-gradient(ellipse 85% 70% at 70% 35%, #000 55%, transparent 100%)',
+              }}
+            />
           </picture>
         ) : (
           <picture className="ern-acesso-foto" aria-hidden="true">
