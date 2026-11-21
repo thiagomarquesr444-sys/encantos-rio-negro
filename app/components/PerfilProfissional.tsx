@@ -452,7 +452,13 @@ function FormularioPerfilProfissional({ tipo }: Props) {
           <div
             className="fi-capa"
             style={guia
-              ? { backgroundImage: "url('/images/guia/guia-perfil-capa-surubim.webp')", backgroundPosition: 'center 42%', minHeight: 260 } /* EDA_GUIA_PERFIL_FOTO_V1 */
+              ? {
+                  /* EDA_GUIA_PERFIL_FOTO_V2: foto à direita no tamanho real (sem esticar), texto sobre fundo escuro à esquerda. */
+                  background: "linear-gradient(90deg, #07110e 0%, #07110e 38%, rgb(7 17 14 / 75%) 52%, rgb(7 17 14 / 15%) 75%, rgb(7 17 14 / 0%) 100%), url('/images/guia/guia-perfil-capa-surubim.webp') right 38% / auto 135% no-repeat, #07110e",
+                  backgroundClip: 'padding-box',
+                  borderColor: 'rgb(244 199 126 / 18%)',
+                  minHeight: 260,
+                }
               : { backgroundImage: "url('/images/fornecedor/experiencias.webp')", minHeight: 260 }}
           >
             <div className="fi-capa-veu" />
