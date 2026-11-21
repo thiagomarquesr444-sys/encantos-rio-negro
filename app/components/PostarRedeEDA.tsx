@@ -62,8 +62,8 @@ type Reconhecimento = {
 };
 
 export default function PostarRedeEDA({
-  modo, onPublicado,
-}: { modo: ModoAutorEDA; onPublicado?: () => void }) {
+  modo, onPublicado, abrir,
+}: { modo: ModoAutorEDA; onPublicado?: () => void; abrir?: { id: string; n: number } | null }) {
   const [autor, setAutor] = useState<AutorRedeEDA | null>(null);
   const [erroAutor, setErroAutor] = useState('');
   const [texto, setTexto] = useState<TextoPostagemEDA>(TEXTO_INICIAL);
@@ -93,6 +93,47 @@ export default function PostarRedeEDA({
     setItens(lista => lista.map(i => (i.chave === chave ? { ...i, ...mudanca } : i)));
   }, []);
 
+  // Abre um rascunho existente (pendente ou tocado na galeria) já preenchido.
+  async function abrirRascunho(autorId: string, id: string, vivo: () => boolean = () => true) {
+    const { data: pub } = await supabase.from('publicacoes')
+      .select('id,status,tipo,resumo,conteudo,localidade_texto,passeio_id,data_evento_inicio,data_evento_fim')
+      .eq('id', id).eq('autor_perfil_id', autorId).maybeSingle();
+    if (!vivo() || !pub || pub.status !== 'rascunho') return false;
+    idRef.current = pub.id;
+    existeRef.current = true;
+    setPublicado(null);
+    setDireitos(false);
+    setTexto({
+      legenda: (pub.conteudo || pub.resumo || '') as string,
+      tipo: pub.tipo as TextoPostagemEDA['tipo'],
+      localidade: (pub.localidade_texto || '') as string,
+      passeioId: pub.passeio_id as string | null,
+      inicio: pub.data_evento_inicio ? String(pub.data_evento_inicio).slice(0, 10) : null,
+      fim: pub.data_evento_fim ? String(pub.data_evento_fim).slice(0, 10) : null,
+    });
+    const midias = await resolverMidiasPrivadasERN(await midiasRascunhoRedeEDA(pub.id));
+    if (!vivo()) return false;
+    setItens(midias.map(m => ({
+      chave: m.id, tipo: m.tipo, arquivo: null, previa: m.tipo === 'video' ? (m.thumbnail_url || '') : m.url,
+      fase: 'pronto' as Fase, progresso: 100, midiaId: m.id,
+      caminho: m.caminho, capa: m.capaCaminho ?? undefined,
+    })));
+    try { localStorage.setItem(`eda-postar-${modo}-${autorId}`, pub.id); } catch { /* ok */ }
+    return true;
+  }
+
+  useEffect(() => {
+    if (!autor || !abrir) return;
+    if (itensRef.current.some(i => i.fase !== 'pronto' && i.fase !== 'erro')) {
+      setErro('Espere o envio atual terminar para abrir outro rascunho.');
+      return;
+    }
+    void abrirRascunho(autor.id, abrir.id).then(() => {
+      document.getElementById('postar-rede-eda')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [abrir, autor]);
+
   // Autor + rascunho pendente (se a internet caiu no meio, continua de onde parou).
   useEffect(() => {
     let vivo = true;
@@ -107,31 +148,7 @@ export default function PostarRedeEDA({
           if (vivo) setPasseios((data ?? []) as { id: string; nome: string }[]);
         }
         const guardado = (() => { try { return localStorage.getItem(`eda-postar-${modo}-${a.id}`); } catch { return null; } })();
-        if (guardado) {
-          const { data: pub } = await supabase.from('publicacoes')
-            .select('id,status,tipo,resumo,conteudo,localidade_texto,passeio_id,data_evento_inicio,data_evento_fim')
-            .eq('id', guardado).eq('autor_perfil_id', a.id).maybeSingle();
-          if (vivo && pub && pub.status === 'rascunho') {
-            idRef.current = pub.id;
-            existeRef.current = true;
-            setTexto({
-              legenda: (pub.conteudo || pub.resumo || '') as string,
-              tipo: pub.tipo as TextoPostagemEDA['tipo'],
-              localidade: (pub.localidade_texto || '') as string,
-              passeioId: pub.passeio_id as string | null,
-              inicio: pub.data_evento_inicio ? String(pub.data_evento_inicio).slice(0, 10) : null,
-              fim: pub.data_evento_fim ? String(pub.data_evento_fim).slice(0, 10) : null,
-            });
-            const midias = await resolverMidiasPrivadasERN(await midiasRascunhoRedeEDA(pub.id));
-            if (vivo) {
-              setItens(midias.map(m => ({
-                chave: m.id, tipo: m.tipo, arquivo: null, previa: m.tipo === 'video' ? (m.thumbnail_url || m.url) : m.url,
-                fase: 'pronto', progresso: 100, midiaId: m.id,
-                caminho: undefined, capa: undefined,
-              })));
-            }
-          }
-        }
+        if (guardado && vivo) await abrirRascunho(a.id, guardado, () => vivo);
       } catch (e) {
         if (vivo) setErroAutor(erroPostarEDA(e));
       } finally {
@@ -378,7 +395,7 @@ export default function PostarRedeEDA({
   const tipos = TIPOS[modo];
 
   return (
-    <section className="pr-eda eda-card" aria-label="Publicar na Rede EDA">
+    <section id="postar-rede-eda" className="pr-eda eda-card" aria-label="Publicar na Rede EDA">
       <header className="pr-topo">
         <span className="pr-avatar" aria-hidden="true">{(autor?.nome || 'E').slice(0, 1).toUpperCase()}</span>
         <div className="min-w-0">

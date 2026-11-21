@@ -2,6 +2,7 @@
 // Envio retomável (continua de onde parou se o sinal cair), vídeo reduzido no aparelho,
 // capa automática e rascunho salvo sozinho. Permissão sempre garantida pelo banco (RLS).
 import { supabase } from '@/lib/supabase';
+import { resolverMidiasPrivadasERN } from '@/lib/midiasPrivadasERN';
 import {
   contextoPerfilPublicoERN as contextoOperadora,
   carregarPerfilPublicoOperadoraERN,
@@ -142,7 +143,9 @@ export async function midiasRascunhoRedeEDA(id: string) {
   const { data, error } = await supabase.from('publicacao_midias')
     .select('id,tipo,url,thumbnail_url').eq('publicacao_id', id).order('ordem').limit(20);
   if (error) throw error;
-  return (data ?? []) as { id: string; tipo: 'imagem' | 'video'; url: string; thumbnail_url: string | null }[];
+  const semPrefixo = (u: string | null) => (u && u.startsWith(`${BUCKET}/`) ? u.slice(BUCKET.length + 1) : undefined);
+  return ((data ?? []) as { id: string; tipo: 'imagem' | 'video'; url: string; thumbnail_url: string | null }[])
+    .map(m => ({ ...m, caminho: semPrefixo(m.url), capaCaminho: semPrefixo(m.thumbnail_url) }));
 }
 
 // ---------- Arquivos ----------
@@ -419,4 +422,149 @@ export async function registrarMidiaRedeEDA(p: {
     ordem: p.ordem,
   });
   if (error) throw error;
+}
+
+// ---------- Galeria de publicações (EDA_GALERIA_PUBLICACOES_V1) ----------
+
+export type CardGaleriaEDA = {
+  id: string; slug: string; titulo: string; tipo: string; status: 'rascunho' | 'publicado' | 'arquivado' | string;
+  updated_at: string; created_at: string; publicado_em: string | null;
+  data_evento_inicio: string | null; data_evento_fim: string | null;
+  capa: string | null; fotos: number; videos: number; flechas: number;
+};
+
+export const DIAS_ESQUECIDO = 7;
+export const DIAS_APAGAR = 30;
+const DIA_MS = 86_400_000;
+
+export async function listarGaleriaRedeEDA(autorId: string): Promise<CardGaleriaEDA[]> {
+  const { data, error } = await supabase.from('publicacoes')
+    .select('id,slug,titulo,tipo,status,updated_at,created_at,publicado_em,data_evento_inicio,data_evento_fim')
+    .eq('autor_perfil_id', autorId).order('updated_at', { ascending: false }).limit(200);
+  if (error) throw error;
+  const pubs = (data ?? []) as Omit<CardGaleriaEDA, 'capa' | 'fotos' | 'videos' | 'flechas'>[];
+  const ids = pubs.map(p => p.id);
+  if (!ids.length) return [];
+
+  const { data: midias, error: e2 } = await supabase.from('publicacao_midias')
+    .select('publicacao_id,tipo,url,thumbnail_url,ordem').in('publicacao_id', ids).order('ordem');
+  if (e2) throw e2;
+  const porPub = new Map<string, { tipo: string; url: string; thumbnail_url: string | null }[]>();
+  for (const m of (midias ?? []) as { publicacao_id: string; tipo: string; url: string; thumbnail_url: string | null }[]) {
+    porPub.set(m.publicacao_id, [...(porPub.get(m.publicacao_id) ?? []), m]);
+  }
+
+  // Só a capa de cada card ganha endereço assinado (uma chamada para todas).
+  const capas = pubs.map(p => {
+    const lista = porPub.get(p.id) ?? [];
+    const foto = lista.find(m => m.tipo === 'imagem');
+    const video = lista.find(m => m.tipo === 'video' && m.thumbnail_url);
+    const url = foto?.url ?? video?.thumbnail_url ?? null;
+    return { id: p.id, url: url ?? '', thumbnail_url: null as string | null };
+  });
+  let resolvidas = capas;
+  try { resolvidas = await resolverMidiasPrivadasERN(capas.filter(c => c.url)); } catch { resolvidas = []; }
+  const capaPorId = new Map(resolvidas.map(c => [c.id, c.url]));
+
+  const publicados = pubs.filter(p => p.status === 'publicado').map(p => p.id);
+  const flechas = new Map<string, number>();
+  if (publicados.length) {
+    const { data: totais } = await supabase.rpc('contagem_reacoes_eda', { p_ids: publicados });
+    for (const t of (Array.isArray(totais) ? totais : []) as { publicacao_id: string; total: number }[]) {
+      flechas.set(t.publicacao_id, (flechas.get(t.publicacao_id) ?? 0) + (Number(t.total) || 0));
+    }
+  }
+
+  return pubs.map(p => {
+    const lista = porPub.get(p.id) ?? [];
+    return {
+      ...p,
+      capa: capaPorId.get(p.id) ?? null,
+      fotos: lista.filter(m => m.tipo === 'imagem').length,
+      videos: lista.filter(m => m.tipo === 'video').length,
+      flechas: flechas.get(p.id) ?? 0,
+    };
+  });
+}
+
+async function versao(id: string) {
+  const { data, error } = await supabase.from('publicacoes').select('updated_at').eq('id', id).single();
+  if (error || !data) throw error ?? new Error('Publicação não encontrada.');
+  return data.updated_at as string;
+}
+
+export async function mudarStatusRedeEDA(id: string, acao: 'publicar' | 'arquivar' | 'rascunho') {
+  const { error } = await supabase.rpc('alterar_status_publicacao_ern', {
+    publicacao_id: id, acao, versao_esperada: await versao(id),
+  });
+  if (error) throw new Error(traduzirErroPublicar(error.message));
+}
+
+// Volta para a Rede (usado no "Desfazer" do arquivar e em "Restaurar").
+export async function restaurarRedeEDA(id: string) {
+  await mudarStatusRedeEDA(id, 'rascunho');
+  await mudarStatusRedeEDA(id, 'publicar');
+}
+
+export async function excluirRascunhoRedeEDA(id: string) {
+  const midias = await midiasRascunhoRedeEDA(id);
+  if (midias.length) {
+    const { error } = await supabase.from('publicacao_midias').delete().eq('publicacao_id', id);
+    if (error) throw error;
+    const caminhos = midias.flatMap(m => [m.caminho, m.capaCaminho]).filter((c): c is string => !!c);
+    if (caminhos.length) await supabase.storage.from(BUCKET).remove(caminhos);
+  }
+  const { error } = await supabase.from('publicacoes').delete().eq('id', id).eq('status', 'rascunho');
+  if (error) throw error;
+}
+
+// Rascunho parado há mais de 30 dias é apagado na abertura da galeria.
+export async function limparRascunhosEsquecidosEDA(cards: CardGaleriaEDA[]) {
+  const limite = Date.now() - DIAS_APAGAR * DIA_MS;
+  const velhos = cards.filter(c => c.status === 'rascunho' && new Date(c.updated_at).getTime() < limite);
+  for (const c of velhos) {
+    try { await excluirRascunhoRedeEDA(c.id); } catch { /* tenta de novo na próxima abertura */ }
+  }
+  return velhos.length;
+}
+
+export function diasParado(c: CardGaleriaEDA) {
+  return Math.floor((Date.now() - new Date(c.updated_at).getTime()) / DIA_MS);
+}
+
+// Duplicar: novo rascunho com o mesmo texto e cópia das fotos/vídeos (datas de agenda ficam em branco).
+export async function duplicarRedeEDA(autorId: string, origemId: string): Promise<string> {
+  const { data: o, error } = await supabase.from('publicacoes')
+    .select('titulo,resumo,conteudo,tipo,localidade_texto,passeio_id,idioma_original')
+    .eq('id', origemId).eq('autor_perfil_id', autorId).single();
+  if (error || !o) throw error ?? new Error('Publicação não encontrada.');
+  const novoId = crypto.randomUUID();
+  const { error: e1 } = await supabase.from('publicacoes').insert({
+    id: novoId, autor_perfil_id: autorId, slug: `publicacao-${novoId}`, status: 'rascunho',
+    titulo: o.titulo, resumo: o.resumo, conteudo: o.conteudo, tipo: o.tipo,
+    localidade_texto: o.localidade_texto, passeio_id: o.tipo === 'oferta' ? o.passeio_id : null,
+    idioma_original: o.idioma_original ?? 'pt', permitir_interacoes: true,
+  });
+  if (e1) throw e1;
+
+  const { data: ms } = await supabase.from('publicacao_midias')
+    .select('tipo,url,thumbnail_url,alt_text,credito,ordem').eq('publicacao_id', origemId).order('ordem').limit(20);
+  const copiar = async (u: string | null) => {
+    if (!u || !u.startsWith(`${BUCKET}/`)) return u;
+    const ext = u.split('.').pop() ?? 'jpg';
+    const destino = `publicacoes/${novoId}/${crypto.randomUUID()}.${ext}`;
+    const { error: ec } = await supabase.storage.from(BUCKET).copy(u.slice(BUCKET.length + 1), destino);
+    if (ec) throw ec;
+    return `${BUCKET}/${destino}`;
+  };
+  for (const m of (ms ?? []) as { tipo: string; url: string; thumbnail_url: string | null; alt_text: string | null; credito: string | null; ordem: number }[]) {
+    const url = await copiar(m.url);
+    const capa = await copiar(m.thumbnail_url);
+    const { error: e2 } = await supabase.from('publicacao_midias').insert({
+      id: crypto.randomUUID(), publicacao_id: novoId, tipo: m.tipo, url, thumbnail_url: capa,
+      alt_text: m.alt_text, credito: m.credito, consentimento_confirmado: false, ordem: m.ordem,
+    });
+    if (e2) throw e2;
+  }
+  return novoId;
 }
