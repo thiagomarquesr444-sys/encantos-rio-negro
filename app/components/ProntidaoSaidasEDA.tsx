@@ -58,12 +58,15 @@ export default function ProntidaoSaidasEDA({ hoje, financeiroLiberado }: { hoje:
     if (!saidas.length) return [];
     const ids = saidas.map((s) => s.id);
     const passeioIds = Array.from(new Set(saidas.map((s) => s.passeio_id).filter((x): x is string => !!x)));
-    const [ps, rs, ds, al] = await Promise.all([
+    const [ps, rs, ds, al, es] = await Promise.all([
       supabase.from('passeios').select('id,nome').in('id', passeioIds.length ? passeioIds : [NENHUM]),
       supabase.from('reservas').select('id,saida_id,status,quantidade_pessoas,embarcacao_id,guia_id,guia').in('saida_id', ids),
       supabase.from('demandas').select('id,saida_id,status,pessoas_estimadas,publico_alvo,saude_preparada_em,demanda_itens(situacao)').in('saida_id', ids),
       supabase.rpc('alertas_proximas_viagens_eda', { p_dias: 8 }),
+      // EDA_AGENDA_PROFISSIONAL_V1: guia/prático com conta EDA confirma a escala.
+      supabase.rpc('escala_respostas_empresa_eda', { p_dias: 10 }),
     ]);
+    const escalas = (es.error ? [] : (es.data ?? [])) as unknown as { chave: string; reserva_id: string; nome: string | null; escala: string }[];
     const nomes = new Map(((ps.data ?? []) as unknown as { id: string; nome: string | null }[]).map((p) => [p.id, p.nome ?? 'Passeio']));
     const reservas = ((rs.data ?? []) as unknown as Reserva[]).filter((r) => !/cancel/i.test(r.status ?? ''));
     const demandas = ((ds.data ?? []) as unknown as Demanda[]).filter((d) => !/cancel/i.test(d.status ?? ''));
@@ -120,6 +123,14 @@ export default function ProntidaoSaidasEDA({ hoje, financeiroLiberado }: { hoje:
       // 5. Guia
       const semGuia = rsv.filter((r) => !r.guia_id && !r.guia?.trim());
       if (semGuia.length) abertos.push({ chave: 'guia', texto: `${plural(semGuia.length, 'reserva', 'reservas')} sem guia`, href: editar(semGuia[0]), acao: 'Escalar guia' });
+      const esc = escalas.filter((x) => x.chave === s.id);
+      total += esc.length;
+      for (const x of esc.filter((x) => x.escala !== 'aceita')) {
+        const r = rsv.find((r) => r.id === x.reserva_id) ?? rsv[0];
+        abertos.push(x.escala === 'recusada'
+          ? { chave: `escala-${x.nome}`, texto: `${x.nome ?? 'Profissional'} recusou a escala`, href: editar(r), acao: 'Trocar' }
+          : { chave: `escala-${x.nome}`, texto: `${x.nome ?? 'Profissional'} ainda não confirmou a escala`, href: editar(r), acao: 'Ver reserva' });
+      }
 
       // 6. Embarcação e lotação
       const semBarco = rsv.filter((r) => !r.embarcacao_id);
