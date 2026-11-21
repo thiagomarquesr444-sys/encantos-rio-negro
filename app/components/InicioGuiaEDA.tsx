@@ -144,6 +144,14 @@ export default function InicioGuiaEDA() {
       <div id="viagens"><MinhasViagensGuiaEDA /></div>
 
       <div className="fi-cards">
+        <Link href="/guia/publicacoes" className="fi-card" style={fotoGuia('guia-acesso-tucunare-barco', 'center 40%')}>
+          <span className="fi-card-veu" />
+          <span className="fi-card-txt">
+            <small>Em nome próprio</small>
+            <b className="fi-letreiro">Publicar na Rede</b>
+            <em>Fotos, vídeos de até 90 s e as datas em que você está livre para guiar.</em>
+          </span>
+        </Link>
         <Link href="/guia/perfil" className="fi-card" style={fotoGuia('guia-card-tucunare', '30% center')}>
           <span className="fi-card-veu" />
           <span className="fi-card-txt">

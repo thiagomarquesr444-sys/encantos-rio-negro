@@ -19,6 +19,7 @@ import {
   type PublicacaoEditorialERN,
 } from '@/lib/publicacoesEditorialERN';
 import CampoLocalEDA from '@/app/components/CampoLocalEDA';
+import PostarRedeEDA from '@/app/components/PostarRedeEDA';
 
 const INICIAL: DadosPublicacaoEditorialERN = {
   titulo: '',
@@ -266,6 +267,12 @@ export default function PublicacoesEditorialPage() {
         )}
 
         <div className="mt-8 grid min-w-0 gap-10 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+          {!editando ? (
+            <section aria-label="Nova publicação" className="min-w-0">
+              <PostarRedeEDA modo="editorial" onPublicado={() => setTentativa(atual => atual + 1)} />
+              <p className="mt-3 text-xs text-[var(--ern-secundario)]">Para ajustar um rascunho antigo, use “Editar texto” na lista.</p>
+            </section>
+          ) : (
           <section aria-labelledby="editor-publicacao" className="min-w-0">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 id="editor-publicacao" className="text-xl font-semibold">
@@ -278,7 +285,7 @@ export default function PublicacoesEditorialPage() {
                   onClick={novo}
                   className={botao}
                 >
-                  Novo texto
+                  Nova publicação
                 </button>
               )}
             </div>
@@ -415,6 +422,7 @@ export default function PublicacoesEditorialPage() {
               />
             )}
           </section>
+          )}
 
           <section aria-labelledby="lista-publicacoes" className="min-w-0">
             <h2 id="lista-publicacoes" className="text-xl font-semibold">

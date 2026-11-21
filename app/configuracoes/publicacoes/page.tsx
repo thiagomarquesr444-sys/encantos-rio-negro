@@ -19,6 +19,7 @@ import {
   type PublicacaoOperadoraERN,
 } from '@/lib/publicacoesOperadoraERN';
 import CampoLocalEDA from '@/app/components/CampoLocalEDA';
+import PostarRedeEDA from '@/app/components/PostarRedeEDA';
 import { supabase } from '@/lib/supabase';
 
 const INICIAL: DadosPublicacaoOperadoraERN = {
@@ -247,7 +248,7 @@ export default function PublicacoesOperadoraPage() {
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-6 text-[var(--ern-secundario)]">
             Prepare conteúdos sobre sua operação e os destinos da Amazônia.
-            Nesta etapa, os textos ficam salvos como rascunho.
+            Escolha fotos e vídeos, escreva a legenda e publique. O rascunho é salvo sozinho.
           </p>
         </header>
 
@@ -275,6 +276,12 @@ export default function PublicacoesOperadoraPage() {
         )}
 
         <div className="mt-8 grid min-w-0 gap-10 lg:grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)]">
+          {!editando ? (
+            <section aria-label="Nova publicação" className="min-w-0">
+              <PostarRedeEDA modo="operadora" onPublicado={() => setTentativa(atual => atual + 1)} />
+              <p className="mt-3 text-xs text-[var(--ern-secundario)]">Para ajustar um rascunho antigo, use “Editar texto” na lista.</p>
+            </section>
+          ) : (
           <section aria-labelledby="editor-publicacao" className="min-w-0">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <h2 id="editor-publicacao" className="text-xl font-semibold">
@@ -287,7 +294,7 @@ export default function PublicacoesOperadoraPage() {
                   onClick={novo}
                   className={botao}
                 >
-                  Novo texto
+                  Nova publicação
                 </button>
               )}
             </div>
@@ -443,6 +450,7 @@ export default function PublicacoesOperadoraPage() {
               />
             )}
           </section>
+          )}
 
           <section aria-labelledby="lista-publicacoes" className="min-w-0">
             <h2 id="lista-publicacoes" className="text-xl font-semibold">

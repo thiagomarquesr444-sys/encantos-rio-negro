@@ -38,6 +38,7 @@ const MENUS: Record<Tipo, { principal: Item[]; portal: Item[]; rotulo: string; c
     principal: [
       { href: '/guia', label: 'Início', icone: 'casa' },
       { href: '/guia#viagens', label: 'Minhas viagens', icone: 'rio' },
+      { href: '/guia/publicacoes', label: 'Publicar na Rede', icone: 'estrela' },
       { href: '/guia/perfil', label: 'Meu perfil', icone: 'perfil' },
     ],
     portal: [
