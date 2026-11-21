@@ -98,3 +98,31 @@
 
 /* Enquanto a atividade carrega: fundo escuro neutro, sem foto antiga. */
 .fi-capa.fi-carregando, .fi-card.fi-carregando { background: #0c1a15; }
+
+/* EDA_PROFISSIONAL_MOBILE_V2 — mesmo padrão mobile da Descubra e de Experiências:
+   capa baixa, EDA compacta (só os passos que faltam), 2 colunas e nada ocupando a tela inteira.
+   Vale para o guia/prático e para o fornecedor/artesão (início e perfil). */
+@media (max-width: 639px) {
+  .fi-eda { padding: 12px 10px 40px; }
+  .fi-capa { min-height: 168px !important; border-radius: 16px; }
+  .fi-capa-txt { padding: 14px 14px 16px; }
+  .fi-eb { font-size: 9px; letter-spacing: 0.16em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fi-capa h1 { margin-top: 6px; font-size: 1.85rem; }
+  .fi-sub { margin-top: 6px; font-size: 12.5px; line-height: 1.45; -webkit-line-clamp: 2; }
+
+  .fi-eda-guia { margin-top: 12px; padding: 10px 12px; gap: 10px; border-radius: 14px; align-items: center; }
+  .fi-eda-selo { width: 30px; height: 30px; font-size: 9px; }
+  .fi-eda-fala { font-size: 12.5px; line-height: 1.45; }
+  .fi-passos { margin-top: 6px; gap: 4px; }
+  .fi-passos li { font-size: 12px; gap: 8px; }
+  .fi-passos li > span { width: 18px; height: 18px; font-size: 10px; }
+  .fi-passos li[data-feito] { display: none; }
+
+  .fi-cards { margin-top: 12px; gap: 8px; }
+  .fi-card { min-height: 128px; border-radius: 14px; }
+  .fi-card:last-child:nth-child(odd) { min-height: 104px; }
+  .fi-card-txt { padding: 10px; }
+  .fi-card b { font-size: 1.3rem; }
+  .fi-card em { font-size: 11px; }
+  .fi-rodape { margin-top: 18px; font-size: 11px; line-height: 1.5; }
+}

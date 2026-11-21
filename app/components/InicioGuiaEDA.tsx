@@ -178,6 +178,14 @@ export default function InicioGuiaEDA() {
         .fi-codigo b { font-size: 28px; letter-spacing: .12em; color: #f4ead6; font-variant-numeric: tabular-nums; }
         .fi-codigo em { font-style: normal; font-size: 13px; line-height: 1.5; color: rgb(237 237 227 / 75%); }
         .fi-codigo button { min-height: 44px; padding: 0 20px; border-radius: 999px; border: 0; background: #e3a144; color: #07110e; font-weight: 700; cursor: pointer; }
+        @media (max-width: 639px) {
+          .fi-codigo { margin-top: 12px; padding: 12px 14px; gap: 10px; border-radius: 14px; flex-wrap: nowrap; }
+          .fi-codigo div { flex: 1 1 auto; gap: 2px; }
+          .fi-codigo small { font-size: 9px; }
+          .fi-codigo b { font-size: 19px; letter-spacing: .08em; }
+          .fi-codigo em { font-size: 11px; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+          .fi-codigo button { min-height: 38px; padding: 0 14px; font-size: 12px; flex-shrink: 0; }
+        }
       `}</style>
 
       <p className="fi-rodape">
