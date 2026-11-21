@@ -286,7 +286,7 @@ export default function EmbarquesDoDiaPage() {
 
         <CartaoMagneticoEDA as="section" forca={3} className="eda-emb-porto" aria-label="Resumo do porto">
           <div className="eda-emb-porto-img">
-            <img src="/images/regiao/viagembarco.png.jpeg" alt="" loading="eager" />
+            <img src="/images/regiao/embarque-van-turistas.webp" alt="Turistas embarcando com bagagens" loading="eager" style={{ objectPosition: "50% 85%" }} />
             <div className="eda-emb-porto-txt">
               <small>Porto · {data === hoje ? 'Hoje' : dataBR(data)}</small>
               <b>{aEmbarcar.length ? `${aEmbarcar.length} ${aEmbarcar.length === 1 ? 'embarque' : 'embarques'} pelas águas da Amazônia` : feitos.length ? 'Todos embarcaram. Boa viagem!' : 'Sem saídas neste dia'}</b>
