@@ -5,6 +5,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { atualizarNivelRio } from '@/lib/nivelRioEDA';
 
 export const runtime = 'nodejs';
 export const maxDuration = 60;
@@ -83,7 +84,10 @@ async function executar(req: NextRequest) {
     if (!e2) clima += 1;
   }
 
-  return NextResponse.json({ ok: true, avisos: gerados ?? 0, clima, saidas: lista.length });
+  // EDA_NIVEL_RIO_V1: cota do Rio Negro (ANA) para agentes, operação e memória de trechos.
+  const rio = await atualizarNivelRio(admin);
+
+  return NextResponse.json({ ok: true, avisos: gerados ?? 0, clima, saidas: lista.length, rio });
 }
 
 export async function GET(req: NextRequest) { return executar(req); }

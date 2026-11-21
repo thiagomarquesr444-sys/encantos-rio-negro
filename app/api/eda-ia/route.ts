@@ -12,6 +12,7 @@ import { destinosTranslations } from '@/lib/i18n/destinos';
 import { HISTORIAS_MUNICIPIOS } from '@/lib/historiasMunicipiosERN';
 import { carregarFichas, fichaDe, festaIntrusa, municipioDoDestino, respostaDaFicha, textoFicha, REGRA_FICHA, type FichaMunicipio } from '@/lib/fichasMunicipiosIara';
 import { fatosDaCidade, type CidadeBaseERN } from '@/lib/fatosDestinosERN';
+import { linhaRioAgentes, type SituacaoRioEDA } from '@/lib/nivelRioEDA';
 
 // Tipo concreto do cliente (sem genéricos abertos).
 function novoCliente(url: string, chave: string, token?: string) {
@@ -340,10 +341,12 @@ async function contextoOperadora(db: SupabaseClient, empresaId: string, hoje: st
   }
   // EDA_MEMORIA_TRECHOS_V1: tempos reais medidos nas viagens da própria operadora.
   // EDA_AGENDA_PROFISSIONAL_V1: guias/práticos com conta que ainda não confirmaram a escala.
-  const [trechos, escalas] = await Promise.all([
+  const [trechos, escalas, rio] = await Promise.all([
     db.from('eda_trechos').select('passeio_id,sentido,duracao_min').eq('empresa_id', empresaId).limit(3000),
     db.rpc('escala_respostas_empresa_eda', { p_dias: 21 }),
+    db.rpc('situacao_rio_eda', { p_estacao: null }),
   ]);
+  if (!rio.error) { const l = linhaRioAgentes(rio.data as SituacaoRioEDA | null); if (l) linhas.push(l); }
   if (!trechos.error && trechos.data?.length) {
     const grupos = new Map<string, number[]>();
     for (const t of trechos.data as { passeio_id: string | null; sentido: string; duracao_min: number }[]) {
@@ -1009,13 +1012,17 @@ async function operadorasPublicas(admin: SupabaseClient) {
 }
 
 async function contextoPublico(db: SupabaseClient) {
-  const { data, error } = await db.rpc('passeios_publicos_eda', { p_slug: null });
+  const [{ data, error }, rio] = await Promise.all([
+    db.rpc('passeios_publicos_eda', { p_slug: null }),
+    db.rpc('situacao_rio_eda', { p_estacao: null }),
+  ]);
+  const linhaRio = rio.error ? '' : linhaRioAgentes(rio.data as SituacaoRioEDA | null);
   if (error || !Array.isArray(data)) return { texto: 'Catálogo indisponível no momento.', lista: [] as { id: string; nome: string; slug: string | null }[] };
   // (os botões P1..Pn são montados na rota a partir da lista)
   const lista = (data as Record<string, unknown>[]).slice(0, 40).map(p => ({ id: String(p.id), nome: String(p.nome ?? ''), slug: p.slug ? String(p.slug) : null }));
-  return { lista, texto: (data as Record<string, unknown>[]).slice(0, 40).map((p, i) =>
+  return { lista, texto: ((data as Record<string, unknown>[]).slice(0, 40).map((p, i) =>
     `- [botão P${i + 1}] ${p.nome} | ${p.categoria ?? '—'} | ${p.cidade ?? '—'} | ${p.duracao ?? '—'} | ${p.preco != null ? `a partir de ${reais(Number(p.preco))}${p.preco_modalidade ? ` (${p.preco_modalidade})` : ''}` : 'preço sob consulta'} | operadora: ${p.operadora_nome ?? '—'} | próxima saída: ${p.proxima_saida ? dm(String(p.proxima_saida)) : 'a combinar'}${p.proxima_saida_vagas != null ? ` (${p.proxima_saida_vagas} vagas)` : ''} | inclui: ${Array.isArray(p.inclui) && p.inclui.length ? (p.inclui as string[]).slice(0, 8).join(', ') : 'não informado'}${Array.isArray(p.nao_inclui) && p.nao_inclui.length ? ` | não inclui: ${(p.nao_inclui as string[]).slice(0, 6).join(', ')}` : ''} | inclui: ${Array.isArray(p.inclui) && p.inclui.length ? (p.inclui as string[]).slice(0, 8).join(', ') : 'não informado'}${Array.isArray(p.nao_inclui) && p.nao_inclui.length ? ` | não inclui: ${(p.nao_inclui as string[]).slice(0, 6).join(', ')}` : ''} | contato público: ${p.operadora_whatsapp ? 'WhatsApp da operadora na página do passeio' : 'pela página do passeio'} | link: /experiencias${p.slug ? `/${p.slug}` : ''}`,
-  ).join('\n').slice(0, 9000) || 'Ainda não há passeios publicados.' };
+  ).join('\n').slice(0, 9000) || 'Ainda não há passeios publicados.') + linhaRio };
 }
 
 type PerfilIara = 'visitante' | 'operadora' | 'guia' | 'fornecedor';
