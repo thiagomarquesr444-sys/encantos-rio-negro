@@ -450,8 +450,10 @@ function FormularioPerfilProfissional({ tipo }: Props) {
         {/* EDA_PROFISSIONAL_PERFIL_FABLE_V2: capa com letreiro e EDA para fornecedor e guia. */}
         <header>
           <div
-            className={`fi-capa ${guia ? 'fi-card-rio' : ''}`}
-            style={guia ? { minHeight: 260 } : { backgroundImage: "url('/images/fornecedor/experiencias.webp')", minHeight: 260 }}
+            className="fi-capa"
+            style={guia
+              ? { backgroundImage: "url('/images/guia/guia-perfil-capa-surubim.webp')", backgroundPosition: 'center 42%', minHeight: 260 } /* EDA_GUIA_PERFIL_FOTO_V1 */
+              : { backgroundImage: "url('/images/fornecedor/experiencias.webp')", minHeight: 260 }}
           >
             <div className="fi-capa-veu" />
             <div className="fi-capa-txt">
