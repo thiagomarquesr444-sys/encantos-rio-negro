@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 
 import PublicHeader from '@/app/components/PublicHeader';
 import FeedDescubraERN from '@/app/components/FeedDescubraERN';
@@ -15,6 +15,9 @@ import RevelarTextoEDA from '@/app/components/RevelarTextoEDA';
 import FaixaRolanteEDA from '@/app/components/FaixaRolanteEDA';
 import { useLanguage } from '@/app/components/LanguageProvider';
 import '@/app/fablepremium.css';
+import '@/app/descubra-fam.css';
+import FundoDescubraEDA from '@/app/components/FundoDescubraEDA';
+import PilaresDescubraEDA from '@/app/components/PilaresDescubraEDA';
 
 import {
   homeTranslations,
@@ -31,6 +34,20 @@ const conciergeCta = {
   ES: 'Hablar con Iara',
 } as const;
 
+// DESCUBRA_FAM_V1: palavra do hero para cada foto do fundo (mesma ordem de SLIDES_DESCUBRA).
+const PALAVRAS_FUNDO = {
+  PT: ['o Encontro das Águas', 'Barcelos', 'o Rio Negro', 'os igarapés', 'a floresta'],
+  EN: ['the Meeting of the Waters', 'Barcelos', 'the Rio Negro', 'the igarapés', 'the rainforest'],
+  ES: ['el Encuentro de las Aguas', 'Barcelos', 'el Río Negro', 'los igarapés', 'la selva'],
+} as const;
+
+// DESCUBRA_FAM_V1: ao rolar, a própria Iara se apresenta, na voz dela.
+const iaraApresenta = {
+  PT: { rotulo: 'Iara · mãe das águas', fala: 'Eu sou a Iara, mãe das águas do Rio Negro.', texto: 'Me conta o que tu queres viver: pesca, comunidade, comida da terra ou um banho de igarapé. Eu acho a operadora certa e te levo até lá.' },
+  EN: { rotulo: 'Iara · mother of the waters', fala: 'I am Iara, mother of the waters of the Rio Negro.', texto: 'Tell me what you want to live: fishing, communities, local food or a swim in an igarapé. I will find the right operator and take you there.' },
+  ES: { rotulo: 'Iara · madre de las aguas', fala: 'Soy Iara, madre de las aguas del Río Negro.', texto: 'Cuéntame qué quieres vivir: pesca, comunidades, comida de la tierra o un baño de igarapé. Yo encuentro la operadora correcta y te llevo hasta allá.' },
+};
+
 const FOCO =
   'focus-visible:outline-2 focus-visible:outline-offset-4 ' +
   'focus-visible:outline-[#F4C77E]';
@@ -46,6 +63,9 @@ export default function Home() {
   const t = homeTranslations[idioma] as HomeTranslation;
   const faixa = faixaOperador[idioma];
   const [busca, setBusca] = useState('');
+  const [slide, setSlide] = useState(0);
+  const trocarSlide = useCallback((i: number) => setSlide(i), []);
+  const iara = iaraApresenta[idioma];
 
   function buscarDestino(texto: string) {
     setBusca(texto);
@@ -79,20 +99,9 @@ export default function Home() {
       <PublicHeader />
 
       <section className="ern-publico-hero relative overflow-hidden bg-[#07110E]">
-        {/* ERN_FUNDO_ENCONTRO_AGUAS_V1: Encontro das Águas (Canva), 1920×1080 no
-            computador e versão vertical no celular. */}
-        <picture>
-          <source media="(min-width: 768px)" srcSet="/images/fundo/encontro-das-aguas-1920.jpg" />
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/images/fundo/encontro-das-aguas-celular.jpg"
-            alt=""
-            aria-hidden="true"
-            fetchPriority="high"
-            decoding="async"
-            className="ern-fundo-respira ern-fundo-descubra absolute inset-0 h-full w-full object-cover object-[50%_35%]"
-          />
-        </picture>
+        {/* ERN_FUNDO_ENCONTRO_AGUAS_V1 + DESCUBRA_FAM_V1: o Encontro das Águas abre
+            e as fotos do território se revezam no fundo. */}
+        <FundoDescubraEDA onTroca={trocarSlide} />
         <div
           aria-hidden="true"
           className="absolute inset-0"
@@ -103,27 +112,31 @@ export default function Home() {
           }}
         />
 
-        <HeroImersivoERN onBuscar={buscarDestino} onFiltrar={setBusca} />
+        <HeroImersivoERN onBuscar={buscarDestino} onFiltrar={setBusca} destaque={PALAVRAS_FUNDO[idioma][slide]} />
 
         <div
           id="concierge"
           className="relative z-10 mx-auto flex max-w-[1180px] scroll-mt-28 flex-col items-start gap-8 px-5 pb-20 md:px-8 lg:flex-row lg:items-center lg:justify-between lg:pb-24"
         >
-          <div className="max-w-[560px]">
-            <RevelarTextoEDA
-              como="h2"
-              texto={t.territory.unsure}
-              className="text-[clamp(1.875rem,3.4vw,2.75rem)] leading-[1.1] tracking-[-0.03em] text-[#F5F3EA]"
-            />
-            <p className="mt-5 text-base leading-7 text-[#DBE3DE]">
-              {t.territory.unsureDescription}
-            </p>
+          <div className="eda-iara-apresenta max-w-[620px]">
+            <span aria-hidden="true" className="eda-iara-retrato"><IconeIara /></span>
+            <div>
+              <p className="eda-iara-rotulo">{iara.rotulo}</p>
+              <RevelarTextoEDA
+                como="h2"
+                texto={iara.fala}
+                className="text-[clamp(1.875rem,3.4vw,2.75rem)] leading-[1.1] tracking-[-0.03em] text-[#F5F3EA]"
+              />
+              <p className="mt-5 text-base leading-7 text-[#DBE3DE]">
+                {iara.texto}
+              </p>
+            </div>
           </div>
           {/* ERN_CONCIERGE_LATERAL_V1: o Concierge abre no painel lateral direito
               (botão flutuante EDA, que continua podendo ser arrastado). */}
           <a
             href="#concierge"
-            className={`group inline-flex min-h-[54px] shrink-0 items-center gap-3 rounded-full bg-gradient-to-b from-[#F7D595] to-[#E3A144] py-2 pl-2 pr-6 text-sm font-bold text-[#07110E] shadow-[0_14px_32px_rgb(227_161_68/30%),inset_0_1px_0_rgb(255_255_255/55%)] transition hover:brightness-105 ${FOCO}`}
+            className={`eda-botao group inline-flex min-h-[54px] shrink-0 items-center gap-3 rounded-full py-2 pl-2 pr-6 text-sm font-semibold transition ${FOCO}`}
           >
             <span aria-hidden="true" className="block h-10 w-10 overflow-hidden rounded-full shadow-[0_4px_12px_rgb(0_0_0/35%)]"><IconeIara /></span>
             {conciergeCta[idioma]}
@@ -153,6 +166,8 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <PilaresDescubraEDA />
 
       <VitrineDestinosERN busca={busca} onLimparBusca={() => setBusca('')} />
 

@@ -7,6 +7,10 @@ import {
 import {
   createClient,
 } from '@supabase/supabase-js';
+import {
+  atualizarNotaPorEventoAsaasEDA,
+  registrarNotaAssinaturaEDA,
+} from '@/lib/notasAssinaturaEDA';
 
 const SUPABASE_URL =
   process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -997,6 +1001,15 @@ export async function POST(
       return resposta({ ok: true, ...resultadoEDA });
     }
 
+    // EDA_NOTAS_ASSINATURA_V1: retorno do emissor de NFS-e (autorizada, erro, cancelada).
+    if (evento.startsWith('INVOICE_')) {
+      const resultadoNota = await atualizarNotaPorEventoAsaasEDA(
+        admin,
+        (payload as { invoice?: Record<string, unknown> }).invoice
+      );
+      return resposta({ ok: true, evento, ...resultadoNota });
+    }
+
     if (
       !eventoEhPagamento(
         evento
@@ -1611,6 +1624,7 @@ export async function POST(
         throw ativarPlanoError;
       }
 
+      await registrarNotaAssinaturaEDA(admin, cobranca, String(payment.id ?? ""));
       await marcarEventoProcessado(admin, eventoId, tentativaEventoERN, true);
 
       return resposta({
@@ -1748,6 +1762,7 @@ export async function POST(
       }
     }
 
+    await registrarNotaAssinaturaEDA(admin, cobranca, String(payment.id ?? ""));
     await marcarEventoProcessado(admin, eventoId, tentativaEventoERN, true);
 
     return resposta({

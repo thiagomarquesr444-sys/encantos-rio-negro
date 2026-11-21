@@ -216,9 +216,12 @@ function destacarDescricao(texto: string): ReactNode {
 export default function HeroImersivoERN({
   onBuscar,
   onFiltrar,
+  destaque,
 }: {
   onBuscar: (texto: string) => void;
   onFiltrar?: (texto: string) => void;
+  /** DESCUBRA_FAM_V1: palavra que troca junto com a foto do fundo. */
+  destaque?: string;
 }) {
   const { idioma } = useLanguage();
   const h = (homeTranslations[idioma] as HomeTranslation).hero;
@@ -290,6 +293,13 @@ export default function HeroImersivoERN({
       >
         <TituloAnimado texto={h.title} />
       </h1>
+
+      {destaque && (
+        <p aria-hidden="true" className="eda-hero-destaque">
+          {idioma === 'EN' ? 'Discover' : idioma === 'ES' ? 'Descubre' : 'Descubra'}{' '}
+          <span key={destaque} className="eda-hero-palavra">{destaque}</span>
+        </p>
+      )}
 
       <p className="ern-revela mt-7 max-w-[640px] text-base leading-7 text-[#DBE3DE] [animation-delay:900ms] md:text-lg md:leading-8">
         {destacarDescricao(h.description)}

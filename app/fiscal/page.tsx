@@ -10,6 +10,7 @@ import { mesAtualERN, mesValidoERN, rotuloMesERN, type PeriodoMensalERN } from '
 import PreparacaoFiscalERN, { type ReservaFiscalEDA } from '@/app/components/PreparacaoFiscalERN';
 import CadastroFiscalERN from '@/app/components/CadastroFiscalERN';
 import HistoricoRevisaoFiscalERN from '@/app/components/HistoricoRevisaoFiscalERN';
+import NotasAssinaturaEDA from '@/app/components/NotasAssinaturaEDA';
 
 type StatusFiscal =
   | 'rascunho'
@@ -356,6 +357,8 @@ export default function PainelFiscalERN() {
             </button>
           </div>
         </header>
+
+        <NotasAssinaturaEDA />
 
         {erro ? (
           <section role="alert" className={`${painel} border-rose-400/30 p-5`}>
