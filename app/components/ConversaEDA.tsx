@@ -78,7 +78,8 @@ function formatar(texto: string): ReactNode[] {
   ));
 }
 
-const CHAVE_CONVERSA = 'eda.conversa.v1';
+// EDA_TUPA_V1: chave nova — conversas antigas (voz do Jurupari) não voltam.
+const CHAVE_CONVERSA = 'eda.conversa.v2-tupa';
 const ESTADOS_ACAO: EstadoAcao[] = ['pendente', 'executando', 'feito', 'cancelado', 'erro', 'desfazendo', 'desfeito'];
 // Confere tudo que volta do armazenamento antes de mostrar (nunca confia no que está guardado).
 function restaurarMsgs(valor: unknown): Msg[] {
