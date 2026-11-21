@@ -18,6 +18,7 @@ import { useAbrirRegistroEDA } from '@/lib/abrirRegistroEDA';
 import GraficoPasseios from '@/app/components/GraficoPasseios';
 import { CabecalhoEDA } from '@/app/components/PadraoPaginaEDA';
 import SaidasPasseioEDA from '@/app/components/SaidasPasseioEDA';
+import HistoricoTrechosEDA from '@/app/components/HistoricoTrechosEDA';
 import PoliticaPrecoPasseioEDA from '@/app/components/PoliticaPrecoPasseioEDA';
 import CampoOpcoesEDA, { CampoDuracaoEDA } from '@/app/components/CampoOpcoesEDA';
 import CampoLocalEDA from '@/app/components/CampoLocalEDA';
@@ -1543,6 +1544,7 @@ export default function PasseiosPage() {
                   vagasPadrao={Number(passeioSelecionado.vagas) || null}
                 />
                 <PoliticaPrecoPasseioEDA passeioId={passeioSelecionado.id} />
+                <HistoricoTrechosEDA passeioId={passeioSelecionado.id} />
               </>
             )}
 

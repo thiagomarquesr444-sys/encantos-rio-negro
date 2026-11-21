@@ -338,6 +338,35 @@ async function contextoOperadora(db: SupabaseClient, empresaId: string, hoje: st
     linhas.push(`\nPASSEIOS CADASTRADOS (${p.length}): código | nome | categoria | preço | situação | vagas | cidade | duração | no portal`);
     for (const x of p) linhas.push(`- ${codP.get(String(x.id)) ?? '—'} | ${x.nome} | ${x.categoria ?? '—'} | ${(x.preco ?? x.valor) != null ? reais(Number(x.preco ?? x.valor)) : '—'} | ${x.situacao ?? '—'} | ${x.vagas ?? '—'} | ${x.cidade ?? '—'} | ${x.duracao ?? '—'} | ${x.publicado_portal ? 'sim' : 'não'}`);
   }
+  // EDA_MEMORIA_TRECHOS_V1: tempos reais medidos nas viagens da própria operadora.
+  // EDA_AGENDA_PROFISSIONAL_V1: guias/práticos com conta que ainda não confirmaram a escala.
+  const [trechos, escalas] = await Promise.all([
+    db.from('eda_trechos').select('passeio_id,sentido,duracao_min').eq('empresa_id', empresaId).limit(3000),
+    db.rpc('escala_respostas_empresa_eda', { p_dias: 21 }),
+  ]);
+  if (!trechos.error && trechos.data?.length) {
+    const grupos = new Map<string, number[]>();
+    for (const t of trechos.data as { passeio_id: string | null; sentido: string; duracao_min: number }[]) {
+      if (!t.passeio_id) continue;
+      const k = `${t.passeio_id}|${t.sentido}`;
+      grupos.set(k, [...(grupos.get(k) ?? []), Number(t.duracao_min)]);
+    }
+    const hm = (m: number) => `${Math.floor(m / 60)}h${String(Math.round(m % 60)).padStart(2, '0')}`;
+    const quartil = (o: number[], q: number) => o[Math.min(o.length - 1, Math.max(0, Math.round((o.length - 1) * q)))];
+    linhas.push('\nTEMPOS REAIS DOS TRECHOS (medidos nas viagens desta operadora; com menos de 3 viagens é só indicativo — diga isso; nunca invente tempo para passeio sem medição): passeio | trecho | viagens | tempo típico | faixa');
+    for (const [k, v] of grupos) {
+      const [pid, sentido] = k.split('|');
+      const o = [...v].sort((a, b) => a - b);
+      linhas.push(`- ${codP.get(pid) ?? '—'} ${nomePasseio.get(pid) ?? ''} | ${sentido} | ${o.length} | ${hm(quartil(o, 0.5))} | ${hm(quartil(o, 0.25))} a ${hm(quartil(o, 0.75))}`);
+    }
+  }
+  if (!escalas.error && Array.isArray(escalas.data)) {
+    const abertas = (escalas.data as { passeio: string | null; inicio: string; nome: string | null; escala: string }[]).filter(x => x.escala !== 'aceita');
+    if (abertas.length) {
+      linhas.push(`\nESCALA SEM CONFIRMAÇÃO (guia/prático com conta EDA precisa aceitar; ${abertas.length}): passeio | data | profissional | situação`);
+      for (const x of abertas.slice(0, 20)) linhas.push(`- ${x.passeio ?? 'Viagem'} | ${dm(x.inicio)} | ${x.nome ?? '—'} | ${x.escala === 'recusada' ? 'RECUSOU — escalar outra pessoa' : 'aguardando o aceite'}`);
+    }
+  }
   const contar = (lista: Record<string, unknown>[], campo: string) => {
     const m = new Map<string, number>();
     for (const x of lista) { const k = String(x[campo] ?? '—').trim() || '—'; m.set(k, (m.get(k) ?? 0) + 1); }
