@@ -498,7 +498,10 @@ function PercursoEDA({ v }: { v: ViagemAoVivoEDA }) {
         <span>Percurso</span><b>{formatarDistancia(r.totalM)}{(v.rota?.paradas?.length ?? 0) ? ` · ${v.rota?.paradas?.length} parada(s) prevista(s)` : ''}</b>
         <span>Situação</span><b>{situacao}</b>
         {r.restanteM !== null && <><span>Falta</span><b>{formatarDistancia(r.restanteM)}</b></>}
-        {r.chegadaPrevista && <><span>Chegada prevista</span><b>{hora(r.chegadaPrevista)}{r.atrasoMin ? ` · atraso de ${duracao(r.atrasoMin)}` : ''}</b></>}
+        {r.chegadaPrevista && <><span>Chegada prevista</span><b>{hora(r.chegadaPrevista)}{r.atrasoMin ? ` · atraso de ${duracao(r.atrasoMin)}` : ''}</b>
+          <small style={{ gridColumn: '1 / -1', opacity: 0.7 }}>{r.previsaoFonte === 'historico'
+            ? `Pelo tempo real de ${r.previsaoBase} viagens anteriores deste passeio. Confirme as condições do rio com quem está a bordo.`
+            : 'Estimativa pela velocidade média do passeio — ainda sem viagens suficientes para usar o histórico.'}</small></>}
       </div>
       {pct !== null && <div className="av-rota-prog" aria-label={`${pct}% do percurso`}><b style={{ width: `${pct}%` }} /></div>}
     </div>

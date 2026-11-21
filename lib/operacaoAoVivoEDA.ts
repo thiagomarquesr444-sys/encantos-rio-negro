@@ -29,7 +29,16 @@ export type ViagemAoVivoEDA = {
   // EDA_BARCO_BOTE_V1: bote fora do barco com um grupo (guia).
   bote?: { desde: string; texto: string | null; posicao: { lat: number; lng: number; em: string; precisao: number | null; velocidade: number | null; bateria: number | null } | null; trilha: [number, number][] } | null;
   recentes?: [number, number, string][];
+  // EDA_MEMORIA_TRECHOS_V1: tempos reais das viagens anteriores deste passeio (só da própria operadora).
+  historico?: Partial<Record<'ida' | 'volta' | 'completa', HistoricoTrechoEDA>> | null;
 };
+
+export type HistoricoTrechoEDA = {
+  n: number; mediana_min: number; p25_min: number; p75_min: number; min_min: number; max_min: number;
+  epoca_n: number; epoca_mediana_min: number | null; ultima: string;
+};
+// Com menos de 3 viagens o histórico ainda não serve de base.
+export const MIN_VIAGENS_HISTORICO = 3;
 
 export type ParadaRotaEDA = { lat: number; lng: number; nome: string; minutos?: number };
 export type RotaEDA = { pontos: [number, number][]; paradas?: ParadaRotaEDA[]; velocidade_kmh?: number };
@@ -268,6 +277,8 @@ export type AnaliseRotaEDA = {
   distanciaRotaM: number | null; foraDaRota: boolean;
   paradoMin: number | null; paradaPrevista: ParadaRotaEDA | null; noDestino: boolean; noEmbarque: boolean;
   chegadaPrevista: string | null; atrasoMin: number | null;
+  // De onde veio a previsão: viagens reais anteriores ou velocidade média informada no passeio.
+  previsaoFonte: 'historico' | 'velocidade' | null; previsaoBase: number | null;
 };
 
 export function analisarRota(v: ViagemAoVivoEDA): AnaliseRotaEDA {
@@ -313,7 +324,25 @@ export function analisarRota(v: ViagemAoVivoEDA): AnaliseRotaEDA {
 
   // Chegada prevista: partida (registro de etapa ou horário) + distância / velocidade + paradas.
   let chegadaPrevista: string | null = null, atrasoMin: number | null = null;
-  if (temRota) {
+  let previsaoFonte: AnaliseRotaEDA['previsaoFonte'] = null, previsaoBase: number | null = null;
+  const chegou = v.eventos.some((e) => e.tipo === 'chegada' || e.tipo === 'retorno');
+  const hIda = v.historico?.ida;
+  if (hIda && hIda.n >= MIN_VIAGENS_HISTORICO) {
+    // Mesma época do ano (±1 mês) quando há base suficiente; senão, todas as viagens.
+    const daEpoca = hIda.epoca_n >= MIN_VIAGENS_HISTORICO && hIda.epoca_mediana_min;
+    const mediana = daEpoca ? hIda.epoca_mediana_min! : hIda.mediana_min;
+    const partida = [...v.eventos].reverse().find((e) => e.tipo === 'partida')?.em
+      ?? (v.horario ? new Date(`${v.inicio}T${v.horario.slice(0, 5)}:00-04:00`).toISOString() : null);
+    if (partida) {
+      chegadaPrevista = new Date(Date.parse(partida) + mediana * 60000).toISOString();
+      previsaoFonte = 'historico'; previsaoBase = daEpoca ? hIda.epoca_n : hIda.n;
+      // Atraso só conta além do que costuma acontecer (acima de 3/4 das viagens).
+      if (!chegou && !noDestino && v.dias <= 1) {
+        const m = Math.round((Date.now() - (Date.parse(partida) + Math.max(mediana, hIda.p75_min) * 60000)) / 60000);
+        atrasoMin = m > 0 ? m : null;
+      }
+    }
+  } else if (temRota) {
     const vel = Math.max(3, v.rota?.velocidade_kmh ?? 20);
     const partida = [...v.eventos].reverse().find((e) => e.tipo === 'partida')?.em
       ?? (v.horario ? new Date(`${v.inicio}T${v.horario.slice(0, 5)}:00-04:00`).toISOString() : null);
@@ -321,14 +350,14 @@ export function analisarRota(v: ViagemAoVivoEDA): AnaliseRotaEDA {
       const paradas = (v.rota?.paradas ?? []).reduce((t, p) => t + (p.minutos ?? 0), 0);
       const previsto = Date.parse(partida) + ((totalM / 1000 / vel) * 60 + paradas) * 60000;
       chegadaPrevista = new Date(previsto).toISOString();
-      const chegou = v.eventos.some((e) => e.tipo === 'chegada' || e.tipo === 'retorno');
+      previsaoFonte = 'velocidade';
       if (!chegou && !noDestino && v.dias <= 1) {
         const m = Math.round((Date.now() - previsto) / 60000);
         atrasoMin = m > 0 ? m : null;
       }
     }
   }
-  return { temRota, totalM, percorridoM, restanteM, distanciaRotaM, foraDaRota, paradoMin, paradaPrevista, noDestino, noEmbarque, chegadaPrevista, atrasoMin };
+  return { temRota, totalM, percorridoM, restanteM, distanciaRotaM, foraDaRota, paradoMin, paradaPrevista, noDestino, noEmbarque, chegadaPrevista, atrasoMin, previsaoFonte, previsaoBase };
 }
 
 // ---------------------------------------------------------------------------
