@@ -8,15 +8,19 @@ import { useEffect, useState } from 'react';
 
 export type SlideDescubra = { src: string; alt: string };
 
+// DESCUBRA_FAM_V3: fotos em alta resolução (Unsplash/Pexels) + o igarapé da canoa, escolhido pelo Thiago.
 export const SLIDES_DESCUBRA: SlideDescubra[] = [
   { src: '/images/fundo/encontro-das-aguas-1920.jpg', alt: '' },
-  { src: '/images/descubra/slide-barcelos.webp', alt: '' },
-  { src: '/images/descubra/slide-barco.webp', alt: '' },
+  { src: '/images/descubra/slide-praias-rio-negro.webp', alt: '' },
   { src: '/images/descubra/slide-igarape.webp', alt: '' },
-  { src: '/images/descubra/slide-floresta.webp', alt: '' },
-];
+  { src: '/images/descubra/slide-pesca.webp', alt: '' },
+  { src: '/images/descubra/slide-igapo.webp', alt: '' },
+  { src: '/images/descubra/slide-rio-aereo.webp', alt: '' },
+  { src: '/images/descubra/slide-rio-negro-hd.webp', alt: '' },
+  { src: '/images/descubra/slide-lago.webp', alt: '' },
+]
 
-const INTERVALO = 6500;
+const INTERVALO = 7000;
 
 function podeAnimar() {
   if (typeof window === 'undefined') return false;
@@ -27,6 +31,9 @@ function podeAnimar() {
 export default function FundoDescubraEDA({ onTroca }: { onTroca?: (indice: number) => void }) {
   const [atual, setAtual] = useState(0);
   const [carregar, setCarregar] = useState(false);
+  // Baixa uma foto por vez (a atual e a próxima), para não pesar no Starlink.
+  const [ate, setAte] = useState(1);
+  useEffect(() => { setAte((v) => Math.max(v, atual + 1)); }, [atual]);
 
   useEffect(() => {
     if (!podeAnimar()) return;
@@ -59,7 +66,7 @@ export default function FundoDescubraEDA({ onTroca }: { onTroca?: (indice: numbe
           className={`eda-fundo-slide ern-fundo-descubra object-[50%_35%] ${atual === 0 ? 'eda-fundo-on' : ''}`}
         />
       </picture>
-      {carregar && SLIDES_DESCUBRA.slice(1).map((s, i) => (
+      {carregar && SLIDES_DESCUBRA.slice(1, ate + 1).map((s, i) => (
         // eslint-disable-next-line @next/next/no-img-element
         <img
           key={s.src}

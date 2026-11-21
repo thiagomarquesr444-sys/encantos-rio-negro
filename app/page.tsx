@@ -1,6 +1,7 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { MUNICIPIOS_AMAZONAS } from '@/lib/municipiosAmazonasERN';
 
 import PublicHeader from '@/app/components/PublicHeader';
 import FeedDescubraERN from '@/app/components/FeedDescubraERN';
@@ -36,10 +37,18 @@ const conciergeCta = {
 
 // DESCUBRA_FAM_V1: palavra do hero para cada foto do fundo (mesma ordem de SLIDES_DESCUBRA).
 const PALAVRAS_FUNDO = {
-  PT: ['o Encontro das Águas', 'Barcelos', 'o Rio Negro', 'os igarapés', 'a floresta'],
-  EN: ['the Meeting of the Waters', 'Barcelos', 'the Rio Negro', 'the igarapés', 'the rainforest'],
-  ES: ['el Encuentro de las Aguas', 'Barcelos', 'el Río Negro', 'los igarapés', 'la selva'],
+  PT: ['Barcelos', 'o Rio Negro', 'a floresta', 'os sabores', 'o artesanato', 'as comunidades'],
+  EN: ['Barcelos', 'the Rio Negro', 'the rainforest', 'the flavors', 'the crafts', 'the communities'],
+  ES: ['Barcelos', 'el Río Negro', 'la selva', 'los sabores', 'la artesanía', 'las comunidades'],
 } as const;
+
+const ABERTURA_FAM = {
+  PT: { descubra: 'Descubra', botao: 'Explorar o território' },
+  EN: { descubra: 'Discover', botao: 'Explore the region' },
+  ES: { descubra: 'Descubre', botao: 'Explorar el territorio' },
+};
+
+const NOMES_MUNICIPIOS = [...MUNICIPIOS_AMAZONAS].map((m) => m.nome).sort((a, b) => a.localeCompare(b, 'pt-BR'));
 
 // DESCUBRA_FAM_V1: ao rolar, a própria Iara se apresenta, na voz dela.
 const iaraApresenta = {
@@ -63,8 +72,17 @@ export default function Home() {
   const t = homeTranslations[idioma] as HomeTranslation;
   const faixa = faixaOperador[idioma];
   const [busca, setBusca] = useState('');
-  const [slide, setSlide] = useState(0);
-  const trocarSlide = useCallback((i: number) => setSlide(i), []);
+  const aberturaFam = ABERTURA_FAM[idioma];
+  // DESCUBRA_FAM_V2: a palavra do hero troca sozinha (parada com sinal fraco ou "reduzir movimento").
+  const [palavra, setPalavra] = useState(0);
+  useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const id = window.setInterval(() => {
+      if (document.hidden || document.documentElement.dataset.edaSinal === 'fraco') return;
+      setPalavra((i) => (i + 1) % PALAVRAS_FUNDO.PT.length);
+    }, 3200);
+    return () => window.clearInterval(id);
+  }, []);
   const iara = iaraApresenta[idioma];
 
   function buscarDestino(texto: string) {
@@ -98,21 +116,29 @@ export default function Home() {
     >
       <PublicHeader />
 
-      <section className="ern-publico-hero relative overflow-hidden bg-[#07110E]">
-        {/* ERN_FUNDO_ENCONTRO_AGUAS_V1 + DESCUBRA_FAM_V1: o Encontro das Águas abre
-            e as fotos do território se revezam no fundo. */}
-        <FundoDescubraEDA onTroca={trocarSlide} />
-        <div
-          aria-hidden="true"
-          className="absolute inset-0"
-          style={{
-            background:
-              // DESCUBRA_CORES_VIVAS_V1: véu mais leve para a foto respirar com cor.
-              'radial-gradient(ellipse at 50% 32%, rgb(3 16 11 / 44%), rgb(3 16 11 / 14%) 60%, rgb(3 16 11 / 0%) 80%), linear-gradient(180deg, rgb(3 16 11 / 38%) 0%, rgb(3 16 11 / 8%) 30%, rgb(7 17 14 / 55%) 72%, #07110E 100%)',
-          }}
-        />
+      {/* DESCUBRA_FAM_V2: abertura limpa — "Descubra ___" com a palavra trocando,
+          fotos HD se revezando atrás, um botão e a faixa dos municípios. */}
+      <section className="eda-hero-fam ern-publico-hero">
+        <FundoDescubraEDA />
+        <div aria-hidden="true" className="eda-hero-fam-veu" />
+        <div className="eda-hero-fam-txt">
+          <h1 className="eda-hero-fam-h1" aria-label={`${aberturaFam.descubra} ${PALAVRAS_FUNDO[idioma].join(', ')}`}>
+            <span aria-hidden="true">{aberturaFam.descubra}</span>{' '}
+            <span aria-hidden="true" key={palavra} className="eda-hero-palavra">{PALAVRAS_FUNDO[idioma][palavra]}</span>
+          </h1>
+          <p className="eda-hero-fam-sub">{t.hero.title}</p>
+          <a href="#busca-iara" className={`eda-botao eda-hero-fam-bt ${FOCO}`}>{aberturaFam.botao}</a>
+        </div>
+        <div aria-hidden="true" className="eda-hero-fam-faixa">
+          <div className="eda-hero-fam-rola">
+            {[...NOMES_MUNICIPIOS, ...NOMES_MUNICIPIOS].map((nome, i) => <span key={i}>{nome}</span>)}
+          </div>
+        </div>
+      </section>
 
-        <HeroImersivoERN onBuscar={buscarDestino} onFiltrar={setBusca} destaque={PALAVRAS_FUNDO[idioma][slide]} />
+      {/* A busca da Iara, os destaques e a apresentação da Iara entram ao rolar. */}
+      <section id="busca-iara" className="eda-busca-iara-sec ern-publico-hero scroll-mt-20 overflow-hidden">
+        <HeroImersivoERN onBuscar={buscarDestino} onFiltrar={setBusca} semAbertura />
 
         <div
           id="concierge"
@@ -177,7 +203,7 @@ export default function Home() {
 
       <LetreiroEDA />
 
-      <section id="vitrine-gestao" className="ern-publico-hero relative scroll-mt-28 overflow-hidden border-t border-white/[0.07] bg-[#07110E] px-5 py-24 md:px-8 md:py-28">
+      <section id="vitrine-gestao" className="ern-publico-hero eda-gestao-claro relative scroll-mt-28 overflow-hidden border-t border-white/[0.07] bg-[#07110E] px-5 py-24 md:px-8 md:py-28">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_85%_10%,rgb(227_161_68/10%),transparent_55%),radial-gradient(ellipse_at_10%_90%,rgb(71_176_135/8%),transparent_50%)]" />
         <div className="relative mx-auto grid max-w-[1180px] gap-12 rounded-[28px] border border-white/[0.08] bg-gradient-to-br from-[#0E1F19] to-[#08130F] p-7 shadow-[0_30px_80px_rgb(0_0_0/30%),inset_0_1px_0_rgb(255_255_255/5%)] md:p-12 grid-cols-1 lg:grid-cols-[1fr_1.05fr] lg:items-center">
           <div className="min-w-0">

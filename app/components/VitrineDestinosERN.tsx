@@ -185,7 +185,7 @@ export default function VitrineDestinosERN({
     <section
       id="destinos"
       aria-labelledby="ern-vitrine-destinos-titulo"
-      className="ern-publico-hero scroll-mt-24 bg-[#07110E] px-5 py-20 text-[#EDEDE3] md:px-8 md:py-28"
+      className="ern-publico-hero eda-catalogo-claro scroll-mt-24 bg-[#07110E] px-5 py-20 text-[#EDEDE3] md:px-8 md:py-28"
     >
       <div className="mx-auto max-w-[1180px]">
         <div className="flex flex-col justify-between gap-8 lg:flex-row lg:items-end">

@@ -217,11 +217,14 @@ export default function HeroImersivoERN({
   onBuscar,
   onFiltrar,
   destaque,
+  semAbertura = false,
 }: {
   onBuscar: (texto: string) => void;
   onFiltrar?: (texto: string) => void;
   /** DESCUBRA_FAM_V1: palavra que troca junto com a foto do fundo. */
   destaque?: string;
+  /** DESCUBRA_FAM_V2: sem a abertura (selo, título e texto) — só a busca da Iara e os destaques, abaixo do hero. */
+  semAbertura?: boolean;
 }) {
   const { idioma } = useLanguage();
   const h = (homeTranslations[idioma] as HomeTranslation).hero;
@@ -266,7 +269,8 @@ export default function HeroImersivoERN({
   }
 
   return (
-    <div className="relative z-10 mx-auto flex max-w-[1180px] flex-col items-center px-5 pb-16 pt-32 text-center md:px-8 md:pb-20 md:pt-40">
+    <div className={`relative z-10 mx-auto flex max-w-[1180px] flex-col items-center px-5 pb-16 text-center md:px-8 md:pb-20 ${semAbertura ? 'pt-16 md:pt-24' : 'pt-32 md:pt-40'}`}>
+      {!semAbertura && (<>
       {/* ERN_SELO_LUGARES_V1 + EDA_FAIXA_62_MUNICIPIOS_V2: a cápsula original,
           agora com os 62 municípios do Amazonas rolando devagar. */}
       <p
@@ -304,6 +308,8 @@ export default function HeroImersivoERN({
       <p className="ern-revela mt-7 max-w-[640px] text-base leading-7 text-[#DBE3DE] [animation-delay:900ms] md:text-lg md:leading-8">
         {destacarDescricao(h.description)}
       </p>
+
+      </>)}
 
       <form
         role="search"

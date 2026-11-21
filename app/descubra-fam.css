@@ -257,3 +257,198 @@ html[data-eda-sinal='fraco'] .eda-hero-palavra { transition: none; animation: no
   .eda-fundo-slide, .eda-mosaico-item, .eda-mosaico-item img, .eda-mosaico-mais { transition: none; }
   .eda-hero-palavra { animation: none; }
 }
+
+/* ========== DESCUBRA_FAM_V2 ========== */
+
+/* Cabeçalho claro (padrão FAM) — só na Descubra por enquanto. Logo mantido. */
+html:root header.eda-cabecalho-claro {
+  --eda-acao: transparent;
+  --eda-acao-hover: #13342a;
+  --eda-acao-ativo: rgb(15 28 23 / 9%);
+  --eda-acao-borda: #13342a;
+  --eda-acao-borda-hover: #13342a;
+  --eda-acao-texto: #13342a;
+  background: #ffffff !important;
+  border-color: #e3e5df !important;
+  box-shadow: 0 1px 0 rgb(15 28 23 / 4%) !important;
+  backdrop-filter: none !important;
+  color: #13201a !important;
+}
+html:root header.eda-cabecalho-claro > div > a span { color: #13342a !important; }
+html:root header.eda-cabecalho-claro .eda-menu-link { color: #4b5a53 !important; border-color: transparent !important; }
+html:root header.eda-cabecalho-claro .eda-menu-link:hover { color: #13342a !important; }
+html:root header.eda-cabecalho-claro .eda-menu-link[aria-current='page'] { color: #1d6b4b !important; border-color: #1d6b4b !important; }
+html:root header.eda-cabecalho-claro .ern-botao-ouro:hover { color: #ffffff !important; }
+html:root header.eda-cabecalho-claro .relative > button,
+html:root header.eda-cabecalho-claro .eda-pontos {
+  color: #13342a !important;
+  border-color: #d6d9d2 !important;
+  background: transparent !important;
+}
+html:root header.eda-cabecalho-claro .eda-pontos i { background: #13342a !important; box-shadow: none !important; }
+
+/* Hero limpo: "Descubra ___" e fotos HD se revezando atrás */
+.eda-hero-fam {
+  position: relative;
+  margin-top: 76px;
+  height: calc(100svh - 76px);
+  min-height: 520px;
+  max-height: 900px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  color: #fff;
+  background: #07110e;
+}
+.eda-hero-fam-veu {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgb(4 12 9 / 52%) 0%, rgb(4 12 9 / 58%) 55%, rgb(4 12 9 / 78%) 100%);
+}
+.eda-hero-fam-txt { position: relative; z-index: 2; padding: 0 20px 60px; max-width: 1100px; }
+.eda-hero-fam-h1 {
+  margin: 0;
+  font-family: var(--font-bebas), 'Bebas Neue', sans-serif;
+  font-weight: 400;
+  font-size: clamp(3.2rem, 9vw, 7.5rem);
+  line-height: 0.95;
+  letter-spacing: 0.01em !important;
+  text-transform: uppercase;
+  text-wrap: balance;
+  text-shadow: 0 2px 24px rgb(0 0 0 / 35%);
+}
+.eda-hero-fam-sub {
+  margin: 1.1rem auto 2.2rem;
+  max-width: 620px;
+  font-size: clamp(1rem, 1.7vw, 1.2rem);
+  line-height: 1.6;
+  color: rgb(255 255 255 / 88%);
+  text-wrap: pretty;
+}
+.eda-hero-fam-bt {
+  display: inline-flex;
+  align-items: center;
+  min-height: 50px;
+  padding: 0 30px;
+  border-radius: 999px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  backdrop-filter: blur(6px);
+}
+.eda-hero-fam-faixa {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 3;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: #0f3b2c;
+}
+.eda-hero-fam-rola {
+  display: flex;
+  flex: none;
+  width: max-content;
+  gap: 42px;
+  white-space: nowrap;
+  font-family: var(--font-bebas), 'Bebas Neue', sans-serif;
+  font-size: 1.25rem;
+  letter-spacing: 0.08em;
+  color: rgb(255 255 255 / 86%);
+  animation: eda-faixa-rola 160s linear infinite;
+}
+.eda-hero-fam-rola span { flex: none; }
+@keyframes eda-faixa-rola { to { transform: translateX(-50%); } }
+
+/* Busca da Iara e destaques: entram depois do hero, ao rolar */
+.eda-busca-iara-sec { position: relative; background: #07110e; }
+
+/* Catálogo de destinos no padrão claro (foto 1): areia + letreiro escuro.
+   Os cards com foto continuam como estão. */
+html:root .eda-catalogo-claro {
+  --eda-acao: transparent;
+  --eda-acao-hover: rgb(15 28 23 / 6%);
+  --eda-acao-ativo: rgb(15 28 23 / 9%);
+  --eda-acao-borda: rgb(15 28 23 / 28%);
+  --eda-acao-borda-hover: rgb(15 28 23 / 55%);
+  --eda-acao-texto: #0f1c17;
+  background: #f3f1ec !important;
+  color: #0f1c17 !important;
+}
+/* os cards com foto mantêm o texto claro */
+html:root .eda-catalogo-claro .dc-card { --eda-acao-texto: #ffffff; --eda-acao-borda: rgb(255 255 255 / 40%); }
+.eda-catalogo-claro h2#ern-vitrine-destinos-titulo {
+  font-family: var(--font-bebas), 'Bebas Neue', sans-serif !important;
+  font-weight: 400;
+  font-size: clamp(2.3rem, 5vw, 3.6rem);
+  line-height: 1;
+  letter-spacing: 0.01em !important;
+  text-transform: uppercase;
+  color: #0f1c17 !important;
+}
+.eda-catalogo-claro :is([class*='text-[#F0F0E8]'], [class*='text-[#EDEDE3]'], [class*='text-[#D6DFD9]']):not(.dc-card *) { color: #0f1c17 !important; }
+.eda-catalogo-claro :is([class*='text-[#B8C9BF]']):not(.dc-card *) { color: #4b5a53 !important; }
+.eda-catalogo-claro :is([class*='text-[#F4C77E]'], [class*='text-[#F7D595]']):not(.dc-card *) { color: #8a4b12 !important; }
+.eda-catalogo-claro :is([class*='border-[#355043]'], [class*='border-white/12'], [class*='border-[#F4C77E]/20']):not(.dc-card *) { border-color: #d6d2c8 !important; }
+.eda-catalogo-claro [class*='bg-[linear-gradient(180deg,rgb(16_35_27']:not(.dc-card *) {
+  background: #ffffff !important;
+  box-shadow: 0 1px 0 rgb(15 28 23 / 4%) !important;
+  backdrop-filter: none !important;
+}
+.eda-catalogo-claro select:not(.dc-card *) { background: #ffffff !important; color: #0f1c17 !important; }
+
+@media (max-width: 767px) {
+  .eda-hero-fam { min-height: 480px; height: calc(88svh - 76px); }
+  .eda-hero-fam-faixa { height: 46px; }
+  .eda-hero-fam-rola { font-size: 1.05rem; }
+}
+html[data-eda-sinal='fraco'] .eda-hero-fam-rola { animation: none; }
+@media (prefers-reduced-motion: reduce) { .eda-hero-fam-rola { animation: none; } }
+
+/* ========== DESCUBRA_FAM_V3: faixas restantes no padrão claro ========== */
+
+/* Festivais que movem o Amazonas: fundo areia e letreiro escuro; os cards com foto ficam iguais. */
+html:root .eda-letreiro { background: #f3f1ec !important; }
+html:root .eda-letreiro .eda-letreiro-olho { color: #8a4b12; }
+html:root .eda-letreiro .eda-letreiro-titulo { color: #0f1c17; }
+html:root .eda-letreiro .eda-letreiro-sub { color: #4b5a53; }
+html:root .eda-letreiro .eda-letreiro-cartao:hover { box-shadow: 0 24px 48px rgb(15 28 23 / 18%); }
+
+/* EDA para operadores: cartão branco sobre areia. */
+html:root .eda-gestao-claro {
+  --eda-acao: transparent;
+  --eda-acao-hover: rgb(15 28 23 / 6%);
+  --eda-acao-ativo: rgb(15 28 23 / 9%);
+  --eda-acao-borda: rgb(15 28 23 / 28%);
+  --eda-acao-borda-hover: rgb(15 28 23 / 55%);
+  --eda-acao-texto: #0f1c17;
+  background: #f3f1ec !important;
+  border-top-color: #e3e0d8 !important;
+}
+.eda-gestao-claro > div[aria-hidden='true'] { display: none; }
+.eda-gestao-claro > div:not([aria-hidden]) {
+  background: #ffffff !important;
+  border-color: #e3e0d8 !important;
+  box-shadow: 0 24px 60px rgb(15 28 23 / 8%) !important;
+}
+.eda-gestao-claro h2 {
+  font-family: var(--font-bebas), 'Bebas Neue', sans-serif !important;
+  font-size: clamp(2.3rem, 5vw, 3.6rem) !important;
+  font-weight: 400;
+  line-height: 1 !important;
+  letter-spacing: 0.01em !important;
+  text-transform: uppercase;
+  color: #0f1c17 !important;
+}
+.eda-gestao-claro [class*='text-[#E3A144]'] { color: #8a4b12 !important; }
+.eda-gestao-claro p[class*='text-[#C8D6CD]'] { color: #4b5a53 !important; }
+.eda-gestao-claro [class*='rounded-full'][class*='border-white'] {
+  border-color: #e3e0d8 !important;
+  background: #f7f6f2 !important;
+  color: #2c3a33 !important;
+}

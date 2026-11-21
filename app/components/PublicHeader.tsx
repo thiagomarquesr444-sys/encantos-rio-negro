@@ -249,7 +249,7 @@ export default function PublicHeader() {
       {/* ERN_CABECALHO_RIO_NEGRO_V1: verde-noite translúcido, sem ilustrações.
           Na home, fica transparente sobre a abertura até a pessoa rolar. */}
       <header
-        className={`ern-navegacao-ilustrada ern-publico-hero fixed inset-x-0 top-0 z-[100] border-b text-[#EDEDE3] transition-[background-color,box-shadow,border-color] duration-300 motion-reduce:transition-none ${
+        className={`ern-navegacao-ilustrada ern-publico-hero ${pathname === '/' ? 'eda-cabecalho-claro' : ''} fixed inset-x-0 top-0 z-[100] border-b text-[#EDEDE3] transition-[background-color,box-shadow,border-color] duration-300 motion-reduce:transition-none ${
           rolouPagina
             ? 'border-white/10 bg-[#08130F]/95 shadow-[0_10px_30px_rgb(0_0_0/25%)] backdrop-blur-xl'
             : pathname === '/'
