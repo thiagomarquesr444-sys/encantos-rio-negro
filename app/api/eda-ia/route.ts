@@ -553,7 +553,6 @@ function blocoEstilo(modo: 'operadora' | 'publico', estilo: 'regional' | 'formal
   // EDA_TUPA_V1: na gestão não existe mais seletor de jeito de falar — a voz é a de Tupã.
   if (modo === 'operadora') return '\n\nJEITO DE FALAR: a voz de Tupã (veja Personalidade) — sem gírias regionais.';
   if (estilo === 'formal') return '\n\nJEITO DE FALAR: formal — português padrão, cordial e profissional, sem gírias nem expressões regionais.';
-  if (modo === 'operadora') return `\n\nJEITO DE FALAR: regional nortista/barcelense — fale à vontade, como gente da terra, usando até 2 expressões por resposta quando soar natural. Vocabulário: ${VOCABULARIO_NORTISTA}. Números, datas, valores e alertas SEMPRE claros, sem gíria no que é sério.`;
   return idioma === 'PT'
     ? `\n\nJEITO DE FALAR: regional nortista/barcelense, com leveza — no máximo UMA expressão por resposta, natural e sem caricatura. Vocabulário: ${VOCABULARIO_NORTISTA}. Se o visitante parecer ser de fora, explique a expressão entre parênteses de forma simpática.`
     : `\n\nJEITO DE FALAR: no idioma do visitante, use no máximo UMA palavra regional do Norte do Brasil de vez em quando (ex.: "égua", "pai d'égua"), sempre explicada entre parênteses.`;
