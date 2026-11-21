@@ -31,7 +31,7 @@ export default function VitrinePaginaFornecedorEDA() {
 
   return (
     <div data-fable="portal" className="fi-eda">
-      <header className="fi-capa" style={{ backgroundImage: "url('/images/fornecedor/serra-araca-hero.webp')", minHeight: 260 }}>
+      <header className="fi-capa" style={{ backgroundImage: "url('/images/fornecedor/artesao-vitrine-feira.webp')", backgroundPosition: 'center', minHeight: 260 }}>
         <div className="fi-capa-veu" />
         <div className="fi-capa-txt">
           <p className="fi-eb">Encantos da Amazônia · Minha vitrine</p>
