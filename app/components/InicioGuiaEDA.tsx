@@ -3,7 +3,7 @@
 /*
   EDA_GUIA_INICIO_V1 — início do guia independente da Rede EDA
   (não é o cadastro de "Guias" da operadora). Capa, EDA guiando e cards.
-  Fundo em degradê de rio até chegarem as fotos do segmento guia.
+  EDA_GUIA_FOTOS_V1: fotos de pesca/peixes do segmento guia na capa, no card da EDA e nos cards.
 */
 import './inicio-fornecedor-eda.css';
 import '@/app/fablepremium.css';
@@ -31,6 +31,12 @@ function Digitando({ texto }: { texto: string }) {
   }, [texto]);
   return <span aria-label={texto}>{texto.slice(0, n)}</span>;
 }
+
+const fotoGuia = (arquivo: string, posicao = 'center') => ({
+  backgroundImage: `url('/images/guia/${arquivo}.webp')`,
+  backgroundSize: 'cover',
+  backgroundPosition: posicao,
+});
 
 export default function InicioGuiaEDA() {
   const [s, setS] = useState<Situacao | null>(null);
@@ -95,7 +101,7 @@ export default function InicioGuiaEDA() {
 
   return (
     <div data-fable="portal" className="fi-eda">
-      <header className="fi-capa fi-card-rio">
+      <header className="fi-capa" style={fotoGuia('guia-capa-cardume', 'center 40%')}>
         <div className="fi-capa-veu" />
         <div className="fi-capa-txt">
           <p className="fi-eb">Encantos da Amazônia · Espaço do guia e do prático</p>
@@ -107,7 +113,7 @@ export default function InicioGuiaEDA() {
         </div>
       </header>
 
-      <section className="fi-eda-guia" aria-live="polite">
+      <section className="fi-eda-guia fi-eda-guia-pirarucu" aria-live="polite">
         <span className="fi-eda-selo" aria-hidden="true">EDA</span>
         <div className="min-w-0 flex-1">
           <p className="fi-eda-fala"><Digitando texto={fala} /></p>
@@ -138,7 +144,7 @@ export default function InicioGuiaEDA() {
       <div id="viagens"><MinhasViagensGuiaEDA /></div>
 
       <div className="fi-cards">
-        <Link href="/guia/perfil" className="fi-card fi-card-rio">
+        <Link href="/guia/perfil" className="fi-card" style={fotoGuia('guia-card-tucunare', '30% center')}>
           <span className="fi-card-veu" />
           <span className="fi-card-txt">
             <small>Quem eu sou</small>
@@ -146,7 +152,7 @@ export default function InicioGuiaEDA() {
             <em>Guia ou prático, registros, região e o WhatsApp que recebe os contatos.</em>
           </span>
         </Link>
-        <Link href="/destinos" target="_blank" className="fi-card fi-card-rio">
+        <Link href="/destinos" target="_blank" className="fi-card" style={fotoGuia('guia-card-tucunare-lago', 'center 35%')}>
           <span className="fi-card-veu" />
           <span className="fi-card-txt">
             <small>Portal público ↗</small>
@@ -154,7 +160,7 @@ export default function InicioGuiaEDA() {
             <em>Os 62 municípios que os visitantes exploram no mapa.</em>
           </span>
         </Link>
-        <Link href="/rede" target="_blank" className="fi-card fi-card-rio">
+        <Link href="/rede" target="_blank" className="fi-card" style={fotoGuia('guia-card-filhote', 'center 45%')}>
           <span className="fi-card-veu" />
           <span className="fi-card-txt">
             <small>Portal público ↗</small>
@@ -165,6 +171,7 @@ export default function InicioGuiaEDA() {
       </div>
 
       <style jsx>{`
+        .fi-eda-guia-pirarucu { background: linear-gradient(90deg, rgb(7 17 14 / 94%) 0%, rgb(7 17 14 / 82%) 55%, rgb(7 17 14 / 50%) 100%), url('/images/guia/guia-eda-pirarucu.webp') center / cover no-repeat; }
         .fi-codigo { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 14px; align-items: center; justify-content: space-between; padding: 18px 20px; border-radius: 22px; border: 1px solid rgb(227 161 68 / 45%); background: linear-gradient(135deg, rgb(227 161 68 / 14%), rgb(7 17 14 / 0%)); }
         .fi-codigo div { display: grid; gap: 4px; min-width: 0; flex: 1 1 260px; }
         .fi-codigo small { font-size: 11px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: #e3a144; }

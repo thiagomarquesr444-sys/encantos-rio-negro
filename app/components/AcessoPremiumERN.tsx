@@ -70,6 +70,12 @@ export default function AcessoPremiumERN({ children, etapa, perfil }: Props) {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/images/fornecedor/artesao-acesso.webp" alt="" style={{ objectPosition: 'center 30%' }} />
           </picture>
+        ) : perfil === 'guia' ? (
+          /* EDA_GUIA_ACESSO_V1: guia/prático com tucunaré-açu ao fundo. */
+          <picture className="ern-acesso-foto" aria-hidden="true">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/images/guia/guia-acesso-tucunare-acu.webp" alt="" style={{ objectPosition: 'center 25%' }} />
+          </picture>
         ) : (
           <picture className="ern-acesso-foto" aria-hidden="true">
             <source media="(max-width: 767px)" srcSet="/images/fundo/encontro-das-aguas-celular.jpg" />
