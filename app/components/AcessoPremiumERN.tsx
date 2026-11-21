@@ -74,7 +74,7 @@ export default function AcessoPremiumERN({ children, etapa, perfil }: Props) {
           /* EDA_GUIA_ACESSO_V1: guia/prático com tucunaré-açu ao fundo. */
           <picture className="ern-acesso-foto" aria-hidden="true">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/images/guia/guia-acesso-tucunare-acu.webp" alt="" style={{ objectPosition: 'center 25%' }} />
+            <img src="/images/guia/guia-acesso-tucunare-acu.webp" alt="" decoding="async" style={{ objectPosition: 'center 22%', animation: 'none', imageRendering: 'auto' }} />
           </picture>
         ) : (
           <picture className="ern-acesso-foto" aria-hidden="true">
